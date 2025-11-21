@@ -1,0 +1,2231 @@
+{% load static %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}" />
+    <title>{{ establishment.name }} - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
+    <style>
+.notification-toggle-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--text-dark, #333);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.notification-toggle-btn:hover {
+    background: var(--bg-light, #f5f7fa);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #f02849;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+}
+
+.notification-panel {
+    position: fixed;
+    right: 0;
+    top: 70px;
+    width: 400px;
+    height: calc(100vh - 70px);
+    background: white;
+    border-left: 1px solid var(--border, #e4e6eb);
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 998;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-panel.open {
+    transform: translateX(0);
+}
+
+.notification-panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border, #e4e6eb);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+    color: white;
+}
+
+.notification-panel-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.mark-all-read-btn,
+.notification-close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    transition: opacity 0.2s;
+}
+
+.mark-all-read-btn:hover,
+.notification-close-btn:hover {
+    opacity: 0.8;
+}
+
+.notification-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: start;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 8px;
+    border: 1px solid var(--border, #e4e6eb);
+    position: relative;
+}
+
+.notification-item:hover {
+    background: var(--bg-light, #f5f7fa);
+}
+
+.notification-item.unread {
+    background: rgba(240, 40, 73, 0.05);
+    border-color: #f02849;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--text-dark, #333);
+}
+
+.notification-details {
+    font-size: 12px;
+    color: var(--text-muted, #65676b);
+    margin-bottom: 4px;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: var(--text-muted, #65676b);
+}
+
+.notification-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #65676b);
+}
+
+.notification-empty-state i {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: 16px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .notification-panel {
+        width: 100%;
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+}
+
+.chat-panel {
+    position: fixed;
+    right: 0;
+    top: 70px;
+    width: 360px;
+    height: calc(100vh - 70px);
+    background: white;
+    border-left: 1px solid var(--border, #e4e6eb);
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-panel.open {
+    transform: translateX(0);
+}
+
+.chat-panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border, #e4e6eb);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.chat-panel-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.chat-close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.chat-close-btn:hover {
+    transform: scale(1.1);
+}
+
+.chat-conversations-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.chat-conversation-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.chat-conversation-item:hover {
+    background: var(--bg-light, #f5f7fa);
+}
+
+.chat-conversation-item.active {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.chat-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.chat-conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-conversation-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--text-dark, #333);
+}
+
+.chat-conversation-preview {
+    font-size: 13px;
+    color: var(--text-muted, #65676b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-conversation-time {
+    font-size: 11px;
+    color: var(--text-muted, #65676b);
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.chat-unread-badge {
+    background: var(--primary, #667eea);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+}
+
+.chat-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #65676b);
+}
+
+.chat-empty-state i {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: 16px;
+    display: block;
+}
+
+/* ========================================
+   CHAT WINDOW (Individual Conversation)
+   ======================================== */
+
+.chat-window {
+    display: none;
+    position: fixed;
+    right: 0;
+    top: 70px;
+    width: 360px;
+    height: calc(100vh - 70px);
+    background: white;
+    border-left: 1px solid var(--border, #e4e6eb);
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    flex-direction: column;
+}
+
+.chat-window.active {
+    display: flex;
+}
+
+.chat-window-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border, #e4e6eb);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.chat-back-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.chat-window-header .chat-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+}
+
+.chat-window-info h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ✅ PINNED MESSAGES SECTION - Always at top */
+.owner-pinned-section {
+    background: #f8f9fa;
+    border-bottom: 1px solid var(--border, #e4e6eb);
+    padding: 10px 15px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.owner-pinned-section.active {
+    display: flex;
+}
+
+.owner-pinned-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.owner-pinned-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.owner-pinned-collapse {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 5px;
+}
+
+.pinned-message-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pinned-message-item:hover {
+    background: #f0f2f5;
+}
+
+.pinned-message-item i {
+    color: #667eea;
+    font-size: 0.9rem;
+}
+
+.pinned-message-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unpin-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 0.9rem;
+}
+
+.unpin-btn:hover {
+    color: #f02849;
+}
+
+.chat-messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f5f5f5;
+}
+
+/* ========================================
+   CHAT MESSAGES (Owner View)
+   ======================================== */
+
+.chat-message {
+    display: flex;
+    margin-bottom: 16px;
+    animation: fadeInMessage 0.3s ease;
+    clear: both;
+    position: relative;
+    align-items: center;
+}
+
+@keyframes fadeInMessage {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Owner's messages (current user) - RIGHT SIDE */
+.chat-message.sent {
+    justify-content: flex-end;
+}
+
+/* Customer's messages - LEFT SIDE */
+.chat-message.received {
+    justify-content: flex-start;
+}
+
+.chat-message-bubble {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    position: relative;
+}
+
+/* Owner's bubble - Purple */
+.chat-message.sent .chat-message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+/* Customer's bubble - White */
+.chat-message.received .chat-message-bubble {
+    background: white;
+    color: var(--text-dark, #333);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.chat-message-time {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 4px;
+    display: block;
+}
+
+/* ========================================
+   THREE DOTS BUTTON - NAKADIKIT TALAGA SA BUBBLE
+   ======================================== */
+
+.message-options-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 10;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* For sent messages (owner) - button sa KALIWA ng bubble */
+.chat-message.sent .message-options-btn {
+    order: -1;
+    margin-right: 10px;
+}
+
+/* For received messages (customer) - button sa KANAN ng bubble */
+.chat-message.received .message-options-btn {
+    order: 1;
+    margin-left: 10px;
+}
+
+/* Show on hover (Desktop) */
+@media (hover: hover) {
+    .chat-message:hover .message-options-btn {
+        opacity: 1;
+    }
+
+    .message-options-btn:hover {
+        background: rgba(0, 0, 0, 0.7);
+        transform: scale(1.1);
+    }
+}
+
+/* Always visible on touch devices when message is active */
+.chat-message.active .message-options-btn {
+    opacity: 1;
+}
+
+/* Mobile: Show indicator when long-pressing */
+.chat-message.long-pressing .chat-message-bubble {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
+/* ✅ PINNED MESSAGE INDICATOR */
+.chat-message.pinned .chat-message-bubble::before {
+    content: '📌 ';
+    margin-right: 4px;
+}
+
+/* ✅ SEE ALL PINS LINK */
+.owner-see-pins-link {
+    background: #f0f2f5;
+    padding: 10px 15px;
+    border-top: 1px solid #e4e6eb;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #667eea;
+    display: none;
+}
+
+.owner-see-pins-link.active {
+    display: block;
+}
+
+.owner-see-pins-link:hover {
+    background: #e4e6eb;
+}
+
+/* ========================================
+   CHAT INPUT
+   ======================================== */
+
+.chat-input-container {
+    padding: 16px;
+    border-top: 1px solid var(--border, #e4e6eb);
+    background: white;
+}
+
+.chat-input-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border, #e4e6eb);
+    border-radius: 20px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.chat-input:focus {
+    border-color: #667eea;
+}
+
+.chat-send-btn {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.05);
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========================================
+   TOGGLE BUTTON IN NAVBAR
+   ======================================== */
+
+.chat-toggle-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--text-dark, #333);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.chat-toggle-btn:hover {
+    background: var(--bg-light, #f5f7fa);
+}
+
+.chat-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--primary, #667eea);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* ========================================
+   CONTEXT MENU STYLES
+   ======================================== */
+
+.message-context-menu {
+    position: fixed;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 10002;
+    display: none;
+    animation: menuSlideIn 0.15s ease-out;
+}
+
+.message-context-menu.active {
+    display: block;
+}
+
+@keyframes menuSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.context-menu-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #333;
+    transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+    background: #f5f5f5;
+}
+
+.context-menu-item i {
+    width: 18px;
+    font-size: 1rem;
+}
+
+.context-menu-item.danger {
+    color: #f02849;
+}
+
+.context-menu-item.danger:hover {
+    background: #ffebee;
+}
+
+/* ========================================
+   UNSEND MODAL STYLES
+   ======================================== */
+
+.unsend-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10003;
+    animation: fadeIn 0.2s ease;
+}
+
+.unsend-modal.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.unsend-modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.unsend-modal h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.unsend-option {
+    padding: 16px;
+    border: 2px solid #e4e6eb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.unsend-option:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.unsend-option.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.unsend-option-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.unsend-option-desc {
+    font-size: 0.85rem;
+    color: #65676b;
+}
+
+.unsend-modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.unsend-modal-buttons button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: #e4e6eb;
+    color: #333;
+}
+
+.btn-cancel:hover {
+    background: #d0d2d7;
+}
+
+.btn-remove {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-remove:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-remove:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========================================
+   MESSAGE STATES
+   ======================================== */
+
+/* Message Deleted State */
+.chat-message.deleted .chat-message-bubble {
+    background: #f5f5f5 !important;
+    color: #999 !important;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.chat-message.deleted .chat-message-bubble::before {
+    content: '🚫 ';
+}
+
+/* ✅ PINNED MESSAGES LIST MODAL */
+.pinned-messages-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10004;
+    animation: fadeIn 0.2s ease;
+}
+
+.pinned-messages-modal.active {
+    display: flex;
+}
+
+.pinned-messages-modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+.pinned-messages-modal h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.pinned-messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pinned-messages-list .pinned-message-item {
+    padding: 12px;
+    border: 1px solid #e4e6eb;
+}
+
+.pinned-messages-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.pinned-messages-empty i {
+    font-size: 48px;
+    opacity: 0.3;
+    display: block;
+    margin-bottom: 12px;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .chat-panel,
+    .chat-window {
+        width: 100%;
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+
+    .message-options-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        /* ✅ Make button easier to tap on mobile */
+        opacity: 0.7;
+    }
+
+    .chat-message.sent .message-options-btn {
+        margin-right: 12px;
+    }
+
+    .chat-message.received .message-options-btn {
+        margin-left: 12px;
+    }
+
+    /* ✅ Ensure menu items are tappable */
+    .context-menu-item {
+        padding: 16px 20px;
+        font-size: 1rem;
+    }
+
+    .unsend-option {
+        padding: 18px;
+    }
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-container">
+        <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
+            KabsuEats
+        </a>
+        <div style="display: flex; align-items: center; gap: 16px;">
+
+            <!-- ✅ NOTIFICATION BELL BUTTON -->
+            <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+
+            <!-- Chat Toggle Button -->
+            <button class="chat-toggle-btn" onclick="toggleChatPanel()" id="chatToggleBtn">
+                <i class="fas fa-envelope"></i>
+                <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
+            </button>
+
+            <div class="navbar-dropdown">
+                <button class="navbar-btn" onclick="toggleDropdown()">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ establishment.name }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="navbar-menu" id="navMenu">
+                    <a href="{% url 'logout_owner' %}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="notification-panel" id="notificationPanel">
+    <div class="notification-panel-header">
+        <h3><i class="fas fa-bell"></i> Notifications</h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="mark-all-read-btn" onclick="markAllNotificationsRead()" id="markAllReadBtn" title="Mark all as read">
+                <i class="fas fa-check-double"></i>
+            </button>
+            <button class="notification-close-btn" onclick="toggleNotificationPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="notification-list" id="notificationList">
+        <!-- Notifications will be loaded here -->
+        <div class="notification-empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <p>No new notifications</p>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Chat Panel (Conversations List) -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-panel-header">
+            <h3><i class="fas fa-comments"></i> Messages</h3>
+            <button class="chat-close-btn" onclick="toggleChatPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-conversations-list" id="conversationsList">
+            <!-- Conversations will be loaded here -->
+            <div class="chat-empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No conversations yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Window (Individual Conversation) -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-window-header">
+            <button class="chat-back-btn" onclick="backToConversations()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="chat-avatar" id="chatWindowAvatar">U</div>
+            <div class="chat-window-info">
+                <h4 id="chatWindowName">Customer</h4>
+            </div>
+        </div>
+
+        <!-- ✅ PINNED MESSAGES SECTION -->
+        <div class="owner-pinned-section" id="ownerPinnedSection">
+            <div class="owner-pinned-section-header">
+                <span class="owner-pinned-section-title">📌 Pinned Messages</span>
+                <button class="owner-pinned-collapse" onclick="toggleOwnerPinnedSection()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="ownerPinnedMessagesList">
+                <!-- Pinned messages will appear here -->
+            </div>
+        </div>
+
+        <div class="chat-messages-container" id="chatMessagesContainer">
+            <!-- Messages will be loaded here -->
+        </div>
+
+        <!-- ✅ SEE ALL PINS LINK -->
+        <div class="owner-see-pins-link" id="ownerSeePinsLink" onclick="openOwnerPinnedMessagesModal()">
+            <i class="fas fa-thumbtack"></i> See All Pins
+        </div>
+
+        <div class="chat-input-container">
+            <form class="chat-input-form" id="chatInputForm" onsubmit="sendMessage(event)">
+                <input
+                    type="text"
+                    class="chat-input"
+                    id="chatInput"
+                    placeholder="Type a message..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="chat-send-btn" id="chatSendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <main class="main-content">
+        {% if is_suspended %}
+        <div class="suspension-warning">
+            <i class="fas fa-exclamation-circle"></i> Your store is currently suspended. Please contact an administrator.
+        </div>
+        {% endif %}
+
+        <header class="store-header">
+            <div class="cover-photo" onclick="openProfileImageModal()">
+                <img id="storeCoverPhoto" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/cover_photo_default.jpg' %}{% endif %}" alt="Cover">
+            </div>
+            <div class="header-info">
+                <div class="profile-pic" onclick="openProfileImageModal()">
+                    <img id="profileImageView" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="Profile">
+                </div>
+                <div class="store-info">
+                    <h1 id="establishmentName">{{ establishment.name }}</h1>
+                    <p id="establishmentAddress">{{ establishment.address }}</p>
+                    <span class="status-badge {% if establishment.status == 'Open' %}open{% else %}closed{% endif %}" id="establishmentStatus">
+                        {{ establishment.status }}
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-transparent" onclick="openModal('addMenuItemModal')">
+                        <i class="fas fa-plus"></i> Add Menu Item
+                    </button>
+                    <button class="btn btn-transparent" onclick="openModal('updateStoreDetailsModal')">
+                        <i class="fas fa-edit"></i> Update Details
+                    </button>
+                    <button class="btn btn-transparent" onclick="openModal('storeReviewsModal')">
+                        <i class="fas fa-star"></i> View Reviews
+                    </button>
+                     <button class="btn btn-transparent" onclick="openModal('viewStoreDetailsModal')">
+                        <i class="fas fa-info-circle"></i> View Details
+                    </button>
+                </div>
+            </div>
+
+             <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-chart-bar"></i> Statistics
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">{{ total_reviews }}</div>
+                            <div class="stat-label">Total Reviews</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div>
+                            <div class="stat-number">{{ average_rating }}/5.0</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card menu-section">
+            <div class="card-title-center">
+                <i class="fas fa-hamburger"></i> Your Menu
+            </div>
+            {% if menu_items %}
+            <div class="menu-grid">
+                {% for item in menu_items %}
+                <div class="menu-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}" data-item-description="{{ item.description }}" data-item-price="{{ item.price|floatformat:2 }}" data-item-quantity="{{ item.quantity|default:0 }}" data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
+                    <div class="menu-image">
+                        <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}" alt="{{ item.name }}">
+                        <div class="badges-container">
+                            {% if item.is_top_seller %}
+                            <span class="badge bestseller">
+                                <i class="fas fa-award"></i> Best Seller
+                            </span>
+                            {% endif %}
+                            {% if item.quantity > 0 %}
+                            <span class="badge available">Available: {{ item.quantity }}</span>
+                            {% else %}
+                            <span class="badge soldout">Out of Stock</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="menu-info">
+                        <div class="menu-name">{{ item.name }}</div>
+                        <div class="menu-desc">{{ item.description }}</div>
+                        <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
+                        <div class="menu-actions">
+                            <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
+                                <i class="fas fa-pen"></i> Edit
+                            </button>
+                            <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn seller">
+                                    <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{% endif %}
+                                </button>
+                            </form>
+                            <button type="button" class="action-btn delete" onclick="deleteMenuItem('{{ item.id }}', this)">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-items">
+                <i class="fas fa-inbox"></i>
+                <p>No menu items yet. Add your first item to get started!</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- All existing modals -->
+    <div class="modal" id="viewStoreDetailsModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">×</button>
+            <h2><i class="fas fa-info-circle"></i> Store Details</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="color: var(--text-muted); font-size: 12px;">Category</label>
+                    <p style="font-weight: 600; margin-top: 4px;" id="establishmentCategory">{{ establishment.category.name|default:"N/A" }}</p>
+                </div>
+                <div>
+                    <label style="color: var(--text-muted); font-size: 12px;">Amenities</label>
+                    <p style="font-weight: 600; margin-top: 4px;" id="establishmentAmenities">{% for amenity in establishment.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% empty %}N/A{% endfor %}</p>
+                </div>
+                <div>
+                    <label style="color: var(--text-muted); font-size: 12px;">Payment Methods</label>
+                    <p style="font-weight: 600; margin-top: 4px;" id="establishmentPaymentMethods">{{ establishment.payment_methods|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="updateStoreDetailsModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">×</button>
+        <h2><i class="fas fa-edit"></i> Update Store Details</h2>
+        <form method="POST" enctype="multipart/form-data" class="modal-form" id="updateStoreDetailsForm" action="{% url 'update_establishment_details_ajax' establishment.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="update_status" value="1">
+            <input type="hidden" name="update_token" id="update_token" value="{{ update_token }}">
+
+            <div class="form-group">
+                {{ status_form.name.label_tag }}
+                {{ status_form.name }}
+            </div>
+            <div class="form-group">
+                {{ status_form.address.label_tag }}
+                {{ status_form.address }}
+            </div>
+            <div class="form-group">
+                <label>Pin Location</label>
+                <button type="button" class="btn btn-secondary" onclick="openLocationModal()" style="width: 100%; justify-content: center;">
+                    <i class="fas fa-map-marker-alt"></i> Set on Map
+                </button>
+            </div>
+            <input type="hidden" name="latitude" id="id_latitude" value="{{ establishment.latitude|default:'' }}">
+            <input type="hidden" name="longitude" id="id_longitude" value="{{ establishment.longitude|default:'' }}">
+            <input type="hidden" id="previous_lat" value="{{ establishment.latitude|default:'' }}">
+            <input type="hidden" id="previous_lng" value="{{ establishment.longitude|default:'' }}">
+            <div class="form-group">
+                {{ status_form.status.label_tag }}
+                {{ status_form.status }}
+            </div>
+            <div class="form-group">
+                {{ status_form.category.label_tag }}
+                {{ status_form.category }}
+            </div>
+            <div class="form-group">
+                {{ status_form.amenities.label_tag }}
+                {{ status_form.amenities }}
+            </div>
+
+            <!-- ✅ PAYMENT METHODS AS CHECKBOXES -->
+            <div class="form-group">
+                <label>Payment Methods</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="payment_cash" name="payment_methods" value="Cash"
+                        {% if 'Cash' in establishment.payment_methods %}checked{% endif %}>
+                        <label for="payment_cash">Cash</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="payment_gcash" name="payment_methods" value="GCash"
+                        {% if 'GCash' in establishment.payment_methods %}checked{% endif %}>
+                        <label for="payment_gcash">GCash</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ status_form.image.label_tag }}
+                {% if establishment.image %}
+                <img src="{{ establishment.image.url }}" alt="Current" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block;">
+                {% endif %}
+                {{ status_form.image }}
+            </div>
+            <button type="submit" name="update_status" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 16px;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <span id="updateDetailsMsg" style="display: block; text-align: center; margin-top: 8px; font-size: 14px;"></span>
+        </form>
+    </div>
+</div>
+
+   <div class="modal" id="addMenuItemModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="modal-close" onclick="closeModal('addMenuItemModal')">×</button>
+        <h2><i class="fas fa-plus"></i> Add New Menu Item</h2>
+
+        <!-- Debug Info (remove in production) -->
+        <div id="debugInfo" style="display:none; background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
+            <strong>Debug:</strong> <span id="debugMessage"></span>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="modal-form" id="addMenuItemForm">
+            {% csrf_token %}
+            <input type="hidden" name="add_menu_item" value="1">
+            <input type="hidden" name="menu_add_token" value="{{ menu_add_token }}">
+
+            <div class="form-group">
+                <label for="id_name">Menu Name *</label>
+                <input type="text" name="name" id="id_name" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label for="id_description">Description *</label>
+                <textarea name="description" id="id_description" required rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="id_price">Price (₱) *</label>
+                <input type="number" name="price" id="id_price" step="0.01" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="id_quantity">Quantity</label>
+                <input type="number" name="quantity" id="id_quantity" min="0" value="0">
+            </div>
+
+            <div class="form-group">
+                <label for="id_image">Image (Optional)</label>
+                <input type="file" name="image" id="id_image" accept="image/*">
+                <small style="color: #666; font-size: 12px;">Recommended: JPG or PNG, max 5MB</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+        </form>
+    </div>
+</div>
+
+    <div class="modal" id="editMenuItemModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="modal-close" onclick="closeModal('editMenuItemModal')">×</button>
+            <h2><i class="fas fa-edit"></i> Edit Menu Item</h2>
+            <form id="editMenuItemForm" method="post" action="" enctype="multipart/form-data" class="modal-form">
+                {% csrf_token %}
+                <input type="hidden" name="item_id" id="edit_item_id">
+                <div class="form-group">
+                    <label for="edit_item_name">Menu Name</label>
+                    <input type="text" name="name" id="edit_item_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_item_description">Description</label>
+                    <textarea name="description" id="edit_item_description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_item_price">Price</label>
+                    <input type="text" name="price" id="edit_item_price" required>
+                </div>
+                 <div class="form-group">
+                    <label for="id_quantity_edit">Quantity</label>
+                    <input type="number" name="quantity" id="id_quantity_edit" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="edit_item_image">New Image</label>
+                    <input type="file" name="image" id="edit_item_image" accept="image/*">
+                    <img id="edit_current_item_image" src="" alt="Current" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-top: 8px; display: none;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="storeReviewsModal">
+        <div class="modal-content" style="max-width: 600px; max-height: 70vh;">
+            <button class="modal-close" onclick="closeModal('storeReviewsModal')">×</button>
+            <h2><i class="fas fa-star"></i> Customer Reviews</h2>
+            <div style="display: flex; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 28px; font-weight: 700; color: var(--primary);">{{ total_reviews }}</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Total Reviews</div>
+                </div>
+                {% if average_rating > 0 %}
+                <div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--primary);">{{ average_rating }}/5.0</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">
+                        {% for i in "12345" %}
+                        <i class="fas fa-star{% if forloop.counter > average_rating|floatformat:0 %}-o{% endif %}" style="color: #ffb400;"></i>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div style="max-height: 400px; overflow-y: auto;">
+                {% for review in dashboard_reviews %}
+                <div style="padding: 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div style="font-weight: 700;">{{ review.user.username }}</div>
+                        <div style="color: #ffb400;">
+                            {% for i in "12345" %}
+                            <i class="fas fa-star{% if forloop.counter > review.rating %}-o{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">{{ review.comment }}</p>
+                    {% if review.image %}
+                    <img src="{{ review.image.url }}" alt="Review" style="max-width: 100%; max-height: 150px; border-radius: 6px; margin-bottom: 8px;">
+                    {% endif %}
+                    <div style="font-size: 12px; color: #9aa0a6;">{{ review.created_at|date:"M d, Y" }}</div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                    No reviews yet
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="ownerProfileImageModal" style="background: rgba(0, 0, 0, 0.9);">
+        <button class="modal-close" onclick="closeModal('ownerProfileImageModal')" style="color: white;">×</button>
+        <img id="ownerModalImageView" src="" alt="Profile" style="max-width: 90%; max-height: 90vh; border-radius: var(--radius);">
+    </div>
+
+    <div class="modal" id="mapModal">
+    <div class="modal-content" style="max-width: 800px; padding: 24px;">
+        <button class="modal-close" onclick="closeModal('mapModal')">×</button>
+        <h2><i class="fas fa-map"></i> Set Establishment Location</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+            Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin.
+        </p>
+        <div id="previousLocationInfo" style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
+        <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);"></div>
+        <div style="display: flex; gap: 12px;">
+            <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()">
+                <i class="fas fa-crosshairs"></i> Focus on CvSU
+            </button>
+            <button type="button" class="btn btn-primary" onclick="closeModal('mapModal')">
+                <i class="fas fa-check"></i> Confirm Location
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="message-context-menu" id="ownerMessageContextMenu">
+    <div class="context-menu-item" onclick="pinOwnerMessage()">
+        <i class="fas fa-thumbtack"></i>
+        <span id="ownerPinMenuText">Pin</span>
+    </div>
+    <div class="context-menu-item danger" onclick="openOwnerUnsendModal()">
+        <i class="fas fa-undo"></i>
+        <span>Unsend</span>
+    </div>
+</div>
+
+<!-- Unsend Modal -->
+<div class="unsend-modal" id="ownerUnsendModal">
+    <div class="unsend-modal-content">
+        <h3>Who do you want to unsend this message for?</h3>
+
+        <div class="unsend-option selected" data-type="everyone" onclick="selectOwnerUnsendOption('everyone')">
+            <div class="unsend-option-title">
+                <i class="fas fa-users"></i>
+                Unsend for everyone
+            </div>
+            <div class="unsend-option-desc">
+                This message will be unsent for everyone in the chat. Others may have already seen or forwarded it.
+            </div>
+        </div>
+
+        <div class="unsend-option" data-type="you" onclick="selectOwnerUnsendOption('you')">
+            <div class="unsend-option-title">
+                <i class="fas fa-user"></i>
+                Unsend for you
+            </div>
+            <div class="unsend-option-desc">
+                This will remove the message from your devices. Other chat members will still be able to see it.
+            </div>
+        </div>
+
+        <div class="unsend-modal-buttons">
+            <button class="btn-cancel" onclick="closeOwnerUnsendModal()">Cancel</button>
+            <button class="btn-remove" onclick="confirmOwnerUnsend()">Remove</button>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ PINNED MESSAGES LIST MODAL -->
+<div class="pinned-messages-modal" id="ownerPinnedMessagesModal">
+    <div class="pinned-messages-modal-content">
+        <h3><i class="fas fa-thumbtack"></i> Pinned Messages</h3>
+        <div class="pinned-messages-list" id="ownerPinnedMessagesListModal">
+            <!-- Pinned messages will appear here -->
+        </div>
+        <div class="pinned-messages-empty" id="ownerPinnedMessagesEmpty" style="display: none;">
+            <i class="fas fa-inbox"></i>
+            <p>No pinned messages</p>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button class="btn-cancel" onclick="closeOwnerPinnedMessagesModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
+
+<script>
+const establishmentId = {{ establishment.id }};
+const currentUserId = {{ request.user.id }};
+let activeCustomerId = null;
+let chatSocket = null;
+let ownerContextMenuMessageId = null;
+let ownerSelectedUnsendType = 'everyone';
+let ownerPinnedMessages = new Set();
+let ownerMessagesCache = [];
+
+// Long press detection variables
+let longPressTimer = null;
+let longPressTriggered = false;
+const LONG_PRESS_DURATION = 500;
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleChatPanel() {
+    const panel = document.getElementById('chatPanel');
+    const chatWindow = document.getElementById('chatWindow');
+
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+    } else {
+        panel.classList.add('open');
+        chatWindow.classList.remove('active');
+        loadConversations();
+    }
+}
+
+function loadConversations() {
+    fetch(`/owner/chat/conversations/${establishmentId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const list = document.getElementById('conversationsList');
+
+            if (data.conversations && data.conversations.length > 0) {
+                list.innerHTML = data.conversations.map(conv => `
+                    <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${conv.customer_name}')">
+                        <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
+                        <div class="chat-conversation-info">
+                            <div class="chat-conversation-name">${conv.customer_name}</div>
+                            <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
+                        </div>
+                        <div class="chat-conversation-time">${conv.time || ''}</div>
+                        ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
+                    </div>
+                `).join('');
+
+                const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+                updateChatBadge(totalUnread);
+            } else {
+                list.innerHTML = `
+                    <div class="chat-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No conversations yet</p>
+                    </div>
+                `;
+                updateChatBadge(0);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading conversations:', error);
+        });
+}
+
+function openConversation(customerId, customerName) {
+    activeCustomerId = customerId;
+
+    document.getElementById('chatWindowName').textContent = customerName;
+    document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
+
+    document.getElementById('chatPanel').classList.remove('open');
+    document.getElementById('chatWindow').classList.add('active');
+
+    loadMessages(customerId);
+    connectWebSocket(customerId);
+}
+
+function backToConversations() {
+    document.getElementById('chatWindow').classList.remove('active');
+    document.getElementById('chatPanel').classList.add('open');
+
+    if (chatSocket) {
+        chatSocket.close();
+        chatSocket = null;
+    }
+
+    activeCustomerId = null;
+    ownerPinnedMessages.clear();
+    ownerMessagesCache = [];
+    loadConversations();
+}
+
+function loadOwnerPinnedMessages() {
+    if (!activeCustomerId) return;
+
+    const stored = localStorage.getItem(`owner_pinned_${activeCustomerId}_${establishmentId}`);
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            ownerPinnedMessages = new Set(parsed);
+        } catch (e) {
+            ownerPinnedMessages = new Set();
+        }
+    }
+}
+
+function saveOwnerPinnedMessages() {
+    if (!activeCustomerId) return;
+
+    const arr = Array.from(ownerPinnedMessages);
+    localStorage.setItem(`owner_pinned_${activeCustomerId}_${establishmentId}`, JSON.stringify(arr));
+}
+
+function loadMessages(customerId) {
+    const container = document.getElementById('chatMessagesContainer');
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Loading messages...</div>';
+
+    // Load pinned messages for this conversation
+    loadOwnerPinnedMessages();
+    ownerMessagesCache = [];
+
+    fetch(`/owner/chat/messages/${customerId}/${establishmentId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                container.innerHTML = '';
+
+                data.messages.forEach(msg => {
+                    const msgData = {
+                        id: msg.id,
+                        sender_id: msg.sender_id,
+                        content: msg.content,
+                        timestamp: msg.timestamp
+                    };
+                    ownerMessagesCache.push(msgData);
+
+                    const senderId = parseInt(msg.sender_id);
+                    const ownerId = parseInt(currentUserId);
+                    const isMyMessage = senderId === ownerId;
+
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `chat-message ${isMyMessage ? 'sent' : 'received'}`;
+                    messageDiv.dataset.messageId = msg.id;
+
+                    // Check if pinned
+                    if (ownerPinnedMessages.has(msg.id)) {
+                        messageDiv.classList.add('pinned');
+                    }
+
+                    const optionsButton = isMyMessage ? `
+                        <button class="message-options-btn" onclick="showOwnerOptionsMenu(event, ${msg.id})">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    ` : '';
+
+                    messageDiv.innerHTML = `
+                        ${optionsButton}
+                        <div class="chat-message-bubble">
+                            <div>${escapeHtml(msg.content)}</div>
+                            <span class="chat-message-time">${msg.timestamp}</span>
+                        </div>
+                    `;
+
+                    if (isMyMessage) {
+                        attachLongPressHandlers(messageDiv, msg.id);
+                    }
+
+                    container.appendChild(messageDiv);
+                });
+
+                updateOwnerPinnedSection();
+            } else {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Start the conversation! 💬</div>';
+            }
+
+            scrollToBottom();
+        })
+        .catch(error => {
+            console.error('Error loading messages:', error);
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Failed to load messages</div>';
+        });
+}
+
+function connectWebSocket(customerId) {
+    if (chatSocket) {
+        chatSocket.close();
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${customerId}/${establishmentId}/`;
+
+    chatSocket = new WebSocket(wsUrl);
+
+    chatSocket.onopen = function(e) {
+        console.log('✅ Chat connected');
+    };
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (data.type === 'chat_message') {
+            addMessageToChat(data);
+        }
+        else if (data.type === 'message_unsent') {
+            handleOwnerMessageUnsent(data);
+        }
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error('Chat connection error');
+    };
+
+    chatSocket.onclose = function(e) {
+        console.log('Chat disconnected');
+    };
+}
+
+function sendMessage(event) {
+    event.preventDefault();
+
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+
+    if (!message || !chatSocket || !activeCustomerId) {
+        return;
+    }
+
+    chatSocket.send(JSON.stringify({
+        'type': 'chat_message',
+        'message': message,
+        'sender_id': currentUserId
+    }));
+
+    input.value = '';
+    input.focus();
+}
+
+function addMessageToChat(data) {
+    const container = document.getElementById('chatMessagesContainer');
+    const messageDiv = document.createElement('div');
+
+    const senderId = parseInt(data.sender_id);
+    const ownerId = parseInt(currentUserId);
+    const isMyMessage = senderId === ownerId;
+
+    messageDiv.className = `chat-message ${isMyMessage ? 'sent' : 'received'}`;
+    messageDiv.dataset.messageId = data.message_id;
+
+    // Add to cache
+    ownerMessagesCache.push({
+        id: data.message_id,
+        sender_id: data.sender_id,
+        content: data.message,
+        timestamp: data.timestamp
+    });
+
+    const optionsButton = isMyMessage ? `
+        <button class="message-options-btn" onclick="showOwnerOptionsMenu(event, ${data.message_id})">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+    ` : '';
+
+    messageDiv.innerHTML = `
+        ${optionsButton}
+        <div class="chat-message-bubble">
+            <div>${escapeHtml(data.message)}</div>
+            <span class="chat-message-time">${data.timestamp}</span>
+        </div>
+    `;
+
+    if (isMyMessage) {
+        attachLongPressHandlers(messageDiv, data.message_id);
+    }
+
+    container.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// ==========================================
+// ✅ LONG PRESS DETECTION (MOBILE)
+// ==========================================
+
+function attachLongPressHandlers(messageElement, messageId) {
+    // Touch events
+    messageElement.addEventListener('touchstart', function(e) {
+        longPressTriggered = false;
+        messageElement.classList.add('long-pressing');
+
+        longPressTimer = setTimeout(() => {
+            longPressTriggered = true;
+            messageElement.classList.remove('long-pressing');
+
+            const touch = e.touches[0];
+            showOwnerContextMenuAtPosition(touch.clientX, touch.clientY, messageId);
+
+            e.preventDefault();
+        }, LONG_PRESS_DURATION);
+    }, { passive: false });
+
+    messageElement.addEventListener('touchend', function(e) {
+        clearTimeout(longPressTimer);
+        messageElement.classList.remove('long-pressing');
+
+        if (longPressTriggered) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    messageElement.addEventListener('touchmove', function(e) {
+        clearTimeout(longPressTimer);
+        messageElement.classList.remove('long-pressing');
+    });
+
+    // Mouse events (for desktop)
+    messageElement.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+
+        longPressTriggered = false;
+
+        longPressTimer = setTimeout(() => {
+            longPressTriggered = true;
+            showOwnerContextMenuAtPosition(e.clientX, e.clientY, messageId);
+        }, LONG_PRESS_DURATION);
+    });
+
+    messageElement.addEventListener('mouseup', function(e) {
+        clearTimeout(longPressTimer);
+    });
+
+    messageElement.addEventListener('mouseleave', function(e) {
+        clearTimeout(longPressTimer);
+    });
+}
+
+// ==========================================
+// ✅ CONTEXT MENU (DESKTOP & MOBILE)
+// ==========================================
+
+function showOwnerOptionsMenu(event, messageId) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    const rect = event.target.closest('button').getBoundingClientRect();
+    showOwnerContextMenuAtPosition(rect.left, rect.bottom + 5, messageId);
+}
+
+function showOwnerContextMenuAtPosition(x, y, messageId) {
+    const contextMenu = document.getElementById('ownerMessageContextMenu');
+    ownerContextMenuMessageId = messageId;
+
+    // Update pin/unpin text
+    const isPinned = ownerPinnedMessages.has(messageId);
+    document.getElementById('ownerPinMenuText').textContent = isPinned ? 'Unpin' : 'Pin';
+
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+
+    // Adjust if menu goes off-screen
+    setTimeout(() => {
+        const menuRect = contextMenu.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        if (menuRect.right > windowWidth) {
+            contextMenu.style.left = (x - menuRect.width) + 'px';
+        }
+
+        if (menuRect.bottom > windowHeight) {
+            contextMenu.style.top = (y - menuRect.height - 10) + 'px';
+        }
+    }, 10);
+
+    contextMenu.classList.add('active');
+
+    setTimeout(() => {
+        document.addEventListener('click', hideOwnerContextMenu);
+        document.addEventListener('touchstart', hideOwnerContextMenu);
+    }, 100);
+}
+
+function hideOwnerContextMenu() {
+    const contextMenu = document.getElementById('ownerMessageContextMenu');
+    contextMenu.classList.remove('active');
+    document.removeEventListener('click', hideOwnerContextMenu);
+    document.removeEventListener('touchstart', hideOwnerContextMenu);
+}
+
+function updateChatBadge(count) {
+    const badge = document.getElementById('chatBadge');
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function scrollToBottom() {
+    const container = document.getElementById('chatMessagesContainer');
+    setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+    }, 100);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ==========================================
+// ✅ PIN FUNCTIONALITY (PERSISTENT)
+// ==========================================
+
+function pinOwnerMessage() {
+    hideOwnerContextMenu();
+
+    if (!ownerContextMenuMessageId) return;
+
+    const messageEl = document.querySelector(`.chat-message[data-message-id="${ownerContextMenuMessageId}"]`);
+    if (!messageEl) return;
+
+    const isPinned = ownerPinnedMessages.has(ownerContextMenuMessageId);
+
+    if (isPinned) {
+        // Unpin
+        ownerPinnedMessages.delete(ownerContextMenuMessageId);
+        messageEl.classList.remove('pinned');
+    } else {
+        // Pin
+        ownerPinnedMessages.add(ownerContextMenuMessageId);
+        messageEl.classList.add('pinned');
+    }
+
+    saveOwnerPinnedMessages();
+    updateOwnerPinnedSection();
+}
+
+function updateOwnerPinnedSection() {
+    const pinnedSection = document.getElementById('ownerPinnedSection');
+    const pinnedList = document.getElementById('ownerPinnedMessagesList');
+    const seePinsLink = document.getElementById('ownerSeePinsLink');
+
+    if (ownerPinnedMessages.size === 0) {
+        pinnedSection.classList.remove('active');
+        seePinsLink.classList.remove('active');
+        return;
+    }
+
+    pinnedSection.classList.add('active');
+    seePinsLink.classList.add('active');
+
+    // Show max 3 pinned messages in section
+    pinnedList.innerHTML = '';
+    const pinnedArray = Array.from(ownerPinnedMessages).slice(-3);
+
+    pinnedArray.forEach(msgId => {
+        const msg = ownerMessagesCache.find(m => m.id === msgId);
+        if (msg) {
+            const item = document.createElement('div');
+            item.className = 'pinned-message-item';
+            item.innerHTML = `
+                <i class="fas fa-thumbtack"></i>
+                <span class="pinned-message-text">${escapeHtml(msg.content)}</span>
+                <button class="unpin-btn" onclick="unpinOwnerMessage(${msgId}, event)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            pinnedList.appendChild(item);
+        }
+    });
+}
+
+function unpinOwnerMessage(messageId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+
+    ownerPinnedMessages.delete(messageId);
+    saveOwnerPinnedMessages();
+
+    const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+    if (messageEl) {
+        messageEl.classList.remove('pinned');
+    }
+
+    updateOwnerPinnedSection();
+}
+
+function toggleOwnerPinnedSection() {
+    const section = document.getElementById('ownerPinnedSection');
+    section.classList.toggle('active');
+}
+
+// ==========================================
+// ✅ PINNED MESSAGES MODAL
+// ==========================================
+
+function openOwnerPinnedMessagesModal() {
+    const modal = document.getElementById('ownerPinnedMessagesModal');
+    const modalList = document.getElementById('ownerPinnedMessagesListModal');
+    const emptyState = document.getElementById('ownerPinnedMessagesEmpty');
+
+    if (ownerPinnedMessages.size === 0) {
+        modalList.innerHTML = '';
+        emptyState.style.display = 'block';
+    } else {
+        emptyState.style.display = 'none';
+        modalList.innerHTML = '';
+
+        Array.from(ownerPinnedMessages).forEach(msgId => {
+            const msg = ownerMessagesCache.find(m => m.id === msgId);
+            if (msg) {
+                const item = document.createElement('div');
+                item.className = 'pinned-message-item';
+                item.innerHTML = `
+                    <i class="fas fa-thumbtack"></i>
+                    <span class="pinned-message-text">${escapeHtml(msg.content)}</span>
+                    <button class="unpin-btn" onclick="unpinOwnerMessage(${msgId}, event)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                modalList.appendChild(item);
+            }
+        });
+    }
+
+    modal.classList.add('active');
+}
+
+function closeOwnerPinnedMessagesModal() {
+    const modal = document.getElementById('ownerPinnedMessagesModal');
+    modal.classList.remove('active');
+}
+
+// ==========================================
+// ✅ UNSEND FUNCTIONALITY (PERSISTENT)
+// ==========================================
+
+function openOwnerUnsendModal() {
+    hideOwnerContextMenu();
+    const modal = document.getElementById('ownerUnsendModal');
+    modal.classList.add('active');
+    ownerSelectedUnsendType = 'everyone';
+}
+
+function closeOwnerUnsendModal() {
+    const modal = document.getElementById('ownerUnsendModal');
+    modal.classList.remove('active');
+    ownerContextMenuMessageId = null;
+}
+
+function selectOwnerUnsendOption(type) {
+    ownerSelectedUnsendType = type;
+
+    document.querySelectorAll('#ownerUnsendModal .unsend-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    document.querySelector(`#ownerUnsendModal .unsend-option[data-type="${type}"]`).classList.add('selected');
+}
+
+function confirmOwnerUnsend() {
+    if (!ownerContextMenuMessageId || !chatSocket) {
+        console.error('Cannot unsend: missing message ID or socket');
+        return;
+    }
+
+    const removeBtn = document.querySelector('#ownerUnsendModal .btn-remove');
+    removeBtn.disabled = true;
+    removeBtn.textContent = 'Removing...';
+
+    chatSocket.send(JSON.stringify({
+        'type': 'unsend_message',
+        'message_id': ownerContextMenuMessageId,
+        'unsend_type': ownerSelectedUnsendType,
+        'sender_id': currentUserId
+    }));
+
+    setTimeout(() => {
+        closeOwnerUnsendModal();
+        removeBtn.disabled = false;
+        removeBtn.textContent = 'Remove';
+    }, 500);
+}
+
+function handleOwnerMessageUnsent(data) {
+    const messageId = data.message_id;
+    const unsendType = data.unsend_type;
+    const unsent_by = parseInt(data.unsent_by);
+    const ownerId = parseInt(currentUserId);
+
+    const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+
+    if (!messageEl) {
+        return;
+    }
+
+    if (unsendType === 'everyone') {
+        const bubble = messageEl.querySelector('.chat-message-bubble');
+        messageEl.classList.add('deleted');
+
+        const optionsBtn = messageEl.querySelector('.message-options-btn');
+        if (optionsBtn) {
+            optionsBtn.remove();
+        }
+
+        bubble.innerHTML = `
+            <div>Message was unsent</div>
+            <span class="chat-message-time">${new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}</span>
+        `;
+
+        ownerMessagesCache = ownerMessagesCache.filter(msg => msg.id !== messageId);
+    }
+    else if (unsendType === 'you' && unsent_by === ownerId) {
+        messageEl.remove();
+        ownerMessagesCache = ownerMessagesCache.filter(msg => msg.id !== messageId);
+    }
+
+    // Remove from pinned if it was pinned
+    if (ownerPinnedMessages.has(messageId)) {
+        ownerPinnedMessages.delete(messageId);
+        saveOwnerPinnedMessages();
+        updateOwnerPinnedSection();
+    }
+}
+
+function debugLog(message) {
+    console.log('🔍 DEBUG:', message);
+    const debugDiv = document.getElementById('debugInfo');
+    const debugMsg = document.getElementById('debugMessage');
+    if (debugDiv && debugMsg) {
+        debugMsg.textContent = message;
+        debugDiv.style.display = 'block';
+        setTimeout(() => {
+            debugDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+// Initialize
+</script>
+</body>
+</html>
+{% endblock %}

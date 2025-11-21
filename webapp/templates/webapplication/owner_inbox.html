@@ -1,0 +1,272 @@
+<!--{% load static %}-->
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Messages - {{ establishment.name }}</title>-->
+<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">-->
+<!--    <style>-->
+<!--        * {-->
+<!--            margin: 0;-->
+<!--            padding: 0;-->
+<!--            box-sizing: border-box;-->
+<!--        }-->
+
+<!--        body {-->
+<!--            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;-->
+<!--            background: #f0f2f5;-->
+<!--        }-->
+
+<!--        .navbar {-->
+<!--            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--            color: white;-->
+<!--            padding: 15px 30px;-->
+<!--            display: flex;-->
+<!--            justify-content: space-between;-->
+<!--            align-items: center;-->
+<!--            box-shadow: 0 2px 10px rgba(0,0,0,0.1);-->
+<!--        }-->
+
+<!--        .navbar h1 {-->
+<!--            font-size: 1.5rem;-->
+<!--        }-->
+
+<!--        .back-btn {-->
+<!--            background: rgba(255,255,255,0.2);-->
+<!--            color: white;-->
+<!--            padding: 10px 20px;-->
+<!--            border-radius: 25px;-->
+<!--            text-decoration: none;-->
+<!--            transition: background 0.3s;-->
+<!--        }-->
+
+<!--        .back-btn:hover {-->
+<!--            background: rgba(255,255,255,0.3);-->
+<!--        }-->
+
+<!--        .container {-->
+<!--            max-width: 1200px;-->
+<!--            margin: 30px auto;-->
+<!--            padding: 0 20px;-->
+<!--        }-->
+
+<!--        .inbox-header {-->
+<!--            background: white;-->
+<!--            padding: 25px;-->
+<!--            border-radius: 12px;-->
+<!--            margin-bottom: 20px;-->
+<!--            box-shadow: 0 2px 10px rgba(0,0,0,0.1);-->
+<!--        }-->
+
+<!--        .inbox-header h2 {-->
+<!--            color: #333;-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
+
+<!--        .inbox-stats {-->
+<!--            display: flex;-->
+<!--            gap: 30px;-->
+<!--            color: #666;-->
+<!--            font-size: 0.9rem;-->
+<!--        }-->
+
+<!--        .stat-item {-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            gap: 8px;-->
+<!--        }-->
+
+<!--        .chat-list {-->
+<!--            background: white;-->
+<!--            border-radius: 12px;-->
+<!--            box-shadow: 0 2px 10px rgba(0,0,0,0.1);-->
+<!--            overflow: hidden;-->
+<!--        }-->
+
+<!--        .chat-item {-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            padding: 20px;-->
+<!--            border-bottom: 1px solid #e0e0e0;-->
+<!--            cursor: pointer;-->
+<!--            transition: background 0.3s;-->
+<!--            text-decoration: none;-->
+<!--            color: inherit;-->
+<!--        }-->
+
+<!--        .chat-item:hover {-->
+<!--            background: #f5f5f5;-->
+<!--        }-->
+
+<!--        .chat-item:last-child {-->
+<!--            border-bottom: none;-->
+<!--        }-->
+
+<!--        .chat-avatar {-->
+<!--            width: 60px;-->
+<!--            height: 60px;-->
+<!--            border-radius: 50%;-->
+<!--            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            justify-content: center;-->
+<!--            color: white;-->
+<!--            font-size: 1.5rem;-->
+<!--            font-weight: bold;-->
+<!--            margin-right: 15px;-->
+<!--        }-->
+
+<!--        .chat-info {-->
+<!--            flex: 1;-->
+<!--        }-->
+
+<!--        .chat-name {-->
+<!--            font-weight: 600;-->
+<!--            font-size: 1.1rem;-->
+<!--            color: #333;-->
+<!--            margin-bottom: 5px;-->
+<!--        }-->
+
+<!--        .chat-preview {-->
+<!--            color: #666;-->
+<!--            font-size: 0.9rem;-->
+<!--            white-space: nowrap;-->
+<!--            overflow: hidden;-->
+<!--            text-overflow: ellipsis;-->
+<!--            max-width: 400px;-->
+<!--        }-->
+
+<!--        .chat-meta {-->
+<!--            text-align: right;-->
+<!--        }-->
+
+<!--        .chat-time {-->
+<!--            color: #999;-->
+<!--            font-size: 0.85rem;-->
+<!--            margin-bottom: 5px;-->
+<!--        }-->
+
+<!--        .unread-badge {-->
+<!--            background: #f44336;-->
+<!--            color: white;-->
+<!--            padding: 4px 10px;-->
+<!--            border-radius: 12px;-->
+<!--            font-size: 0.85rem;-->
+<!--            font-weight: 600;-->
+<!--        }-->
+
+<!--        .empty-state {-->
+<!--            text-align: center;-->
+<!--            padding: 60px 20px;-->
+<!--            color: #999;-->
+<!--        }-->
+
+<!--        .empty-state i {-->
+<!--            font-size: 4rem;-->
+<!--            margin-bottom: 20px;-->
+<!--            opacity: 0.3;-->
+<!--        }-->
+
+<!--        .empty-state h3 {-->
+<!--            color: #666;-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
+
+<!--        @media (max-width: 768px) {-->
+<!--            .navbar {-->
+<!--                padding: 15px;-->
+<!--            }-->
+
+<!--            .navbar h1 {-->
+<!--                font-size: 1.2rem;-->
+<!--            }-->
+
+<!--            .inbox-stats {-->
+<!--                flex-direction: column;-->
+<!--                gap: 10px;-->
+<!--            }-->
+
+<!--            .chat-preview {-->
+<!--                max-width: 200px;-->
+<!--            }-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <nav class="navbar">-->
+<!--        <h1><i class="fas fa-envelope"></i> Messages</h1>-->
+<!--        <a href="{% url 'food_establishment_dashboard' %}" class="back-btn">-->
+<!--            <i class="fas fa-arrow-left"></i> Dashboard-->
+<!--        </a>-->
+<!--    </nav>-->
+
+<!--    <div class="container">-->
+<!--        <div class="inbox-header">-->
+<!--            <h2>{{ establishment.name }} - Customer Messages</h2>-->
+<!--            <div class="inbox-stats">-->
+<!--                <div class="stat-item">-->
+<!--                    <i class="fas fa-comments"></i>-->
+<!--                    <span>{{ chat_rooms|length }} Conversation{{ chat_rooms|length|pluralize }}</span>-->
+<!--                </div>-->
+<!--                <div class="stat-item">-->
+<!--                    <i class="fas fa-bell"></i>-->
+<!--                    <span>-->
+<!--                        {% with total_unread=chat_rooms|length %}-->
+<!--                            {% if total_unread > 0 %}-->
+<!--                                {{ total_unread }} Unread-->
+<!--                            {% else %}-->
+<!--                                No unread messages-->
+<!--                            {% endif %}-->
+<!--                        {% endwith %}-->
+<!--                    </span>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        <div class="chat-list">-->
+<!--            {% if chat_rooms %}-->
+<!--                {% for room in chat_rooms %}-->
+<!--                <a href="{% url 'owner_chat' room.customer.id %}" class="chat-item">-->
+<!--                    <div class="chat-avatar">-->
+<!--                        {{ room.customer.username|first|upper }}-->
+<!--                    </div>-->
+<!--                    <div class="chat-info">-->
+<!--                        <div class="chat-name">{{ room.customer.username }}</div>-->
+<!--                        <div class="chat-preview">-->
+<!--                            {% if room.latest_message %}-->
+<!--                                {% if room.latest_message.sender == request.user %}-->
+<!--                                    You: {{ room.latest_message.content }}-->
+<!--                                {% else %}-->
+<!--                                    {{ room.latest_message.content }}-->
+<!--                                {% endif %}-->
+<!--                            {% else %}-->
+<!--                                No messages yet-->
+<!--                            {% endif %}-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="chat-meta">-->
+<!--                        <div class="chat-time">-->
+<!--                            {% if room.latest_message %}-->
+<!--                                {{ room.latest_message.created_at|date:"M d, g:i A" }}-->
+<!--                            {% else %}-->
+<!--                                {{ room.created_at|date:"M d, g:i A" }}-->
+<!--                            {% endif %}-->
+<!--                        </div>-->
+<!--                        {% if room.owner_unread_count > 0 %}-->
+<!--                        <span class="unread-badge">{{ room.owner_unread_count }}</span>-->
+<!--                        {% endif %}-->
+<!--                    </div>-->
+<!--                </a>-->
+<!--                {% endfor %}-->
+<!--            {% else %}-->
+<!--                <div class="empty-state">-->
+<!--                    <i class="fas fa-inbox"></i>-->
+<!--                    <h3>No Messages Yet</h3>-->
+<!--                    <p>When customers message your establishment, they'll appear here.</p>-->
+<!--                </div>-->
+<!--            {% endif %}-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</body>-->
+<!--</html>-->

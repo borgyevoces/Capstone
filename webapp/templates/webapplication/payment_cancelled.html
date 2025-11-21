@@ -1,0 +1,30 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+
+{% block title %}Payment Cancelled - KabsuEats{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 80px auto; padding: 40px; text-align: center;">
+    <!-- Cancelled Icon -->
+    <div style="background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <i class="fas fa-times-circle" style="font-size: 80px; margin-bottom: 20px;"></i>
+        <h1 style="margin: 0; font-size: 32px;">Payment Cancelled</h1>
+    </div>
+
+    <!-- Message -->
+    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <p style="font-size: 18px; color: #1a1a1a; margin-bottom: 20px;">{{ message }}</p>
+        <p style="font-size: 14px; color: #6b7280;">No charges were made to your account.</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'kabsueats_home' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 24px; background: linear-gradient(135deg, #B71C1C, #8c1616); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+        <a href="javascript:history.back()" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 24px; background: white; color: #B71C1C; border: 2px solid #B71C1C; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fas fa-arrow-left"></i> Try Again
+        </a>
+    </div>
+</div>
+{% endblock %}

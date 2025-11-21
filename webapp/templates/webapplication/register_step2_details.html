@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Register (2/3): Details - KabsuEats</title>
+    <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
+</head>
+<body>
+<div class="registration-container">
+    <div class="registration-header">
+        <h1>Business Registration</h1>
+        <div class="progress-bar">
+            <div class="progress-step active">1</div>
+            <div class="progress-step active">2</div>
+            <div class="progress-step">3</div>
+        </div>
+    </div>
+
+    <div class="registration-content">
+        <h2>Step 2: Establishment Details</h2>
+        <p>Please provide the following required information about your business.</p>
+
+        <form id="details-form" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="name">Establishment Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="address">Address (auto-generated from pin) *</label>
+                    <input type="text" id="address" name="address" required readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">--Select a Category--</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Initial Status *</label>
+                    <select id="status" name="status" required>
+                        <option value="Open">Open</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="establishment_image">Upload Establishment Image *</label>
+                    <input type="file" id="establishment_image" name="establishment_image" accept="image/*" required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Payment Options (select at least one) *</label>
+                    <div class="checkbox-group">
+                        {% for method in payment_methods %}
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="payment_{{ method|lower }}" name="payment_methods"
+                                   value="{{ method }}">
+                            <label for="payment_{{ method|lower }}">{{ method }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Amenities (select at least one) *</label>
+                    <div class="checkbox-group">
+                        {% for amenity in amenities %}
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="amenity_{{ amenity.id }}" name="amenities"
+                                   value="{{ amenity.id }}">
+                            <label for="amenity_{{ amenity.id }}">{{ amenity.name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="navigation-buttons">
+            <button id="back-step-btn" class="btn-secondary" type="button">Back: Location</button>
+            <button id="next-step-btn" class="btn-primary" type="button" disabled>Next: Create Account</button>
+        </div>
+
+        <p class="login-link">Already have an account? <a href="{% url 'owner_login' %}">Login here</a>.</p>
+    </div>
+</div>
+
+<script src="{% static 'js/business_owner_registration.js' %}"></script>
+</body>
+</html>

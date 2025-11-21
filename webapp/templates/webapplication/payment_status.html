@@ -1,0 +1,40 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+
+{% block title %}Payment Status - KabsuEats{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/payment_status.css' %}" />
+{% endblock %}
+
+{% block content %}
+    
+    <div id="payment-status-container">
+        
+        {% if status == 'success' %}
+            <div class="status-box status-success">
+                <i class="fas fa-check-circle fa-5x"></i>
+                <h2>Payment Successful!</h2>
+                <p>Thank you for your order! We have received your payment and your order is now being processed.</p>
+                <p>An email receipt has been sent to your registered email address.</p>
+            </div>
+        {% elif status == 'cancelled' %}
+            <div class="status-box status-cancelled">
+                <i class="fas fa-times-circle fa-5x"></i>
+                <h2>Payment Cancelled</h2>
+                <p>Your payment transaction was cancelled. No charges were made.</p>
+                <p>You can try again or contact support if you need assistance.</p>
+            </div>
+        {% else %}
+             <div class="status-box status-pending">
+                <i class="fas fa-info-circle fa-5x"></i>
+                <h2>Payment Status Unknown</h2>
+                <p>We are having trouble verifying your payment status. Please check your email or contact support.</p>
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'home' %}" class="btn-back-to-home">Back to Home</a>
+
+    </div>
+    
+{% endblock %}

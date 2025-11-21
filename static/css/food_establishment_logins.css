@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* LOGO */
+.logo-text {
+    position: absolute;
+    top: 50px;
+    left: 100px;
+    font-family: 'Pacifico', cursive;
+    font-size: 28px;
+    color: #000000;
+}
+
+/* LOGIN CONTAINER */
+.text_container {
+    text-align: center;
+    width: 90%;
+    max-width: 380px;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* TITLE */
+.title {
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: #000000;
+}
+
+.subtext {
+    color: #555555;
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+}
+
+/* FORM FIELD CONTAINER */
+.form-field-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* INPUT FIELD */
+.input {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    border: none;
+    border-bottom: 1.5px solid #000000;
+    font-size: 1rem;
+    color: #000000;
+    text-align: left;
+    background-color: transparent;
+    box-sizing: border-box;
+}
+
+.input::placeholder {
+    color: #999999;
+    text-align: left;
+}
+
+.input:focus {
+    outline: none;
+    border-bottom: 1.5px solid #000000;
+}
+
+/* PASSWORD FIELD WITH ICON */
+.password-field-container {
+    position: relative;
+}
+
+.input-with-icon {
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999999;
+    transition: color 0.2s ease;
+    z-index: 10;
+    font-size: 1.1rem;
+    padding: 5px;
+    user-select: none;
+}
+
+.password-toggle:hover {
+    color: #000000;
+}
+
+.password-toggle.active {
+    color: #000000;
+}
+
+/* Focus state enhancement */
+.form-field-container:focus-within .password-toggle {
+    color: #666666;
+}
+
+/* BUTTON */
+.continue {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #ffffff;
+    background-color: #000000;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.continue:hover {
+    background-color: #222222;
+    transform: scale(1.02);
+}
+
+/* REGISTER LINK */
+.start {
+    margin-top: 18px;
+    color: #555555;
+    font-size: 0.9rem;
+}
+
+.start a {
+    color: #000000;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.start a:hover {
+    text-decoration: underline;
+}
+
+/* MESSAGES */
+.messages {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    z-index: 999;
+}
+
+.messages li {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    background-color: #f5f5f5;
+    color: #000000;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.messages li.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.messages li.error {
+    background-color: #fceaea;
+    color: #b91c1c;
+}
+
+/* RESPONSIVE DESIGN */
+
+/* Tablets */
+@media (max-width: 1024px) {
+    .logo-text {
+        top: 30px;
+        left: 60px;
+        font-size: 24px;
+    }
+}
+
+/* Phones */
+@media (max-width: 768px) {
+    body {
+        padding-top: 40px;
+        align-items: center;
+    }
+
+    .logo-text {
+        position: static;
+        text-align: center;
+        font-size: 38px;
+        margin-bottom: 20px;
+    }
+
+    .text_container {
+        width: 85%;
+        padding: 25px 20px;
+    }
+
+    .input, .continue {
+        font-size: 0.95rem;
+        padding: 12px 14px;
+        width: 100%;
+    }
+
+    .title {
+        font-size: 1.35rem;
+    }
+
+    .subtext {
+        font-size: 0.85rem;
+    }
+}
+
+/* Extra Small Phones */
+@media (max-width: 480px) {
+    .logo-text {
+        font-size: 30px;
+        margin-bottom: 15px;
+    }
+
+    .text_container {
+        padding: 22px 15px;
+    }
+
+    .input, .continue {
+        font-size: 0.9rem;
+        padding: 12px;
+    }
+
+    .start {
+        font-size: 0.8rem;
+    }
+}

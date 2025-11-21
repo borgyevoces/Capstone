@@ -1,0 +1,177 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load static custom_filters webapp_filters %}
+
+{% block title %}Shopping Cart - KabsuEats{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cart_page.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+<div id="cart-page-container">
+
+    {% if carts_data %}
+        <!-- Cart Header -->
+        <div class="cart-header">
+            <h1>Shopping Cart</h1>
+            <span class="cart-item-count">{{ total_cart_count }} item{{ total_cart_count|pluralize }}</span>
+        </div>
+
+        <!-- Main Cart Layout -->
+        <div class="cart-main-wrapper">
+
+            <!-- Left Column: All Establishment Carts -->
+            <div class="all-carts-container">
+
+                {% for cart in carts_data %}
+                <div class="establishment-cart-box" data-establishment-id="{{ cart.establishment.id }}">
+
+                    <!-- Establishment Header -->
+                    <div class="cart-establishment-info">
+                        <i class="fas fa-store"></i>
+                        <h2>{{ cart.establishment.name }}</h2>
+                        <button type="button"
+                                class="clear-establishment-btn"
+                                onclick="clearEstablishmentCart({{ cart.establishment.id }})"
+                                title="Clear this cart">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Cart Items List -->
+                    <div class="cart-items-list">
+                        {% for item in cart.items %}
+                            <div class="cart-item"
+                                 id="cart-item-{{ item.id }}"
+                                 data-order-id="{{ cart.order.id }}"
+                                 data-item-id="{{ item.id }}"
+                                 data-max-stock="{{ item.menu_item.quantity }}">
+
+                                <!-- Item Image -->
+                                {% if item.menu_item.image %}
+                                    <img src="{{ item.menu_item.image.url }}"
+                                         alt="{{ item.menu_item.name }}"
+                                         class="item-image">
+                                {% else %}
+                                    <div class="item-image-placeholder">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Item Details -->
+                                <div class="item-details">
+                                    <h3 class="item-name">{{ item.menu_item.name }}</h3>
+                                    <p class="item-price" data-unit-price="{{ item.menu_item.price }}">₱{{ item.menu_item.price|floatformat:2 }} each</p>
+                                    <p class="item-stock">
+                                        <i class="fas fa-box"></i>
+                                        <span class="stock-count">{{ item.menu_item.quantity }}</span> available
+                                    </p>
+                                </div>
+
+                                <!-- Quantity Controls -->
+                                <div class="item-quantity-controls">
+                                    <button type="button"
+                                            class="quantity-btn btn-decrease"
+                                            data-item-id="{{ item.id }}"
+                                            {% if item.quantity <= 1 %}disabled{% endif %}>
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+
+                                    <span class="quantity-value" data-item-id="{{ item.id }}">{{ item.quantity }}</span>
+
+                                    <button type="button"
+                                            class="quantity-btn btn-increase"
+                                            data-item-id="{{ item.id }}"
+                                            {% if item.quantity >= item.menu_item.quantity %}disabled{% endif %}>
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Item Subtotal & Remove -->
+                                <div class="item-subtotal-section">
+                                    <span class="item-subtotal" id="item-total-{{ item.id }}">
+                                        ₱{{ item.total_price|floatformat:2 }}
+                                    </span>
+                                    <button type="button"
+                                            class="remove-item-btn"
+                                            onclick="removeItemFromCart({{ item.id }})">
+                                        <i class="fas fa-trash-alt"></i>
+                                        Remove
+                                    </button>
+                                </div>
+
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <!-- Right Column: Active Order Summary (Sticky) -->
+            <div class="cart-summary-sticky">
+                <div class="cart-summary" id="active-order-summary">
+                    <h2 class="summary-title">Order Summary</h2>
+                    <p class="summary-instruction">Click on an establishment to see order details</p>
+
+                    <div class="summary-content" style="display: none;">
+                        <div class="summary-establishment-name"></div>
+
+                        <div class="summary-line">
+                            <span>Subtotal <span class="summary-item-count"></span></span>
+                            <strong class="summary-subtotal">₱0.00</strong>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="grand-total-line">
+                            <strong>Total</strong>
+                            <span class="grand-total-amount">₱0.00</span>
+                        </div>
+
+                        <button type="button"
+                                class="btn-checkout-gcash"
+                                onclick="proceedToCheckout(this)">
+                            <i class="fas fa-lock"></i>
+                            Proceed to Checkout
+                        </button>
+
+                        <div class="security-badge">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Secure payment via PayMongo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'kabsueats_home' %}" class="continue-shopping">
+                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+
+        </div>
+
+    {% else %}
+        <!-- Empty Cart State -->
+        <div class="empty-cart-message">
+            <div class="empty-cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h2>Your cart is empty</h2>
+            <p>Add items to your cart to get started!</p>
+            <a href="{% url 'kabsueats_home' %}" class="btn-back-to-home">
+                <i class="fas fa-store"></i> Browse Establishments
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/cart.js' %}"></script>
+{% endblock %}

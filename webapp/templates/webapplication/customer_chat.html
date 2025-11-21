@@ -1,0 +1,374 @@
+<!--{% extends "webapplication/kabsueats.html" %}-->
+<!--{% load static %}-->
+
+<!--{% block search_visibility_control %}-->
+<!--    {% with show_search=False %}{% endwith %}-->
+<!--{% endblock %}-->
+
+<!--{% block title %}Chat with {{ establishment.name }}{% endblock %}-->
+
+<!--{% block extra_css %}-->
+<!--<style>-->
+<!--.chat-container {-->
+<!--    max-width: 800px;-->
+<!--    margin: 20px auto;-->
+<!--    background: white;-->
+<!--    border-radius: 12px;-->
+<!--    box-shadow: 0 2px 10px rgba(0,0,0,0.1);-->
+<!--    height: 600px;-->
+<!--    display: flex;-->
+<!--    flex-direction: column;-->
+<!--}-->
+
+<!--.chat-header {-->
+<!--    padding: 20px;-->
+<!--    border-bottom: 1px solid #e0e0e0;-->
+<!--    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--    color: white;-->
+<!--    border-radius: 12px 12px 0 0;-->
+<!--    display: flex;-->
+<!--    align-items: center;-->
+<!--    gap: 15px;-->
+<!--}-->
+
+<!--.chat-header img {-->
+<!--    width: 50px;-->
+<!--    height: 50px;-->
+<!--    border-radius: 50%;-->
+<!--    border: 2px solid white;-->
+<!--}-->
+
+<!--.chat-header-info h3 {-->
+<!--    margin: 0;-->
+<!--    font-size: 1.2rem;-->
+<!--}-->
+
+<!--.chat-header-info p {-->
+<!--    margin: 5px 0 0 0;-->
+<!--    opacity: 0.9;-->
+<!--    font-size: 0.9rem;-->
+<!--}-->
+
+<!--.chat-messages {-->
+<!--    flex: 1;-->
+<!--    overflow-y: auto;-->
+<!--    padding: 20px;-->
+<!--    background: #f5f5f5;-->
+<!--}-->
+
+<!--.message {-->
+<!--    display: flex;-->
+<!--    margin-bottom: 15px;-->
+<!--    animation: fadeIn 0.3s;-->
+<!--}-->
+
+<!--@keyframes fadeIn {-->
+<!--    from { opacity: 0; transform: translateY(10px); }-->
+<!--    to { opacity: 1; transform: translateY(0); }-->
+<!--}-->
+
+<!--.message.sent {-->
+<!--    justify-content: flex-end;-->
+<!--}-->
+
+<!--.message.received {-->
+<!--    justify-content: flex-start;-->
+<!--}-->
+
+<!--.message-bubble {-->
+<!--    max-width: 70%;-->
+<!--    padding: 12px 16px;-->
+<!--    border-radius: 18px;-->
+<!--    word-wrap: break-word;-->
+<!--}-->
+
+<!--.message.sent .message-bubble {-->
+<!--    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--    color: white;-->
+<!--    border-bottom-right-radius: 4px;-->
+<!--}-->
+
+<!--.message.received .message-bubble {-->
+<!--    background: white;-->
+<!--    color: #333;-->
+<!--    border-bottom-left-radius: 4px;-->
+<!--    box-shadow: 0 1px 2px rgba(0,0,0,0.1);-->
+<!--}-->
+
+<!--.message-time {-->
+<!--    font-size: 0.75rem;-->
+<!--    opacity: 0.7;-->
+<!--    margin-top: 5px;-->
+<!--}-->
+
+<!--.typing-indicator {-->
+<!--    display: none;-->
+<!--    padding: 10px 20px;-->
+<!--    font-style: italic;-->
+<!--    color: #666;-->
+<!--    font-size: 0.9rem;-->
+<!--}-->
+
+<!--.typing-indicator.active {-->
+<!--    display: block;-->
+<!--}-->
+
+<!--.chat-input-container {-->
+<!--    padding: 20px;-->
+<!--    border-top: 1px solid #e0e0e0;-->
+<!--    background: white;-->
+<!--    border-radius: 0 0 12px 12px;-->
+<!--}-->
+
+<!--.chat-input-form {-->
+<!--    display: flex;-->
+<!--    gap: 10px;-->
+<!--}-->
+
+<!--.chat-input {-->
+<!--    flex: 1;-->
+<!--    padding: 12px 16px;-->
+<!--    border: 2px solid #e0e0e0;-->
+<!--    border-radius: 25px;-->
+<!--    font-size: 1rem;-->
+<!--    outline: none;-->
+<!--    transition: border-color 0.3s;-->
+<!--}-->
+
+<!--.chat-input:focus {-->
+<!--    border-color: #667eea;-->
+<!--}-->
+
+<!--.send-button {-->
+<!--    padding: 12px 24px;-->
+<!--    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--    color: white;-->
+<!--    border: none;-->
+<!--    border-radius: 25px;-->
+<!--    cursor: pointer;-->
+<!--    font-weight: 600;-->
+<!--    transition: transform 0.2s;-->
+<!--}-->
+
+<!--.send-button:hover {-->
+<!--    transform: scale(1.05);-->
+<!--}-->
+
+<!--.send-button:disabled {-->
+<!--    opacity: 0.5;-->
+<!--    cursor: not-allowed;-->
+<!--}-->
+
+<!--.back-button {-->
+<!--    background: rgba(255,255,255,0.2);-->
+<!--    color: white;-->
+<!--    padding: 8px 16px;-->
+<!--    border-radius: 20px;-->
+<!--    text-decoration: none;-->
+<!--    font-size: 0.9rem;-->
+<!--    transition: background 0.3s;-->
+<!--}-->
+
+<!--.back-button:hover {-->
+<!--    background: rgba(255,255,255,0.3);-->
+<!--}-->
+
+<!--@media (max-width: 768px) {-->
+<!--    .chat-container {-->
+<!--        margin: 10px;-->
+<!--        height: calc(100vh - 100px);-->
+<!--    }-->
+
+<!--    .message-bubble {-->
+<!--        max-width: 85%;-->
+<!--    }-->
+<!--}-->
+<!--</style>-->
+<!--{% endblock %}-->
+
+<!--{% block content %}-->
+<!--<div class="chat-container">-->
+<!--    <div class="chat-header">-->
+<!--        <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"-->
+<!--             alt="{{ establishment.name }}">-->
+<!--        <div class="chat-header-info">-->
+<!--            <h3>{{ establishment.name }}</h3>-->
+<!--            <p id="connectionStatus">Connecting...</p>-->
+<!--        </div>-->
+<!--        <a href="{% url 'food_establishment_details' establishment.id %}" class="back-button">-->
+<!--            <i class="fas fa-arrow-left"></i> Back-->
+<!--        </a>-->
+<!--    </div>-->
+
+<!--    <div class="chat-messages" id="chatMessages">-->
+<!--        {% for message in messages %}-->
+<!--        <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">-->
+<!--            <div class="message-bubble">-->
+<!--                <div>{{ message.content }}</div>-->
+<!--                <div class="message-time">{{ message.created_at|date:"g:i A" }}</div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--        {% endfor %}-->
+<!--    </div>-->
+
+<!--    <div class="typing-indicator" id="typingIndicator">-->
+<!--        {{ establishment.name }} is typing...-->
+<!--    </div>-->
+
+<!--    <div class="chat-input-container">-->
+<!--        <form class="chat-input-form" id="chatForm">-->
+<!--            <input type="text"-->
+<!--                   class="chat-input"-->
+<!--                   id="messageInput"-->
+<!--                   placeholder="Type your message..."-->
+<!--                   autocomplete="off"-->
+<!--                   required>-->
+<!--            <button type="submit" class="send-button" id="sendButton">-->
+<!--                <i class="fas fa-paper-plane"></i> Send-->
+<!--            </button>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--</div>-->
+<!--{% endblock %}-->
+
+<!--{% block extra_js %}-->
+<!--<script>-->
+<!--const customerId = {{ customer_id }};-->
+<!--const establishmentId = {{ establishment_id }};-->
+<!--const currentUserId = {{ request.user.id }};-->
+
+<!--// WebSocket connection-->
+<!--const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';-->
+<!--const wsUrl = `${protocol}//${window.location.host}/ws/chat/${customerId}/${establishmentId}/`;-->
+<!--const chatSocket = new WebSocket(wsUrl);-->
+
+<!--const chatMessages = document.getElementById('chatMessages');-->
+<!--const messageInput = document.getElementById('messageInput');-->
+<!--const chatForm = document.getElementById('chatForm');-->
+<!--const sendButton = document.getElementById('sendButton');-->
+<!--const typingIndicator = document.getElementById('typingIndicator');-->
+<!--const connectionStatus = document.getElementById('connectionStatus');-->
+
+<!--let typingTimeout;-->
+
+<!--// WebSocket opened-->
+<!--chatSocket.onopen = function(e) {-->
+<!--    console.log('✅ WebSocket connected');-->
+<!--    connectionStatus.textContent = 'Online';-->
+<!--    connectionStatus.style.color = '#4CAF50';-->
+<!--};-->
+
+<!--// WebSocket closed-->
+<!--chatSocket.onclose = function(e) {-->
+<!--    console.log('❌ WebSocket disconnected');-->
+<!--    connectionStatus.textContent = 'Disconnected';-->
+<!--    connectionStatus.style.color = '#f44336';-->
+<!--};-->
+
+<!--// WebSocket error-->
+<!--chatSocket.onerror = function(e) {-->
+<!--    console.error('WebSocket error:', e);-->
+<!--    connectionStatus.textContent = 'Connection Error';-->
+<!--    connectionStatus.style.color = '#f44336';-->
+<!--};-->
+
+<!--// Receive message from WebSocket-->
+<!--chatSocket.onmessage = function(e) {-->
+<!--    const data = JSON.parse(e.data);-->
+
+<!--    if (data.type === 'connection_established') {-->
+<!--        console.log('Connection confirmed');-->
+<!--    }-->
+<!--    else if (data.type === 'chat_message') {-->
+<!--        addMessageToChat(data);-->
+<!--    }-->
+<!--    else if (data.type === 'typing_indicator') {-->
+<!--        if (data.sender_id !== currentUserId) {-->
+<!--            showTypingIndicator(data.is_typing);-->
+<!--        }-->
+<!--    }-->
+<!--};-->
+
+<!--// Add message to chat UI-->
+<!--function addMessageToChat(data) {-->
+<!--    const messageDiv = document.createElement('div');-->
+<!--    messageDiv.className = `message ${data.sender_id === currentUserId ? 'sent' : 'received'}`;-->
+
+<!--    messageDiv.innerHTML = `-->
+<!--        <div class="message-bubble">-->
+<!--            <div>${escapeHtml(data.message)}</div>-->
+<!--            <div class="message-time">${data.timestamp}</div>-->
+<!--        </div>-->
+<!--    `;-->
+
+<!--    chatMessages.appendChild(messageDiv);-->
+<!--    scrollToBottom();-->
+<!--}-->
+
+<!--// Send message-->
+<!--chatForm.addEventListener('submit', function(e) {-->
+<!--    e.preventDefault();-->
+
+<!--    const message = messageInput.value.trim();-->
+<!--    if (!message) return;-->
+
+<!--    // Disable input while sending-->
+<!--    sendButton.disabled = true;-->
+<!--    messageInput.disabled = true;-->
+
+<!--    chatSocket.send(JSON.stringify({-->
+<!--        'type': 'chat_message',-->
+<!--        'message': message,-->
+<!--        'sender_id': currentUserId-->
+<!--    }));-->
+
+<!--    messageInput.value = '';-->
+<!--    messageInput.disabled = false;-->
+<!--    sendButton.disabled = false;-->
+<!--    messageInput.focus();-->
+<!--});-->
+
+<!--// Typing indicator-->
+<!--messageInput.addEventListener('input', function() {-->
+<!--    chatSocket.send(JSON.stringify({-->
+<!--        'type': 'typing',-->
+<!--        'sender_id': currentUserId,-->
+<!--        'is_typing': true-->
+<!--    }));-->
+
+<!--    clearTimeout(typingTimeout);-->
+<!--    typingTimeout = setTimeout(() => {-->
+<!--        chatSocket.send(JSON.stringify({-->
+<!--            'type': 'typing',-->
+<!--            'sender_id': currentUserId,-->
+<!--            'is_typing': false-->
+<!--        }));-->
+<!--    }, 1000);-->
+<!--});-->
+
+<!--// Show typing indicator-->
+<!--function showTypingIndicator(isTyping) {-->
+<!--    if (isTyping) {-->
+<!--        typingIndicator.classList.add('active');-->
+<!--        scrollToBottom();-->
+<!--    } else {-->
+<!--        typingIndicator.classList.remove('active');-->
+<!--    }-->
+<!--}-->
+
+<!--// Scroll to bottom-->
+<!--function scrollToBottom() {-->
+<!--    chatMessages.scrollTop = chatMessages.scrollHeight;-->
+<!--}-->
+
+<!--// Escape HTML to prevent XSS-->
+<!--function escapeHtml(text) {-->
+<!--    const div = document.createElement('div');-->
+<!--    div.textContent = text;-->
+<!--    return div.innerHTML;-->
+<!--}-->
+
+<!--// Initial scroll to bottom-->
+<!--scrollToBottom();-->
+<!--</script>-->
+<!--{% endblock %}-->

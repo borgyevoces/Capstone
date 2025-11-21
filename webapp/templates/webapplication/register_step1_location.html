@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Register (1/3): Pin Location - KabsuEats</title>
+    <!-- Note: Leaflet CSS is required for the map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
+</head>
+<body>
+    <div class="registration-container">
+        <div class="registration-header">
+            <h1>Business Registration</h1>
+            <div class="progress-bar">
+                <div class="progress-step active">1</div>
+                <div class="progress-step">2</div>
+                <div class="progress-step">3</div>
+            </div>
+        </div>
+
+        <div class="registration-content">
+            <h2>Step 1: Pin Your Location</h2>
+            <p>Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin. You can change the map type using the control in the top-right corner.</p>
+            <div id="map"></div>
+            <div id="validation-message" class="map-validation-message">Please pin a location on the map.</div>
+            <div class="navigation-buttons">
+                 <button id="next-step-btn" class="btn-primary" disabled style="margin-left: auto;">Next: Add Details</button>
+            </div>
+            <p class="login-link">Already have an account? <a href="{% url 'owner_login' %}">Login here</a>.</p>
+        </div>
+    </div>
+
+    <!-- Note: Leaflet JS is required for the map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // This variable is used by the external JS file
+        const CVSU_COORDS = {
+            lat: {{ CVSU_LATITUDE|default:"14.412768" }},
+            lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
+        };
+    </script>
+    <script src="{% static 'js/business_owner_registration.js' %}"></script>
+</body>
+</html>
