@@ -57,7 +57,7 @@ from sendgrid.helpers.mail import Mail
 # ==========================================
 from .models import (
     FoodEstablishment, MenuItem, Review, Order, OrderItem,
-    OTP, Amenity, Category, InvitationCode, UserProfile
+    OTP, Amenity, Category, InvitationCode, UserProfile, OrderNotification
 )
 from .forms import (
     UserProfileUpdateForm, AccessCodeForm,
@@ -985,8 +985,16 @@ def create_gcash_payment_link(request):
     Now supports multi-establishment by accepting order_id.
     """
     try:
-        # Get order_id from request
-        order_id = request.POST.get('order_id')
+        # Get order_id from request (support form-encoded and JSON bodies)
+        order_id = None
+        if request.content_type and request.content_type.startswith('application/json'):
+            try:
+                body = json.loads(request.body.decode('utf-8') or '{}')
+                order_id = body.get('order_id')
+            except Exception:
+                order_id = None
+        if not order_id:
+            order_id = request.POST.get('order_id')
 
         if not order_id:
             return JsonResponse({
@@ -1012,6 +1020,13 @@ def create_gcash_payment_link(request):
         # Calculate total
         total_amount = float(order.total_amount)
         amount_in_centavos = int(total_amount * 100)
+
+        # Defensive validation: amount must be > 0
+        if amount_in_centavos <= 0:
+            return JsonResponse({
+                'success': False,
+                'message': 'Order total must be greater than zero.'
+            }, status=400)
 
         # PayMongo API setup
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
@@ -1054,7 +1069,12 @@ def create_gcash_payment_link(request):
 
         # Call PayMongo API
         api_url = f"{settings.PAYMONGO_API_URL}/links"
-        response = requests.post(api_url, headers=headers, json=payload)
+
+        # Log payload for debugging
+        import logging
+        logging.getLogger(__name__).debug('PayMongo payload: %s', json.dumps(payload))
+
+        response = requests.post(api_url, headers=headers, json=payload, timeout=30)
 
         if response.status_code in [200, 201]:
             response_data = response.json()
@@ -1073,23 +1093,98 @@ def create_gcash_payment_link(request):
                 'total_amount': float(total_amount)
             })
         else:
-            error_data = response.json() if response.content else {}
-            error_message = error_data.get('errors', [{}])[0].get('detail', 'Payment service error')
+            # Try to include upstream response for debugging
+            try:
+                resp_text = response.text
+                error_data = response.json() if response.content else {}
+            except Exception:
+                resp_text = response.text if hasattr(response, 'text') else ''
+                error_data = {}
+
+            error_message = error_data.get('errors', [{}])[0].get('detail') if isinstance(error_data, dict) else None
+            if not error_message:
+                error_message = resp_text or 'Payment service error'
+
+            import logging
+            logging.getLogger(__name__).error('PayMongo /links returned %s: %s', response.status_code, resp_text)
 
             return JsonResponse({
                 'success': False,
-                'message': error_message
-            }, status=500)
+                'message': error_message,
+                'upstream_status': response.status_code,
+                'upstream_body': resp_text
+            }, status=502)
 
     except Exception as e:
-        print(f"❌ Error creating payment link: {e}")
-        import traceback
+        import logging, traceback
+        logging.getLogger(__name__).exception('Unexpected error in create_gcash_payment_link')
         traceback.print_exc()
-
         return JsonResponse({
             'success': False,
-            'message': f'An error occurred: {str(e)}'
+            'message': 'Internal server error while creating payment link'
         }, status=500)
+
+
+@login_required
+def debug_create_gcash_payload(request, order_id):
+    """
+    Debug endpoint: build and return the PayMongo payload for the given order_id
+    without calling PayMongo. Use this to inspect the payload, amount, and URLs.
+    """
+    try:
+        order = get_object_or_404(
+            Order.objects.prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            user=request.user,
+            status='PENDING'
+        )
+
+        cart_items = order.orderitem_set.all()
+        if not cart_items.exists():
+            return JsonResponse({'success': False, 'message': 'This cart is empty'}, status=400)
+
+        total_amount = float(order.total_amount)
+        amount_in_centavos = int(total_amount * 100)
+
+        success_url = request.build_absolute_uri(reverse('gcash_payment_success')) + f'?order_id={order.id}'
+        cancel_url = request.build_absolute_uri(reverse('gcash_payment_cancel')) + f'?order_id={order.id}'
+
+        item_names = [item.menu_item.name for item in cart_items[:3]]
+        description = f"Order from {order.establishment.name}: {', '.join(item_names)}"
+        if cart_items.count() > 3:
+            description += f" and {cart_items.count() - 3} more items"
+
+        payload = {
+            "data": {
+                "attributes": {
+                    "amount": amount_in_centavos,
+                    "description": description,
+                    "remarks": f"Order #{order.id} - KabsuEats",
+                    "payment_method_allowed": ["gcash"],
+                    "success_url": success_url,
+                    "failed_url": cancel_url
+                }
+            }
+        }
+
+        api_url = f"{settings.PAYMONGO_API_URL}/links"
+
+        # Return payload and helpful debug info (do NOT include secret keys)
+        return JsonResponse({
+            'success': True,
+            'order_id': order.id,
+            'total_amount': total_amount,
+            'amount_in_centavos': amount_in_centavos,
+            'api_url': api_url,
+            'payload': payload,
+            'note': 'This endpoint does NOT call PayMongo. Use the payload to test the API separately.'
+        })
+
+    except Exception:
+        import logging, traceback
+        logging.getLogger(__name__).exception('Error building debug payload')
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': 'Error building payload'}, status=500)
 
 
 @login_required

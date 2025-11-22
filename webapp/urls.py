@@ -55,6 +55,8 @@ urlpatterns = [
                   path('payment/create-gcash-link/', views.create_gcash_payment_link, name='create_gcash_payment_link'),
                   path('payment/gcash-success/', views.gcash_payment_success, name='gcash_payment_success'),
                   path('payment/gcash-cancel/', views.gcash_payment_cancel, name='gcash_payment_cancel'),
+                  # Debug payload builder (development only)
+                  path('payment/debug-create-payload/<int:order_id>/', views.debug_create_gcash_payload, name='debug_create_gcash_payload'),
                   path('payment/webhook/', views.paymongo_webhook, name='paymongo_webhook'),
                   path('paymongo_checkout/', views.paymongo_checkout, name='paymongo_checkout'),
                   path('payment-status/<str:status>/', views.payment_status, name='payment_status'),

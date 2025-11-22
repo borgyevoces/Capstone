@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from django.conf.global_settings import STATICFILES_DIRS
 from django.core.asgi import get_asgi_application
+import os
 
 PAYMONGO_SECRET_KEY = 'sk_test_QR6jF33RUJ5rhBfGiTirT6Ag'
 PAYMONGO_PUBLIC_KEY = 'pk_test_y94mFUoDLXbD99SygpeHiUCq'
@@ -39,9 +40,13 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = 'kabsueats_home'
 LOGOUT_REDIRECT_URL = 'user_login_register'
 
-GOOGLE_CLIENT_ID = '597255921135-n8g38r5u3p0u5akndenm5lltg4ikq3j5.apps.googleusercontent.com'
-GOOGLE_CLIENT_SECRET = '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'
-GOOGLE_REDIRECT_URI = 'https://34b987c61741.ngrok-free.app/accounts/google/callback'
+# Previous defaults (commented out for record)
+# GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '597255921135-n8g38r5u3p0u5akndenm5lltg4ikq3j5.apps.googleusercontent.com')
+# GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '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')
+
+# Use environment values if present; fall back to the new provided keys
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '184478297970-r1ke8u6spdvum7gaffhmblga7m9t09jt.apps.googleusercontent.com')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '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')
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -55,7 +60,7 @@ SECRET_KEY = 'django-insecure-b$-7u%j-7cc_pbp!_penzpu(xd009$ro@=xf$89-mktoss=s-l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.11','192.168.1.5', 'localhost', '127.0.0.1', '192.168.254.120', '192.168.254.120', '10.136.92.88', '10.20.78.227', '192.168.254.125',".ngrok-free.app" , "192.168.254.131" ]
+ALLOWED_HOSTS = ['192.168.1.11','192.168.1.5', '127.0.0.1', '192.168.254.120', '192.168.254.120', '10.136.92.88', '10.20.78.227', '192.168.254.125', '192.168.254.131']
 # b802-64-224-103-143.ngrok-free.app
 
 # Application definition
@@ -91,8 +96,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'Capstone.urls'
 
-import os # Add this line at the top of settings.py
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -114,6 +117,7 @@ WSGI_APPLICATION = 'Capstone.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
 
 DATABASES = {
     'default': {
@@ -179,9 +183,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # or use a wildcard 'https://*.ngrok-free.app' if it changes.
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
-    'http://localhost:8000',
-    'https://b1381d33405c.ngrok-free.app', # Example: replace with your actual ngrok URL
-    'https://*.ngrok-free.app', # This wildcard covers all ngrok-free.app subdomains over HTTPS
+    # If you run the dev server on a different port or host, update SITE_URL above
 ]
 # ===================================================================================
 import os
@@ -192,6 +194,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env file
 load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+# Allow SITE_URL to be overridden from .env (so redirect URI matches runtime)
+SITE_URL = os.getenv('SITE_URL', SITE_URL)
+
+# Normalize SITE_URL: ensure scheme and remove trailing slash
+if not SITE_URL.startswith(('http://', 'https://')):
+    SITE_URL = 'http://' + SITE_URL
+SITE_URL = SITE_URL.rstrip('/')
+
+# Recompute Google redirect URI so it matches SITE_URL (useful when SITE_URL is set in .env)
+GOOGLE_REDIRECT_URI = f"{SITE_URL}/accounts/google/callback"
+
+# Debug: log and print effective redirect URI for development runs
+try:
+    import logging
+    logging.getLogger('django').info(f"Effective GOOGLE_REDIRECT_URI set to: {GOOGLE_REDIRECT_URI}")
+except Exception:
+    pass
+print(f"[DEBUG] Effective GOOGLE_REDIRECT_URI={GOOGLE_REDIRECT_URI}")
 
 # Secret Key and Debug mode
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-palitan-mo-ako-ng-bago-at-secure-key')
