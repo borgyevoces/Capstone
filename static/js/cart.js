@@ -231,7 +231,8 @@ async function clearEstablishmentCart(establishmentId) {
     fetch('/cart/clear-establishment/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
@@ -359,11 +360,31 @@ function proceedToCheckout(button) {
     fetch('/payment/create-gcash-link/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
     })
-    .then(response => {
+    .then(async response => {
+        // Try to parse JSON body even on non-OK so we can surface upstream details
+        let bodyText = '';
+        try {
+            const cloned = response.clone();
+            bodyText = await cloned.text();
+        } catch (e) {
+            bodyText = '';
+        }
+
         if (!response.ok) {
-            throw new Error('Server error: ' + response.statusText);
+            // Attempt to extract message from JSON body
+            try {
+                const errData = JSON.parse(bodyText || '{}');
+                const upstreamStatus = errData.upstream_status || response.status;
+                const upstreamBody = errData.upstream_body || bodyText;
+                console.error('Checkout upstream error', upstreamStatus, upstreamBody);
+                throw new Error(errData.message || `Server error: ${response.status} ${response.statusText}`);
+            } catch (parseErr) {
+                console.error('Checkout error response (non-JSON):', response.status, bodyText);
+                throw new Error(`Server error: ${response.status} ${response.statusText}`);
+            }
         }
         return response.json();
     })

@@ -59,21 +59,7 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
 
 # SECURITY: SECRET_KEY and DEBUG are loaded from environment (see below)
 
-# ALLOWED_HOSTS: read from environment variable `ALLOWED_HOSTS` (comma-separated)
-# If not set, try to derive from SITE_URL; always include localhost and 127.0.0.1
-raw_allowed = os.getenv('ALLOWED_HOSTS', '')
-if raw_allowed:
-    ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
-else:
-    # derive host from SITE_URL if provided
-    try:
-        from urllib.parse import urlparse
-        parsed = urlparse(SITE_URL)
-        host_from_site = parsed.hostname
-    except Exception:
-        host_from_site = None
-    ALLOWED_HOSTS = [h for h in ([host_from_site, '127.0.0.1', 'localhost'] if host_from_site else ['127.0.0.1', 'localhost']) if h]
-# b802-64-224-103-143.ngrok-free.app
+# ALLOWED_HOSTS is computed later (after SECRET_KEY) to allow a DEBUG-aware fallback.
 
 # Application definition
 
@@ -234,6 +220,27 @@ if not SECRET_KEY:
         warnings.warn('SECRET_KEY not set in environment — using insecure development fallback.', RuntimeWarning)
     else:
         raise RuntimeError('The SECRET_KEY environment variable is not set. Set it in .env or environment variables.')
+
+# Compute ALLOWED_HOSTS here so we can include local hosts when DEBUG is True.
+# Preference order: environment `ALLOWED_HOSTS`, then derive from SITE_URL, else empty.
+raw_allowed = os.getenv('ALLOWED_HOSTS', '').strip()
+if raw_allowed:
+    ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
+else:
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(SITE_URL)
+        host_from_site = parsed.hostname
+    except Exception:
+        host_from_site = None
+    ALLOWED_HOSTS = [host_from_site] if host_from_site else []
+
+# Always allow local hosts when developing locally.
+if DEBUG:
+    for local_host in ('127.0.0.1', 'localhost'):
+        if local_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(local_host)
+
 
 # SendGrid Settings
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')

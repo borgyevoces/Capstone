@@ -1028,6 +1028,52 @@ def create_gcash_payment_link(request):
                 'message': 'Order total must be greater than zero.'
             }, status=400)
 
+        # PayMongo enforces a minimum amount (typically ₱100). If the order is
+        # below that threshold we cannot create a PayMongo link. For local
+        # development (DEBUG=True) we simulate a successful payment so you can
+        # test the checkout flow without calling the external API. In
+        # production we return a clear error to the client.
+        MIN_AMOUNT_CENTAVOS = int(getattr(settings, 'PAYMONGO_MINIMUM_AMOUNT_CENTAVOS', 10000))
+        if amount_in_centavos < MIN_AMOUNT_CENTAVOS:
+            if settings.DEBUG:
+                # Simulate immediate successful payment for testing
+                order.status = 'PAID'
+                order.payment_confirmed_at = timezone.now()
+                order.gcash_reference_number = f"SIM-{uuid.uuid4()}"
+                order.save()
+
+                # Reduce stock for order items
+                for order_item in order.orderitem_set.all():
+                    menu_item = order_item.menu_item
+                    try:
+                        if menu_item.quantity >= order_item.quantity:
+                            menu_item.quantity -= order_item.quantity
+                            menu_item.save()
+                    except Exception as stock_err:
+                        print(f"Error reducing stock for {menu_item.id}: {stock_err}")
+
+                # Send confirmation emails (best-effort)
+                try:
+                    send_order_confirmation_email(order)
+                except Exception as e:
+                    print(f"Email error (simulated payment): {e}")
+
+                # Return a redirect URL so the frontend can continue the happy path
+                redirect_url = request.build_absolute_uri(reverse('gcash_payment_success')) + f'?order_id={order.id}'
+                return JsonResponse({
+                    'success': True,
+                    'checkout_url': redirect_url,
+                    'order_id': order.id,
+                    'reference_number': order.gcash_reference_number,
+                    'total_amount': float(total_amount),
+                    'note': 'Simulated payment because amount below PayMongo minimum and DEBUG=True'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'PayMongo requires a minimum payment of ₱{MIN_AMOUNT_CENTAVOS/100:.2f}. Please increase your order or use another payment method.'
+                }, status=400)
+
         # PayMongo API setup
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
         auth_base64 = base64.b64encode(auth_string.encode()).decode()
@@ -1054,6 +1100,12 @@ def create_gcash_payment_link(request):
             description += f" and {cart_items.count() - 3} more items"
 
         # Payment link payload
+        # Include a return indicator so we can redirect the user back to the
+        # appropriate page after PayMongo completes the flow.
+        # For cart checkout, use return_to=cart
+        success_url = success_url + '&return_to=cart'
+        cancel_url = cancel_url + '&return_to=cart'
+
         payload = {
             "data": {
                 "attributes": {
@@ -1199,30 +1251,63 @@ def gcash_payment_success(request):
         return redirect('view_cart')
 
     try:
-        order = Order.objects.get(id=order_id, user=request.user)
+        # Try to find the order. The user may or may not be authenticated
+        # (redirects from PayMongo may not include session cookies). Prefer matching by id.
+        order = Order.objects.filter(id=order_id).select_related('user').first()
+        if not order:
+            messages.error(request, 'Order not found')
+            return redirect('view_cart')
 
-        # Update order status
-        order.status = 'PAID'
-        order.payment_confirmed_at = timezone.now()
-        order.save()
+        # Update order status if still pending
+        if order.status != 'PAID':
+            order.status = 'PAID'
+            order.payment_confirmed_at = timezone.now()
+            order.save()
 
-        # ✅ REDUCE STOCK for each item
-        for order_item in order.orderitem_set.all():
-            menu_item = order_item.menu_item
-            if menu_item.quantity >= order_item.quantity:
-                menu_item.quantity -= order_item.quantity
-                menu_item.save()
-            else:
-                print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
+            # Reduce stock
+            for order_item in order.orderitem_set.all():
+                menu_item = order_item.menu_item
+                try:
+                    if menu_item.quantity >= order_item.quantity:
+                        menu_item.quantity -= order_item.quantity
+                        menu_item.save()
+                    else:
+                        print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
+                except Exception as stock_err:
+                    print(f"Error reducing stock for {menu_item.id}: {stock_err}")
 
-        # Send confirmation emails
-        try:
-            send_order_confirmation_email(order)
-        except Exception as e:
-            print(f"Email error: {e}")
+            # Send confirmation emails (best-effort)
+            try:
+                send_order_confirmation_email(order)
+            except Exception as e:
+                print(f"Email error: {e}")
 
-        messages.success(request, 'Payment successful! Your order has been confirmed.')
-        return redirect('order_confirmation', order_id=order.id)
+        # Decide where to redirect the user after payment.
+        # PayMongo will redirect to this view and include our `return_to` param
+        # when creating the payment link.
+        return_to = request.GET.get('return_to')
+
+        # If the request is authenticated and belongs to the order owner,
+        # send them to the order confirmation page.
+        if request.user.is_authenticated and request.user == order.user:
+            messages.success(request, 'Payment successful! Your order has been confirmed.')
+            return redirect('order_confirmation', order_id=order.id)
+
+        # If PayMongo returned us here and requested a cart redirect,
+        # send the user to the cart page. Since the order was marked PAID,
+        # it will no longer appear in the pending cart and the cart will
+        # effectively be cleared for that establishment.
+        if return_to == 'cart':
+            return redirect('view_cart')
+
+        # For buy-now flows, redirect to a public payment status / order page.
+        if return_to == 'buynow':
+            # If possible, prefer showing a public payment status page that can
+            # link to the order confirmation after the user signs in.
+            return redirect('payment_status', status='success')
+
+        # Fallback: public success page
+        return redirect('payment_status', status='success')
 
     except Order.DoesNotExist:
         messages.error(request, 'Order not found')
@@ -1455,6 +1540,11 @@ def create_buynow_payment_link(request):
         description = f"Buy Now: {menu_item.name} x{quantity} from {establishment.name}"
 
         # Payment link payload
+        # For Buy Now flow, indicate return_to=buynow so success handler
+        # can redirect to the order confirmation / store page.
+        success_url = success_url + '&return_to=buynow'
+        cancel_url = cancel_url + '&return_to=buynow'
+
         payload = {
             "data": {
                 "attributes": {
