@@ -17,3 +17,6 @@ tzdata==2025.2
 urllib3==2.5.0
 gunicorn==21.2.0
 
+channels==4.0.0
+daphne==4.0.0
+
