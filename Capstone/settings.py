@@ -204,9 +204,19 @@ except Exception:
     pass
 print(f"[DEBUG] Effective GOOGLE_REDIRECT_URI={GOOGLE_REDIRECT_URI}")
 
-# Secret Key and Debug mode
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-palitan-mo-ako-ng-bago-at-secure-key')
+# Debug mode (read early so we can decide behavior for SECRET_KEY)
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+# Secret Key: must be provided via environment (.env). In production this must be set.
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        # development fallback (not secure) so local dev keeps working
+        SECRET_KEY = 'django-insecure-dev-placeholder'
+        import warnings
+        warnings.warn('SECRET_KEY not set in environment — using insecure development fallback.', RuntimeWarning)
+    else:
+        raise RuntimeError('The SECRET_KEY environment variable is not set. Set it in .env or environment variables.')
 
 # SendGrid Settings
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
