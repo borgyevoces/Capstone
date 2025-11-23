@@ -10,6 +10,7 @@ import base64
 import random
 import hashlib
 import requests
+import logging
 from math import radians, sin, cos, sqrt, atan2
 from decimal import Decimal
 from urllib.parse import urlencode
@@ -41,8 +42,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import send_mail as django_send_mail
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 
@@ -104,7 +106,7 @@ def user_login_register(request):
                 login(request, user)
                 subject = "Login Successful"
                 message = f"Hello {user.username},\n\nThis is to confirm that your account has been successfully logged in."
-                send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
+                send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
                 messages.success(request, "Successfully logged in!")
                 return redirect("kabsueats_home")
@@ -136,7 +138,7 @@ def user_login_register(request):
                 # Send registration confirmation email
                 subject = "Account Registration Confirmed"
                 message = f"Hello {user.username},\n\nWelcome to our service! Your account has been successfully registered."
-                send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
+                send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
                 # PAGBABAGO: Hindi na automatic magla-log in. Sa halip, ire-redirect ang user sa login page.
                 messages.success(request, "Account created successfully! You can now log in.")
@@ -186,20 +188,58 @@ def google_callback(request):
     }
     try:
         token_response = requests.post(token_url, data=token_params)
-        token_response.raise_for_status()
-        token_data = token_response.json()
+        try:
+            token_response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            logging.getLogger('django').error(
+                f"Google token endpoint error: status={token_response.status_code} body={token_response.text}"
+            )
+            if getattr(settings, 'DEBUG', False):
+                messages.error(request, f'Google token exchange failed (status {token_response.status_code}): {token_response.text}')
+            else:
+                messages.error(request, f'Google token exchange failed (status {token_response.status_code}).')
+            return redirect('user_login_register')
+
+        try:
+            token_data = token_response.json()
+        except json.JSONDecodeError:
+            logging.getLogger('django').error(
+                f"Google token endpoint returned non-JSON: {token_response.text}"
+            )
+            messages.error(request, 'Failed to decode Google token response.')
+            return redirect('user_login_register')
+
         access_token = token_data.get('access_token')
 
         if not access_token:
+            logging.getLogger('django').error(f"No access_token in token response: {token_data}")
             messages.error(request, 'Failed to get Google access token.')
             return redirect('user_login_register')
 
         user_info_url = 'https://www.googleapis.com/oauth2/v2/userinfo'
         headers = {'Authorization': f'Bearer {access_token}'}
         user_info_response = requests.get(user_info_url, headers=headers)
-        user_info_response.raise_for_status()
-        user_info = user_info_response.json()
-    except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
+        try:
+            user_info_response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            logging.getLogger('django').error(
+                f"Google userinfo error: status={user_info_response.status_code} body={user_info_response.text}"
+            )
+            # Surface a friendly message but include body when DEBUG so we can see the 403 reason
+            if getattr(settings, 'DEBUG', False):
+                messages.error(request, f'Google userinfo request failed (status {user_info_response.status_code}): {user_info_response.text}')
+            else:
+                messages.error(request, f'Google userinfo request failed (status {user_info_response.status_code}).')
+            return redirect('user_login_register')
+
+        try:
+            user_info = user_info_response.json()
+        except json.JSONDecodeError:
+            logging.getLogger('django').error(f"Google userinfo returned non-JSON: {user_info_response.text}")
+            messages.error(request, 'Failed to decode Google user info response.')
+            return redirect('user_login_register')
+    except requests.exceptions.RequestException as e:
+        logging.getLogger('django').exception('Exception during Google OAuth flow')
         messages.error(request, f'An error occurred during Google authentication: {e}')
         return redirect('user_login_register')
 
@@ -213,7 +253,7 @@ def google_callback(request):
 
             subject = "Login Successful via Google"
             message = f"Hello {user.username},\n\nThis is to confirm that your account was logged in using your Google account."
-            send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=False)
+            send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
             messages.success(request, f'🎉 Welcome back, {user.username}!')
             return redirect('kabsueats_home')
@@ -715,6 +755,27 @@ from decimal import Decimal
 def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
+
+
+# Wrapper send_mail: prefer SendGrid API when `SENDGRID_API_KEY` is configured,
+# otherwise fall back to Django's SMTP `send_mail`. This centralizes email
+# sending so OAuth/google flows and order emails work even if SMTP creds fail.
+def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
+    sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
+    if sendgrid_key:
+        try:
+            sg_msg = Mail(from_email=from_email, to_emails=recipient_list, subject=subject, html_content=html_message or message)
+            sg = SendGridAPIClient(sendgrid_key)
+            resp = sg.send(sg_msg)
+            # Return number of accepted recipients similar to django send_mail
+            return 1 if resp.status_code in (200, 202) else 0
+        except Exception as e:
+            print(f"SendGrid send error: {e}")
+            if not fail_silently:
+                raise
+            return 0
+    # Fallback to Django SMTP send_mail
+    return django_send_mail(subject, message, from_email, recipient_list, fail_silently=fail_silently, html_message=html_message)
 
 @login_required
 @require_POST
@@ -2568,7 +2629,7 @@ def paymongo_checkout(request):
         }, status=500)
 
 def payment_status(request, status):
-    """Generic payment status page"""
+    """payment status page"""
     if status == 'success':
         title = "Payment Successful!"
         message = "Your order has been placed successfully."
