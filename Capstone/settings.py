@@ -59,7 +59,20 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
 
 # SECURITY: SECRET_KEY and DEBUG are loaded from environment (see below)
 
-ALLOWED_HOSTS = ['192.168.1.11','192.168.1.5', '127.0.0.1', '192.168.254.120', '192.168.254.120', '10.136.92.88', '10.20.78.227', '192.168.254.125', '192.168.254.131']
+# ALLOWED_HOSTS: read from environment variable `ALLOWED_HOSTS` (comma-separated)
+# If not set, try to derive from SITE_URL; always include localhost and 127.0.0.1
+raw_allowed = os.getenv('ALLOWED_HOSTS', '')
+if raw_allowed:
+    ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
+else:
+    # derive host from SITE_URL if provided
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(SITE_URL)
+        host_from_site = parsed.hostname
+    except Exception:
+        host_from_site = None
+    ALLOWED_HOSTS = [h for h in ([host_from_site, '127.0.0.1', 'localhost'] if host_from_site else ['127.0.0.1', 'localhost']) if h]
 # b802-64-224-103-143.ngrok-free.app
 
 # Application definition
