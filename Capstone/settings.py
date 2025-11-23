@@ -86,6 +86,7 @@ CHANNEL_LAYERS = {
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -164,6 +165,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Added STATIC_ROOT to fix the ImproperlyConfigured error
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Used when running collectstatic
+
+# Use WhiteNoise to serve static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (Images, uploaded files)
 # These settings are for handling uploaded files like images
