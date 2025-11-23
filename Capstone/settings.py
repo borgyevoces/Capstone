@@ -14,24 +14,30 @@ from pathlib import Path
 from django.conf.global_settings import STATICFILES_DIRS
 from django.core.asgi import get_asgi_application
 import os
+from dotenv import load_dotenv
 
-PAYMONGO_SECRET_KEY = 'sk_test_QR6jF33RUJ5rhBfGiTirT6Ag'
-PAYMONGO_PUBLIC_KEY = 'pk_test_y94mFUoDLXbD99SygpeHiUCq'
+# Base dir and load .env early so os.getenv picks up values from .env
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-PAYMONGO_API_URL = 'https://api.paymongo.com/v1'
-SITE_URL = 'http://127.0.0.1:8000'
+# Secrets and config (loaded from environment/.env)
+PAYMONGO_SECRET_KEY = os.getenv('PAYMONGO_SECRET_KEY', '')
+PAYMONGO_PUBLIC_KEY = os.getenv('PAYMONGO_PUBLIC_KEY', '')
 
-PAYMONGO_GCASH_SOURCE_URL = 'https://api.paymongo.com/v1/sources'
-PAYMONGO_GCASH_CHECKOUT_URL = 'https://api.paymongo.com/v1/checkout_sessions'
+PAYMONGO_API_URL = os.getenv('PAYMONGO_API_URL', 'https://api.paymongo.com/v1')
+SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
+
+PAYMONGO_GCASH_SOURCE_URL = os.getenv('PAYMONGO_GCASH_SOURCE_URL', 'https://api.paymongo.com/v1/sources')
+PAYMONGO_GCASH_CHECKOUT_URL = os.getenv('PAYMONGO_GCASH_CHECKOUT_URL', 'https://api.paymongo.com/v1/checkout_sessions')
 
 LOGIN_URL = 'food_establishment_login'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'kabsueatsdep@gmail.com'
-EMAIL_HOST_PASSWORD = 'twkq psax xjgy xdvv'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -45,20 +51,13 @@ LOGOUT_REDIRECT_URL = 'user_login_register'
 # GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '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')
 
 # Use environment values if present; fall back to the new provided keys
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '184478297970-r1ke8u6spdvum7gaffhmblga7m9t09jt.apps.googleusercontent.com')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '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')
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-b$-7u%j-7cc_pbp!_penzpu(xd009$ro@=xf$89-mktoss=s-l'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# SECURITY: SECRET_KEY and DEBUG are loaded from environment (see below)
 
 ALLOWED_HOSTS = ['192.168.1.11','192.168.1.5', '127.0.0.1', '192.168.254.120', '192.168.254.120', '10.136.92.88', '10.20.78.227', '192.168.254.125', '192.168.254.131']
 # b802-64-224-103-143.ngrok-free.app
@@ -186,15 +185,6 @@ CSRF_TRUSTED_ORIGINS = [
     # If you run the dev server on a different port or host, update SITE_URL above
 ]
 # ===================================================================================
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Load .env file
-load_dotenv(os.path.join(BASE_DIR, '.env'))
-
 # Allow SITE_URL to be overridden from .env (so redirect URI matches runtime)
 SITE_URL = os.getenv('SITE_URL', SITE_URL)
 
