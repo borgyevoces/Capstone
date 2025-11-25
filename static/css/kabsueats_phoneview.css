@@ -617,12 +617,13 @@
         gap: 0px;
     }
 
-    /* === ITO ANG BINAGO === */
+    /* === UPDATED: Left aligned name and new font === */
     .mb-0 {
+        font-family: 'Poppins', sans-serif; /* Updated Font */
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 500;
         margin-top: 12px;
-        text-align: center;
+        text-align: left; /* Changed from center to left */
         line-height: 1.1;
     }
     /* ======================= */
@@ -654,11 +655,14 @@
     }
     /* ===== END NG FIX ===== */
 
+    /* === UPDATED: New font for amenities === */
     .amenities-inline {
+        font-family: 'Poppins', sans-serif; /* Updated Font */
         font-size: 12px;
         color: #4b5563;
         margin: 25px 0 0 0;
     }
+    /* ======================= */
 
     .distance-info {
         font-size: 12px;

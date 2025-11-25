@@ -301,21 +301,24 @@
             <form id="profileUpdateForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <div class="profile-form-group text-center">
-                    <label for="current_profile_pic">Current Profile Picture:</label>
-                    <img id="current_profile_pic"
+                <div class="profile-form-group" style="text-align: center;">
+                    <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
+                    <!-- UPDATED: Changed ID to match JS and ensure preview works -->
+                    <img id="profileImagePreview"
                         src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
                         alt="Current Profile">
                 </div>
 
                 <div class="profile-form-group">
-                    <label for="id_profile_picture">Change Profile Picture:</label>
-                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*">
+                    <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
+                    <!-- UPDATED: Added onchange event for live preview -->
+                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
                 </div>
 
                 <div class="profile-form-group">
-                    <label for="id_username">Username:</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" required>
+                    <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
+                    <!-- UPDATED: Added readonly and gray background style -->
+                    <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
                 </div>
 
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">

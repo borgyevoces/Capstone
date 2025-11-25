@@ -656,23 +656,26 @@
 
     .food-name {
         padding: 8px 12px;
-        font-weight: bold;
+        font-weight: 400;
         text-align: left;
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         align-items: flex-start;
-        font-family: titlefont;
+    }
+    #profileImagePreview{
+        margin-left: 190px;
     }
 
-    /* === ITO ANG BINAGO === */
+    /* === UPDATED: Left aligned name and new font === */
     .mb-0 {
+        font-family: 'Poppins', sans-serif; /* Updated Font */
         font-size: 22px;
-        text-align: center;
+        text-align: left; /* Changed to left */
         width: 100%;
         line-height: 1.1;
-        margin-top: 12px; /* Dinagdag para sa espasyo sa taas */
+        margin-top: 12px;
     }
     /* ======================= */
 
@@ -703,13 +706,16 @@
     }
     /* ===== END NG FIX ===== */
 
+    /* === UPDATED: New font for amenities === */
     .amenities-inline {
+        font-family: 'Poppins', sans-serif; /* Updated Font */
         font-size: 13px;
         color: #4b5563;
         top: 10px;
         position: relative;
         margin: 15px 0 0 0;
     }
+    /* ======================= */
 
     .distance-info {
         font-size: 13px;
