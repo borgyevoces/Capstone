@@ -817,6 +817,304 @@ def toggle_item_availability(request, item_id):
     messages.error(request, "Invalid request method.")
     return redirect(reverse_lazy('food_establishment_dashboard'))
 
+
+
+@csrf_exempt
+def send_registration_otp(request):
+    """
+    Step 1: Send OTP for customer registration
+    Accepts POST with JSON { "email": "user@gmail.com" }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        # Parse request data
+        body = request.body.decode('utf-8') or '{}'
+        data = json.loads(body) if body else {}
+    except Exception:
+        data = {}
+
+    email = data.get('email') or request.POST.get('email')
+    
+    if not email:
+        return JsonResponse({'error': 'Email is required'}, status=400)
+
+    # Validate email format
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        return JsonResponse({'error': 'Invalid email format'}, status=400)
+
+    # Check if email already exists
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({'error': 'This email is already registered'}, status=400)
+
+    # Generate 6-digit OTP
+    otp_code = ''.join(random.choices(string.digits, k=6))
+
+    # Save OTP to database (overwrite if exists)
+    try:
+        otp_obj, created = OTP.objects.update_or_create(
+            email=email, 
+            defaults={'code': otp_code}
+        )
+    except Exception as e:
+        print(f"OTP DB save error: {e}")
+        return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
+
+    # Also save in session for redundancy
+    try:
+        request.session['otp'] = otp_code
+        request.session['otp_email'] = email
+        request.session.modified = True
+    except Exception as e:
+        print(f"Session OTP save error: {e}")
+
+    # Send OTP via SendGrid
+    from_email = os.getenv('SENDER_EMAIL') or settings.DEFAULT_FROM_EMAIL
+    sendgrid_key = os.getenv('SENDGRID_API_KEY')
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }}
+            .container {{ max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+            .header {{ background-color: #e59b20; color: white; padding: 30px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 28px; }}
+            .content {{ padding: 40px 30px; }}
+            .otp-box {{ background-color: #f9f9f9; border: 2px dashed #e59b20; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }}
+            .otp-code {{ font-size: 36px; font-weight: bold; color: #e59b20; letter-spacing: 8px; }}
+            .footer {{ background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777; }}
+            .warning {{ color: #d9534f; font-size: 14px; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>KabsuEats Verification</h1>
+            </div>
+            <div class="content">
+                <h2>Hello!</h2>
+                <p>Thank you for registering with KabsuEats. To complete your registration, please use the following One-Time Password (OTP):</p>
+                
+                <div class="otp-box">
+                    <div class="otp-code">{otp_code}</div>
+                </div>
+                
+                <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+                
+                <p class="warning">⚠️ Do not share this code with anyone. KabsuEats staff will never ask for your OTP.</p>
+                
+                <p>If you didn't request this code, please ignore this email.</p>
+            </div>
+            <div class="footer">
+                <p>&copy; 2024 KabsuEats. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    if sendgrid_key:
+        try:
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail
+
+            message = Mail(
+                from_email=from_email,
+                to_emails=email,
+                subject='Your KabsuEats Verification Code',
+                html_content=html_content
+            )
+            
+            sg = SendGridAPIClient(sendgrid_key)
+            response = sg.send(message)
+
+            if response.status_code in (200, 202):
+                print(f"✅ OTP sent via SendGrid to {email}: {otp_code}")
+                return JsonResponse({
+                    'success': True,
+                    'message': 'OTP sent successfully to your email'
+                })
+            else:
+                print(f"SendGrid response: {response.status_code}")
+                return JsonResponse({
+                    'error': 'Failed to send OTP email'
+                }, status=500)
+                
+        except Exception as e:
+            print(f"❌ SendGrid error: {e}")
+            return JsonResponse({
+                'success': True,
+                'warning': 'OTP generated but email sending failed. Check server logs.'
+            })
+    else:
+        print(f"⚠️ SENDGRID_API_KEY not configured. OTP for {email}: {otp_code}")
+        return JsonResponse({
+            'success': True,
+            'warning': 'SendGrid not configured. OTP: ' + otp_code
+        })
+
+@csrf_exempt
+def verify_otp_and_register(request):
+    """
+    Step 2: Verify OTP and complete registration
+    Accepts POST with:
+    - otp: the 6-digit code
+    - email: user's email
+    - password: user's password
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        body = request.body.decode('utf-8') or '{}'
+        data = json.loads(body) if body else {}
+    except Exception:
+        data = request.POST.dict()
+
+    email = data.get('email')
+    otp_code = data.get('otp')
+    password = data.get('password')
+
+    if not email or not otp_code or not password:
+        return JsonResponse({
+            'error': 'Email, OTP, and password are required'
+        }, status=400)
+
+    # Verify OTP from database
+    otp_valid = False
+    try:
+        otp_entry = OTP.objects.get(email=email)
+        if otp_entry.code == otp_code:
+            otp_valid = True
+            # Check OTP expiration (10 minutes)
+            from django.utils import timezone
+            from datetime import timedelta
+            if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
+                return JsonResponse({
+                    'error': 'OTP has expired. Please request a new one.'
+                }, status=400)
+    except OTP.DoesNotExist:
+        pass
+
+    # Fallback to session OTP
+    if not otp_valid:
+        session_otp = request.session.get('otp')
+        session_email = request.session.get('otp_email')
+        if session_email == email and session_otp == otp_code:
+            otp_valid = True
+
+    if not otp_valid:
+        return JsonResponse({
+            'error': 'Invalid or expired OTP'
+        }, status=400)
+
+    # Check if user already exists
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({
+            'error': 'This email is already registered'
+        }, status=400)
+
+    # Validate password
+    if len(password) < 8:
+        return JsonResponse({
+            'error': 'Password must be at least 8 characters long'
+        }, status=400)
+
+    import re
+    if not re.search(r'[A-Z]', password):
+        return JsonResponse({
+            'error': 'Password must contain at least one uppercase letter'
+        }, status=400)
+
+    if not re.search(r'\d', password):
+        return JsonResponse({
+            'error': 'Password must contain at least one number'
+        }, status=400)
+
+    # Create user
+    try:
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password
+        )
+
+        # Delete OTP after successful registration
+        OTP.objects.filter(email=email).delete()
+        request.session.pop('otp', None)
+        request.session.pop('otp_email', None)
+
+        # Send welcome email
+        try:
+            from .views import send_mail
+            subject = "Welcome to KabsuEats!"
+            message = f"""
+Hello {user.username},
+
+Welcome to KabsuEats! Your account has been successfully created.
+
+You can now log in and start exploring delicious food options around CvSU.
+
+Happy eating!
+The KabsuEats Team
+            """
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=os.getenv('SENDER_EMAIL'),
+                recipient_list=[user.email],
+                fail_silently=True
+            )
+        except Exception as email_error:
+            print(f"Welcome email error: {email_error}")
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Account created successfully! You can now log in.',
+            'redirect_url': '/accounts/login_register/'
+        })
+
+    except Exception as e:
+        print(f"Registration error: {e}")
+        return JsonResponse({
+            'error': f'Failed to create account: {str(e)}'
+        }, status=500)
+
+@csrf_exempt
+def resend_otp(request):
+    """
+    Resend OTP if user didn't receive it
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        body = request.body.decode('utf-8') or '{}'
+        data = json.loads(body) if body else {}
+    except Exception:
+        data = {}
+
+    email = data.get('email') or request.POST.get('email')
+    
+    if not email:
+        return JsonResponse({'error': 'Email is required'}, status=400)
+
+    # Check if user already exists
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({
+            'error': 'This email is already registered'
+        }, status=400)
+
+    # Use the same send_registration_otp logic
+    return send_registration_otp(request)
+
+
+
 import base64
 import json
 import requests

@@ -78,13 +78,33 @@ class FoodEstablishment(models.Model):
         return self.name
 
 class OTP(models.Model):
-    """Nagi-store ng One-Time Passwords para sa email verification."""
+    """OTP for email verification with expiration"""
     email = models.EmailField(unique=True)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
+    attempts = models.IntegerField(default=0)
+    is_verified = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "OTP"
+        verbose_name_plural = "OTPs"
 
     def __str__(self):
-        return f"OTP for {self.email}"
+        return f"OTP for {self.email} - {self.code}"
+
+    def is_expired(self):
+        """Check if OTP is expired (10 minutes)"""
+        expiry_time = self.created_at + timedelta(minutes=10)
+        return timezone.now() > expiry_time
+
+    def increment_attempts(self):
+        """Increment failed attempts"""
+        self.attempts += 1
+        self.save()
+
+    def is_blocked(self):
+        """Block after 5 failed attempts"""
+        return self.attempts >= 5
 
 class InvitationCode(models.Model):
     """

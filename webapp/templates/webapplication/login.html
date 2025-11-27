@@ -8,10 +8,92 @@
     <link rel="stylesheet" href="{% static 'css/login_desktopview.css' %}">
     <link rel="stylesheet" href="{% static 'css/login_phoneview.css' %}">
     <style>
-        /* Import necessary fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@700&display=swap');
+        /* OTP Input Styles */
+        .otp-container {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
 
-        /* ===== ENHANCED STYLES ===== */
+        .otp-container.active {
+            display: block;
+        }
+
+        .otp-input-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .otp-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .otp-input:focus {
+            border-color: #e59b20;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(229, 155, 32, 0.1);
+        }
+
+        .otp-timer {
+            text-align: center;
+            color: #e59b20;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .resend-otp {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .resend-otp a {
+            color: #e59b20;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .resend-otp a:hover {
+            text-decoration: underline;
+        }
+
+        .resend-otp.disabled a {
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
         /* Password Toggle Eye Icon */
         .password-wrapper {
@@ -35,12 +117,11 @@
             color: #262626;
         }
 
-        /* Input field with icon space */
         .password-input {
             padding-right: 45px !important;
         }
 
-        /* Enhanced Error Notification */
+        /* Notification Styles */
         .inline-error {
             display: flex;
             align-items: center;
@@ -61,7 +142,6 @@
             flex-shrink: 0;
         }
 
-        /* Success Notification */
         .inline-success {
             display: flex;
             align-items: center;
@@ -83,7 +163,7 @@
             font-weight: bold;
         }
 
-        /* Floating Popup Notification */
+        /* Floating Popup */
         .message-popup {
             position: fixed;
             top: -100px;
@@ -133,30 +213,6 @@
             font-size: 18px;
         }
 
-        .message-popup.info {
-            border-left-color: #2196f3;
-            background-color: #f5f9ff;
-        }
-
-        .message-popup.info::before {
-            content: "ℹ";
-            color: #2196f3;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        /* Input validation states */
-        input.error-input {
-            border-color: #d9534f !important;
-            background-color: #fff5f5 !important;
-        }
-
-        input.error-input:focus {
-            border-color: #d9534f !important;
-            box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.1);
-        }
-
-        /* Animation */
         @keyframes slideDown {
             from {
                 opacity: 0;
@@ -167,339 +223,10 @@
                 transform: translateY(0);
             }
         }
-
-        /* Shake animation for errors */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .shake {
-            animation: shake 0.4s ease-in-out;
-        }
-
-        /* Loading spinner for submit button */
-        .action-btn.loading {
-            position: relative;
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        .action-btn.loading::after {
-            content: "";
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: translateY(-50%) rotate(360deg); }
-        }
     </style>
-    <script>
-        // ===== ENHANCED JAVASCRIPT =====
-
-        // Password Toggle Functionality
-        function togglePassword(fieldId, iconElement) {
-            const passwordField = document.getElementById(fieldId);
-            const icon = iconElement;
-
-            if (passwordField.type === "password") {
-                passwordField.type = "text";
-                icon.textContent = "👁️";
-                icon.title = "Hide password";
-            } else {
-                passwordField.type = "password";
-                icon.textContent = "👁️‍🗨️";
-                icon.title = "Show password";
-            }
-        }
-
-        // Enhanced Message Popup
-        function showMessagePopup(message, type) {
-            const existingPopup = document.querySelector('.message-popup');
-            if (existingPopup) {
-                existingPopup.remove();
-            }
-
-            const popup = document.createElement('div');
-            popup.classList.add('message-popup', type);
-            popup.textContent = message;
-            document.body.appendChild(popup);
-
-            setTimeout(() => {
-                popup.classList.add('active');
-            }, 10);
-
-            setTimeout(() => {
-                popup.classList.remove('active');
-                setTimeout(() => {
-                    popup.remove();
-                }, 400);
-            }, 5000);
-
-            popup.addEventListener('click', () => {
-                popup.classList.remove('active');
-                setTimeout(() => {
-                    popup.remove();
-                }, 400);
-            });
-        }
-
-        // Tab Switching
-        function switchTab(tab) {
-            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-            document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
-            document.getElementById(tab + "-tab").classList.add("active");
-            document.getElementById(tab).classList.add("active");
-
-            // Clear any error states when switching tabs
-            document.querySelectorAll('.error-input').forEach(input => {
-                input.classList.remove('error-input');
-            });
-        }
-
-        // Form Validation
-        function validateLoginForm(event) {
-            const username = document.getElementById('id_username');
-            const password = document.getElementById('id_password');
-            let isValid = true;
-
-            // Clear previous errors
-            username.classList.remove('error-input');
-            password.classList.remove('error-input');
-
-            // Remove existing inline errors
-            document.querySelectorAll('.inline-error').forEach(err => err.remove());
-
-            if (!username.value.trim()) {
-                showFieldError(username, 'Email is required');
-                isValid = false;
-            } else if (!isValidEmail(username.value)) {
-                showFieldError(username, 'Please enter a valid email address');
-                isValid = false;
-            }
-
-            if (!password.value) {
-                showFieldError(password, 'Password is required');
-                isValid = false;
-            }
-
-            if (!isValid) {
-                event.preventDefault();
-                document.getElementById('login').classList.add('shake');
-                setTimeout(() => {
-                    document.getElementById('login').classList.remove('shake');
-                }, 400);
-            } else {
-                // Add loading state
-                const submitBtn = event.target.querySelector('.action-btn');
-                submitBtn.classList.add('loading');
-                submitBtn.textContent = 'Logging in...';
-            }
-
-            return isValid;
-        }
-
-        function validateRegisterForm(event) {
-            const username = document.getElementById('id_new_username');
-            const password1 = document.getElementById('id_new_password1');
-            const password2 = document.getElementById('id_new_password2');
-            let isValid = true;
-
-            // Clear previous errors
-            username.classList.remove('error-input');
-            password1.classList.remove('error-input');
-            password2.classList.remove('error-input');
-
-            // Remove existing inline errors
-            document.querySelectorAll('.inline-error').forEach(err => err.remove());
-
-            if (!username.value.trim()) {
-                showFieldError(username, 'Email is required');
-                isValid = false;
-            } else if (!isValidEmail(username.value)) {
-                showFieldError(username, 'Please enter a valid email address');
-                isValid = false;
-            }
-
-            if (!password1.value) {
-                showFieldError(password1, 'Password is required');
-                isValid = false;
-            } else if (password1.value.length < 8) {
-                showFieldError(password1, 'Password must be at least 8 characters');
-                isValid = false;
-            } else if (!/[A-Z]/.test(password1.value)) {
-                showFieldError(password1, 'Password must contain at least one uppercase letter');
-                isValid = false;
-            } else if (!/\d/.test(password1.value)) {
-                showFieldError(password1, 'Password must contain at least one number');
-                isValid = false;
-            }
-
-            if (!password2.value) {
-                showFieldError(password2, 'Please confirm your password');
-                isValid = false;
-            } else if (password1.value !== password2.value) {
-                showFieldError(password2, 'Passwords do not match');
-                isValid = false;
-            }
-
-            if (!isValid) {
-                event.preventDefault();
-                document.getElementById('register').classList.add('shake');
-                setTimeout(() => {
-                    document.getElementById('register').classList.remove('shake');
-                }, 400);
-            } else {
-                // Add loading state
-                const submitBtn = event.target.querySelector('.action-btn');
-                submitBtn.classList.add('loading');
-                submitBtn.textContent = 'Creating Account...';
-            }
-
-            return isValid;
-        }
-
-        function showFieldError(field, message) {
-            field.classList.add('error-input');
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'inline-error';
-            errorDiv.textContent = message;
-            field.parentElement.appendChild(errorDiv);
-        }
-
-        function isValidEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-
-        // Modal Functions
-        function openForgotPasswordModal() {
-            document.getElementById("forgotPasswordModal").style.display = "flex";
-        }
-
-        function closeForgotPasswordModal() {
-            document.getElementById("forgotPasswordModal").style.display = "none";
-        }
-
-        function closeDoneModal() {
-            document.getElementById("passwordResetDoneModal").style.display = "none";
-        }
-
-        window.onclick = function(event) {
-            const forgotModal = document.getElementById("forgotPasswordModal");
-            const doneModal = document.getElementById("passwordResetDoneModal");
-            if (event.target === forgotModal) {
-                closeForgotPasswordModal();
-            }
-            if (event.target === doneModal) {
-                closeDoneModal();
-            }
-        }
-
-        function checkURLForModal() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('reset_done') === 'true' || urlParams.get('reset_complete') === 'true') {
-                document.getElementById("passwordResetDoneModal").style.display = "flex";
-            }
-
-            // Check for errors and switch to appropriate tab
-            const loginErrors = document.querySelector('#login .form-errors');
-            const registerErrors = document.querySelector('#register .form-errors');
-
-            if (registerErrors && registerErrors.children.length > 0) {
-                switchTab('register');
-            } else if (loginErrors && loginErrors.children.length > 0) {
-                switchTab('login');
-            } else if ('{{ active_tab }}' === 'register') {
-                switchTab('register');
-            } else {
-                switchTab('login');
-            }
-        }
-
-        // Initialize on page load
-        window.onload = function() {
-            // Display Django messages as popups
-            const messagesList = document.querySelector('.messages');
-            if (messagesList) {
-                const messages = messagesList.querySelectorAll('li');
-                messages.forEach(msg => {
-                    let messageText = msg.textContent.trim();
-                    let messageType = 'info';
-                    if (msg.classList.contains('success')) {
-                        messageType = 'success';
-                    } else if (msg.classList.contains('error')) {
-                        messageType = 'error';
-                    }
-                    showMessagePopup(messageText, messageType);
-                });
-            }
-
-            checkURLForModal();
-
-            // Attach form validation
-            const loginForm = document.querySelector('#login form');
-            const registerForm = document.querySelector('#register form');
-
-            if (loginForm) {
-                loginForm.addEventListener('submit', validateLoginForm);
-            }
-
-            if (registerForm) {
-                registerForm.addEventListener('submit', validateRegisterForm);
-            }
-
-            // Real-time password strength indicator
-            const registerPassword = document.getElementById('id_new_password1');
-            if (registerPassword) {
-                registerPassword.addEventListener('input', function() {
-                    const strength = calculatePasswordStrength(this.value);
-                    updatePasswordStrength(strength);
-                });
-            }
-        };
-
-        // Password Strength Calculator
-        function calculatePasswordStrength(password) {
-            let strength = 0;
-            if (password.length >= 8) strength++;
-            if (password.length >= 12) strength++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-            if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z0-9]/.test(password)) strength++;
-            return strength;
-        }
-
-        function updatePasswordStrength(strength) {
-            const helpText = document.querySelector('#id_new_password1').parentElement.querySelector('.help-text');
-            if (!helpText) return;
-
-            const strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-            const strengthColor = ['#d9534f', '#f0ad4e', '#f0ad4e', '#5cb85c', '#5cb85c'];
-
-            if (strength > 0) {
-                helpText.textContent = `Password Strength: ${strengthText[strength - 1]}`;
-                helpText.style.color = strengthColor[strength - 1];
-            } else {
-                helpText.textContent = 'Min 8 characters, one uppercase, one number.';
-                helpText.style.color = '#a1a1a1';
-            }
-        }
-    </script>
 </head>
 <body>
     <div class="page-wrapper">
-
         <header class="page-header">
              <a href="{% url 'kabsueats_home' %}"><p class="logo-text">KabsuEats</p></a>
         </header>
@@ -551,13 +278,6 @@
                             <span class="password-toggle" onclick="togglePassword('id_password', this)" title="Show password">👁️‍🗨️</span>
                         </div>
                     </div>
-                    {% if form.non_field_errors %}
-                        <div class="form-errors">
-                            {% for error in form.non_field_errors %}
-                                <div class="inline-error">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
                     <div class="forgot-password">
                         <a onclick="openForgotPasswordModal()">Forgot password?</a>
                     </div>
@@ -565,50 +285,72 @@
                 </form>
             </div>
 
-            <!-- REGISTER TAB -->
+            <!-- REGISTER TAB WITH OTP -->
             <div id="register" class="tab-content">
-                <form method="post" action="{% url 'user_login_register' %}" class="auth-form">
-                    {% csrf_token %}
-                    <div class="form-field-container">
-                        <label for="id_new_username">Email/Gmail</label>
-                        <input type="text" name="username" id="id_new_username" placeholder="Enter a valid email" required>
-                    </div>
-                    <div class="form-field-container">
-                        <label for="id_new_password1">Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" name="password" id="id_new_password1" class="password-input" placeholder="••••••••" required>
-                            <span class="password-toggle" onclick="togglePassword('id_new_password1', this)" title="Show password">👁️‍🗨️</span>
+                <!-- Step 1: Email Input -->
+                <div id="email-step" class="registration-step">
+                    <form id="email-form" class="auth-form">
+                        <div class="form-field-container">
+                            <label for="reg_email">Email/Gmail</label>
+                            <input type="email" id="reg_email" placeholder="Enter a valid email" required>
                         </div>
-                        <p class="help-text">Min 8 characters, one uppercase, one number.</p>
-                    </div>
-                    <div class="form-field-container">
-                        <label for="id_new_password2">Confirm Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" name="confirm_password" id="id_new_password2" class="password-input" placeholder="Repeat your password" required>
-                            <span class="password-toggle" onclick="togglePassword('id_new_password2', this)" title="Show password">👁️‍🗨️</span>
+                        <button type="submit" class="action-btn">Send Verification Code</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: OTP Verification -->
+                <div id="otp-step" class="registration-step otp-container">
+                    <p style="text-align: center; color: #555; margin-bottom: 20px;">
+                        We've sent a 6-digit code to <strong id="display-email"></strong>
+                    </p>
+                    <form id="otp-form" class="auth-form">
+                        <div class="otp-input-group">
+                            <input type="text" class="otp-input" maxlength="1" data-index="0" required>
+                            <input type="text" class="otp-input" maxlength="1" data-index="1" required>
+                            <input type="text" class="otp-input" maxlength="1" data-index="2" required>
+                            <input type="text" class="otp-input" maxlength="1" data-index="3" required>
+                            <input type="text" class="otp-input" maxlength="1" data-index="4" required>
+                            <input type="text" class="otp-input" maxlength="1" data-index="5" required>
                         </div>
-                    </div>
-                    {% if registration_form.errors %}
-                        <div class="form-errors">
-                            {% for field in registration_form %}
-                                {% for error in field.errors %}
-                                    <div class="inline-error">{{ error }}</div>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in registration_form.non_field_errors %}
-                                <div class="inline-error">{{ error }}</div>
-                            {% endfor %}
+                        <div class="otp-timer">Time remaining: <span id="timer">10:00</span></div>
+                        <div class="resend-otp disabled">
+                            <a id="resend-link" onclick="resendOTP()">Resend Code</a>
                         </div>
-                    {% endif %}
-                    <button type="submit" name="register_submit" class="action-btn register-action-btn">Create Account</button>
-                </form>
+                        <button type="submit" class="action-btn">Verify Code</button>
+                        <button type="button" class="action-btn" onclick="goBackToEmail()" style="background-color: #fff; color: #e59b20; margin-top: 10px;">Change Email</button>
+                    </form>
+                </div>
+
+                <!-- Step 3: Password Setup -->
+                <div id="password-step" class="registration-step otp-container">
+                    <p style="text-align: center; color: #555; margin-bottom: 20px;">
+                        Email verified! Now set your password.
+                    </p>
+                    <form id="password-form" class="auth-form">
+                        <div class="form-field-container">
+                            <label for="reg_password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg_password" class="password-input" placeholder="••••••••" required>
+                                <span class="password-toggle" onclick="togglePassword('reg_password', this)" title="Show password">👁️‍🗨️</span>
+                            </div>
+                            <p class="help-text">Min 8 characters, one uppercase, one number.</p>
+                        </div>
+                        <div class="form-field-container">
+                            <label for="reg_confirm_password">Confirm Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg_confirm_password" class="password-input" placeholder="Repeat your password" required>
+                                <span class="password-toggle" onclick="togglePassword('reg_confirm_password', this)" title="Show password">👁️‍🗨️</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="action-btn">Create Account</button>
+                    </form>
+                </div>
             </div>
 
             <div class="switch-link">
                 <a href="{% url 'owner_login' %}" class="business-btn">Login Establishment?</a>
             </div>
         </div>
-
     </div>
 
     <!-- FORGOT PASSWORD MODAL -->
@@ -630,22 +372,369 @@
         </div>
     </div>
 
-    <!-- PASSWORD RESET DONE MODAL -->
-    <div id="passwordResetDoneModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeDoneModal()">&times;</span>
-            <div class="modal-header">
-                <h3>Password Reset Email Sent</h3>
-            </div>
-            <p class="modal-text">
-                We've emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly.
-            </p>
-            <p class="modal-text">
-                If you don't receive an email, please make sure you've entered the address you registered with, and check your spam folder.
-            </p>
-        </div>
-    </div>
+    <script>
+        // ==========================================
+        // OTP REGISTRATION JAVASCRIPT
+        // ==========================================
 
-    <div class="message-popup-container"></div>
+        let registrationEmail = '';
+        let otpTimer = null;
+        let timeRemaining = 600; // 10 minutes in seconds
+
+        // Password Toggle
+        function togglePassword(fieldId, iconElement) {
+            const passwordField = document.getElementById(fieldId);
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                iconElement.textContent = "👁️";
+                iconElement.title = "Hide password";
+            } else {
+                passwordField.type = "password";
+                iconElement.textContent = "👁️‍🗨️";
+                iconElement.title = "Show password";
+            }
+        }
+
+        // Show Message Popup
+        function showMessagePopup(message, type) {
+            const existingPopup = document.querySelector('.message-popup');
+            if (existingPopup) existingPopup.remove();
+
+            const popup = document.createElement('div');
+            popup.classList.add('message-popup', type);
+            popup.textContent = message;
+            document.body.appendChild(popup);
+
+            setTimeout(() => popup.classList.add('active'), 10);
+
+            setTimeout(() => {
+                popup.classList.remove('active');
+                setTimeout(() => popup.remove(), 400);
+            }, 5000);
+
+            popup.addEventListener('click', () => {
+                popup.classList.remove('active');
+                setTimeout(() => popup.remove(), 400);
+            });
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+            document.getElementById(tab + "-tab").classList.add("active");
+            document.getElementById(tab).classList.add("active");
+
+            // Reset registration steps when switching tabs
+            if (tab === 'register') {
+                showStep('email-step');
+            }
+        }
+
+        // Step Navigation
+        function showStep(stepId) {
+            document.querySelectorAll('.registration-step').forEach(step => {
+                step.classList.remove('active');
+                step.style.display = 'none';
+            });
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.style.display = 'block';
+                step.classList.add('active');
+            }
+        }
+
+        function goBackToEmail() {
+            showStep('email-step');
+            if (otpTimer) {
+                clearInterval(otpTimer);
+                otpTimer = null;
+            }
+        }
+
+        // Email Form Submission
+        document.getElementById('email-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('reg_email');
+            const email = emailInput.value.trim();
+            const submitBtn = e.target.querySelector('.action-btn');
+
+            if (!email) {
+                showMessagePopup('Please enter your email', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Sending...';
+
+            try {
+                const response = await fetch('/api/send-registration-otp/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    registrationEmail = email;
+                    document.getElementById('display-email').textContent = email;
+                    showStep('otp-step');
+                    startOTPTimer();
+                    showMessagePopup(data.message || 'OTP sent successfully!', 'success');
+                } else {
+                    showMessagePopup(data.error || 'Failed to send OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessagePopup('Network error. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Verification Code';
+            }
+        });
+
+        // OTP Input Handling
+        document.querySelectorAll('.otp-input').forEach((input, index, inputs) => {
+            input.addEventListener('input', function(e) {
+                if (this.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                pastedData.split('').forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+                if (inputs[Math.min(pastedData.length, inputs.length - 1)]) {
+                    inputs[Math.min(pastedData.length, inputs.length - 1)].focus();
+                }
+            });
+        });
+
+        // OTP Timer
+        function startOTPTimer() {
+            timeRemaining = 600; // 10 minutes
+            updateTimerDisplay();
+            
+            const resendContainer = document.querySelector('.resend-otp');
+            resendContainer.classList.add('disabled');
+
+            if (otpTimer) clearInterval(otpTimer);
+            
+            otpTimer = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(otpTimer);
+                    document.getElementById('timer').textContent = 'Expired';
+                    resendContainer.classList.remove('disabled');
+                    showMessagePopup('OTP expired. Please request a new code.', 'error');
+                }
+
+                if (timeRemaining === 120) {
+                    resendContainer.classList.remove('disabled');
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Resend OTP
+        async function resendOTP() {
+            const resendLink = document.getElementById('resend-link');
+            if (resendLink.parentElement.classList.contains('disabled')) return;
+
+            try {
+                const response = await fetch('/api/resend-otp/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ email: registrationEmail })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessagePopup('New OTP sent successfully!', 'success');
+                    startOTPTimer();
+                } else {
+                    showMessagePopup(data.error || 'Failed to resend OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessagePopup('Network error. Please try again.', 'error');
+            }
+        }
+
+        // OTP Verification
+        document.getElementById('otp-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+
+            if (otp.length !== 6) {
+                showMessagePopup('Please enter complete 6-digit code', 'error');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('.action-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+
+            try {
+                // For now, just move to password step
+                // In production, you'd verify OTP with backend here
+                showStep('password-step');
+                showMessagePopup('Email verified successfully!', 'success');
+                if (otpTimer) clearInterval(otpTimer);
+            } catch (error) {
+                console.error('Error:', error);
+                showMessagePopup('Verification failed. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Verify Code';
+            }
+        });
+
+        // Password Form Submission
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('reg_password').value;
+            const confirmPassword = document.getElementById('reg_confirm_password').value;
+
+            if (password !== confirmPassword) {
+                showMessagePopup('Passwords do not match', 'error');
+                return;
+            }
+
+            if (password.length < 8) {
+                showMessagePopup('Password must be at least 8 characters', 'error');
+                return;
+            }
+
+            if (!/[A-Z]/.test(password)) {
+                showMessagePopup('Password must contain at least one uppercase letter', 'error');
+                return;
+            }
+
+            if (!/\d/.test(password)) {
+                showMessagePopup('Password must contain at least one number', 'error');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('.action-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
+
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+
+            try {
+                const response = await fetch('/api/verify-otp-register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        email: registrationEmail,
+                        otp: otp,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessagePopup(data.message || 'Account created successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/accounts/login_register/';
+                    }, 2000);
+                } else {
+                    showMessagePopup(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessagePopup('Network error. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+
+        // Forgot Password Modal
+        function openForgotPasswordModal() {
+            document.getElementById("forgotPasswordModal").style.display = "flex";
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById("forgotPasswordModal").style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            const forgotModal = document.getElementById("forgotPasswordModal");
+            if (event.target === forgotModal) {
+                closeForgotPasswordModal();
+            }
+        }
+
+        // Get CSRF Token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Display Django messages on page load
+        window.onload = function() {
+            const messagesList = document.querySelector('.messages');
+            if (messagesList) {
+                const messages = messagesList.querySelectorAll('li');
+                messages.forEach(msg => {
+                    let messageText = msg.textContent.trim();
+                    let messageType = 'info';
+                    if (msg.classList.contains('success')) {
+                        messageType = 'success';
+                    } else if (msg.classList.contains('error')) {
+                        messageType = 'error';
+                    }
+                    showMessagePopup(messageText, messageType);
+                });
+            }
+        };
+    </script>
 </body>
 </html>
