@@ -8,6 +8,19 @@
     <link rel="stylesheet" href="{% static 'css/login_desktopview.css' %}">
     <link rel="stylesheet" href="{% static 'css/login_phoneview.css' %}">
     <style>
+        /* ========================================= */
+        /* ADDED FIX FOR PLACEHOLDER & INPUT SIZING */
+        /* ========================================= */
+        .auth-form input {
+            font-size: 16px !important; /* Sinisigurado na parehas ang laki ng text */
+            padding: 12px 15px; /* Standard padding para hindi siksik */
+        }
+
+        .auth-form input::placeholder {
+            font-size: 15px !important; /* Inayos ang size ng placeholder */
+            opacity: 0.7;
+        }
+
         /* OTP Input Styles */
         .otp-container {
             display: none;
@@ -29,11 +42,12 @@
             width: 50px;
             height: 50px;
             text-align: center;
-            font-size: 24px;
+            font-size: 24px !important; /* Override para malaki ang number sa OTP */
             font-weight: bold;
             border: 2px solid #ddd;
             border-radius: 8px;
             transition: all 0.3s;
+            padding: 0; /* Reset padding for OTP box */
         }
 
         .otp-input:focus {
@@ -263,7 +277,6 @@
                 <button id="register-tab" class="tab-btn" onclick="switchTab('register')">Register</button>
             </div>
 
-            <!-- LOGIN TAB -->
             <div id="login" class="tab-content active">
                 <form method="post" action="{% url 'user_login_register' %}" class="auth-form">
                     {% csrf_token %}
@@ -285,9 +298,7 @@
                 </form>
             </div>
 
-            <!-- REGISTER TAB WITH OTP -->
             <div id="register" class="tab-content">
-                <!-- Step 1: Email Input -->
                 <div id="email-step" class="registration-step">
                     <form id="email-form" class="auth-form">
                         <div class="form-field-container">
@@ -298,7 +309,6 @@
                     </form>
                 </div>
 
-                <!-- Step 2: OTP Verification -->
                 <div id="otp-step" class="registration-step otp-container">
                     <p style="text-align: center; color: #555; margin-bottom: 20px;">
                         We've sent a 6-digit code to <strong id="display-email"></strong>
@@ -321,7 +331,6 @@
                     </form>
                 </div>
 
-                <!-- Step 3: Password Setup -->
                 <div id="password-step" class="registration-step otp-container">
                     <p style="text-align: center; color: #555; margin-bottom: 20px;">
                         Email verified! Now set your password.
@@ -353,7 +362,6 @@
         </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL -->
     <div id="forgotPasswordModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeForgotPasswordModal()">&times;</span>
