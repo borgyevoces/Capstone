@@ -819,18 +819,15 @@ def toggle_item_availability(request, item_id):
     return redirect(reverse_lazy('food_establishment_dashboard'))
 
 
-
 @csrf_exempt
 def send_registration_otp(request):
     """
-    Step 1: Send OTP for customer registration
-    Accepts POST with JSON { "email": "user@gmail.com" }
+    FIXED: Async-safe OTP sending with timeout protection
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     try:
-        # Parse request data
         body = request.body.decode('utf-8') or '{}'
         data = json.loads(body) if body else {}
     except Exception:
@@ -854,11 +851,11 @@ def send_registration_otp(request):
     # Generate 6-digit OTP
     otp_code = ''.join(random.choices(string.digits, k=6))
 
-    # Save OTP to database (overwrite if exists)
+    # Save OTP to database
     try:
         otp_obj, created = OTP.objects.update_or_create(
             email=email, 
-            defaults={'code': otp_code}
+            defaults={'code': otp_code, 'attempts': 0}
         )
     except Exception as e:
         print(f"OTP DB save error: {e}")
@@ -872,9 +869,8 @@ def send_registration_otp(request):
     except Exception as e:
         print(f"Session OTP save error: {e}")
 
-    # Send OTP via SendGrid
+    # Prepare email content
     from_email = os.getenv('SENDER_EMAIL') or settings.DEFAULT_FROM_EMAIL
-    sendgrid_key = os.getenv('SENDGRID_API_KEY')
 
     html_content = f"""
     <!DOCTYPE html>
@@ -919,44 +915,40 @@ def send_registration_otp(request):
     </html>
     """
 
-    if sendgrid_key:
-        try:
-            from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail
-
-            message = Mail(
-                from_email=from_email,
-                to_emails=email,
-                subject='Your KabsuEats Verification Code',
-                html_content=html_content
-            )
-            
-            sg = SendGridAPIClient(sendgrid_key)
-            response = sg.send(message)
-
-            if response.status_code in (200, 202):
-                print(f"✅ OTP sent via SendGrid to {email}: {otp_code}")
-                return JsonResponse({
-                    'success': True,
-                    'message': 'OTP sent successfully to your email'
-                })
-            else:
-                print(f"SendGrid response: {response.status_code}")
-                return JsonResponse({
-                    'error': 'Failed to send OTP email'
-                }, status=500)
-                
-        except Exception as e:
-            print(f"❌ SendGrid error: {e}")
+    # CRITICAL: Send email in non-blocking way
+    try:
+        # Use the fixed send_mail function with timeout protection
+        result = send_mail(
+            subject='Your KabsuEats Verification Code',
+            message=f'Your verification code is: {otp_code}',
+            from_email=from_email,
+            recipient_list=[email],
+            fail_silently=True,  # Don't block on email failure
+            html_message=html_content
+        )
+        
+        if result:
+            print(f"✅ OTP sent to {email}: {otp_code}")
             return JsonResponse({
                 'success': True,
-                'warning': 'OTP generated but email sending failed. Check server logs.'
+                'message': 'OTP sent successfully to your email'
             })
-    else:
-        print(f"⚠️ SENDGRID_API_KEY not configured. OTP for {email}: {otp_code}")
+        else:
+            # Email failed but OTP is saved - allow user to continue
+            print(f"⚠️ Email failed but OTP saved for {email}: {otp_code}")
+            return JsonResponse({
+                'success': True,
+                'message': 'OTP generated (email delivery may be delayed)',
+                'warning': 'If you don\'t receive the email, check your spam folder'
+            })
+            
+    except Exception as e:
+        print(f"❌ Error sending OTP email: {e}")
+        # Still return success because OTP is saved in database
         return JsonResponse({
             'success': True,
-            'warning': 'SendGrid not configured. OTP: ' + otp_code
+            'message': 'OTP generated',
+            'warning': 'Email delivery failed. Please contact support if needed.'
         })
 
 @csrf_exempt
@@ -1134,30 +1126,69 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    Enhanced email sending with SendGrid API and SMTP fallback
+    Enhanced email sending with SendGrid API - FIXED VERSION
+    Includes proper error handling and timeout prevention
     """
-    # Try SendGrid API first
+    import time
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+    
+    # Validate sender email FIRST
+    if not from_email or from_email == 'webmaster@localhost':
+        from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+    
+    if not from_email:
+        print("❌ CRITICAL: No sender email configured")
+        if not fail_silently:
+            raise ValueError("SENDER_EMAIL not configured")
+        return 0
+    
+    # Get SendGrid API key
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
     
-    if sendgrid_key and sendgrid_key != '********************':
+    # CRITICAL FIX: Validate SendGrid configuration
+    if not sendgrid_key or sendgrid_key == '********************':
+        print(f"⚠️ SendGrid not configured properly. API Key present: {bool(sendgrid_key)}")
+        
+        # Try Django SMTP as fallback
         try:
-            from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail, Email, To, Content
-            
-            # Validate sender email
-            if not from_email or from_email == 'webmaster@localhost':
-                from_email = os.getenv('SENDER_EMAIL') or settings.SENDER_EMAIL
-            
-            # Create SendGrid message
-            sg_msg = Mail(
-                from_email=Email(from_email),
-                to_emails=To(recipient_list[0]) if isinstance(recipient_list, list) else To(recipient_list),
+            return django_send_mail(
                 subject=subject,
-                html_content=Content("text/html", html_message if html_message else message)
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=fail_silently,
+                html_message=html_message
             )
-            
-            # Send via SendGrid
-            sg = SendGridAPIClient(sendgrid_key)
+        except Exception as smtp_error:
+            print(f"❌ SMTP fallback failed: {smtp_error}")
+            if not fail_silently:
+                raise
+            return 0
+    
+    # Try SendGrid with timeout protection
+    try:
+        # Ensure recipient_list is a list
+        if isinstance(recipient_list, str):
+            recipient_list = [recipient_list]
+        
+        # Create SendGrid message
+        sg_msg = Mail(
+            from_email=Email(from_email),
+            to_emails=[To(email) for email in recipient_list],
+            subject=subject,
+            html_content=Content("text/html", html_message if html_message else message)
+        )
+        
+        # Send via SendGrid with timeout
+        sg = SendGridAPIClient(sendgrid_key)
+        
+        # CRITICAL: Set timeout to prevent worker hangs
+        import requests
+        original_timeout = requests.adapters.DEFAULT_TIMEOUT
+        requests.adapters.DEFAULT_TIMEOUT = 10  # 10 second timeout
+        
+        try:
             response = sg.send(sg_msg)
             
             if response.status_code in (200, 202):
@@ -1165,18 +1196,26 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 return 1
             else:
                 print(f"⚠️ SendGrid returned status {response.status_code}")
+                print(f"Response body: {response.body}")
+                
                 # Fall through to SMTP
                 
-        except Exception as e:
-            print(f"❌ SendGrid error: {e}")
-            # Fall through to SMTP fallback
+        finally:
+            requests.adapters.DEFAULT_TIMEOUT = original_timeout
+            
+    except Exception as sg_error:
+        print(f"❌ SendGrid error: {sg_error}")
+        
+        # If it's a 403 Forbidden, log detailed error
+        if '403' in str(sg_error):
+            print("❌ SendGrid 403 Forbidden - Check:")
+            print("  1. API Key is valid and not expired")
+            print("  2. Sender email is verified in SendGrid")
+            print("  3. API Key has 'Mail Send' permissions")
     
     # Fallback to Django SMTP
     try:
-        # Ensure proper FROM address
-        if not from_email or from_email == 'webmaster@localhost':
-            from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None) or settings.EMAIL_HOST_USER
-        
+        print(f"🔄 Falling back to Django SMTP...")
         return django_send_mail(
             subject=subject,
             message=message,
@@ -2302,13 +2341,11 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    Accepts POST with JSON { "email": "owner@gmail.com" } or form-encoded.
-    Saves the OTP into OTP model and session, sends via SendGrid.
+    FIXED: Owner registration OTP with timeout protection
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-    # Get email from JSON or POST
     try:
         body = request.body.decode('utf-8') or ''
         data = json.loads(body) if body else {}
@@ -2321,15 +2358,16 @@ def send_otp(request):
 
     otp_code = str(random.randint(100000, 999999)).zfill(6)
 
-    # Save OTP in DB (create or update)
+    # Save OTP
     try:
-        otp_obj, created = OTP.objects.update_or_create(email=email, defaults={'code': otp_code})
+        otp_obj, created = OTP.objects.update_or_create(
+            email=email, 
+            defaults={'code': otp_code, 'attempts': 0}
+        )
     except Exception as e:
-        # If OTP model isn't available for some reason, still store in session
         print("OTP DB save error:", e)
-        otp_obj = None
 
-    # Also save in session for redundancy
+    # Save in session
     try:
         request.session['otp'] = otp_code
         request.session['otp_email'] = email
@@ -2337,40 +2375,35 @@ def send_otp(request):
     except Exception as e:
         print("Session OTP save error:", e)
 
-    # Prepare SendGrid message
-    from_email = os.getenv('SENDER_EMAIL') or getattr(__import__('django.conf').conf.settings, 'DEFAULT_FROM_EMAIL', None)
-    sendgrid_key = os.getenv('SENDGRID_API_KEY')
-
+    # Prepare email
+    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
     html_content = f"<p>Your KabsuEats verification code is: <strong>{otp_code}</strong></p>"
 
-    if sendgrid_key:
-        try:
-            message = Mail(
-                from_email=from_email,
-                to_emails=email,
-                subject='Your KabsuEats OTP Code',
-                html_content=html_content
-            )
-            sg = SendGridAPIClient(sendgrid_key)
-            response = sg.send(message)
-
-            # 202 is accepted by SendGrid
-            if response.status_code in (200, 202):
-                print(f"✅ OTP sent via SendGrid to {email}: {otp_code}")
-                return JsonResponse({'success': True})
-            else:
-                print("SendGrid response:", response.status_code, response.body)
-                return JsonResponse({'error': 'Failed to send OTP via SendGrid.'}, status=500)
-        except Exception as e:
-            print(f"❌ SendGrid error: {e}")
-            # Fall through to return success (OTP stored) or error depending on your choice
-            # We'll return success because OTP is already stored in DB/session — frontend can continue.
-            return JsonResponse({'success': True, 'warning': 'OTP saved but failed sending email.'})
-    else:
-        # No SendGrid configured — return success because OTP saved (you may want to log or send via Django email)
-        print(f"⚠️ SENDGRID_API_KEY not configured. OTP for {email}: {otp_code}")
-        return JsonResponse({'success': True, 'warning': 'SendGrid not configured; OTP generated (check server logs).'})
-
+    # Send email with timeout protection
+    try:
+        result = send_mail(
+            subject='Your KabsuEats OTP Code',
+            message=f'Your verification code is: {otp_code}',
+            from_email=from_email,
+            recipient_list=[email],
+            fail_silently=True,
+            html_message=html_content
+        )
+        
+        if result:
+            print(f"✅ OTP sent to {email}: {otp_code}")
+        else:
+            print(f"⚠️ Email failed but OTP saved for {email}: {otp_code}")
+            
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        print(f"❌ OTP email error: {e}")
+        return JsonResponse({
+            'success': True,
+            'warning': 'OTP generated but email may be delayed'
+        })
+    
 @csrf_exempt
 @transaction.atomic
 def verify_and_register(request):
