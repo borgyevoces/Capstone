@@ -14,11 +14,14 @@
         .auth-form input {
             font-size: 16px !important; /* Sinisigurado na parehas ang laki ng text */
             padding: 12px 15px; /* Standard padding para hindi siksik */
+            border-radius: 8px;
+            opacity: 0.7;
         }
 
         .auth-form input::placeholder {
             font-size: 15px !important; /* Inayos ang size ng placeholder */
             opacity: 0.7;
+            border-radius: 8px;
         }
 
         /* OTP Input Styles */
@@ -300,7 +303,7 @@
 
             <div id="register" class="tab-content">
                 <div id="email-step" class="registration-step">
-                    <form id="email-form" class="form-field-container">
+                    <form id="email-form" class="auth-form">
                         <div class="form-field-container">
                             <label for="reg_email">Email/Gmail</label>
                             <input type="email" id="reg_email" placeholder="Enter a valid email" required>
