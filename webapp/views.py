@@ -276,46 +276,123 @@ def google_callback(request):
         return redirect('user_login_register')
 
 def forgot_password(request):
+    """
+    Handle forgot password requests with proper email sending
+    """
     if request.method == 'POST':
         email = request.POST.get('email')
         User = get_user_model()
+        
         try:
             user = User.objects.get(email=email)
-            subject = "Password Reset Requested"
-            email_template_name = "webapplication/password_reset_email.html"
-            context = {
-                'email': user.email,
-                'domain': request.get_host(),
-                'site_name': 'Kabsueats',
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
-                'protocol': 'https' if request.is_secure() else 'http',
-            }
-            email_content = render_to_string(email_template_name, context)
+            
+            # Generate reset token
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            
+            # Build reset URL
+            protocol = 'https' if request.is_secure() else 'http'
+            domain = request.get_host()
+            reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
+            
+            # Email subject and content
+            subject = "Password Reset Request - KabsuEats"
+            
+            # Plain text message (fallback)
+            text_message = f"""
+Hello {user.username},
 
-            send_mail(
-                subject,
-                email_content,
-                settings.EMAIL_HOST_USER,
-                [email],
-                fail_silently=False
-            )
+We received a request to reset the password for your KabsuEats account.
 
-            messages.info(request, "If an account with that email exists, we've sent instructions to reset your password.")
-            return redirect('password_reset_done_redirect')
+To reset your password, please click the link below or copy and paste it into your browser:
 
+{reset_url}
+
+This link will expire in 24 hours.
+
+If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+
+Thank you,
+The KabsuEats Team
+            """
+            
+            # HTML message (better formatting)
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: #e59b20; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+        .content {{ background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }}
+        .button {{ display: inline-block; padding: 12px 30px; background-color: #e59b20; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Password Reset Request</h2>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{user.username}</strong>,</p>
+            
+            <p>We received a request to reset the password for your KabsuEats account.</p>
+            
+            <p>Click the button below to reset your password:</p>
+            
+            <a href="{reset_url}" class="button">Reset Password</a>
+            
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #e59b20;">{reset_url}</p>
+            
+            <p><strong>This link will expire in 24 hours.</strong></p>
+            
+            <div class="footer">
+                <p>If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
+                <p>Thank you,<br>The KabsuEats Team</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+            """
+            
+            # Send email using the wrapper function
+            try:
+                send_mail(
+                    subject=subject,
+                    message=text_message,
+                    from_email=settings.SENDER_EMAIL or settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                    html_message=html_message
+                )
+                
+                messages.success(request, "Password reset instructions have been sent to your email.")
+                return redirect('password_reset_done_redirect')
+                
+            except Exception as email_error:
+                print(f"Email sending error: {email_error}")
+                messages.error(request, "There was an error sending the reset email. Please try again later.")
+                return redirect('user_login_register')
+        
         except User.DoesNotExist:
-            messages.error(request, "An account with that email does not exist.")
-            return redirect('user_login_register')
-
+            # Don't reveal if email exists (security best practice)
+            messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
+            return redirect('password_reset_done_redirect')
+    
     return redirect('user_login_register')
 
 def password_reset_done_redirect(request):
-    messages.info(request, "We've emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly.")
+    """Redirect to login with success message"""
+    messages.info(request, "We've emailed you instructions for setting your password. Please check your inbox and spam folder.")
     return redirect(reverse('user_login_register') + '?reset_done=true')
 
 def password_reset_complete_redirect(request):
-    messages.success(request, "Your password has been reset. You may now log in with your new password.")
+    """Redirect to login after password reset"""
+    messages.success(request, "Your password has been reset successfully! You can now log in with your new password.")
     return redirect(reverse('user_login_register') + '?reset_complete=true')
 
 def kabsueats_main_view(request):
@@ -756,26 +833,64 @@ def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
 
-
-# Wrapper send_mail: prefer SendGrid API when `SENDGRID_API_KEY` is configured,
-# otherwise fall back to Django's SMTP `send_mail`. This centralizes email
-# sending so OAuth/google flows and order emails work even if SMTP creds fail.
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
+    """
+    Enhanced email sending with SendGrid API and SMTP fallback
+    """
+    # Try SendGrid API first
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
-    if sendgrid_key:
+    
+    if sendgrid_key and sendgrid_key != '********************':
         try:
-            sg_msg = Mail(from_email=from_email, to_emails=recipient_list, subject=subject, html_content=html_message or message)
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail, Email, To, Content
+            
+            # Validate sender email
+            if not from_email or from_email == 'webmaster@localhost':
+                from_email = os.getenv('SENDER_EMAIL') or settings.SENDER_EMAIL
+            
+            # Create SendGrid message
+            sg_msg = Mail(
+                from_email=Email(from_email),
+                to_emails=To(recipient_list[0]) if isinstance(recipient_list, list) else To(recipient_list),
+                subject=subject,
+                html_content=Content("text/html", html_message if html_message else message)
+            )
+            
+            # Send via SendGrid
             sg = SendGridAPIClient(sendgrid_key)
-            resp = sg.send(sg_msg)
-            # Return number of accepted recipients similar to django send_mail
-            return 1 if resp.status_code in (200, 202) else 0
+            response = sg.send(sg_msg)
+            
+            if response.status_code in (200, 202):
+                print(f"✅ Email sent via SendGrid to {recipient_list}")
+                return 1
+            else:
+                print(f"⚠️ SendGrid returned status {response.status_code}")
+                # Fall through to SMTP
+                
         except Exception as e:
-            print(f"SendGrid send error: {e}")
-            if not fail_silently:
-                raise
-            return 0
-    # Fallback to Django SMTP send_mail
-    return django_send_mail(subject, message, from_email, recipient_list, fail_silently=fail_silently, html_message=html_message)
+            print(f"❌ SendGrid error: {e}")
+            # Fall through to SMTP fallback
+    
+    # Fallback to Django SMTP
+    try:
+        # Ensure proper FROM address
+        if not from_email or from_email == 'webmaster@localhost':
+            from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None) or settings.EMAIL_HOST_USER
+        
+        return django_send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            fail_silently=fail_silently,
+            html_message=html_message
+        )
+    except Exception as smtp_error:
+        print(f"❌ SMTP error: {smtp_error}")
+        if not fail_silently:
+            raise
+        return 0
 
 @login_required
 @require_POST
@@ -1037,7 +1152,6 @@ def view_order_confirmation(request, order_id):
 
     return render(request, 'webapplication/order_confirmation.html', context)
 
-
 @login_required
 @require_POST
 def create_gcash_payment_link(request):
@@ -1236,7 +1350,6 @@ def create_gcash_payment_link(request):
             'success': False,
             'message': 'Internal server error while creating payment link'
         }, status=500)
-
 
 @login_required
 def debug_create_gcash_payload(request, order_id):
@@ -2289,7 +2402,6 @@ def delete_menu_item(request, item_id):
         messages.error(request, f'An error occurred while deleting the menu item: {str(e)}')
         return redirect('food_establishment_dashboard')
 
-
 @login_required(login_url='owner_login')
 def store_reviews_view(request):
     """
@@ -2308,7 +2420,6 @@ def store_reviews_view(request):
         'reviews': reviews,
     }
     return render(request, 'webapplication/store_reviews.html', context)
-
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -2730,7 +2841,6 @@ def update_cart_item(request):
             'message': 'Error updating cart'
         }, status=500)
 
-
 @login_required
 @require_POST
 def remove_from_cart(request):
@@ -2806,7 +2916,6 @@ def get_cart_count(request):
             'cart_count': 0
         })
 
-
 @login_required
 @require_POST
 def clear_establishment_cart(request):
@@ -2844,12 +2953,7 @@ def clear_establishment_cart(request):
             'message': 'Error clearing cart'
         }, status=500)
 
-
-
-
 # =======ORIGINAL CODE==========
-
-
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
