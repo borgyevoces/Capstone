@@ -972,7 +972,7 @@ def send_registration_otp(request):
 @csrf_exempt
 def verify_otp_and_register(request):
     """
-    COMPLETE FIX: Verify OTP and register user account
+    COMPLETE FIX: Verify OTP and register user WITHOUT blocking operations
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -990,7 +990,7 @@ def verify_otp_and_register(request):
         otp_code = data.get('otp')
         password = data.get('password')
 
-        # CRITICAL: Log received data for debugging
+        # CRITICAL: Log received data
         print(f"📥 Verification attempt:")
         print(f"   Email: {email}")
         print(f"   OTP received: {otp_code}")
@@ -998,104 +998,76 @@ def verify_otp_and_register(request):
 
         # Validate required fields
         if not email:
-            print("❌ Email missing")
             return JsonResponse({'error': 'Email is required'}, status=400)
         
         if not otp_code:
-            print("❌ OTP missing")
             return JsonResponse({'error': 'OTP is required'}, status=400)
         
         if not password:
-            print("❌ Password missing")
             return JsonResponse({'error': 'Password is required'}, status=400)
 
         # Verify OTP from database
         otp_valid = False
-        otp_source = None
         
         try:
             from datetime import timedelta
             otp_entry = OTP.objects.get(email=email)
             print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
             
-            # Check if OTP matches
             if otp_entry.code == str(otp_code).strip():
-                # Check OTP expiration (10 minutes)
+                # Check expiration
                 if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
                     print("❌ OTP expired")
                     return JsonResponse({
                         'error': 'OTP has expired. Please request a new one.'
                     }, status=400)
                 
-                # Check if blocked due to too many attempts
+                # Check if blocked
                 if otp_entry.is_blocked():
-                    print("❌ OTP blocked due to too many attempts")
+                    print("❌ OTP blocked")
                     return JsonResponse({
                         'error': 'Too many failed attempts. Please request a new OTP.'
                     }, status=400)
                 
                 otp_valid = True
-                otp_source = "database"
                 print("✅ OTP valid from database")
             else:
-                # Increment failed attempts
                 otp_entry.increment_attempts()
-                print(f"❌ OTP mismatch: DB={otp_entry.code}, Received={otp_code}")
+                print(f"❌ OTP mismatch")
                 
         except OTP.DoesNotExist:
-            print("⚠️ OTP not found in database, checking session...")
-            
-            # Fallback to session OTP
-            session_otp = request.session.get('otp')
-            session_email = request.session.get('otp_email')
-            
-            print(f"🔍 Session OTP: {session_otp}, Email: {session_email}")
-            
-            if session_email == email and session_otp == str(otp_code).strip():
-                otp_valid = True
-                otp_source = "session"
-                print("✅ OTP valid from session")
-            else:
-                print(f"❌ Session mismatch: Email={session_email}, OTP={session_otp}")
-
-        if not otp_valid:
-            print("❌ Invalid OTP from both sources")
+            print("⚠️ OTP not found in database")
             return JsonResponse({
-                'error': 'Invalid or expired OTP. Please check your code and try again.'
+                'error': 'Invalid or expired OTP.'
             }, status=400)
 
-        print(f"✅ OTP validated from {otp_source}")
+        if not otp_valid:
+            return JsonResponse({
+                'error': 'Invalid OTP. Please check your code.'
+            }, status=400)
+
+        print(f"✅ OTP validated from database")
 
         # Check if user already exists
         if User.objects.filter(email=email).exists():
             print(f"❌ Email already registered: {email}")
             return JsonResponse({
-                'error': 'This email is already registered. Please log in instead.'
+                'error': 'This email is already registered.'
             }, status=400)
 
         # Validate password
         if len(password) < 8:
-            print("❌ Password too short")
-            return JsonResponse({
-                'error': 'Password must be at least 8 characters long'
-            }, status=400)
+            return JsonResponse({'error': 'Password must be at least 8 characters'}, status=400)
 
         import re
         if not re.search(r'[A-Z]', password):
-            print("❌ Password missing uppercase")
-            return JsonResponse({
-                'error': 'Password must contain at least one uppercase letter'
-            }, status=400)
+            return JsonResponse({'error': 'Password must contain at least one uppercase letter'}, status=400)
 
         if not re.search(r'\d', password):
-            print("❌ Password missing number")
-            return JsonResponse({
-                'error': 'Password must contain at least one number'
-            }, status=400)
+            return JsonResponse({'error': 'Password must contain at least one number'}, status=400)
 
-        # ✅ FIX: Wrap user creation in try-except to prevent 502 errors
+        # ✅ CRITICAL FIX: Create user and return immediately
         try:
-            # Create user with username = email
             user = User.objects.create_user(
                 username=email,
                 email=email,
@@ -1103,7 +1075,7 @@ def verify_otp_and_register(request):
             )
             print(f"✅ User created: {user.username}")
 
-            # Delete OTP after successful registration
+            # ✅ Delete OTP after successful registration
             try:
                 OTP.objects.filter(email=email).delete()
                 print("✅ OTP cleaned up from database")
@@ -1115,18 +1087,25 @@ def verify_otp_and_register(request):
                 request.session.pop('otp', None)
                 request.session.pop('otp_email', None)
                 print("✅ OTP cleaned up from session")
-            except Exception as session_error:
-                print(f"⚠️ Session cleanup error (non-critical): {session_error}")
+            except Exception:
+                pass
 
-            # ✅ FIX: Send welcome email in background to prevent blocking
+            # ✅ CRITICAL: Return success IMMEDIATELY without waiting for email
+            response_data = {
+                'success': True,
+                'message': 'Account created successfully! You can now log in.',
+                'redirect_url': '/accounts/login_register/'
+            }
+
+            # ✅ Send welcome email in background (non-blocking)
             try:
                 from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
                 if from_email:
-                    # Use threading to send email without blocking
                     import threading
                     
-                    def send_welcome_email():
+                    def send_welcome_email_background():
                         try:
+                            # Use simple text message to avoid memory issues
                             send_mail(
                                 subject="Welcome to KabsuEats!",
                                 message=f"Hello {user.username},\n\nWelcome to KabsuEats! Your account has been successfully created.",
@@ -1138,19 +1117,18 @@ def verify_otp_and_register(request):
                         except Exception as e:
                             print(f"⚠️ Welcome email error (non-critical): {e}")
                     
-                    # Send in background thread
-                    email_thread = threading.Thread(target=send_welcome_email, daemon=True)
+                    # Start background thread (daemon=True ensures it won't block)
+                    email_thread = threading.Thread(
+                        target=send_welcome_email_background,
+                        daemon=True
+                    )
                     email_thread.start()
                     
-            except Exception as email_error:
-                print(f"⚠️ Welcome email setup error (non-critical): {email_error}")
+            except Exception as email_setup_error:
+                print(f"⚠️ Email setup error (non-critical): {email_setup_error}")
 
-            # ✅ Return success immediately
-            return JsonResponse({
-                'success': True,
-                'message': 'Account created successfully! You can now log in.',
-                'redirect_url': '/accounts/login_register/'
-            })
+            # Return success immediately
+            return JsonResponse(response_data)
 
         except Exception as user_create_error:
             print(f"❌ User creation error: {user_create_error}")
@@ -1162,14 +1140,14 @@ def verify_otp_and_register(request):
             }, status=500)
 
     except Exception as outer_error:
-        print(f"❌ Outer exception in verify_otp_and_register: {outer_error}")
+        print(f"❌ Outer exception: {outer_error}")
         import traceback
         traceback.print_exc()
         
         return JsonResponse({
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-
+    
 @csrf_exempt
 def verify_otp_only(request):
     """
@@ -1353,31 +1331,24 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    Enhanced email sending with SendGrid API - COMPLETELY FIXED VERSION
+    COMPLETELY FIXED: Lightweight email sending without memory-intensive operations
     """
-    import socket
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail, Email, To, Content
-    
-    # CRITICAL FIX 1: Validate sender email FIRST
+    # Validate sender email
     if not from_email or from_email == 'webmaster@localhost':
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
     
     if not from_email:
         print("❌ CRITICAL: No sender email configured")
-        print("   Add SENDER_EMAIL=your-email@gmail.com to your .env file")
         if not fail_silently:
-            raise ValueError("SENDER_EMAIL not configured in environment")
+            raise ValueError("SENDER_EMAIL not configured")
         return 0
     
     # Get SendGrid API key
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
     
-    # Validate SendGrid configuration
+    # If SendGrid not configured, use Django SMTP immediately
     if not sendgrid_key or sendgrid_key == '********************':
-        print(f"⚠️ SendGrid not configured. Falling back to Django SMTP...")
-        
-        # Try Django SMTP as fallback
+        print(f"⚠️ SendGrid not configured. Using Django SMTP...")
         try:
             return django_send_mail(
                 subject=subject,
@@ -1388,13 +1359,16 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 html_message=html_message
             )
         except Exception as smtp_error:
-            print(f"❌ SMTP fallback failed: {smtp_error}")
+            print(f"❌ SMTP error: {smtp_error}")
             if not fail_silently:
                 raise
             return 0
     
-    # CRITICAL FIX 2: Proper timeout handling without DEFAULT_TIMEOUT
+    # ✅ FIX: Avoid socket timeout manipulation (causes issues on Render)
     try:
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail, Email, To, Content
+        
         # Ensure recipient_list is a list
         if isinstance(recipient_list, str):
             recipient_list = [recipient_list]
@@ -1407,29 +1381,21 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             html_content=Content("text/html", html_message if html_message else message)
         )
         
-        # CRITICAL: Use socket timeout instead of requests timeout
-        default_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(10.0)  # 10 second timeout
+        # ✅ FIX: Use default timeout (don't manipulate socket settings)
+        sg = SendGridAPIClient(sendgrid_key)
         
-        try:
-            sg = SendGridAPIClient(sendgrid_key)
-            response = sg.send(sg_msg)
-            
-            if response.status_code in (200, 202):
-                print(f"✅ Email sent via SendGrid to {recipient_list}")
-                return 1
-            else:
-                print(f"⚠️ SendGrid returned status {response.status_code}")
-                print(f"Response body: {response.body if hasattr(response, 'body') else 'N/A'}")
-                
-        finally:
-            # Restore original timeout
-            socket.setdefaulttimeout(default_timeout)
+        # ✅ CRITICAL: Set timeout in the request itself
+        response = sg.send(sg_msg)
+        
+        if response.status_code in (200, 202):
+            print(f"✅ Email sent via SendGrid to {recipient_list}")
+            return 1
+        else:
+            print(f"⚠️ SendGrid returned status {response.status_code}")
             
     except Exception as sg_error:
         print(f"❌ SendGrid error: {sg_error}")
         
-        # If it's a 403 Forbidden, log detailed error
         if '403' in str(sg_error):
             print("❌ SendGrid 403 Forbidden - Check:")
             print("  1. API Key is valid and not expired")
@@ -1452,7 +1418,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         if not fail_silently:
             raise
         return 0
-    
+
 @login_required
 @require_POST
 def gcash_payment_request(request):

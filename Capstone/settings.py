@@ -15,6 +15,7 @@ from django.conf.global_settings import STATICFILES_DIRS
 from django.core.asgi import get_asgi_application
 import os
 from dotenv import load_dotenv
+EMAIL_TIMEOUT = 10
 
 # Base dir and load .env early so os.getenv picks up values from .env
 BASE_DIR = Path(__file__).resolve().parent.parent
