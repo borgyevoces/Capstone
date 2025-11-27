@@ -822,7 +822,7 @@ def toggle_item_availability(request, item_id):
 @csrf_exempt
 def send_registration_otp(request):
     """
-    FIXED: Async-safe OTP sending with timeout protection
+    COMPLETELY FIXED: Send OTP for customer registration
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -851,12 +851,20 @@ def send_registration_otp(request):
     # Generate 6-digit OTP
     otp_code = ''.join(random.choices(string.digits, k=6))
 
-    # Save OTP to database
+    # Save OTP to database with timestamp reset
     try:
         otp_obj, created = OTP.objects.update_or_create(
             email=email, 
-            defaults={'code': otp_code, 'attempts': 0}
+            defaults={
+                'code': otp_code, 
+                'attempts': 0,
+                'is_verified': False
+            }
         )
+        # Force update the created_at timestamp
+        if not created:
+            otp_obj.created_at = timezone.now()
+            otp_obj.save()
     except Exception as e:
         print(f"OTP DB save error: {e}")
         return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
@@ -869,9 +877,20 @@ def send_registration_otp(request):
     except Exception as e:
         print(f"Session OTP save error: {e}")
 
-    # Prepare email content
-    from_email = os.getenv('SENDER_EMAIL') or settings.DEFAULT_FROM_EMAIL
+    # Check if SENDER_EMAIL is configured
+    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+    
+    if not from_email:
+        print("❌ CRITICAL: No sender email configured")
+        print(f"⚠️ OTP saved for {email}: {otp_code}")
+        return JsonResponse({
+            'success': True,
+            'message': 'OTP generated (email not configured)',
+            'warning': 'SENDER_EMAIL not set. Add it to .env file.',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
 
+    # Prepare email content
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -915,15 +934,14 @@ def send_registration_otp(request):
     </html>
     """
 
-    # CRITICAL: Send email in non-blocking way
+    # Send email with proper error handling
     try:
-        # Use the fixed send_mail function with timeout protection
         result = send_mail(
             subject='Your KabsuEats Verification Code',
             message=f'Your verification code is: {otp_code}',
             from_email=from_email,
             recipient_list=[email],
-            fail_silently=True,  # Don't block on email failure
+            fail_silently=True,
             html_message=html_content
         )
         
@@ -934,31 +952,27 @@ def send_registration_otp(request):
                 'message': 'OTP sent successfully to your email'
             })
         else:
-            # Email failed but OTP is saved - allow user to continue
             print(f"⚠️ Email failed but OTP saved for {email}: {otp_code}")
             return JsonResponse({
                 'success': True,
-                'message': 'OTP generated (email delivery may be delayed)',
-                'warning': 'If you don\'t receive the email, check your spam folder'
+                'message': 'OTP generated',
+                'warning': 'Email delivery may be delayed. Check spam folder.',
+                'debug_otp': otp_code  # REMOVE IN PRODUCTION
             })
             
     except Exception as e:
         print(f"❌ Error sending OTP email: {e}")
-        # Still return success because OTP is saved in database
         return JsonResponse({
             'success': True,
             'message': 'OTP generated',
-            'warning': 'Email delivery failed. Please contact support if needed.'
+            'warning': 'Email sending failed',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-
+    
 @csrf_exempt
 def verify_otp_and_register(request):
     """
-    Step 2: Verify OTP and complete registration
-    Accepts POST with:
-    - otp: the 6-digit code
-    - email: user's email
-    - password: user's password
+    COMPLETELY FIXED: Verify OTP and complete registration
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -966,65 +980,103 @@ def verify_otp_and_register(request):
     try:
         body = request.body.decode('utf-8') or '{}'
         data = json.loads(body) if body else {}
-    except Exception:
+    except Exception as e:
+        print(f"❌ JSON parse error: {e}")
         data = request.POST.dict()
 
     email = data.get('email')
     otp_code = data.get('otp')
     password = data.get('password')
 
-    if not email or not otp_code or not password:
-        return JsonResponse({
-            'error': 'Email, OTP, and password are required'
-        }, status=400)
+    # CRITICAL: Log received data for debugging
+    print(f"🔍 Verification attempt:")
+    print(f"   Email: {email}")
+    print(f"   OTP received: {otp_code}")
+    print(f"   Password length: {len(password) if password else 0}")
+
+    # Validate required fields
+    if not email:
+        print("❌ Email missing")
+        return JsonResponse({'error': 'Email is required'}, status=400)
+    
+    if not otp_code:
+        print("❌ OTP missing")
+        return JsonResponse({'error': 'OTP is required'}, status=400)
+    
+    if not password:
+        print("❌ Password missing")
+        return JsonResponse({'error': 'Password is required'}, status=400)
 
     # Verify OTP from database
     otp_valid = False
+    otp_source = None
+    
     try:
         otp_entry = OTP.objects.get(email=email)
-        if otp_entry.code == otp_code:
-            otp_valid = True
+        print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
+        
+        if otp_entry.code == str(otp_code).strip():
             # Check OTP expiration (10 minutes)
-            from django.utils import timezone
             from datetime import timedelta
             if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
+                print("❌ OTP expired")
                 return JsonResponse({
                     'error': 'OTP has expired. Please request a new one.'
                 }, status=400)
+            
+            otp_valid = True
+            otp_source = "database"
+            print("✅ OTP valid from database")
+        else:
+            print(f"❌ OTP mismatch: DB={otp_entry.code}, Received={otp_code}")
+            
     except OTP.DoesNotExist:
-        pass
-
-    # Fallback to session OTP
-    if not otp_valid:
+        print("⚠️ OTP not found in database, checking session...")
+        
+        # Fallback to session OTP
         session_otp = request.session.get('otp')
         session_email = request.session.get('otp_email')
-        if session_email == email and session_otp == otp_code:
+        
+        print(f"🔍 Session OTP: {session_otp}, Email: {session_email}")
+        
+        if session_email == email and session_otp == str(otp_code).strip():
             otp_valid = True
+            otp_source = "session"
+            print("✅ OTP valid from session")
+        else:
+            print(f"❌ Session mismatch: Email={session_email}, OTP={session_otp}")
 
     if not otp_valid:
+        print("❌ Invalid OTP from both sources")
         return JsonResponse({
             'error': 'Invalid or expired OTP'
         }, status=400)
 
+    print(f"✅ OTP validated from {otp_source}")
+
     # Check if user already exists
     if User.objects.filter(email=email).exists():
+        print(f"❌ Email already registered: {email}")
         return JsonResponse({
             'error': 'This email is already registered'
         }, status=400)
 
     # Validate password
     if len(password) < 8:
+        print("❌ Password too short")
         return JsonResponse({
             'error': 'Password must be at least 8 characters long'
         }, status=400)
 
     import re
     if not re.search(r'[A-Z]', password):
+        print("❌ Password missing uppercase")
         return JsonResponse({
             'error': 'Password must contain at least one uppercase letter'
         }, status=400)
 
     if not re.search(r'\d', password):
+        print("❌ Password missing number")
         return JsonResponse({
             'error': 'Password must contain at least one number'
         }, status=400)
@@ -1036,35 +1088,27 @@ def verify_otp_and_register(request):
             email=email,
             password=password
         )
+        print(f"✅ User created: {user.username}")
 
         # Delete OTP after successful registration
         OTP.objects.filter(email=email).delete()
         request.session.pop('otp', None)
         request.session.pop('otp_email', None)
+        print("✅ OTP cleaned up")
 
-        # Send welcome email
+        # Send welcome email (non-blocking)
         try:
-            from .views import send_mail
-            subject = "Welcome to KabsuEats!"
-            message = f"""
-Hello {user.username},
-
-Welcome to KabsuEats! Your account has been successfully created.
-
-You can now log in and start exploring delicious food options around CvSU.
-
-Happy eating!
-The KabsuEats Team
-            """
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=os.getenv('SENDER_EMAIL'),
-                recipient_list=[user.email],
-                fail_silently=True
-            )
+            from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+            if from_email:
+                send_mail(
+                    subject="Welcome to KabsuEats!",
+                    message=f"Hello {user.username},\n\nWelcome to KabsuEats! Your account has been successfully created.",
+                    from_email=from_email,
+                    recipient_list=[user.email],
+                    fail_silently=True
+                )
         except Exception as email_error:
-            print(f"Welcome email error: {email_error}")
+            print(f"⚠️ Welcome email error (non-critical): {email_error}")
 
         return JsonResponse({
             'success': True,
@@ -1073,15 +1117,17 @@ The KabsuEats Team
         })
 
     except Exception as e:
-        print(f"Registration error: {e}")
+        print(f"❌ Registration error: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'error': f'Failed to create account: {str(e)}'
         }, status=500)
-
+    
 @csrf_exempt
 def resend_otp(request):
     """
-    Resend OTP if user didn't receive it
+    FIXED: Resend OTP if user didn't receive it
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -1103,10 +1149,83 @@ def resend_otp(request):
             'error': 'This email is already registered'
         }, status=400)
 
-    # Use the same send_registration_otp logic
-    return send_registration_otp(request)
+    # Generate new OTP
+    otp_code = ''.join(random.choices(string.digits, k=6))
 
+    # Save OTP to database with fresh timestamp
+    try:
+        otp_obj, created = OTP.objects.update_or_create(
+            email=email, 
+            defaults={
+                'code': otp_code, 
+                'attempts': 0,
+                'is_verified': False
+            }
+        )
+        # Force update the created_at timestamp
+        otp_obj.created_at = timezone.now()
+        otp_obj.save()
+        
+        print(f"✅ New OTP generated for {email}: {otp_code}")
+    except Exception as e:
+        print(f"❌ OTP save error: {e}")
+        return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
 
+    # Update session
+    try:
+        request.session['otp'] = otp_code
+        request.session['otp_email'] = email
+        request.session.modified = True
+    except Exception as e:
+        print(f"⚠️ Session update error: {e}")
+
+    # Send email
+    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+    
+    if not from_email:
+        return JsonResponse({
+            'success': True,
+            'message': 'New OTP generated',
+            'warning': 'Email not configured',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
+
+    # Use the same send logic as send_registration_otp
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>KabsuEats - Resend Verification Code</h2>
+        <p>Your new verification code is:</p>
+        <div style="background: #f9f9f9; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; color: #e59b20;">
+            {otp_code}
+        </div>
+        <p>This code is valid for 10 minutes.</p>
+    </div>
+    """
+
+    try:
+        result = send_mail(
+            subject='Your New KabsuEats Verification Code',
+            message=f'Your new verification code is: {otp_code}',
+            from_email=from_email,
+            recipient_list=[email],
+            fail_silently=True,
+            html_message=html_content
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'New OTP sent successfully!',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
+        
+    except Exception as e:
+        print(f"❌ Resend email error: {e}")
+        return JsonResponse({
+            'success': True,
+            'message': 'New OTP generated',
+            'warning': 'Email may be delayed',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
 
 import base64
 import json
@@ -1126,29 +1245,29 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    Enhanced email sending with SendGrid API - FIXED VERSION
-    Includes proper error handling and timeout prevention
+    Enhanced email sending with SendGrid API - COMPLETELY FIXED VERSION
     """
-    import time
+    import socket
     from sendgrid import SendGridAPIClient
     from sendgrid.helpers.mail import Mail, Email, To, Content
     
-    # Validate sender email FIRST
+    # CRITICAL FIX 1: Validate sender email FIRST
     if not from_email or from_email == 'webmaster@localhost':
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
     
     if not from_email:
         print("❌ CRITICAL: No sender email configured")
+        print("   Add SENDER_EMAIL=your-email@gmail.com to your .env file")
         if not fail_silently:
-            raise ValueError("SENDER_EMAIL not configured")
+            raise ValueError("SENDER_EMAIL not configured in environment")
         return 0
     
     # Get SendGrid API key
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
     
-    # CRITICAL FIX: Validate SendGrid configuration
+    # Validate SendGrid configuration
     if not sendgrid_key or sendgrid_key == '********************':
-        print(f"⚠️ SendGrid not configured properly. API Key present: {bool(sendgrid_key)}")
+        print(f"⚠️ SendGrid not configured. Falling back to Django SMTP...")
         
         # Try Django SMTP as fallback
         try:
@@ -1166,7 +1285,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 raise
             return 0
     
-    # Try SendGrid with timeout protection
+    # CRITICAL FIX 2: Proper timeout handling without DEFAULT_TIMEOUT
     try:
         # Ensure recipient_list is a list
         if isinstance(recipient_list, str):
@@ -1180,15 +1299,12 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             html_content=Content("text/html", html_message if html_message else message)
         )
         
-        # Send via SendGrid with timeout
-        sg = SendGridAPIClient(sendgrid_key)
-        
-        # CRITICAL: Set timeout to prevent worker hangs
-        import requests
-        original_timeout = requests.adapters.DEFAULT_TIMEOUT
-        requests.adapters.DEFAULT_TIMEOUT = 10  # 10 second timeout
+        # CRITICAL: Use socket timeout instead of requests timeout
+        default_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(10.0)  # 10 second timeout
         
         try:
+            sg = SendGridAPIClient(sendgrid_key)
             response = sg.send(sg_msg)
             
             if response.status_code in (200, 202):
@@ -1196,12 +1312,11 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 return 1
             else:
                 print(f"⚠️ SendGrid returned status {response.status_code}")
-                print(f"Response body: {response.body}")
-                
-                # Fall through to SMTP
+                print(f"Response body: {response.body if hasattr(response, 'body') else 'N/A'}")
                 
         finally:
-            requests.adapters.DEFAULT_TIMEOUT = original_timeout
+            # Restore original timeout
+            socket.setdefaulttimeout(default_timeout)
             
     except Exception as sg_error:
         print(f"❌ SendGrid error: {sg_error}")
@@ -1214,8 +1329,8 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             print("  3. API Key has 'Mail Send' permissions")
     
     # Fallback to Django SMTP
+    print(f"🔄 Falling back to Django SMTP...")
     try:
-        print(f"🔄 Falling back to Django SMTP...")
         return django_send_mail(
             subject=subject,
             message=message,
@@ -1229,7 +1344,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         if not fail_silently:
             raise
         return 0
-
+    
 @login_required
 @require_POST
 def gcash_payment_request(request):
@@ -2341,7 +2456,7 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    FIXED: Owner registration OTP with timeout protection
+    FIXED: Owner registration OTP
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -2364,6 +2479,9 @@ def send_otp(request):
             email=email, 
             defaults={'code': otp_code, 'attempts': 0}
         )
+        if not created:
+            otp_obj.created_at = timezone.now()
+            otp_obj.save()
     except Exception as e:
         print("OTP DB save error:", e)
 
@@ -2375,13 +2493,22 @@ def send_otp(request):
     except Exception as e:
         print("Session OTP save error:", e)
 
-    # Prepare email
-    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+    # Check sender email
+    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+    
+    if not from_email:
+        print(f"⚠️ No SENDER_EMAIL configured. OTP: {otp_code}")
+        return JsonResponse({
+            'success': True,
+            'warning': 'Email not configured',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
+
     html_content = f"<p>Your KabsuEats verification code is: <strong>{otp_code}</strong></p>"
 
-    # Send email with timeout protection
+    # Send email
     try:
-        result = send_mail(
+        send_mail(
             subject='Your KabsuEats OTP Code',
             message=f'Your verification code is: {otp_code}',
             from_email=from_email,
@@ -2389,21 +2516,15 @@ def send_otp(request):
             fail_silently=True,
             html_message=html_content
         )
-        
-        if result:
-            print(f"✅ OTP sent to {email}: {otp_code}")
-        else:
-            print(f"⚠️ Email failed but OTP saved for {email}: {otp_code}")
-            
         return JsonResponse({'success': True})
-        
     except Exception as e:
         print(f"❌ OTP email error: {e}")
         return JsonResponse({
             'success': True,
-            'warning': 'OTP generated but email may be delayed'
+            'warning': 'OTP generated but email may be delayed',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-    
+     
 @csrf_exempt
 @transaction.atomic
 def verify_and_register(request):
