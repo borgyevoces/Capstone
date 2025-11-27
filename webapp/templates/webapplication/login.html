@@ -9,19 +9,41 @@
     <link rel="stylesheet" href="{% static 'css/login_phoneview.css' %}">
     <style>
         /* ========================================= */
-        /* ADDED FIX FOR PLACEHOLDER & INPUT SIZING */
+        /* FIXED INPUT STYLING (LOGIN & REGISTER)   */
         /* ========================================= */
-        .auth-form input {
-            font-size: 16px !important; /* Sinisigurado na parehas ang laki ng text */
-            padding: 12px 15px; /* Standard padding para hindi siksik */
+        
+        /* Ito ang magsisigurado na parehas na parehas ang Login at Register inputs */
+        .auth-form input[type="text"],
+        .auth-form input[type="password"],
+        .auth-form input[type="email"] {
+            width: 100%;
+            padding: 12px 15px; /* Ito ang nagpapalaki sa loob ng box */
+            font-size: 16px;    /* Tamang laki ng text */
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Ito ang nagpapa-rounded sa kanto */
+            background-color: #fff;
+            box-sizing: border-box; /* Para hindi sumobra sa width ang padding */
+            transition: all 0.3s ease;
+            margin-top: 5px;
+            color: #333;
         }
 
+        /* Focus state (pag clinick) */
+        .auth-form input:focus {
+            border-color: #e59b20;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(229, 155, 32, 0.1);
+        }
+
+        /* Placeholder Styling - Para maging grayish at tamang size */
         .auth-form input::placeholder {
-            font-size: 15px !important; /* Inayos ang size ng placeholder */
-            opacity: 0.7;
+            color: #999 !important;
+            font-size: 15px !important;
+            font-weight: 400;
+            opacity: 1; /* Firefox fix */
         }
 
-        /* OTP Input Styles */
+        /* OTP Input Styles (Override para sa maliliit na box) */
         .otp-container {
             display: none;
             animation: fadeIn 0.3s ease-in;
@@ -39,21 +61,12 @@
         }
 
         .otp-input {
-            width: 50px;
-            height: 50px;
+            width: 50px !important; /* Override global width */
+            height: 50px !important;
             text-align: center;
-            font-size: 24px !important; /* Override para malaki ang number sa OTP */
+            font-size: 24px !important;
             font-weight: bold;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            transition: all 0.3s;
-            padding: 0; /* Reset padding for OTP box */
-        }
-
-        .otp-input:focus {
-            border-color: #e59b20;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(229, 155, 32, 0.1);
+            padding: 0 !important;
         }
 
         .otp-timer {
@@ -84,14 +97,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Loading Spinner */
@@ -117,14 +124,16 @@
 
         .password-toggle {
             position: absolute;
-            right: 12px;
+            right: 15px; /* Inayos para pumantay sa padding */
             top: 50%;
-            transform: translateY(-50%);
+            transform: translateY(-50%); /* Center vertically exact */
             cursor: pointer;
             color: #a1a1a1;
             transition: color 0.2s;
             user-select: none;
             font-size: 18px;
+            height: auto;
+            line-height: 0; /* Fix vertical alignment issues */
         }
 
         .password-toggle:hover {
@@ -228,14 +237,8 @@
         }
 
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -597,165 +600,140 @@
         }
 
         // OTP Verification
-       document.getElementById('otp-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+        document.getElementById('otp-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-    const otpInputs = document.querySelectorAll('.otp-input');
-    const otp = Array.from(otpInputs).map(input => input.value).join('');
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
 
-    if (otp.length !== 6) {
-        showMessagePopup('Please enter complete 6-digit code', 'error');
-        return;
-    }
+            if (otp.length !== 6) {
+                showMessagePopup('Please enter complete 6-digit code', 'error');
+                return;
+            }
 
-    const submitBtn = e.target.querySelector('.action-btn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+            const submitBtn = e.target.querySelector('.action-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
 
-    try {
-        console.log('📤 Verifying OTP:', otp, 'for email:', registrationEmail);
-        
-        const response = await fetch('/api/verify-otp/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                email: registrationEmail,
-                otp: otp
-            })
+            try {
+                console.log('📤 Verifying OTP:', otp, 'for email:', registrationEmail);
+                
+                const response = await fetch('/api/verify-otp/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        email: registrationEmail,
+                        otp: otp
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessagePopup('Email verified successfully!', 'success');
+                    showStep('password-step');
+                    if (otpTimer) clearInterval(otpTimer);
+                } else {
+                    showMessagePopup(data.error || 'Invalid OTP. Please try again.', 'error');
+                    otpInputs.forEach(input => input.value = '');
+                    otpInputs[0].focus();
+                }
+            } catch (error) {
+                console.error('❌ OTP verification error:', error);
+                showMessagePopup('Verification failed. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Verify Code';
+            }
         });
 
-        console.log('📥 Response status:', response.status);
-        
-        const data = await response.json();
-        console.log('📥 Response data:', data);
+        // Password Form Submission
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        if (data.success) {
-            showMessagePopup('Email verified successfully!', 'success');
-            showStep('password-step');
-            if (otpTimer) clearInterval(otpTimer);
-        } else {
-            showMessagePopup(data.error || 'Invalid OTP. Please try again.', 'error');
-            
-            // Clear OTP inputs on error
-            otpInputs.forEach(input => input.value = '');
-            otpInputs[0].focus();
-        }
-    } catch (error) {
-        console.error('❌ OTP verification error:', error);
-        showMessagePopup('Verification failed. Please try again.', 'error');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Verify Code';
-    }
-});
-        // Password Form Submission - COMPLETELY FIXED
-document.getElementById('password-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+            const password = document.getElementById('reg_password').value;
+            const confirmPassword = document.getElementById('reg_confirm_password').value;
 
-    const password = document.getElementById('reg_password').value;
-    const confirmPassword = document.getElementById('reg_confirm_password').value;
+            // Frontend validation
+            if (password !== confirmPassword) {
+                showMessagePopup('Passwords do not match', 'error');
+                return;
+            }
 
-    // Frontend validation
-    if (password !== confirmPassword) {
-        showMessagePopup('Passwords do not match', 'error');
-        return;
-    }
+            if (password.length < 8) {
+                showMessagePopup('Password must be at least 8 characters', 'error');
+                return;
+            }
 
-    if (password.length < 8) {
-        showMessagePopup('Password must be at least 8 characters', 'error');
-        return;
-    }
+            if (!/[A-Z]/.test(password)) {
+                showMessagePopup('Password must contain at least one uppercase letter', 'error');
+                return;
+            }
 
-    if (!/[A-Z]/.test(password)) {
-        showMessagePopup('Password must contain at least one uppercase letter', 'error');
-        return;
-    }
+            if (!/\d/.test(password)) {
+                showMessagePopup('Password must contain at least one number', 'error');
+                return;
+            }
 
-    if (!/\d/.test(password)) {
-        showMessagePopup('Password must contain at least one number', 'error');
-        return;
-    }
+            const submitBtn = e.target.querySelector('.action-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
 
-    const submitBtn = e.target.querySelector('.action-btn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
 
-    const otpInputs = document.querySelectorAll('.otp-input');
-    const otp = Array.from(otpInputs).map(input => input.value).join('');
+            try {
+                const response = await fetch('/api/verify-otp-register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        email: registrationEmail,
+                        otp: otp,
+                        password: password
+                    })
+                });
 
-    try {
-        console.log('📤 Sending registration request...');
-        console.log('Email:', registrationEmail);
-        console.log('OTP:', otp);
-        
-        const response = await fetch('/api/verify-otp-register/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                email: registrationEmail,
-                otp: otp,
-                password: password
-            })
+                let data;
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    throw new Error(`Server error (${response.status}). Please try again.`);
+                }
+
+                if (data.success) {
+                    showMessagePopup(data.message || 'Account created successfully!', 'success');
+                    otpInputs.forEach(input => input.value = '');
+                    
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('id_username').value = registrationEmail;
+                        showMessagePopup('You can now log in with your new account!', 'success');
+                    }, 2000);
+                } else {
+                    showMessagePopup(data.error || 'Registration failed', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error('❌ Registration error:', error);
+                let errorMessage = 'Network error. Please try again.';
+                if (error.message.includes('502')) errorMessage = 'Server is temporarily unavailable.';
+                if (error.message.includes('500')) errorMessage = 'Server error.';
+                
+                showMessagePopup(errorMessage, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
         });
 
-        console.log('📥 Response status:', response.status);
-
-        // ✅ FIX: Handle non-JSON responses (like 502 errors)
-        let data;
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-        } else {
-            // Server returned non-JSON (like 502 HTML error page)
-            console.error('❌ Server returned non-JSON response');
-            console.error('Status:', response.status);
-            console.error('Content-Type:', contentType);
-            
-            throw new Error(`Server error (${response.status}). Please try again.`);
-        }
-
-        console.log('📥 Response data:', data);
-
-        if (data.success) {
-            showMessagePopup(data.message || 'Account created successfully!', 'success');
-            
-            // ✅ Clear OTP inputs
-            otpInputs.forEach(input => input.value = '');
-            
-            // ✅ Switch to login tab and auto-fill email
-            setTimeout(() => {
-                switchTab('login');
-                document.getElementById('id_username').value = registrationEmail;
-                showMessagePopup('You can now log in with your new account!', 'success');
-            }, 2000);
-        } else {
-            showMessagePopup(data.error || 'Registration failed', 'error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Account';
-        }
-    } catch (error) {
-        console.error('❌ Registration error:', error);
-        
-        let errorMessage = 'Network error. Please try again.';
-        
-        if (error.message.includes('502')) {
-            errorMessage = 'Server is temporarily unavailable. Please try again in a moment.';
-        } else if (error.message.includes('500')) {
-            errorMessage = 'Server error. Please contact support if this persists.';
-        }
-        
-        showMessagePopup(errorMessage, 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-    }
-});
         // Forgot Password Modal
         function openForgotPasswordModal() {
             document.getElementById("forgotPasswordModal").style.display = "flex";
