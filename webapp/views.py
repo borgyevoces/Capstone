@@ -7,6 +7,7 @@ import json
 import time
 import uuid
 import base64
+import string
 import random
 import hashlib
 import requests
