@@ -619,73 +619,110 @@
             }
         });
 
-        // Password Form Submission
-        document.getElementById('password-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Password Form Submission - COMPLETELY FIXED
+document.getElementById('password-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-            const password = document.getElementById('reg_password').value;
-            const confirmPassword = document.getElementById('reg_confirm_password').value;
+    const password = document.getElementById('reg_password').value;
+    const confirmPassword = document.getElementById('reg_confirm_password').value;
 
-            if (password !== confirmPassword) {
-                showMessagePopup('Passwords do not match', 'error');
-                return;
-            }
+    if (password !== confirmPassword) {
+        showMessagePopup('Passwords do not match', 'error');
+        return;
+    }
 
-            if (password.length < 8) {
-                showMessagePopup('Password must be at least 8 characters', 'error');
-                return;
-            }
+    if (password.length < 8) {
+        showMessagePopup('Password must be at least 8 characters', 'error');
+        return;
+    }
 
-            if (!/[A-Z]/.test(password)) {
-                showMessagePopup('Password must contain at least one uppercase letter', 'error');
-                return;
-            }
+    if (!/[A-Z]/.test(password)) {
+        showMessagePopup('Password must contain at least one uppercase letter', 'error');
+        return;
+    }
 
-            if (!/\d/.test(password)) {
-                showMessagePopup('Password must contain at least one number', 'error');
-                return;
-            }
+    if (!/\d/.test(password)) {
+        showMessagePopup('Password must contain at least one number', 'error');
+        return;
+    }
 
-            const submitBtn = e.target.querySelector('.action-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
+    const submitBtn = e.target.querySelector('.action-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
 
-            const otpInputs = document.querySelectorAll('.otp-input');
-            const otp = Array.from(otpInputs).map(input => input.value).join('');
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const otp = Array.from(otpInputs).map(input => input.value).join('');
 
-            try {
-                const response = await fetch('/api/verify-otp-register/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        email: registrationEmail,
-                        otp: otp,
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showMessagePopup(data.message || 'Account created successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirect_url || '/accounts/login_register/';
-                    }, 2000);
-                } else {
-                    showMessagePopup(data.error || 'Registration failed', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessagePopup('Network error. Please try again.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create Account';
-            }
+    try {
+        console.log('📤 Sending registration request...');
+        console.log('Email:', registrationEmail);
+        console.log('OTP:', otp);
+        
+        const response = await fetch('/api/verify-otp-register/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                email: registrationEmail,
+                otp: otp,
+                password: password
+            })
         });
 
+        console.log('📥 Response status:', response.status);
+
+        // ✅ FIX: Handle non-JSON responses (like 502 errors)
+        let data;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            // Server returned non-JSON (like 502 HTML error page)
+            console.error('❌ Server returned non-JSON response');
+            console.error('Status:', response.status);
+            console.error('Content-Type:', contentType);
+            
+            throw new Error(`Server error (${response.status}). Please try again.`);
+        }
+
+        console.log('📥 Response data:', data);
+
+        if (data.success) {
+            showMessagePopup(data.message || 'Account created successfully!', 'success');
+            
+            // ✅ Clear OTP inputs
+            otpInputs.forEach(input => input.value = '');
+            
+            // ✅ Switch to login tab and auto-fill email
+            setTimeout(() => {
+                switchTab('login');
+                document.getElementById('id_username').value = registrationEmail;
+                showMessagePopup('You can now log in with your new account!', 'success');
+            }, 2000);
+        } else {
+            showMessagePopup(data.error || 'Registration failed', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
+        }
+    } catch (error) {
+        console.error('❌ Registration error:', error);
+        
+        let errorMessage = 'Network error. Please try again.';
+        
+        if (error.message.includes('502')) {
+            errorMessage = 'Server is temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Server error. Please contact support if this persists.';
+        }
+        
+        showMessagePopup(errorMessage, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+    }
+});
         // Forgot Password Modal
         function openForgotPasswordModal() {
             document.getElementById("forgotPasswordModal").style.display = "flex";

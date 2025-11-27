@@ -978,150 +978,186 @@ def verify_otp_and_register(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     try:
-        body = request.body.decode('utf-8') or '{}'
-        data = json.loads(body) if body else {}
-    except Exception as e:
-        print(f"❌ JSON parse error: {e}")
-        data = request.POST.dict()
-
-    email = data.get('email')
-    otp_code = data.get('otp')
-    password = data.get('password')
-
-    # CRITICAL: Log received data for debugging
-    print(f"🔍 Verification attempt:")
-    print(f"   Email: {email}")
-    print(f"   OTP received: {otp_code}")
-    print(f"   Password length: {len(password) if password else 0}")
-
-    # Validate required fields
-    if not email:
-        print("❌ Email missing")
-        return JsonResponse({'error': 'Email is required'}, status=400)
-    
-    if not otp_code:
-        print("❌ OTP missing")
-        return JsonResponse({'error': 'OTP is required'}, status=400)
-    
-    if not password:
-        print("❌ Password missing")
-        return JsonResponse({'error': 'Password is required'}, status=400)
-
-    # Verify OTP from database
-    otp_valid = False
-    otp_source = None
-    
-    try:
-        otp_entry = OTP.objects.get(email=email)
-        print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
-        
-        if otp_entry.code == str(otp_code).strip():
-            # Check OTP expiration (10 minutes)
-            from datetime import timedelta
-            if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
-                print("❌ OTP expired")
-                return JsonResponse({
-                    'error': 'OTP has expired. Please request a new one.'
-                }, status=400)
-            
-            otp_valid = True
-            otp_source = "database"
-            print("✅ OTP valid from database")
-        else:
-            print(f"❌ OTP mismatch: DB={otp_entry.code}, Received={otp_code}")
-            
-    except OTP.DoesNotExist:
-        print("⚠️ OTP not found in database, checking session...")
-        
-        # Fallback to session OTP
-        session_otp = request.session.get('otp')
-        session_email = request.session.get('otp_email')
-        
-        print(f"🔍 Session OTP: {session_otp}, Email: {session_email}")
-        
-        if session_email == email and session_otp == str(otp_code).strip():
-            otp_valid = True
-            otp_source = "session"
-            print("✅ OTP valid from session")
-        else:
-            print(f"❌ Session mismatch: Email={session_email}, OTP={session_otp}")
-
-    if not otp_valid:
-        print("❌ Invalid OTP from both sources")
-        return JsonResponse({
-            'error': 'Invalid or expired OTP'
-        }, status=400)
-
-    print(f"✅ OTP validated from {otp_source}")
-
-    # Check if user already exists
-    if User.objects.filter(email=email).exists():
-        print(f"❌ Email already registered: {email}")
-        return JsonResponse({
-            'error': 'This email is already registered'
-        }, status=400)
-
-    # Validate password
-    if len(password) < 8:
-        print("❌ Password too short")
-        return JsonResponse({
-            'error': 'Password must be at least 8 characters long'
-        }, status=400)
-
-    import re
-    if not re.search(r'[A-Z]', password):
-        print("❌ Password missing uppercase")
-        return JsonResponse({
-            'error': 'Password must contain at least one uppercase letter'
-        }, status=400)
-
-    if not re.search(r'\d', password):
-        print("❌ Password missing number")
-        return JsonResponse({
-            'error': 'Password must contain at least one number'
-        }, status=400)
-
-    # Create user
-    try:
-        user = User.objects.create_user(
-            username=email,
-            email=email,
-            password=password
-        )
-        print(f"✅ User created: {user.username}")
-
-        # Delete OTP after successful registration
-        OTP.objects.filter(email=email).delete()
-        request.session.pop('otp', None)
-        request.session.pop('otp_email', None)
-        print("✅ OTP cleaned up")
-
-        # Send welcome email (non-blocking)
+        # Parse request body
         try:
-            from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
-            if from_email:
-                send_mail(
-                    subject="Welcome to KabsuEats!",
-                    message=f"Hello {user.username},\n\nWelcome to KabsuEats! Your account has been successfully created.",
-                    from_email=from_email,
-                    recipient_list=[user.email],
-                    fail_silently=True
-                )
-        except Exception as email_error:
-            print(f"⚠️ Welcome email error (non-critical): {email_error}")
+            body = request.body.decode('utf-8') or '{}'
+            data = json.loads(body) if body else {}
+        except Exception as e:
+            print(f"❌ JSON parse error: {e}")
+            data = request.POST.dict()
 
-        return JsonResponse({
-            'success': True,
-            'message': 'Account created successfully! You can now log in.',
-            'redirect_url': '/accounts/login_register/'
-        })
+        email = data.get('email')
+        otp_code = data.get('otp')
+        password = data.get('password')
 
-    except Exception as e:
-        print(f"❌ Registration error: {e}")
+        # CRITICAL: Log received data for debugging
+        print(f"🔍 Verification attempt:")
+        print(f"   Email: {email}")
+        print(f"   OTP received: {otp_code}")
+        print(f"   Password length: {len(password) if password else 0}")
+
+        # Validate required fields
+        if not email:
+            print("❌ Email missing")
+            return JsonResponse({'error': 'Email is required'}, status=400)
+        
+        if not otp_code:
+            print("❌ OTP missing")
+            return JsonResponse({'error': 'OTP is required'}, status=400)
+        
+        if not password:
+            print("❌ Password missing")
+            return JsonResponse({'error': 'Password is required'}, status=400)
+
+        # Verify OTP from database
+        otp_valid = False
+        otp_source = None
+        
+        try:
+            otp_entry = OTP.objects.get(email=email)
+            print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
+            
+            if otp_entry.code == str(otp_code).strip():
+                # Check OTP expiration (10 minutes)
+                from datetime import timedelta
+                if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
+                    print("❌ OTP expired")
+                    return JsonResponse({
+                        'error': 'OTP has expired. Please request a new one.'
+                    }, status=400)
+                
+                otp_valid = True
+                otp_source = "database"
+                print("✅ OTP valid from database")
+            else:
+                print(f"❌ OTP mismatch: DB={otp_entry.code}, Received={otp_code}")
+                
+        except OTP.DoesNotExist:
+            print("⚠️ OTP not found in database, checking session...")
+            
+            # Fallback to session OTP
+            session_otp = request.session.get('otp')
+            session_email = request.session.get('otp_email')
+            
+            print(f"🔍 Session OTP: {session_otp}, Email: {session_email}")
+            
+            if session_email == email and session_otp == str(otp_code).strip():
+                otp_valid = True
+                otp_source = "session"
+                print("✅ OTP valid from session")
+            else:
+                print(f"❌ Session mismatch: Email={session_email}, OTP={session_otp}")
+
+        if not otp_valid:
+            print("❌ Invalid OTP from both sources")
+            return JsonResponse({
+                'error': 'Invalid or expired OTP'
+            }, status=400)
+
+        print(f"✅ OTP validated from {otp_source}")
+
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            print(f"❌ Email already registered: {email}")
+            return JsonResponse({
+                'error': 'This email is already registered'
+            }, status=400)
+
+        # Validate password
+        if len(password) < 8:
+            print("❌ Password too short")
+            return JsonResponse({
+                'error': 'Password must be at least 8 characters long'
+            }, status=400)
+
+        import re
+        if not re.search(r'[A-Z]', password):
+            print("❌ Password missing uppercase")
+            return JsonResponse({
+                'error': 'Password must contain at least one uppercase letter'
+            }, status=400)
+
+        if not re.search(r'\d', password):
+            print("❌ Password missing number")
+            return JsonResponse({
+                'error': 'Password must contain at least one number'
+            }, status=400)
+
+        # ✅ FIX: Wrap user creation in try-except to prevent 502 errors
+        try:
+            # Create user with username = email
+            user = User.objects.create_user(
+                username=email,  # Username is the email
+                email=email,
+                password=password
+            )
+            print(f"✅ User created: {user.username}")
+
+            # Delete OTP after successful registration
+            try:
+                OTP.objects.filter(email=email).delete()
+                print("✅ OTP cleaned up from database")
+            except Exception as cleanup_error:
+                print(f"⚠️ OTP cleanup error (non-critical): {cleanup_error}")
+            
+            # Clear session OTP
+            try:
+                request.session.pop('otp', None)
+                request.session.pop('otp_email', None)
+                print("✅ OTP cleaned up from session")
+            except Exception as session_error:
+                print(f"⚠️ Session cleanup error (non-critical): {session_error}")
+
+            # ✅ FIX: Send welcome email in background to prevent blocking
+            try:
+                from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+                if from_email:
+                    # Use threading to send email without blocking
+                    import threading
+                    
+                    def send_welcome_email():
+                        try:
+                            send_mail(
+                                subject="Welcome to KabsuEats!",
+                                message=f"Hello {user.username},\n\nWelcome to KabsuEats! Your account has been successfully created.",
+                                from_email=from_email,
+                                recipient_list=[user.email],
+                                fail_silently=True
+                            )
+                            print(f"✅ Welcome email sent to {user.email}")
+                        except Exception as e:
+                            print(f"⚠️ Welcome email error (non-critical): {e}")
+                    
+                    # Send in background thread
+                    email_thread = threading.Thread(target=send_welcome_email, daemon=True)
+                    email_thread.start()
+                    
+            except Exception as email_error:
+                print(f"⚠️ Welcome email setup error (non-critical): {email_error}")
+
+            # ✅ Return success immediately
+            return JsonResponse({
+                'success': True,
+                'message': 'Account created successfully! You can now log in.',
+                'redirect_url': '/accounts/login_register/'
+            })
+
+        except Exception as user_create_error:
+            print(f"❌ User creation error: {user_create_error}")
+            import traceback
+            traceback.print_exc()
+            
+            return JsonResponse({
+                'error': f'Failed to create account: {str(user_create_error)}'
+            }, status=500)
+
+    except Exception as outer_error:
+        print(f"❌ Outer exception in verify_otp_and_register: {outer_error}")
         import traceback
         traceback.print_exc()
+        
         return JsonResponse({
-            'error': f'Failed to create account: {str(e)}'
+            'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
     
 @csrf_exempt
