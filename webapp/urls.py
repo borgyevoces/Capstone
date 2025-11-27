@@ -44,8 +44,7 @@ urlpatterns = [
                       template_name='webapplication/password_reset_complete.html'), name='password_reset_complete'),
                   path('accounts/password_reset_done_redirect/', views.password_reset_done_redirect,
                        name='password_reset_done_redirect'),
-                  path('accounts/password_reset_complete_redirect/', views.password_reset_complete_redirect,
-                       name='password_reset_complete_redirect'),
+                  path('accounts/reset/done/', views.password_reset_complete_redirect, name='password_reset_complete'),
 
                   # 4. Cart & Payments - COMPLETE FIXED ROUTES
                   path('cart/', views.view_cart, name='view_cart'),

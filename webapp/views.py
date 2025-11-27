@@ -392,9 +392,9 @@ def password_reset_done_redirect(request):
     return redirect(reverse('user_login_register') + '?reset_done=true')
 
 def password_reset_complete_redirect(request):
-    """Redirect to login after password reset"""
-    messages.success(request, "Your password has been reset successfully! You can now log in with your new password.")
-    return redirect(reverse('user_login_register') + '?reset_complete=true')
+    """Custom redirect after password reset"""
+    messages.success(request, 'Your password has been reset successfully! You can now log in.')
+    return redirect('user_login_register')
 
 def kabsueats_main_view(request):
     """

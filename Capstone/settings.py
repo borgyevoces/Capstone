@@ -31,8 +31,6 @@ SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 PAYMONGO_GCASH_SOURCE_URL = os.getenv('PAYMONGO_GCASH_SOURCE_URL', 'https://api.paymongo.com/v1/sources')
 PAYMONGO_GCASH_CHECKOUT_URL = os.getenv('PAYMONGO_GCASH_CHECKOUT_URL', 'https://api.paymongo.com/v1/checkout_sessions')
 
-LOGIN_URL = 'food_establishment_login'
-
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
@@ -44,6 +42,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+LOGIN_URL = 'user_login_register'
 LOGIN_REDIRECT_URL = 'kabsueats_home'
 LOGOUT_REDIRECT_URL = 'user_login_register'
 
