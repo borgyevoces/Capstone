@@ -972,7 +972,7 @@ def send_registration_otp(request):
 @csrf_exempt
 def verify_otp_and_register(request):
     """
-    COMPLETELY FIXED: Verify OTP and complete registration
+    COMPLETE FIX: Verify OTP and register user account
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -991,7 +991,7 @@ def verify_otp_and_register(request):
         password = data.get('password')
 
         # CRITICAL: Log received data for debugging
-        print(f"🔍 Verification attempt:")
+        print(f"📥 Verification attempt:")
         print(f"   Email: {email}")
         print(f"   OTP received: {otp_code}")
         print(f"   Password length: {len(password) if password else 0}")
@@ -1014,22 +1014,32 @@ def verify_otp_and_register(request):
         otp_source = None
         
         try:
+            from datetime import timedelta
             otp_entry = OTP.objects.get(email=email)
             print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
             
+            # Check if OTP matches
             if otp_entry.code == str(otp_code).strip():
                 # Check OTP expiration (10 minutes)
-                from datetime import timedelta
                 if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
                     print("❌ OTP expired")
                     return JsonResponse({
                         'error': 'OTP has expired. Please request a new one.'
                     }, status=400)
                 
+                # Check if blocked due to too many attempts
+                if otp_entry.is_blocked():
+                    print("❌ OTP blocked due to too many attempts")
+                    return JsonResponse({
+                        'error': 'Too many failed attempts. Please request a new OTP.'
+                    }, status=400)
+                
                 otp_valid = True
                 otp_source = "database"
                 print("✅ OTP valid from database")
             else:
+                # Increment failed attempts
+                otp_entry.increment_attempts()
                 print(f"❌ OTP mismatch: DB={otp_entry.code}, Received={otp_code}")
                 
         except OTP.DoesNotExist:
@@ -1051,7 +1061,7 @@ def verify_otp_and_register(request):
         if not otp_valid:
             print("❌ Invalid OTP from both sources")
             return JsonResponse({
-                'error': 'Invalid or expired OTP'
+                'error': 'Invalid or expired OTP. Please check your code and try again.'
             }, status=400)
 
         print(f"✅ OTP validated from {otp_source}")
@@ -1060,7 +1070,7 @@ def verify_otp_and_register(request):
         if User.objects.filter(email=email).exists():
             print(f"❌ Email already registered: {email}")
             return JsonResponse({
-                'error': 'This email is already registered'
+                'error': 'This email is already registered. Please log in instead.'
             }, status=400)
 
         # Validate password
@@ -1087,7 +1097,7 @@ def verify_otp_and_register(request):
         try:
             # Create user with username = email
             user = User.objects.create_user(
-                username=email,  # Username is the email
+                username=email,
                 email=email,
                 password=password
             )
@@ -1159,7 +1169,69 @@ def verify_otp_and_register(request):
         return JsonResponse({
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-    
+
+@csrf_exempt
+def verify_otp_only(request):
+    """
+    ✅ NEW: Verify OTP code BEFORE password step
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        body = request.body.decode('utf-8') or '{}'
+        data = json.loads(body) if body else {}
+    except Exception:
+        data = {}
+
+    email = data.get('email')
+    otp_code = data.get('otp')
+
+    if not email or not otp_code:
+        return JsonResponse({'error': 'Email and OTP are required'}, status=400)
+
+    # Verify OTP from database
+    try:
+        from datetime import timedelta
+        otp_entry = OTP.objects.get(email=email)
+        
+        if otp_entry.code == str(otp_code).strip():
+            # Check expiration
+            if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
+                return JsonResponse({
+                    'error': 'OTP has expired. Please request a new one.'
+                }, status=400)
+            
+            # Check if blocked
+            if otp_entry.is_blocked():
+                return JsonResponse({
+                    'error': 'Too many failed attempts. Please request a new OTP.'
+                }, status=400)
+            
+            # Mark as verified (but don't delete yet)
+            otp_entry.is_verified = True
+            otp_entry.save()
+            
+            return JsonResponse({'success': True, 'message': 'OTP verified'})
+        else:
+            # Increment failed attempts
+            otp_entry.increment_attempts()
+            return JsonResponse({
+                'error': 'Invalid OTP. Please check your code.'
+            }, status=400)
+            
+    except OTP.DoesNotExist:
+        # Fallback to session
+        session_otp = request.session.get('otp')
+        session_email = request.session.get('otp_email')
+        
+        if session_email == email and session_otp == str(otp_code).strip():
+            return JsonResponse({'success': True, 'message': 'OTP verified'})
+        else:
+            return JsonResponse({
+                'error': 'Invalid OTP. Please check your code.'
+            }, status=400)
+
 @csrf_exempt
 def resend_otp(request):
     """

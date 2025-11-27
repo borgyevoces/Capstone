@@ -29,7 +29,8 @@ urlpatterns = [
                   path('api/send-registration-otp/', views.send_registration_otp, name='send_registration_otp'),
                   path('api/verify-otp-register/', views.verify_otp_and_register, name='verify_otp_register'),
                   path('api/resend-otp/', views.resend_otp, name='resend_otp'),
-                  
+                  path('api/verify-otp/', views.verify_otp_only, name='verify_otp_only'),
+
                   # 3. Password Reset
                   path('accounts/forgot_password/', views.forgot_password, name='forgot_password'),
                   path('accounts/password_reset/',

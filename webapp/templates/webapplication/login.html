@@ -589,36 +589,60 @@
         }
 
         // OTP Verification
-        document.getElementById('otp-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+       document.getElementById('otp-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-            const otpInputs = document.querySelectorAll('.otp-input');
-            const otp = Array.from(otpInputs).map(input => input.value).join('');
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const otp = Array.from(otpInputs).map(input => input.value).join('');
 
-            if (otp.length !== 6) {
-                showMessagePopup('Please enter complete 6-digit code', 'error');
-                return;
-            }
+    if (otp.length !== 6) {
+        showMessagePopup('Please enter complete 6-digit code', 'error');
+        return;
+    }
 
-            const submitBtn = e.target.querySelector('.action-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+    const submitBtn = e.target.querySelector('.action-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
 
-            try {
-                // For now, just move to password step
-                // In production, you'd verify OTP with backend here
-                showStep('password-step');
-                showMessagePopup('Email verified successfully!', 'success');
-                if (otpTimer) clearInterval(otpTimer);
-            } catch (error) {
-                console.error('Error:', error);
-                showMessagePopup('Verification failed. Please try again.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Verify Code';
-            }
+    try {
+        console.log('📤 Verifying OTP:', otp, 'for email:', registrationEmail);
+        
+        const response = await fetch('/api/verify-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                email: registrationEmail,
+                otp: otp
+            })
         });
 
+        console.log('📥 Response status:', response.status);
+        
+        const data = await response.json();
+        console.log('📥 Response data:', data);
+
+        if (data.success) {
+            showMessagePopup('Email verified successfully!', 'success');
+            showStep('password-step');
+            if (otpTimer) clearInterval(otpTimer);
+        } else {
+            showMessagePopup(data.error || 'Invalid OTP. Please try again.', 'error');
+            
+            // Clear OTP inputs on error
+            otpInputs.forEach(input => input.value = '');
+            otpInputs[0].focus();
+        }
+    } catch (error) {
+        console.error('❌ OTP verification error:', error);
+        showMessagePopup('Verification failed. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify Code';
+    }
+});
         // Password Form Submission - COMPLETELY FIXED
 document.getElementById('password-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -626,6 +650,7 @@ document.getElementById('password-form').addEventListener('submit', async functi
     const password = document.getElementById('reg_password').value;
     const confirmPassword = document.getElementById('reg_confirm_password').value;
 
+    // Frontend validation
     if (password !== confirmPassword) {
         showMessagePopup('Passwords do not match', 'error');
         return;
