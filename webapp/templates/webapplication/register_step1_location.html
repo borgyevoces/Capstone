@@ -400,9 +400,7 @@
             lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
         };
     </script>
-    <script src="{% static 'js/business_owner_registration.js' %}"></script>
-    
-<!-- Add this script section to replace the existing location features script in register_step1_location.html -->
+<!-- Replace the existing location features script in register_step1_location.html with this -->
 <script>
     (function() {
         const focusCvsuBtn = document.getElementById('focus-cvsu-btn');
@@ -500,12 +498,6 @@
                 if (address) {
                     window.userMarker.bindPopup(`✅ ${address}`).openPopup();
                 }
-                
-                // ✅ FIX: Center map on location with smooth animation
-                window.map.setView([lat, lng], 17, {
-                    animate: true,
-                    duration: 1.0
-                });
                 
                 // Save to sessionStorage
                 sessionStorage.setItem('registration_latitude', lat);
@@ -653,22 +645,28 @@
             }
         });
         
-        // ✅ FIX: Updated selectLocation to move map to searched location
+        // ✅ FIXED: Select location and move map
         function selectLocation(result) {
             const lat = parseFloat(result.lat);
             const lng = parseFloat(result.lon);
             const address = result.display_name.split(',').slice(0, 2).join(',');
             
-            // ✅ First, move the map to the location with animation
+            // ✅ CRITICAL FIX: Move map to location FIRST
             if (window.map) {
-                window.map.setView([lat, lng], 17, {
+                console.log('🗺️ Moving map to searched location:', lat, lng);
+                window.map.setView([lat, lng], 18, {
                     animate: true,
-                    duration: 1.0
+                    duration: 1.0,
+                    easeLinearity: 0.5
                 });
+                
+                // Small delay to ensure map has moved before placing marker
+                setTimeout(() => {
+                    placeMarker(lat, lng, address);
+                }, 300);
+            } else {
+                placeMarker(lat, lng, address);
             }
-            
-            // Then place marker (which will validate and update)
-            placeMarker(lat, lng, address);
             
             // Update search input
             searchInput.value = address;
@@ -691,30 +689,41 @@
         });
         
         // ========================================
-        // ✅ FIXED: FOCUS ON CVSU-BACOOR BUTTON
+        // ✅ COMPLETELY FIXED: FOCUS ON CVSU-BACOOR BUTTON
         // ========================================
         focusCvsuBtn.addEventListener('click', function() {
-            if (window.map) {
-                // ✅ Center map on CvSU-Bacoor with smooth animation and proper zoom
-                window.map.setView([CVSU_COORDS.lat, CVSU_COORDS.lng], 17, {
-                    animate: true,
-                    duration: 1.0
-                });
-                
-                // Place marker at CvSU center
-                placeMarker(CVSU_COORDS.lat, CVSU_COORDS.lng, 'CvSU-Bacoor Campus');
-                
-                // Show success message
-                showStatus('✅ Focused on CvSU-Bacoor Campus', 'success');
-            } else {
+            console.log('🎯 Focus on CvSU button clicked');
+            console.log('📍 CvSU Coordinates:', CVSU_COORDS);
+            
+            if (!window.map) {
+                console.error('❌ Map not initialized');
                 showStatus('❌ Map not initialized', 'error');
+                return;
             }
+            
+            // ✅ CRITICAL FIX: Proper map centering with flyTo for smooth animation
+            console.log('🗺️ Moving map to CvSU-Bacoor...');
+            
+            window.map.flyTo([CVSU_COORDS.lat, CVSU_COORDS.lng], 18, {
+                animate: true,
+                duration: 1.5,
+                easeLinearity: 0.25
+            });
+            
+            // ✅ Place marker after map has moved
+            setTimeout(() => {
+                console.log('📍 Placing marker at CvSU center');
+                placeMarker(CVSU_COORDS.lat, CVSU_COORDS.lng, 'CvSU-Bacoor Campus');
+                showStatus('✅ Focused on CvSU-Bacoor Campus', 'success');
+            }, 500);
         });
         
         // ========================================
         // USE MY CURRENT LOCATION BUTTON
         // ========================================
         useLocationBtn.addEventListener('click', function() {
+            console.log('📍 Use current location clicked');
+            
             // Check if geolocation is supported
             if (!navigator.geolocation) {
                 showStatus('❌ Geolocation is not supported by your browser', 'error');
@@ -735,16 +744,22 @@
                     
                     console.log('📍 Current Location:', userLat, userLng, 'Accuracy:', accuracy + 'm');
                     
-                    // ✅ Move map to user's location first
+                    // ✅ FIXED: Move map to user's location with flyTo
                     if (window.map) {
-                        window.map.setView([userLat, userLng], 17, {
+                        console.log('🗺️ Moving map to user location');
+                        window.map.flyTo([userLat, userLng], 18, {
                             animate: true,
-                            duration: 1.0
+                            duration: 1.5,
+                            easeLinearity: 0.25
                         });
+                        
+                        // Place marker after map has moved
+                        setTimeout(() => {
+                            placeMarker(userLat, userLng, `Your location (±${Math.round(accuracy)}m)`);
+                        }, 500);
+                    } else {
+                        placeMarker(userLat, userLng, `Your location (±${Math.round(accuracy)}m)`);
                     }
-                    
-                    // Then place marker
-                    placeMarker(userLat, userLng, `Your location (±${Math.round(accuracy)}m)`);
                     
                     // Re-enable button
                     useLocationBtn.disabled = false;
@@ -778,6 +793,33 @@
                 }
             );
         });
+        
+        // ========================================
+        // INITIALIZE: Focus on CvSU when page loads
+        // ========================================
+        window.addEventListener('load', function() {
+            console.log('🌐 Page loaded, checking for map...');
+            
+            // Wait for map to be fully initialized
+            const checkMapInterval = setInterval(function() {
+                if (window.map) {
+                    console.log('✅ Map detected and ready');
+                    clearInterval(checkMapInterval);
+                    
+                    // Auto-focus on CvSU after a short delay
+                    setTimeout(() => {
+                        console.log('🎯 Auto-focusing on CvSU-Bacoor...');
+                        window.map.setView([CVSU_COORDS.lat, CVSU_COORDS.lng], 17);
+                    }, 500);
+                }
+            }, 100);
+            
+            // Stop checking after 5 seconds
+            setTimeout(() => {
+                clearInterval(checkMapInterval);
+            }, 5000);
+        });
+        
     })();
 </script>
 </body>
