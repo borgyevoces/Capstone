@@ -655,8 +655,46 @@
                 const lng = parseFloat(result.lon);
                 const address = result.display_name.split(',').slice(0, 2).join(',');
                 
-                // Place marker
-                placeMarker(lat, lng, address);
+                // ✅ ALWAYS move map to searched location
+                if (window.map) {
+                    window.map.setView([lat, lng], 17);
+                }
+                
+                // Check if within radius
+                const isValid = isWithinRadius(lat, lng, CVSU_COORDS.lat, CVSU_COORDS.lng, 500);
+                
+                if (isValid) {
+                    // Location is valid - place marker
+                    placeMarker(lat, lng, address);
+                } else {
+                    // Location is outside radius - show on map but don't pin
+                    showStatus('⚠️ Location is outside the 500m radius. Please select within the red circle.', 'error');
+                    
+                    // Show temporary red marker to indicate searched location
+                    if (window.tempSearchMarker) {
+                        window.map.removeLayer(window.tempSearchMarker);
+                    }
+                    
+                    window.tempSearchMarker = L.marker([lat, lng], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    }).addTo(window.map)
+                      .bindPopup(`❌ ${address}<br><small>Outside allowed area</small>`)
+                      .openPopup();
+                    
+                    // Remove temporary marker after 5 seconds
+                    setTimeout(() => {
+                        if (window.tempSearchMarker && window.map.hasLayer(window.tempSearchMarker)) {
+                            window.map.removeLayer(window.tempSearchMarker);
+                        }
+                    }, 5000);
+                }
                 
                 // Update search input
                 searchInput.value = address;
