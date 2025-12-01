@@ -5,9 +5,116 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Register (1/3): Pin Location - KabsuEats</title>
-    <!-- Note: Leaflet CSS is required for the map -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
+    <style>
+        /* Additional styles for the location button */
+        .location-button-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .current-location-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .current-location-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .current-location-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .current-location-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .current-location-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .location-status {
+            display: inline-block;
+            margin-left: 15px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+        
+        .location-status.loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .location-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .location-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #856404;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .location-info {
+            margin-top: 10px;
+            padding: 12px;
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1976D2;
+            display: none;
+        }
+        
+        .location-info.show {
+            display: block;
+        }
+        
+        .location-info strong {
+            color: #0d47a1;
+        }
+    </style>
 </head>
 <body>
     <div class="registration-container">
@@ -22,7 +129,25 @@
 
         <div class="registration-content">
             <h2>Step 1: Pin Your Location</h2>
-            <p>Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin. You can change the map type using the control in the top-right corner.</p>
+            <p>Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin, or use your current GPS location.</p>
+            
+            <!-- Current Location Button -->
+            <div class="location-button-container">
+                <button type="button" id="use-current-location-btn" class="current-location-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                        <circle cx="12" cy="9" r="2.5"/>
+                    </svg>
+                    Use My Current Location
+                </button>
+                <span id="location-status" class="location-status" style="display: none;"></span>
+            </div>
+            
+            <!-- Location Info Display -->
+            <div id="location-info" class="location-info">
+                <strong>📍 Current Location:</strong> <span id="location-coords"></span>
+            </div>
+            
             <div id="map"></div>
             <div id="validation-message" class="map-validation-message">Please pin a location on the map.</div>
             <div class="navigation-buttons">
@@ -32,15 +157,186 @@
         </div>
     </div>
 
-    <!-- Note: Leaflet JS is required for the map -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // This variable is used by the external JS file
+        // CvSU coordinates from Django template
         const CVSU_COORDS = {
             lat: {{ CVSU_LATITUDE|default:"14.412768" }},
             lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
         };
     </script>
     <script src="{% static 'js/business_owner_registration.js' %}"></script>
+    
+    <!-- Current Location Feature Script -->
+    <script>
+        (function() {
+            const useLocationBtn = document.getElementById('use-current-location-btn');
+            const locationStatus = document.getElementById('location-status');
+            const locationInfo = document.getElementById('location-info');
+            const locationCoords = document.getElementById('location-coords');
+            
+            // Function to show status message
+            function showStatus(message, type) {
+                locationStatus.textContent = message;
+                locationStatus.className = `location-status ${type}`;
+                locationStatus.style.display = 'inline-block';
+                
+                if (type === 'success' || type === 'error') {
+                    setTimeout(() => {
+                        locationStatus.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // Function to check if location is within 500m radius
+            function isWithinRadius(lat, lng, centerLat, centerLng, radiusMeters) {
+                const R = 6371000; // Earth radius in meters
+                const dLat = (centerLat - lat) * Math.PI / 180;
+                const dLng = (centerLng - lng) * Math.PI / 180;
+                
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                         Math.cos(lat * Math.PI / 180) * Math.cos(centerLat * Math.PI / 180) *
+                         Math.sin(dLng/2) * Math.sin(dLng/2);
+                
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const distance = R * c;
+                
+                return distance <= radiusMeters;
+            }
+            
+            // Handle "Use My Current Location" button click
+            useLocationBtn.addEventListener('click', function() {
+                // Check if geolocation is supported
+                if (!navigator.geolocation) {
+                    showStatus('❌ Geolocation is not supported by your browser', 'error');
+                    return;
+                }
+                
+                // Disable button and show loading
+                useLocationBtn.disabled = true;
+                showStatus('🔄 Getting your location...', 'loading');
+                locationStatus.innerHTML = '<span class="spinner"></span>Getting your location...';
+                
+                // Get current position
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        
+                        console.log('📍 Current Location:', userLat, userLng, 'Accuracy:', accuracy + 'm');
+                        
+                        // Check if location is within 500m radius of CvSU
+                        const isValid = isWithinRadius(
+                            userLat, 
+                            userLng, 
+                            CVSU_COORDS.lat, 
+                            CVSU_COORDS.lng, 
+                            500
+                        );
+                        
+                        if (isValid) {
+                            // Valid location - update map
+                            if (window.map && window.userMarker) {
+                                // Remove existing marker
+                                if (window.userMarker) {
+                                    window.map.removeLayer(window.userMarker);
+                                }
+                                
+                                // Add new marker at current location
+                                window.userMarker = L.marker([userLat, userLng], {
+                                    icon: L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                        iconSize: [25, 41],
+                                        iconAnchor: [12, 41],
+                                        popupAnchor: [1, -34],
+                                        shadowSize: [41, 41]
+                                    })
+                                }).addTo(window.map);
+                                
+                                // Center map on current location
+                                window.map.setView([userLat, userLng], 17);
+                                
+                                // Save to sessionStorage
+                                sessionStorage.setItem('registration_latitude', userLat);
+                                sessionStorage.setItem('registration_longitude', userLng);
+                                
+                                // Enable next button
+                                const nextBtn = document.getElementById('next-step-btn');
+                                const validationMsg = document.getElementById('validation-message');
+                                if (nextBtn) nextBtn.disabled = false;
+                                if (validationMsg) validationMsg.style.display = 'none';
+                                
+                                // Show success message
+                                showStatus('✅ Location pinned successfully!', 'success');
+                                
+                                // Show location info
+                                locationCoords.textContent = `${userLat.toFixed(6)}, ${userLng.toFixed(6)} (±${Math.round(accuracy)}m)`;
+                                locationInfo.classList.add('show');
+                            }
+                        } else {
+                            // Location outside radius
+                            showStatus('⚠️ Your location is outside the 500m radius of CvSU-Bacoor', 'error');
+                            
+                            // Still show the location for reference
+                            if (window.map) {
+                                window.map.setView([userLat, userLng], 15);
+                                
+                                // Add a temporary marker to show where user is
+                                const tempMarker = L.marker([userLat, userLng], {
+                                    icon: L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                        iconSize: [25, 41],
+                                        iconAnchor: [12, 41],
+                                        popupAnchor: [1, -34],
+                                        shadowSize: [41, 41]
+                                    })
+                                }).addTo(window.map)
+                                  .bindPopup('❌ Your current location (outside allowed area)')
+                                  .openPopup();
+                                
+                                setTimeout(() => {
+                                    window.map.removeLayer(tempMarker);
+                                }, 5000);
+                            }
+                        }
+                        
+                        // Re-enable button
+                        useLocationBtn.disabled = false;
+                    },
+                    function(error) {
+                        // Error handling
+                        useLocationBtn.disabled = false;
+                        
+                        let errorMessage = '';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = '❌ Location access denied. Please enable location permissions.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = '❌ Location information unavailable.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = '❌ Location request timed out.';
+                                break;
+                            default:
+                                errorMessage = '❌ An unknown error occurred.';
+                        }
+                        
+                        showStatus(errorMessage, 'error');
+                        console.error('Geolocation error:', error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        })();
+    </script>
 </body>
 </html>
