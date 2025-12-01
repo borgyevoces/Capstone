@@ -63,23 +63,35 @@ function initStep1() {
         minZoom: 10
     }).setView(cvsuLatLng, 16); // Zoom level 16 - shows entire area with red circle and surroundings
 
+    // Make map globally accessible
+    window.map = map;
+
     // 4. Add layer control to the map
     L.control.layers(baseMaps).addTo(map);
 
-    // --- END OF MAP LAYER UPDATES ---
-
+    // --- CvSU Marker and Radius Circle ---
     L.marker(cvsuLatLng).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>').openPopup();
     L.circle(cvsuLatLng, { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: RADIUS }).addTo(map);
 
-    let marker = null;
-
+    // --- Map Click Handler ---
     map.on('click', (e) => {
         const distance = map.distance(e.latlng, cvsuLatLng);
         if (distance <= RADIUS) {
-            if (marker) marker.setLatLng(e.latlng);
-            else {
-                marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-                marker.on('dragend', (evt) => validatePosition(evt.target.getLatLng()));
+            if (window.userMarker) {
+                window.userMarker.setLatLng(e.latlng);
+            } else {
+                window.userMarker = L.marker(e.latlng, { 
+                    draggable: true,
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+                window.userMarker.on('dragend', (evt) => validatePosition(evt.target.getLatLng()));
             }
             validatePosition(e.latlng);
         } else {
@@ -95,6 +107,20 @@ function initStep1() {
         msg.textContent = '✅ Location pinned successfully!';
         msg.className = 'map-validation-message valid';
         nextBtn.disabled = false;
+        
+        // Show remove pin button
+        const removePinBtn = document.getElementById('remove-pin-btn');
+        if (removePinBtn) {
+            removePinBtn.style.display = 'inline-flex';
+        }
+        
+        // Show location info
+        const locationInfo = document.getElementById('location-info');
+        const locationCoords = document.getElementById('location-coords');
+        if (locationInfo && locationCoords) {
+            locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+            locationInfo.classList.add('show');
+        }
     }
 
     nextBtn.addEventListener('click', () => {
