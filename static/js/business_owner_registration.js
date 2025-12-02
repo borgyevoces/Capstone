@@ -1,5 +1,5 @@
 /* ============================================================
-   KABSU EATS â€“ BUSINESS OWNER REGISTRATION (FULL 3-STEP FLOW)
+   KABSU EATS – BUSINESS OWNER REGISTRATION (FULL 3-STEP FLOW)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   STEP 1 â€“ LOCATION PINNING
+   STEP 1 – LOCATION PINNING
    ============================================================ */
 function initStep1() {
     const nextBtn = document.getElementById('next-step-btn');
@@ -48,7 +48,7 @@ function initStep1() {
         maxZoom: 20
     });
 
-    // 2. Create BaseMaps object for the control
+    // Create BaseMaps object for the control
     const baseMaps = {
         "Hybrid (Satellite + Labels)": hybridLayer,
         "Satellite": satelliteLayer,
@@ -56,22 +56,27 @@ function initStep1() {
         "Terrain": terrainLayer
     };
 
-    // 3. Initialize the map with HYBRID as default at ZOOM LEVEL 16
+    // Initialize the map with HYBRID as default at ZOOM LEVEL 16
     const map = L.map('map', {
-        layers: [hybridLayer], // Default to hybrid view with labels
+        layers: [hybridLayer],
         maxZoom: 21,
         minZoom: 10
-    }).setView(cvsuLatLng, 16); // Zoom level 16 - shows entire area with red circle and surroundings
+    }).setView(cvsuLatLng, 16);
 
     // Make map globally accessible
     window.map = map;
 
-    // 4. Add layer control to the map
+    // Add layer control to the map
     L.control.layers(baseMaps).addTo(map);
 
     // --- CvSU Marker and Radius Circle ---
     L.marker(cvsuLatLng).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>').openPopup();
-    L.circle(cvsuLatLng, { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: RADIUS }).addTo(map);
+    L.circle(cvsuLatLng, {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.2,
+        radius: RADIUS
+    }).addTo(map);
 
     // --- Map Click Handler ---
     map.on('click', (e) => {
@@ -91,11 +96,22 @@ function initStep1() {
                         shadowSize: [41, 41]
                     })
                 }).addTo(map);
-                window.userMarker.on('dragend', (evt) => validatePosition(evt.target.getLatLng()));
+
+                window.userMarker.on('dragend', (evt) => {
+                    const pos = evt.target.getLatLng();
+                    const dist = map.distance(pos, cvsuLatLng);
+                    if (dist <= RADIUS) {
+                        validatePosition(pos);
+                    } else {
+                        msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+                        msg.className = 'map-validation-message invalid';
+                        nextBtn.disabled = true;
+                    }
+                });
             }
             validatePosition(e.latlng);
         } else {
-            msg.textContent = 'âŒ Please pin inside the red circle (within 500m).';
+            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
             msg.className = 'map-validation-message invalid';
             nextBtn.disabled = true;
         }
@@ -104,7 +120,7 @@ function initStep1() {
     function validatePosition(pos) {
         sessionStorage.setItem('latitude', pos.lat);
         sessionStorage.setItem('longitude', pos.lng);
-        msg.textContent = 'âœ… Location pinned successfully!';
+        msg.textContent = '✓ Location pinned successfully!';
         msg.className = 'map-validation-message valid';
         nextBtn.disabled = false;
 
@@ -129,7 +145,7 @@ function initStep1() {
 }
 
 /* ============================================================
-   STEP 2 â€“ ESTABLISHMENT DETAILS
+   STEP 2 – ESTABLISHMENT DETAILS
    ============================================================ */
 function initStep2() {
     if (!sessionStorage.getItem('latitude')) {
@@ -199,7 +215,7 @@ function initStep2() {
 }
 
 /* ============================================================
-   STEP 3 â€“ ACCOUNT CREDENTIALS + OTP
+   STEP 3 – ACCOUNT CREDENTIALS + OTP
    ============================================================ */
 function initStep3() {
     if (!sessionStorage.getItem('establishmentDetails')) {
@@ -305,7 +321,7 @@ function initStep3() {
 }
 
 /* ============================================================
-   Helper â€“ Convert Base64 â†’ Blob
+   Helper – Convert Base64 → Blob
    ============================================================ */
 function dataURLtoBlob(dataURL) {
     const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
