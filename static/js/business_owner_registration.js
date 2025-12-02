@@ -1,22 +1,22 @@
 /* ============================================================
    LOCATION FEATURES - SEARCH, CURRENT LOCATION, FOCUS CVSU, REMOVE PIN
+   This file ADDS features to the existing map without interfering with it
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+// Wait for the DOM and map to be ready
+window.addEventListener('load', () => {
     if (!window.location.pathname.includes('register/location')) return;
 
-    // Wait for map to be initialized from business_owner_registration.js
-    setTimeout(initLocationFeatures, 500);
+    // Wait a moment for map initialization
+    const checkMap = setInterval(() => {
+        if (window.map) {
+            clearInterval(checkMap);
+            initLocationFeatures();
+        }
+    }, 100);
 });
 
 function initLocationFeatures() {
-    // Check if map exists
-    if (!window.map) {
-        console.error('Map not initialized yet');
-        setTimeout(initLocationFeatures, 500);
-        return;
-    }
-
     const searchInput = document.getElementById('location-search');
     const clearSearchBtn = document.getElementById('clear-search');
     const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
@@ -41,7 +41,6 @@ function initLocationFeatures() {
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
 
-        // Show/hide clear button
         if (query.length > 0) {
             clearSearchBtn.classList.add('show');
         } else {
@@ -50,7 +49,6 @@ function initLocationFeatures() {
             return;
         }
 
-        // Debounce search
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             if (query.length >= 3) {
@@ -59,7 +57,6 @@ function initLocationFeatures() {
         }, 300);
     });
 
-    // Clear search button
     clearSearchBtn.addEventListener('click', () => {
         searchInput.value = '';
         clearSearchBtn.classList.remove('show');
@@ -67,7 +64,6 @@ function initLocationFeatures() {
         currentSelectedIndex = -1;
     });
 
-    // Keyboard navigation for autocomplete
     searchInput.addEventListener('keydown', (e) => {
         const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
 
@@ -102,12 +98,10 @@ function initLocationFeatures() {
     }
 
     async function searchLocation(query) {
-        // Show loading state
         autocompleteDropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
         autocompleteDropdown.classList.add('show');
 
         try {
-            // Search near CvSU Bacoor using Nominatim
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/search?` +
                 `format=json&q=${encodeURIComponent(query)}&` +
@@ -123,11 +117,10 @@ function initLocationFeatures() {
                 return;
             }
 
-            // Display results
             autocompleteDropdown.innerHTML = '';
             currentSelectedIndex = -1;
 
-            results.forEach((result, index) => {
+            results.forEach((result) => {
                 const item = document.createElement('div');
                 item.className = 'autocomplete-item';
                 item.innerHTML = `
@@ -153,22 +146,29 @@ function initLocationFeatures() {
         const lng = parseFloat(result.lon);
         const latlng = L.latLng(lat, lng);
 
-        // Check if within radius
         const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
 
         if (distance > RADIUS) {
-            showStatus('error', 'Location is outside the 500m radius. Please select a location within the red circle.');
+            showStatus('error', 'Location is outside the 500m radius. Please select within the red circle.');
             return;
         }
 
-        // Update search input
         searchInput.value = result.display_name.split(',')[0];
         autocompleteDropdown.classList.remove('show');
 
-        // Pan map to location
         window.map.setView(latlng, 18);
 
-        // Place or move marker
+        // Use the existing marker creation logic by simulating a map click
+        placeMarkerAt(latlng);
+
+        showStatus('success', 'Location pinned successfully!');
+    }
+
+    // Helper function to place marker (reuses existing logic)
+    function placeMarkerAt(latlng) {
+        const msg = document.getElementById('validation-message');
+        const nextBtn = document.getElementById('next-step-btn');
+
         if (window.userMarker) {
             window.userMarker.setLatLng(latlng);
         } else {
@@ -185,16 +185,10 @@ function initLocationFeatures() {
             }).addTo(window.map);
 
             window.userMarker.on('dragend', (evt) => {
-                const msg = document.getElementById('validation-message');
-                const nextBtn = document.getElementById('next-step-btn');
                 const pos = evt.target.getLatLng();
                 const dist = window.map.distance(pos, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
 
-                if (dist > RADIUS) {
-                    msg.textContent = '❌ Please pin inside the red circle (within 500m).';
-                    msg.className = 'map-validation-message invalid';
-                    nextBtn.disabled = true;
-                } else {
+                if (dist <= RADIUS) {
                     sessionStorage.setItem('latitude', pos.lat);
                     sessionStorage.setItem('longitude', pos.lng);
                     msg.textContent = '✅ Location pinned successfully!';
@@ -209,16 +203,17 @@ function initLocationFeatures() {
                         locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
                         locationInfo.classList.add('show');
                     }
+                } else {
+                    msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+                    msg.className = 'map-validation-message invalid';
+                    nextBtn.disabled = true;
                 }
             });
         }
 
-        // Validate and save position
+        // Validate the position
         sessionStorage.setItem('latitude', latlng.lat);
         sessionStorage.setItem('longitude', latlng.lng);
-
-        const msg = document.getElementById('validation-message');
-        const nextBtn = document.getElementById('next-step-btn');
         msg.textContent = '✅ Location pinned successfully!';
         msg.className = 'map-validation-message valid';
         nextBtn.disabled = false;
@@ -231,11 +226,8 @@ function initLocationFeatures() {
             locationCoords.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
             locationInfo.classList.add('show');
         }
-
-        showStatus('success', 'Location pinned successfully!');
     }
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
             autocompleteDropdown.classList.remove('show');
@@ -248,7 +240,6 @@ function initLocationFeatures() {
     // ============================================================
 
     focusCvsuBtn.addEventListener('click', () => {
-        // Pan and zoom to CvSU Bacoor
         window.map.setView([CVSU_COORDS.lat, CVSU_COORDS.lng], 16);
         showStatus('success', 'Focused on CvSU Bacoor');
     });
@@ -272,7 +263,6 @@ function initLocationFeatures() {
                 const lng = position.coords.longitude;
                 const latlng = L.latLng(lat, lng);
 
-                // Check if within radius
                 const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
 
                 if (distance > RADIUS) {
@@ -281,71 +271,8 @@ function initLocationFeatures() {
                     return;
                 }
 
-                // Valid location - place marker
                 window.map.setView(latlng, 18);
-
-                if (window.userMarker) {
-                    window.userMarker.setLatLng(latlng);
-                } else {
-                    window.userMarker = L.marker(latlng, {
-                        draggable: true,
-                        icon: L.icon({
-                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34],
-                            shadowSize: [41, 41]
-                        })
-                    }).addTo(window.map);
-
-                    window.userMarker.on('dragend', (evt) => {
-                        const msg = document.getElementById('validation-message');
-                        const nextBtn = document.getElementById('next-step-btn');
-                        const pos = evt.target.getLatLng();
-                        const dist = window.map.distance(pos, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
-
-                        if (dist > RADIUS) {
-                            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
-                            msg.className = 'map-validation-message invalid';
-                            nextBtn.disabled = true;
-                        } else {
-                            sessionStorage.setItem('latitude', pos.lat);
-                            sessionStorage.setItem('longitude', pos.lng);
-                            msg.textContent = '✅ Location pinned successfully!';
-                            msg.className = 'map-validation-message valid';
-                            nextBtn.disabled = false;
-
-                            removePinBtn.style.display = 'inline-flex';
-
-                            const locationInfo = document.getElementById('location-info');
-                            const locationCoords = document.getElementById('location-coords');
-                            if (locationInfo && locationCoords) {
-                                locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
-                                locationInfo.classList.add('show');
-                            }
-                        }
-                    });
-                }
-
-                // Validate and save
-                sessionStorage.setItem('latitude', latlng.lat);
-                sessionStorage.setItem('longitude', latlng.lng);
-
-                const msg = document.getElementById('validation-message');
-                const nextBtn = document.getElementById('next-step-btn');
-                msg.textContent = '✅ Location pinned successfully!';
-                msg.className = 'map-validation-message valid';
-                nextBtn.disabled = false;
-
-                removePinBtn.style.display = 'inline-flex';
-
-                const locationInfo = document.getElementById('location-info');
-                const locationCoords = document.getElementById('location-coords');
-                if (locationInfo && locationCoords) {
-                    locationCoords.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                    locationInfo.classList.add('show');
-                }
+                placeMarkerAt(latlng);
 
                 showStatus('success', 'Location set successfully!');
                 useLocationBtn.disabled = false;
@@ -380,26 +307,21 @@ function initLocationFeatures() {
 
     removePinBtn.addEventListener('click', () => {
         if (window.userMarker) {
-            // Remove marker from map
             window.map.removeLayer(window.userMarker);
             window.userMarker = null;
         }
 
-        // Clear session storage
         sessionStorage.removeItem('latitude');
         sessionStorage.removeItem('longitude');
 
-        // Reset UI
         const msg = document.getElementById('validation-message');
         const nextBtn = document.getElementById('next-step-btn');
         msg.textContent = 'Please pin a location on the map.';
         msg.className = 'map-validation-message';
         nextBtn.disabled = true;
 
-        // Hide remove button
         removePinBtn.style.display = 'none';
 
-        // Hide location info
         const locationInfo = document.getElementById('location-info');
         if (locationInfo) {
             locationInfo.classList.remove('show');
@@ -422,7 +344,6 @@ function initLocationFeatures() {
             locationStatus.textContent = message;
         }
 
-        // Auto-hide after 3 seconds (except for loading)
         if (type !== 'loading') {
             setTimeout(() => {
                 locationStatus.style.display = 'none';
