@@ -5,6 +5,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.location.pathname.includes('register/location')) return;
 
+    // Wait for map to be initialized from business_owner_registration.js
+    setTimeout(initLocationFeatures, 500);
+});
+
+function initLocationFeatures() {
+    // Check if map exists
+    if (!window.map) {
+        console.error('Map not initialized yet');
+        setTimeout(initLocationFeatures, 500);
+        return;
+    }
+
     const searchInput = document.getElementById('location-search');
     const clearSearchBtn = document.getElementById('clear-search');
     const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
@@ -25,10 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // SEARCH AUTOCOMPLETE FUNCTIONALITY
     // ============================================================
-    
+
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
-        
+
         // Show/hide clear button
         if (query.length > 0) {
             clearSearchBtn.classList.add('show');
@@ -58,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Keyboard navigation for autocomplete
     searchInput.addEventListener('keydown', (e) => {
         const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
-        
+
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             currentSelectedIndex = Math.min(currentSelectedIndex + 1, items.length - 1);
@@ -122,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="autocomplete-name">${result.display_name.split(',')[0]}</div>
                     <div class="autocomplete-address">${result.display_name}</div>
                 `;
-                
+
                 item.addEventListener('click', () => {
                     selectLocation(result);
                 });
@@ -143,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check if within radius
         const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
-        
+
         if (distance > RADIUS) {
             showStatus('error', 'Location is outside the 500m radius. Please select a location within the red circle.');
             return;
@@ -173,36 +185,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }).addTo(window.map);
 
             window.userMarker.on('dragend', (evt) => {
-                validateMarkerPosition(evt.target.getLatLng());
+                const msg = document.getElementById('validation-message');
+                const nextBtn = document.getElementById('next-step-btn');
+                const pos = evt.target.getLatLng();
+                const dist = window.map.distance(pos, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
+
+                if (dist > RADIUS) {
+                    msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+                    msg.className = 'map-validation-message invalid';
+                    nextBtn.disabled = true;
+                } else {
+                    sessionStorage.setItem('latitude', pos.lat);
+                    sessionStorage.setItem('longitude', pos.lng);
+                    msg.textContent = '✅ Location pinned successfully!';
+                    msg.className = 'map-validation-message valid';
+                    nextBtn.disabled = false;
+
+                    removePinBtn.style.display = 'inline-flex';
+
+                    const locationInfo = document.getElementById('location-info');
+                    const locationCoords = document.getElementById('location-coords');
+                    if (locationInfo && locationCoords) {
+                        locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+                        locationInfo.classList.add('show');
+                    }
+                }
             });
         }
 
-        validateMarkerPosition(latlng);
-    }
-
-    function validateMarkerPosition(latlng) {
-        const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
-        
-        if (distance > RADIUS) {
-            showStatus('error', 'Pin is outside the allowed area!');
-            document.getElementById('validation-message').textContent = '❌ Please pin inside the red circle (within 500m).';
-            document.getElementById('validation-message').className = 'map-validation-message invalid';
-            document.getElementById('next-step-btn').disabled = true;
-            return false;
-        }
-
-        // Valid position
+        // Validate and save position
         sessionStorage.setItem('latitude', latlng.lat);
         sessionStorage.setItem('longitude', latlng.lng);
-        
-        document.getElementById('validation-message').textContent = '✅ Location pinned successfully!';
-        document.getElementById('validation-message').className = 'map-validation-message valid';
-        document.getElementById('next-step-btn').disabled = false;
-        
-        // Show remove pin button
+
+        const msg = document.getElementById('validation-message');
+        const nextBtn = document.getElementById('next-step-btn');
+        msg.textContent = '✅ Location pinned successfully!';
+        msg.className = 'map-validation-message valid';
+        nextBtn.disabled = false;
+
         removePinBtn.style.display = 'inline-flex';
-        
-        // Show location info
+
         const locationInfo = document.getElementById('location-info');
         const locationCoords = document.getElementById('location-coords');
         if (locationInfo && locationCoords) {
@@ -211,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showStatus('success', 'Location pinned successfully!');
-        return true;
     }
 
     // Close dropdown when clicking outside
@@ -225,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // FOCUS ON CVSU BUTTON
     // ============================================================
-    
+
     focusCvsuBtn.addEventListener('click', () => {
         // Pan and zoom to CvSU Bacoor
         window.map.setView([CVSU_COORDS.lat, CVSU_COORDS.lng], 16);
@@ -235,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // USE CURRENT LOCATION BUTTON
     // ============================================================
-    
+
     useLocationBtn.addEventListener('click', () => {
         if (!navigator.geolocation) {
             showStatus('error', 'Geolocation is not supported by your browser');
@@ -279,11 +300,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).addTo(window.map);
 
                     window.userMarker.on('dragend', (evt) => {
-                        validateMarkerPosition(evt.target.getLatLng());
+                        const msg = document.getElementById('validation-message');
+                        const nextBtn = document.getElementById('next-step-btn');
+                        const pos = evt.target.getLatLng();
+                        const dist = window.map.distance(pos, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
+
+                        if (dist > RADIUS) {
+                            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+                            msg.className = 'map-validation-message invalid';
+                            nextBtn.disabled = true;
+                        } else {
+                            sessionStorage.setItem('latitude', pos.lat);
+                            sessionStorage.setItem('longitude', pos.lng);
+                            msg.textContent = '✅ Location pinned successfully!';
+                            msg.className = 'map-validation-message valid';
+                            nextBtn.disabled = false;
+
+                            removePinBtn.style.display = 'inline-flex';
+
+                            const locationInfo = document.getElementById('location-info');
+                            const locationCoords = document.getElementById('location-coords');
+                            if (locationInfo && locationCoords) {
+                                locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+                                locationInfo.classList.add('show');
+                            }
+                        }
                     });
                 }
 
-                validateMarkerPosition(latlng);
+                // Validate and save
+                sessionStorage.setItem('latitude', latlng.lat);
+                sessionStorage.setItem('longitude', latlng.lng);
+
+                const msg = document.getElementById('validation-message');
+                const nextBtn = document.getElementById('next-step-btn');
+                msg.textContent = '✅ Location pinned successfully!';
+                msg.className = 'map-validation-message valid';
+                nextBtn.disabled = false;
+
+                removePinBtn.style.display = 'inline-flex';
+
+                const locationInfo = document.getElementById('location-info');
+                const locationCoords = document.getElementById('location-coords');
+                if (locationInfo && locationCoords) {
+                    locationCoords.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                    locationInfo.classList.add('show');
+                }
+
+                showStatus('success', 'Location set successfully!');
                 useLocationBtn.disabled = false;
             },
             (error) => {
@@ -313,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // REMOVE PIN BUTTON
     // ============================================================
-    
+
     removePinBtn.addEventListener('click', () => {
         if (window.userMarker) {
             // Remove marker from map
@@ -326,13 +390,15 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.removeItem('longitude');
 
         // Reset UI
-        document.getElementById('validation-message').textContent = 'Please pin a location on the map.';
-        document.getElementById('validation-message').className = 'map-validation-message';
-        document.getElementById('next-step-btn').disabled = true;
-        
+        const msg = document.getElementById('validation-message');
+        const nextBtn = document.getElementById('next-step-btn');
+        msg.textContent = 'Please pin a location on the map.';
+        msg.className = 'map-validation-message';
+        nextBtn.disabled = true;
+
         // Hide remove button
         removePinBtn.style.display = 'none';
-        
+
         // Hide location info
         const locationInfo = document.getElementById('location-info');
         if (locationInfo) {
@@ -345,11 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // STATUS MESSAGE HELPER
     // ============================================================
-    
+
     function showStatus(type, message) {
         locationStatus.style.display = 'inline-block';
         locationStatus.className = `location-status ${type}`;
-        
+
         if (type === 'loading') {
             locationStatus.innerHTML = `<span class="spinner"></span>${message}`;
         } else {
@@ -357,10 +423,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Auto-hide after 3 seconds (except for loading)
-        if (type !== 'loading') {a
+        if (type !== 'loading') {
             setTimeout(() => {
                 locationStatus.style.display = 'none';
             }, 3000);
         }
     }
-});
+}
