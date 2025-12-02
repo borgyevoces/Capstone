@@ -1,18 +1,22 @@
 /* ============================================================
-   KABSU EATS — BUSINESS OWNER REGISTRATION (FULL 3-STEP FLOW)
-   Combined with Location Features
+   KABSU EATS — BUSINESS OWNER REGISTRATION (COMPLETE)
+   All 3 Steps + Location Features Combined
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
 
-    if (path.includes('register/location')) initStep1();
-    else if (path.includes('register/details')) initStep2();
-    else if (path.includes('register/credentials')) initStep3();
+    if (path.includes('register/location')) {
+        initStep1();
+    } else if (path.includes('register/details')) {
+        initStep2();
+    } else if (path.includes('register/credentials')) {
+        initStep3();
+    }
 });
 
 /* ============================================================
-   STEP 1 — LOCATION PINNING WITH INTEGRATED FEATURES
+   STEP 1 — LOCATION PINNING WITH ALL FEATURES
    ============================================================ */
 function initStep1() {
     const nextBtn = document.getElementById('next-step-btn');
@@ -21,35 +25,29 @@ function initStep1() {
     const cvsuLatLng = [CVSU_COORDS.lat, CVSU_COORDS.lng];
     const RADIUS = 500;
 
-    // --- HIGH RESOLUTION MAP LAYERS ---
-
-    // 1. Street Map - OpenStreetMap
+    // --- MAP LAYERS ---
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19
     });
 
-    // 2. High Resolution Satellite - Google Satellite
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         attribution: '&copy; Google',
         maxZoom: 21,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     });
 
-    // 3. Hybrid View - Satellite with Labels (DEFAULT)
     const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '&copy; Google',
         maxZoom: 21,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     });
 
-    // 4. Terrain Map
     const terrainLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
         attribution: '&copy; Google',
         maxZoom: 20
     });
 
-    // Create BaseMaps object for the control
     const baseMaps = {
         "Hybrid (Satellite + Labels)": hybridLayer,
         "Satellite": satelliteLayer,
@@ -57,20 +55,17 @@ function initStep1() {
         "Terrain": terrainLayer
     };
 
-    // Initialize the map with HYBRID as default at ZOOM LEVEL 16
+    // Initialize map
     const map = L.map('map', {
         layers: [hybridLayer],
         maxZoom: 21,
         minZoom: 10
     }).setView(cvsuLatLng, 16);
 
-    // Make map globally accessible
     window.map = map;
-
-    // Add layer control to the map
     L.control.layers(baseMaps).addTo(map);
 
-    // --- CvSU Marker and Radius Circle ---
+    // CvSU marker and radius
     L.marker(cvsuLatLng).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>').openPopup();
     L.circle(cvsuLatLng, {
         color: 'red',
@@ -79,46 +74,7 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // --- Map Click Handler ---
-    map.on('click', (e) => {
-        const distance = map.distance(e.latlng, cvsuLatLng);
-        if (distance <= RADIUS) {
-            if (window.userMarker) {
-                window.userMarker.setLatLng(e.latlng);
-            } else {
-                window.userMarker = L.marker(e.latlng, {
-                    draggable: true,
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map);
-
-                window.userMarker.on('dragend', (evt) => {
-                    const pos = evt.target.getLatLng();
-                    const dist = map.distance(pos, cvsuLatLng);
-                    if (dist <= RADIUS) {
-                        validatePosition(pos);
-                    } else {
-                        msg.textContent = '❌ Please pin inside the red circle (within 500m).';
-                        msg.className = 'map-validation-message invalid';
-                        nextBtn.disabled = true;
-                        updateRemovePinButton(false);
-                    }
-                });
-            }
-            validatePosition(e.latlng);
-        } else {
-            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
-            msg.className = 'map-validation-message invalid';
-            nextBtn.disabled = true;
-        }
-    });
-
+    // --- VALIDATE POSITION FUNCTION ---
     function validatePosition(pos) {
         sessionStorage.setItem('latitude', pos.lat);
         sessionStorage.setItem('longitude', pos.lng);
@@ -127,7 +83,10 @@ function initStep1() {
         nextBtn.disabled = false;
 
         // Activate remove pin button
-        updateRemovePinButton(true);
+        const removePinBtn = document.getElementById('remove-pin-btn');
+        if (removePinBtn) {
+            removePinBtn.classList.add('active');
+        }
 
         // Show location info
         const locationInfo = document.getElementById('location-info');
@@ -136,23 +95,68 @@ function initStep1() {
             locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
             locationInfo.classList.add('show');
         }
+
+        hideLocationStatus();
     }
 
-    function updateRemovePinButton(hasPinned) {
-        const removePinBtn = document.getElementById('remove-pin-btn');
-        if (hasPinned) {
-            removePinBtn.classList.add('active');
+    // --- PLACE MARKER FUNCTION ---
+    function placeMarker(latlng) {
+        const cvsuLatLngObj = L.latLng(CVSU_COORDS.lat, CVSU_COORDS.lng);
+
+        if (window.userMarker) {
+            window.userMarker.setLatLng(latlng);
         } else {
-            removePinBtn.classList.remove('active');
+            window.userMarker = L.marker(latlng, {
+                draggable: true,
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map);
+
+            window.userMarker.on('dragend', (evt) => {
+                const pos = evt.target.getLatLng();
+                const distance = map.distance(pos, cvsuLatLngObj);
+
+                if (distance <= RADIUS) {
+                    validatePosition(pos);
+                } else {
+                    msg.textContent = '❌ Pin must be within the red circle (within 500m).';
+                    msg.className = 'map-validation-message invalid';
+                    nextBtn.disabled = true;
+                    const removePinBtn = document.getElementById('remove-pin-btn');
+                    if (removePinBtn) {
+                        removePinBtn.classList.remove('active');
+                    }
+                }
+            });
         }
+        validatePosition(latlng);
     }
 
+    // --- MAP CLICK HANDLER ---
+    map.on('click', (e) => {
+        const distance = map.distance(e.latlng, cvsuLatLng);
+        if (distance <= RADIUS) {
+            placeMarker(e.latlng);
+        } else {
+            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+            msg.className = 'map-validation-message invalid';
+            nextBtn.disabled = true;
+        }
+    });
+
+    // --- NEXT BUTTON ---
     nextBtn.addEventListener('click', () => {
         window.location.href = '/owner/register/details/';
     });
 
     // ============================================================
-    // INTEGRATED LOCATION FEATURES
+    // LOCATION FEATURES - Search, Focus, GPS, Remove
     // ============================================================
 
     const searchInput = document.getElementById('location-search');
@@ -167,10 +171,7 @@ function initStep1() {
     let searchTimeout;
     let currentSelectedIndex = -1;
 
-    // ============================================================
-    // SEARCH FUNCTIONALITY
-    // ============================================================
-
+    // --- SEARCH FUNCTIONALITY ---
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
 
@@ -238,9 +239,7 @@ function initStep1() {
 
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1&limit=10`)
             .then(res => res.json())
-            .then(data => {
-                displaySearchResults(data);
-            })
+            .then(data => displaySearchResults(data))
             .catch(err => {
                 console.error('Search error:', err);
                 autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
@@ -265,10 +264,7 @@ function initStep1() {
                 <div class="autocomplete-address">${result.display_name}</div>
             `;
 
-            item.addEventListener('click', () => {
-                selectSearchResult(result);
-            });
-
+            item.addEventListener('click', () => selectSearchResult(result));
             autocompleteDropdown.appendChild(item);
         });
     }
@@ -277,7 +273,6 @@ function initStep1() {
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
         const latlng = L.latLng(lat, lng);
-
         const distance = map.distance(latlng, cvsuLatLngObj);
 
         if (distance <= RADIUS) {
@@ -299,23 +294,16 @@ function initStep1() {
         }
     });
 
-    // ============================================================
-    // FOCUS ON CVSU BUTTON
-    // ============================================================
-
+    // --- FOCUS ON CVSU ---
     focusCvsuBtn.addEventListener('click', () => {
         map.setView(cvsuLatLngObj, 16);
         focusCvsuBtn.disabled = true;
-
         setTimeout(() => {
             focusCvsuBtn.disabled = false;
         }, 500);
     });
 
-    // ============================================================
-    // USE CURRENT LOCATION BUTTON
-    // ============================================================
-
+    // --- USE CURRENT LOCATION ---
     useCurrentLocationBtn.addEventListener('click', () => {
         if (!navigator.geolocation) {
             showLocationStatus('Geolocation is not supported by your browser', 'error');
@@ -330,7 +318,6 @@ function initStep1() {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const userLatLng = L.latLng(lat, lng);
-
                 const distance = map.distance(userLatLng, cvsuLatLngObj);
 
                 if (distance <= RADIUS) {
@@ -347,17 +334,10 @@ function initStep1() {
             },
             (error) => {
                 let errorMsg = 'Unable to get your location';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMsg = 'Location permission denied';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMsg = 'Location information unavailable';
-                        break;
-                    case error.TIMEOUT:
-                        errorMsg = 'Location request timed out';
-                        break;
-                }
+                if (error.code === error.PERMISSION_DENIED) errorMsg = 'Location permission denied';
+                else if (error.code === error.POSITION_UNAVAILABLE) errorMsg = 'Location information unavailable';
+                else if (error.code === error.TIMEOUT) errorMsg = 'Location request timed out';
+
                 showLocationStatus(errorMsg, 'error');
                 useCurrentLocationBtn.disabled = false;
             },
@@ -369,13 +349,10 @@ function initStep1() {
         );
     });
 
-    // ============================================================
-    // REMOVE PIN BUTTON
-    // ============================================================
-
+    // --- REMOVE PIN ---
     removePinBtn.addEventListener('click', () => {
         if (!removePinBtn.classList.contains('active')) {
-            return; // Button is disabled
+            return;
         }
 
         if (window.userMarker) {
@@ -385,12 +362,10 @@ function initStep1() {
             sessionStorage.removeItem('latitude');
             sessionStorage.removeItem('longitude');
 
-            updateRemovePinButton(false);
+            removePinBtn.classList.remove('active');
 
             const locationInfo = document.getElementById('location-info');
-            if (locationInfo) {
-                locationInfo.classList.remove('show');
-            }
+            if (locationInfo) locationInfo.classList.remove('show');
 
             msg.textContent = 'Please pin a location on the map.';
             msg.className = 'map-validation-message';
@@ -400,49 +375,11 @@ function initStep1() {
             clearSearchBtn.classList.remove('show');
 
             showLocationStatus('Pin removed', 'success');
-            setTimeout(() => {
-                hideLocationStatus();
-            }, 2000);
+            setTimeout(() => hideLocationStatus(), 2000);
         }
     });
 
-    // ============================================================
-    // HELPER FUNCTIONS
-    // ============================================================
-
-    function placeMarker(latlng) {
-        if (window.userMarker) {
-            window.userMarker.setLatLng(latlng);
-        } else {
-            window.userMarker = L.marker(latlng, {
-                draggable: true,
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-
-            window.userMarker.on('dragend', (evt) => {
-                const pos = evt.target.getLatLng();
-                const distance = map.distance(pos, cvsuLatLngObj);
-
-                if (distance <= RADIUS) {
-                    validatePosition(pos);
-                } else {
-                    msg.textContent = '❌ Pin must be within the red circle (within 500m).';
-                    msg.className = 'map-validation-message invalid';
-                    nextBtn.disabled = true;
-                    updateRemovePinButton(false);
-                }
-            });
-        }
-        validatePosition(latlng);
-    }
-
+    // --- HELPER FUNCTIONS ---
     function showLocationStatus(message, type) {
         locationStatus.textContent = message;
         locationStatus.className = `location-status ${type}`;
@@ -477,7 +414,6 @@ function initStep2() {
     const lat = sessionStorage.getItem('latitude');
     const lng = sessionStorage.getItem('longitude');
 
-    // Fetch address from coordinates
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
         .then(res => res.json())
         .then(data => {
@@ -485,7 +421,7 @@ function initStep2() {
             validateForm();
         })
         .catch(err => {
-            console.error("Error fetching address: ", err);
+            console.error("Error fetching address:", err);
             addressInput.value = "Could not fetch address. Please check connection.";
             validateForm();
         });
@@ -579,7 +515,7 @@ function initStep3() {
                     console.error('Failed to send OTP:', data.error);
                 }
             })
-            .catch((err) => console.error('Error sending OTP:', err))
+            .catch(err => console.error('Error sending OTP:', err))
             .finally(() => {
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.textContent = 'Send OTP to register establishment';
@@ -637,10 +573,11 @@ function initStep3() {
 }
 
 /* ============================================================
-   Helper — Convert Base64 → Blob
+   HELPER — Convert Base64 to Blob
    ============================================================ */
 function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
