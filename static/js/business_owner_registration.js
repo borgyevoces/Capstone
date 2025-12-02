@@ -1,317 +1,366 @@
 /* ============================================================
-   KABSU EATS – BUSINESS OWNER REGISTRATION (FULL 3-STEP FLOW)
+   LOCATION FEATURES - SEARCH, CURRENT LOCATION, FOCUS CVSU, REMOVE PIN
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const path = window.location.pathname;
+    if (!window.location.pathname.includes('register/location')) return;
 
-    if (path.includes('register/location')) initStep1();
-    else if (path.includes('register/details')) initStep2();
-    else if (path.includes('register/credentials')) initStep3();
-});
+    const searchInput = document.getElementById('location-search');
+    const clearSearchBtn = document.getElementById('clear-search');
+    const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+    const focusCvsuBtn = document.getElementById('focus-cvsu-btn');
+    const useLocationBtn = document.getElementById('use-current-location-btn');
+    const removePinBtn = document.getElementById('remove-pin-btn');
+    const locationStatus = document.getElementById('location-status');
 
-/* ============================================================
-   STEP 1 – LOCATION PINNING
-   ============================================================ */
-function initStep1() {
-    const nextBtn = document.getElementById('next-step-btn');
-    const msg = document.getElementById('validation-message');
-
-    const cvsuLatLng = [CVSU_COORDS.lat, CVSU_COORDS.lng];
+    const CVSU_COORDS = {
+        lat: 14.412657,
+        lng: 120.981290
+    };
     const RADIUS = 500;
 
-    // --- HIGH RESOLUTION MAP LAYERS ---
+    let searchTimeout;
+    let currentSelectedIndex = -1;
 
-    // 1. Street Map - OpenStreetMap
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    });
-
-    // 2. High Resolution Satellite - Google Satellite (works up to zoom 21)
-    const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    });
-
-    // 3. Hybrid View - Satellite with Labels (DEFAULT)
-    const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    });
-
-    // 4. Terrain Map
-    const terrainLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 20
-    });
-
-    // 2. Create BaseMaps object for the control
-    const baseMaps = {
-        "Hybrid (Satellite + Labels)": hybridLayer,
-        "Satellite": satelliteLayer,
-        "Street": streetLayer,
-        "Terrain": terrainLayer
-    };
-
-    // 3. Initialize the map with HYBRID as default at ZOOM LEVEL 16
-    const map = L.map('map', {
-        layers: [hybridLayer], // Default to hybrid view with labels
-        maxZoom: 21,
-        minZoom: 10
-    }).setView(cvsuLatLng, 16); // Zoom level 16 - shows entire area with red circle and surroundings
-
-    // Make map globally accessible
-    window.map = map;
-
-    // 4. Add layer control to the map
-    L.control.layers(baseMaps).addTo(map);
-
-    // --- CvSU Marker and Radius Circle ---
-    L.marker(cvsuLatLng).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>').openPopup();
-    L.circle(cvsuLatLng, { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: RADIUS }).addTo(map);
-
-    // --- Map Click Handler ---
-    map.on('click', (e) => {
-        const distance = map.distance(e.latlng, cvsuLatLng);
-        if (distance <= RADIUS) {
-            if (window.userMarker) {
-                window.userMarker.setLatLng(e.latlng);
-            } else {
-                window.userMarker = L.marker(e.latlng, { 
-                    draggable: true,
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map);
-                window.userMarker.on('dragend', (evt) => validatePosition(evt.target.getLatLng()));
-            }
-            validatePosition(e.latlng);
+    // ============================================================
+    // SEARCH AUTOCOMPLETE FUNCTIONALITY
+    // ============================================================
+    
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // Show/hide clear button
+        if (query.length > 0) {
+            clearSearchBtn.classList.add('show');
         } else {
-            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
-            msg.className = 'map-validation-message invalid';
-            nextBtn.disabled = true;
+            clearSearchBtn.classList.remove('show');
+            autocompleteDropdown.classList.remove('show');
+            return;
+        }
+
+        // Debounce search
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (query.length >= 3) {
+                searchLocation(query);
+            }
+        }, 300);
+    });
+
+    // Clear search button
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearSearchBtn.classList.remove('show');
+        autocompleteDropdown.classList.remove('show');
+        currentSelectedIndex = -1;
+    });
+
+    // Keyboard navigation for autocomplete
+    searchInput.addEventListener('keydown', (e) => {
+        const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentSelectedIndex = Math.min(currentSelectedIndex + 1, items.length - 1);
+            updateActiveItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentSelectedIndex = Math.max(currentSelectedIndex - 1, -1);
+            updateActiveItem(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentSelectedIndex >= 0 && items[currentSelectedIndex]) {
+                items[currentSelectedIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            autocompleteDropdown.classList.remove('show');
+            currentSelectedIndex = -1;
         }
     });
 
-    function validatePosition(pos) {
-        sessionStorage.setItem('latitude', pos.lat);
-        sessionStorage.setItem('longitude', pos.lng);
-        msg.textContent = '✅ Location pinned successfully!';
-        msg.className = 'map-validation-message valid';
-        nextBtn.disabled = false;
+    function updateActiveItem(items) {
+        items.forEach((item, index) => {
+            if (index === currentSelectedIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    async function searchLocation(query) {
+        // Show loading state
+        autocompleteDropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
+        autocompleteDropdown.classList.add('show');
+
+        try {
+            // Search near CvSU Bacoor using Nominatim
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?` +
+                `format=json&q=${encodeURIComponent(query)}&` +
+                `lat=${CVSU_COORDS.lat}&lon=${CVSU_COORDS.lng}&` +
+                `bounded=1&viewbox=${CVSU_COORDS.lng - 0.05},${CVSU_COORDS.lat - 0.05},${CVSU_COORDS.lng + 0.05},${CVSU_COORDS.lat + 0.05}&` +
+                `limit=10`
+            );
+
+            const results = await response.json();
+
+            if (results.length === 0) {
+                autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found near CvSU</div>';
+                return;
+            }
+
+            // Display results
+            autocompleteDropdown.innerHTML = '';
+            currentSelectedIndex = -1;
+
+            results.forEach((result, index) => {
+                const item = document.createElement('div');
+                item.className = 'autocomplete-item';
+                item.innerHTML = `
+                    <div class="autocomplete-name">${result.display_name.split(',')[0]}</div>
+                    <div class="autocomplete-address">${result.display_name}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    selectLocation(result);
+                });
+
+                autocompleteDropdown.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error('Search error:', error);
+            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
+        }
+    }
+
+    function selectLocation(result) {
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        const latlng = L.latLng(lat, lng);
+
+        // Check if within radius
+        const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
+        
+        if (distance > RADIUS) {
+            showStatus('error', 'Location is outside the 500m radius. Please select a location within the red circle.');
+            return;
+        }
+
+        // Update search input
+        searchInput.value = result.display_name.split(',')[0];
+        autocompleteDropdown.classList.remove('show');
+
+        // Pan map to location
+        window.map.setView(latlng, 18);
+
+        // Place or move marker
+        if (window.userMarker) {
+            window.userMarker.setLatLng(latlng);
+        } else {
+            window.userMarker = L.marker(latlng, {
+                draggable: true,
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(window.map);
+
+            window.userMarker.on('dragend', (evt) => {
+                validateMarkerPosition(evt.target.getLatLng());
+            });
+        }
+
+        validateMarkerPosition(latlng);
+    }
+
+    function validateMarkerPosition(latlng) {
+        const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
+        
+        if (distance > RADIUS) {
+            showStatus('error', 'Pin is outside the allowed area!');
+            document.getElementById('validation-message').textContent = '❌ Please pin inside the red circle (within 500m).';
+            document.getElementById('validation-message').className = 'map-validation-message invalid';
+            document.getElementById('next-step-btn').disabled = true;
+            return false;
+        }
+
+        // Valid position
+        sessionStorage.setItem('latitude', latlng.lat);
+        sessionStorage.setItem('longitude', latlng.lng);
+        
+        document.getElementById('validation-message').textContent = '✅ Location pinned successfully!';
+        document.getElementById('validation-message').className = 'map-validation-message valid';
+        document.getElementById('next-step-btn').disabled = false;
         
         // Show remove pin button
-        const removePinBtn = document.getElementById('remove-pin-btn');
-        if (removePinBtn) {
-            removePinBtn.style.display = 'inline-flex';
-        }
+        removePinBtn.style.display = 'inline-flex';
         
         // Show location info
         const locationInfo = document.getElementById('location-info');
         const locationCoords = document.getElementById('location-coords');
         if (locationInfo && locationCoords) {
-            locationCoords.textContent = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+            locationCoords.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
             locationInfo.classList.add('show');
         }
+
+        showStatus('success', 'Location pinned successfully!');
+        return true;
     }
 
-    nextBtn.addEventListener('click', () => {
-        window.location.href = '/owner/register/details/';
-    });
-}
-
-/* ============================================================
-   STEP 2 – ESTABLISHMENT DETAILS
-   ============================================================ */
-function initStep2() {
-    if (!sessionStorage.getItem('latitude')) {
-        console.warn('Please complete Step 1 first. Redirecting...');
-        window.location.href = '/owner/register/location/';
-        return;
-    }
-
-    const form = document.getElementById('details-form');
-    const nextBtn = document.getElementById('next-step-btn');
-    const backBtn = document.getElementById('back-step-btn');
-    const addressInput = document.getElementById('address');
-    const lat = sessionStorage.getItem('latitude');
-    const lng = sessionStorage.getItem('longitude');
-
-    // Fetch address from coordinates
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.display_name) addressInput.value = data.display_name;
-            validateForm();
-        })
-        .catch(err => {
-            console.error("Error fetching address: ", err);
-            addressInput.value = "Could not fetch address. Please check connection.";
-            validateForm();
-        });
-
-    const requiredFields = Array.from(form.querySelectorAll('[required]'));
-
-    function validateForm() {
-        const isFilled = requiredFields.every(f => f.value.trim() !== '');
-        const paymentChecked = form.querySelectorAll('input[name="payment_methods"]:checked').length > 0;
-        const amenitiesChecked = form.querySelectorAll('input[name="amenities"]:checked').length > 0;
-        nextBtn.disabled = !(isFilled && paymentChecked && amenitiesChecked);
-    }
-
-    form.addEventListener('input', validateForm);
-    form.addEventListener('change', validateForm);
-    backBtn.addEventListener('click', () => window.location.href = '/owner/register/location/');
-
-    nextBtn.addEventListener('click', () => {
-        const details = {
-            name: form.querySelector('#name').value.trim(),
-            address: form.querySelector('#address').value.trim(),
-            status: form.querySelector('#status').value,
-            category: form.querySelector('#category').value,
-            paymentMethods: Array.from(form.querySelectorAll('input[name="payment_methods"]:checked')).map(el => el.value),
-            amenities: Array.from(form.querySelectorAll('input[name="amenities"]:checked')).map(el => el.value)
-        };
-
-        const fileInput = document.getElementById('establishment_image');
-        if (fileInput.files.length > 0) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                sessionStorage.setItem('establishment_image_data', e.target.result);
-                sessionStorage.setItem('establishmentDetails', JSON.stringify(details));
-                window.location.href = '/owner/register/credentials/';
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            console.error('Please upload your establishment image.');
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+            autocompleteDropdown.classList.remove('show');
+            currentSelectedIndex = -1;
         }
     });
 
-    validateForm();
-}
+    // ============================================================
+    // FOCUS ON CVSU BUTTON
+    // ============================================================
+    
+    focusCvsuBtn.addEventListener('click', () => {
+        // Pan and zoom to CvSU Bacoor
+        window.map.setView([CVSU_COORDS.lat, CVSU_COORDS.lng], 16);
+        showStatus('success', 'Focused on CvSU Bacoor');
+    });
 
-/* ============================================================
-   STEP 3 – ACCOUNT CREDENTIALS + OTP
-   ============================================================ */
-function initStep3() {
-    if (!sessionStorage.getItem('establishmentDetails')) {
-        console.warn('Please complete Step 2 first. Redirecting...');
-        window.location.href = '/owner/register/details/';
-        return;
-    }
+    // ============================================================
+    // USE CURRENT LOCATION BUTTON
+    // ============================================================
+    
+    useLocationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            showStatus('error', 'Geolocation is not supported by your browser');
+            return;
+        }
 
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const retypeInput = document.getElementById('retype-password');
-    const sendOtpBtn = document.getElementById('send-otp-btn');
-    const backBtn = document.getElementById('back-step-btn');
-    const otpModal = document.getElementById('otpModal');
-    const otpForm = document.getElementById('otpForm');
-    const otpError = document.getElementById('otpError');
-    const loading = document.getElementById('loadingSpinner');
-    const successModal = document.getElementById('successModal');
+        showStatus('loading', 'Getting your location...');
+        useLocationBtn.disabled = true;
 
-    function validateInputs() {
-        const ok = passwordInput.value.length >= 8 &&
-                   passwordInput.value === retypeInput.value &&
-                   emailInput.validity.valid;
-        sendOtpBtn.disabled = !ok;
-    }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const latlng = L.latLng(lat, lng);
 
-    [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
-    backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
+                // Check if within radius
+                const distance = window.map.distance(latlng, [CVSU_COORDS.lat, CVSU_COORDS.lng]);
 
-    sendOtpBtn.addEventListener('click', () => {
-        const email = emailInput.value;
-        sendOtpBtn.disabled = true;
-        sendOtpBtn.textContent = 'Sending...';
-
-        fetch('/api/send-otp/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    otpModal.style.display = 'flex';
-                } else {
-                    console.error('Failed to send OTP:', data.error);
+                if (distance > RADIUS) {
+                    showStatus('error', `You are ${Math.round(distance)}m away from CvSU. Please be within 500m.`);
+                    useLocationBtn.disabled = false;
+                    return;
                 }
-            })
-            .catch((err) => console.error('Error sending OTP:', err))
-            .finally(() => {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'Send OTP to register establishment';
-            });
-    });
 
-    window.addEventListener('click', (e) => {
-        if (e.target === otpModal) otpModal.style.display = 'none';
-        if (e.target === successModal) successModal.style.display = 'none';
-    });
+                // Valid location - place marker
+                window.map.setView(latlng, 18);
 
-    otpForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        otpError.textContent = '';
-        loading.style.display = 'block';
+                if (window.userMarker) {
+                    window.userMarker.setLatLng(latlng);
+                } else {
+                    window.userMarker = L.marker(latlng, {
+                        draggable: true,
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    }).addTo(window.map);
 
-        try {
-            const otpCode = document.getElementById('otp-input').value.trim();
-            const details = JSON.parse(sessionStorage.getItem('establishmentDetails'));
-            const lat = sessionStorage.getItem('latitude');
-            const lng = sessionStorage.getItem('longitude');
-            const imgData = sessionStorage.getItem('establishment_image_data');
+                    window.userMarker.on('dragend', (evt) => {
+                        validateMarkerPosition(evt.target.getLatLng());
+                    });
+                }
 
-            const formData = new FormData();
-            formData.append('otp', otpCode);
-            formData.append('registrationData', JSON.stringify({
-                ...details,
-                latitude: lat,
-                longitude: lng,
-                email: emailInput.value,
-                password: passwordInput.value,
-                name: details.name
-            }));
-
-            if (imgData) {
-                const blob = dataURLtoBlob(imgData);
-                formData.append('cover_image', blob, 'establishment_image.jpg');
+                validateMarkerPosition(latlng);
+                useLocationBtn.disabled = false;
+            },
+            (error) => {
+                let errorMsg = 'Unable to get your location';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'Location permission denied';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'Location information unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'Location request timed out';
+                        break;
+                }
+                showStatus('error', errorMsg);
+                useLocationBtn.disabled = false;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             }
-
-            const res = await fetch('/api/verify-and-register/', { method: 'POST', body: formData });
-            const result = await res.json();
-
-            if (!res.ok || !result.success) throw new Error(result.error || 'Registration failed.');
-
-            sessionStorage.clear();
-            otpModal.style.display = 'none';
-            successModal.style.display = 'flex';
-            setTimeout(() => window.location.href = result.redirect_url, 2000);
-        } catch (err) {
-            otpError.textContent = err.message;
-        } finally {
-            loading.style.display = 'none';
-        }
+        );
     });
-}
 
-/* ============================================================
-   Helper – Convert Base64 → Blob
-   ============================================================ */
-function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-    return new Blob([u8arr], { type: mime });
-}
+    // ============================================================
+    // REMOVE PIN BUTTON
+    // ============================================================
+    
+    removePinBtn.addEventListener('click', () => {
+        if (window.userMarker) {
+            // Remove marker from map
+            window.map.removeLayer(window.userMarker);
+            window.userMarker = null;
+        }
+
+        // Clear session storage
+        sessionStorage.removeItem('latitude');
+        sessionStorage.removeItem('longitude');
+
+        // Reset UI
+        document.getElementById('validation-message').textContent = 'Please pin a location on the map.';
+        document.getElementById('validation-message').className = 'map-validation-message';
+        document.getElementById('next-step-btn').disabled = true;
+        
+        // Hide remove button
+        removePinBtn.style.display = 'none';
+        
+        // Hide location info
+        const locationInfo = document.getElementById('location-info');
+        if (locationInfo) {
+            locationInfo.classList.remove('show');
+        }
+
+        showStatus('success', 'Pin removed');
+    });
+
+    // ============================================================
+    // STATUS MESSAGE HELPER
+    // ============================================================
+    
+    function showStatus(type, message) {
+        locationStatus.style.display = 'inline-block';
+        locationStatus.className = `location-status ${type}`;
+        
+        if (type === 'loading') {
+            locationStatus.innerHTML = `<span class="spinner"></span>${message}`;
+        } else {
+            locationStatus.textContent = message;
+        }
+
+        // Auto-hide after 3 seconds (except for loading)
+        if (type !== 'loading') {a
+            setTimeout(() => {
+                locationStatus.style.display = 'none';
+            }, 3000);
+        }
+    }
+});
