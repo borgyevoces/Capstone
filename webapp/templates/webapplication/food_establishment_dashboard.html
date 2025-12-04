@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
+/* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
 .notification-toggle-btn {
     position: relative;
     background: transparent;
@@ -1010,13 +1011,11 @@
         </a>
         <div style="display: flex; align-items: center; gap: 16px;">
 
-            <!-- ✅ NOTIFICATION BELL BUTTON -->
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn">
                 <i class="fas fa-bell"></i>
                 <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
             </button>
 
-            <!-- Chat Toggle Button -->
             <button class="chat-toggle-btn" onclick="toggleChatPanel()" id="chatToggleBtn">
                 <i class="fas fa-envelope"></i>
                 <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
@@ -1052,7 +1051,6 @@
     </div>
 
     <div class="notification-list" id="notificationList">
-        <!-- Notifications will be loaded here -->
         <div class="notification-empty-state">
             <i class="fas fa-bell-slash"></i>
             <p>No new notifications</p>
@@ -1061,7 +1059,6 @@
 </div>
 
 
-    <!-- Chat Panel (Conversations List) -->
     <div class="chat-panel" id="chatPanel">
         <div class="chat-panel-header">
             <h3><i class="fas fa-comments"></i> Messages</h3>
@@ -1070,7 +1067,6 @@
             </button>
         </div>
         <div class="chat-conversations-list" id="conversationsList">
-            <!-- Conversations will be loaded here -->
             <div class="chat-empty-state">
                 <i class="fas fa-inbox"></i>
                 <p>No conversations yet</p>
@@ -1078,7 +1074,6 @@
         </div>
     </div>
 
-    <!-- Chat Window (Individual Conversation) -->
     <div class="chat-window" id="chatWindow">
         <div class="chat-window-header">
             <button class="chat-back-btn" onclick="backToConversations()">
@@ -1090,7 +1085,6 @@
             </div>
         </div>
 
-        <!-- ✅ PINNED MESSAGES SECTION -->
         <div class="owner-pinned-section" id="ownerPinnedSection">
             <div class="owner-pinned-section-header">
                 <span class="owner-pinned-section-title">📌 Pinned Messages</span>
@@ -1099,15 +1093,12 @@
                 </button>
             </div>
             <div id="ownerPinnedMessagesList">
-                <!-- Pinned messages will appear here -->
-            </div>
+                </div>
         </div>
 
         <div class="chat-messages-container" id="chatMessagesContainer">
-            <!-- Messages will be loaded here -->
-        </div>
+            </div>
 
-        <!-- ✅ SEE ALL PINS LINK -->
         <div class="owner-see-pins-link" id="ownerSeePinsLink" onclick="openOwnerPinnedMessagesModal()">
             <i class="fas fa-thumbtack"></i> See All Pins
         </div>
@@ -1135,128 +1126,135 @@
         </div>
         {% endif %}
 
-        <header class="store-header">
-            <div class="cover-photo" onclick="openProfileImageModal()">
-                <img id="storeCoverPhoto" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/cover_photo_default.jpg' %}{% endif %}" alt="Cover">
-            </div>
-            <div class="header-info">
-                <div class="profile-pic" onclick="openProfileImageModal()">
-                    <img id="profileImageView" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="Profile">
-                </div>
-                <div class="store-info">
-                    <h1 id="establishmentName">{{ establishment.name }}</h1>
-                    <p id="establishmentAddress">{{ establishment.address }}</p>
-                    <span class="status-badge {% if establishment.status == 'Open' %}open{% else %}closed{% endif %}" id="establishmentStatus">
-                        {{ establishment.status }}
-                    </span>
-                </div>
-            </div>
-        </header>
+        <div class="dashboard-layout">
 
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="card-title">
-                    <i class="fas fa-bolt"></i> Quick Actions
-                </div>
+            <aside class="dashboard-sidebar">
 
-                <div class="btn-group">
-                    <button class="btn btn-transparent" onclick="openModal('addMenuItemModal')">
-                        <i class="fas fa-plus"></i> Add Menu Item
-                    </button>
-                    <button class="btn btn-transparent" onclick="openModal('updateStoreDetailsModal')">
-                        <i class="fas fa-edit"></i> Update Details
-                    </button>
-                    <button class="btn btn-transparent" onclick="openModal('storeReviewsModal')">
-                        <i class="fas fa-star"></i> View Reviews
-                    </button>
-                     <button class="btn btn-transparent" onclick="openModal('viewStoreDetailsModal')">
-                        <i class="fas fa-info-circle"></i> View Details
-                    </button>
-                </div>
-            </div>
-
-             <div class="card">
-                <div class="card-title">
-                    <i class="fas fa-chart-bar"></i> Statistics
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="stat-item">
-                        <div class="stat-icon">
-                            <i class="fas fa-comments"></i>
-                        </div>
-                        <div>
-                            <div class="stat-number">{{ total_reviews }}</div>
-                            <div class="stat-label">Total Reviews</div>
-                        </div>
+                <header class="store-header">
+                    <div class="cover-photo" onclick="openProfileImageModal()">
+                        <img id="storeCoverPhoto" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/cover_photo_default.jpg' %}{% endif %}" alt="Cover">
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-icon">
-                            <i class="fas fa-star"></i>
+                    <div class="header-info">
+                        <div class="profile-pic" onclick="openProfileImageModal()">
+                            <img id="profileImageView" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="Profile">
                         </div>
-                        <div>
-                            <div class="stat-number">{{ average_rating }}/5.0</div>
-                            <div class="stat-label">Average Rating</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card menu-section">
-            <div class="card-title-center">
-                <i class="fas fa-hamburger"></i> Your Menu
-            </div>
-            {% if menu_items %}
-            <div class="menu-grid">
-                {% for item in menu_items %}
-                <div class="menu-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}" data-item-description="{{ item.description }}" data-item-price="{{ item.price|floatformat:2 }}" data-item-quantity="{{ item.quantity|default:0 }}" data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
-                    <div class="menu-image">
-                        <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}" alt="{{ item.name }}">
-                        <div class="badges-container">
-                            {% if item.is_top_seller %}
-                            <span class="badge bestseller">
-                                <i class="fas fa-award"></i> Best Seller
+                        <div class="store-info">
+                            <h1 id="establishmentName">{{ establishment.name }}</h1>
+                            <p id="establishmentAddress">{{ establishment.address }}</p>
+                            <span class="status-badge {% if establishment.status == 'Open' %}open{% else %}closed{% endif %}" id="establishmentStatus">
+                                {{ establishment.status }}
                             </span>
-                            {% endif %}
-                            {% if item.quantity > 0 %}
-                            <span class="badge available">Available: {{ item.quantity }}</span>
-                            {% else %}
-                            <span class="badge soldout">Out of Stock</span>
-                            {% endif %}
                         </div>
                     </div>
-                    <div class="menu-info">
-                        <div class="menu-name">{{ item.name }}</div>
-                        <div class="menu-desc">{{ item.description }}</div>
-                        <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
-                        <div class="menu-actions">
-                            <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
-                                <i class="fas fa-pen"></i> Edit
+                </header>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-bolt"></i> Quick Actions
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-transparent" onclick="openModal('addMenuItemModal')">
+                                <i class="fas fa-plus"></i> Add Menu Item
                             </button>
-                            <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
-                                {% csrf_token %}
-                                <button type="submit" class="action-btn seller">
-                                    <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{% endif %}
-                                </button>
-                            </form>
-                            <button type="button" class="action-btn delete" onclick="deleteMenuItem('{{ item.id }}', this)">
-                                <i class="fas fa-trash"></i> Delete
+                            <button class="btn btn-transparent" onclick="openModal('updateStoreDetailsModal')">
+                                <i class="fas fa-edit"></i> Update Details
                             </button>
+                            <button class="btn btn-transparent" onclick="openModal('storeReviewsModal')">
+                                <i class="fas fa-star"></i> View Reviews
+                            </button>
+                             <button class="btn btn-transparent" onclick="openModal('viewStoreDetailsModal')">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+
+                     <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-chart-bar"></i> Statistics
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number">{{ total_reviews }}</div>
+                                    <div class="stat-label">Total Reviews</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number">{{ average_rating }}/5.0</div>
+                                    <div class="stat-label">Average Rating</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="no-items">
-                <i class="fas fa-inbox"></i>
-                <p>No menu items yet. Add your first item to get started!</p>
-            </div>
-            {% endif %}
+            </aside>
+
+            <section class="dashboard-content">
+                <div class="card menu-section">
+                    <div class="card-title-center">
+                        <i class="fas fa-hamburger"></i> Your Menu
+                    </div>
+                    {% if menu_items %}
+                    <div class="menu-grid">
+                        {% for item in menu_items %}
+                        <div class="menu-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}" data-item-description="{{ item.description }}" data-item-price="{{ item.price|floatformat:2 }}" data-item-quantity="{{ item.quantity|default:0 }}" data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
+                            <div class="menu-image">
+                                <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}" alt="{{ item.name }}">
+                                <div class="badges-container">
+                                    {% if item.is_top_seller %}
+                                    <span class="badge bestseller">
+                                        <i class="fas fa-award"></i> Best Seller
+                                    </span>
+                                    {% endif %}
+                                    {% if item.quantity > 0 %}
+                                    <span class="badge available">Available: {{ item.quantity }}</span>
+                                    {% else %}
+                                    <span class="badge soldout">Out of Stock</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="menu-info">
+                                <div class="menu-name">{{ item.name }}</div>
+                                <div class="menu-desc">{{ item.description }}</div>
+                                <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
+                                <div class="menu-actions">
+                                    <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
+                                        <i class="fas fa-pen"></i> Edit
+                                    </button>
+                                    <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="action-btn seller">
+                                            <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{% endif %}
+                                        </button>
+                                    </form>
+                                    <button type="button" class="action-btn delete" onclick="deleteMenuItem('{{ item.id }}', this)">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="no-items">
+                        <i class="fas fa-inbox"></i>
+                        <p>No menu items yet. Add your first item to get started!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
         </div>
     </main>
 
-    <!-- All existing modals -->
     <div class="modal" id="viewStoreDetailsModal">
         <div class="modal-content" style="max-width: 400px;">
             <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">×</button>
@@ -1318,7 +1316,6 @@
                 {{ status_form.amenities }}
             </div>
 
-            <!-- ✅ PAYMENT METHODS AS CHECKBOXES -->
             <div class="form-group">
                 <label>Payment Methods</label>
                 <div class="checkbox-group">
@@ -1355,7 +1352,6 @@
         <button class="modal-close" onclick="closeModal('addMenuItemModal')">×</button>
         <h2><i class="fas fa-plus"></i> Add New Menu Item</h2>
 
-        <!-- Debug Info (remove in production) -->
         <div id="debugInfo" style="display:none; background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
             <strong>Debug:</strong> <span id="debugMessage"></span>
         </div>
@@ -1505,7 +1501,6 @@
     </div>
 </div>
 
-<!-- Context Menu -->
 <div class="message-context-menu" id="ownerMessageContextMenu">
     <div class="context-menu-item" onclick="pinOwnerMessage()">
         <i class="fas fa-thumbtack"></i>
@@ -1517,7 +1512,6 @@
     </div>
 </div>
 
-<!-- Unsend Modal -->
 <div class="unsend-modal" id="ownerUnsendModal">
     <div class="unsend-modal-content">
         <h3>Who do you want to unsend this message for?</h3>
@@ -1549,13 +1543,11 @@
     </div>
 </div>
 
-<!-- ✅ PINNED MESSAGES LIST MODAL -->
 <div class="pinned-messages-modal" id="ownerPinnedMessagesModal">
     <div class="pinned-messages-modal-content">
         <h3><i class="fas fa-thumbtack"></i> Pinned Messages</h3>
         <div class="pinned-messages-list" id="ownerPinnedMessagesListModal">
-            <!-- Pinned messages will appear here -->
-        </div>
+            </div>
         <div class="pinned-messages-empty" id="ownerPinnedMessagesEmpty" style="display: none;">
             <i class="fas fa-inbox"></i>
             <p>No pinned messages</p>
