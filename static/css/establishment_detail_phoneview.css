@@ -9,83 +9,90 @@
     */
     .search-and-filters-wrapper {
         display: flex;
-        flex-wrap: wrap; /* Payagan mag-wrap ang items */
+        flex-wrap: wrap;
         align-items: center;
-        padding: 0; /* Alisin ang padding dito */
-        position: relative; /* Para sa child elements */
-        /* Alisin ang border-bottom, ililipat natin sa button */
-        /* border-bottom: 1px solid #eee; */
-        background-color: #fff; /* Siguraduhin na may background */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Dagdag ng kaunting shadow */
+        padding: 0;
+        position: relative;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    /* Pagsasaayos ng .header-left (KabsuEats Title) */
     .search-and-filters-wrapper .header-left {
-        flex: 1 1 auto; /* Hayaan itong lumaki */
-        order: 1; /* Unang item */
-        padding-left: 12px; /* Idagdag ang padding dito */
-        /* Nagdagdag ng vertical padding para sa top row */
+        flex: 1 1 auto;
+        order: 1;
+        padding-left: 12px;
         padding-top: 8px;
         padding-bottom: 8px;
     }
 
-    /* Pagsasaayos ng .header-right (Cart & Profile) */
     .search-and-filters-wrapper .header-right {
-        flex: 0 0 auto; /* Huwag lumaki, huwag lumiit */
-        order: 2; /* Pangalawang item */
+        flex: 0 0 auto;
+        order: 2;
         display: flex;
         align-items: center;
-        padding-right: 12px; /* Idagdag ang padding dito */
-        /* Nagdagdag ng vertical padding para sa top row */
+        padding-right: 12px;
         padding-top: 8px;
         padding-bottom: 8px;
     }
 
-    /* Pagsasaayos ng .Home_buttons (Message Button)
-      Itong block ang naglalaman ng "Message" button.
-      Gagawin natin itong full-width at ilalagay sa pangalawang row.
-    */
+    /* ✅ HIDE the message button from header */
     .search-and-filters-wrapper .Home_buttons {
-        flex: 1 1 100%; /* Okupahin ang buong lapad */
-        order: 3; /* Pangatlong item (sa ilalim) */
-        margin-top: 0; /* Alisin ang margin-top */
-        display: flex; /* Siguraduhin na ito ay flex */
+        display: none !important;
     }
 
-    /* Estilo para sa "Message" button mismo */
-    .Home_buttons .nav_button {
-        display: inline-flex;
+    /* ✅ FLOATING CHAT BUTTON - Bottom Right */
+    .floating-chat-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
         align-items: center;
-        justify-content: center; /* I-center ang laman */
-        gap: 8px;
-        margin-left: 5%;
-        margin-bottom: 5%;
-        font-size: 0.9em;
-        font-weight: 600;
-        white-space: nowrap;
-        color: #333;
-        border-radius: 0;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        cursor: pointer;
+        z-index: 9998;
+        transition: all 0.3s ease;
         border: none;
-        width: 100%;
-        text-decoration: none;
     }
 
-    .Home_buttons .nav_button:active {
-         background-color: #e9ecef; /* Darker gray on press */
-         color: #155fbf;
+    .floating-chat-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
     }
 
-    .Home_buttons .nav_button i {
-        font-size: 1em;
+    .floating-chat-button:active {
+        transform: scale(0.95);
     }
 
-    /* I-truncate ang text kung masyadong mahaba */
-    .Home_buttons .nav_button span {
-        max-width: 200px; /* Habaan ng kaunti */
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        display: inline-block;
+    .floating-chat-button i {
+        color: white;
+        font-size: 28px;
+    }
+
+    /* Notification badge on floating button */
+    .floating-chat-button .chat-notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #f02849;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        border: 3px solid white;
+    }
+
+    .floating-chat-button .chat-notification-badge.active {
+        display: flex;
     }
 
     /* -- Simula ng datihang CSS para sa #food-details-page -- */
@@ -106,7 +113,7 @@
 
     /* ================== HERO SECTION - REDUCED HEIGHT ================== */
     .establishment-hero {
-        height: 165px; /* REDUCED from 280px */
+        height: 165px;
         margin-bottom: 20px;
         border-radius: 0 0 20px 20px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -123,7 +130,7 @@
     }
 
     .hero-content h1 {
-        font-size: 1.5em; /* REDUCED */
+        font-size: 1.5em;
         font-weight: 700;
         margin-bottom: 2px;
         text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
@@ -139,7 +146,7 @@
     }
 
     .rating-number {
-        font-size: 0.8em; /* REDUCED */
+        font-size: 0.8em;
         font-weight: 700;
         color: #ffc107;
     }
@@ -150,17 +157,17 @@
     }
 
     .star-rating-main .fas.fa-star.filled {
-        font-size: 0.7em; /* REDUCED */
+        font-size: 0.7em;
         color: #ffd700;
     }
 
     .star-rating-main .far.fa-star {
-        font-size: 0.7em; /* REDUCED */
+        font-size: 0.7em;
         color: rgba(255, 255, 255, 0.4);
     }
 
     .review-count-text {
-        font-size: 0.7em; /* REDUCED */
+        font-size: 0.7em;
         color: rgba(255, 255, 255, 0.9);
     }
 
@@ -367,7 +374,7 @@
 
     .menu-list {
         display: grid;
-        grid-template-columns: repeat(2, 1fr); /* 2 COLUMNS */
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
@@ -653,8 +660,8 @@
 
     .review-main {
         flex: 1;
-        min-width: 0; /* IMPORTANT: Prevents flex item from overflowing */
-        overflow: hidden; /* Prevents content overflow */
+        min-width: 0;
+        overflow: hidden;
     }
 
     .review-main-top {
@@ -885,10 +892,6 @@
         font-weight: 200;
     }
 
-    .item-details-body {
-
-    }
-
     .modal-item-image {
         width: 100%;
         max-width: 260px;
@@ -1094,7 +1097,6 @@
         margin: 6% auto;
     }
 
-    /* Ensure same colors apply to tablet view */
     .contact-location i {
         color: darkred;
     }

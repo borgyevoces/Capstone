@@ -1122,7 +1122,13 @@
         </div>
     </div>
 
-    {# FACEBOOK-STYLE CHAT POPUP #}
+{% if user.is_authenticated %}
+<button onclick="toggleChatPopup()" class="floating-chat-button" id="floatingChatButton">
+    <i class="fas fa-comments"></i>
+    <span class="chat-notification-badge" id="floatingChatBadge">1</span>
+</button>
+{% endif %}
+
 {% if user.is_authenticated %}
 <div class="chat-popup-container" id="chatPopupContainer">
     <div class="chat-popup-header" id="chatPopupHeader">
@@ -1595,16 +1601,26 @@ function showTypingIndicator(isTyping) {
 }
 
 function showChatNotificationBadge() {
-    const badge = document.getElementById('chatNotificationBadge');
-    if (badge) {
-        badge.classList.add('active');
+    const headerBadge = document.getElementById('chatNotificationBadge');
+    const floatingBadge = document.getElementById('floatingChatBadge');
+
+    if (headerBadge) {
+        headerBadge.classList.add('active');
+    }
+    if (floatingBadge) {
+        floatingBadge.classList.add('active');
     }
 }
 
 function clearChatNotificationBadge() {
-    const badge = document.getElementById('chatNotificationBadge');
-    if (badge) {
-        badge.classList.remove('active');
+    const headerBadge = document.getElementById('chatNotificationBadge');
+    const floatingBadge = document.getElementById('floatingChatBadge');
+
+    if (headerBadge) {
+        headerBadge.classList.remove('active');
+    }
+    if (floatingBadge) {
+        floatingBadge.classList.remove('active');
     }
 }
 
