@@ -349,7 +349,7 @@
 
     #bestSellerFilter.active {
         /* UPDATED: Changed active background and border to black */
-        background-color: #000000;
+        background-color: #495051;
         color: white;
         border-color: #000000;
     }
@@ -723,7 +723,7 @@
 
     .btn-review-filter.active {
         /* UPDATED: Changed active filter background and border to black */
-        background-color: #000000;
+        background-color: #495051;
         color: white;
         border-color: #000000;
         /* UPDATED: Changed box-shadow color to black */

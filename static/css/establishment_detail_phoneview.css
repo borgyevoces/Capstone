@@ -358,7 +358,7 @@
     }
 
     #bestSellerFilter.active {
-        background-color: #000000;
+        background-color: #495051;
         color: white;
         border-color: #000000;
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
@@ -617,10 +617,12 @@
     }
 
     .btn-review-filter.active {
-        background-color: #000000;
-        border-color: #000000;
+        /* UPDATED: Changed active filter background and border to black */
+        background-color: #495051;
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        border-color: #000000;
+        /* UPDATED: Changed box-shadow color to black */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
 
     .all-reviews-list-wrapper {
