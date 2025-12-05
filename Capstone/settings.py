@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 EMAIL_TIMEOUT = 10
 
 # Base dir and load .env early so os.getenv picks up values from .env
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(_file_).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Secrets and config (loaded from environment/.env)
@@ -161,7 +161,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-
 # Added STATIC_ROOT to fix the ImproperlyConfigured error
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Used when running collectstatic
 
@@ -222,7 +221,7 @@ if not SECRET_KEY:
         raise RuntimeError('The SECRET_KEY environment variable is not set. Set it in .env or environment variables.')
 
 # Compute ALLOWED_HOSTS here so we can include local hosts when DEBUG is True.
-# Preference order: environment `ALLOWED_HOSTS`, then derive from SITE_URL, else empty.
+# Preference order: environment ALLOWED_HOSTS, then derive from SITE_URL, else empty.
 raw_allowed = os.getenv('ALLOWED_HOSTS', '').strip()
 if raw_allowed:
     ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
@@ -250,9 +249,14 @@ SENDER_EMAIL = os.getenv('SENDER_EMAIL')
 CVSU_LATITUDE = os.getenv('CVSU_LATITUDE')
 CVSU_LONGITUDE = os.getenv('CVSU_LONGITUDE')
 
-from django.contrib.auth.models import User
-
+# ===================================================================================
+# Auto-create superuser if environment variable is set
+# This must be at the bottom because it requires Django setup
 if os.environ.get("AUTO_CREATE_SUPERUSER") == "1":
+    import django
+    django.setup()
+    from django.contrib.auth.models import User
+
     username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
     email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
     password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
