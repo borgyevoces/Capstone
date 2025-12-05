@@ -249,3 +249,23 @@ SENDER_EMAIL = os.getenv('SENDER_EMAIL')
 # CvSU coordinates
 CVSU_LATITUDE = os.getenv('CVSU_LATITUDE')
 CVSU_LONGITUDE = os.getenv('CVSU_LONGITUDE')
+
+from django.contrib.auth.models import User
+
+if os.environ.get("AUTO_CREATE_SUPERUSER") == "1":
+    username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
+    email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
+    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+
+    if username and password:
+        if not User.objects.filter(username=username).exists():
+            User.objects.create_superuser(
+                username=username,
+                email=email or "",
+                password=password
+            )
+            print("Superuser created successfully!")
+        else:
+            print("Superuser already exists.")
+    else:
+        print("Superuser environment variables not set.")
