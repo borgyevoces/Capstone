@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 EMAIL_TIMEOUT = 10
 
 # Base dir and load .env early so os.getenv picks up values from .env
-BASE_DIR = Path(_file_).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Secrets and config (loaded from environment/.env)
