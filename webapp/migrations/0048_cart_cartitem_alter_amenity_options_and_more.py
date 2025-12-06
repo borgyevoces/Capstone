@@ -170,13 +170,15 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='review',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=1),
+            # FIXED: Changed default=1 to a valid string timestamp
+            field=models.DateTimeField(auto_now_add=True, default='2023-01-01T12:00:00+00:00'),
             preserve_default=False,
         ),
         migrations.AlterField(
             model_name='review',
             name='updated_at',
-            field=models.DateTimeField(auto_now=True, default=1),
+            # FIXED: Changed default=1 to a valid string timestamp
+            field=models.DateTimeField(auto_now=True, default='2023-01-01T12:00:00+00:00'),
             preserve_default=False,
         ),
         migrations.AddField(
