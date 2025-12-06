@@ -1,0 +1,23 @@
+mkdir -p static
+echo "# Static files" > static/.gitkeep
+```
+
+#### **Update `.gitignore`**
+```
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
