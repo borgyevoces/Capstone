@@ -20,4 +20,6 @@ channels==4.0.0
 daphne==4.0.0
 sendgrid==6.12.5
 whitenoise==6.5.0
+dj-database-url
+psycopg2-binary
 
