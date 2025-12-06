@@ -16,6 +16,7 @@ from django.core.asgi import get_asgi_application
 import os
 from dotenv import load_dotenv
 EMAIL_TIMEOUT = 10
+import dj_database_url
 
 # Base dir and load .env early so os.getenv picks up values from .env
 BASE_DIR = Path(__file__).resolve().parent.parent
