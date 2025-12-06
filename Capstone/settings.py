@@ -74,7 +74,22 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'webapp.apps.WebappConfig',
+    'cloudinary_storage',
+    'cloudinary',
 ]
+# Cloudinary Configuration
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+
+# Use Cloudinary for media files
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 ASGI_APPLICATION = 'Capstone.asgi.application'
 
 CHANNEL_LAYERS = {
