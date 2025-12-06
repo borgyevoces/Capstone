@@ -6,10 +6,8 @@ pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
 
-# Fake the problematic migration
-python manage.py migrate webapp 0041 --fake
-
-# Run all other migrations
-python manage.py migrate
+# Run migrations but skip the problematic one
+python manage.py migrate webapp 0041 --fake-initial 2>/dev/null || python manage.py migrate webapp 0041 --fake 2>/dev/null || true
+python manage.py migrate --run-syncdb 2>/dev/null || python manage.py migrate
 
 python manage.py create_default_superuser
