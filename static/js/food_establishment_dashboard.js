@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE VERSION WITH AUTO-ADDRESS
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE VERSION WITH REAL-TIME ADDRESS
 // ==========================================
 
 // ==========================================
@@ -8,7 +8,6 @@
 let isSubmitting = false;
 const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
 const LOCK_TIMEOUT = 5000; // 5 seconds
-let geocoder = null; // ✅ For reverse geocoding
 
 // ==========================================
 // NOTIFICATION SYSTEM
@@ -94,76 +93,117 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
-// ✅ REVERSE GEOCODING - AUTO ADDRESS UPDATE
+// ✅ FIXED: REVERSE GEOCODING - REAL-TIME ADDRESS UPDATE
 // ==========================================
 function updateAddressFromCoords(latlng) {
-    if (!geocoder) {
-        console.error('❌ Geocoder not initialized');
+    console.log('🔍 Getting address for:', latlng);
+
+    const addressField = document.getElementById('id_address');
+    const locationInfo = document.getElementById('previousLocationInfo');
+
+    if (!addressField) {
+        console.error('❌ Address field not found');
         return;
     }
 
-    const locationInfo = document.getElementById('previousLocationInfo');
+    // Show loading state IMMEDIATELY
+    addressField.value = '📍 Getting address...';
+    addressField.style.backgroundColor = '#fff3cd';
+    addressField.style.fontStyle = 'italic';
 
-    // Show loading state
     if (locationInfo) {
         locationInfo.innerHTML = `
             <i class="fas fa-spinner fa-spin"></i>
-            Getting address...
+            Fetching address from coordinates...
         `;
         locationInfo.style.color = '#666';
     }
 
-    geocoder.reverse(
-        latlng,
-        window._kabsueats_map.options.crs.scale(window._kabsueats_map.getZoom()),
-        function(results) {
-            if (results && results.length > 0) {
-                const address = results[0].name;
+    // ✅ Use Nominatim API directly (more reliable)
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`;
 
-                // ✅ Update address field automatically
-                const addressField = document.getElementById('id_address');
-                if (addressField) {
-                    addressField.value = address;
-
-                    // Visual feedback - green highlight
-                    addressField.classList.add('updated');
-                    addressField.style.backgroundColor = '#e8f5e9';
-                    setTimeout(() => {
-                        addressField.style.backgroundColor = '#f8f9fa';
-                        addressField.classList.remove('updated');
-                    }, 1500);
-                }
-
-                // Update location info
-                if (locationInfo) {
-                    locationInfo.innerHTML = `
-                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                        <strong>Address set:</strong> ${address}
-                    `;
-                    locationInfo.style.color = '#28a745';
-                }
-
-                console.log('✅ Address updated:', address);
-            } else {
-                console.log('⚠️ No address found for these coordinates');
-
-                // Fallback to coordinates
-                const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
-                const addressField = document.getElementById('id_address');
-                if (addressField) {
-                    addressField.value = coordsAddress;
-                }
-
-                if (locationInfo) {
-                    locationInfo.innerHTML = `
-                        <i class="fas fa-map-marker-alt" style="color: #ffc107;"></i>
-                        Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}
-                    `;
-                    locationInfo.style.color = '#ffc107';
-                }
-            }
+    fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KabsuEats/1.0'
         }
-    );
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Nominatim response:', data);
+
+        let address = '';
+
+        if (data.display_name) {
+            address = data.display_name;
+        } else if (data.address) {
+            // Build address from parts
+            const parts = [];
+            if (data.address.road) parts.push(data.address.road);
+            if (data.address.suburb) parts.push(data.address.suburb);
+            if (data.address.city) parts.push(data.address.city);
+            if (data.address.state) parts.push(data.address.state);
+            if (data.address.postcode) parts.push(data.address.postcode);
+            if (data.address.country) parts.push(data.address.country);
+            address = parts.join(', ');
+        }
+
+        if (!address) {
+            // Fallback to coordinates
+            address = `Location: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+        }
+
+        // ✅ UPDATE ADDRESS FIELD IMMEDIATELY
+        addressField.value = address;
+        addressField.style.fontStyle = 'normal';
+
+        // ✅ GREEN HIGHLIGHT ANIMATION
+        addressField.style.backgroundColor = '#d4edda';
+        addressField.classList.add('updated');
+
+        setTimeout(() => {
+            addressField.style.backgroundColor = '#f8f9fa';
+            addressField.classList.remove('updated');
+        }, 2000);
+
+        // Update location info
+        if (locationInfo) {
+            locationInfo.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                <strong>Address set:</strong> ${address}
+            `;
+            locationInfo.style.color = '#28a745';
+        }
+
+        console.log('✅ Address updated successfully');
+    })
+    .catch(error => {
+        console.error('❌ Geocoding error:', error);
+
+        // Fallback to coordinates
+        const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
+        addressField.value = coordsAddress;
+        addressField.style.backgroundColor = '#fff3cd';
+        addressField.style.fontStyle = 'italic';
+
+        if (locationInfo) {
+            locationInfo.innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                Could not fetch address. Using coordinates.
+            `;
+            locationInfo.style.color = '#ffc107';
+        }
+
+        // Reset background after 2 seconds
+        setTimeout(() => {
+            addressField.style.backgroundColor = '#f8f9fa';
+        }, 2000);
+    });
 }
 
 // ==========================================
@@ -625,7 +665,6 @@ function closeModal(id) {
         } catch (err) {}
         window._kabsueats_map = null;
         window._kabsueats_marker = null;
-        geocoder = null; // ✅ Clear geocoder
     }
 }
 
@@ -678,7 +717,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// ✅ MAP FUNCTIONALITY WITH AUTO-ADDRESS
+// ✅ MAP FUNCTIONALITY WITH REAL-TIME ADDRESS UPDATE
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -773,10 +812,7 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    // ✅ Initialize Geocoder (Reverse Geocoding)
-    geocoder = L.Control.Geocoder.nominatim();
-
-    // ✅ Validate position and update address
+    // ✅ Validate position and update address IMMEDIATELY
     function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
@@ -785,7 +821,7 @@ function initializeMap() {
             document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
             document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-            // ✅ Auto-update address
+            // ✅ AUTO-UPDATE ADDRESS IN REAL-TIME
             updateAddressFromCoords(latlng);
 
             return true;
@@ -801,7 +837,7 @@ function initializeMap() {
         }
     }
 
-    // ✅ Marker drag event
+    // ✅ Marker drag event - INSTANT UPDATE
     marker.on('dragend', function(e) {
         const position = marker.getLatLng();
         if (!validatePosition(position)) {
@@ -809,7 +845,7 @@ function initializeMap() {
         }
     });
 
-    // ✅ Map click event
+    // ✅ Map click event - INSTANT UPDATE
     map.on('click', function(e) {
         if (validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
@@ -826,7 +862,7 @@ function initializeMap() {
     }
 }
 
-// ✅ Focus on CvSU button
+// ✅ Focus on CvSU button with address update
 function focusOnCvSU() {
     if (window._kabsueats_map && window._kabsueats_marker) {
         const cvsuLat = 14.412768;
@@ -839,17 +875,15 @@ function focusOnCvSU() {
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
         // ✅ Update address for CvSU location
-        if (geocoder) {
-            updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
-        }
+        updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
 
         const locationInfo = document.getElementById('previousLocationInfo');
         if (locationInfo) {
             locationInfo.innerHTML = `
-                <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                Location set to CvSU-Bacoor Campus
+                <i class="fas fa-spinner fa-spin"></i>
+                Getting CvSU address...
             `;
-            locationInfo.style.color = '#28a745';
+            locationInfo.style.color = '#666';
         }
     }
 }
@@ -1099,19 +1133,18 @@ style.textContent = `
 
     /* ✅ Address field animations */
     @keyframes addressUpdate {
-        0% { background-color: #e8f5e9; }
+        0% { background-color: #d4edda; }
         100% { background-color: #f8f9fa; }
     }
 
     #id_address.updated {
-        animation: addressUpdate 1.5s ease;
+        animation: addressUpdate 2s ease;
     }
 
     #id_address[readonly] {
         background-color: #f8f9fa !important;
         color: #495057;
         border: 1px solid #ced4da;
-        font-style: italic;
         cursor: not-allowed;
     }
 `;
