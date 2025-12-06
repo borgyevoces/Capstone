@@ -851,7 +851,23 @@ html, body {
     cursor: pointer;
     user-select: none;
 }
+/* Address field styling when readonly */
+#id_address[readonly] {
+    background-color: #f8f9fa !important;
+    color: #495057;
+    border: 1px solid #ced4da;
+    font-style: italic;
+}
 
+/* Animation when address updates */
+@keyframes addressUpdate {
+    0% { background-color: #e8f5e9; }
+    100% { background-color: #f8f9fa; }
+}
+
+#id_address.updated {
+    animation: addressUpdate 1s ease;
+}
 .checkbox-item input[type="checkbox"]:checked {
     accent-color: var(--primary);
 }

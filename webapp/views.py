@@ -3056,10 +3056,13 @@ def toggle_top_seller(request, item_id):
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
     return redirect('food_establishment_dashboard')
 
+
 @login_required
 @require_POST
 def update_establishment_details_ajax(request, pk):
-    """Update establishment details via AJAX"""
+    """
+    ✅ UPDATED: Handle address auto-update from pin location
+    """
     try:
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
@@ -3072,19 +3075,46 @@ def update_establishment_details_ajax(request, pk):
 
     if form.is_valid():
         try:
-            instance = form.save()
+            instance = form.save(commit=False)
+
+            # ✅ Get coordinates and address from form
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            address = request.POST.get('address', '').strip()
+
+            # ✅ Update coordinates
+            if latitude and longitude:
+                try:
+                    instance.latitude = float(latitude)
+                    instance.longitude = float(longitude)
+                except (ValueError, TypeError):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Invalid coordinates provided.'
+                    }, status=400)
+
+            # ✅ Use address from form (auto-filled by geocoding)
+            if address:
+                instance.address = address
+            elif not instance.address:
+                # Fallback to coordinates if no address
+                instance.address = f"Location: {latitude}, {longitude}"
+
+            # Save instance
+            instance.save()
+            form.save_m2m()  # Save many-to-many relationships
 
             # Prepare response data
             data = {
                 'success': True,
                 'message': 'Establishment details updated successfully.',
                 'name': instance.name,
-                'address': instance.address,
+                'address': instance.address,  # ✅ Return updated address
                 'status': instance.status,
                 'category': instance.category.name if instance.category else None,
                 'payment_methods': instance.payment_methods,
-                'latitude': str(instance.latitude),
-                'longitude': str(instance.longitude),
+                'latitude': str(instance.latitude) if instance.latitude else '',
+                'longitude': str(instance.longitude) if instance.longitude else '',
                 'image_url': instance.image.url if instance.image else '',
                 'amenities': ', '.join([a.name for a in instance.amenities.all()]),
             }
@@ -3092,13 +3122,20 @@ def update_establishment_details_ajax(request, pk):
             return JsonResponse(data)
 
         except Exception as e:
-            print(f"Database save error: {e}")
+            print(f"❌ Database save error: {e}")
+            import traceback
+            traceback.print_exc()
+
             return JsonResponse({
                 'success': False,
-                'error': 'A database error occurred during update.'
+                'error': f'A database error occurred: {str(e)}'
             }, status=500)
     else:
-        errors = {k: v for k, v in form.errors.items()}
+        # Validation errors
+        errors = {}
+        for field, error_list in form.errors.items():
+            errors[field] = [str(e) for e in error_list]
+
         return JsonResponse({
             'success': False,
             'error': 'Validation failed. Please check your inputs.',

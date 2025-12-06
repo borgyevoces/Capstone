@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE VERSION WITH AUTO-ADDRESS
 // ==========================================
 
 // ==========================================
@@ -8,6 +8,7 @@
 let isSubmitting = false;
 const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
 const LOCK_TIMEOUT = 5000; // 5 seconds
+let geocoder = null; // ✅ For reverse geocoding
 
 // ==========================================
 // NOTIFICATION SYSTEM
@@ -93,6 +94,79 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
+// ✅ REVERSE GEOCODING - AUTO ADDRESS UPDATE
+// ==========================================
+function updateAddressFromCoords(latlng) {
+    if (!geocoder) {
+        console.error('❌ Geocoder not initialized');
+        return;
+    }
+
+    const locationInfo = document.getElementById('previousLocationInfo');
+
+    // Show loading state
+    if (locationInfo) {
+        locationInfo.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            Getting address...
+        `;
+        locationInfo.style.color = '#666';
+    }
+
+    geocoder.reverse(
+        latlng,
+        window._kabsueats_map.options.crs.scale(window._kabsueats_map.getZoom()),
+        function(results) {
+            if (results && results.length > 0) {
+                const address = results[0].name;
+
+                // ✅ Update address field automatically
+                const addressField = document.getElementById('id_address');
+                if (addressField) {
+                    addressField.value = address;
+
+                    // Visual feedback - green highlight
+                    addressField.classList.add('updated');
+                    addressField.style.backgroundColor = '#e8f5e9';
+                    setTimeout(() => {
+                        addressField.style.backgroundColor = '#f8f9fa';
+                        addressField.classList.remove('updated');
+                    }, 1500);
+                }
+
+                // Update location info
+                if (locationInfo) {
+                    locationInfo.innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        <strong>Address set:</strong> ${address}
+                    `;
+                    locationInfo.style.color = '#28a745';
+                }
+
+                console.log('✅ Address updated:', address);
+            } else {
+                console.log('⚠️ No address found for these coordinates');
+
+                // Fallback to coordinates
+                const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
+                const addressField = document.getElementById('id_address');
+                if (addressField) {
+                    addressField.value = coordsAddress;
+                }
+
+                if (locationInfo) {
+                    locationInfo.innerHTML = `
+                        <i class="fas fa-map-marker-alt" style="color: #ffc107;"></i>
+                        Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}
+                    `;
+                    locationInfo.style.color = '#ffc107';
+                }
+            }
+        }
+    );
+}
+
+// ==========================================
 // ✅ FIXED: ADD MENU ITEM FORM HANDLER
 // ==========================================
 function setupAddMenuItemForm() {
@@ -114,7 +188,7 @@ function setupAddMenuItemForm() {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('📝 Form submit triggered');
+        console.log('🔍 Form submit triggered');
 
         // ✅ Prevent double submission
         if (isSubmitting) {
@@ -273,7 +347,7 @@ function addMenuItemToGrid(item) {
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
                 </button>
-                <form action="/owner/dashboard/toggle_top_seller/${item.id}/" method="post" style="display: contents;">
+                <form action="/toggle-top-seller/${item.id}/" method="post" style="display: contents;">
                     <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
                     <button type="submit" class="action-btn seller">
                         <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
@@ -551,6 +625,7 @@ function closeModal(id) {
         } catch (err) {}
         window._kabsueats_map = null;
         window._kabsueats_marker = null;
+        geocoder = null; // ✅ Clear geocoder
     }
 }
 
@@ -603,7 +678,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// MAP FUNCTIONALITY
+// ✅ MAP FUNCTIONALITY WITH AUTO-ADDRESS
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -638,6 +713,7 @@ function initializeMap() {
         }
     }
 
+    // Map layers
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 22
@@ -677,10 +753,12 @@ function initializeMap() {
 
     L.control.layers(baseMaps).addTo(map);
 
+    // CvSU marker
     L.marker([cvsuLat, cvsuLng]).addTo(map)
         .bindPopup('<b>CvSU-Bacoor Campus</b>')
         .openPopup();
 
+    // 500m radius circle
     L.circle([cvsuLat, cvsuLng], {
         color: 'red',
         fillColor: '#f03',
@@ -688,33 +766,42 @@ function initializeMap() {
         radius: RADIUS
     }).addTo(map);
 
+    // Draggable marker
     const marker = L.marker([prevLat, prevLng], {
         draggable: true
     }).addTo(map);
 
     window._kabsueats_marker = marker;
 
+    // ✅ Initialize Geocoder (Reverse Geocoding)
+    geocoder = L.Control.Geocoder.nominatim();
+
+    // ✅ Validate position and update address
     function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
         if (distance <= RADIUS) {
+            // Update coordinates
             document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
             document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-            if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                locationInfo.style.color = 'var(--success)';
-            }
+            // ✅ Auto-update address
+            updateAddressFromCoords(latlng);
+
             return true;
         } else {
             if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> Please pin inside the red circle (within 500m of CvSU-Bacoor).`;
-                locationInfo.style.color = 'var(--error)';
+                locationInfo.innerHTML = `
+                    <i class="fas fa-exclamation-circle" style="color: #dc3545;"></i>
+                    Please pin inside the red circle (within 500m of CvSU-Bacoor).
+                `;
+                locationInfo.style.color = '#dc3545';
             }
             return false;
         }
     }
 
+    // ✅ Marker drag event
     marker.on('dragend', function(e) {
         const position = marker.getLatLng();
         if (!validatePosition(position)) {
@@ -722,16 +809,24 @@ function initializeMap() {
         }
     });
 
+    // ✅ Map click event
     map.on('click', function(e) {
         if (validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
         }
     });
 
+    // Initial coordinate setup
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
+
+    // ✅ Load initial address if coordinates exist
+    if (prevLat && prevLng) {
+        updateAddressFromCoords({ lat: prevLat, lng: prevLng });
+    }
 }
 
+// ✅ Focus on CvSU button
 function focusOnCvSU() {
     if (window._kabsueats_map && window._kabsueats_marker) {
         const cvsuLat = 14.412768;
@@ -743,10 +838,18 @@ function focusOnCvSU() {
         document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
+        // ✅ Update address for CvSU location
+        if (geocoder) {
+            updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
+        }
+
         const locationInfo = document.getElementById('previousLocationInfo');
         if (locationInfo) {
-            locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set to CvSU-Bacoor Campus`;
-            locationInfo.style.color = 'var(--success)';
+            locationInfo.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                Location set to CvSU-Bacoor Campus
+            `;
+            locationInfo.style.color = '#28a745';
         }
     }
 }
@@ -850,7 +953,7 @@ function updateNotificationBadge(count) {
 }
 
 function markNotificationRead(notificationId) {
-    fetch(`/api/notifications/${notificationId}/read/`, {
+    fetch(`/api/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
@@ -992,6 +1095,24 @@ style.textContent = `
         50% {
             transform: scale(1.02);
         }
+    }
+
+    /* ✅ Address field animations */
+    @keyframes addressUpdate {
+        0% { background-color: #e8f5e9; }
+        100% { background-color: #f8f9fa; }
+    }
+
+    #id_address.updated {
+        animation: addressUpdate 1.5s ease;
+    }
+
+    #id_address[readonly] {
+        background-color: #f8f9fa !important;
+        color: #495057;
+        border: 1px solid #ced4da;
+        font-style: italic;
+        cursor: not-allowed;
     }
 `;
 document.head.appendChild(style);
