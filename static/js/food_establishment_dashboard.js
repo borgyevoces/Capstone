@@ -108,7 +108,7 @@ function getAddressFromCoordinates(lat, lng) {
         // ✅ Provider 3: BigDataCloud (Fallback)
         const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
 
-        // ⏱️ FALLBACK: Show coordinates after 2 seconds (longer timeout for better results)
+        // ⏱️ FALLBACK: Show coordinates after 3 seconds (longer timeout for better results)
         const fallbackTimeout = setTimeout(() => {
             if (!resolved) {
                 resolved = true;
@@ -119,7 +119,7 @@ function getAddressFromCoordinates(lat, lng) {
                     provider: 'coordinates'
                 });
             }
-        }, 2000);
+        }, 3000);
 
         // ✅ Helper function to build detailed address
         function buildDetailedAddress(addressData) {
@@ -169,7 +169,7 @@ function getAddressFromCoordinates(lat, lng) {
                 'Accept': 'application/json',
                 'User-Agent': 'KabsuEats/1.0'
             },
-            signal: AbortSignal.timeout(3000)
+            signal: AbortSignal.timeout(5000)
         })
         .then(r => r.json())
         .then(data => {
@@ -202,7 +202,7 @@ function getAddressFromCoordinates(lat, lng) {
 
         // ✅ LocationIQ (Backup with address details)
         fetch(locationIQUrl, {
-            signal: AbortSignal.timeout(3000)
+            signal: AbortSignal.timeout(5000)
         })
         .then(r => r.json())
         .then(data => {
@@ -234,7 +234,7 @@ function getAddressFromCoordinates(lat, lng) {
         .catch(err => console.log('LocationIQ error:', err));
 
         // ✅ BigDataCloud (Last resort - less detailed)
-        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(3000) })
+        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(5000) })
         .then(r => r.json())
         .then(data => {
             if (resolved) return;
@@ -844,7 +844,29 @@ function openLocationModal() {
         initializeMap();
     }, 100);
 }
-
+// ✅ Close modal handler
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+if (modalId === 'mapModal' && window._kabsueats_map) {
+        try {
+            window._kabsueats_map.remove();
+        } catch (err) {}
+        window._kabsueats_map = null;
+        window._kabsueats_marker = null;
+    }
+}
+// ✅ Open modal helper
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
 function initializeMap() {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
