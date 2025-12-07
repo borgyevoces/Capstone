@@ -1530,38 +1530,82 @@
     </div>
 
     <div class="modal" id="mapModal">
-    <div class="modal-content" style="max-width: 800px; padding: 24px;">
+    <div class="modal-content" style="max-width: 900px; padding: 24px;">
         <button class="modal-close" onclick="closeModal('mapModal')">×</button>
-        <h2><i class="fas fa-map"></i> Set Establishment Location</h2>
-        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
-            Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin.
+
+        <h2 style="margin-bottom: 8px;">
+            <i class="fas fa-map-marker-alt"></i> Set Establishment Location
+        </h2>
+
+        <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+            📍 Click or drag the pin inside the red circle (500m from CvSU-Bacoor)
         </p>
 
-        <!-- Location Info Display -->
-        <div id="previousLocationInfo" style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
-
-        <!-- Address Display (Real-time) -->
-        <div id="geocodedAddressDisplay" style="background: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none;">
-            <div style="font-weight: 600; color: #2e7d32; margin-bottom: 4px;">
-                <i class="fas fa-map-marker-alt"></i> Address for this location:
+        <!-- ✅ OPTIMIZED: Prominent Current Location Display -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 12px; margin-bottom: 16px; color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    📍
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; opacity: 0.9; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                        Current Location
+                    </div>
+                    <div id="currentLocationDisplay" style="font-size: 18px; font-weight: 700; margin-top: 4px;">
+                        {{ location_display }}
+                    </div>
+                    {% if has_location %}
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">
+                        ✓ Location is set within CvSU-Bacoor radius
+                    </div>
+                    {% else %}
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">
+                        ⚠ Please pin your location on the map
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            <div id="geocodedAddressText" style="color: #1b5e20; font-size: 13px;"></div>
         </div>
 
-        <!-- Map Container -->
-        <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);"></div>
+        <!-- ✅ OPTIMIZED: Real-time Address Display -->
+        <div id="geocodedAddressDisplay" style="background: #e8f5e9; padding: 16px; border-radius: 12px; margin-bottom: 16px; display: none;">
+            <div style="display: flex; align-items: start; gap: 12px;">
+                <div style="font-size: 24px;">🏠</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 14px;">
+                        NEW ADDRESS FOR THIS LOCATION
+                    </div>
+                    <div id="geocodedAddressText" style="color: #1b5e20; font-size: 14px; line-height: 1.5;">
+                        <i class="fas fa-spinner fa-spin"></i> Getting address...
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <!-- Action Buttons -->
-        <div style="display: flex; gap: 12px;">
-            <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()">
-                <i class="fas fa-crosshairs"></i> Focus on CvSU
+        <!-- ✅ Map Container with faster loading -->
+        <div id="map" style="width: 100%; height: 450px; border-radius: 12px; margin-bottom: 16px; border: 3px solid #667eea; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></div>
+
+        <!-- ✅ Action Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-secondary" onclick="resetToCvSU()" style="flex: 0 0 auto;">
+                <i class="fas fa-crosshairs"></i> Reset to CvSU
             </button>
-            <button type="button" class="btn btn-primary" onclick="confirmMapLocation()">
-                <i class="fas fa-check"></i> Confirm Location & Address
+
+            <div style="flex: 1; text-align: center; font-size: 13px; color: #666;">
+                <i class="fas fa-info-circle"></i> Drag the pin or click to set location
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="confirmMapLocation()" style="flex: 0 0 auto; min-width: 200px;">
+                <i class="fas fa-check-circle"></i> Confirm Location
             </button>
         </div>
     </div>
 </div>
+
+<input type="hidden" name="latitude" id="id_latitude" value="{{ current_lat }}">
+<input type="hidden" name="longitude" id="id_longitude" value="{{ current_lng }}">
+<input type="hidden" id="previous_lat" value="{{ current_lat }}">
+<input type="hidden" id="previous_lng" value="{{ current_lng }}">
 
 <div class="message-context-menu" id="ownerMessageContextMenu">
     <div class="context-menu-item" onclick="pinOwnerMessage()">

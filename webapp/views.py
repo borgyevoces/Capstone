@@ -2711,7 +2711,7 @@ def food_establishment_dashboard(request):
 
     if request.method == 'POST':
         # ========================================
-        # ✅ ADD NEW MENU ITEM - COMPLETE FIX WITH BETTER ERROR HANDLING
+        # ADD NEW MENU ITEM
         # ========================================
         if 'add_menu_item' in request.POST:
             try:
@@ -2737,7 +2737,6 @@ def food_establishment_dashboard(request):
                         request.session.modified = True
                     except Exception as token_error:
                         print(f"Token handling error: {token_error}")
-                        # Continue anyway - don't fail because of token issues
 
                 menu_item_form = MenuItemForm(request.POST, request.FILES)
 
@@ -2746,15 +2745,12 @@ def food_establishment_dashboard(request):
                         menu_item = menu_item_form.save(commit=False)
                         menu_item.food_establishment = establishment
 
-                        # Set default quantity if not provided
                         if not hasattr(menu_item, 'quantity') or menu_item.quantity is None:
                             menu_item.quantity = 0
 
                         menu_item.save()
 
-                        # ✅ CRITICAL: Return complete item data for AJAX
                         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                            # Get absolute URL for image
                             image_url = ''
                             if menu_item.image:
                                 try:
@@ -2796,7 +2792,6 @@ def food_establishment_dashboard(request):
                         messages.error(request, f"Error saving menu item: {str(save_error)}")
                         return redirect('food_establishment_dashboard')
                 else:
-                    # Return validation errors
                     print(f"❌ Form validation errors: {menu_item_form.errors}")
 
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -2835,9 +2830,8 @@ def food_establishment_dashboard(request):
                 messages.error(request, f"An error occurred: {str(outer_error)}")
                 return redirect('food_establishment_dashboard')
 
-        # UPDATE STORE DETAILS
+        # UPDATE STORE DETAILS - keep existing code
         elif 'update_status' in request.POST:
-            # Your existing update code here
             pass
 
     # GET request
@@ -2847,6 +2841,14 @@ def food_establishment_dashboard(request):
     dashboard_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
     total_reviews = dashboard_reviews.count()
     average_rating = round(dashboard_reviews.aggregate(Avg('rating'))['rating__avg'] or 0, 1)
+
+    # ✅ OPTIMIZED: Pre-calculate current location for faster map loading
+    current_lat = establishment.latitude or 14.412768
+    current_lng = establishment.longitude or 120.981348
+    has_location = bool(establishment.latitude and establishment.longitude)
+
+    # ✅ Format location display
+    location_display = f"{current_lat:.6f}, {current_lng:.6f}" if has_location else "Not set"
 
     context = {
         'establishment': establishment,
@@ -2859,6 +2861,11 @@ def food_establishment_dashboard(request):
         'average_rating': average_rating,
         'update_token': str(uuid.uuid4()),
         'menu_add_token': str(uuid.uuid4()),
+        # ✅ NEW: Pre-calculated location data
+        'current_lat': current_lat,
+        'current_lng': current_lng,
+        'has_location': has_location,
+        'location_display': location_display,
     }
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)

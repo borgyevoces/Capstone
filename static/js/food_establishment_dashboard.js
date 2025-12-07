@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE OPTIMIZED VERSION
 // ==========================================
 
 // ==========================================
@@ -115,7 +115,7 @@ function setupAddMenuItemForm() {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('📝 Form submit triggered');
+        console.log('🔍 Form submit triggered');
 
         // ✅ Prevent double submission
         if (isSubmitting) {
@@ -613,7 +613,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// ✅ MAP FUNCTIONALITY WITH REVERSE GEOCODING
+// ✅ OPTIMIZED MAP INITIALIZATION - FASTER & CLEARER
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -626,6 +626,7 @@ function initializeMap() {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
 
+    // Clean up existing map
     if (window._kabsueats_map) {
         try {
             window._kabsueats_map.remove();
@@ -636,112 +637,126 @@ function initializeMap() {
     const cvsuLng = 120.981348;
     const RADIUS = 500;
 
+    // ✅ Get current location from hidden fields
     const prevLat = parseFloat(document.getElementById('previous_lat').value) || cvsuLat;
     const prevLng = parseFloat(document.getElementById('previous_lng').value) || cvsuLng;
 
-    const locationInfo = document.getElementById('previousLocationInfo');
-    if (locationInfo) {
-        if (prevLat && prevLng && (Math.abs(prevLat - cvsuLat) > 0.0001 || Math.abs(prevLng - cvsuLng) > 0.0001)) {
-            locationInfo.innerHTML = `<i class="fas fa-map-pin"></i> Current location: ${prevLat.toFixed(6)}, ${prevLng.toFixed(6)}`;
-        } else {
-            locationInfo.innerHTML = `<i class="fas fa-info-circle"></i> Click inside the red circle to set your location within 500m of CvSU-Bacoor.`;
-        }
-    }
-
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 22
+    // ✅ OPTIMIZED: Use Hybrid view by default for better visibility
+    const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '© Google',
+        maxZoom: 21,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     });
 
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        attribution: '© Google',
+        maxZoom: 21
     });
 
-    const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    });
-
-    const terrainLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 20
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 22
     });
 
     const baseMaps = {
-        "Hybrid (Satellite + Labels)": hybridLayer,
-        "Satellite": satelliteLayer,
-        "Street": streetLayer,
-        "Terrain": terrainLayer
+        "📍 Hybrid (Best View)": hybridLayer,
+        "🛰️ Satellite": satelliteLayer,
+        "🗺️ Street Map": streetLayer
     };
 
+    // ✅ Initialize map centered on current location with better zoom
     const map = L.map('map', {
         layers: [hybridLayer],
         maxZoom: 22,
-        minZoom: 10
-    }).setView([cvsuLat, cvsuLng], 16);
+        minZoom: 15,
+        zoomControl: true
+    }).setView([prevLat, prevLng], 18); // Higher zoom for better detail
 
     window._kabsueats_map = map;
 
-    L.control.layers(baseMaps).addTo(map);
+    // ✅ Add layer control
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-    L.marker([cvsuLat, cvsuLng]).addTo(map)
-        .bindPopup('<b>CvSU-Bacoor Campus</b>')
+    // ✅ Add CvSU marker with better icon
+    const cvsuIcon = L.divIcon({
+        html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏫</div>',
+        className: 'cvsu-marker',
+        iconSize: [36, 36]
+    });
+
+    L.marker([cvsuLat, cvsuLng], { icon: cvsuIcon })
+        .addTo(map)
+        .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">🎓 CvSU-Bacoor<br><small>500m Radius Center</small></div>')
         .openPopup();
 
+    // ✅ Add restriction circle with better visibility
     L.circle([cvsuLat, cvsuLng], {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.2,
-        radius: RADIUS
+        color: '#f02849',
+        fillColor: '#f02849',
+        fillOpacity: 0.15,
+        weight: 3,
+        radius: RADIUS,
+        dashArray: '10, 10'
     }).addTo(map);
 
+    // ✅ Add establishment marker with custom icon
+    const establishmentIcon = L.divIcon({
+        html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">📍</span></div>',
+        className: 'establishment-marker',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
+    });
+
     const marker = L.marker([prevLat, prevLng], {
-        draggable: true
+        draggable: true,
+        icon: establishmentIcon
     }).addTo(map);
 
     window._kabsueats_marker = marker;
 
-    // ✅ Reverse Geocode Function
+    // ✅ Add pulsing effect to marker
+    marker.on('add', function() {
+        const markerElement = marker.getElement();
+        if (markerElement) {
+            markerElement.style.animation = 'pulse 2s infinite';
+        }
+    });
+
+    // ✅ OPTIMIZED: Faster reverse geocoding
     async function reverseGeocode(lat, lng) {
         try {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
                 {
-                    headers: {
-                        'User-Agent': 'KabsuEats/1.0'
-                    }
+                    headers: { 'User-Agent': 'KabsuEats/1.0' }
                 }
             );
             const data = await response.json();
-
-            if (data && data.display_name) {
-                return data.display_name;
-            } else {
-                return `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            }
+            return data?.display_name || `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         } catch (error) {
             console.error('Geocoding error:', error);
-            return `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            return `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         }
     }
 
-    // ✅ Validate Position + Geocode
+    // ✅ OPTIMIZED: Validate position with immediate visual feedback
     async function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
+        // Update coordinates immediately
+        document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
+        document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
+
+        // ✅ Update prominent display
+        const displayEl = document.getElementById('currentLocationDisplay');
+
         if (distance <= RADIUS) {
-            document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
-            document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
+            // Valid location
+            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+            displayEl.style.color = 'white';
+            displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)';
 
-            if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                locationInfo.style.color = 'var(--success)';
-            }
-
-            // ✅ Reverse Geocode
+            // Show address
             const addressDisplay = document.getElementById('geocodedAddressDisplay');
             const addressText = document.getElementById('geocodedAddressText');
 
@@ -751,42 +766,51 @@ function initializeMap() {
 
                 const address = await reverseGeocode(latlng.lat, latlng.lng);
                 currentGeocodedAddress = address;
-
                 addressText.innerHTML = address;
             }
 
             return true;
         } else {
-            if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> Please pin inside the red circle (within 500m of CvSU-Bacoor).`;
-                locationInfo.style.color = 'var(--error)';
-            }
+            // Invalid location
+            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} ⚠️ OUTSIDE RADIUS`;
+            displayEl.style.color = 'white';
+            displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #f44336 0%, #c62828 100%)';
 
-            const addressDisplay = document.getElementById('geocodedAddressDisplay');
-            if (addressDisplay) {
-                addressDisplay.style.display = 'none';
-            }
+            // Hide address
+            document.getElementById('geocodedAddressDisplay').style.display = 'none';
             currentGeocodedAddress = '';
+
+            // Show error message
+            showNotification('⚠️ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
 
             return false;
         }
     }
 
+    // ✅ Marker drag event
     marker.on('dragend', async function(e) {
         const position = marker.getLatLng();
         if (!await validatePosition(position)) {
+            // Reset to previous valid position
             marker.setLatLng([prevLat, prevLng]);
         }
     });
 
+    // ✅ Map click event
     map.on('click', async function(e) {
         if (await validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
+
+            // Animate marker
+            const markerElement = marker.getElement();
+            if (markerElement) {
+                markerElement.style.animation = 'bounce 0.5s ease';
+                setTimeout(() => {
+                    markerElement.style.animation = 'pulse 2s infinite';
+                }, 500);
+            }
         }
     });
-
-    document.getElementById('id_latitude').value = prevLat.toFixed(6);
-    document.getElementById('id_longitude').value = prevLng.toFixed(6);
 
     // ✅ Load initial address
     if (prevLat && prevLng) {
@@ -796,32 +820,33 @@ function initializeMap() {
     mapInitialized = true;
 }
 
-function focusOnCvSU() {
+// ✅ Reset to CvSU location
+function resetToCvSU() {
     if (window._kabsueats_map && window._kabsueats_marker) {
         const cvsuLat = 14.412768;
         const cvsuLng = 120.981348;
 
-        window._kabsueats_map.setView([cvsuLat, cvsuLng], 16);
+        window._kabsueats_map.setView([cvsuLat, cvsuLng], 18);
         window._kabsueats_marker.setLatLng([cvsuLat, cvsuLng]);
 
         document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
-        const locationInfo = document.getElementById('previousLocationInfo');
-        if (locationInfo) {
-            locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set to CvSU-Bacoor Campus`;
-            locationInfo.style.color = 'var(--success)';
-        }
+        // Update display
+        const displayEl = document.getElementById('currentLocationDisplay');
+        displayEl.innerHTML = `${cvsuLat.toFixed(6)}, ${cvsuLng.toFixed(6)}`;
+        displayEl.style.color = 'white';
+        displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)';
 
-        const addressDisplay = document.getElementById('geocodedAddressDisplay');
-        if (addressDisplay) {
-            addressDisplay.style.display = 'none';
-        }
+        // Hide address temporarily
+        document.getElementById('geocodedAddressDisplay').style.display = 'none';
         currentGeocodedAddress = '';
+
+        showNotification('✅ Location reset to CvSU-Bacoor Campus', 'success');
     }
 }
 
-// ✅ NEW: Confirm Location and Update Address
+// ✅ Confirm location and update address field
 function confirmMapLocation() {
     if (!currentGeocodedAddress) {
         showNotification('⚠️ Please pin a location on the map first', 'warning');
@@ -836,18 +861,13 @@ function confirmMapLocation() {
         return;
     }
 
-    // ✅ Update address field
+    // Update address field
     const addressField = document.getElementById('id_address');
     if (addressField) {
         addressField.value = currentGeocodedAddress;
     }
 
-    // ✅ Update location status
-    const locationStatus = document.getElementById('locationStatus');
-    if (locationStatus) {
-        locationStatus.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${lat}, ${lng}`;
-    }
-
+    // Close modal
     closeModal('mapModal');
 
     showNotification('✅ Location and address updated successfully!', 'success');
@@ -1092,8 +1112,17 @@ style.textContent = `
             transform: scale(1);
         }
         50% {
-            transform: scale(1.02);
+            transform: scale(1.1);
+        }
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
         }
     }
 `;
-document.head.appendChild(style)
+document.head.appendChild(style);
