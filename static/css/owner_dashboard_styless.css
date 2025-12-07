@@ -34,9 +34,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* ==========================================
-   NAVBAR
-   ========================================== */
+/* NAVBAR */
 .navbar {
     background: var(--bg);
     border-bottom: 1px solid var(--border);
@@ -125,9 +123,7 @@ html, body {
     color: var(--primary);
 }
 
-/* ==========================================
-   ALERTS
-   ========================================== */
+/* ALERTS - IMPROVED NOTIFICATION DESIGN */
 .alert {
     position: fixed;
     top: 90px;
@@ -208,9 +204,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* ==========================================
-   MAIN LAYOUT
-   ========================================== */
+/* MAIN CONTENT - NEW LAYOUT WRAPPER */
 .main-content {
     max-width: 1400px;
     margin: 0 auto;
@@ -223,6 +217,7 @@ html, body {
     align-items: flex-start;
 }
 
+/* LEFT SIDEBAR (Sticky) */
 .dashboard-sidebar {
     width: 350px;
     flex-shrink: 0;
@@ -233,11 +228,13 @@ html, body {
     gap: 24px;
 }
 
+/* RIGHT CONTENT AREA */
 .dashboard-content {
     flex-grow: 1;
-    min-width: 0;
+    min-width: 0; /* Prevents overflow issues in flex children */
 }
 
+/* SUSPENSION WARNING */
 .suspension-warning {
     background: linear-gradient(135deg, var(--error), #ef5350);
     color: white;
@@ -250,9 +247,11 @@ html, body {
 }
 
 /* ==========================================
-   STORE HEADER (SIDEBAR)
+   STORE HEADER - ADAPTED FOR SIDEBAR
    ========================================== */
+
 .store-header {
+    /* Removed large margins as it's now in sidebar */
     position: relative;
     background: var(--bg);
     border-radius: var(--radius);
@@ -264,7 +263,8 @@ html, body {
 
 .cover-photo {
     width: 100%;
-    height: 140px;
+    height: 140px; /* Reduced height for sidebar look */
+    border-radius: 0; /* Flush with card top */
     overflow: hidden;
     cursor: pointer;
     background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
@@ -288,7 +288,10 @@ html, body {
 .cover-photo::after {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
     pointer-events: none;
 }
@@ -296,10 +299,10 @@ html, body {
 .header-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* Center everything in sidebar */
     text-align: center;
     gap: 12px;
-    margin-top: -60px;
+    margin-top: -60px; /* Pull profile pic up */
     padding: 0 16px;
     position: relative;
     z-index: 10;
@@ -329,12 +332,14 @@ html, body {
     object-fit: cover;
 }
 
+/* Adjusted Store Info for White Background (Sidebar Card) */
 .store-info h1 {
     font-size: 26px;
     margin-top: 8px;
     margin-bottom: 4px;
     color: var(--text-dark);
     font-weight: 800;
+    text-shadow: none; /* Removed heavy shadow as it's on white card now */
 }
 
 .store-info p {
@@ -342,6 +347,7 @@ html, body {
     margin-bottom: 12px;
     font-size: 14px;
     font-weight: 500;
+    text-shadow: none;
 }
 
 .status-badge {
@@ -350,24 +356,26 @@ html, body {
     border-radius: 20px;
     font-weight: 700;
     font-size: 12px;
+    border: none;
+    box-shadow: none;
 }
 
 .status-badge.open {
     background: rgba(47, 138, 74, 0.15);
     color: var(--success);
+    text-shadow: none;
 }
 
 .status-badge.closed {
     background: rgba(198, 40, 40, 0.15);
     color: var(--error);
+    text-shadow: none;
 }
 
-/* ==========================================
-   CARDS & GRID
-   ========================================== */
+/* GRID LAYOUT - ADAPTED FOR SIDEBAR */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Force 1 column in sidebar */
     gap: 24px;
 }
 
@@ -399,6 +407,7 @@ html, body {
     font-size: 18px;
 }
 
+/* CENTERED TITLE FOR MENU SECTION */
 .card-title-center {
     font-size: 24px;
     font-weight: 700;
@@ -406,7 +415,7 @@ html, body {
     color: var(--text-dark);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: flex-start; /* Aligned left for right column */
     gap: 10px;
     text-align: left;
 }
@@ -418,12 +427,10 @@ html, body {
 
 .menu-section {
     margin-bottom: 32px;
-    height: 100%;
+    height: 100%; /* Fill the right column */
 }
 
-/* ==========================================
-   BUTTONS
-   ========================================== */
+/* BUTTONS */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -471,13 +478,14 @@ html, body {
     gap: 10px;
 }
 
+/* TRANSPARENT BUTTON STYLE */
 .btn-transparent {
     background: var(--bg);
     color: var(--text-dark);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
     justify-content: flex-start;
-    width: 100%;
+    width: 100%; /* Full width in sidebar */
 }
 
 .btn-transparent:hover {
@@ -492,9 +500,7 @@ html, body {
     text-align: center;
 }
 
-/* ==========================================
-   STATS
-   ========================================== */
+/* STATS */
 .stat-item {
     display: flex;
     align-items: center;
@@ -528,9 +534,7 @@ html, body {
     color: var(--text-muted);
 }
 
-/* ==========================================
-   MENU GRID & CARDS
-   ========================================== */
+/* MENU GRID - ADAPTED FOR RIGHT COLUMN */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -572,6 +576,7 @@ html, body {
     transform: scale(1.08);
 }
 
+/* IMPROVED BADGE POSITIONING */
 .badges-container {
     position: absolute;
     top: 10px;
@@ -694,23 +699,14 @@ html, body {
     background: rgba(198, 40, 40, 0.1);
 }
 
-/* ==========================================
-   MODALS
-   ========================================== */
+/* MODALS */
 .modal {
+    display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 10px;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-}
-
-.modal.show {
-    display: flex;
     animation: fadeIn 300ms ease;
 }
 
@@ -719,16 +715,21 @@ html, body {
     to { opacity: 1; }
 }
 
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .modal-content {
     background: var(--bg);
     border-radius: var(--radius);
     padding: 32px;
     max-width: 500px;
-    width: 100%;
+    width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    box-shadow: var(--shadow-lg);
     animation: slideUp 300ms ease;
 }
 
@@ -772,195 +773,6 @@ html, body {
     color: var(--text-dark);
 }
 
-/* ==========================================
-   MAP MODAL SPECIFIC STYLES
-   ========================================== */
-#mapModal .modal-content {
-    max-width: 900px;
-    padding: 20px;
-}
-
-#mapModal h2 {
-    margin: 0 0 8px 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: #333;
-}
-
-#mapModal h2 i {
-    color: #667eea;
-    margin-right: 8px;
-}
-
-#mapModal p {
-    margin: 0 0 16px 0;
-    color: #666;
-    font-size: 14px;
-}
-
-.current-location-box {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    color: white;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.current-location-box .location-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.current-location-box .location-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    flex-shrink: 0;
-}
-
-.current-location-box .location-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.current-location-box .location-label {
-    font-size: 12px;
-    opacity: 0.9;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-}
-
-.current-location-box .location-value {
-    font-size: 16px;
-    font-weight: 700;
-    word-break: break-all;
-}
-
-.current-location-box .location-status {
-    font-size: 11px;
-    opacity: 0.8;
-    margin-top: 4px;
-}
-
-.address-display-box {
-    background: #e8f5e9;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    display: none;
-}
-
-.address-display-box.active {
-    display: block;
-}
-
-.address-display-box .address-header {
-    display: flex;
-    align-items: start;
-    gap: 12px;
-}
-
-.address-display-box .address-icon {
-    font-size: 24px;
-    flex-shrink: 0;
-}
-
-.address-display-box .address-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.address-display-box .address-title {
-    font-weight: 700;
-    color: #2e7d32;
-    margin-bottom: 4px;
-    font-size: 13px;
-}
-
-.address-display-box .address-text {
-    color: #1b5e20;
-    font-size: 13px;
-    line-height: 1.5;
-    word-break: break-word;
-}
-
-#map {
-    width: 100%;
-    height: 450px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    border: 3px solid #667eea;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.map-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.map-actions button {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-}
-
-.map-actions .btn-secondary {
-    background: #e0e0e0;
-    color: #333;
-    flex: 0 0 auto;
-}
-
-.map-actions .btn-secondary:hover {
-    background: #d0d0d0;
-    transform: translateY(-2px);
-}
-
-.map-actions .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    flex: 1 1 auto;
-    min-width: 200px;
-    justify-content: center;
-}
-
-.map-actions .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.map-actions .map-hint {
-    flex: 1 1 100%;
-    text-align: center;
-    font-size: 12px;
-    color: #666;
-    margin: 0;
-    padding: 8px 0 0 0;
-}
-
-/* ==========================================
-   FORMS
-   ========================================== */
 .form-group {
     margin-bottom: 16px;
 }
@@ -998,20 +810,17 @@ html, body {
     min-height: 80px;
 }
 
-#id_address[readonly] {
-    background-color: #f8f9fa !important;
-    color: #495057;
-    border: 1px solid #ced4da;
-    font-style: italic;
+.no-items {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
 }
 
-@keyframes addressUpdate {
-    0% { background-color: #e8f5e9; }
-    100% { background-color: #f8f9fa; }
-}
-
-#id_address.updated {
-    animation: addressUpdate 1s ease;
+.no-items i {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: 16px;
+    display: block;
 }
 
 .checkbox-group {
@@ -1034,7 +843,6 @@ html, body {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: var(--primary);
 }
 
 .checkbox-item label {
@@ -1042,6 +850,26 @@ html, body {
     margin: 0;
     cursor: pointer;
     user-select: none;
+}
+/* Address field styling when readonly */
+#id_address[readonly] {
+    background-color: #f8f9fa !important;
+    color: #495057;
+    border: 1px solid #ced4da;
+    font-style: italic;
+}
+
+/* Animation when address updates */
+@keyframes addressUpdate {
+    0% { background-color: #e8f5e9; }
+    100% { background-color: #f8f9fa; }
+}
+
+#id_address.updated {
+    animation: addressUpdate 1s ease;
+}
+.checkbox-item input[type="checkbox"]:checked {
+    accent-color: var(--primary);
 }
 
 .checkbox-item input[type="checkbox"]:hover {
@@ -1057,24 +885,9 @@ html, body {
 }
 
 /* ==========================================
-   UTILITY CLASSES
+   RESPONSIVE ADJUSTMENTS
    ========================================== */
-.no-items {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-}
 
-.no-items i {
-    font-size: 48px;
-    opacity: 0.3;
-    margin-bottom: 16px;
-    display: block;
-}
-
-/* ==========================================
-   RESPONSIVE DESIGN
-   ========================================== */
 @media (max-width: 1024px) {
     .dashboard-sidebar {
         width: 300px;
@@ -1089,6 +902,7 @@ html, body {
         padding: 20px 16px;
     }
 
+    /* Stack sidebar on top of content on mobile */
     .dashboard-layout {
         flex-direction: column;
     }
@@ -1118,124 +932,6 @@ html, body {
     .modal-content {
         padding: 24px;
         max-width: 95%;
-    }
-
-    /* Map Modal - Tablets */
-    .modal {
-        padding: 5px;
-        align-items: flex-start;
-    }
-
-    #mapModal .modal-content {
-        padding: 15px;
-        max-height: 98vh;
-        margin-top: 5px;
-    }
-
-    .modal-close {
-        width: 36px;
-        height: 36px;
-        font-size: 20px;
-        top: 10px;
-        right: 10px;
-    }
-
-    #mapModal h2 {
-        font-size: 18px;
-        margin-right: 40px;
-    }
-
-    #mapModal p {
-        font-size: 13px;
-    }
-
-    .current-location-box {
-        padding: 12px;
-    }
-
-    .current-location-box .location-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
-
-    .current-location-box .location-value {
-        font-size: 14px;
-    }
-
-    .current-location-box .location-label {
-        font-size: 11px;
-    }
-
-    .address-display-box {
-        padding: 12px;
-    }
-
-    .address-display-box .address-icon {
-        font-size: 20px;
-    }
-
-    .address-display-box .address-title,
-    .address-display-box .address-text {
-        font-size: 12px;
-    }
-
-    #map {
-        height: 350px;
-        border-width: 2px;
-    }
-
-    .map-actions {
-        gap: 8px;
-    }
-
-    .map-actions button {
-        padding: 10px 16px;
-        font-size: 13px;
-    }
-
-    .map-actions .btn-secondary {
-        flex: 0 1 auto;
-    }
-
-    .map-actions .btn-primary {
-        flex: 1 1 100%;
-        min-width: unset;
-    }
-
-    .map-actions .map-hint {
-        font-size: 11px;
-    }
-
-    /* Leaflet Controls */
-    .leaflet-control-zoom {
-        margin-top: 10px !important;
-        margin-right: 10px !important;
-    }
-
-    .leaflet-control-zoom a {
-        width: 36px !important;
-        height: 36px !important;
-        line-height: 36px !important;
-        font-size: 18px !important;
-    }
-
-    .leaflet-control-layers {
-        margin-top: 10px !important;
-        margin-right: 10px !important;
-    }
-
-    .leaflet-control-layers-toggle {
-        width: 36px !important;
-        height: 36px !important;
-    }
-
-    .leaflet-marker-icon {
-        cursor: pointer;
-    }
-
-    .leaflet-popup-content {
-        font-size: 13px;
     }
 }
 
@@ -1290,152 +986,5 @@ html, body {
     .profile-pic {
         width: 100px;
         height: 100px;
-    }
-
-    /* Map Modal - Mobile */
-    .modal {
-        padding: 0;
-    }
-
-    .modal-content {
-        max-height: 100vh;
-        height: 100vh;
-        border-radius: 0;
-        padding: 12px;
-        margin-top: 0;
-    }
-
-    #mapModal .modal-content {
-        padding: 12px;
-    }
-
-    .modal-close {
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
-        top: 8px;
-        right: 8px;
-    }
-
-    #mapModal h2 {
-        font-size: 16px;
-        margin: 0 35px 6px 0;
-    }
-
-    #mapModal p {
-        font-size: 12px;
-        margin-bottom: 12px;
-    }
-
-    .current-location-box {
-        padding: 10px;
-        margin-bottom: 12px;
-    }
-
-    .current-location-box .location-header {
-        gap: 8px;
-    }
-
-    .current-location-box .location-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-
-    .current-location-box .location-value {
-        font-size: 12px;
-    }
-
-    .current-location-box .location-label,
-    .current-location-box .location-status {
-        font-size: 10px;
-    }
-
-    .address-display-box {
-        padding: 10px;
-        margin-bottom: 12px;
-    }
-
-    .address-display-box .address-icon {
-        font-size: 18px;
-    }
-
-    .address-display-box .address-title {
-        font-size: 11px;
-    }
-
-    .address-display-box .address-text {
-        font-size: 11px;
-    }
-
-    #map {
-        height: 280px;
-        margin-bottom: 12px;
-        border-radius: 8px;
-    }
-
-    .map-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .map-actions button {
-        width: 100%;
-        padding: 12px 16px;
-        font-size: 14px;
-        justify-content: center;
-    }
-
-    .map-actions .btn-secondary,
-    .map-actions .btn-primary {
-        flex: 1 1 auto;
-        min-width: unset;
-    }
-
-    .map-actions .map-hint {
-        font-size: 10px;
-        padding: 4px 0 0 0;
-    }
-}
-
-@media (max-width: 360px) {
-    #mapModal h2 {
-        font-size: 15px;
-    }
-
-    #map {
-        height: 240px;
-    }
-
-    .current-location-box .location-value {
-        font-size: 11px;
-    }
-
-    .address-display-box .address-text {
-        font-size: 10px;
-    }
-
-    .map-actions button {
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-}
-
-@media (max-height: 500px) and (orientation: landscape) {
-    .modal-content {
-        max-height: 95vh;
-    }
-
-    #map {
-        height: 200px;
-    }
-
-    .current-location-box,
-    .address-display-box {
-        padding: 8px;
-    }
-
-    .map-actions button {
-        padding: 8px 16px;
     }
 }
