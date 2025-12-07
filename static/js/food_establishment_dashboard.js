@@ -92,22 +92,23 @@ function releaseSubmissionLock() {
 
 // ==========================================
 // ✅ ULTRA-FAST ADDRESS GEOCODING (RACE CONDITION)
+// Gets DETAILED street address, not just city name
 // ==========================================
 function getAddressFromCoordinates(lat, lng) {
     return new Promise((resolve) => {
         let resolved = false;
         const startTime = Date.now();
 
-        // ✅ Provider 1: BigDataCloud (Fastest, No API Key)
-        const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
-
-        // ✅ Provider 2: Nominatim (OpenStreetMap)
+        // ✅ Provider 1: Nominatim (Best for detailed street addresses)
         const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
 
-        // ✅ Provider 3: LocationIQ (Backup)
-        const locationIQUrl = `https://us1.locationiq.com/v1/reverse.php?key=pk.0f147952a41c555c5b70614039fd148b&lat=${lat}&lon=${lng}&format=json`;
+        // ✅ Provider 2: LocationIQ (Good detail)
+        const locationIQUrl = `https://us1.locationiq.com/v1/reverse.php?key=pk.0f147952a41c555c5b70614039fd148b&lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
 
-        // ✅ FALLBACK: Show coordinates after 1 second
+        // ✅ Provider 3: BigDataCloud (Fallback)
+        const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+
+        // ✅ FALLBACK: Show coordinates after 2 seconds (longer timeout for better results)
         const fallbackTimeout = setTimeout(() => {
             if (!resolved) {
                 resolved = true;
@@ -118,56 +119,72 @@ function getAddressFromCoordinates(lat, lng) {
                     provider: 'coordinates'
                 });
             }
-        }, 1000);
+        }, 2000);
 
-        // ✅ BigDataCloud (Usually fastest)
-        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(2000) })
-        .then(r => r.json())
-        .then(data => {
-            if (resolved) return;
-
+        // ✅ Helper function to build detailed address
+        function buildDetailedAddress(addressData) {
             const parts = [];
-            if (data.locality) parts.push(data.locality);
-            if (data.principalSubdivision) parts.push(data.principalSubdivision);
-            if (data.countryName) parts.push(data.countryName);
 
-            if (parts.length > 0) {
-                resolved = true;
-                clearTimeout(fallbackTimeout);
-                const address = parts.join(', ');
-                console.log(`✅ BigDataCloud (${Date.now() - startTime}ms):`, address);
-                resolve({
-                    success: true,
-                    address: address,
-                    provider: 'BigDataCloud'
-                });
+            // Add house number + road (most specific)
+            if (addressData.house_number && addressData.road) {
+                parts.push(`${addressData.house_number} ${addressData.road}`);
+            } else if (addressData.road) {
+                parts.push(addressData.road);
             }
-        })
-        .catch(err => console.log('BigDataCloud error:', err));
 
-        // ✅ Nominatim (OSM)
+            // Add neighborhood/suburb
+            if (addressData.neighbourhood) {
+                parts.push(addressData.neighbourhood);
+            } else if (addressData.suburb) {
+                parts.push(addressData.suburb);
+            }
+
+            // Add city/municipality
+            if (addressData.city) {
+                parts.push(addressData.city);
+            } else if (addressData.municipality) {
+                parts.push(addressData.municipality);
+            } else if (addressData.town) {
+                parts.push(addressData.town);
+            }
+
+            // Add province/state
+            if (addressData.state) {
+                parts.push(addressData.state);
+            } else if (addressData.province) {
+                parts.push(addressData.province);
+            }
+
+            // Add country
+            if (addressData.country) {
+                parts.push(addressData.country);
+            }
+
+            return parts.join(', ');
+        }
+
+        // ✅ Nominatim (OSM) - Priority for detailed addresses
         fetch(nominatimUrl, {
             headers: {
                 'Accept': 'application/json',
                 'User-Agent': 'KabsuEats/1.0'
             },
-            signal: AbortSignal.timeout(2000)
+            signal: AbortSignal.timeout(3000)
         })
         .then(r => r.json())
         .then(data => {
             if (resolved) return;
 
             let address = null;
-            if (data.display_name) {
+
+            // Try to build detailed address from components
+            if (data.address) {
+                address = buildDetailedAddress(data.address);
+            }
+
+            // Fallback to display_name if components don't work
+            if (!address || address === 'Philippines') {
                 address = data.display_name;
-            } else if (data.address) {
-                const parts = [];
-                if (data.address.road) parts.push(data.address.road);
-                if (data.address.suburb) parts.push(data.address.suburb);
-                if (data.address.city) parts.push(data.address.city);
-                if (data.address.state) parts.push(data.address.state);
-                if (data.address.country) parts.push(data.address.country);
-                address = parts.join(', ');
             }
 
             if (address && address.length > 10) {
@@ -183,24 +200,82 @@ function getAddressFromCoordinates(lat, lng) {
         })
         .catch(err => console.log('Nominatim error:', err));
 
-        // ✅ LocationIQ (Backup)
-        fetch(locationIQUrl, { signal: AbortSignal.timeout(2000) })
+        // ✅ LocationIQ (Backup with address details)
+        fetch(locationIQUrl, {
+            signal: AbortSignal.timeout(3000)
+        })
         .then(r => r.json())
         .then(data => {
             if (resolved) return;
 
-            if (data.display_name) {
+            let address = null;
+
+            // Try to build detailed address
+            if (data.address) {
+                address = buildDetailedAddress(data.address);
+            }
+
+            // Fallback to display_name
+            if (!address || address === 'Philippines') {
+                address = data.display_name;
+            }
+
+            if (address && address.length > 10) {
                 resolved = true;
                 clearTimeout(fallbackTimeout);
-                console.log(`✅ LocationIQ (${Date.now() - startTime}ms):`, data.display_name);
+                console.log(`✅ LocationIQ (${Date.now() - startTime}ms):`, address);
                 resolve({
                     success: true,
-                    address: data.display_name,
+                    address: address,
                     provider: 'LocationIQ'
                 });
             }
         })
         .catch(err => console.log('LocationIQ error:', err));
+
+        // ✅ BigDataCloud (Last resort - less detailed)
+        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(3000) })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            const parts = [];
+
+            // Try to get street-level detail
+            if (data.localityInfo && data.localityInfo.administrative) {
+                const admin = data.localityInfo.administrative;
+
+                // Get most specific level first
+                for (let i = admin.length - 1; i >= 0; i--) {
+                    if (admin[i].name && admin[i].name !== 'Philippines') {
+                        parts.push(admin[i].name);
+                        if (parts.length >= 3) break; // Limit to 3 levels
+                    }
+                }
+            }
+
+            // Add general locality if we have it
+            if (data.locality && !parts.includes(data.locality)) {
+                parts.unshift(data.locality);
+            }
+
+            if (data.principalSubdivision && !parts.includes(data.principalSubdivision)) {
+                parts.push(data.principalSubdivision);
+            }
+
+            if (parts.length > 0) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                const address = parts.join(', ');
+                console.log(`✅ BigDataCloud (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'BigDataCloud'
+                });
+            }
+        })
+        .catch(err => console.log('BigDataCloud error:', err));
     });
 }
 
