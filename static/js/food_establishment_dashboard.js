@@ -108,7 +108,7 @@ function getAddressFromCoordinates(lat, lng) {
         // ✅ Provider 3: BigDataCloud (Fallback)
         const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
 
-        // ⏱️ FALLBACK: Show coordinates after 3 seconds (longer timeout for better results)
+        // ⏱️ FALLBACK: Show coordinates after 3 seconds
         const fallbackTimeout = setTimeout(() => {
             if (!resolved) {
                 resolved = true;
@@ -163,7 +163,7 @@ function getAddressFromCoordinates(lat, lng) {
             return parts.join(', ');
         }
 
-        // ✅ Nominatim (OSM) - Priority for detailed addresses
+        // ✅ Nominatim (OSM)
         fetch(nominatimUrl, {
             headers: {
                 'Accept': 'application/json',
@@ -177,12 +177,10 @@ function getAddressFromCoordinates(lat, lng) {
 
             let address = null;
 
-            // Try to build detailed address from components
             if (data.address) {
                 address = buildDetailedAddress(data.address);
             }
 
-            // Fallback to display_name if components don't work
             if (!address || address === 'Philippines') {
                 address = data.display_name;
             }
@@ -200,7 +198,7 @@ function getAddressFromCoordinates(lat, lng) {
         })
         .catch(err => console.log('Nominatim error:', err));
 
-        // ✅ LocationIQ (Backup with address details)
+        // ✅ LocationIQ
         fetch(locationIQUrl, {
             signal: AbortSignal.timeout(5000)
         })
@@ -210,12 +208,10 @@ function getAddressFromCoordinates(lat, lng) {
 
             let address = null;
 
-            // Try to build detailed address
             if (data.address) {
                 address = buildDetailedAddress(data.address);
             }
 
-            // Fallback to display_name
             if (!address || address === 'Philippines') {
                 address = data.display_name;
             }
@@ -233,7 +229,7 @@ function getAddressFromCoordinates(lat, lng) {
         })
         .catch(err => console.log('LocationIQ error:', err));
 
-        // ✅ BigDataCloud (Last resort - less detailed)
+        // ✅ BigDataCloud
         fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(5000) })
         .then(r => r.json())
         .then(data => {
@@ -241,20 +237,17 @@ function getAddressFromCoordinates(lat, lng) {
 
             const parts = [];
 
-            // Try to get street-level detail
             if (data.localityInfo && data.localityInfo.administrative) {
                 const admin = data.localityInfo.administrative;
 
-                // Get most specific level first
                 for (let i = admin.length - 1; i >= 0; i--) {
                     if (admin[i].name && admin[i].name !== 'Philippines') {
                         parts.push(admin[i].name);
-                        if (parts.length >= 3) break; // Limit to 3 levels
+                        if (parts.length >= 3) break;
                     }
                 }
             }
 
-            // Add general locality if we have it
             if (data.locality && !parts.includes(data.locality)) {
                 parts.unshift(data.locality);
             }
@@ -283,7 +276,7 @@ function getAddressFromCoordinates(lat, lng) {
 // ✅ INSTANT ADDRESS UPDATE WITH VISUAL FEEDBACK
 // ==========================================
 async function updateAddressFromCoords(latlng) {
-    console.log('📍 Getting address for:', latlng);
+    console.log('🔍 Getting address for:', latlng);
 
     const addressField = document.getElementById('id_address');
     const locationInfo = document.getElementById('previousLocationInfo');
@@ -307,16 +300,16 @@ async function updateAddressFromCoords(latlng) {
         locationInfo.style.color = '#666';
     }
 
-    // ✅ GET ADDRESS (Race condition with multiple providers)
+    // ✅ GET ADDRESS
     const result = await getAddressFromCoordinates(latlng.lat, latlng.lng);
 
-    // ✅ UPDATE FIELD WITH RESULT
+    // ✅ UPDATE FIELD
     addressField.value = result.address;
     addressField.style.fontStyle = 'normal';
     addressField.classList.remove('loading');
 
     if (result.success) {
-        // ✅ GREEN SUCCESS ANIMATION
+        // ✅ GREEN SUCCESS
         addressField.style.backgroundColor = '#d4edda';
         addressField.style.borderColor = '#28a745';
 
@@ -333,7 +326,7 @@ async function updateAddressFromCoords(latlng) {
             locationInfo.style.color = '#28a745';
         }
     } else {
-        // ⏱️ YELLOW WARNING (Coordinates)
+        // ⏱️ YELLOW WARNING
         addressField.style.backgroundColor = '#fff3cd';
         addressField.style.borderColor = '#ffc107';
 
@@ -353,7 +346,6 @@ async function updateAddressFromCoords(latlng) {
 
     console.log('✅ Address field updated:', result.address);
 }
-
 // ==========================================
 // ADD MENU ITEM FORM
 // ==========================================
@@ -839,10 +831,16 @@ function toggleDropdown() {
 // ✅ MAP FUNCTIONALITY - INSTANT ADDRESS UPDATE
 // ==========================================
 function openLocationModal() {
-    openModal('mapModal');
-    setTimeout(() => {
-        initializeMap();
-    }, 100);
+    const modal = document.getElementById('mapModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // ✅ Initialize map after modal is visible
+        setTimeout(() => {
+            initializeMap();
+        }, 100);
+    }
 }
 // ✅ Close modal handler
 function closeModal(modalId) {
@@ -851,7 +849,8 @@ function closeModal(modalId) {
         modal.classList.remove('show');
         document.body.style.overflow = '';
     }
-if (modalId === 'mapModal' && window._kabsueats_map) {
+
+    if (modalId === 'mapModal' && window._kabsueats_map) {
         try {
             window._kabsueats_map.remove();
         } catch (err) {}
@@ -869,20 +868,29 @@ function openModal(modalId) {
 }
 function initializeMap() {
     const mapElement = document.getElementById('map');
-    if (!mapElement) return;
+    if (!mapElement) {
+        console.error('❌ Map element not found');
+        return;
+    }
 
+    // Clean up existing map
     if (window._kabsueats_map) {
         try {
             window._kabsueats_map.remove();
-        } catch (err) {}
+        } catch (err) {
+            console.log('Map cleanup error:', err);
+        }
     }
 
     const cvsuLat = 14.412768;
     const cvsuLng = 120.981348;
     const RADIUS = 500;
 
-    const prevLat = parseFloat(document.getElementById('previous_lat').value) || cvsuLat;
-    const prevLng = parseFloat(document.getElementById('previous_lng').value) || cvsuLng;
+    // ✅ FIX: Use correct hidden field IDs
+    const prevLat = parseFloat(document.getElementById('id_latitude')?.value) || cvsuLat;
+    const prevLng = parseFloat(document.getElementById('id_longitude')?.value) || cvsuLng;
+
+    console.log('📍 Initializing map with:', { prevLat, prevLng });
 
     const locationInfo = document.getElementById('previousLocationInfo');
     if (locationInfo) {
@@ -893,36 +901,29 @@ function initializeMap() {
         }
     }
 
-    // ✅ HIGH RESOLUTION MAP LAYERS
+    // Map layers
+    const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google',
+        maxZoom: 21
+    });
+
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+        attribution: '&copy; OpenStreetMap',
         maxZoom: 22
     });
 
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    });
-
-    const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 21,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    });
-
-    const terrainLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-        attribution: '&copy; Google',
-        maxZoom: 20
+        maxZoom: 21
     });
 
     const baseMaps = {
-        "Hybrid (Satellite + Labels)": hybridLayer,
-        "Satellite": satelliteLayer,
+        "Hybrid": hybridLayer,
         "Street": streetLayer,
-        "Terrain": terrainLayer
+        "Satellite": satelliteLayer
     };
 
+    // Create map
     const map = L.map('map', {
         layers: [hybridLayer],
         maxZoom: 22,
@@ -933,10 +934,12 @@ function initializeMap() {
 
     L.control.layers(baseMaps).addTo(map);
 
+    // CvSU marker
     L.marker([cvsuLat, cvsuLng]).addTo(map)
         .bindPopup('<b>CvSU-Bacoor Campus</b>')
         .openPopup();
 
+    // Radius circle
     L.circle([cvsuLat, cvsuLng], {
         color: 'red',
         fillColor: '#f03',
@@ -944,19 +947,29 @@ function initializeMap() {
         radius: RADIUS
     }).addTo(map);
 
+    // Draggable marker
     const marker = L.marker([prevLat, prevLng], {
         draggable: true
     }).addTo(map);
 
     window._kabsueats_marker = marker;
 
-    // ✅ INSTANT ADDRESS UPDATE ON CLICK/DRAG
+    // ✅ VALIDATION AND ADDRESS UPDATE
     function validateAndUpdateAddress(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
         if (distance <= RADIUS) {
-            document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
-            document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
+            // ✅ FIX: Update correct hidden fields
+            const latField = document.getElementById('id_latitude');
+            const lngField = document.getElementById('id_longitude');
+
+            if (latField && lngField) {
+                latField.value = latlng.lat.toFixed(6);
+                lngField.value = latlng.lng.toFixed(6);
+                console.log('✅ Coordinates updated:', latField.value, lngField.value);
+            } else {
+                console.error('❌ Coordinate fields not found!');
+            }
 
             // ✅ INSTANT ADDRESS FETCH
             updateAddressFromCoords(latlng);
@@ -974,6 +987,7 @@ function initializeMap() {
         }
     }
 
+    // Marker drag event
     marker.on('dragend', function(e) {
         const position = marker.getLatLng();
         if (!validateAndUpdateAddress(position)) {
@@ -981,20 +995,29 @@ function initializeMap() {
         }
     });
 
+    // Map click event
     map.on('click', function(e) {
         if (validateAndUpdateAddress(e.latlng)) {
             marker.setLatLng(e.latlng);
         }
     });
 
-    document.getElementById('id_latitude').value = prevLat.toFixed(6);
-    document.getElementById('id_longitude').value = prevLng.toFixed(6);
-
     // ✅ LOAD INITIAL ADDRESS IF EXISTS
     if (prevLat && prevLng && (Math.abs(prevLat - cvsuLat) > 0.0001 || Math.abs(prevLng - cvsuLng) > 0.0001)) {
         updateAddressFromCoords({ lat: prevLat, lng: prevLng });
     }
+
+    console.log('✅ Map initialized successfully');
 }
+// Export functions for global access
+window.openLocationModal = openLocationModal;
+window.closeModal = closeModal;
+window.initializeMap = initializeMap;
+window.focusOnCvSU = focusOnCvSU;
+window.updateAddressFromCoords = updateAddressFromCoords;
+window.getAddressFromCoordinates = getAddressFromCoordinates;
+
+console.log('✅ Pin location system loaded');
 
 function focusOnCvSU() {
     if (window._kabsueats_map && window._kabsueats_marker) {
@@ -1004,8 +1027,13 @@ function focusOnCvSU() {
         window._kabsueats_map.setView([cvsuLat, cvsuLng], 16);
         window._kabsueats_marker.setLatLng([cvsuLat, cvsuLng]);
 
-        document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
-        document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
+        const latField = document.getElementById('id_latitude');
+        const lngField = document.getElementById('id_longitude');
+
+        if (latField && lngField) {
+            latField.value = cvsuLat.toFixed(6);
+            lngField.value = cvsuLng.toFixed(6);
+        }
 
         updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
 
