@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - INSTANT ADDRESS UPDATE
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE WITH ULTRA-FAST ADDRESS
 // ==========================================
 
 // ==========================================
@@ -7,7 +7,7 @@
 // ==========================================
 let isSubmitting = false;
 const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
-const LOCK_TIMEOUT = 5000; // 5 seconds
+const LOCK_TIMEOUT = 5000;
 
 // ==========================================
 // NOTIFICATION SYSTEM
@@ -58,7 +58,7 @@ function getCookie(name) {
 }
 
 // ==========================================
-// GLOBAL SUBMISSION LOCK
+// SUBMISSION LOCK
 // ==========================================
 function acquireSubmissionLock() {
     const now = Date.now();
@@ -91,9 +91,123 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
-// ✅ OPTIMIZED: INSTANT REVERSE GEOCODING
+// ✅ ULTRA-FAST ADDRESS GEOCODING (RACE CONDITION)
 // ==========================================
-function updateAddressFromCoords(latlng) {
+function getAddressFromCoordinates(lat, lng) {
+    return new Promise((resolve) => {
+        let resolved = false;
+        const startTime = Date.now();
+
+        // ✅ Provider 1: BigDataCloud (Fastest, No API Key)
+        const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+
+        // ✅ Provider 2: Nominatim (OpenStreetMap)
+        const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+
+        // ✅ Provider 3: LocationIQ (Backup)
+        const locationIQUrl = `https://us1.locationiq.com/v1/reverse.php?key=pk.0f147952a41c555c5b70614039fd148b&lat=${lat}&lon=${lng}&format=json`;
+
+        // ✅ FALLBACK: Show coordinates after 1 second
+        const fallbackTimeout = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                console.log('⚠️ Using coordinates (geocoding timeout)');
+                resolve({
+                    success: false,
+                    address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+                    provider: 'coordinates'
+                });
+            }
+        }, 1000);
+
+        // ✅ BigDataCloud (Usually fastest)
+        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(2000) })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            const parts = [];
+            if (data.locality) parts.push(data.locality);
+            if (data.principalSubdivision) parts.push(data.principalSubdivision);
+            if (data.countryName) parts.push(data.countryName);
+
+            if (parts.length > 0) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                const address = parts.join(', ');
+                console.log(`✅ BigDataCloud (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'BigDataCloud'
+                });
+            }
+        })
+        .catch(err => console.log('BigDataCloud error:', err));
+
+        // ✅ Nominatim (OSM)
+        fetch(nominatimUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'KabsuEats/1.0'
+            },
+            signal: AbortSignal.timeout(2000)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            let address = null;
+            if (data.display_name) {
+                address = data.display_name;
+            } else if (data.address) {
+                const parts = [];
+                if (data.address.road) parts.push(data.address.road);
+                if (data.address.suburb) parts.push(data.address.suburb);
+                if (data.address.city) parts.push(data.address.city);
+                if (data.address.state) parts.push(data.address.state);
+                if (data.address.country) parts.push(data.address.country);
+                address = parts.join(', ');
+            }
+
+            if (address && address.length > 10) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                console.log(`✅ Nominatim (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'Nominatim'
+                });
+            }
+        })
+        .catch(err => console.log('Nominatim error:', err));
+
+        // ✅ LocationIQ (Backup)
+        fetch(locationIQUrl, { signal: AbortSignal.timeout(2000) })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            if (data.display_name) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                console.log(`✅ LocationIQ (${Date.now() - startTime}ms):`, data.display_name);
+                resolve({
+                    success: true,
+                    address: data.display_name,
+                    provider: 'LocationIQ'
+                });
+            }
+        })
+        .catch(err => console.log('LocationIQ error:', err));
+    });
+}
+
+// ==========================================
+// ✅ INSTANT ADDRESS UPDATE WITH VISUAL FEEDBACK
+// ==========================================
+async function updateAddressFromCoords(latlng) {
     console.log('🔍 Getting address for:', latlng);
 
     const addressField = document.getElementById('id_address');
@@ -104,8 +218,8 @@ function updateAddressFromCoords(latlng) {
         return;
     }
 
-    // ✅ INSTANT VISUAL FEEDBACK
-    addressField.value = '📍 Fetching address...';
+    // ✅ INSTANT LOADING STATE
+    addressField.value = '📍 Getting address...';
     addressField.style.backgroundColor = '#fff3cd';
     addressField.style.fontStyle = 'italic';
     addressField.classList.add('loading');
@@ -113,139 +227,56 @@ function updateAddressFromCoords(latlng) {
     if (locationInfo) {
         locationInfo.innerHTML = `
             <i class="fas fa-spinner fa-spin" style="color: #ffc107;"></i>
-            <strong>Getting address...</strong>
+            <strong>Fetching address...</strong>
         `;
         locationInfo.style.color = '#666';
     }
 
-    // ✅ MULTI-PROVIDER APPROACH (Try multiple services for speed)
-    const providers = [
-        // Provider 1: Nominatim (Fast, Free)
-        {
-            name: 'Nominatim',
-            url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`,
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'KabsuEats/1.0'
-            },
-            parse: (data) => {
-                if (data.display_name) return data.display_name;
-                if (data.address) {
-                    const parts = [];
-                    if (data.address.road) parts.push(data.address.road);
-                    if (data.address.suburb) parts.push(data.address.suburb);
-                    if (data.address.city) parts.push(data.address.city);
-                    if (data.address.state) parts.push(data.address.state);
-                    if (data.address.country) parts.push(data.address.country);
-                    return parts.join(', ');
-                }
-                return null;
-            }
-        }
-    ];
+    // ✅ GET ADDRESS (Race condition with multiple providers)
+    const result = await getAddressFromCoordinates(latlng.lat, latlng.lng);
 
-    // ✅ RACE CONDITION: Use first successful response
-    let resolved = false;
-
-    providers.forEach((provider, index) => {
-        fetch(provider.url, {
-            headers: provider.headers,
-            signal: AbortSignal.timeout(5000) // 5 second timeout
-        })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            if (resolved) return; // Already got address from another provider
-
-            console.log(`✅ ${provider.name} response:`, data);
-
-            const address = provider.parse(data);
-
-            if (address && address.length > 10) {
-                resolved = true;
-                updateAddressField(address, latlng, true);
-            }
-        })
-        .catch(error => {
-            console.error(`❌ ${provider.name} error:`, error);
-
-            // If all providers fail, use coordinates
-            if (index === providers.length - 1 && !resolved) {
-                const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
-                updateAddressField(coordsAddress, latlng, false);
-            }
-        });
-    });
-
-    // ✅ FALLBACK: After 3 seconds, if still loading, show coordinates
-    setTimeout(() => {
-        if (!resolved && addressField.value === '📍 Fetching address...') {
-            const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
-            updateAddressField(coordsAddress, latlng, false);
-
-            if (locationInfo) {
-                locationInfo.innerHTML = `
-                    <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
-                    Address lookup is slow. Using coordinates. You can edit this later.
-                `;
-                locationInfo.style.color = '#17a2b8';
-            }
-        }
-    }, 3000);
-}
-
-function updateAddressField(address, latlng, success) {
-    const addressField = document.getElementById('id_address');
-    const locationInfo = document.getElementById('previousLocationInfo');
-
-    if (!addressField) return;
-
-    // ✅ UPDATE ADDRESS IMMEDIATELY WITH ANIMATION
-    addressField.value = address;
+    // ✅ UPDATE FIELD WITH RESULT
+    addressField.value = result.address;
     addressField.style.fontStyle = 'normal';
     addressField.classList.remove('loading');
 
-    if (success) {
+    if (result.success) {
         // ✅ GREEN SUCCESS ANIMATION
         addressField.style.backgroundColor = '#d4edda';
         addressField.style.borderColor = '#28a745';
-        addressField.classList.add('updated');
 
         setTimeout(() => {
-            addressField.style.backgroundColor = '#fff';
+            addressField.style.backgroundColor = '#f5f5f5';
             addressField.style.borderColor = '#ced4da';
-            addressField.classList.remove('updated');
         }, 2000);
 
         if (locationInfo) {
             locationInfo.innerHTML = `
                 <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                <strong style="color: #28a745;">Address found!</strong> ${address}
+                <strong style="color: #28a745;">Address found!</strong> ${result.address}
             `;
             locationInfo.style.color = '#28a745';
         }
     } else {
-        // ✅ YELLOW WARNING (Coordinates fallback)
+        // ⚠️ YELLOW WARNING (Coordinates)
         addressField.style.backgroundColor = '#fff3cd';
         addressField.style.borderColor = '#ffc107';
 
         setTimeout(() => {
-            addressField.style.backgroundColor = '#fff';
+            addressField.style.backgroundColor = '#f5f5f5';
             addressField.style.borderColor = '#ced4da';
         }, 2000);
 
         if (locationInfo) {
             locationInfo.innerHTML = `
                 <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
-                Using coordinates. Address lookup failed.
+                Using coordinates. Address lookup was slow.
             `;
             locationInfo.style.color = '#ffc107';
         }
     }
 
-    console.log('✅ Address updated:', address);
+    console.log('✅ Address field updated:', result.address);
 }
 
 // ==========================================
@@ -765,7 +796,7 @@ function initializeMap() {
         }
     }
 
-    // Map layers
+    // ✅ HIGH RESOLUTION MAP LAYERS
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 22
@@ -862,7 +893,8 @@ function initializeMap() {
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
 
-    if (prevLat && prevLng) {
+    // ✅ LOAD INITIAL ADDRESS IF EXISTS
+    if (prevLat && prevLng && (Math.abs(prevLat - cvsuLat) > 0.0001 || Math.abs(prevLng - cvsuLng) > 0.0001)) {
         updateAddressFromCoords({ lat: prevLat, lng: prevLng });
     }
 }
