@@ -91,7 +91,7 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
-// ✅ ULTRA-FAST ADDRESS GEOCODING (RACE CONDITION)
+// âœ… ULTRA-FAST ADDRESS GEOCODING (RACE CONDITION)
 // Gets DETAILED street address, not just city name
 // ==========================================
 function getAddressFromCoordinates(lat, lng) {
@@ -99,20 +99,20 @@ function getAddressFromCoordinates(lat, lng) {
         let resolved = false;
         const startTime = Date.now();
 
-        // ✅ Provider 1: Nominatim (Best for detailed street addresses)
+        // âœ… Provider 1: Nominatim (Best for detailed street addresses)
         const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
 
-        // ✅ Provider 2: LocationIQ (Good detail)
+        // âœ… Provider 2: LocationIQ (Good detail)
         const locationIQUrl = `https://us1.locationiq.com/v1/reverse.php?key=pk.0f147952a41c555c5b70614039fd148b&lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
 
-        // ✅ Provider 3: BigDataCloud (Fallback)
+        // âœ… Provider 3: BigDataCloud (Fallback)
         const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
 
-        // ✅ FALLBACK: Show coordinates after 2 seconds (longer timeout for better results)
+        // âœ… FALLBACK: Show coordinates after 2 seconds (longer timeout for better results)
         const fallbackTimeout = setTimeout(() => {
             if (!resolved) {
                 resolved = true;
-                console.log('⚠️ Using coordinates (geocoding timeout)');
+                console.log('âš ï¸ Using coordinates (geocoding timeout)');
                 resolve({
                     success: false,
                     address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
@@ -121,7 +121,7 @@ function getAddressFromCoordinates(lat, lng) {
             }
         }, 2000);
 
-        // ✅ Helper function to build detailed address
+        // âœ… Helper function to build detailed address
         function buildDetailedAddress(addressData) {
             const parts = [];
 
@@ -163,7 +163,7 @@ function getAddressFromCoordinates(lat, lng) {
             return parts.join(', ');
         }
 
-        // ✅ Nominatim (OSM) - Priority for detailed addresses
+        // âœ… Nominatim (OSM) - Priority for detailed addresses
         fetch(nominatimUrl, {
             headers: {
                 'Accept': 'application/json',
@@ -190,7 +190,7 @@ function getAddressFromCoordinates(lat, lng) {
             if (address && address.length > 10) {
                 resolved = true;
                 clearTimeout(fallbackTimeout);
-                console.log(`✅ Nominatim (${Date.now() - startTime}ms):`, address);
+                console.log(`âœ… Nominatim (${Date.now() - startTime}ms):`, address);
                 resolve({
                     success: true,
                     address: address,
@@ -200,7 +200,7 @@ function getAddressFromCoordinates(lat, lng) {
         })
         .catch(err => console.log('Nominatim error:', err));
 
-        // ✅ LocationIQ (Backup with address details)
+        // âœ… LocationIQ (Backup with address details)
         fetch(locationIQUrl, {
             signal: AbortSignal.timeout(3000)
         })
@@ -223,7 +223,7 @@ function getAddressFromCoordinates(lat, lng) {
             if (address && address.length > 10) {
                 resolved = true;
                 clearTimeout(fallbackTimeout);
-                console.log(`✅ LocationIQ (${Date.now() - startTime}ms):`, address);
+                console.log(`âœ… LocationIQ (${Date.now() - startTime}ms):`, address);
                 resolve({
                     success: true,
                     address: address,
@@ -233,7 +233,7 @@ function getAddressFromCoordinates(lat, lng) {
         })
         .catch(err => console.log('LocationIQ error:', err));
 
-        // ✅ BigDataCloud (Last resort - less detailed)
+        // âœ… BigDataCloud (Last resort - less detailed)
         fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(3000) })
         .then(r => r.json())
         .then(data => {
@@ -267,7 +267,7 @@ function getAddressFromCoordinates(lat, lng) {
                 resolved = true;
                 clearTimeout(fallbackTimeout);
                 const address = parts.join(', ');
-                console.log(`✅ BigDataCloud (${Date.now() - startTime}ms):`, address);
+                console.log(`âœ… BigDataCloud (${Date.now() - startTime}ms):`, address);
                 resolve({
                     success: true,
                     address: address,
@@ -280,21 +280,21 @@ function getAddressFromCoordinates(lat, lng) {
 }
 
 // ==========================================
-// ✅ INSTANT ADDRESS UPDATE WITH VISUAL FEEDBACK
+// âœ… INSTANT ADDRESS UPDATE WITH VISUAL FEEDBACK
 // ==========================================
 async function updateAddressFromCoords(latlng) {
-    console.log('🔍 Getting address for:', latlng);
+    console.log('ðŸ" Getting address for:', latlng);
 
     const addressField = document.getElementById('id_address');
     const locationInfo = document.getElementById('previousLocationInfo');
 
     if (!addressField) {
-        console.error('❌ Address field not found');
+        console.error('âŒ Address field not found');
         return;
     }
 
-    // ✅ INSTANT LOADING STATE
-    addressField.value = '📍 Getting address...';
+    // âœ… INSTANT LOADING STATE
+    addressField.value = 'ðŸ" Getting address...';
     addressField.style.backgroundColor = '#fff3cd';
     addressField.style.fontStyle = 'italic';
     addressField.classList.add('loading');
@@ -307,16 +307,16 @@ async function updateAddressFromCoords(latlng) {
         locationInfo.style.color = '#666';
     }
 
-    // ✅ GET ADDRESS (Race condition with multiple providers)
+    // âœ… GET ADDRESS (Race condition with multiple providers)
     const result = await getAddressFromCoordinates(latlng.lat, latlng.lng);
 
-    // ✅ UPDATE FIELD WITH RESULT
+    // âœ… UPDATE FIELD WITH RESULT
     addressField.value = result.address;
     addressField.style.fontStyle = 'normal';
     addressField.classList.remove('loading');
 
     if (result.success) {
-        // ✅ GREEN SUCCESS ANIMATION
+        // âœ… GREEN SUCCESS ANIMATION
         addressField.style.backgroundColor = '#d4edda';
         addressField.style.borderColor = '#28a745';
 
@@ -333,7 +333,7 @@ async function updateAddressFromCoords(latlng) {
             locationInfo.style.color = '#28a745';
         }
     } else {
-        // ⚠️ YELLOW WARNING (Coordinates)
+        // âš ï¸ YELLOW WARNING (Coordinates)
         addressField.style.backgroundColor = '#fff3cd';
         addressField.style.borderColor = '#ffc107';
 
@@ -351,7 +351,7 @@ async function updateAddressFromCoords(latlng) {
         }
     }
 
-    console.log('✅ Address field updated:', result.address);
+    console.log('âœ… Address field updated:', result.address);
 }
 
 // ==========================================
@@ -361,26 +361,26 @@ function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
 
     if (!addMenuForm) {
-        console.log('⚠️ Add menu form not found');
+        console.log('âš ï¸ Add menu form not found');
         return;
     }
 
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
-    console.log('✅ Setting up add menu form handler');
+    console.log('âœ… Setting up add menu form handler');
 
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
         if (isSubmitting) {
-            showNotification('⏳ Please wait, submission in progress...', 'info');
+            showNotification('â³ Please wait, submission in progress...', 'info');
             return false;
         }
 
         if (!acquireSubmissionLock()) {
-            showNotification('⏳ Please wait, submission in progress...', 'info');
+            showNotification('â³ Please wait, submission in progress...', 'info');
             return false;
         }
 
@@ -393,14 +393,14 @@ function setupAddMenuItemForm() {
         const description = formData.get('description');
 
         if (!name || !price || !description) {
-            showNotification('❌ Please fill in all required fields', 'error');
+            showNotification('âŒ Please fill in all required fields', 'error');
             releaseSubmissionLock();
             return false;
         }
 
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
-            showNotification('❌ Security token missing. Please refresh the page.', 'error');
+            showNotification('âŒ Security token missing. Please refresh the page.', 'error');
             releaseSubmissionLock();
             return false;
         }
@@ -421,7 +421,7 @@ function setupAddMenuItemForm() {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 return response.text().then(text => {
-                    console.error('❌ Server returned HTML:', text.substring(0, 500));
+                    console.error('âŒ Server returned HTML:', text.substring(0, 500));
                     throw new Error('Server error - check server logs');
                 });
             }
@@ -433,7 +433,7 @@ function setupAddMenuItemForm() {
                     return;
                 }
 
-                showNotification('✅ ' + data.message, 'success');
+                showNotification('âœ… ' + data.message, 'success');
 
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
@@ -447,12 +447,12 @@ function setupAddMenuItemForm() {
                     newForm.reset();
                 }, 1000);
             } else {
-                showNotification('❌ ' + (data.error || 'Failed to add menu item'), 'error');
+                showNotification('âŒ ' + (data.error || 'Failed to add menu item'), 'error');
             }
         })
         .catch(error => {
-            console.error('❌ Error:', error);
-            showNotification('❌ ' + error.message, 'error');
+            console.error('âŒ Error:', error);
+            showNotification('âŒ ' + error.message, 'error');
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -503,7 +503,7 @@ function addMenuItemToGrid(item) {
         <div class="menu-info">
             <div class="menu-name">${item.name}</div>
             <div class="menu-desc">${item.description}</div>
-            <div class="menu-price">₱${parseFloat(item.price).toFixed(2)}</div>
+            <div class="menu-price">â‚±${parseFloat(item.price).toFixed(2)}</div>
             <div class="menu-actions">
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
@@ -593,18 +593,18 @@ function setupUpdateStoreDetailsForm() {
                         document.getElementById('storeCoverPhoto').src = data.image_url;
                     }
 
-                    showNotification('✅ Store details updated successfully!', 'success');
+                    showNotification('âœ… Store details updated successfully!', 'success');
 
                     setTimeout(() => {
                         closeModal('updateStoreDetailsModal');
                     }, 1000);
                 } else {
-                    showNotification('❌ ' + (data.error || 'Failed to update store details'), 'error');
+                    showNotification('âŒ ' + (data.error || 'Failed to update store details'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('❌ An error occurred while updating', 'error');
+                showNotification('âŒ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -641,19 +641,19 @@ function setupEditMenuItemForm() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification('✅ ' + data.message, 'success');
+                    showNotification('âœ… ' + data.message, 'success');
                     updateMenuItemInGrid(data.item);
 
                     setTimeout(() => {
                         closeModal('editMenuItemModal');
                     }, 1000);
                 } else {
-                    showNotification('❌ ' + (data.error || 'Failed to update menu item'), 'error');
+                    showNotification('âŒ ' + (data.error || 'Failed to update menu item'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('❌ An error occurred while updating', 'error');
+                showNotification('âŒ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -693,7 +693,7 @@ function updateMenuItemInGrid(item) {
 
     menuCard.querySelector('.menu-name').textContent = item.name;
     menuCard.querySelector('.menu-desc').textContent = item.description;
-    menuCard.querySelector('.menu-price').textContent = `₱${parseFloat(item.price).toFixed(2)}`;
+    menuCard.querySelector('.menu-price').textContent = `â‚±${parseFloat(item.price).toFixed(2)}`;
 
     menuCard.style.animation = 'pulse 0.5s ease';
     setTimeout(() => {
@@ -745,16 +745,16 @@ function deleteMenuItem(itemId, button) {
                 }, 300);
             }
 
-            showNotification('✅ ' + data.message, 'success');
+            showNotification('âœ… ' + data.message, 'success');
         } else {
-            showNotification('❌ ' + data.message, 'error');
+            showNotification('âŒ ' + data.message, 'error');
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-trash"></i> Delete';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('❌ An error occurred', 'error');
+        showNotification('âŒ An error occurred', 'error');
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash"></i> Delete';
     });
@@ -836,7 +836,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// ✅ MAP FUNCTIONALITY - INSTANT ADDRESS UPDATE
+// âœ… MAP FUNCTIONALITY - INSTANT ADDRESS UPDATE
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -871,7 +871,7 @@ function initializeMap() {
         }
     }
 
-    // ✅ HIGH RESOLUTION MAP LAYERS
+    // âœ… HIGH RESOLUTION MAP LAYERS
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 22
@@ -928,7 +928,7 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    // ✅ INSTANT ADDRESS UPDATE ON CLICK/DRAG
+    // âœ… INSTANT ADDRESS UPDATE ON CLICK/DRAG
     function validateAndUpdateAddress(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
@@ -936,7 +936,7 @@ function initializeMap() {
             document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
             document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-            // ✅ INSTANT ADDRESS FETCH
+            // âœ… INSTANT ADDRESS FETCH
             updateAddressFromCoords(latlng);
 
             return true;
@@ -968,7 +968,7 @@ function initializeMap() {
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
 
-    // ✅ LOAD INITIAL ADDRESS IF EXISTS
+    // âœ… LOAD INITIAL ADDRESS IF EXISTS
     if (prevLat && prevLng && (Math.abs(prevLat - cvsuLat) > 0.0001 || Math.abs(prevLng - cvsuLng) > 0.0001)) {
         updateAddressFromCoords({ lat: prevLat, lng: prevLng });
     }
@@ -1127,7 +1127,7 @@ function markAllNotificationsRead() {
     .then(data => {
         if (data.success) {
             loadNotifications();
-            showNotification('✅ All notifications marked as read', 'success');
+            showNotification('âœ… All notifications marked as read', 'success');
         }
     })
     .catch(error => {
@@ -1171,13 +1171,13 @@ document.addEventListener('keydown', function(e) {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard initializing...');
+    console.log('ðŸš€ Dashboard initializing...');
 
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
 
     if (loginSuccess === 'true') {
-        showNotification('✅ Successfully logged in! Welcome to your dashboard.', 'success');
+        showNotification('âœ… Successfully logged in! Welcome to your dashboard.', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -1196,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    console.log('✅ Dashboard initialized successfully');
+    console.log('âœ… Dashboard initialized successfully');
 });
 
 // ==========================================
@@ -1235,7 +1235,7 @@ style.textContent = `
         }
     }
 
-    /* ✅ Address field loading animation */
+    /* âœ… Address field loading animation */
     #id_address.loading {
         background: linear-gradient(90deg, #fff3cd 0%, #ffeaa7 50%, #fff3cd 100%);
         background-size: 200% 100%;
@@ -1247,7 +1247,7 @@ style.textContent = `
         100% { background-position: 200% 0; }
     }
 
-    /* ✅ Address field success animation */
+    /* âœ… Address field success animation */
     #id_address.updated {
         transition: all 0.3s ease;
     }
