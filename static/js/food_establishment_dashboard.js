@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - INSTANT ADDRESS UPDATE
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
 // ==========================================
 
 // ==========================================
@@ -33,6 +33,7 @@ function showNotification(message, type = 'success') {
 
     document.body.appendChild(notification);
 
+    // Auto-remove after 5 seconds
     setTimeout(() => {
         notification.style.animation = 'slideIn 300ms ease reverse';
         setTimeout(() => notification.remove(), 300);
@@ -58,7 +59,7 @@ function getCookie(name) {
 }
 
 // ==========================================
-// GLOBAL SUBMISSION LOCK
+// GLOBAL SUBMISSION LOCK (CROSS-TAB)
 // ==========================================
 function acquireSubmissionLock() {
     const now = Date.now();
@@ -68,9 +69,10 @@ function acquireSubmissionLock() {
         try {
             const { timestamp } = JSON.parse(lockData);
             if (now - timestamp < LOCK_TIMEOUT) {
-                return false;
+                return false; // Lock is held
             }
         } catch (e) {
+            // Invalid lock data, clear it
             localStorage.removeItem(SUBMISSION_LOCK_KEY);
         }
     }
@@ -91,165 +93,7 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
-// ✅ OPTIMIZED: INSTANT REVERSE GEOCODING
-// ==========================================
-function updateAddressFromCoords(latlng) {
-    console.log('🔍 Getting address for:', latlng);
-
-    const addressField = document.getElementById('id_address');
-    const locationInfo = document.getElementById('previousLocationInfo');
-
-    if (!addressField) {
-        console.error('❌ Address field not found');
-        return;
-    }
-
-    // ✅ INSTANT VISUAL FEEDBACK
-    addressField.value = '📍 Fetching address...';
-    addressField.style.backgroundColor = '#fff3cd';
-    addressField.style.fontStyle = 'italic';
-    addressField.classList.add('loading');
-
-    if (locationInfo) {
-        locationInfo.innerHTML = `
-            <i class="fas fa-spinner fa-spin" style="color: #ffc107;"></i>
-            <strong>Getting address...</strong>
-        `;
-        locationInfo.style.color = '#666';
-    }
-
-    // ✅ MULTI-PROVIDER APPROACH (Try multiple services for speed)
-    const providers = [
-        // Provider 1: Nominatim (Fast, Free)
-        {
-            name: 'Nominatim',
-            url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`,
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'KabsuEats/1.0'
-            },
-            parse: (data) => {
-                if (data.display_name) return data.display_name;
-                if (data.address) {
-                    const parts = [];
-                    if (data.address.road) parts.push(data.address.road);
-                    if (data.address.suburb) parts.push(data.address.suburb);
-                    if (data.address.city) parts.push(data.address.city);
-                    if (data.address.state) parts.push(data.address.state);
-                    if (data.address.country) parts.push(data.address.country);
-                    return parts.join(', ');
-                }
-                return null;
-            }
-        }
-    ];
-
-    // ✅ RACE CONDITION: Use first successful response
-    let resolved = false;
-
-    providers.forEach((provider, index) => {
-        fetch(provider.url, {
-            headers: provider.headers,
-            signal: AbortSignal.timeout(5000) // 5 second timeout
-        })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            if (resolved) return; // Already got address from another provider
-
-            console.log(`✅ ${provider.name} response:`, data);
-
-            const address = provider.parse(data);
-
-            if (address && address.length > 10) {
-                resolved = true;
-                updateAddressField(address, latlng, true);
-            }
-        })
-        .catch(error => {
-            console.error(`❌ ${provider.name} error:`, error);
-
-            // If all providers fail, use coordinates
-            if (index === providers.length - 1 && !resolved) {
-                const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
-                updateAddressField(coordsAddress, latlng, false);
-            }
-        });
-    });
-
-    // ✅ FALLBACK: After 3 seconds, if still loading, show coordinates
-    setTimeout(() => {
-        if (!resolved && addressField.value === '📍 Fetching address...') {
-            const coordsAddress = `Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}`;
-            updateAddressField(coordsAddress, latlng, false);
-
-            if (locationInfo) {
-                locationInfo.innerHTML = `
-                    <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
-                    Address lookup is slow. Using coordinates. You can edit this later.
-                `;
-                locationInfo.style.color = '#17a2b8';
-            }
-        }
-    }, 3000);
-}
-
-function updateAddressField(address, latlng, success) {
-    const addressField = document.getElementById('id_address');
-    const locationInfo = document.getElementById('previousLocationInfo');
-
-    if (!addressField) return;
-
-    // ✅ UPDATE ADDRESS IMMEDIATELY WITH ANIMATION
-    addressField.value = address;
-    addressField.style.fontStyle = 'normal';
-    addressField.classList.remove('loading');
-
-    if (success) {
-        // ✅ GREEN SUCCESS ANIMATION
-        addressField.style.backgroundColor = '#d4edda';
-        addressField.style.borderColor = '#28a745';
-        addressField.classList.add('updated');
-
-        setTimeout(() => {
-            addressField.style.backgroundColor = '#fff';
-            addressField.style.borderColor = '#ced4da';
-            addressField.classList.remove('updated');
-        }, 2000);
-
-        if (locationInfo) {
-            locationInfo.innerHTML = `
-                <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                <strong style="color: #28a745;">Address found!</strong> ${address}
-            `;
-            locationInfo.style.color = '#28a745';
-        }
-    } else {
-        // ✅ YELLOW WARNING (Coordinates fallback)
-        addressField.style.backgroundColor = '#fff3cd';
-        addressField.style.borderColor = '#ffc107';
-
-        setTimeout(() => {
-            addressField.style.backgroundColor = '#fff';
-            addressField.style.borderColor = '#ced4da';
-        }, 2000);
-
-        if (locationInfo) {
-            locationInfo.innerHTML = `
-                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
-                Using coordinates. Address lookup failed.
-            `;
-            locationInfo.style.color = '#ffc107';
-        }
-    }
-
-    console.log('✅ Address updated:', address);
-}
-
-// ==========================================
-// ADD MENU ITEM FORM
+// ✅ FIXED: ADD MENU ITEM FORM HANDLER
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
@@ -259,21 +103,29 @@ function setupAddMenuItemForm() {
         return;
     }
 
+    // ✅ CRITICAL: Remove any existing event listeners by cloning
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
     console.log('✅ Setting up add menu form handler');
 
+    // ✅ Now attach single event listener
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
+        console.log('📝 Form submit triggered');
+
+        // ✅ Prevent double submission
         if (isSubmitting) {
+            console.log('⏳ Already submitting, ignoring...');
             showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
 
+        // ✅ Global lock check
         if (!acquireSubmissionLock()) {
+            console.log('🔒 Submission locked by another tab');
             showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
@@ -282,6 +134,7 @@ function setupAddMenuItemForm() {
         const submitButton = this.querySelector('button[type="submit"]');
         const originalText = submitButton.innerHTML;
 
+        // Validate required fields
         const name = formData.get('name');
         const price = formData.get('price');
         const description = formData.get('description');
@@ -292,6 +145,7 @@ function setupAddMenuItemForm() {
             return false;
         }
 
+        // Get CSRF token
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
             showNotification('❌ Security token missing. Please refresh the page.', 'error');
@@ -299,6 +153,9 @@ function setupAddMenuItemForm() {
             return false;
         }
 
+        console.log('🚀 Submitting menu item:', name);
+
+        // Set flags
         isSubmitting = true;
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -322,17 +179,24 @@ function setupAddMenuItemForm() {
             return response.json();
         })
         .then(data => {
+            console.log('📦 Response received:', data);
+
             if (data.success) {
                 if (data.skipped) {
+                    console.log('⚠️ Duplicate request detected, skipping');
                     return;
                 }
 
                 showNotification('✅ ' + data.message, 'success');
 
+                // ✅ Check if item already exists before adding
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
                     if (!existingItem) {
+                        console.log('➕ Adding new item to grid');
                         addMenuItemToGrid(data.item);
+                    } else {
+                        console.log('⚠️ Item already exists in grid');
                     }
                 }
 
@@ -349,6 +213,7 @@ function setupAddMenuItemForm() {
             showNotification('❌ ' + error.message, 'error');
         })
         .finally(() => {
+            console.log('🔓 Releasing locks');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
             isSubmitting = false;
@@ -357,12 +222,16 @@ function setupAddMenuItemForm() {
 
         return false;
     });
+
+    console.log('✅ Add menu form handler attached successfully');
 }
 
 // ==========================================
-// ADD MENU ITEM TO GRID
+// ADD MENU ITEM TO GRID (REAL-TIME)
 // ==========================================
 function addMenuItemToGrid(item) {
+    console.log('➕ Adding item to grid:', item.id);
+
     const menuGrid = document.querySelector('.menu-grid');
     const noItems = document.querySelector('.no-items');
 
@@ -370,8 +239,10 @@ function addMenuItemToGrid(item) {
         noItems.remove();
     }
 
+    // ✅ Check if item already exists (prevent duplicates)
     const existingItem = document.querySelector(`.menu-card[data-item-id="${item.id}"]`);
     if (existingItem) {
+        console.log('⚠️ Item already exists, skipping add');
         return;
     }
 
@@ -402,7 +273,7 @@ function addMenuItemToGrid(item) {
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
                 </button>
-                <form action="/toggle-top-seller/${item.id}/" method="post" style="display: contents;">
+                <form action="/owner/dashboard/toggle_top_seller/${item.id}/" method="post" style="display: contents;">
                     <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
                     <button type="submit" class="action-btn seller">
                         <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
@@ -426,6 +297,8 @@ function addMenuItemToGrid(item) {
     } else {
         menuGrid.appendChild(menuCard);
     }
+
+    console.log('✅ Item added to grid successfully');
 }
 
 // ==========================================
@@ -730,7 +603,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// ✅ MAP FUNCTIONALITY - INSTANT ADDRESS UPDATE
+// MAP FUNCTIONALITY
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -765,7 +638,6 @@ function initializeMap() {
         }
     }
 
-    // Map layers
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 22
@@ -822,25 +694,22 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    // ✅ INSTANT ADDRESS UPDATE ON CLICK/DRAG
-    function validateAndUpdateAddress(latlng) {
+    function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
         if (distance <= RADIUS) {
             document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
             document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-            // ✅ INSTANT ADDRESS FETCH
-            updateAddressFromCoords(latlng);
-
+            if (locationInfo) {
+                locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                locationInfo.style.color = 'var(--success)';
+            }
             return true;
         } else {
             if (locationInfo) {
-                locationInfo.innerHTML = `
-                    <i class="fas fa-exclamation-circle" style="color: #dc3545;"></i>
-                    Please pin inside the red circle (within 500m of CvSU-Bacoor).
-                `;
-                locationInfo.style.color = '#dc3545';
+                locationInfo.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> Please pin inside the red circle (within 500m of CvSU-Bacoor).`;
+                locationInfo.style.color = 'var(--error)';
             }
             return false;
         }
@@ -848,23 +717,19 @@ function initializeMap() {
 
     marker.on('dragend', function(e) {
         const position = marker.getLatLng();
-        if (!validateAndUpdateAddress(position)) {
+        if (!validatePosition(position)) {
             marker.setLatLng([prevLat, prevLng]);
         }
     });
 
     map.on('click', function(e) {
-        if (validateAndUpdateAddress(e.latlng)) {
+        if (validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
         }
     });
 
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
-
-    if (prevLat && prevLng) {
-        updateAddressFromCoords({ lat: prevLat, lng: prevLng });
-    }
 }
 
 function focusOnCvSU() {
@@ -878,15 +743,10 @@ function focusOnCvSU() {
         document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
-        updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
-
         const locationInfo = document.getElementById('previousLocationInfo');
         if (locationInfo) {
-            locationInfo.innerHTML = `
-                <i class="fas fa-spinner fa-spin"></i>
-                Getting CvSU address...
-            `;
-            locationInfo.style.color = '#666';
+            locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set to CvSU-Bacoor Campus`;
+            locationInfo.style.color = 'var(--success)';
         }
     }
 }
@@ -990,7 +850,7 @@ function updateNotificationBadge(count) {
 }
 
 function markNotificationRead(notificationId) {
-    fetch(`/api/notifications/${notificationId}/mark-read/`, {
+    fetch(`/api/notifications/${notificationId}/read/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
@@ -1066,6 +926,7 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard initializing...');
 
+    // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
 
@@ -1074,13 +935,18 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+    // Load notifications
     loadNotifications();
+
+    // Poll for new notifications every 60 seconds
     setInterval(pollNotifications, 60000);
 
+    // Setup form handlers
     setupUpdateStoreDetailsForm();
     setupAddMenuItemForm();
     setupEditMenuItemForm();
 
+    // Setup modal click outside to close
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -1126,30 +992,6 @@ style.textContent = `
         50% {
             transform: scale(1.02);
         }
-    }
-
-    /* ✅ Address field loading animation */
-    #id_address.loading {
-        background: linear-gradient(90deg, #fff3cd 0%, #ffeaa7 50%, #fff3cd 100%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-    }
-
-    @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-    }
-
-    /* ✅ Address field success animation */
-    #id_address.updated {
-        transition: all 0.3s ease;
-    }
-
-    #id_address[readonly] {
-        background-color: #f8f9fa !important;
-        color: #495057;
-        border: 1px solid #ced4da;
-        cursor: not-allowed;
     }
 `;
 document.head.appendChild(style);
