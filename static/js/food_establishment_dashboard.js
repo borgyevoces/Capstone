@@ -1,13 +1,11 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE OPTIMIZED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
 // ==========================================
 
 // ==========================================
 // GLOBAL VARIABLES
 // ==========================================
 let isSubmitting = false;
-const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
-const LOCK_TIMEOUT = 5000; // 5 seconds
 let mapInitialized = false;
 let currentGeocodedAddress = '';
 
@@ -61,40 +59,8 @@ function getCookie(name) {
 }
 
 // ==========================================
-// GLOBAL SUBMISSION LOCK (CROSS-TAB)
-// ==========================================
-function acquireSubmissionLock() {
-    const now = Date.now();
-    const lockData = localStorage.getItem(SUBMISSION_LOCK_KEY);
-
-    if (lockData) {
-        try {
-            const { timestamp } = JSON.parse(lockData);
-            if (now - timestamp < LOCK_TIMEOUT) {
-                return false; // Lock is held
-            }
-        } catch (e) {
-            localStorage.removeItem(SUBMISSION_LOCK_KEY);
-        }
-    }
-
-    localStorage.setItem(SUBMISSION_LOCK_KEY, JSON.stringify({
-        timestamp: now,
-        tabId: Math.random()
-    }));
-    return true;
-}
-
-function releaseSubmissionLock() {
-    try {
-        localStorage.removeItem(SUBMISSION_LOCK_KEY);
-    } catch (e) {
-        console.error('Error releasing lock:', e);
-    }
-}
-
-// ==========================================
 // ✅ FIXED: ADD MENU ITEM FORM HANDLER
+// Continuous adding without refresh
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
@@ -104,29 +70,21 @@ function setupAddMenuItemForm() {
         return;
     }
 
-    // ✅ CRITICAL: Remove any existing event listeners by cloning
+    // Remove any existing event listeners by cloning
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
     console.log('✅ Setting up add menu form handler');
 
-    // ✅ Now attach single event listener
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('🔍 Form submit triggered');
+        console.log('📝 Form submit triggered');
 
-        // ✅ Prevent double submission
+        // Prevent double submission
         if (isSubmitting) {
             console.log('⏳ Already submitting, ignoring...');
-            showNotification('⏳ Please wait, submission in progress...', 'info');
-            return false;
-        }
-
-        // ✅ Global lock check
-        if (!acquireSubmissionLock()) {
-            console.log('🔒 Submission locked by another tab');
             showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
@@ -142,7 +100,6 @@ function setupAddMenuItemForm() {
 
         if (!name || !price || !description) {
             showNotification('❌ Please fill in all required fields', 'error');
-            releaseSubmissionLock();
             return false;
         }
 
@@ -150,13 +107,12 @@ function setupAddMenuItemForm() {
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
             showNotification('❌ Security token missing. Please refresh the page.', 'error');
-            releaseSubmissionLock();
             return false;
         }
 
         console.log('🚀 Submitting menu item:', name);
 
-        // Set flags
+        // Set flag
         isSubmitting = true;
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -190,7 +146,7 @@ function setupAddMenuItemForm() {
 
                 showNotification('✅ ' + data.message, 'success');
 
-                // ✅ Check if item already exists before adding
+                // Add item to grid
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
                     if (!existingItem) {
@@ -201,24 +157,42 @@ function setupAddMenuItemForm() {
                     }
                 }
 
-                setTimeout(() => {
-                    closeModal('addMenuItemModal');
-                    newForm.reset();
-                }, 1000);
+                // ✅ CRITICAL: Reset form and keep modal open
+                newForm.reset();
+
+                // ✅ Update token for next submission
+                const tokenInput = newForm.querySelector('input[name="menu_add_token"]');
+                if (tokenInput && data.new_menu_token) {
+                    tokenInput.value = data.new_menu_token;
+                    console.log('🔑 Token updated for next submission');
+                }
+
+                // ✅ Re-enable button immediately
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+                isSubmitting = false;
+
+                // ✅ Focus on name field for quick next entry
+                const nameInput = newForm.querySelector('input[name="name"]');
+                if (nameInput) {
+                    setTimeout(() => nameInput.focus(), 100);
+                }
+
+                console.log('✅ Ready for next item');
+
             } else {
                 showNotification('❌ ' + (data.error || 'Failed to add menu item'), 'error');
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+                isSubmitting = false;
             }
         })
         .catch(error => {
             console.error('❌ Error:', error);
             showNotification('❌ ' + error.message, 'error');
-        })
-        .finally(() => {
-            console.log('🔓 Releasing locks');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
             isSubmitting = false;
-            releaseSubmissionLock();
         });
 
         return false;
@@ -240,7 +214,7 @@ function addMenuItemToGrid(item) {
         noItems.remove();
     }
 
-    // ✅ Check if item already exists (prevent duplicates)
+    // Check if item already exists (prevent duplicates)
     const existingItem = document.querySelector(`.menu-card[data-item-id="${item.id}"]`);
     if (existingItem) {
         console.log('⚠️ Item already exists, skipping add');
@@ -303,7 +277,7 @@ function addMenuItemToGrid(item) {
 }
 
 // ==========================================
-// ✅ UPDATE STORE DETAILS FORM
+// UPDATE STORE DETAILS FORM
 // ==========================================
 function setupUpdateStoreDetailsForm() {
     const updateForm = document.getElementById('updateStoreDetailsForm');
@@ -316,7 +290,7 @@ function setupUpdateStoreDetailsForm() {
             const submitButton = this.querySelector('button[type="submit"]');
             const originalText = submitButton.innerHTML;
 
-            // ✅ Validate coordinates
+            // Validate coordinates
             const latitude = formData.get('latitude');
             const longitude = formData.get('longitude');
 
@@ -613,7 +587,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// ✅ OPTIMIZED MAP INITIALIZATION - FASTER & CLEARER
+// MAP INITIALIZATION - OPTIMIZED
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -637,11 +611,11 @@ function initializeMap() {
     const cvsuLng = 120.981348;
     const RADIUS = 500;
 
-    // ✅ Get current location from hidden fields
+    // Get current location from hidden fields
     const prevLat = parseFloat(document.getElementById('previous_lat').value) || cvsuLat;
     const prevLng = parseFloat(document.getElementById('previous_lng').value) || cvsuLng;
 
-    // ✅ OPTIMIZED: Use Hybrid view by default for better visibility
+    // Map layers
     const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '© Google',
         maxZoom: 21,
@@ -659,25 +633,25 @@ function initializeMap() {
     });
 
     const baseMaps = {
-        "📍 Hybrid (Best View)": hybridLayer,
+        "🗺️ Hybrid (Best View)": hybridLayer,
         "🛰️ Satellite": satelliteLayer,
         "🗺️ Street Map": streetLayer
     };
 
-    // ✅ Initialize map centered on current location with better zoom
+    // Initialize map
     const map = L.map('map', {
         layers: [hybridLayer],
         maxZoom: 22,
         minZoom: 15,
         zoomControl: true
-    }).setView([prevLat, prevLng], 18); // Higher zoom for better detail
+    }).setView([prevLat, prevLng], 18);
 
     window._kabsueats_map = map;
 
-    // ✅ Add layer control
+    // Add layer control
     L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-    // ✅ Add CvSU marker with better icon
+    // Add CvSU marker
     const cvsuIcon = L.divIcon({
         html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏫</div>',
         className: 'cvsu-marker',
@@ -689,7 +663,7 @@ function initializeMap() {
         .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">🎓 CvSU-Bacoor<br><small>500m Radius Center</small></div>')
         .openPopup();
 
-    // ✅ Add restriction circle with better visibility
+    // Add restriction circle
     L.circle([cvsuLat, cvsuLng], {
         color: '#f02849',
         fillColor: '#f02849',
@@ -699,7 +673,7 @@ function initializeMap() {
         dashArray: '10, 10'
     }).addTo(map);
 
-    // ✅ Add establishment marker with custom icon
+    // Add establishment marker
     const establishmentIcon = L.divIcon({
         html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">📍</span></div>',
         className: 'establishment-marker',
@@ -714,15 +688,7 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    // ✅ Add pulsing effect to marker
-    marker.on('add', function() {
-        const markerElement = marker.getElement();
-        if (markerElement) {
-            markerElement.style.animation = 'pulse 2s infinite';
-        }
-    });
-
-    // ✅ OPTIMIZED: Faster reverse geocoding
+    // Reverse geocoding
     async function reverseGeocode(lat, lng) {
         try {
             const response = await fetch(
@@ -739,24 +705,20 @@ function initializeMap() {
         }
     }
 
-    // ✅ OPTIMIZED: Validate position with immediate visual feedback
+    // Validate position
     async function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
-        // Update coordinates immediately
         document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
         document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-        // ✅ Update prominent display
         const displayEl = document.getElementById('currentLocationDisplay');
 
         if (distance <= RADIUS) {
-            // Valid location
             displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
             displayEl.style.color = 'white';
             displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)';
 
-            // Show address
             const addressDisplay = document.getElementById('geocodedAddressDisplay');
             const addressText = document.getElementById('geocodedAddressText');
 
@@ -771,48 +733,35 @@ function initializeMap() {
 
             return true;
         } else {
-            // Invalid location
             displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} ⚠️ OUTSIDE RADIUS`;
             displayEl.style.color = 'white';
             displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #f44336 0%, #c62828 100%)';
 
-            // Hide address
             document.getElementById('geocodedAddressDisplay').style.display = 'none';
             currentGeocodedAddress = '';
 
-            // Show error message
             showNotification('⚠️ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
 
             return false;
         }
     }
 
-    // ✅ Marker drag event
+    // Marker drag event
     marker.on('dragend', async function(e) {
         const position = marker.getLatLng();
         if (!await validatePosition(position)) {
-            // Reset to previous valid position
             marker.setLatLng([prevLat, prevLng]);
         }
     });
 
-    // ✅ Map click event
+    // Map click event
     map.on('click', async function(e) {
         if (await validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
-
-            // Animate marker
-            const markerElement = marker.getElement();
-            if (markerElement) {
-                markerElement.style.animation = 'bounce 0.5s ease';
-                setTimeout(() => {
-                    markerElement.style.animation = 'pulse 2s infinite';
-                }, 500);
-            }
         }
     });
 
-    // ✅ Load initial address
+    // Load initial address
     if (prevLat && prevLng) {
         validatePosition({ lat: prevLat, lng: prevLng });
     }
@@ -820,7 +769,6 @@ function initializeMap() {
     mapInitialized = true;
 }
 
-// ✅ Reset to CvSU location
 function resetToCvSU() {
     if (window._kabsueats_map && window._kabsueats_marker) {
         const cvsuLat = 14.412768;
@@ -832,13 +780,11 @@ function resetToCvSU() {
         document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
-        // Update display
         const displayEl = document.getElementById('currentLocationDisplay');
         displayEl.innerHTML = `${cvsuLat.toFixed(6)}, ${cvsuLng.toFixed(6)}`;
         displayEl.style.color = 'white';
         displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)';
 
-        // Hide address temporarily
         document.getElementById('geocodedAddressDisplay').style.display = 'none';
         currentGeocodedAddress = '';
 
@@ -846,7 +792,6 @@ function resetToCvSU() {
     }
 }
 
-// ✅ Confirm location and update address field
 function confirmMapLocation() {
     if (!currentGeocodedAddress) {
         showNotification('⚠️ Please pin a location on the map first', 'warning');
@@ -861,15 +806,12 @@ function confirmMapLocation() {
         return;
     }
 
-    // Update address field
     const addressField = document.getElementById('id_address');
     if (addressField) {
         addressField.value = currentGeocodedAddress;
     }
 
-    // Close modal
     closeModal('mapModal');
-
     showNotification('✅ Location and address updated successfully!', 'success');
 }
 
@@ -1112,16 +1054,18 @@ style.textContent = `
             transform: scale(1);
         }
         50% {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
     }
 
-    @keyframes bounce {
-        0%, 100% {
-            transform: translateY(0);
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
         }
-        50% {
-            transform: translateY(-10px);
+        to {
+            transform: translateX(0);
+            opacity: 1;
         }
     }
 `;

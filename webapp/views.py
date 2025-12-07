@@ -2711,33 +2711,10 @@ def food_establishment_dashboard(request):
 
     if request.method == 'POST':
         # ========================================
-        # ADD NEW MENU ITEM
+        # ✅ ADD NEW MENU ITEM - FIXED FOR CONTINUOUS ADDING
         # ========================================
         if 'add_menu_item' in request.POST:
             try:
-                menu_token = request.POST.get('menu_add_token')
-
-                # Deduplication
-                if menu_token:
-                    try:
-                        processed_menu = request.session.get('processed_menu_add_tokens', {})
-                        now_ts = time.time()
-                        # Clean old tokens
-                        for tkn, ts in list(processed_menu.items()):
-                            if now_ts - float(ts) > 300:
-                                processed_menu.pop(tkn, None)
-                        # Check if already processed
-                        if menu_token in processed_menu:
-                            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                                return JsonResponse({'success': True, 'skipped': True})
-                            return redirect('food_establishment_dashboard')
-                        # Mark as processed
-                        processed_menu[menu_token] = now_ts
-                        request.session['processed_menu_add_tokens'] = processed_menu
-                        request.session.modified = True
-                    except Exception as token_error:
-                        print(f"Token handling error: {token_error}")
-
                 menu_item_form = MenuItemForm(request.POST, request.FILES)
 
                 if menu_item_form.is_valid():
@@ -2769,11 +2746,12 @@ def food_establishment_dashboard(request):
                                 'image_url': image_url,
                             }
 
+                            # ✅ CRITICAL: Return new token for next submission
                             return JsonResponse({
                                 'success': True,
                                 'message': f"'{menu_item.name}' added successfully!",
                                 'item': item_data,
-                                'new_menu_token': str(uuid.uuid4())
+                                'new_menu_token': str(uuid.uuid4())  # ✅ New token
                             })
 
                         messages.success(request, f"'{menu_item.name}' added to your menu!")
@@ -2830,9 +2808,7 @@ def food_establishment_dashboard(request):
                 messages.error(request, f"An error occurred: {str(outer_error)}")
                 return redirect('food_establishment_dashboard')
 
-        # UPDATE STORE DETAILS - keep existing code
-        elif 'update_status' in request.POST:
-            pass
+        # ... rest of your POST handlers (update_status, etc.)
 
     # GET request
     status_form = FoodEstablishmentUpdateForm(instance=establishment)
@@ -2842,12 +2818,9 @@ def food_establishment_dashboard(request):
     total_reviews = dashboard_reviews.count()
     average_rating = round(dashboard_reviews.aggregate(Avg('rating'))['rating__avg'] or 0, 1)
 
-    # ✅ OPTIMIZED: Pre-calculate current location for faster map loading
     current_lat = establishment.latitude or 14.412768
     current_lng = establishment.longitude or 120.981348
     has_location = bool(establishment.latitude and establishment.longitude)
-
-    # ✅ Format location display
     location_display = f"{current_lat:.6f}, {current_lng:.6f}" if has_location else "Not set"
 
     context = {
@@ -2861,7 +2834,6 @@ def food_establishment_dashboard(request):
         'average_rating': average_rating,
         'update_token': str(uuid.uuid4()),
         'menu_add_token': str(uuid.uuid4()),
-        # ✅ NEW: Pre-calculated location data
         'current_lat': current_lat,
         'current_lng': current_lng,
         'has_location': has_location,
