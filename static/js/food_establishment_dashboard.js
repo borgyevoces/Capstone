@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE WITH ULTRA-FAST ADDRESS
 // ==========================================
 
 // ==========================================
@@ -7,7 +7,7 @@
 // ==========================================
 let isSubmitting = false;
 const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
-const LOCK_TIMEOUT = 5000; // 5 seconds
+const LOCK_TIMEOUT = 5000;
 
 // ==========================================
 // NOTIFICATION SYSTEM
@@ -33,7 +33,6 @@ function showNotification(message, type = 'success') {
 
     document.body.appendChild(notification);
 
-    // Auto-remove after 5 seconds
     setTimeout(() => {
         notification.style.animation = 'slideIn 300ms ease reverse';
         setTimeout(() => notification.remove(), 300);
@@ -59,7 +58,7 @@ function getCookie(name) {
 }
 
 // ==========================================
-// GLOBAL SUBMISSION LOCK (CROSS-TAB)
+// SUBMISSION LOCK
 // ==========================================
 function acquireSubmissionLock() {
     const now = Date.now();
@@ -69,10 +68,9 @@ function acquireSubmissionLock() {
         try {
             const { timestamp } = JSON.parse(lockData);
             if (now - timestamp < LOCK_TIMEOUT) {
-                return false; // Lock is held
+                return false;
             }
         } catch (e) {
-            // Invalid lock data, clear it
             localStorage.removeItem(SUBMISSION_LOCK_KEY);
         }
     }
@@ -93,39 +91,295 @@ function releaseSubmissionLock() {
 }
 
 // ==========================================
-// ✅ FIXED: ADD MENU ITEM FORM HANDLER
+// ✅ ULTRA-FAST ADDRESS GEOCODING (RACE CONDITION)
+// Gets DETAILED street address, not just city name
+// ==========================================
+function getAddressFromCoordinates(lat, lng) {
+    return new Promise((resolve) => {
+        let resolved = false;
+        const startTime = Date.now();
+
+        // ✅ Provider 1: Nominatim (Best for detailed street addresses)
+        const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+
+        // ✅ Provider 2: LocationIQ (Good detail)
+        const locationIQUrl = `https://us1.locationiq.com/v1/reverse.php?key=pk.0f147952a41c555c5b70614039fd148b&lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+
+        // ✅ Provider 3: BigDataCloud (Fallback)
+        const bigDataCloudUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+
+        // ⏱️ FALLBACK: Show coordinates after 2 seconds (longer timeout for better results)
+        const fallbackTimeout = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                console.log('⏱️ Using coordinates (geocoding timeout)');
+                resolve({
+                    success: false,
+                    address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+                    provider: 'coordinates'
+                });
+            }
+        }, 2000);
+
+        // ✅ Helper function to build detailed address
+        function buildDetailedAddress(addressData) {
+            const parts = [];
+
+            // Add house number + road (most specific)
+            if (addressData.house_number && addressData.road) {
+                parts.push(`${addressData.house_number} ${addressData.road}`);
+            } else if (addressData.road) {
+                parts.push(addressData.road);
+            }
+
+            // Add neighborhood/suburb
+            if (addressData.neighbourhood) {
+                parts.push(addressData.neighbourhood);
+            } else if (addressData.suburb) {
+                parts.push(addressData.suburb);
+            }
+
+            // Add city/municipality
+            if (addressData.city) {
+                parts.push(addressData.city);
+            } else if (addressData.municipality) {
+                parts.push(addressData.municipality);
+            } else if (addressData.town) {
+                parts.push(addressData.town);
+            }
+
+            // Add province/state
+            if (addressData.state) {
+                parts.push(addressData.state);
+            } else if (addressData.province) {
+                parts.push(addressData.province);
+            }
+
+            // Add country
+            if (addressData.country) {
+                parts.push(addressData.country);
+            }
+
+            return parts.join(', ');
+        }
+
+        // ✅ Nominatim (OSM) - Priority for detailed addresses
+        fetch(nominatimUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'KabsuEats/1.0'
+            },
+            signal: AbortSignal.timeout(3000)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            let address = null;
+
+            // Try to build detailed address from components
+            if (data.address) {
+                address = buildDetailedAddress(data.address);
+            }
+
+            // Fallback to display_name if components don't work
+            if (!address || address === 'Philippines') {
+                address = data.display_name;
+            }
+
+            if (address && address.length > 10) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                console.log(`✅ Nominatim (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'Nominatim'
+                });
+            }
+        })
+        .catch(err => console.log('Nominatim error:', err));
+
+        // ✅ LocationIQ (Backup with address details)
+        fetch(locationIQUrl, {
+            signal: AbortSignal.timeout(3000)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            let address = null;
+
+            // Try to build detailed address
+            if (data.address) {
+                address = buildDetailedAddress(data.address);
+            }
+
+            // Fallback to display_name
+            if (!address || address === 'Philippines') {
+                address = data.display_name;
+            }
+
+            if (address && address.length > 10) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                console.log(`✅ LocationIQ (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'LocationIQ'
+                });
+            }
+        })
+        .catch(err => console.log('LocationIQ error:', err));
+
+        // ✅ BigDataCloud (Last resort - less detailed)
+        fetch(bigDataCloudUrl, { signal: AbortSignal.timeout(3000) })
+        .then(r => r.json())
+        .then(data => {
+            if (resolved) return;
+
+            const parts = [];
+
+            // Try to get street-level detail
+            if (data.localityInfo && data.localityInfo.administrative) {
+                const admin = data.localityInfo.administrative;
+
+                // Get most specific level first
+                for (let i = admin.length - 1; i >= 0; i--) {
+                    if (admin[i].name && admin[i].name !== 'Philippines') {
+                        parts.push(admin[i].name);
+                        if (parts.length >= 3) break; // Limit to 3 levels
+                    }
+                }
+            }
+
+            // Add general locality if we have it
+            if (data.locality && !parts.includes(data.locality)) {
+                parts.unshift(data.locality);
+            }
+
+            if (data.principalSubdivision && !parts.includes(data.principalSubdivision)) {
+                parts.push(data.principalSubdivision);
+            }
+
+            if (parts.length > 0) {
+                resolved = true;
+                clearTimeout(fallbackTimeout);
+                const address = parts.join(', ');
+                console.log(`✅ BigDataCloud (${Date.now() - startTime}ms):`, address);
+                resolve({
+                    success: true,
+                    address: address,
+                    provider: 'BigDataCloud'
+                });
+            }
+        })
+        .catch(err => console.log('BigDataCloud error:', err));
+    });
+}
+
+// ==========================================
+// ✅ INSTANT ADDRESS UPDATE WITH VISUAL FEEDBACK
+// ==========================================
+async function updateAddressFromCoords(latlng) {
+    console.log('📍 Getting address for:', latlng);
+
+    const addressField = document.getElementById('id_address');
+    const locationInfo = document.getElementById('previousLocationInfo');
+
+    if (!addressField) {
+        console.error('❌ Address field not found');
+        return;
+    }
+
+    // ✅ INSTANT LOADING STATE
+    addressField.value = '🔄 Getting address...';
+    addressField.style.backgroundColor = '#fff3cd';
+    addressField.style.fontStyle = 'italic';
+    addressField.classList.add('loading');
+
+    if (locationInfo) {
+        locationInfo.innerHTML = `
+            <i class="fas fa-spinner fa-spin" style="color: #ffc107;"></i>
+            <strong>Fetching address...</strong>
+        `;
+        locationInfo.style.color = '#666';
+    }
+
+    // ✅ GET ADDRESS (Race condition with multiple providers)
+    const result = await getAddressFromCoordinates(latlng.lat, latlng.lng);
+
+    // ✅ UPDATE FIELD WITH RESULT
+    addressField.value = result.address;
+    addressField.style.fontStyle = 'normal';
+    addressField.classList.remove('loading');
+
+    if (result.success) {
+        // ✅ GREEN SUCCESS ANIMATION
+        addressField.style.backgroundColor = '#d4edda';
+        addressField.style.borderColor = '#28a745';
+
+        setTimeout(() => {
+            addressField.style.backgroundColor = '#f5f5f5';
+            addressField.style.borderColor = '#ced4da';
+        }, 2000);
+
+        if (locationInfo) {
+            locationInfo.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                <strong style="color: #28a745;">Address found!</strong> ${result.address}
+            `;
+            locationInfo.style.color = '#28a745';
+        }
+    } else {
+        // ⏱️ YELLOW WARNING (Coordinates)
+        addressField.style.backgroundColor = '#fff3cd';
+        addressField.style.borderColor = '#ffc107';
+
+        setTimeout(() => {
+            addressField.style.backgroundColor = '#f5f5f5';
+            addressField.style.borderColor = '#ced4da';
+        }, 2000);
+
+        if (locationInfo) {
+            locationInfo.innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                Using coordinates. Address lookup was slow.
+            `;
+            locationInfo.style.color = '#ffc107';
+        }
+    }
+
+    console.log('✅ Address field updated:', result.address);
+}
+
+// ==========================================
+// ADD MENU ITEM FORM
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
 
     if (!addMenuForm) {
-        console.log('⚠️ Add menu form not found');
+        console.log('⏱️ Add menu form not found');
         return;
     }
 
-    // ✅ CRITICAL: Remove any existing event listeners by cloning
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
     console.log('✅ Setting up add menu form handler');
 
-    // ✅ Now attach single event listener
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('📝 Form submit triggered');
-
-        // ✅ Prevent double submission
         if (isSubmitting) {
-            console.log('⏳ Already submitting, ignoring...');
             showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
 
-        // ✅ Global lock check
         if (!acquireSubmissionLock()) {
-            console.log('🔒 Submission locked by another tab');
             showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
@@ -134,7 +388,6 @@ function setupAddMenuItemForm() {
         const submitButton = this.querySelector('button[type="submit"]');
         const originalText = submitButton.innerHTML;
 
-        // Validate required fields
         const name = formData.get('name');
         const price = formData.get('price');
         const description = formData.get('description');
@@ -145,7 +398,6 @@ function setupAddMenuItemForm() {
             return false;
         }
 
-        // Get CSRF token
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
             showNotification('❌ Security token missing. Please refresh the page.', 'error');
@@ -153,9 +405,6 @@ function setupAddMenuItemForm() {
             return false;
         }
 
-        console.log('🚀 Submitting menu item:', name);
-
-        // Set flags
         isSubmitting = true;
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -179,24 +428,17 @@ function setupAddMenuItemForm() {
             return response.json();
         })
         .then(data => {
-            console.log('📦 Response received:', data);
-
             if (data.success) {
                 if (data.skipped) {
-                    console.log('⚠️ Duplicate request detected, skipping');
                     return;
                 }
 
                 showNotification('✅ ' + data.message, 'success');
 
-                // ✅ Check if item already exists before adding
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
                     if (!existingItem) {
-                        console.log('➕ Adding new item to grid');
                         addMenuItemToGrid(data.item);
-                    } else {
-                        console.log('⚠️ Item already exists in grid');
                     }
                 }
 
@@ -213,7 +455,6 @@ function setupAddMenuItemForm() {
             showNotification('❌ ' + error.message, 'error');
         })
         .finally(() => {
-            console.log('🔓 Releasing locks');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
             isSubmitting = false;
@@ -222,16 +463,12 @@ function setupAddMenuItemForm() {
 
         return false;
     });
-
-    console.log('✅ Add menu form handler attached successfully');
 }
 
 // ==========================================
-// ADD MENU ITEM TO GRID (REAL-TIME)
+// ADD MENU ITEM TO GRID
 // ==========================================
 function addMenuItemToGrid(item) {
-    console.log('➕ Adding item to grid:', item.id);
-
     const menuGrid = document.querySelector('.menu-grid');
     const noItems = document.querySelector('.no-items');
 
@@ -239,10 +476,8 @@ function addMenuItemToGrid(item) {
         noItems.remove();
     }
 
-    // ✅ Check if item already exists (prevent duplicates)
     const existingItem = document.querySelector(`.menu-card[data-item-id="${item.id}"]`);
     if (existingItem) {
-        console.log('⚠️ Item already exists, skipping add');
         return;
     }
 
@@ -273,7 +508,7 @@ function addMenuItemToGrid(item) {
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
                 </button>
-                <form action="/owner/dashboard/toggle_top_seller/${item.id}/" method="post" style="display: contents;">
+                <form action="/toggle-top-seller/${item.id}/" method="post" style="display: contents;">
                     <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
                     <button type="submit" class="action-btn seller">
                         <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
@@ -297,8 +532,6 @@ function addMenuItemToGrid(item) {
     } else {
         menuGrid.appendChild(menuCard);
     }
-
-    console.log('✅ Item added to grid successfully');
 }
 
 // ==========================================
@@ -603,7 +836,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// MAP FUNCTIONALITY
+// ✅ MAP FUNCTIONALITY - INSTANT ADDRESS UPDATE
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -638,6 +871,7 @@ function initializeMap() {
         }
     }
 
+    // ✅ HIGH RESOLUTION MAP LAYERS
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 22
@@ -694,22 +928,25 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    function validatePosition(latlng) {
+    // ✅ INSTANT ADDRESS UPDATE ON CLICK/DRAG
+    function validateAndUpdateAddress(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
         if (distance <= RADIUS) {
             document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
             document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
 
-            if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                locationInfo.style.color = 'var(--success)';
-            }
+            // ✅ INSTANT ADDRESS FETCH
+            updateAddressFromCoords(latlng);
+
             return true;
         } else {
             if (locationInfo) {
-                locationInfo.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> Please pin inside the red circle (within 500m of CvSU-Bacoor).`;
-                locationInfo.style.color = 'var(--error)';
+                locationInfo.innerHTML = `
+                    <i class="fas fa-exclamation-circle" style="color: #dc3545;"></i>
+                    Please pin inside the red circle (within 500m of CvSU-Bacoor).
+                `;
+                locationInfo.style.color = '#dc3545';
             }
             return false;
         }
@@ -717,19 +954,24 @@ function initializeMap() {
 
     marker.on('dragend', function(e) {
         const position = marker.getLatLng();
-        if (!validatePosition(position)) {
+        if (!validateAndUpdateAddress(position)) {
             marker.setLatLng([prevLat, prevLng]);
         }
     });
 
     map.on('click', function(e) {
-        if (validatePosition(e.latlng)) {
+        if (validateAndUpdateAddress(e.latlng)) {
             marker.setLatLng(e.latlng);
         }
     });
 
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
+
+    // ✅ LOAD INITIAL ADDRESS IF EXISTS
+    if (prevLat && prevLng && (Math.abs(prevLat - cvsuLat) > 0.0001 || Math.abs(prevLng - cvsuLng) > 0.0001)) {
+        updateAddressFromCoords({ lat: prevLat, lng: prevLng });
+    }
 }
 
 function focusOnCvSU() {
@@ -743,10 +985,15 @@ function focusOnCvSU() {
         document.getElementById('id_latitude').value = cvsuLat.toFixed(6);
         document.getElementById('id_longitude').value = cvsuLng.toFixed(6);
 
+        updateAddressFromCoords({ lat: cvsuLat, lng: cvsuLng });
+
         const locationInfo = document.getElementById('previousLocationInfo');
         if (locationInfo) {
-            locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set to CvSU-Bacoor Campus`;
-            locationInfo.style.color = 'var(--success)';
+            locationInfo.innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i>
+                Getting CvSU address...
+            `;
+            locationInfo.style.color = '#666';
         }
     }
 }
@@ -850,7 +1097,7 @@ function updateNotificationBadge(count) {
 }
 
 function markNotificationRead(notificationId) {
-    fetch(`/api/notifications/${notificationId}/read/`, {
+    fetch(`/api/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
@@ -926,7 +1173,6 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard initializing...');
 
-    // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
 
@@ -935,18 +1181,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // Load notifications
     loadNotifications();
-
-    // Poll for new notifications every 60 seconds
     setInterval(pollNotifications, 60000);
 
-    // Setup form handlers
     setupUpdateStoreDetailsForm();
     setupAddMenuItemForm();
     setupEditMenuItemForm();
 
-    // Setup modal click outside to close
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -992,6 +1233,30 @@ style.textContent = `
         50% {
             transform: scale(1.02);
         }
+    }
+
+    /* ✅ Address field loading animation */
+    #id_address.loading {
+        background: linear-gradient(90deg, #fff3cd 0%, #ffeaa7 50%, #fff3cd 100%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    /* ✅ Address field success animation */
+    #id_address.updated {
+        transition: all 0.3s ease;
+    }
+
+    #id_address[readonly] {
+        background-color: #f8f9fa !important;
+        color: #495057;
+        border: 1px solid #ced4da;
+        cursor: not-allowed;
     }
 `;
 document.head.appendChild(style);
