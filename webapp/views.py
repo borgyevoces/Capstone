@@ -3060,6 +3060,9 @@ def toggle_top_seller(request, item_id):
 @login_required
 @require_POST
 def update_establishment_details_ajax(request, pk):
+    """
+    ✅ COMPLETE FIX: Update establishment details with auto-filled address from pin
+    """
     try:
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
@@ -3073,38 +3076,104 @@ def update_establishment_details_ajax(request, pk):
     if form.is_valid():
         instance = form.save(commit=False)
 
-        # ✅ Get coordinates and address from form
+        # ✅ Get coordinates from form
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
+
+        # ✅ Get address from form (auto-filled by reverse geocoding)
         address = request.POST.get('address', '').strip()
 
-        # ✅ Update coordinates
-        if latitude and longitude:
-            instance.latitude = float(latitude)
-            instance.longitude = float(longitude)
+        # ✅ Validate coordinates
+        if not latitude or not longitude:
+            return JsonResponse({
+                'success': False,
+                'error': 'Location coordinates are required. Please pin your location on the map.'
+            }, status=400)
 
-        # ✅ Use address from form (auto-filled by geocoding)
+        try:
+            lat_float = float(latitude)
+            lng_float = float(longitude)
+
+            # ✅ Validate coordinates are within CvSU radius (500m)
+            import math
+            cvsu_lat = 14.412768
+            cvsu_lng = 120.981348
+
+            # Haversine distance calculation
+            R = 6371000  # Earth radius in meters
+            dlat = math.radians(lat_float - cvsu_lat)
+            dlng = math.radians(lng_float - cvsu_lng)
+            a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(cvsu_lat)) * math.cos(
+                math.radians(lat_float)) * math.sin(dlng / 2) ** 2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            distance = R * c
+
+            if distance > 500:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Location must be within 500m of CvSU-Bacoor campus'
+                }, status=400)
+
+            # ✅ Update coordinates
+            instance.latitude = lat_float
+            instance.longitude = lng_float
+
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid coordinates format'
+            }, status=400)
+
+        # ✅ Update address (auto-filled from geocoding)
         if address:
             instance.address = address
-        elif not instance.address:
-            # Fallback to coordinates if no address
+        else:
+            # Fallback: use coordinates as address
             instance.address = f"Location: {latitude}, {longitude}"
 
+        # ✅ Save the instance
         instance.save()
         form.save_m2m()
 
-        return JsonResponse({
+        # ✅ Prepare response data
+        response_data = {
             'success': True,
             'message': 'Details updated successfully',
+            'name': instance.name,
             'address': instance.address,
+            'status': instance.status,
             'latitude': str(instance.latitude),
-            'longitude': str(instance.longitude)
-        })
+            'longitude': str(instance.longitude),
+        }
+
+        # ✅ Add category if exists
+        if instance.category:
+            response_data['category'] = instance.category.name
+
+        # ✅ Add amenities if exist
+        if instance.amenities.exists():
+            amenities_list = [amenity.name for amenity in instance.amenities.all()]
+            response_data['amenities'] = ', '.join(amenities_list)
+
+        # ✅ Add payment methods
+        response_data['payment_methods'] = instance.payment_methods or 'N/A'
+
+        # ✅ Add image URL if exists
+        if instance.image:
+            response_data['image_url'] = instance.image.url
+
+        return JsonResponse(response_data)
+
     else:
+        # ✅ Return validation errors
+        errors = {}
+        for field, error_list in form.errors.items():
+            errors[field] = [str(e) for e in error_list]
+
         return JsonResponse({
             'success': False,
             'error': 'Validation failed',
-            'errors': form.errors
+            'errors': errors
         }, status=400)
 #===================================================================================================================
 # ================================================END OWNER ========================================================

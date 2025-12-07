@@ -1299,37 +1299,69 @@
             <input type="hidden" name="update_status" value="1">
             <input type="hidden" name="update_token" id="update_token" value="{{ update_token }}">
 
+            <!-- Establishment Name -->
             <div class="form-group">
                 {{ status_form.name.label_tag }}
                 {{ status_form.name }}
             </div>
+
+            <!-- ✅ UPDATED: Address (Auto-filled, Read-only) -->
             <div class="form-group">
-                {{ status_form.address.label_tag }}
-                {{ status_form.address }}
+                <label for="id_address">Address <span style="color: #999; font-size: 12px;">(Auto-filled from pin location)</span></label>
+                <textarea
+                    name="address"
+                    id="id_address"
+                    rows="3"
+                    readonly
+                    style="background: #f5f5f5; cursor: not-allowed; resize: none;"
+                    placeholder="Pin your location on the map to auto-fill address">{{ establishment.address }}</textarea>
+                <small style="color: #666; font-size: 12px;">
+                    <i class="fas fa-info-circle"></i> Address is automatically set when you pin your location on the map
+                </small>
             </div>
+
+            <!-- ✅ Pin Location Button -->
             <div class="form-group">
-                <label>Pin Location</label>
+                <label>Pin Location <span style="color: red;">*</span></label>
                 <button type="button" class="btn btn-secondary" onclick="openLocationModal()" style="width: 100%; justify-content: center;">
-                    <i class="fas fa-map-marker-alt"></i> Set on Map
+                    <i class="fas fa-map-marker-alt"></i> Set Location on Map
                 </button>
+                <small id="locationStatus" style="display: block; margin-top: 8px; color: #666; font-size: 12px;">
+                    {% if establishment.latitude and establishment.longitude %}
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    Location set: {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6 }}
+                    {% else %}
+                    <i class="fas fa-exclamation-circle" style="color: var(--error);"></i>
+                    No location set yet
+                    {% endif %}
+                </small>
             </div>
+
+            <!-- Hidden fields for coordinates -->
             <input type="hidden" name="latitude" id="id_latitude" value="{{ establishment.latitude|default:'' }}">
             <input type="hidden" name="longitude" id="id_longitude" value="{{ establishment.longitude|default:'' }}">
             <input type="hidden" id="previous_lat" value="{{ establishment.latitude|default:'' }}">
             <input type="hidden" id="previous_lng" value="{{ establishment.longitude|default:'' }}">
+
+            <!-- Status -->
             <div class="form-group">
                 {{ status_form.status.label_tag }}
                 {{ status_form.status }}
             </div>
+
+            <!-- Category -->
             <div class="form-group">
                 {{ status_form.category.label_tag }}
                 {{ status_form.category }}
             </div>
+
+            <!-- Amenities -->
             <div class="form-group">
                 {{ status_form.amenities.label_tag }}
                 {{ status_form.amenities }}
             </div>
 
+            <!-- Payment Methods -->
             <div class="form-group">
                 <label>Payment Methods</label>
                 <div class="checkbox-group">
@@ -1346,6 +1378,7 @@
                 </div>
             </div>
 
+            <!-- Store Image -->
             <div class="form-group">
                 {{ status_form.image.label_tag }}
                 {% if establishment.image %}
@@ -1353,10 +1386,11 @@
                 {% endif %}
                 {{ status_form.image }}
             </div>
+
+            <!-- Submit Button -->
             <button type="submit" name="update_status" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 16px;">
                 <i class="fas fa-save"></i> Save Changes
             </button>
-            <span id="updateDetailsMsg" style="display: block; text-align: center; margin-top: 8px; font-size: 14px;"></span>
         </form>
     </div>
 </div>
@@ -1502,14 +1536,28 @@
         <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
             Click inside the red circle (within 500m of CvSU-Bacoor) to place your establishment's pin.
         </p>
+
+        <!-- Location Info Display -->
         <div id="previousLocationInfo" style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
+
+        <!-- Address Display (Real-time) -->
+        <div id="geocodedAddressDisplay" style="background: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none;">
+            <div style="font-weight: 600; color: #2e7d32; margin-bottom: 4px;">
+                <i class="fas fa-map-marker-alt"></i> Address for this location:
+            </div>
+            <div id="geocodedAddressText" style="color: #1b5e20; font-size: 13px;"></div>
+        </div>
+
+        <!-- Map Container -->
         <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);"></div>
+
+        <!-- Action Buttons -->
         <div style="display: flex; gap: 12px;">
             <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()">
                 <i class="fas fa-crosshairs"></i> Focus on CvSU
             </button>
-            <button type="button" class="btn btn-primary" onclick="closeModal('mapModal')">
-                <i class="fas fa-check"></i> Confirm Location
+            <button type="button" class="btn btn-primary" onclick="confirmMapLocation()">
+                <i class="fas fa-check"></i> Confirm Location & Address
             </button>
         </div>
     </div>

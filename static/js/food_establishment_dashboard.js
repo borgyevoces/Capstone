@@ -8,6 +8,8 @@
 let isSubmitting = false;
 const SUBMISSION_LOCK_KEY = 'menu_submission_lock';
 const LOCK_TIMEOUT = 5000; // 5 seconds
+let mapInitialized = false;
+let currentGeocodedAddress = '';
 
 // ==========================================
 // NOTIFICATION SYSTEM
@@ -72,7 +74,6 @@ function acquireSubmissionLock() {
                 return false; // Lock is held
             }
         } catch (e) {
-            // Invalid lock data, clear it
             localStorage.removeItem(SUBMISSION_LOCK_KEY);
         }
     }
@@ -302,7 +303,7 @@ function addMenuItemToGrid(item) {
 }
 
 // ==========================================
-// UPDATE STORE DETAILS
+// ✅ UPDATE STORE DETAILS FORM
 // ==========================================
 function setupUpdateStoreDetailsForm() {
     const updateForm = document.getElementById('updateStoreDetailsForm');
@@ -314,6 +315,15 @@ function setupUpdateStoreDetailsForm() {
             const formData = new FormData(this);
             const submitButton = this.querySelector('button[type="submit"]');
             const originalText = submitButton.innerHTML;
+
+            // ✅ Validate coordinates
+            const latitude = formData.get('latitude');
+            const longitude = formData.get('longitude');
+
+            if (!latitude || !longitude) {
+                showNotification('⚠️ Please set your location on the map', 'warning');
+                return;
+            }
 
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
@@ -603,7 +613,7 @@ function toggleDropdown() {
 }
 
 // ==========================================
-// MAP FUNCTIONALITY
+// ✅ MAP FUNCTIONALITY WITH REVERSE GEOCODING
 // ==========================================
 function openLocationModal() {
     openModal('mapModal');
@@ -694,7 +704,32 @@ function initializeMap() {
 
     window._kabsueats_marker = marker;
 
-    function validatePosition(latlng) {
+    // ✅ Reverse Geocode Function
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                {
+                    headers: {
+                        'User-Agent': 'KabsuEats/1.0'
+                    }
+                }
+            );
+            const data = await response.json();
+
+            if (data && data.display_name) {
+                return data.display_name;
+            } else {
+                return `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            }
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            return `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    }
+
+    // ✅ Validate Position + Geocode
+    async function validatePosition(latlng) {
         const distance = map.distance(latlng, [cvsuLat, cvsuLng]);
 
         if (distance <= RADIUS) {
@@ -705,31 +740,60 @@ function initializeMap() {
                 locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
                 locationInfo.style.color = 'var(--success)';
             }
+
+            // ✅ Reverse Geocode
+            const addressDisplay = document.getElementById('geocodedAddressDisplay');
+            const addressText = document.getElementById('geocodedAddressText');
+
+            if (addressDisplay && addressText) {
+                addressDisplay.style.display = 'block';
+                addressText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting address...';
+
+                const address = await reverseGeocode(latlng.lat, latlng.lng);
+                currentGeocodedAddress = address;
+
+                addressText.innerHTML = address;
+            }
+
             return true;
         } else {
             if (locationInfo) {
                 locationInfo.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> Please pin inside the red circle (within 500m of CvSU-Bacoor).`;
                 locationInfo.style.color = 'var(--error)';
             }
+
+            const addressDisplay = document.getElementById('geocodedAddressDisplay');
+            if (addressDisplay) {
+                addressDisplay.style.display = 'none';
+            }
+            currentGeocodedAddress = '';
+
             return false;
         }
     }
 
-    marker.on('dragend', function(e) {
+    marker.on('dragend', async function(e) {
         const position = marker.getLatLng();
-        if (!validatePosition(position)) {
+        if (!await validatePosition(position)) {
             marker.setLatLng([prevLat, prevLng]);
         }
     });
 
-    map.on('click', function(e) {
-        if (validatePosition(e.latlng)) {
+    map.on('click', async function(e) {
+        if (await validatePosition(e.latlng)) {
             marker.setLatLng(e.latlng);
         }
     });
 
     document.getElementById('id_latitude').value = prevLat.toFixed(6);
     document.getElementById('id_longitude').value = prevLng.toFixed(6);
+
+    // ✅ Load initial address
+    if (prevLat && prevLng) {
+        validatePosition({ lat: prevLat, lng: prevLng });
+    }
+
+    mapInitialized = true;
 }
 
 function focusOnCvSU() {
@@ -748,7 +812,45 @@ function focusOnCvSU() {
             locationInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set to CvSU-Bacoor Campus`;
             locationInfo.style.color = 'var(--success)';
         }
+
+        const addressDisplay = document.getElementById('geocodedAddressDisplay');
+        if (addressDisplay) {
+            addressDisplay.style.display = 'none';
+        }
+        currentGeocodedAddress = '';
     }
+}
+
+// ✅ NEW: Confirm Location and Update Address
+function confirmMapLocation() {
+    if (!currentGeocodedAddress) {
+        showNotification('⚠️ Please pin a location on the map first', 'warning');
+        return;
+    }
+
+    const lat = document.getElementById('id_latitude').value;
+    const lng = document.getElementById('id_longitude').value;
+
+    if (!lat || !lng) {
+        showNotification('⚠️ Please pin a location on the map first', 'warning');
+        return;
+    }
+
+    // ✅ Update address field
+    const addressField = document.getElementById('id_address');
+    if (addressField) {
+        addressField.value = currentGeocodedAddress;
+    }
+
+    // ✅ Update location status
+    const locationStatus = document.getElementById('locationStatus');
+    if (locationStatus) {
+        locationStatus.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Location set: ${lat}, ${lng}`;
+    }
+
+    closeModal('mapModal');
+
+    showNotification('✅ Location and address updated successfully!', 'success');
 }
 
 // ==========================================
@@ -994,4 +1096,4 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(style)
