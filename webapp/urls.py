@@ -124,7 +124,7 @@ urlpatterns = [
                        name='get_chat_messages'),
                   path('owner/chat/conversations/<int:establishment_id>/',views.get_owner_conversations,name='get_owner_conversations'),
                   path('owner/chat/messages/<int:customer_id>/<int:establishment_id>/',views.get_chat_messages_api,name='get_chat_messages_api'),
-
+                  path('api/test-email-config/', views.test_email_config, name='test_email_config'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

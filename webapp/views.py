@@ -2587,75 +2587,203 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    FIXED: Owner registration OTP
+    ✅ COMPLETELY FIXED: Owner registration OTP with comprehensive debugging
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     try:
-        body = request.body.decode('utf-8') or ''
-        data = json.loads(body) if body else {}
-    except Exception:
-        data = {}
+        # Parse request body
+        try:
+            body = request.body.decode('utf-8') or '{}'
+            data = json.loads(body) if body else {}
+        except Exception as parse_error:
+            print(f"❌ JSON parse error: {parse_error}")
+            data = request.POST.dict()
 
-    email = data.get('email') or request.POST.get('email')
-    if not email:
-        return JsonResponse({'error': 'Email is required'}, status=400)
+        email = data.get('email') or request.POST.get('email')
 
-    otp_code = str(random.randint(100000, 999999)).zfill(6)
+        if not email:
+            return JsonResponse({'error': 'Email is required'}, status=400)
 
-    # Save OTP
-    try:
-        otp_obj, created = OTP.objects.update_or_create(
-            email=email,
-            defaults={'code': otp_code, 'attempts': 0}
-        )
-        if not created:
-            otp_obj.created_at = timezone.now()
-            otp_obj.save()
-    except Exception as e:
-        print("OTP DB save error:", e)
+        # Validate email format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return JsonResponse({'error': 'Invalid email format'}, status=400)
 
-    # Save in session
-    try:
-        request.session['otp'] = otp_code
-        request.session['otp_email'] = email
-        request.session.modified = True
-    except Exception as e:
-        print("Session OTP save error:", e)
+        # Generate 6-digit OTP
+        otp_code = str(random.randint(100000, 999999)).zfill(6)
 
-    # Check sender email
-    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+        print(f"🔐 Generating OTP for {email}: {otp_code}")
 
-    if not from_email:
-        print(f"⚠️ No SENDER_EMAIL configured. OTP: {otp_code}")
+        # Save OTP to database with fresh timestamp
+        try:
+            otp_obj, created = OTP.objects.update_or_create(
+                email=email,
+                defaults={
+                    'code': otp_code,
+                    'attempts': 0,
+                    'is_verified': False
+                }
+            )
+            # Force timestamp update
+            if not created:
+                otp_obj.created_at = timezone.now()
+                otp_obj.save()
+
+            print(f"✅ OTP saved to database: {otp_obj.code}")
+        except Exception as db_error:
+            print(f"❌ OTP DB save error: {db_error}")
+            return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
+
+        # Save in session as backup
+        try:
+            request.session['otp'] = otp_code
+            request.session['otp_email'] = email
+            request.session.modified = True
+            print(f"✅ OTP saved to session")
+        except Exception as session_error:
+            print(f"⚠️ Session OTP save error (non-critical): {session_error}")
+
+        # ============================================================================
+        # EMAIL SENDING WITH COMPREHENSIVE DIAGNOSTICS
+        # ============================================================================
+
+        # Get sender email
+        from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+
+        if not from_email:
+            print("❌ CRITICAL: No SENDER_EMAIL configured")
+            return JsonResponse({
+                'success': True,
+                'warning': 'Email not configured - check .env file',
+                'debug_otp': otp_code,  # REMOVE IN PRODUCTION
+                'message': 'OTP generated but email not sent'
+            })
+
+        print(f"📧 Attempting to send OTP email from: {from_email}")
+
+        # Prepare HTML content
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }}
+        .container {{ max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+        .header {{ background-color: #e59b20; color: white; padding: 30px; text-align: center; }}
+        .header h1 {{ margin: 0; font-size: 28px; }}
+        .content {{ padding: 40px 30px; }}
+        .otp-box {{ background-color: #f9f9f9; border: 2px dashed #e59b20; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }}
+        .otp-code {{ font-size: 36px; font-weight: bold; color: #e59b20; letter-spacing: 8px; }}
+        .footer {{ background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>KabsuEats - Business Registration</h1>
+        </div>
+        <div class="content">
+            <h2>Email Verification</h2>
+            <p>Thank you for registering your business with KabsuEats. To complete your registration, please use the following One-Time Password (OTP):</p>
+
+            <div class="otp-box">
+                <div class="otp-code">{otp_code}</div>
+            </div>
+
+            <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+            <p style="color: #d9534f;">⚠️ Do not share this code with anyone.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 KabsuEats. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+        """
+
+        # Plain text fallback
+        text_message = f"""
+KabsuEats Business Registration
+
+Your verification code is: {otp_code}
+
+This code is valid for 10 minutes.
+
+Do not share this code with anyone.
+
+Thank you,
+The KabsuEats Team
+        """
+
+        # ============================================================================
+        # SEND EMAIL WITH DETAILED ERROR LOGGING
+        # ============================================================================
+        try:
+            print("📤 Calling send_mail function...")
+
+            result = send_mail(
+                subject='KabsuEats Business Registration - Verification Code',
+                message=text_message,
+                from_email=from_email,
+                recipient_list=[email],
+                fail_silently=False,  # Don't suppress errors
+                html_message=html_content
+            )
+
+            print(f"📬 Email send result: {result}")
+
+            if result and result > 0:
+                print(f"✅ OTP email sent successfully to {email}")
+                return JsonResponse({
+                    'success': True,
+                    'message': 'OTP sent successfully to your email'
+                })
+            else:
+                print(f"⚠️ Email send returned 0 or None")
+                return JsonResponse({
+                    'success': True,
+                    'warning': 'OTP generated but email may be delayed',
+                    'message': 'OTP generated. Check spam folder if not received.',
+                    'debug_otp': otp_code  # REMOVE IN PRODUCTION
+                })
+
+        except Exception as email_error:
+            print(f"❌ Email sending error: {email_error}")
+            import traceback
+            traceback.print_exc()
+
+            # Check specific error types
+            error_msg = str(email_error).lower()
+
+            if 'authentication' in error_msg or '535' in error_msg:
+                hint = "Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env"
+            elif 'connection' in error_msg or 'timeout' in error_msg:
+                hint = "Check EMAIL_HOST and EMAIL_PORT settings"
+            elif 'sendgrid' in error_msg or '403' in error_msg:
+                hint = "Check SENDGRID_API_KEY and verify sender email in SendGrid dashboard"
+            else:
+                hint = "Check email configuration in .env file"
+
+            return JsonResponse({
+                'success': True,
+                'warning': 'OTP generated but email failed',
+                'error_details': str(email_error),
+                'hint': hint,
+                'debug_otp': otp_code,  # REMOVE IN PRODUCTION
+                'message': 'OTP generated. Email may be delayed.'
+            })
+
+    except Exception as outer_error:
+        print(f"❌ Outer exception in send_otp: {outer_error}")
+        import traceback
+        traceback.print_exc()
+
         return JsonResponse({
-            'success': True,
-            'warning': 'Email not configured',
-            'debug_otp': otp_code  # REMOVE IN PRODUCTION
-        })
-
-    html_content = f"<p>Your KabsuEats verification code is: <strong>{otp_code}</strong></p>"
-
-    # Send email
-    try:
-        send_mail(
-            subject='Your KabsuEats OTP Code',
-            message=f'Your verification code is: {otp_code}',
-            from_email=from_email,
-            recipient_list=[email],
-            fail_silently=True,
-            html_message=html_content
-        )
-        return JsonResponse({'success': True})
-    except Exception as e:
-        print(f"❌ OTP email error: {e}")
-        return JsonResponse({
-            'success': True,
-            'warning': 'OTP generated but email may be delayed',
-            'debug_otp': otp_code  # REMOVE IN PRODUCTION
-        })
-
+            'error': f'Server error: {str(outer_error)}'
+        }, status=500)
 
 @csrf_exempt
 @transaction.atomic
@@ -3827,3 +3955,195 @@ def get_chat_messages_api(request, customer_id, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+@csrf_exempt
+def test_email_config(request):
+    """
+    🔧 Diagnostic endpoint to test email configuration
+    Access at: /api/test-email-config/
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'Use POST method',
+            'instructions': 'Send POST request with {"email": "your@email.com"}'
+        }, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        test_email = data.get('email')
+
+        if not test_email:
+            return JsonResponse({
+                'error': 'Email required',
+                'example': '{"email": "your@email.com"}'
+            }, status=400)
+
+        # Check environment variables
+        diagnostics = {
+            'timestamp': timezone.now().isoformat(),
+            'test_email': test_email,
+            'environment_check': {
+                'SENDER_EMAIL': '✅ Set' if os.getenv('SENDER_EMAIL') else '❌ Missing',
+                'SENDER_EMAIL_value': os.getenv('SENDER_EMAIL'),
+                'EMAIL_HOST': os.getenv('EMAIL_HOST'),
+                'EMAIL_PORT': os.getenv('EMAIL_PORT'),
+                'EMAIL_USE_TLS': os.getenv('EMAIL_USE_TLS'),
+                'SENDGRID_API_KEY': '✅ Set' if os.getenv('SENDGRID_API_KEY') else '❌ Missing',
+                'EMAIL_HOST_PASSWORD': '✅ Set' if os.getenv('EMAIL_HOST_PASSWORD') else '❌ Missing',
+            },
+            'django_settings': {
+                'EMAIL_BACKEND': settings.EMAIL_BACKEND,
+            },
+            'tests': {}
+        }
+
+        # Test 1: Check sender email
+        from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+
+        if not from_email:
+            diagnostics['tests']['sender_email'] = '❌ FAILED - No sender email configured'
+            diagnostics['error'] = 'SENDER_EMAIL not set in environment'
+            diagnostics['fix'] = 'Add SENDER_EMAIL=robbyrosstanaelmajaba16@gmail.com to .env and Render'
+            return JsonResponse(diagnostics)
+
+        diagnostics['tests']['sender_email'] = f'✅ PASSED - Using {from_email}'
+
+        # Test 2: Try sending test email
+        print(f"\n🧪 Testing email configuration...")
+        print(f"📧 From: {from_email}")
+        print(f"📧 To: {test_email}")
+
+        try:
+            test_subject = '🧪 KabsuEats Email Configuration Test'
+            test_message = f"""
+KabsuEats Email Configuration Test
+
+This is a test email to verify your email settings.
+
+✅ If you receive this, your email configuration is working!
+
+Timestamp: {timezone.now()}
+From: {from_email}
+To: {test_email}
+            """
+
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }}
+        .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+        .header {{ background: #e59b20; color: white; padding: 30px; text-align: center; }}
+        .content {{ padding: 30px; }}
+        .success-box {{ background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ background: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #666; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 KabsuEats Email Test</h1>
+        </div>
+        <div class="content">
+            <h2>Email Configuration Test</h2>
+            <div class="success-box">
+                <strong>✅ SUCCESS!</strong><br>
+                If you're reading this, your email configuration is working correctly!
+            </div>
+            <p><strong>Details:</strong></p>
+            <ul>
+                <li>From: {from_email}</li>
+                <li>To: {test_email}</li>
+                <li>Timestamp: {timezone.now()}</li>
+            </ul>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 KabsuEats. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            print("📤 Attempting to send test email...")
+
+            result = send_mail(
+                subject=test_subject,
+                message=test_message,
+                from_email=from_email,
+                recipient_list=[test_email],
+                fail_silently=False,
+                html_message=html_message
+            )
+
+            print(f"📬 Email send result: {result}")
+
+            if result and result > 0:
+                diagnostics['tests']['email_send'] = '✅ PASSED - Test email sent successfully'
+                diagnostics['status'] = 'success'
+                diagnostics['message'] = f'✅ Test email sent to {test_email}. Check your inbox and spam folder!'
+                print(f"✅ SUCCESS: Test email sent to {test_email}")
+            else:
+                diagnostics['tests']['email_send'] = '⚠️ WARNING - Email function returned 0'
+                diagnostics['status'] = 'warning'
+                diagnostics['message'] = 'Email may have been sent but confirmation uncertain'
+                print(f"⚠️ WARNING: Email send returned 0")
+
+        except Exception as email_error:
+            print(f"❌ EMAIL ERROR: {email_error}")
+            import traceback
+            traceback.print_exc()
+
+            diagnostics['tests']['email_send'] = f'❌ FAILED - {str(email_error)}'
+            diagnostics['status'] = 'error'
+            diagnostics['error_details'] = str(email_error)
+
+            # Provide specific recommendations
+            error_msg = str(email_error).lower()
+
+            if 'authentication' in error_msg or '535' in error_msg:
+                diagnostics['fix'] = [
+                    '❌ Gmail Authentication Failed',
+                    '1. Go to https://myaccount.google.com/apppasswords',
+                    '2. Enable 2-Step Verification first',
+                    '3. Generate App Password for "Mail"',
+                    '4. Copy 16-character password (remove spaces)',
+                    '5. Update EMAIL_HOST_PASSWORD in .env and Render'
+                ]
+            elif 'sendgrid' in error_msg or '403' in error_msg or '401' in error_msg:
+                diagnostics['fix'] = [
+                    '❌ SendGrid Authentication Failed',
+                    '1. Go to https://app.sendgrid.com/settings/api_keys',
+                    '2. Create NEW API key with "Mail Send" permission',
+                    '3. Copy FULL key (starts with SG.)',
+                    '4. Update SENDGRID_API_KEY in .env and Render',
+                    '5. Verify sender email at https://app.sendgrid.com/settings/sender_auth'
+                ]
+            elif 'connection' in error_msg or 'timeout' in error_msg:
+                diagnostics['fix'] = [
+                    '❌ Connection Issue',
+                    '1. Check EMAIL_HOST=smtp.gmail.com',
+                    '2. Check EMAIL_PORT=587',
+                    '3. Check EMAIL_USE_TLS=True',
+                    '4. Verify internet connection'
+                ]
+            else:
+                diagnostics['fix'] = [
+                    '❌ Unknown Error',
+                    f'Error: {str(email_error)}',
+                    'Check all email settings in .env file'
+                ]
+
+        return JsonResponse(diagnostics)
+
+    except Exception as e:
+        print(f"❌ OUTER ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+
+        return JsonResponse({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
