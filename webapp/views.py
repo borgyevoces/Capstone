@@ -70,11 +70,15 @@ from .forms import (
 import base64
 import json
 import requests
+
+
 def about_page(request):
     return render(request, 'webapplication/about.html')
-#===================================================================================================================
+
+
+# ===================================================================================================================
 # ===================================================CLIENT=========================================================
-#===================================================================================================================
+# ===================================================================================================================
 def haversine(lat1, lon1, lat2, lon2):
     """
     Calculate the distance between two points on the Earth using the Haversine formula.
@@ -85,6 +89,7 @@ def haversine(lat1, lon1, lat2, lon2):
     a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
+
 
 def user_login_register(request):
     User = get_user_model()
@@ -125,7 +130,8 @@ def user_login_register(request):
                 active_tab = 'register'
 
             elif len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'\d', password):
-                messages.error(request, "Password must be at least 8 characters long and include at least one uppercase letter and one number.")
+                messages.error(request,
+                               "Password must be at least 8 characters long and include at least one uppercase letter and one number.")
                 active_tab = 'register'
 
             elif User.objects.filter(email=username).exists():
@@ -152,6 +158,7 @@ def user_login_register(request):
 
     return render(request, "webapplication/login.html", {'show_done_modal': show_done_modal, 'active_tab': active_tab})
 
+
 @login_required
 def user_logout(request):
     """
@@ -160,6 +167,7 @@ def user_logout(request):
     logout(request)
     messages.success(request, "Successfully logged out.")
     return redirect(reverse_lazy('kabsueats_home'))
+
 
 def google_login(request):
     params = {
@@ -171,6 +179,7 @@ def google_login(request):
     }
     google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
     return redirect(google_auth_url)
+
 
 def google_callback(request):
     User = get_user_model()
@@ -196,7 +205,8 @@ def google_callback(request):
                 f"Google token endpoint error: status={token_response.status_code} body={token_response.text}"
             )
             if getattr(settings, 'DEBUG', False):
-                messages.error(request, f'Google token exchange failed (status {token_response.status_code}): {token_response.text}')
+                messages.error(request,
+                               f'Google token exchange failed (status {token_response.status_code}): {token_response.text}')
             else:
                 messages.error(request, f'Google token exchange failed (status {token_response.status_code}).')
             return redirect('user_login_register')
@@ -228,7 +238,8 @@ def google_callback(request):
             )
             # Surface a friendly message but include body when DEBUG so we can see the 403 reason
             if getattr(settings, 'DEBUG', False):
-                messages.error(request, f'Google userinfo request failed (status {user_info_response.status_code}): {user_info_response.text}')
+                messages.error(request,
+                               f'Google userinfo request failed (status {user_info_response.status_code}): {user_info_response.text}')
             else:
                 messages.error(request, f'Google userinfo request failed (status {user_info_response.status_code}).')
             return redirect('user_login_register')
@@ -276,6 +287,7 @@ def google_callback(request):
         messages.error(request, f'An error occurred while retrieving user data: {e}')
         return redirect('user_login_register')
 
+
 def forgot_password(request):
     """
     Handle forgot password requests with proper email sending
@@ -283,22 +295,22 @@ def forgot_password(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         User = get_user_model()
-        
+
         try:
             user = User.objects.get(email=email)
-            
+
             # Generate reset token
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
-            
+
             # Build reset URL
             protocol = 'https' if request.is_secure() else 'http'
             domain = request.get_host()
             reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
-            
+
             # Email subject and content
             subject = "Password Reset Request - KabsuEats"
-            
+
             # Plain text message (fallback)
             text_message = f"""
 Hello {user.username},
@@ -316,7 +328,7 @@ If you did not request a password reset, please ignore this email. Your password
 Thank you,
 The KabsuEats Team
             """
-            
+
             # HTML message (better formatting)
             html_message = f"""
 <!DOCTYPE html>
@@ -338,18 +350,18 @@ The KabsuEats Team
         </div>
         <div class="content">
             <p>Hello <strong>{user.username}</strong>,</p>
-            
+
             <p>We received a request to reset the password for your KabsuEats account.</p>
-            
+
             <p>Click the button below to reset your password:</p>
-            
+
             <a href="{reset_url}" class="button">Reset Password</a>
-            
+
             <p>Or copy and paste this link into your browser:</p>
             <p style="word-break: break-all; color: #e59b20;">{reset_url}</p>
-            
+
             <p><strong>This link will expire in 24 hours.</strong></p>
-            
+
             <div class="footer">
                 <p>If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
                 <p>Thank you,<br>The KabsuEats Team</p>
@@ -359,7 +371,7 @@ The KabsuEats Team
 </body>
 </html>
             """
-            
+
             # Send email using the wrapper function
             try:
                 send_mail(
@@ -370,31 +382,35 @@ The KabsuEats Team
                     fail_silently=False,
                     html_message=html_message
                 )
-                
+
                 messages.success(request, "Password reset instructions have been sent to your email.")
                 return redirect('password_reset_done_redirect')
-                
+
             except Exception as email_error:
                 print(f"Email sending error: {email_error}")
                 messages.error(request, "There was an error sending the reset email. Please try again later.")
                 return redirect('user_login_register')
-        
+
         except User.DoesNotExist:
             # Don't reveal if email exists (security best practice)
             messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
             return redirect('password_reset_done_redirect')
-    
+
     return redirect('user_login_register')
+
 
 def password_reset_done_redirect(request):
     """Redirect to login with success message"""
-    messages.info(request, "We've emailed you instructions for setting your password. Please check your inbox and spam folder.")
+    messages.info(request,
+                  "We've emailed you instructions for setting your password. Please check your inbox and spam folder.")
     return redirect(reverse('user_login_register') + '?reset_done=true')
+
 
 def password_reset_complete_redirect(request):
     """Custom redirect after password reset"""
     messages.success(request, 'Your password has been reset successfully! You can now log in.')
     return redirect('user_login_register')
+
 
 def kabsueats_main_view(request):
     """
@@ -465,6 +481,7 @@ def kabsueats_main_view(request):
     }
     return render(request, 'webapplication/kabsueats.html', context)
 
+
 @login_required(login_url='user_login_register')
 def search_food_establishments(request):
     query = request.GET.get('q', '')
@@ -477,6 +494,7 @@ def search_food_establishments(request):
         'food_establishments': food_establishments,
         'q': query
     })
+
 
 @login_required
 @require_http_methods(["POST"])
@@ -516,6 +534,7 @@ def update_profile(request):
         errors = '; '.join([f"{k}: {v[0]}" for k, v in form.errors.items()])
         return JsonResponse({'success': False, 'errors': errors}, status=400)
 
+
 def category_establishments_view(request, category_name):
     try:
         category = Category.objects.get(name__iexact=category_name)
@@ -525,7 +544,7 @@ def category_establishments_view(request, category_name):
     food_establishments = category.foodestablishment_set.all().annotate(
         review_count=Count('review'),
         average_rating=Avg('review__rating')
-    ).order_by('?') # Default sort
+    ).order_by('?')  # Default sort
 
     status_filter = request.GET.get('status', '')
     alpha_filter = request.GET.get('alpha', '')
@@ -559,6 +578,7 @@ def category_establishments_view(request, category_name):
         'q': query,
     }
     return render(request, 'home.html', context)
+
 
 @require_POST
 @login_required
@@ -594,6 +614,7 @@ def submit_review(request, establishment_id):
             return redirect('food_establishment_details', establishment_id=establishment_id)
 
     return redirect('food_establishment_details', establishment_id=establishment_id)
+
 
 @login_required
 def edit_review(request, establishment_id, review_id):
@@ -631,6 +652,7 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
+
 @login_required
 @require_POST
 def delete_review(request, establishment_id, review_id):
@@ -644,6 +666,7 @@ def delete_review(request, establishment_id, review_id):
     cache.delete(f'establishment_{establishment_id}_reviews')
     messages.success(request, 'Review deleted successfully!')
     return redirect('food_establishment_details', establishment_id=establishment_id)
+
 
 def food_establishment_details(request, establishment_id):
     """
@@ -718,6 +741,7 @@ def food_establishment_details(request, establishment_id):
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
+
 @require_POST
 @login_required
 @require_http_methods(['POST'])
@@ -743,6 +767,7 @@ def submit_review(request, establishment_id):
                     messages.error(request, f"Error in {field}: {error}")
             return redirect('food_establishment_details', establishment_id=establishment_id)
     return redirect('food_establishment_details', establishment_id=establishment_id)
+
 
 @login_required
 def edit_review(request, establishment_id, review_id):
@@ -778,6 +803,7 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
+
 @login_required(login_url='user_login_register')
 def view_directions(request, establishment_id):
     establishment = get_object_or_404(FoodEstablishment, id=establishment_id)
@@ -786,7 +812,8 @@ def view_directions(request, establishment_id):
     name = establishment.name
 
     if latitude is None or longitude is None:
-        return render(request, 'webapplication/view_directions.html', {'error': 'Location not set for this establishment.'})
+        return render(request, 'webapplication/view_directions.html',
+                      {'error': 'Location not set for this establishment.'})
 
     context = {
         'establishment': establishment,
@@ -794,6 +821,7 @@ def view_directions(request, establishment_id):
         'longitude': longitude,
     }
     return render(request, 'webapplication/view_directions.html', context)
+
 
 @login_required(login_url='user_login_register')
 def toggle_item_availability(request, item_id):
@@ -834,7 +862,7 @@ def send_registration_otp(request):
         data = {}
 
     email = data.get('email') or request.POST.get('email')
-    
+
     if not email:
         return JsonResponse({'error': 'Email is required'}, status=400)
 
@@ -854,9 +882,9 @@ def send_registration_otp(request):
     # Save OTP to database with timestamp reset
     try:
         otp_obj, created = OTP.objects.update_or_create(
-            email=email, 
+            email=email,
             defaults={
-                'code': otp_code, 
+                'code': otp_code,
                 'attempts': 0,
                 'is_verified': False
             }
@@ -879,7 +907,7 @@ def send_registration_otp(request):
 
     # Check if SENDER_EMAIL is configured
     from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
-    
+
     if not from_email:
         print("❌ CRITICAL: No sender email configured")
         print(f"⚠️ OTP saved for {email}: {otp_code}")
@@ -915,15 +943,15 @@ def send_registration_otp(request):
             <div class="content">
                 <h2>Hello!</h2>
                 <p>Thank you for registering with KabsuEats. To complete your registration, please use the following One-Time Password (OTP):</p>
-                
+
                 <div class="otp-box">
                     <div class="otp-code">{otp_code}</div>
                 </div>
-                
+
                 <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-                
+
                 <p class="warning">⚠️ Do not share this code with anyone. KabsuEats staff will never ask for your OTP.</p>
-                
+
                 <p>If you didn't request this code, please ignore this email.</p>
             </div>
             <div class="footer">
@@ -944,7 +972,7 @@ def send_registration_otp(request):
             fail_silently=True,
             html_message=html_content
         )
-        
+
         if result:
             print(f"✅ OTP sent to {email}: {otp_code}")
             return JsonResponse({
@@ -959,7 +987,7 @@ def send_registration_otp(request):
                 'warning': 'Email delivery may be delayed. Check spam folder.',
                 'debug_otp': otp_code  # REMOVE IN PRODUCTION
             })
-            
+
     except Exception as e:
         print(f"❌ Error sending OTP email: {e}")
         return JsonResponse({
@@ -968,7 +996,8 @@ def send_registration_otp(request):
             'warning': 'Email sending failed',
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-    
+
+
 @csrf_exempt
 def verify_otp_and_register(request):
     """
@@ -999,21 +1028,21 @@ def verify_otp_and_register(request):
         # Validate required fields
         if not email:
             return JsonResponse({'error': 'Email is required'}, status=400)
-        
+
         if not otp_code:
             return JsonResponse({'error': 'OTP is required'}, status=400)
-        
+
         if not password:
             return JsonResponse({'error': 'Password is required'}, status=400)
 
         # Verify OTP from database
         otp_valid = False
-        
+
         try:
             from datetime import timedelta
             otp_entry = OTP.objects.get(email=email)
             print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
-            
+
             if otp_entry.code == str(otp_code).strip():
                 # Check expiration
                 if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
@@ -1021,20 +1050,20 @@ def verify_otp_and_register(request):
                     return JsonResponse({
                         'error': 'OTP has expired. Please request a new one.'
                     }, status=400)
-                
+
                 # Check if blocked
                 if otp_entry.is_blocked():
                     print("❌ OTP blocked")
                     return JsonResponse({
                         'error': 'Too many failed attempts. Please request a new OTP.'
                     }, status=400)
-                
+
                 otp_valid = True
                 print("✅ OTP valid from database")
             else:
                 otp_entry.increment_attempts()
                 print(f"❌ OTP mismatch")
-                
+
         except OTP.DoesNotExist:
             print("⚠️ OTP not found in database")
             return JsonResponse({
@@ -1081,7 +1110,7 @@ def verify_otp_and_register(request):
                 print("✅ OTP cleaned up from database")
             except Exception as cleanup_error:
                 print(f"⚠️ OTP cleanup error (non-critical): {cleanup_error}")
-            
+
             # Clear session OTP
             try:
                 request.session.pop('otp', None)
@@ -1102,7 +1131,7 @@ def verify_otp_and_register(request):
                 from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
                 if from_email:
                     import threading
-                    
+
                     def send_welcome_email_background():
                         try:
                             # Use simple text message to avoid memory issues
@@ -1116,14 +1145,14 @@ def verify_otp_and_register(request):
                             print(f"✅ Welcome email sent to {user.email}")
                         except Exception as e:
                             print(f"⚠️ Welcome email error (non-critical): {e}")
-                    
+
                     # Start background thread (daemon=True ensures it won't block)
                     email_thread = threading.Thread(
                         target=send_welcome_email_background,
                         daemon=True
                     )
                     email_thread.start()
-                    
+
             except Exception as email_setup_error:
                 print(f"⚠️ Email setup error (non-critical): {email_setup_error}")
 
@@ -1134,7 +1163,7 @@ def verify_otp_and_register(request):
             print(f"❌ User creation error: {user_create_error}")
             import traceback
             traceback.print_exc()
-            
+
             return JsonResponse({
                 'error': f'Failed to create account: {str(user_create_error)}'
             }, status=500)
@@ -1143,11 +1172,12 @@ def verify_otp_and_register(request):
         print(f"❌ Outer exception: {outer_error}")
         import traceback
         traceback.print_exc()
-        
+
         return JsonResponse({
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-    
+
+
 @csrf_exempt
 def verify_otp_only(request):
     """
@@ -1172,24 +1202,24 @@ def verify_otp_only(request):
     try:
         from datetime import timedelta
         otp_entry = OTP.objects.get(email=email)
-        
+
         if otp_entry.code == str(otp_code).strip():
             # Check expiration
             if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
                 return JsonResponse({
                     'error': 'OTP has expired. Please request a new one.'
                 }, status=400)
-            
+
             # Check if blocked
             if otp_entry.is_blocked():
                 return JsonResponse({
                     'error': 'Too many failed attempts. Please request a new OTP.'
                 }, status=400)
-            
+
             # Mark as verified (but don't delete yet)
             otp_entry.is_verified = True
             otp_entry.save()
-            
+
             return JsonResponse({'success': True, 'message': 'OTP verified'})
         else:
             # Increment failed attempts
@@ -1197,18 +1227,19 @@ def verify_otp_only(request):
             return JsonResponse({
                 'error': 'Invalid OTP. Please check your code.'
             }, status=400)
-            
+
     except OTP.DoesNotExist:
         # Fallback to session
         session_otp = request.session.get('otp')
         session_email = request.session.get('otp_email')
-        
+
         if session_email == email and session_otp == str(otp_code).strip():
             return JsonResponse({'success': True, 'message': 'OTP verified'})
         else:
             return JsonResponse({
                 'error': 'Invalid OTP. Please check your code.'
             }, status=400)
+
 
 @csrf_exempt
 def resend_otp(request):
@@ -1225,7 +1256,7 @@ def resend_otp(request):
         data = {}
 
     email = data.get('email') or request.POST.get('email')
-    
+
     if not email:
         return JsonResponse({'error': 'Email is required'}, status=400)
 
@@ -1241,9 +1272,9 @@ def resend_otp(request):
     # Save OTP to database with fresh timestamp
     try:
         otp_obj, created = OTP.objects.update_or_create(
-            email=email, 
+            email=email,
             defaults={
-                'code': otp_code, 
+                'code': otp_code,
                 'attempts': 0,
                 'is_verified': False
             }
@@ -1251,7 +1282,7 @@ def resend_otp(request):
         # Force update the created_at timestamp
         otp_obj.created_at = timezone.now()
         otp_obj.save()
-        
+
         print(f"✅ New OTP generated for {email}: {otp_code}")
     except Exception as e:
         print(f"❌ OTP save error: {e}")
@@ -1267,7 +1298,7 @@ def resend_otp(request):
 
     # Send email
     from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
-    
+
     if not from_email:
         return JsonResponse({
             'success': True,
@@ -1297,13 +1328,13 @@ def resend_otp(request):
             fail_silently=True,
             html_message=html_content
         )
-        
+
         return JsonResponse({
             'success': True,
             'message': 'New OTP sent successfully!',
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-        
+
     except Exception as e:
         print(f"❌ Resend email error: {e}")
         return JsonResponse({
@@ -1312,6 +1343,7 @@ def resend_otp(request):
             'warning': 'Email may be delayed',
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
+
 
 import base64
 import json
@@ -1325,9 +1357,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from decimal import Decimal
 
+
 def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
+
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
@@ -1418,6 +1452,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         if not fail_silently:
             raise
         return 0
+
 
 @login_required
 @require_POST
@@ -1511,6 +1546,7 @@ def gcash_payment_request(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
 
+
 @login_required
 @require_POST
 def confirm_gcash_payment(request):
@@ -1591,6 +1627,7 @@ def confirm_gcash_payment(request):
             'message': f'Error confirming payment: {str(e)}'
         }, status=500)
 
+
 def send_order_confirmation_email(order):
     """
     Sends confirmation emails to customer and store owner.
@@ -1662,6 +1699,7 @@ Items to Prepare:
     except Exception as e:
         print(f"❌ Error sending emails: {e}")
 
+
 @login_required
 def view_order_confirmation(request, order_id):
     """
@@ -1678,6 +1716,7 @@ def view_order_confirmation(request, order_id):
     }
 
     return render(request, 'webapplication/order_confirmation.html', context)
+
 
 @login_required
 @require_POST
@@ -1773,7 +1812,7 @@ def create_gcash_payment_link(request):
             else:
                 return JsonResponse({
                     'success': False,
-                    'message': f'PayMongo requires a minimum payment of ₱{MIN_AMOUNT_CENTAVOS/100:.2f}. Please increase your order or use another payment method.'
+                    'message': f'PayMongo requires a minimum payment of ₱{MIN_AMOUNT_CENTAVOS / 100:.2f}. Please increase your order or use another payment method.'
                 }, status=400)
 
         # PayMongo API setup
@@ -1877,6 +1916,7 @@ def create_gcash_payment_link(request):
             'success': False,
             'message': 'Internal server error while creating payment link'
         }, status=500)
+
 
 @login_required
 def debug_create_gcash_payload(request, order_id):
@@ -2014,6 +2054,7 @@ def gcash_payment_success(request):
         messages.error(request, 'Order not found')
         return redirect('view_cart')
 
+
 @login_required
 def gcash_payment_cancel(request):
     """Handle cancelled payment"""
@@ -2022,11 +2063,13 @@ def gcash_payment_cancel(request):
     if order_id:
         try:
             order = Order.objects.get(id=order_id, user=request.user)
-            messages.warning(request, f'Payment was cancelled for {order.establishment.name}. You can try again from your cart.')
+            messages.warning(request,
+                             f'Payment was cancelled for {order.establishment.name}. You can try again from your cart.')
         except Order.DoesNotExist:
             pass
 
     return redirect('view_cart')
+
 
 @login_required
 def order_confirmation_view(request, order_id):
@@ -2039,6 +2082,7 @@ def order_confirmation_view(request, order_id):
         'order_items': order_items,
     }
     return render(request, 'webapplication/order_confirmation.html', context)
+
 
 @csrf_exempt
 @require_POST
@@ -2099,6 +2143,7 @@ def paymongo_webhook(request):
     except Exception as e:
         print(f"Webhook error: {e}")
         return HttpResponse(status=400)
+
 
 def send_order_confirmation_email(order):
     """Send confirmation emails to customer and store owner"""
@@ -2168,6 +2213,7 @@ Items to Prepare:
 
     except Exception as e:
         print(f"❌ Email error: {e}")
+
 
 @login_required
 @require_POST
@@ -2303,6 +2349,7 @@ def create_buynow_payment_link(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
 
+
 @login_required
 def get_owner_notifications(request):
     """
@@ -2354,6 +2401,7 @@ def get_owner_notifications(request):
             'error': str(e)
         }, status=500)
 
+
 @login_required
 @require_POST
 def mark_notification_read(request, notification_id):
@@ -2399,6 +2447,7 @@ def mark_notification_read(request, notification_id):
             'error': str(e)
         }, status=500)
 
+
 @login_required
 @require_POST
 def mark_all_notifications_read(request):
@@ -2432,6 +2481,7 @@ def mark_all_notifications_read(request):
             'error': str(e)
         }, status=500)
 
+
 def get_time_ago(timestamp):
     """
     Convert timestamp to human-readable time ago
@@ -2458,13 +2508,15 @@ def get_time_ago(timestamp):
         return f"{minutes} minutes ago"
 
     return "Just now"
-#===================================================================================================================
-# ===================================================END CLIENT=====================================================
-#===================================================================================================================
 
-#===================================================================================================================
+
+# ===================================================================================================================
+# ===================================================END CLIENT=====================================================
+# ===================================================================================================================
+
+# ===================================================================================================================
 # =================================================== OWNER ========================================================
-#===================================================================================================================
+# ===================================================================================================================
 User = get_user_model()
 
 
@@ -2500,6 +2552,7 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
+
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2508,12 +2561,14 @@ def owner_logout(request):
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
 
+
 def owner_register_step1_location(request):
     """Nagre-render ng Page 1: Location Pinning."""
     return render(request, 'webapplication/register_step1_location.html', {
         'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
         'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE')
     })
+
 
 def owner_register_step2_details(request):
     payment_methods = ["Cash", "GCash"]
@@ -2524,8 +2579,10 @@ def owner_register_step2_details(request):
     }
     return render(request, 'webapplication/register_step2_details.html', context)
 
+
 def owner_register_step3_credentials(request):
     return render(request, 'webapplication/register_step3_credentials.html')
+
 
 @csrf_exempt
 def send_otp(request):
@@ -2599,6 +2656,7 @@ def send_otp(request):
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
 
+
 @csrf_exempt
 @transaction.atomic
 def verify_and_register(request):
@@ -2623,7 +2681,8 @@ def verify_and_register(request):
     longitude = data.get('longitude')
     address = data.get('address') or data.get('display_address') or ''
     category_id = data.get('category')
-    payment_methods = ', '.join(data.get('paymentMethods', [])) if data.get('paymentMethods') else data.get('payment_methods', '')
+    payment_methods = ', '.join(data.get('paymentMethods', [])) if data.get('paymentMethods') else data.get(
+        'payment_methods', '')
     amenities_ids = data.get('amenities') or []
 
     if not email or not password or not name:
@@ -2711,10 +2770,34 @@ def food_establishment_dashboard(request):
 
     if request.method == 'POST':
         # ========================================
-        # ✅ ADD NEW MENU ITEM - FIXED FOR CONTINUOUS ADDING
+        # ✅ ADD NEW MENU ITEM - COMPLETE FIX WITH BETTER ERROR HANDLING
         # ========================================
         if 'add_menu_item' in request.POST:
             try:
+                menu_token = request.POST.get('menu_add_token')
+
+                # Deduplication
+                if menu_token:
+                    try:
+                        processed_menu = request.session.get('processed_menu_add_tokens', {})
+                        now_ts = time.time()
+                        # Clean old tokens
+                        for tkn, ts in list(processed_menu.items()):
+                            if now_ts - float(ts) > 300:
+                                processed_menu.pop(tkn, None)
+                        # Check if already processed
+                        if menu_token in processed_menu:
+                            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                                return JsonResponse({'success': True, 'skipped': True})
+                            return redirect('food_establishment_dashboard')
+                        # Mark as processed
+                        processed_menu[menu_token] = now_ts
+                        request.session['processed_menu_add_tokens'] = processed_menu
+                        request.session.modified = True
+                    except Exception as token_error:
+                        print(f"Token handling error: {token_error}")
+                        # Continue anyway - don't fail because of token issues
+
                 menu_item_form = MenuItemForm(request.POST, request.FILES)
 
                 if menu_item_form.is_valid():
@@ -2722,12 +2805,15 @@ def food_establishment_dashboard(request):
                         menu_item = menu_item_form.save(commit=False)
                         menu_item.food_establishment = establishment
 
+                        # Set default quantity if not provided
                         if not hasattr(menu_item, 'quantity') or menu_item.quantity is None:
                             menu_item.quantity = 0
 
                         menu_item.save()
 
+                        # ✅ CRITICAL: Return complete item data for AJAX
                         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                            # Get absolute URL for image
                             image_url = ''
                             if menu_item.image:
                                 try:
@@ -2746,12 +2832,11 @@ def food_establishment_dashboard(request):
                                 'image_url': image_url,
                             }
 
-                            # ✅ CRITICAL: Return new token for next submission
                             return JsonResponse({
                                 'success': True,
                                 'message': f"'{menu_item.name}' added successfully!",
                                 'item': item_data,
-                                'new_menu_token': str(uuid.uuid4())  # ✅ New token
+                                'new_menu_token': str(uuid.uuid4())
                             })
 
                         messages.success(request, f"'{menu_item.name}' added to your menu!")
@@ -2770,6 +2855,7 @@ def food_establishment_dashboard(request):
                         messages.error(request, f"Error saving menu item: {str(save_error)}")
                         return redirect('food_establishment_dashboard')
                 else:
+                    # Return validation errors
                     print(f"❌ Form validation errors: {menu_item_form.errors}")
 
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -2808,7 +2894,10 @@ def food_establishment_dashboard(request):
                 messages.error(request, f"An error occurred: {str(outer_error)}")
                 return redirect('food_establishment_dashboard')
 
-        # ... rest of your POST handlers (update_status, etc.)
+        # UPDATE STORE DETAILS
+        elif 'update_status' in request.POST:
+            # Your existing update code here
+            pass
 
     # GET request
     status_form = FoodEstablishmentUpdateForm(instance=establishment)
@@ -2817,11 +2906,6 @@ def food_establishment_dashboard(request):
     dashboard_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
     total_reviews = dashboard_reviews.count()
     average_rating = round(dashboard_reviews.aggregate(Avg('rating'))['rating__avg'] or 0, 1)
-
-    current_lat = establishment.latitude or 14.412768
-    current_lng = establishment.longitude or 120.981348
-    has_location = bool(establishment.latitude and establishment.longitude)
-    location_display = f"{current_lat:.6f}, {current_lng:.6f}" if has_location else "Not set"
 
     context = {
         'establishment': establishment,
@@ -2834,13 +2918,10 @@ def food_establishment_dashboard(request):
         'average_rating': average_rating,
         'update_token': str(uuid.uuid4()),
         'menu_add_token': str(uuid.uuid4()),
-        'current_lat': current_lat,
-        'current_lng': current_lng,
-        'has_location': has_location,
-        'location_display': location_display,
     }
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
+
 
 def toggle_item_availability(request, item_id):
     if request.method == 'POST':
@@ -2849,6 +2930,7 @@ def toggle_item_availability(request, item_id):
         item.save()
         return redirect('food_establishment_dashboard')
     return HttpResponseBadRequest()
+
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -2908,6 +2990,7 @@ def delete_menu_item(request, item_id):
         messages.error(request, f'An error occurred while deleting the menu item: {str(e)}')
         return redirect('food_establishment_dashboard')
 
+
 @login_required(login_url='owner_login')
 def store_reviews_view(request):
     """
@@ -2926,6 +3009,7 @@ def store_reviews_view(request):
         'reviews': reviews,
     }
     return render(request, 'webapplication/store_reviews.html', context)
+
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -2980,6 +3064,7 @@ def edit_menu_item(request, item_id):
                 messages.error(request, f"Error in '{form.fields[field].label}': {error}")
         return redirect("food_establishment_dashboard")
 
+
 @csrf_exempt
 @require_http_methods(["PATCH"])
 def toggle_establishment_status(request, establishment_id):
@@ -3001,6 +3086,7 @@ def toggle_establishment_status(request, establishment_id):
         return JsonResponse({'message': message, 'status': establishment.status})
     except FoodEstablishment.DoesNotExist:
         return HttpResponseBadRequest("Food establishment not found.")
+
 
 @require_POST
 def toggle_top_seller(request, item_id):
@@ -3028,8 +3114,6 @@ def toggle_top_seller(request, item_id):
 
     return redirect(reverse_lazy('food_establishment_dashboard'))
 
-
-
     # Dahil ginamit ang URL na ito sa 'Add New Menu Item' button mo, kailangan itong may view function.
     # Ito ay temporary placeholder lamang. Palitan ito ng actual logic mo.
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
@@ -3039,124 +3123,56 @@ def toggle_top_seller(request, item_id):
 @login_required
 @require_POST
 def update_establishment_details_ajax(request, pk):
-    """
-    ✅ COMPLETE FIX: Update establishment details with auto-filled address from pin
-    """
+    """Update establishment details via AJAX"""
     try:
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'Establishment not found'
+            'error': 'Establishment not found or access denied.'
         }, status=404)
 
     form = FoodEstablishmentUpdateForm(request.POST, request.FILES, instance=establishment)
 
     if form.is_valid():
-        instance = form.save(commit=False)
-
-        # ✅ Get coordinates from form
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
-
-        # ✅ Get address from form (auto-filled by reverse geocoding)
-        address = request.POST.get('address', '').strip()
-
-        # ✅ Validate coordinates
-        if not latitude or not longitude:
-            return JsonResponse({
-                'success': False,
-                'error': 'Location coordinates are required. Please pin your location on the map.'
-            }, status=400)
-
         try:
-            lat_float = float(latitude)
-            lng_float = float(longitude)
+            instance = form.save()
 
-            # ✅ Validate coordinates are within CvSU radius (500m)
-            import math
-            cvsu_lat = 14.412768
-            cvsu_lng = 120.981348
+            # Prepare response data
+            data = {
+                'success': True,
+                'message': 'Establishment details updated successfully.',
+                'name': instance.name,
+                'address': instance.address,
+                'status': instance.status,
+                'category': instance.category.name if instance.category else None,
+                'payment_methods': instance.payment_methods,
+                'latitude': str(instance.latitude),
+                'longitude': str(instance.longitude),
+                'image_url': instance.image.url if instance.image else '',
+                'amenities': ', '.join([a.name for a in instance.amenities.all()]),
+            }
 
-            # Haversine distance calculation
-            R = 6371000  # Earth radius in meters
-            dlat = math.radians(lat_float - cvsu_lat)
-            dlng = math.radians(lng_float - cvsu_lng)
-            a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(cvsu_lat)) * math.cos(
-                math.radians(lat_float)) * math.sin(dlng / 2) ** 2
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-            distance = R * c
+            return JsonResponse(data)
 
-            if distance > 500:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Location must be within 500m of CvSU-Bacoor campus'
-                }, status=400)
-
-            # ✅ Update coordinates
-            instance.latitude = lat_float
-            instance.longitude = lng_float
-
-        except (ValueError, TypeError):
+        except Exception as e:
+            print(f"Database save error: {e}")
             return JsonResponse({
                 'success': False,
-                'error': 'Invalid coordinates format'
-            }, status=400)
-
-        # ✅ Update address (auto-filled from geocoding)
-        if address:
-            instance.address = address
-        else:
-            # Fallback: use coordinates as address
-            instance.address = f"Location: {latitude}, {longitude}"
-
-        # ✅ Save the instance
-        instance.save()
-        form.save_m2m()
-
-        # ✅ Prepare response data
-        response_data = {
-            'success': True,
-            'message': 'Details updated successfully',
-            'name': instance.name,
-            'address': instance.address,
-            'status': instance.status,
-            'latitude': str(instance.latitude),
-            'longitude': str(instance.longitude),
-        }
-
-        # ✅ Add category if exists
-        if instance.category:
-            response_data['category'] = instance.category.name
-
-        # ✅ Add amenities if exist
-        if instance.amenities.exists():
-            amenities_list = [amenity.name for amenity in instance.amenities.all()]
-            response_data['amenities'] = ', '.join(amenities_list)
-
-        # ✅ Add payment methods
-        response_data['payment_methods'] = instance.payment_methods or 'N/A'
-
-        # ✅ Add image URL if exists
-        if instance.image:
-            response_data['image_url'] = instance.image.url
-
-        return JsonResponse(response_data)
-
+                'error': 'A database error occurred during update.'
+            }, status=500)
     else:
-        # ✅ Return validation errors
-        errors = {}
-        for field, error_list in form.errors.items():
-            errors[field] = [str(e) for e in error_list]
-
+        errors = {k: v for k, v in form.errors.items()}
         return JsonResponse({
             'success': False,
-            'error': 'Validation failed',
+            'error': 'Validation failed. Please check your inputs.',
             'errors': errors
         }, status=400)
-#===================================================================================================================
+
+
+# ===================================================================================================================
 # ================================================END OWNER ========================================================
-#===================================================================================================================
+# ===================================================================================================================
 
 # =======================================================================
 # CART MANAGEMENT
@@ -3164,12 +3180,14 @@ def update_establishment_details_ajax(request, pk):
 from django.db import transaction
 from .models import MenuItem, OrderItem
 
+
 @transaction.atomic
 def handle_payment_success(order):
     """When payment is confirmed, reduce item stock."""
     for item in order.items.all():
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
+
 
 @require_POST
 @login_required
@@ -3259,6 +3277,7 @@ def add_to_cart(request):
             'message': 'Error adding item to cart.'
         }, status=500)
 
+
 @login_required
 def view_cart(request):
     """
@@ -3302,6 +3321,7 @@ def view_cart(request):
     }
     return render(request, 'webapplication/cart.html', context)
 
+
 @login_required
 @require_POST
 def paymongo_checkout(request):
@@ -3315,6 +3335,7 @@ def paymongo_checkout(request):
             'success': False,
             'message': 'Checkout failed'
         }, status=500)
+
 
 def payment_status(request, status):
     """payment status page"""
@@ -3336,6 +3357,7 @@ def payment_status(request, status):
     }
     return render(request, 'webapplication/payment_status.html', context)
 
+
 @login_required
 @require_POST
 def clear_cart(request):
@@ -3353,6 +3375,7 @@ def clear_cart(request):
             'success': False,
             'message': 'Error clearing cart'
         }, status=500)
+
 
 @login_required
 @require_POST
@@ -3418,6 +3441,7 @@ def update_cart_item(request):
             'message': 'Error updating cart'
         }, status=500)
 
+
 @login_required
 @require_POST
 def remove_from_cart(request):
@@ -3471,6 +3495,7 @@ def remove_from_cart(request):
             'message': 'Error removing item'
         }, status=500)
 
+
 @login_required
 def get_cart_count(request):
     """
@@ -3492,6 +3517,7 @@ def get_cart_count(request):
             'success': False,
             'cart_count': 0
         })
+
 
 @login_required
 @require_POST
@@ -3530,6 +3556,7 @@ def clear_establishment_cart(request):
             'message': 'Error clearing cart'
         }, status=500)
 
+
 # =======ORIGINAL CODE==========
 
 from django.shortcuts import render, get_object_or_404
@@ -3541,6 +3568,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .models import ChatRoom, Message, FoodEstablishment
+
 
 @login_required
 def customer_chat_view(request, establishment_id):
@@ -3576,6 +3604,7 @@ def customer_chat_view(request, establishment_id):
     }
 
     return render(request, 'webapplication/customer_chat.html', context)
+
 
 @login_required
 def owner_chat_view(request, customer_id):
@@ -3619,6 +3648,7 @@ def owner_chat_view(request, customer_id):
 
     return render(request, 'webapplication/owner_chat.html', context)
 
+
 @login_required
 def owner_inbox_view(request):
     """
@@ -3645,6 +3675,7 @@ def owner_inbox_view(request):
     }
 
     return render(request, 'webapplication/owner_inbox.html', context)
+
 
 @login_required
 def get_chat_messages(request, customer_id, establishment_id):
@@ -3703,6 +3734,7 @@ def get_chat_messages(request, customer_id, establishment_id):
             'error': str(e)
         }, status=400)
 
+
 @login_required
 def get_owner_conversations(request, establishment_id):
     """
@@ -3746,6 +3778,7 @@ def get_owner_conversations(request, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
+
 
 @login_required
 def get_chat_messages_api(request, customer_id, establishment_id):
