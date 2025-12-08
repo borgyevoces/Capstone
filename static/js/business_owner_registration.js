@@ -552,38 +552,89 @@ function initStep3() {
     const successModal = document.getElementById('successModal');
 
     function validateInputs() {
-        const ok = passwordInput.value.length >= 8 &&
-                   passwordInput.value === retypeInput.value &&
-                   emailInput.validity.valid;
+        const emailValid = emailInput.validity.valid && emailInput.value.trim() !== '';
+        const passwordValid = passwordInput.value.length >= 8;
+        const passwordsMatch = passwordInput.value === retypeInput.value;
+
+        const ok = emailValid && passwordValid && passwordsMatch;
         sendOtpBtn.disabled = !ok;
     }
 
     [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
     backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
 
-    sendOtpBtn.addEventListener('click', () => {
-        const email = emailInput.value;
-        sendOtpBtn.disabled = true;
-        sendOtpBtn.textContent = 'Sending...';
+    sendOtpBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
 
-        fetch('/api/send-otp/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    otpModal.style.display = 'flex';
-                } else {
-                    console.error('Failed to send OTP:', data.error);
-                }
-            })
-            .catch((err) => console.error('Error sending OTP:', err))
-            .finally(() => {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'Send OTP to register establishment';
+        console.log('📧 Sending OTP request to:', email);
+
+        if (!email) {
+            alert('Please enter your email address');
+            return;
+        }
+
+        // Validate email format
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.textContent = 'Sending OTP...';
+
+        try {
+            // Get CSRF token
+            const csrftoken = getCookie('csrftoken');
+
+            console.log('🔐 CSRF Token:', csrftoken);
+            console.log('📤 Sending request to /api/send-otp/');
+
+            const response = await fetch('/api/send-otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ email: email })
             });
+
+            console.log('📥 Response status:', response.status);
+
+            const data = await response.json();
+            console.log('📥 Response data:', data);
+
+            if (response.ok && data.success) {
+                console.log('✅ OTP sent successfully');
+
+                // Show warning if email wasn't configured or delayed
+                if (data.warning) {
+                    const warningMsg = data.warning +
+                        (data.debug_otp ? `\n\n🔑 Your OTP code is: ${data.debug_otp}\n\n(This is shown because DEBUG=True)` : '');
+                    alert(`⚠️ ${warningMsg}`);
+                    console.log('🔑 DEBUG OTP:', data.debug_otp);
+                } else {
+                    alert('✅ OTP sent successfully! Check your email (and spam folder).');
+                }
+
+                // Store email for verification
+                sessionStorage.setItem('otp_email', email);
+
+                // Open OTP modal
+                otpModal.style.display = 'flex';
+                document.getElementById('otp-input').focus();
+
+            } else {
+                console.error('❌ Failed to send OTP:', data.error || data);
+                alert(data.error || 'Failed to send OTP. Please try again.');
+            }
+        } catch (err) {
+            console.error('❌ Error sending OTP:', err);
+            alert('Network error. Please check your connection and try again.');
+        } finally {
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.textContent = 'Send OTP to register establishment';
+        }
     });
 
     window.addEventListener('click', (e) => {
@@ -598,10 +649,20 @@ function initStep3() {
 
         try {
             const otpCode = document.getElementById('otp-input').value.trim();
+            const email = emailInput.value.trim();
+
+            console.log('🔐 Verifying OTP:', otpCode);
+
+            if (!otpCode || otpCode.length !== 6) {
+                throw new Error('Please enter a valid 6-digit OTP code');
+            }
+
             const details = JSON.parse(sessionStorage.getItem('establishmentDetails'));
             const lat = sessionStorage.getItem('latitude');
             const lng = sessionStorage.getItem('longitude');
             const imgData = sessionStorage.getItem('establishment_image_data');
+
+            console.log('📤 Submitting registration...');
 
             const formData = new FormData();
             formData.append('otp', otpCode);
@@ -609,7 +670,7 @@ function initStep3() {
                 ...details,
                 latitude: lat,
                 longitude: lng,
-                email: emailInput.value,
+                email: email,
                 password: passwordInput.value,
                 name: details.name
             }));
@@ -619,31 +680,72 @@ function initStep3() {
                 formData.append('cover_image', blob, 'establishment_image.jpg');
             }
 
-            const res = await fetch('/api/verify-and-register/', { method: 'POST', body: formData });
+            const res = await fetch('/api/verify-and-register/', {
+                method: 'POST',
+                body: formData
+            });
+
             const result = await res.json();
+            console.log('📥 Verification response:', result);
 
-            if (!res.ok || !result.success) throw new Error(result.error || 'Registration failed.');
+            if (!res.ok || !result.success) {
+                throw new Error(result.error || 'Registration failed.');
+            }
 
+            console.log('✅ Registration successful!');
+
+            // Clear session storage
             sessionStorage.clear();
+
+            // Close OTP modal
             otpModal.style.display = 'none';
+
+            // Show success modal
             successModal.style.display = 'flex';
-            setTimeout(() => window.location.href = result.redirect_url, 2000);
+
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = result.redirect_url;
+            }, 2000);
+
         } catch (err) {
+            console.error('❌ Registration error:', err);
             otpError.textContent = err.message;
         } finally {
             loading.style.display = 'none';
         }
     });
-}
 
+    validateInputs();
+}
+/* ============================================================
+   Helper – Get CSRF Token from Cookies
+   ============================================================ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 /* ============================================================
    Helper — Convert Base64 → Blob
    ============================================================ */
 function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
     return new Blob([u8arr], { type: mime });
 }
