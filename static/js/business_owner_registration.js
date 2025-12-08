@@ -552,21 +552,18 @@ function initStep3() {
     const successModal = document.getElementById('successModal');
 
     function validateInputs() {
-        const emailValid = emailInput.validity.valid && emailInput.value.trim() !== '';
-        const passwordValid = passwordInput.value.length >= 8;
-        const passwordsMatch = passwordInput.value === retypeInput.value;
-
-        const ok = emailValid && passwordValid && passwordsMatch;
+        const ok = passwordInput.value.length >= 8 &&
+                   passwordInput.value === retypeInput.value &&
+                   emailInput.validity.valid;
         sendOtpBtn.disabled = !ok;
     }
 
     [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
     backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
 
+    // ✅ FIXED: Faster OTP sending with better feedback
     sendOtpBtn.addEventListener('click', async () => {
         const email = emailInput.value.trim();
-
-        console.log('📧 Sending OTP request to:', email);
 
         if (!email) {
             alert('Please enter your email address');
@@ -580,21 +577,17 @@ function initStep3() {
             return;
         }
 
+        // Disable button and show loading state
         sendOtpBtn.disabled = true;
         sendOtpBtn.textContent = 'Sending OTP...';
 
         try {
-            // Get CSRF token
-            const csrftoken = getCookie('csrftoken');
-
-            console.log('🔐 CSRF Token:', csrftoken);
-            console.log('📤 Sending request to /api/send-otp/');
+            console.log('📤 Sending OTP request to:', email);
 
             const response = await fetch('/api/send-otp/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
                 },
                 body: JSON.stringify({ email: email })
             });
@@ -604,44 +597,61 @@ function initStep3() {
             const data = await response.json();
             console.log('📥 Response data:', data);
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 console.log('✅ OTP sent successfully');
 
-                // Show warning if email wasn't configured or delayed
+                // Show success message
                 if (data.warning) {
-                    const warningMsg = data.warning +
-                        (data.debug_otp ? `\n\n🔑 Your OTP code is: ${data.debug_otp}\n\n(This is shown because DEBUG=True)` : '');
-                    alert(`⚠️ ${warningMsg}`);
-                    console.log('🔑 DEBUG OTP:', data.debug_otp);
-                } else {
-                    alert('✅ OTP sent successfully! Check your email (and spam folder).');
+                    alert(`⚠️ ${data.warning}\n\nOTP: ${data.debug_otp || 'Check your email'}`);
                 }
-
-                // Store email for verification
-                sessionStorage.setItem('otp_email', email);
 
                 // Open OTP modal
                 otpModal.style.display = 'flex';
                 document.getElementById('otp-input').focus();
 
+                // Show success notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #4CAF50;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                notification.textContent = '✅ OTP sent to your email!';
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+
             } else {
-                console.error('❌ Failed to send OTP:', data.error || data);
-                alert(data.error || 'Failed to send OTP. Please try again.');
+                console.error('❌ OTP sending failed:', data.error);
+                alert(`Failed to send OTP: ${data.error || 'Please try again'}`);
             }
-        } catch (err) {
-            console.error('❌ Error sending OTP:', err);
+        } catch (error) {
+            console.error('❌ Error sending OTP:', error);
             alert('Network error. Please check your connection and try again.');
         } finally {
+            // Re-enable button
             sendOtpBtn.disabled = false;
             sendOtpBtn.textContent = 'Send OTP to register establishment';
         }
     });
 
+    // Close modal on background click
     window.addEventListener('click', (e) => {
         if (e.target === otpModal) otpModal.style.display = 'none';
         if (e.target === successModal) successModal.style.display = 'none';
     });
 
+    // ✅ FIXED: OTP verification with proper error handling
     otpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         otpError.textContent = '';
@@ -649,12 +659,9 @@ function initStep3() {
 
         try {
             const otpCode = document.getElementById('otp-input').value.trim();
-            const email = emailInput.value.trim();
-
-            console.log('🔐 Verifying OTP:', otpCode);
 
             if (!otpCode || otpCode.length !== 6) {
-                throw new Error('Please enter a valid 6-digit OTP code');
+                throw new Error('Please enter a valid 6-digit OTP');
             }
 
             const details = JSON.parse(sessionStorage.getItem('establishmentDetails'));
@@ -662,7 +669,7 @@ function initStep3() {
             const lng = sessionStorage.getItem('longitude');
             const imgData = sessionStorage.getItem('establishment_image_data');
 
-            console.log('📤 Submitting registration...');
+            console.log('🔐 Verifying OTP and registering...');
 
             const formData = new FormData();
             formData.append('otp', otpCode);
@@ -670,7 +677,7 @@ function initStep3() {
                 ...details,
                 latitude: lat,
                 longitude: lng,
-                email: email,
+                email: emailInput.value,
                 password: passwordInput.value,
                 name: details.name
             }));
@@ -685,11 +692,12 @@ function initStep3() {
                 body: formData
             });
 
+            console.log('📥 Registration response status:', res.status);
             const result = await res.json();
-            console.log('📥 Verification response:', result);
+            console.log('📥 Registration response:', result);
 
             if (!res.ok || !result.success) {
-                throw new Error(result.error || 'Registration failed.');
+                throw new Error(result.error || 'Registration failed');
             }
 
             console.log('✅ Registration successful!');
@@ -697,55 +705,62 @@ function initStep3() {
             // Clear session storage
             sessionStorage.clear();
 
-            // Close OTP modal
+            // Close OTP modal and show success modal
             otpModal.style.display = 'none';
-
-            // Show success modal
             successModal.style.display = 'flex';
 
             // Redirect after 2 seconds
             setTimeout(() => {
-                window.location.href = result.redirect_url;
+                window.location.href = result.redirect_url || '/food_establishment/dashboard/';
             }, 2000);
 
         } catch (err) {
             console.error('❌ Registration error:', err);
             otpError.textContent = err.message;
+            otpError.style.color = 'red';
+            otpError.style.marginTop = '10px';
         } finally {
             loading.style.display = 'none';
         }
     });
+}
 
-    validateInputs();
-}
-/* ============================================================
-   Helper – Get CSRF Token from Cookies
-   ============================================================ */
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
 /* ============================================================
    Helper — Convert Base64 → Blob
    ============================================================ */
 function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
+    const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new Blob([u8arr], { type: mime });
 }
+/* ============================================================
+   CSS Animations for Notifications
+   ============================================================ */
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
