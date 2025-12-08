@@ -2527,242 +2527,77 @@ def owner_register_step2_details(request):
 def owner_register_step3_credentials(request):
     return render(request, 'webapplication/register_step3_credentials.html')
 
-
 @csrf_exempt
 def send_otp(request):
     """
-    ✅ COMPLETE FIX: Send OTP for owner registration with proper error handling
+    FIXED: Owner registration OTP
     """
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     try:
-        # Parse request body
-        try:
-            body = request.body.decode('utf-8') or '{}'
-            data = json.loads(body) if body else {}
-        except Exception:
-            data = request.POST.dict()
+        body = request.body.decode('utf-8') or ''
+        data = json.loads(body) if body else {}
+    except Exception:
+        data = {}
 
-        email = data.get('email')
+    email = data.get('email') or request.POST.get('email')
+    if not email:
+        return JsonResponse({'error': 'Email is required'}, status=400)
 
-        # Validate email
-        if not email:
-            return JsonResponse({'success': False, 'error': 'Email is required'}, status=400)
+    otp_code = str(random.randint(100000, 999999)).zfill(6)
 
-        # Validate email format
-        import re
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_pattern, email):
-            return JsonResponse({'success': False, 'error': 'Invalid email format'}, status=400)
-
-        # Check if email already exists
-        if User.objects.filter(email=email).exists():
-            return JsonResponse({
-                'success': False,
-                'error': 'This email is already registered'
-            }, status=400)
-
-        # Generate 6-digit OTP
-        otp_code = ''.join(random.choices(string.digits, k=6))
-        print(f"🔐 Generated OTP for {email}: {otp_code}")
-
-        # Save OTP to database with fresh timestamp
-        try:
-            otp_obj, created = OTP.objects.update_or_create(
-                email=email,
-                defaults={
-                    'code': otp_code,
-                    'attempts': 0,
-                    'is_verified': False
-                }
-            )
-            # Force update the created_at timestamp
+    # Save OTP
+    try:
+        otp_obj, created = OTP.objects.update_or_create(
+            email=email,
+            defaults={'code': otp_code, 'attempts': 0}
+        )
+        if not created:
             otp_obj.created_at = timezone.now()
             otp_obj.save()
-            print(f"✅ OTP saved to database for {email}")
-        except Exception as db_error:
-            print(f"❌ Database error: {db_error}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Failed to generate OTP'
-            }, status=500)
+    except Exception as e:
+        print("OTP DB save error:", e)
 
-        # Also save in session for redundancy
-        try:
-            request.session['otp'] = otp_code
-            request.session['otp_email'] = email
-            request.session.modified = True
-            print(f"✅ OTP saved to session for {email}")
-        except Exception as session_error:
-            print(f"⚠️ Session save error (non-critical): {session_error}")
+    # Save in session
+    try:
+        request.session['otp'] = otp_code
+        request.session['otp_email'] = email
+        request.session.modified = True
+    except Exception as e:
+        print("Session OTP save error:", e)
 
-        # Get sender email
-        from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+    # Check sender email
+    from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
-        if not from_email:
-            print("❌ CRITICAL: No SENDER_EMAIL configured")
-            print(f"⚠️ OTP generated but email not configured: {otp_code}")
-            return JsonResponse({
-                'success': True,
-                'message': 'OTP generated successfully',
-                'warning': 'Email not configured. Check console for OTP.',
-                'debug_otp': otp_code  # ⚠️ REMOVE THIS IN PRODUCTION
-            })
-
-        # Prepare HTML email content
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ 
-                    font-family: Arial, sans-serif; 
-                    background-color: #f4f4f4; 
-                    margin: 0; 
-                    padding: 0; 
-                }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 40px auto; 
-                    background-color: #ffffff; 
-                    border-radius: 8px; 
-                    overflow: hidden; 
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-                }}
-                .header {{ 
-                    background-color: #e74c3c; 
-                    color: white; 
-                    padding: 30px; 
-                    text-align: center; 
-                }}
-                .header h1 {{ 
-                    margin: 0; 
-                    font-size: 28px; 
-                }}
-                .content {{ 
-                    padding: 40px 30px; 
-                }}
-                .otp-box {{ 
-                    background-color: #f9f9f9; 
-                    border: 2px dashed #e74c3c; 
-                    border-radius: 8px; 
-                    padding: 20px; 
-                    text-align: center; 
-                    margin: 30px 0; 
-                }}
-                .otp-code {{ 
-                    font-size: 36px; 
-                    font-weight: bold; 
-                    color: #e74c3c; 
-                    letter-spacing: 8px; 
-                }}
-                .footer {{ 
-                    background-color: #f4f4f4; 
-                    padding: 20px; 
-                    text-align: center; 
-                    font-size: 12px; 
-                    color: #777; 
-                }}
-                .warning {{ 
-                    color: #d9534f; 
-                    font-size: 14px; 
-                    margin-top: 20px; 
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🏪 KabsuEats Business Registration</h1>
-                </div>
-                <div class="content">
-                    <h2>Hello!</h2>
-                    <p>Thank you for registering your business with KabsuEats. To complete your registration, please use the following One-Time Password (OTP):</p>
-
-                    <div class="otp-box">
-                        <div class="otp-code">{otp_code}</div>
-                    </div>
-
-                    <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-
-                    <p class="warning">⚠️ Do not share this code with anyone. KabsuEats staff will never ask for your OTP.</p>
-
-                    <p>If you didn't request this code, please ignore this email.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; 2024 KabsuEats. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-
-        # Plain text fallback
-        plain_message = f"""
-        KabsuEats Business Registration
-
-        Your verification code is: {otp_code}
-
-        This OTP is valid for 10 minutes.
-
-        Do not share this code with anyone.
-
-        If you didn't request this code, please ignore this email.
-
-        © 2024 KabsuEats. All rights reserved.
-        """
-
-        # Send email using the wrapper function
-        try:
-            # Import the send_mail wrapper from your views
-            from . import views
-
-            result = views.send_mail(
-                subject='🏪 KabsuEats Business Registration - Verification Code',
-                message=plain_message,
-                from_email=from_email,
-                recipient_list=[email],
-                fail_silently=True,
-                html_message=html_content
-            )
-
-            if result:
-                print(f"✅ OTP email sent successfully to {email}")
-                return JsonResponse({
-                    'success': True,
-                    'message': 'OTP sent successfully to your email'
-                })
-            else:
-                print(f"⚠️ Email sending may have failed, but OTP is saved")
-                return JsonResponse({
-                    'success': True,
-                    'message': 'OTP generated. Check your email and spam folder.',
-                    'warning': 'Email delivery may be delayed'
-                })
-
-        except Exception as email_error:
-            print(f"❌ Error sending OTP email: {email_error}")
-            import traceback
-            traceback.print_exc()
-
-            # Return success anyway since OTP is saved
-            return JsonResponse({
-                'success': True,
-                'message': 'OTP generated successfully',
-                'warning': 'Email sending encountered an issue. If you do not receive the email, try resending.',
-                'debug_otp': otp_code  # ⚠️ REMOVE THIS IN PRODUCTION
-            })
-
-    except Exception as outer_error:
-        print(f"❌ Outer exception in send_otp: {outer_error}")
-        import traceback
-        traceback.print_exc()
-
+    if not from_email:
+        print(f"⚠️ No SENDER_EMAIL configured. OTP: {otp_code}")
         return JsonResponse({
-            'success': False,
-            'error': 'An unexpected error occurred. Please try again.'
-        }, status=500)
+            'success': True,
+            'warning': 'Email not configured',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
+
+    html_content = f"<p>Your KabsuEats verification code is: <strong>{otp_code}</strong></p>"
+
+    # Send email
+    try:
+        send_mail(
+            subject='Your KabsuEats OTP Code',
+            message=f'Your verification code is: {otp_code}',
+            from_email=from_email,
+            recipient_list=[email],
+            fail_silently=True,
+            html_message=html_content
+        )
+        return JsonResponse({'success': True})
+    except Exception as e:
+        print(f"❌ OTP email error: {e}")
+        return JsonResponse({
+            'success': True,
+            'warning': 'OTP generated but email may be delayed',
+            'debug_otp': otp_code  # REMOVE IN PRODUCTION
+        })
 
 @csrf_exempt
 @transaction.atomic

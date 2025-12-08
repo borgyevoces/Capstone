@@ -561,97 +561,36 @@ function initStep3() {
     [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
     backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
 
-    // ✅ FIXED: Faster OTP sending with better feedback
-    sendOtpBtn.addEventListener('click', async () => {
-        const email = emailInput.value.trim();
-
-        if (!email) {
-            alert('Please enter your email address');
-            return;
-        }
-
-        // Validate email format
-        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailPattern.test(email)) {
-            alert('Please enter a valid email address');
-            return;
-        }
-
-        // Disable button and show loading state
+    sendOtpBtn.addEventListener('click', () => {
+        const email = emailInput.value;
         sendOtpBtn.disabled = true;
-        sendOtpBtn.textContent = 'Sending OTP...';
+        sendOtpBtn.textContent = 'Sending...';
 
-        try {
-            console.log('📤 Sending OTP request to:', email);
-
-            const response = await fetch('/api/send-otp/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: email })
-            });
-
-            console.log('📥 Response status:', response.status);
-
-            const data = await response.json();
-            console.log('📥 Response data:', data);
-
-            if (data.success) {
-                console.log('✅ OTP sent successfully');
-
-                // Show success message
-                if (data.warning) {
-                    alert(`⚠️ ${data.warning}\n\nOTP: ${data.debug_otp || 'Check your email'}`);
+        fetch('/api/send-otp/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    otpModal.style.display = 'flex';
+                } else {
+                    console.error('Failed to send OTP:', data.error);
                 }
-
-                // Open OTP modal
-                otpModal.style.display = 'flex';
-                document.getElementById('otp-input').focus();
-
-                // Show success notification
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #4CAF50;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 5px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                    z-index: 10000;
-                    animation: slideIn 0.3s ease-out;
-                `;
-                notification.textContent = '✅ OTP sent to your email!';
-                document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.style.animation = 'slideOut 0.3s ease-out';
-                    setTimeout(() => notification.remove(), 300);
-                }, 3000);
-
-            } else {
-                console.error('❌ OTP sending failed:', data.error);
-                alert(`Failed to send OTP: ${data.error || 'Please try again'}`);
-            }
-        } catch (error) {
-            console.error('❌ Error sending OTP:', error);
-            alert('Network error. Please check your connection and try again.');
-        } finally {
-            // Re-enable button
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.textContent = 'Send OTP to register establishment';
-        }
+            })
+            .catch((err) => console.error('Error sending OTP:', err))
+            .finally(() => {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.textContent = 'Send OTP to register establishment';
+            });
     });
 
-    // Close modal on background click
     window.addEventListener('click', (e) => {
         if (e.target === otpModal) otpModal.style.display = 'none';
         if (e.target === successModal) successModal.style.display = 'none';
     });
 
-    // ✅ FIXED: OTP verification with proper error handling
     otpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         otpError.textContent = '';
@@ -659,17 +598,10 @@ function initStep3() {
 
         try {
             const otpCode = document.getElementById('otp-input').value.trim();
-
-            if (!otpCode || otpCode.length !== 6) {
-                throw new Error('Please enter a valid 6-digit OTP');
-            }
-
             const details = JSON.parse(sessionStorage.getItem('establishmentDetails'));
             const lat = sessionStorage.getItem('latitude');
             const lng = sessionStorage.getItem('longitude');
             const imgData = sessionStorage.getItem('establishment_image_data');
-
-            console.log('🔐 Verifying OTP and registering...');
 
             const formData = new FormData();
             formData.append('otp', otpCode);
@@ -687,38 +619,17 @@ function initStep3() {
                 formData.append('cover_image', blob, 'establishment_image.jpg');
             }
 
-            const res = await fetch('/api/verify-and-register/', {
-                method: 'POST',
-                body: formData
-            });
-
-            console.log('📥 Registration response status:', res.status);
+            const res = await fetch('/api/verify-and-register/', { method: 'POST', body: formData });
             const result = await res.json();
-            console.log('📥 Registration response:', result);
 
-            if (!res.ok || !result.success) {
-                throw new Error(result.error || 'Registration failed');
-            }
+            if (!res.ok || !result.success) throw new Error(result.error || 'Registration failed.');
 
-            console.log('✅ Registration successful!');
-
-            // Clear session storage
             sessionStorage.clear();
-
-            // Close OTP modal and show success modal
             otpModal.style.display = 'none';
             successModal.style.display = 'flex';
-
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = result.redirect_url || '/food_establishment/dashboard/';
-            }, 2000);
-
+            setTimeout(() => window.location.href = result.redirect_url, 2000);
         } catch (err) {
-            console.error('❌ Registration error:', err);
             otpError.textContent = err.message;
-            otpError.style.color = 'red';
-            otpError.style.marginTop = '10px';
         } finally {
             loading.style.display = 'none';
         }
@@ -736,31 +647,3 @@ function dataURLtoBlob(dataURL) {
     while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new Blob([u8arr], { type: mime });
 }
-/* ============================================================
-   CSS Animations for Notifications
-   ============================================================ */
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
