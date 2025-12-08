@@ -1329,96 +1329,104 @@ def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
 
+
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    COMPLETELY FIXED: Lightweight email sending without memory-intensive operations
+    OPTIMIZED: Fast email sending with proper fallback
     """
     # Validate sender email
     if not from_email or from_email == 'webmaster@localhost':
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
-    
+
     if not from_email:
         print("❌ CRITICAL: No sender email configured")
         if not fail_silently:
             raise ValueError("SENDER_EMAIL not configured")
         return 0
-    
+
     # Get SendGrid API key
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
-    
-    # If SendGrid not configured, use Django SMTP immediately
-    if not sendgrid_key or sendgrid_key == '********************':
-        print(f"⚠️ SendGrid not configured. Using Django SMTP...")
+
+    # Try SendGrid first (fastest)
+    if sendgrid_key and sendgrid_key != '********************':
         try:
-            return django_send_mail(
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail, Email, To, Content
+
+            # Ensure recipient_list is a list
+            if isinstance(recipient_list, str):
+                recipient_list = [recipient_list]
+
+            # Create SendGrid message
+            sg_msg = Mail(
+                from_email=Email(from_email),
+                to_emails=[To(email) for email in recipient_list],
                 subject=subject,
-                message=message,
-                from_email=from_email,
-                recipient_list=recipient_list,
-                fail_silently=fail_silently,
-                html_message=html_message
+                html_content=Content("text/html", html_message if html_message else message)
             )
-        except Exception as smtp_error:
-            print(f"❌ SMTP error: {smtp_error}")
+
+            # Send with SendGrid
+            sg = SendGridAPIClient(sendgrid_key)
+            response = sg.send(sg_msg)
+
+            if response.status_code in (200, 202):
+                print(f"✅ Email sent via SendGrid to {recipient_list}")
+                return 1
+            else:
+                print(f"⚠️ SendGrid status {response.status_code}: {response.body}")
+
+        except Exception as sg_error:
+            print(f"❌ SendGrid error: {sg_error}")
+
+            # Check for common errors
+            error_str = str(sg_error)
+            if '403' in error_str or 'Forbidden' in error_str:
+                print("❌ SendGrid 403 - Possible causes:")
+                print("  1. API Key expired or invalid")
+                print("  2. Sender email not verified in SendGrid")
+                print("  3. API Key missing 'Mail Send' permission")
+            elif '401' in error_str or 'Unauthorized' in error_str:
+                print("❌ SendGrid 401 - Invalid API Key")
+
+    # Fallback to Gmail SMTP
+    print(f"📧 Falling back to Gmail SMTP for {recipient_list}...")
+    try:
+        # Get Gmail credentials
+        gmail_user = os.getenv('EMAIL_HOST_USER')
+        gmail_pass = os.getenv('EMAIL_HOST_PASSWORD')
+
+        if not gmail_user or not gmail_pass or gmail_pass == 'your-app-password':
+            print("❌ Gmail SMTP not configured properly")
+            print(f"   EMAIL_HOST_USER: {gmail_user}")
+            print(f"   EMAIL_HOST_PASSWORD: {'***' if gmail_pass else 'NOT SET'}")
+
             if not fail_silently:
-                raise
+                raise ValueError("Gmail SMTP credentials not configured")
             return 0
-    
-    # ✅ FIX: Avoid socket timeout manipulation (causes issues on Render)
-    try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, Email, To, Content
-        
-        # Ensure recipient_list is a list
-        if isinstance(recipient_list, str):
-            recipient_list = [recipient_list]
-        
-        # Create SendGrid message
-        sg_msg = Mail(
-            from_email=Email(from_email),
-            to_emails=[To(email) for email in recipient_list],
-            subject=subject,
-            html_content=Content("text/html", html_message if html_message else message)
-        )
-        
-        # ✅ FIX: Use default timeout (don't manipulate socket settings)
-        sg = SendGridAPIClient(sendgrid_key)
-        
-        # ✅ CRITICAL: Set timeout in the request itself
-        response = sg.send(sg_msg)
-        
-        if response.status_code in (200, 202):
-            print(f"✅ Email sent via SendGrid to {recipient_list}")
-            return 1
-        else:
-            print(f"⚠️ SendGrid returned status {response.status_code}")
-            
-    except Exception as sg_error:
-        print(f"❌ SendGrid error: {sg_error}")
-        
-        if '403' in str(sg_error):
-            print("❌ SendGrid 403 Forbidden - Check:")
-            print("  1. API Key is valid and not expired")
-            print("  2. Sender email is verified in SendGrid")
-            print("  3. API Key has 'Mail Send' permissions")
-    
-    # Fallback to Django SMTP
-    print(f"🔄 Falling back to Django SMTP...")
-    try:
-        return django_send_mail(
+
+        # Use Django's send_mail
+        result = django_send_mail(
             subject=subject,
             message=message,
-            from_email=from_email,
+            from_email=gmail_user,  # Use Gmail as sender
             recipient_list=recipient_list,
             fail_silently=fail_silently,
             html_message=html_message
         )
+
+        if result:
+            print(f"✅ Email sent via Gmail SMTP to {recipient_list}")
+            return result
+        else:
+            print(f"⚠️ Gmail SMTP returned 0 (may have failed)")
+            return 0
+
     except Exception as smtp_error:
-        print(f"❌ SMTP error: {smtp_error}")
+        print(f"❌ Gmail SMTP error: {smtp_error}")
         if not fail_silently:
             raise
         return 0
-
+    
 @login_required
 @require_POST
 def gcash_payment_request(request):
