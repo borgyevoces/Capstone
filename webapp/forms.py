@@ -40,7 +40,8 @@ class FoodEstablishmentForm(forms.ModelForm):
         fields = [
             'name',
             'address',
-            'status',
+            'opening_time',
+            'closing_time',
             'image',
             'category',
             'payment_methods',
@@ -49,7 +50,6 @@ class FoodEstablishmentForm(forms.ModelForm):
             'amenities',
         ]
         widgets = {
-            'status': forms.Select(choices=[('Open', 'Open'), ('Closed', 'Closed')], attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'category': forms.Select(attrs={'class': 'form-control'}),
@@ -60,6 +60,16 @@ class FoodEstablishmentForm(forms.ModelForm):
             'name': ' Establishment name:',
 
         }
+        opening_time = forms.TimeField(
+            widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            required=False,
+            label="Opening Time"
+        )
+        closing_time = forms.TimeField(
+            widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            required=False,
+            label="Closing Time"
+        )
 
 
     def clean_image(self):
@@ -93,6 +103,7 @@ class FoodEstablishmentUpdateForm(forms.ModelForm):
         required=False
     )
 
+
     # ✅ Payment methods as MultipleChoiceField with checkboxes
     PAYMENT_CHOICES = [
         ('Cash', 'Cash'),
@@ -106,12 +117,24 @@ class FoodEstablishmentUpdateForm(forms.ModelForm):
         required=False
     )
 
+    opening_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        required=False,
+        label="Opening Time"
+    )
+    closing_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        required=False,
+        label="Closing Time"
+    )
+
     class Meta:
         model = FoodEstablishment
         fields = [
             'name',
             'address',
-            'status',
+            'opening_time',
+            'closing_time',
             'image',
             'latitude',
             'longitude',
@@ -120,7 +143,6 @@ class FoodEstablishmentUpdateForm(forms.ModelForm):
             'payment_methods',
         ]
         widgets = {
-            'status': forms.Select(choices=[('Open', 'Open'), ('Closed', 'Closed')], attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'category': forms.Select(attrs={'class': 'form-control'}),
@@ -136,6 +158,10 @@ class FoodEstablishmentUpdateForm(forms.ModelForm):
             self.initial['latitude'] = self.instance.latitude
             self.initial['longitude'] = self.instance.longitude
 
+            # ✅ NEW: Initialize time fields
+            self.initial['opening_time'] = self.instance.opening_time
+            self.initial['closing_time'] = self.instance.closing_time
+
             # ✅ Pre-select payment methods from comma-separated string
             if self.instance.payment_methods:
                 selected = [method.strip() for method in self.instance.payment_methods.split(',')]
@@ -145,6 +171,10 @@ class FoodEstablishmentUpdateForm(forms.ModelForm):
         instance = super().save(commit=False)
         instance.latitude = self.cleaned_data['latitude']
         instance.longitude = self.cleaned_data['longitude']
+
+        # ✅ NEW: Save time fields
+        instance.opening_time = self.cleaned_data.get('opening_time')
+        instance.closing_time = self.cleaned_data.get('closing_time')
 
         # ✅ Convert selected payment methods list to comma-separated string
         payment_list = self.cleaned_data.get('payment_methods', [])

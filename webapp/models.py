@@ -60,7 +60,16 @@ class FoodEstablishment(models.Model):
     # Basic Information
     name = models.CharField(max_length=255)
     address = models.TextField()
-    status = models.CharField(max_length=50, default='Open')
+    opening_time = models.TimeField(
+        help_text="Time when establishment opens (e.g., 08:00 AM)",
+        null=True,
+        blank=True
+    )
+    closing_time = models.TimeField(
+        help_text="Time when establishment closes (e.g., 10:00 PM)",
+        null=True,
+        blank=True
+    )
 
     image = models.ImageField(upload_to='establishment_images/', null=True, blank=True)
 
@@ -77,6 +86,23 @@ class FoodEstablishment(models.Model):
 
     def __str__(self):
         return self.name
+
+    # ✅ NEW: Automatic status calculation based on time
+    @property
+    def status(self):
+        """Automatically determine if establishment is Open or Closed based on current time"""
+        if not self.opening_time or not self.closing_time:
+            return "Closed"  # Default to closed if times not set
+
+        from django.utils import timezone
+        now = timezone.localtime(timezone.now()).time()
+
+        if self.opening_time <= self.closing_time:
+            # Normal case: opens and closes on same day (e.g., 8 AM - 10 PM)
+            return "Open" if self.opening_time <= now <= self.closing_time else "Closed"
+        else:
+            # Overnight case: closes after midnight (e.g., 10 PM - 2 AM)
+            return "Open" if now >= self.opening_time or now <= self.closing_time else "Closed"
 
 class OTP(models.Model):
     """OTP for email verification with expiration"""

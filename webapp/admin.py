@@ -12,7 +12,7 @@ class FoodEstablishmentAdmin(admin.ModelAdmin):
     image_tag.short_description = 'Image'
     list_display = ('name', 'address', 'status', 'category', 'image_tag',)
     search_fields = ('name', 'address',)
-    list_filter = ('status', 'category',)
+    list_filter = ('category',)
 
 class MenuItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'food_establishment', 'price', 'quantity', 'is_top_seller')

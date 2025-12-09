@@ -2871,11 +2871,34 @@ def verify_and_register(request):
 
     # Create establishment
     category = Category.objects.filter(id=category_id).first() if category_id else None
+    from datetime import time as dt_time
+
+    # ✅ Parse time strings to time objects
+    opening_time_str = data.get('opening_time')
+    closing_time_str = data.get('closing_time')
+
+    opening_time = None
+    closing_time = None
+
+    if opening_time_str:
+        try:
+            # Handle both "HH:MM" and "HH:MM:SS" formats
+            opening_time = dt_time.fromisoformat(opening_time_str)
+        except ValueError as e:
+            print(f"⚠️ Invalid opening_time format: {opening_time_str} - {e}")
+
+    if closing_time_str:
+        try:
+            closing_time = dt_time.fromisoformat(closing_time_str)
+        except ValueError as e:
+            print(f"⚠️ Invalid closing_time format: {closing_time_str} - {e}")
+
     establishment = FoodEstablishment.objects.create(
         owner=user,
         name=name,
         address=address,
-        status=data.get('status', 'Open'),
+        opening_time=opening_time,  # ✅ Changed
+        closing_time=closing_time,  # ✅ Added
         latitude=float(latitude) if latitude else None,
         longitude=float(longitude) if longitude else None,
         category=category,
@@ -3283,7 +3306,6 @@ def toggle_top_seller(request, item_id):
 @login_required
 @require_POST
 def update_establishment_details_ajax(request, pk):
-    """Update establishment details via AJAX"""
     try:
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
@@ -3296,7 +3318,28 @@ def update_establishment_details_ajax(request, pk):
 
     if form.is_valid():
         try:
-            instance = form.save()
+            from datetime import time as dt_time
+
+            instance = form.save(commit=False)
+
+            # ✅ Handle time fields from POST data
+            opening_time_str = request.POST.get('opening_time')
+            closing_time_str = request.POST.get('closing_time')
+
+            if opening_time_str:
+                try:
+                    instance.opening_time = dt_time.fromisoformat(opening_time_str)
+                except ValueError:
+                    pass
+
+            if closing_time_str:
+                try:
+                    instance.closing_time = dt_time.fromisoformat(closing_time_str)
+                except ValueError:
+                    pass
+
+            instance.save()
+            form.save_m2m()
 
             # Prepare response data
             data = {
@@ -3304,7 +3347,9 @@ def update_establishment_details_ajax(request, pk):
                 'message': 'Establishment details updated successfully.',
                 'name': instance.name,
                 'address': instance.address,
-                'status': instance.status,
+                'status': instance.status,  # ✅ This now returns calculated status
+                'opening_time': instance.opening_time.strftime('%H:%M') if instance.opening_time else None,  # ✅ Added
+                'closing_time': instance.closing_time.strftime('%H:%M') if instance.closing_time else None,  # ✅ Added
                 'category': instance.category.name if instance.category else None,
                 'payment_methods': instance.payment_methods,
                 'latitude': str(instance.latitude),

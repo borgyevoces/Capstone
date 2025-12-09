@@ -3,778 +3,811 @@
 {% load custom_filters %}
 
 {% block search_visibility_control %}
-    {% with show_search=False %}{% endwith %}
+{% with show_search=False %}{% endwith %}
 {% endblock search_visibility_control %}
 
 {% block title %}{{ establishment.name }} - KabsuEats{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/establishment_detail_phoneview.css' %}" />
-<link rel="stylesheet" href="{% static 'css/establishment_detail_desktopview.css' %}" />
+<link rel="stylesheet" href="{% static 'css/establishment_detail_phoneview.css' %}"/>
+<link rel="stylesheet" href="{% static 'css/establishment_detail_desktopview.css' %}"/>
 
 <style>
-.chat-popup-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 360px;
-    height: 500px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-    display: none;
-    flex-direction: column;
-    z-index: 9999;
-    animation: slideUp 0.3s ease-out;
-}
+    /* ============================================================
+   TIME-BASED STATUS BADGE STYLES
+   ============================================================ */
 
-.chat-popup-container.active {
-    display: flex;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* Chat Header */
-.chat-popup-header {
-    padding: 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px 12px 0 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: move;
-}
-
-.chat-popup-header img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid white;
-    object-fit: cover;
-}
-
-.chat-popup-header-info {
-    flex: 1;
-}
-
-.chat-popup-header-info h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.chat-popup-header-info p {
-    margin: 2px 0 0 0;
-    font-size: 0.75rem;
-    opacity: 0.9;
-}
-
-.chat-popup-close {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.3rem;
-    cursor: pointer;
-    padding: 5px;
-    line-height: 1;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-}
-
-.chat-popup-close:hover {
-    opacity: 1;
-}
-
-/* ✅ PINNED MESSAGES SECTION - Always at top */
-.chat-pinned-section {
-    background: #f8f9fa;
-    border-bottom: 1px solid #e4e6eb;
-    padding: 10px 15px;
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.chat-pinned-section.active {
-    display: flex;
-}
-
-.chat-pinned-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.chat-pinned-section-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #667eea;
-}
-
-.chat-pinned-collapse {
-    background: none;
-    border: none;
-    color: #667eea;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 2px 5px;
-}
-
-.pinned-message-item {
-    background: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.pinned-message-item:hover {
-    background: #f0f2f5;
-}
-
-.pinned-message-item i {
-    color: #667eea;
-    font-size: 0.9rem;
-}
-
-.pinned-message-text {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.unpin-btn {
-    background: none;
-    border: none;
-    color: #999;
-    cursor: pointer;
-    padding: 4px;
-    font-size: 0.9rem;
-}
-
-.unpin-btn:hover {
-    color: #f02849;
-}
-
-/* ✅ SEE ALL PINS LINK - Always at bottom */
-.chat-see-pins-link {
-    background: #f0f2f5;
-    padding: 10px 15px;
-    border-top: 1px solid #e4e6eb;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.2s;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #667eea;
-    display: none;
-}
-
-.chat-see-pins-link.active {
-    display: block;
-}
-
-.chat-see-pins-link:hover {
-    background: #e4e6eb;
-}
-
-/* Messages Container */
-.chat-popup-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
-    background: #f5f7fa;
-}
-
-.chat-popup-messages::-webkit-scrollbar {
-    width: 6px;
-}
-
-.chat-popup-messages::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 3px;
-}
-
-/* ✅ Chat Message with Three Dots Button */
-.chat-message {
-    display: flex;
-    margin-bottom: 12px;
-    animation: messageSlide 0.25s ease-out;
-    clear: both;
-    width: 100%;
-    position: relative;
-    align-items: center;
-}
-
-@keyframes messageSlide {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Customer's messages (current user) - RIGHT SIDE */
-.chat-message.sent {
-    justify-content: flex-end;
-}
-
-/* Owner's messages (establishment) - LEFT SIDE */
-.chat-message.received {
-    justify-content: flex-start;
-}
-
-/* Chat Bubble */
-.chat-bubble {
-    max-width: 75%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    word-wrap: break-word;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    display: block;
-    position: relative;
-}
-
-/* Customer's bubble - Purple gradient, right-aligned */
-.chat-message.sent .chat-bubble {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-bottom-right-radius: 4px;
-    text-align: left;
-}
-
-/* Owner's bubble - Gray, left-aligned */
-.chat-message.received .chat-bubble {
-    background: #e4e6eb;
-    color: #050505;
-    border-bottom-left-radius: 4px;
-    text-align: left;
-}
-
-/* ✅ Three Dots Button - NAKADIKIT TALAGA SA BUBBLE */
-.message-options-btn {
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 50%;
-    opacity: 0;
-    transition: all 0.2s ease;
-    z-index: 10;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-/* For sent messages - button sa KALIWA ng bubble */
-.chat-message.sent .message-options-btn {
-    order: -1;
-    margin-right: 10px;
-}
-
-/* For received messages - button sa KANAN ng bubble */
-.chat-message.received .message-options-btn {
-    order: 1;
-    margin-left: 10px;
-}
-
-/* Show on hover (Desktop) */
-@media (hover: hover) {
-    .chat-message:hover .message-options-btn {
-        opacity: 1;
-    }
-
-    .message-options-btn:hover {
-        background: rgba(0, 0, 0, 0.7);
-        transform: scale(1.1);
-    }
-}
-
-/* Always visible on touch devices when message is active */
-.chat-message.active .message-options-btn {
-    opacity: 1;
-}
-
-/* Mobile: Show indicator when long-pressing */
-.chat-message.long-pressing .chat-bubble {
-    transform: scale(0.98);
-    opacity: 0.9;
-}
-
-/* ✅ PINNED MESSAGE INDICATOR */
-.chat-message.pinned .chat-bubble::before {
-    content: '📌 ';
-    margin-right: 4px;
-}
-
-/* Timestamp */
-.chat-timestamp {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    margin-top: 4px;
-    display: block;
-}
-
-/* Typing Indicator */
-.chat-typing-indicator {
-    display: none;
-    padding: 8px 15px;
-    font-size: 0.85rem;
-    color: #65676b;
-    font-style: italic;
-}
-
-.chat-typing-indicator.active {
-    display: block;
-}
-
-.chat-typing-indicator span {
-    animation: blink 1.4s infinite;
-}
-
-.chat-typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.chat-typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes blink {
-    0%, 60%, 100% { opacity: 1; }
-    30% { opacity: 0.3; }
-}
-
-/* Input Container */
-.chat-popup-input-container {
-    padding: 12px 15px;
-    background: white;
-    border-top: 1px solid #e4e6eb;
-    border-radius: 0 0 12px 12px;
-}
-
-.chat-popup-form {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.chat-popup-input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid #e4e6eb;
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 0.9rem;
-    outline: none;
-    background: #f0f2f5;
-    transition: background 0.2s;
-}
-
-.chat-popup-input:focus {
-    background: white;
-    border-color: #667eea;
-}
-
-/* Send Button */
-.chat-send-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-}
-
-.chat-send-btn:hover:not(:disabled) {
-    transform: scale(1.1);
-}
-
-.chat-send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Connection Status */
-.chat-connection-status {
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.chat-connection-status::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #31a24c;
-}
-
-.chat-connection-status.disconnected::before {
-    background: #f02849;
-}
-
-/* Notification Badge on Message Button */
-.chat-notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #f02849;
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: bold;
-}
-
-.chat-notification-badge.active {
-    display: flex;
-}
-
-/* ========================================
-   CONTEXT MENU STYLES
-   ======================================== */
-
-.message-context-menu {
-    position: fixed;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-    padding: 8px 0;
-    min-width: 180px;
-    z-index: 10000;
-    display: none;
-    animation: menuSlideIn 0.15s ease-out;
-}
-
-.message-context-menu.active {
-    display: block;
-}
-
-@keyframes menuSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-.context-menu-item {
-    padding: 12px 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.9rem;
-    color: #333;
-    transition: background 0.2s;
-}
-
-.context-menu-item:hover {
-    background: #f5f5f5;
-}
-
-.context-menu-item i {
-    width: 18px;
-    font-size: 1rem;
-}
-
-.context-menu-item.danger {
-    color: #f02849;
-}
-
-.context-menu-item.danger:hover {
-    background: #ffebee;
-}
-
-/* ========================================
-   UNSEND MODAL STYLES
-   ======================================== */
-
-.unsend-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10001;
-    animation: fadeIn 0.2s ease;
-}
-
-.unsend-modal.active {
-    display: flex;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.unsend-modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 400px;
-    width: 90%;
-    animation: modalSlideUp 0.3s ease-out;
-}
-
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.unsend-modal h3 {
-    margin: 0 0 16px 0;
-    font-size: 1.2rem;
     font-weight: 600;
+    font-size: 14px;
+    margin: 5px 0;
 }
 
-.unsend-option {
-    padding: 16px;
-    border: 2px solid #e4e6eb;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
+.status-open {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: 1px solid #28a745;
 }
 
-.unsend-option:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
+.status-closed {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border: 1px solid #dc3545;
 }
 
-.unsend-option.selected {
-    border-color: #667eea;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+/* Icon animations */
+.status-open::before {
+    content: "✅ ";
 }
 
-.unsend-option-title {
-    font-weight: 600;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.status-closed::before {
+    content: "🔒 ";
 }
-
-.unsend-option-desc {
-    font-size: 0.85rem;
-    color: #65676b;
-}
-
-.unsend-modal-buttons {
-    display: flex;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.unsend-modal-buttons button {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-cancel {
-    background: #e4e6eb;
-    color: #333;
-}
-
-.btn-cancel:hover {
-    background: #d0d2d7;
-}
-
-.btn-remove {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-remove:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-remove:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* ========================================
-   MESSAGE STATES
-   ======================================== */
-
-/* Message Deleted State */
-.chat-message.deleted .chat-bubble {
-    background: #f5f5f5 !important;
-    color: #999 !important;
-    font-style: italic;
-    opacity: 0.7;
-}
-
-.chat-message.deleted .chat-bubble::before {
-    content: '🚫 ';
-}
-
-/* ✅ PINNED MESSAGES LIST MODAL */
-.pinned-messages-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10002;
-    animation: fadeIn 0.2s ease;
-}
-
-.pinned-messages-modal.active {
-    display: flex;
-}
-
-.pinned-messages-modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 70vh;
-    overflow-y: auto;
-    animation: modalSlideUp 0.3s ease-out;
-}
-
-.pinned-messages-modal h3 {
-    margin: 0 0 16px 0;
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-.pinned-messages-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.pinned-messages-list .pinned-message-item {
-    padding: 12px;
-    border: 1px solid #e4e6eb;
-}
-
-.pinned-messages-empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: #999;
-}
-
-.pinned-messages-empty i {
-    font-size: 48px;
-    opacity: 0.3;
-    display: block;
-    margin-bottom: 12px;
-}
-
-/* ========================================
-   MOBILE RESPONSIVE
-   ======================================== */
-
-@media (max-width: 768px) {
     .chat-popup-container {
-        width: calc(100% - 40px);
-        height: calc(100vh - 100px);
-        max-height: 600px;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 360px;
+        height: 500px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+        display: none;
+        flex-direction: column;
+        z-index: 9999;
+        animation: slideUp 0.3s ease-out;
     }
 
+    .chat-popup-container.active {
+        display: flex;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Chat Header */
+    .chat-popup-header {
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: move;
+    }
+
+    .chat-popup-header img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid white;
+        object-fit: cover;
+    }
+
+    .chat-popup-header-info {
+        flex: 1;
+    }
+
+    .chat-popup-header-info h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .chat-popup-header-info p {
+        margin: 2px 0 0 0;
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+
+    .chat-popup-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.3rem;
+        cursor: pointer;
+        padding: 5px;
+        line-height: 1;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .chat-popup-close:hover {
+        opacity: 1;
+    }
+
+    /* ✅ PINNED MESSAGES SECTION - Always at top */
+    .chat-pinned-section {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e4e6eb;
+        padding: 10px 15px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .chat-pinned-section.active {
+        display: flex;
+    }
+
+    .chat-pinned-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .chat-pinned-section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .chat-pinned-collapse {
+        background: none;
+        border: none;
+        color: #667eea;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 2px 5px;
+    }
+
+    .pinned-message-item {
+        background: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .pinned-message-item:hover {
+        background: #f0f2f5;
+    }
+
+    .pinned-message-item i {
+        color: #667eea;
+        font-size: 0.9rem;
+    }
+
+    .pinned-message-text {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .unpin-btn {
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 0.9rem;
+    }
+
+    .unpin-btn:hover {
+        color: #f02849;
+    }
+
+    /* ✅ SEE ALL PINS LINK - Always at bottom */
+    .chat-see-pins-link {
+        background: #f0f2f5;
+        padding: 10px 15px;
+        border-top: 1px solid #e4e6eb;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #667eea;
+        display: none;
+    }
+
+    .chat-see-pins-link.active {
+        display: block;
+    }
+
+    .chat-see-pins-link:hover {
+        background: #e4e6eb;
+    }
+
+    /* Messages Container */
+    .chat-popup-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f5f7fa;
+    }
+
+    .chat-popup-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-popup-messages::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
+
+    /* ✅ Chat Message with Three Dots Button */
+    .chat-message {
+        display: flex;
+        margin-bottom: 12px;
+        animation: messageSlide 0.25s ease-out;
+        clear: both;
+        width: 100%;
+        position: relative;
+        align-items: center;
+    }
+
+    @keyframes messageSlide {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Customer's messages (current user) - RIGHT SIDE */
+    .chat-message.sent {
+        justify-content: flex-end;
+    }
+
+    /* Owner's messages (establishment) - LEFT SIDE */
+    .chat-message.received {
+        justify-content: flex-start;
+    }
+
+    /* Chat Bubble */
+    .chat-bubble {
+        max-width: 75%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        word-wrap: break-word;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: block;
+        position: relative;
+    }
+
+    /* Customer's bubble - Purple gradient, right-aligned */
+    .chat-message.sent .chat-bubble {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom-right-radius: 4px;
+        text-align: left;
+    }
+
+    /* Owner's bubble - Gray, left-aligned */
+    .chat-message.received .chat-bubble {
+        background: #e4e6eb;
+        color: #050505;
+        border-bottom-left-radius: 4px;
+        text-align: left;
+    }
+
+    /* ✅ Three Dots Button - NAKADIKIT TALAGA SA BUBBLE */
     .message-options-btn {
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 50%;
+        opacity: 0;
+        transition: all 0.2s ease;
+        z-index: 10;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* For sent messages - button sa KALIWA ng bubble */
+    .chat-message.sent .message-options-btn {
+        order: -1;
+        margin-right: 10px;
+    }
+
+    /* For received messages - button sa KANAN ng bubble */
+    .chat-message.received .message-options-btn {
+        order: 1;
+        margin-left: 10px;
+    }
+
+    /* Show on hover (Desktop) */
+    @media (hover: hover) {
+        .chat-message:hover .message-options-btn {
+            opacity: 1;
+        }
+
+        .message-options-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+    }
+
+    /* Always visible on touch devices when message is active */
+    .chat-message.active .message-options-btn {
+        opacity: 1;
+    }
+
+    /* Mobile: Show indicator when long-pressing */
+    .chat-message.long-pressing .chat-bubble {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+
+    /* ✅ PINNED MESSAGE INDICATOR */
+    .chat-message.pinned .chat-bubble::before {
+        content: '📌 ';
+        margin-right: 4px;
+    }
+
+    /* Timestamp */
+    .chat-timestamp {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 4px;
+        display: block;
+    }
+
+    /* Typing Indicator */
+    .chat-typing-indicator {
+        display: none;
+        padding: 8px 15px;
+        font-size: 0.85rem;
+        color: #65676b;
+        font-style: italic;
+    }
+
+    .chat-typing-indicator.active {
+        display: block;
+    }
+
+    .chat-typing-indicator span {
+        animation: blink 1.4s infinite;
+    }
+
+    .chat-typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .chat-typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+        0%, 60%, 100% { opacity: 1; }
+        30% { opacity: 0.3; }
+    }
+
+    /* Input Container */
+    .chat-popup-input-container {
+        padding: 12px 15px;
+        background: white;
+        border-top: 1px solid #e4e6eb;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .chat-popup-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .chat-popup-input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid #e4e6eb;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        outline: none;
+        background: #f0f2f5;
+        transition: background 0.2s;
+    }
+
+    .chat-popup-input:focus {
+        background: white;
+        border-color: #667eea;
+    }
+
+    /* Send Button */
+    .chat-send-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
         width: 36px;
         height: 36px;
-        font-size: 16px;
-        /* ✅ Make button easier to tap on mobile */
-        opacity: 0.7;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
     }
 
-    .chat-message.sent .message-options-btn {
-        margin-right: 12px;
+    .chat-send-btn:hover:not(:disabled) {
+        transform: scale(1.1);
     }
 
-    .chat-message.received .message-options-btn {
-        margin-left: 12px;
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
-    /* ✅ Ensure menu items are tappable */
+    /* Connection Status */
+    .chat-connection-status {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .chat-connection-status::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #31a24c;
+    }
+
+    .chat-connection-status.disconnected::before {
+        background: #f02849;
+    }
+
+    /* Notification Badge on Message Button */
+    .chat-notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #f02849;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+
+    .chat-notification-badge.active {
+        display: flex;
+    }
+
+    /* ========================================
+       CONTEXT MENU STYLES
+       ======================================== */
+
+    .message-context-menu {
+        position: fixed;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+        padding: 8px 0;
+        min-width: 180px;
+        z-index: 10000;
+        display: none;
+        animation: menuSlideIn 0.15s ease-out;
+    }
+
+    .message-context-menu.active {
+        display: block;
+    }
+
+    @keyframes menuSlideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
     .context-menu-item {
-        padding: 16px 20px;
+        padding: 12px 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.9rem;
+        color: #333;
+        transition: background 0.2s;
+    }
+
+    .context-menu-item:hover {
+        background: #f5f5f5;
+    }
+
+    .context-menu-item i {
+        width: 18px;
         font-size: 1rem;
     }
 
-    .unsend-option {
-        padding: 18px;
+    .context-menu-item.danger {
+        color: #f02849;
     }
-}
+
+    .context-menu-item.danger:hover {
+        background: #ffebee;
+    }
+
+    /* ========================================
+       UNSEND MODAL STYLES
+       ======================================== */
+
+    .unsend-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .unsend-modal.active {
+        display: flex;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .unsend-modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 400px;
+        width: 90%;
+        animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .unsend-modal h3 {
+        margin: 0 0 16px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .unsend-option {
+        padding: 16px;
+        border: 2px solid #e4e6eb;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .unsend-option:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+    }
+
+    .unsend-option.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    }
+
+    .unsend-option-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .unsend-option-desc {
+        font-size: 0.85rem;
+        color: #65676b;
+    }
+
+    .unsend-modal-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .unsend-modal-buttons button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background: #e4e6eb;
+        color: #333;
+    }
+
+    .btn-cancel:hover {
+        background: #d0d2d7;
+    }
+
+    .btn-remove {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-remove:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-remove:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* ========================================
+       MESSAGE STATES
+       ======================================== */
+
+    /* Message Deleted State */
+    .chat-message.deleted .chat-bubble {
+        background: #f5f5f5 !important;
+        color: #999 !important;
+        font-style: italic;
+        opacity: 0.7;
+    }
+
+    .chat-message.deleted .chat-bubble::before {
+        content: '🚫 ';
+    }
+
+    /* ✅ PINNED MESSAGES LIST MODAL */
+    .pinned-messages-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10002;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .pinned-messages-modal.active {
+        display: flex;
+    }
+
+    .pinned-messages-modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 70vh;
+        overflow-y: auto;
+        animation: modalSlideUp 0.3s ease-out;
+    }
+
+    .pinned-messages-modal h3 {
+        margin: 0 0 16px 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .pinned-messages-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pinned-messages-list .pinned-message-item {
+        padding: 12px;
+        border: 1px solid #e4e6eb;
+    }
+
+    .pinned-messages-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    .pinned-messages-empty i {
+        font-size: 48px;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    /* ========================================
+       MOBILE RESPONSIVE
+       ======================================== */
+
+    @media (max-width: 768px) {
+        .chat-popup-container {
+            width: calc(100% - 40px);
+            height: calc(100vh - 100px);
+            max-height: 600px;
+        }
+
+        .message-options-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+            /* ✅ Make button easier to tap on mobile */
+            opacity: 0.7;
+        }
+
+        .chat-message.sent .message-options-btn {
+            margin-right: 12px;
+        }
+
+        .chat-message.received .message-options-btn {
+            margin-left: 12px;
+        }
+
+        /* ✅ Ensure menu items are tappable */
+        .context-menu-item {
+            padding: 16px 20px;
+            font-size: 1rem;
+        }
+
+        .unsend-option {
+            padding: 18px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block extra_nav_buttons %}
-    {% if user.is_authenticated %}
-    <button onclick="toggleChatPopup()" class="nav_button" style="position: relative;">
-        <i class="fas fa-comments"></i>
-        <span>{{ establishment.name }}</span>
-        <span class="chat-notification-badge" id="chatNotificationBadge">1</span>
-    </button>
-    {% endif %}
+{% if user.is_authenticated %}
+<button onclick="toggleChatPopup()" class="nav_button" style="position: relative;">
+    <i class="fas fa-comments"></i>
+    <span>{{ establishment.name }}</span>
+    <span class="chat-notification-badge" id="chatNotificationBadge">1</span>
+</button>
+{% endif %}
 {% endblock extra_nav_buttons %}
 
 {% block content %}
@@ -806,7 +839,8 @@
     {% endif %}
 
     {# HERO HEADER #}
-    <header class="establishment-hero" style="background-image: url('{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default-bg.jpg' %}{% endif %}');">
+    <header class="establishment-hero"
+            style="background-image: url('{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default-bg.jpg' %}{% endif %}');">
         <div class="hero-overlay">
             <div class="hero-content">
                 <h1>{{ establishment.name }}</h1>
@@ -814,11 +848,11 @@
                     <span class="rating-number">{{ establishment.average_rating|floatformat:1|default:"0.0" }}</span>
                     <div class="star-rating-main">
                         {% for i in "12345" %}
-                            {% if forloop.counter <= establishment.average_rating|default:0 %}
-                                <i class="fas fa-star filled"></i>
-                            {% else %}
-                                <i class="far fa-star"></i>
-                            {% endif %}
+                        {% if forloop.counter <= establishment.average_rating|default:0 %}
+                        <i class="fas fa-star filled"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
                         {% endfor %}
                     </div>
                     <span class="review-count-text">({{ establishment.review_count|default:0 }} Reviews)</span>
@@ -835,10 +869,27 @@
             <section class="section-card contact-location">
                 <h2>Location & Contact</h2>
                 <div class="contact-grid">
-                    <p><i class="fas fa-map-marker-alt"></i> <strong>Address:</strong><br> {{ establishment.address|default:"Not Available" }}</p>
-                    <p><i class="fas fa-store"></i> <strong>Categories:</strong><br> {{ establishment.category|default:"N/A" }}</p>
-                    <p><i class="fas fa-clock"></i> <strong>Status:</strong><br> <span class="status-{{ establishment.status|lower|default:'closed' }}">{{ establishment.status|default:"Unknown" }}</span></p>
-                    <p><i class="fas fa-money-bill-wave"></i> <strong>Payment:</strong><br> {{ establishment.payment_methods|default:"N/A" }}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> <strong>Address:</strong><br> {{
+                        establishment.address|default:"Not Available" }}</p>
+                    <p><i class="fas fa-store"></i> <strong>Categories:</strong><br> {{
+                        establishment.category|default:"N/A" }}</p>
+                    <p><i class="fas fa-clock"></i> <strong>Hours:</strong><br>
+                        <span class="status-badge status-{{ establishment.status|lower }}">
+       {{ establishment.status }}
+   </span>
+                        {% if establishment.opening_time and establishment.closing_time %}
+                        <br>
+                        <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
+                            🕐 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A"
+                            }}
+                        </small>
+                        {% else %}
+                        <br>
+                        <small style="color: #999; font-size: 13px;">Hours not set</small>
+                        {% endif %}
+                    </p>
+                    <p><i class="fas fa-money-bill-wave"></i> <strong>Payment:</strong><br> {{
+                        establishment.payment_methods|default:"N/A" }}</p>
                 </div>
             </section>
 
@@ -847,9 +898,9 @@
                 <h2>Amenities & Features</h2>
                 <ul class="amenities-list">
                     {% for amenity in establishment.amenities.all %}
-                        <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
+                    <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
                     {% empty %}
-                        <li>No amenities listed.</li>
+                    <li>No amenities listed.</li>
                     {% endfor %}
                 </ul>
             </section>
@@ -865,16 +916,16 @@
                 </div>
 
                 {% if user.is_authenticated %}
-                    {% if not user_review %}
-                        <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
-                    {% else %}
-                        <p class="text-muted">Your review is highlighted below. Click the pencil icon to edit it.</p>
-                    {% endif %}
+                {% if not user_review %}
+                <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
                 {% else %}
-                    <p class="text-muted review-login-prompt">
-                        <br>Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
-                    </p>
-                    <br>
+                <p class="text-muted">Your review is highlighted below. Click the pencil icon to edit it.</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted review-login-prompt">
+                    <br>Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
+                </p>
+                <br>
                 {% endif %}
 
                 <div class="all-reviews-list-wrapper">
@@ -882,69 +933,77 @@
 
                         {# NEW REVIEW LAYOUT: Render User's Review First #}
                         {% if user_review %}
-                            {% with review=user_review review_type=user_review.rating|get_review_type %}
-                            <div class="review-item user-highlight {{ review_type }}" data-review-id="{{ review.id }}" data-is-user-review="true" data-rating="{{ review.rating }}">
-                                <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="{{ review.user.username }}" class="review-user-pic">
+                        {% with review=user_review review_type=user_review.rating|get_review_type %}
+                        <div class="review-item user-highlight {{ review_type }}" data-review-id="{{ review.id }}"
+                             data-is-user-review="true" data-rating="{{ review.rating }}">
+                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                 alt="{{ review.user.username }}" class="review-user-pic">
 
-                                <div class="review-main">
-                                    <div class="review-main-top">
-                                        <div class="review-user-info">
-                                            <span class="review-username">{{ review.user.username }} <span class="badge-user-review">(You)</span></span>
-                                            <div class="review-stars">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= review.rating %}
-                                                        <i class="fas fa-star filled"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                            <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                            <div class="review-main">
+                                <div class="review-main-top">
+                                    <div class="review-user-info">
+                                        <span class="review-username">{{ review.user.username }} <span
+                                                class="badge-user-review">(You)</span></span>
+                                        <div class="review-stars">
+                                            {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star filled"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                            {% endfor %}
                                         </div>
-                                        <p class="review-comment">{{ review.comment|default:'' }}</p>
+                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
                                     </div>
-                                </div>
-
-                                <div class="review-actions">
-                                    <i class="fas fa-edit edit-review" data-review-id="{{ review.id }}" data-rating="{{ review.rating }}" data-comment="{{ review.comment|default:''|escapejs }}"></i>
-                                    <i class="fas fa-trash-alt delete-review" data-review-id="{{ review.id }}"></i>
+                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
                                 </div>
                             </div>
-                            {% endwith %}
+
+                            <div class="review-actions">
+                                <i class="fas fa-edit edit-review" data-review-id="{{ review.id }}"
+                                   data-rating="{{ review.rating }}"
+                                   data-comment="{{ review.comment|default:''|escapejs }}"></i>
+                                <i class="fas fa-trash-alt delete-review" data-review-id="{{ review.id }}"></i>
+                            </div>
+                        </div>
+                        {% endwith %}
                         {% endif %}
 
                         {# NEW REVIEW LAYOUT: Render Other Reviews #}
                         {% for review in reviews %}
-                            {% with review_type=review.rating|get_review_type %}
-                            <div class="review-item {{ review_type }}" data-review-id="{{ review.id }}" data-rating="{{ review.rating }}">
-                                <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="{{ review.user.username }}" class="review-user-pic">
+                        {% with review_type=review.rating|get_review_type %}
+                        <div class="review-item {{ review_type }}" data-review-id="{{ review.id }}"
+                             data-rating="{{ review.rating }}">
+                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                 alt="{{ review.user.username }}" class="review-user-pic">
 
-                                <div class="review-main">
-                                    <div class="review-main-top">
-                                        <div class="review-user-info">
-                                            <span class="review-username">{{ review.user.username }}</span>
-                                            <div class="review-stars">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= review.rating %}
-                                                        <i class="fas fa-star filled"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                            <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                            <div class="review-main">
+                                <div class="review-main-top">
+                                    <div class="review-user-info">
+                                        <span class="review-username">{{ review.user.username }}</span>
+                                        <div class="review-stars">
+                                            {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star filled"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                            {% endfor %}
                                         </div>
-                                        <p class="review-comment">{{ review.comment|default:'' }}</p>
+                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
                                     </div>
+                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
                                 </div>
                             </div>
-                            {% endwith %}
+                        </div>
+                        {% endwith %}
                         {% empty %}
-                            {% if not user_review %}
-                                <p class="text-muted" id="noReviewsMessage">Be the first to leave a review!</p>
-                            {% endif %}
+                        {% if not user_review %}
+                        <p class="text-muted" id="noReviewsMessage">Be the first to leave a review!</p>
+                        {% endif %}
                         {% endfor %}
-                        <p class="text-muted hidden-message" id="noFilteredReviews">No reviews found for this filter.</p>
+                        <p class="text-muted hidden-message" id="noFilteredReviews">No reviews found for this
+                            filter.</p>
                     </div>
                 </div>
             </section>
@@ -958,15 +1017,17 @@
                 <div class="menu-controls">
                     <div class="menu-search-bar">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="menuSearchInput" placeholder="Search menu items..." onkeyup="filterMenuItems()">
+                        <input type="text" id="menuSearchInput" placeholder="Search menu items..."
+                               onkeyup="filterMenuItems()">
                     </div>
-                        <div class="menu-filters-group">
+                    <div class="menu-filters-group">
                         <select id="priceFilter" onchange="filterMenuItems()">
                             <option value="default">Sort by Price</option>
                             <option value="highest">Highest to Lowest</option>
                             <option value="lowest">Lowest to Highest</option>
                         </select>
-                        <button id="bestSellerFilter" onclick="toggleBestSellerFilter()" type="button" aria-pressed="false">
+                        <button id="bestSellerFilter" onclick="toggleBestSellerFilter()" type="button"
+                                aria-pressed="false">
                             <i class="fas fa-medal"></i> Best Sellers
                         </button>
                     </div>
@@ -976,37 +1037,39 @@
                     <div class="menu-list" id="menuList">
                         {% for item in menu_items %}
                         <div class="menu-item"
-                            data-price="{{ item.price|floatformat:2 }}"
-                            data-is-top-seller="{% if item.is_top_seller %}true{% else %}false{% endif %}"
-                            data-item-id="{{ item.id }}"
-                            data-item-name="{{ item.name }}"
-                            data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
-                            data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
-                            data-item-quantity="{{ item.quantity|default:0 }}"
-                            onclick="openItemDetailModal(this)">
+                             data-price="{{ item.price|floatformat:2 }}"
+                             data-is-top-seller="{% if item.is_top_seller %}true{% else %}false{% endif %}"
+                             data-item-id="{{ item.id }}"
+                             data-item-name="{{ item.name }}"
+                             data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
+                             data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+                             data-item-quantity="{{ item.quantity|default:0 }}"
+                             onclick="openItemDetailModal(this)">
 
-                            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}" alt="{{ item.name }}" class="menu-item-image">
+                            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+                                 alt="{{ item.name }}" class="menu-item-image">
                             <div class="menu-info">
                                 {% if item.is_top_seller %}
-                                    <span class="badge-top-seller">TOP SELLER</span>
+                                <span class="badge-top-seller">TOP SELLER</span>
                                 {% endif %}
                                 <div class="menu-header-info">
                                     <h3 class="menu-name">{{ item.name }}</h3>
                                     <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
                                 </div>
-                                <p class="menu-description">{{ item.description|default:"No description provided." }}</p>
+                                <p class="menu-description">{{ item.description|default:"No description provided."
+                                    }}</p>
 
                                 <div class="menu-stock-status">
                                     {% if item.quantity > 10 %}
-                                        <span class="stock-status in-stock">
+                                    <span class="stock-status in-stock">
                                             <i class="fas fa-check-circle"></i> In Stock
                                         </span>
                                     {% elif item.quantity > 0 %}
-                                        <span class="stock-status low-stock">
+                                    <span class="stock-status low-stock">
                                             <p>Available : {{ item.quantity }}</p>
                                         </span>
                                     {% else %}
-                                        <span class="stock-status out-of-stock">
+                                    <span class="stock-status out-of-stock">
                                             <i class="fas fa-times-circle"></i> Out of Stock
                                         </span>
                                     {% endif %}
@@ -1014,35 +1077,35 @@
 
                                 <div class="item-actions">
                                     {% if user.is_authenticated %}
-                                        {% if item.quantity > 0 %}
-                                            <div class="item-action-buttons">
-                                                <button class="btn-add-to-cart quick-add-btn"
-                                                    data-item-id="{{ item.id }}"
-                                                    data-item-name="{{ item.name }}"
-                                                    data-item-price="{{ item.price|floatformat:2 }}"
-                                                    onclick="handleQuickAddToCart(this, event)">
-                                                    <i class="fas fa-cart-plus"></i> Add to Cart
-                                                </button>
-                                                <button class="btn-buy-now quick-buy-btn"
-                                                    onclick="openItemDetailModal(this.closest('.menu-item'))">
-                                                    <i class="fas fa-money-bill"></i> Buy Now
-                                                </button>
-                                            </div>
-                                        {% else %}
-                                            <button class="btn-add-to-cart disabled" disabled>
-                                                <i class="fas fa-times-circle"></i> Out of Stock
-                                            </button>
-                                        {% endif %}
+                                    {% if item.quantity > 0 %}
+                                    <div class="item-action-buttons">
+                                        <button class="btn-add-to-cart quick-add-btn"
+                                                data-item-id="{{ item.id }}"
+                                                data-item-name="{{ item.name }}"
+                                                data-item-price="{{ item.price|floatformat:2 }}"
+                                                onclick="handleQuickAddToCart(this, event)">
+                                            <i class="fas fa-cart-plus"></i> Add to Cart
+                                        </button>
+                                        <button class="btn-buy-now quick-buy-btn"
+                                                onclick="openItemDetailModal(this.closest('.menu-item'))">
+                                            <i class="fas fa-money-bill"></i> Buy Now
+                                        </button>
+                                    </div>
                                     {% else %}
-                                        <a href="{% url 'user_login_register' %}" class="btn-add-to-cart login-prompt-btn">
-                                            <i class="fas fa-sign-in-alt"></i> Log in to Order
-                                        </a>
+                                    <button class="btn-add-to-cart disabled" disabled>
+                                        <i class="fas fa-times-circle"></i> Out of Stock
+                                    </button>
+                                    {% endif %}
+                                    {% else %}
+                                    <a href="{% url 'user_login_register' %}" class="btn-add-to-cart login-prompt-btn">
+                                        <i class="fas fa-sign-in-alt"></i> Log in to Order
+                                    </a>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                         {% empty %}
-                            <p class="text-muted">No menu items available yet.</p>
+                        <p class="text-muted">No menu items available yet.</p>
                         {% endfor %}
                         <p id="noMenuItemsFound" class="hidden-message">No menu items found.</p>
                     </div>
@@ -1065,7 +1128,7 @@
                     <label>Your Rating:</label>
                     <div class="modal-stars-container" id="modalStars">
                         {% for i in "12345" %}
-                            <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
+                        <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
                         {% endfor %}
                     </div>
                     <input type="hidden" name="rating" id="ratingInput" value="0">
@@ -1089,159 +1152,160 @@
                 <p id="modalItemDescription" class="modal-item-description"></p>
 
                 {% if user.is_authenticated %}
-                    <p id="modalItemPrice" class="modal-item-price">₱ 0.00</p>
-                    <p id="modalItemStock" class="modal-item-stock"></p>
+                <p id="modalItemPrice" class="modal-item-price">₱ 0.00</p>
+                <p id="modalItemStock" class="modal-item-stock"></p>
 
-                    <div class="quantity-control">
-                        <label for="itemQuantity">Quantity:</label>
-                        <div class="quantity-input-group">
-                            <button type="button" class="btn-quantity-minus" onclick="updateModalQuantity(-1)">-</button>
-                            <input type="number" id="itemQuantity" value="1" min="1" readonly>
-                            <button type="button" class="btn-quantity-plus" onclick="updateModalQuantity(1)">+</button>
-                        </div>
+                <div class="quantity-control">
+                    <label for="itemQuantity">Quantity:</label>
+                    <div class="quantity-input-group">
+                        <button type="button" class="btn-quantity-minus" onclick="updateModalQuantity(-1)">-</button>
+                        <input type="number" id="itemQuantity" value="1" min="1" readonly>
+                        <button type="button" class="btn-quantity-plus" onclick="updateModalQuantity(1)">+</button>
                     </div>
+                </div>
 
-                    <div class="modal-actions">
-                        <button id="modalAddToCartBtn" class="btn-add-to-cart-modal" onclick="handleModalAddToCart(this)" data-action="add">
-                            <i class="fas fa-cart-plus"></i> Add to Cart
-                        </button>
-                        <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleBuyNowGCash(this)">
-                            <i class="fas fa-money-bill"></i> Buy Now
-                        </button>
-                    </div>
+                <div class="modal-actions">
+                    <button id="modalAddToCartBtn" class="btn-add-to-cart-modal" onclick="handleModalAddToCart(this)"
+                            data-action="add">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleBuyNowGCash(this)">
+                        <i class="fas fa-money-bill"></i> Buy Now
+                    </button>
+                </div>
                 {% else %}
-                    <p class="text-muted text-center">Log in or Sign Up to order.</p>
-                    <div class="modal-actions">
-                        <a href="{% url 'user_login_register' %}" class="btn-add-to-cart-modal btn-full-width">
-                            <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
-                        </a>
-                    </div>
+                <p class="text-muted text-center">Log in or Sign Up to order.</p>
+                <div class="modal-actions">
+                    <a href="{% url 'user_login_register' %}" class="btn-add-to-cart-modal btn-full-width">
+                        <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
+                    </a>
+                </div>
                 {% endif %}
             </div>
             <input type="hidden" id="modalItemId" value="">
         </div>
     </div>
 
-{% if user.is_authenticated %}
-<button onclick="toggleChatPopup()" class="floating-chat-button" id="floatingChatButton">
-    <i class="fas fa-comments"></i>
-    <span class="chat-notification-badge" id="floatingChatBadge">1</span>
-</button>
-{% endif %}
+    {% if user.is_authenticated %}
+    <button onclick="toggleChatPopup()" class="floating-chat-button" id="floatingChatButton">
+        <i class="fas fa-comments"></i>
+        <span class="chat-notification-badge" id="floatingChatBadge">1</span>
+    </button>
+    {% endif %}
 
-{% if user.is_authenticated %}
-<div class="chat-popup-container" id="chatPopupContainer">
-    <div class="chat-popup-header" id="chatPopupHeader">
-        <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
-             alt="{{ establishment.name }}">
-        <div class="chat-popup-header-info">
-            <h4>{{ establishment.name }}</h4>
-            <p class="chat-connection-status" id="chatConnectionStatus">Connecting...</p>
-        </div>
-        <button class="chat-popup-close" onclick="closeChatPopup()">&times;</button>
-    </div>
-
-    <!-- ✅ PINNED MESSAGES SECTION - Top of chat -->
-    <div class="chat-pinned-section" id="chatPinnedSection">
-        <div class="chat-pinned-section-header">
-            <span class="chat-pinned-section-title">📌 Pinned Messages</span>
-            <button class="chat-pinned-collapse" onclick="togglePinnedSection()">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div id="pinnedMessagesList">
-            <!-- Pinned messages will appear here -->
-        </div>
-    </div>
-
-    <div class="chat-popup-messages" id="chatPopupMessages">
-        <!-- Messages will be loaded dynamically via JavaScript -->
-    </div>
-
-    <div class="chat-typing-indicator" id="chatTypingIndicator">
-        {{ establishment.name }} is typing<span>.</span><span>.</span><span>.</span>
-    </div>
-
-    <!-- ✅ SEE ALL PINS LINK - Bottom above input -->
-    <div class="chat-see-pins-link" id="chatSeePinsLink" onclick="openPinnedMessagesModal()">
-        <i class="fas fa-thumbtack"></i> See All Pins
-    </div>
-
-    <div class="chat-popup-input-container">
-        <form class="chat-popup-form" id="chatPopupForm">
-            <input type="text"
-                   class="chat-popup-input"
-                   id="chatPopupInput"
-                   placeholder="Aa"
-                   autocomplete="off">
-            <button type="submit" class="chat-send-btn" id="chatSendBtn">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- Context Menu -->
-<div class="message-context-menu" id="messageContextMenu">
-    <div class="context-menu-item" onclick="pinMessage()">
-        <i class="fas fa-thumbtack"></i>
-        <span id="pinMenuText">Pin</span>
-    </div>
-    <div class="context-menu-item danger" onclick="openUnsendModal()">
-        <i class="fas fa-undo"></i>
-        <span>Unsend</span>
-    </div>
-</div>
-
-<!-- Unsend Modal -->
-<div class="unsend-modal" id="unsendModal">
-    <div class="unsend-modal-content">
-        <h3>Who do you want to unsend this message for?</h3>
-
-        <div class="unsend-option selected" data-type="everyone" onclick="selectUnsendOption('everyone')">
-            <div class="unsend-option-title">
-                <i class="fas fa-users"></i>
-                Unsend for everyone
+    {% if user.is_authenticated %}
+    <div class="chat-popup-container" id="chatPopupContainer">
+        <div class="chat-popup-header" id="chatPopupHeader">
+            <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                 alt="{{ establishment.name }}">
+            <div class="chat-popup-header-info">
+                <h4>{{ establishment.name }}</h4>
+                <p class="chat-connection-status" id="chatConnectionStatus">Connecting...</p>
             </div>
-            <div class="unsend-option-desc">
-                This message will be unsent for everyone in the chat. Others may have already seen or forwarded it.
+            <button class="chat-popup-close" onclick="closeChatPopup()">&times;</button>
+        </div>
+
+        <!-- ✅ PINNED MESSAGES SECTION - Top of chat -->
+        <div class="chat-pinned-section" id="chatPinnedSection">
+            <div class="chat-pinned-section-header">
+                <span class="chat-pinned-section-title">📌 Pinned Messages</span>
+                <button class="chat-pinned-collapse" onclick="togglePinnedSection()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="pinnedMessagesList">
+                <!-- Pinned messages will appear here -->
             </div>
         </div>
 
-        <div class="unsend-option" data-type="you" onclick="selectUnsendOption('you')">
-            <div class="unsend-option-title">
-                <i class="fas fa-user"></i>
-                Unsend for you
-            </div>
-            <div class="unsend-option-desc">
-                This will remove the message from your devices. Other chat members will still be able to see it.
-            </div>
+        <div class="chat-popup-messages" id="chatPopupMessages">
+            <!-- Messages will be loaded dynamically via JavaScript -->
         </div>
 
-        <div class="unsend-modal-buttons">
-            <button class="btn-cancel" onclick="closeUnsendModal()">Cancel</button>
-            <button class="btn-remove" onclick="confirmUnsend()">Remove</button>
+        <div class="chat-typing-indicator" id="chatTypingIndicator">
+            {{ establishment.name }} is typing<span>.</span><span>.</span><span>.</span>
         </div>
-    </div>
-</div>
 
-<!-- ✅ PINNED MESSAGES LIST MODAL -->
-<div class="pinned-messages-modal" id="pinnedMessagesModal">
-    <div class="pinned-messages-modal-content">
-        <h3><i class="fas fa-thumbtack"></i> Pinned Messages</h3>
-        <div class="pinned-messages-list" id="pinnedMessagesListModal">
-            <!-- Pinned messages will appear here -->
+        <!-- ✅ SEE ALL PINS LINK - Bottom above input -->
+        <div class="chat-see-pins-link" id="chatSeePinsLink" onclick="openPinnedMessagesModal()">
+            <i class="fas fa-thumbtack"></i> See All Pins
         </div>
-        <div class="pinned-messages-empty" id="pinnedMessagesEmpty" style="display: none;">
-            <i class="fas fa-inbox"></i>
-            <p>No pinned messages</p>
-        </div>
-        <div style="margin-top: 20px; text-align: center;">
-            <button class="btn-cancel" onclick="closePinnedMessagesModal()">Close</button>
+
+        <div class="chat-popup-input-container">
+            <form class="chat-popup-form" id="chatPopupForm">
+                <input type="text"
+                       class="chat-popup-input"
+                       id="chatPopupInput"
+                       placeholder="Aa"
+                       autocomplete="off">
+                <button type="submit" class="chat-send-btn" id="chatSendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
         </div>
     </div>
-</div>
-{% endif %}
+
+    <!-- Context Menu -->
+    <div class="message-context-menu" id="messageContextMenu">
+        <div class="context-menu-item" onclick="pinMessage()">
+            <i class="fas fa-thumbtack"></i>
+            <span id="pinMenuText">Pin</span>
+        </div>
+        <div class="context-menu-item danger" onclick="openUnsendModal()">
+            <i class="fas fa-undo"></i>
+            <span>Unsend</span>
+        </div>
+    </div>
+
+    <!-- Unsend Modal -->
+    <div class="unsend-modal" id="unsendModal">
+        <div class="unsend-modal-content">
+            <h3>Who do you want to unsend this message for?</h3>
+
+            <div class="unsend-option selected" data-type="everyone" onclick="selectUnsendOption('everyone')">
+                <div class="unsend-option-title">
+                    <i class="fas fa-users"></i>
+                    Unsend for everyone
+                </div>
+                <div class="unsend-option-desc">
+                    This message will be unsent for everyone in the chat. Others may have already seen or forwarded it.
+                </div>
+            </div>
+
+            <div class="unsend-option" data-type="you" onclick="selectUnsendOption('you')">
+                <div class="unsend-option-title">
+                    <i class="fas fa-user"></i>
+                    Unsend for you
+                </div>
+                <div class="unsend-option-desc">
+                    This will remove the message from your devices. Other chat members will still be able to see it.
+                </div>
+            </div>
+
+            <div class="unsend-modal-buttons">
+                <button class="btn-cancel" onclick="closeUnsendModal()">Cancel</button>
+                <button class="btn-remove" onclick="confirmUnsend()">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ PINNED MESSAGES LIST MODAL -->
+    <div class="pinned-messages-modal" id="pinnedMessagesModal">
+        <div class="pinned-messages-modal-content">
+            <h3><i class="fas fa-thumbtack"></i> Pinned Messages</h3>
+            <div class="pinned-messages-list" id="pinnedMessagesListModal">
+                <!-- Pinned messages will appear here -->
+            </div>
+            <div class="pinned-messages-empty" id="pinnedMessagesEmpty" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <p>No pinned messages</p>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn-cancel" onclick="closePinnedMessagesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}
@@ -1261,487 +1325,433 @@
 <script src="{% static 'js/establishment_details.js' %}"></script>
 
 <script>
-let chatSocket = null;
-let chatPopupOpen = false;
-let chatMessagesCache = [];
-let contextMenuMessageId = null;
-let selectedUnsendType = 'everyone';
-let pinnedMessages = new Set();
+    let chatSocket = null;
+    let chatPopupOpen = false;
+    let chatMessagesCache = [];
+    let contextMenuMessageId = null;
+    let selectedUnsendType = 'everyone';
+    let pinnedMessages = new Set();
 
-// Long press detection variables
-let longPressTimer = null;
-let longPressTriggered = false;
-const LONG_PRESS_DURATION = 500;
+    // Long press detection variables
+    let longPressTimer = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_DURATION = 500;
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
 
-function toggleChatPopup() {
-    const chatPopup = document.getElementById('chatPopupContainer');
-    chatPopupOpen = !chatPopupOpen;
+    function toggleChatPopup() {
+        const chatPopup = document.getElementById('chatPopupContainer');
+        chatPopupOpen = !chatPopupOpen;
 
-    if (chatPopupOpen) {
-        chatPopup.classList.add('active');
-        initializeChatWebSocket();
-        loadChatMessages();
-        clearChatNotificationBadge();
-    } else {
+        if (chatPopupOpen) {
+            chatPopup.classList.add('active');
+            initializeChatWebSocket();
+            loadChatMessages();
+            clearChatNotificationBadge();
+        } else {
+            chatPopup.classList.remove('active');
+        }
+    }
+
+    function closeChatPopup() {
+        chatPopupOpen = false;
+        const chatPopup = document.getElementById('chatPopupContainer');
         chatPopup.classList.remove('active');
     }
-}
 
-function closeChatPopup() {
-    chatPopupOpen = false;
-    const chatPopup = document.getElementById('chatPopupContainer');
-    chatPopup.classList.remove('active');
-}
+    function loadChatMessages() {
+        const messagesContainer = document.getElementById('chatPopupMessages');
+        if (!messagesContainer) return;
 
-function loadChatMessages() {
-    const messagesContainer = document.getElementById('chatPopupMessages');
-    if (!messagesContainer) return;
+        chatMessagesCache = [];
+        messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Loading messages...</div>';
 
-    chatMessagesCache = [];
-    messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Loading messages...</div>';
-
-    fetch(`/chat/messages/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.messages) {
-            messagesContainer.innerHTML = '';
-            chatMessagesCache = [];
-
-            data.messages.forEach((msg) => {
-                const msgData = {
-                    type: 'chat_message',
-                    sender_id: msg.sender_id,
-                    message: msg.content,
-                    timestamp: msg.timestamp,
-                    message_id: msg.id
-                };
-                chatMessagesCache.push(msgData);
-                addMessageToChatPopup(msgData, false);
-            });
-
-            scrollChatToBottom();
-            updatePinnedSection();
-        } else {
-            messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No messages yet. Say hi! 👋</div>';
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error loading chat messages:', error);
-        messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Failed to load messages</div>';
-    });
-}
-
-function initializeChatWebSocket() {
-    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-        return;
-    }
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`;
-
-    chatSocket = new WebSocket(wsUrl);
-
-    chatSocket.onopen = function(e) {
-        console.log('✅ Chat WebSocket connected');
-        updateConnectionStatus('online');
-    };
-
-    chatSocket.onclose = function(e) {
-        console.log('❌ Chat WebSocket disconnected');
-        updateConnectionStatus('disconnected');
-    };
-
-    chatSocket.onerror = function(e) {
-        console.error('⚠️ WebSocket error:', e);
-        updateConnectionStatus('error');
-    };
-
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-
-        if (data.type === 'connection_established') {
-            console.log('✅ Connection confirmed');
-        }
-        else if (data.type === 'chat_message') {
-            if (parseInt(data.sender_id) === parseInt(CUSTOMER_ID)) {
-                return;
+        fetch(`/chat/messages/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
             }
-            addMessageToChatPopup(data, true);
-            if (!chatPopupOpen) {
-                showChatNotificationBadge();
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages) {
+                messagesContainer.innerHTML = '';
+                chatMessagesCache = [];
+
+                data.messages.forEach((msg) => {
+                    const msgData = {
+                        type: 'chat_message',
+                        sender_id: msg.sender_id,
+                        message: msg.content,
+                        timestamp: msg.timestamp,
+                        message_id: msg.id
+                    };
+                    chatMessagesCache.push(msgData);
+                    addMessageToChatPopup(msgData, false);
+                });
+
+                scrollChatToBottom();
+                updatePinnedSection();
+            } else {
+                messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No messages yet. Say hi! 👋</div>';
             }
+        })
+        .catch(error => {
+            console.error('❌ Error loading chat messages:', error);
+            messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Failed to load messages</div>';
+        });
+    }
+
+    function initializeChatWebSocket() {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            return;
         }
-        else if (data.type === 'typing_indicator') {
-            if (parseInt(data.sender_id) !== parseInt(CUSTOMER_ID)) {
-                showTypingIndicator(data.is_typing);
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`;
+
+        chatSocket = new WebSocket(wsUrl);
+
+        chatSocket.onopen = function(e) {
+            console.log('✅ Chat WebSocket connected');
+            updateConnectionStatus('online');
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log('❌ Chat WebSocket disconnected');
+            updateConnectionStatus('disconnected');
+        };
+
+        chatSocket.onerror = function(e) {
+            console.error('⚠️ WebSocket error:', e);
+            updateConnectionStatus('error');
+        };
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'connection_established') {
+                console.log('✅ Connection confirmed');
             }
+            else if (data.type === 'chat_message') {
+                if (parseInt(data.sender_id) === parseInt(CUSTOMER_ID)) {
+                    return;
+                }
+                addMessageToChatPopup(data, true);
+                if (!chatPopupOpen) {
+                    showChatNotificationBadge();
+                }
+            }
+            else if (data.type === 'typing_indicator') {
+                if (parseInt(data.sender_id) !== parseInt(CUSTOMER_ID)) {
+                    showTypingIndicator(data.is_typing);
+                }
+            }
+            else if (data.type === 'message_unsent') {
+                handleMessageUnsent(data);
+            }
+        };
+    }
+
+    function updateConnectionStatus(status) {
+        const statusElement = document.getElementById('chatConnectionStatus');
+        if (!statusElement) return;
+
+        if (status === 'online') {
+            statusElement.textContent = 'Active now';
+            statusElement.classList.remove('disconnected');
+        } else if (status === 'disconnected') {
+            statusElement.textContent = 'Offline';
+            statusElement.classList.add('disconnected');
+        } else if (status === 'error') {
+            statusElement.textContent = 'Connection Error';
+            statusElement.classList.add('disconnected');
         }
-        else if (data.type === 'message_unsent') {
-            handleMessageUnsent(data);
+    }
+
+    function addMessageToChatPopup(data, addToCache = true) {
+        const messagesContainer = document.getElementById('chatPopupMessages');
+        if (!messagesContainer) return;
+
+        if (addToCache) {
+            chatMessagesCache.push(data);
         }
-    };
-}
 
-function updateConnectionStatus(status) {
-    const statusElement = document.getElementById('chatConnectionStatus');
-    if (!statusElement) return;
+        const messageDiv = document.createElement('div');
+        const senderId = parseInt(data.sender_id);
+        const customerId = parseInt(CUSTOMER_ID);
+        const isMyMessage = senderId === customerId;
 
-    if (status === 'online') {
-        statusElement.textContent = 'Active now';
-        statusElement.classList.remove('disconnected');
-    } else if (status === 'disconnected') {
-        statusElement.textContent = 'Offline';
-        statusElement.classList.add('disconnected');
-    } else if (status === 'error') {
-        statusElement.textContent = 'Connection Error';
-        statusElement.classList.add('disconnected');
-    }
-}
+        messageDiv.className = `chat-message ${isMyMessage ? 'sent' : 'received'}`;
+        messageDiv.dataset.messageId = data.message_id;
 
-function addMessageToChatPopup(data, addToCache = true) {
-    const messagesContainer = document.getElementById('chatPopupMessages');
-    if (!messagesContainer) return;
+        // Check if message is pinned
+        if (pinnedMessages.has(data.message_id)) {
+            messageDiv.classList.add('pinned');
+        }
 
-    if (addToCache) {
-        chatMessagesCache.push(data);
-    }
+        const optionsButton = isMyMessage ? `
+            <button class="message-options-btn" onclick="showContextMenu(event, ${data.message_id})">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        ` : '';
 
-    const messageDiv = document.createElement('div');
-    const senderId = parseInt(data.sender_id);
-    const customerId = parseInt(CUSTOMER_ID);
-    const isMyMessage = senderId === customerId;
+        messageDiv.innerHTML = `
+            ${optionsButton}
+            <div class="chat-bubble">
+                <div>${escapeHtml(data.message)}</div>
+                <span class="chat-timestamp">${data.timestamp}</span>
+            </div>
+        `;
 
-    messageDiv.className = `chat-message ${isMyMessage ? 'sent' : 'received'}`;
-    messageDiv.dataset.messageId = data.message_id;
+        if (isMyMessage) {
+            attachLongPressHandlers(messageDiv, data.message_id);
+        }
 
-    // Check if message is pinned
-    if (pinnedMessages.has(data.message_id)) {
-        messageDiv.classList.add('pinned');
+        messagesContainer.appendChild(messageDiv);
+        scrollChatToBottom();
     }
 
-    const optionsButton = isMyMessage ? `
-        <button class="message-options-btn" onclick="showContextMenu(event, ${data.message_id})">
-            <i class="fas fa-ellipsis-v"></i>
-        </button>
-    ` : '';
+    // ==========================================
+    // ✅ LONG PRESS DETECTION (MOBILE)
+    // ==========================================
 
-    messageDiv.innerHTML = `
-        ${optionsButton}
-        <div class="chat-bubble">
-            <div>${escapeHtml(data.message)}</div>
-            <span class="chat-timestamp">${data.timestamp}</span>
-        </div>
-    `;
+    function attachLongPressHandlers(messageElement, messageId) {
+        // Touch events
+        messageElement.addEventListener('touchstart', function(e) {
+            longPressTriggered = false;
+            messageElement.classList.add('long-pressing');
 
-    if (isMyMessage) {
-        attachLongPressHandlers(messageDiv, data.message_id);
-    }
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                messageElement.classList.remove('long-pressing');
 
-    messagesContainer.appendChild(messageDiv);
-    scrollChatToBottom();
-}
+                const touch = e.touches[0];
+                showContextMenuAtPosition(touch.clientX, touch.clientY, messageId);
 
-// ==========================================
-// ✅ LONG PRESS DETECTION (MOBILE)
-// ==========================================
+                e.preventDefault();
+            }, LONG_PRESS_DURATION);
+        }, { passive: false });
 
-function attachLongPressHandlers(messageElement, messageId) {
-    // Touch events
-    messageElement.addEventListener('touchstart', function(e) {
-        longPressTriggered = false;
-        messageElement.classList.add('long-pressing');
-
-        longPressTimer = setTimeout(() => {
-            longPressTriggered = true;
+        messageElement.addEventListener('touchend', function(e) {
+            clearTimeout(longPressTimer);
             messageElement.classList.remove('long-pressing');
 
-            const touch = e.touches[0];
-            showContextMenuAtPosition(touch.clientX, touch.clientY, messageId);
+            if (longPressTriggered) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
 
-            e.preventDefault();
-        }, LONG_PRESS_DURATION);
-    }, { passive: false });
+        messageElement.addEventListener('touchmove', function(e) {
+            clearTimeout(longPressTimer);
+            messageElement.classList.remove('long-pressing');
+        });
 
-    messageElement.addEventListener('touchend', function(e) {
-        clearTimeout(longPressTimer);
-        messageElement.classList.remove('long-pressing');
+        // Mouse events (for desktop)
+        messageElement.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
 
-        if (longPressTriggered) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
+            longPressTriggered = false;
 
-    messageElement.addEventListener('touchmove', function(e) {
-        clearTimeout(longPressTimer);
-        messageElement.classList.remove('long-pressing');
-    });
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                showContextMenuAtPosition(e.clientX, e.clientY, messageId);
+            }, LONG_PRESS_DURATION);
+        });
 
-    // Mouse events (for desktop)
-    messageElement.addEventListener('mousedown', function(e) {
-        if (e.button !== 0) return;
+        messageElement.addEventListener('mouseup', function(e) {
+            clearTimeout(longPressTimer);
+        });
 
-        longPressTriggered = false;
+        messageElement.addEventListener('mouseleave', function(e) {
+            clearTimeout(longPressTimer);
+        });
+    }
 
-        longPressTimer = setTimeout(() => {
-            longPressTriggered = true;
-            showContextMenuAtPosition(e.clientX, e.clientY, messageId);
-        }, LONG_PRESS_DURATION);
-    });
+    // ==========================================
+    // ✅ CONTEXT MENU (DESKTOP & MOBILE)
+    // ==========================================
 
-    messageElement.addEventListener('mouseup', function(e) {
-        clearTimeout(longPressTimer);
-    });
+    function showContextMenu(event, messageId) {
+        event.preventDefault();
+        event.stopPropagation();
 
-    messageElement.addEventListener('mouseleave', function(e) {
-        clearTimeout(longPressTimer);
-    });
-}
+        const rect = event.target.closest('button').getBoundingClientRect();
+        showContextMenuAtPosition(rect.left, rect.bottom + 5, messageId);
+    }
 
-// ==========================================
-// ✅ CONTEXT MENU (DESKTOP & MOBILE)
-// ==========================================
+    function showContextMenuAtPosition(x, y, messageId) {
+        const contextMenu = document.getElementById('messageContextMenu');
+        contextMenuMessageId = messageId;
 
-function showContextMenu(event, messageId) {
-    event.preventDefault();
-    event.stopPropagation();
+        // Update pin/unpin text
+        const isPinned = pinnedMessages.has(messageId);
+        document.getElementById('pinMenuText').textContent = isPinned ? 'Unpin' : 'Pin';
 
-    const rect = event.target.closest('button').getBoundingClientRect();
-    showContextMenuAtPosition(rect.left, rect.bottom + 5, messageId);
-}
+        // Position the menu
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
 
-function showContextMenuAtPosition(x, y, messageId) {
-    const contextMenu = document.getElementById('messageContextMenu');
-    contextMenuMessageId = messageId;
-
-    // Update pin/unpin text
-    const isPinned = pinnedMessages.has(messageId);
-    document.getElementById('pinMenuText').textContent = isPinned ? 'Unpin' : 'Pin';
-
-    // Position the menu
-    contextMenu.style.left = x + 'px';
-    contextMenu.style.top = y + 'px';
-
-    // Adjust if menu goes off-screen
-    setTimeout(() => {
-        const menuRect = contextMenu.getBoundingClientRect();
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-
-        if (menuRect.right > windowWidth) {
-            contextMenu.style.left = (x - menuRect.width) + 'px';
-        }
-
-        if (menuRect.bottom > windowHeight) {
-            contextMenu.style.top = (y - menuRect.height - 10) + 'px';
-        }
-    }, 10);
-
-    contextMenu.classList.add('active');
-
-    setTimeout(() => {
-        document.addEventListener('click', hideContextMenu);
-        document.addEventListener('touchstart', hideContextMenu);
-    }, 100);
-}
-
-function hideContextMenu() {
-    const contextMenu = document.getElementById('messageContextMenu');
-    contextMenu.classList.remove('active');
-    document.removeEventListener('click', hideContextMenu);
-    document.removeEventListener('touchstart', hideContextMenu);
-}
-
-function scrollChatToBottom() {
-    const messagesContainer = document.getElementById('chatPopupMessages');
-    if (messagesContainer) {
+        // Adjust if menu goes off-screen
         setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            const menuRect = contextMenu.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            if (menuRect.right > windowWidth) {
+                contextMenu.style.left = (x - menuRect.width) + 'px';
+            }
+
+            if (menuRect.bottom > windowHeight) {
+                contextMenu.style.top = (y - menuRect.height - 10) + 'px';
+            }
+        }, 10);
+
+        contextMenu.classList.add('active');
+
+        setTimeout(() => {
+            document.addEventListener('click', hideContextMenu);
+            document.addEventListener('touchstart', hideContextMenu);
         }, 100);
     }
-}
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+    function hideContextMenu() {
+        const contextMenu = document.getElementById('messageContextMenu');
+        contextMenu.classList.remove('active');
+        document.removeEventListener('click', hideContextMenu);
+        document.removeEventListener('touchstart', hideContextMenu);
+    }
 
-function showTypingIndicator(isTyping) {
-    const typingIndicator = document.getElementById('chatTypingIndicator');
-    if (typingIndicator) {
-        if (isTyping) {
-            typingIndicator.classList.add('active');
-            scrollChatToBottom();
+    function scrollChatToBottom() {
+        const messagesContainer = document.getElementById('chatPopupMessages');
+        if (messagesContainer) {
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showTypingIndicator(isTyping) {
+        const typingIndicator = document.getElementById('chatTypingIndicator');
+        if (typingIndicator) {
+            if (isTyping) {
+                typingIndicator.classList.add('active');
+                scrollChatToBottom();
+            } else {
+                typingIndicator.classList.remove('active');
+            }
+        }
+    }
+
+    function showChatNotificationBadge() {
+        const headerBadge = document.getElementById('chatNotificationBadge');
+        const floatingBadge = document.getElementById('floatingChatBadge');
+
+        if (headerBadge) {
+            headerBadge.classList.add('active');
+        }
+        if (floatingBadge) {
+            floatingBadge.classList.add('active');
+        }
+    }
+
+    function clearChatNotificationBadge() {
+        const headerBadge = document.getElementById('chatNotificationBadge');
+        const floatingBadge = document.getElementById('floatingChatBadge');
+
+        if (headerBadge) {
+            headerBadge.classList.remove('active');
+        }
+        if (floatingBadge) {
+            floatingBadge.classList.remove('active');
+        }
+    }
+
+    // ==========================================
+    // ✅ PIN FUNCTIONALITY (PERSISTENT)
+    // ==========================================
+
+    function loadPinnedMessages() {
+        const stored = localStorage.getItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                pinnedMessages = new Set(parsed);
+            } catch (e) {
+                pinnedMessages = new Set();
+            }
+        }
+    }
+
+    function savePinnedMessages() {
+        const arr = Array.from(pinnedMessages);
+        localStorage.setItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`, JSON.stringify(arr));
+    }
+
+    function pinMessage() {
+        hideContextMenu();
+
+        if (!contextMenuMessageId) return;
+
+        const messageEl = document.querySelector(`.chat-message[data-message-id="${contextMenuMessageId}"]`);
+        if (!messageEl) return;
+
+        const isPinned = pinnedMessages.has(contextMenuMessageId);
+
+        if (isPinned) {
+            // Unpin
+            pinnedMessages.delete(contextMenuMessageId);
+            messageEl.classList.remove('pinned');
         } else {
-            typingIndicator.classList.remove('active');
+            // Pin
+            pinnedMessages.add(contextMenuMessageId);
+            messageEl.classList.add('pinned');
         }
+
+        savePinnedMessages();
+        updatePinnedSection();
     }
-}
 
-function showChatNotificationBadge() {
-    const headerBadge = document.getElementById('chatNotificationBadge');
-    const floatingBadge = document.getElementById('floatingChatBadge');
+    function updatePinnedSection() {
+        const pinnedSection = document.getElementById('chatPinnedSection');
+        const pinnedList = document.getElementById('pinnedMessagesList');
+        const seePinsLink = document.getElementById('chatSeePinsLink');
 
-    if (headerBadge) {
-        headerBadge.classList.add('active');
-    }
-    if (floatingBadge) {
-        floatingBadge.classList.add('active');
-    }
-}
-
-function clearChatNotificationBadge() {
-    const headerBadge = document.getElementById('chatNotificationBadge');
-    const floatingBadge = document.getElementById('floatingChatBadge');
-
-    if (headerBadge) {
-        headerBadge.classList.remove('active');
-    }
-    if (floatingBadge) {
-        floatingBadge.classList.remove('active');
-    }
-}
-
-// ==========================================
-// ✅ PIN FUNCTIONALITY (PERSISTENT)
-// ==========================================
-
-function loadPinnedMessages() {
-    const stored = localStorage.getItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`);
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            pinnedMessages = new Set(parsed);
-        } catch (e) {
-            pinnedMessages = new Set();
+        if (pinnedMessages.size === 0) {
+            pinnedSection.classList.remove('active');
+            seePinsLink.classList.remove('active');
+            return;
         }
-    }
-}
 
-function savePinnedMessages() {
-    const arr = Array.from(pinnedMessages);
-    localStorage.setItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`, JSON.stringify(arr));
-}
+        pinnedSection.classList.add('active');
+        seePinsLink.classList.add('active');
 
-function pinMessage() {
-    hideContextMenu();
+        // Show max 3 pinned messages in section
+        pinnedList.innerHTML = '';
+        const pinnedArray = Array.from(pinnedMessages).slice(-3);
 
-    if (!contextMenuMessageId) return;
-
-    const messageEl = document.querySelector(`.chat-message[data-message-id="${contextMenuMessageId}"]`);
-    if (!messageEl) return;
-
-    const isPinned = pinnedMessages.has(contextMenuMessageId);
-
-    if (isPinned) {
-        // Unpin
-        pinnedMessages.delete(contextMenuMessageId);
-        messageEl.classList.remove('pinned');
-    } else {
-        // Pin
-        pinnedMessages.add(contextMenuMessageId);
-        messageEl.classList.add('pinned');
-    }
-
-    savePinnedMessages();
-    updatePinnedSection();
-}
-
-function updatePinnedSection() {
-    const pinnedSection = document.getElementById('chatPinnedSection');
-    const pinnedList = document.getElementById('pinnedMessagesList');
-    const seePinsLink = document.getElementById('chatSeePinsLink');
-
-    if (pinnedMessages.size === 0) {
-        pinnedSection.classList.remove('active');
-        seePinsLink.classList.remove('active');
-        return;
-    }
-
-    pinnedSection.classList.add('active');
-    seePinsLink.classList.add('active');
-
-    // Show max 3 pinned messages in section
-    pinnedList.innerHTML = '';
-    const pinnedArray = Array.from(pinnedMessages).slice(-3);
-
-    pinnedArray.forEach(msgId => {
-        const msg = chatMessagesCache.find(m => m.message_id === msgId);
-        if (msg) {
-            const item = document.createElement('div');
-            item.className = 'pinned-message-item';
-            item.innerHTML = `
-                <i class="fas fa-thumbtack"></i>
-                <span class="pinned-message-text">${escapeHtml(msg.message)}</span>
-                <button class="unpin-btn" onclick="unpinMessage(${msgId}, event)">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            pinnedList.appendChild(item);
-        }
-    });
-}
-
-function unpinMessage(messageId, event) {
-    if (event) {
-        event.stopPropagation();
-    }
-
-    pinnedMessages.delete(messageId);
-    savePinnedMessages();
-
-    const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
-    if (messageEl) {
-        messageEl.classList.remove('pinned');
-    }
-
-    updatePinnedSection();
-}
-
-function togglePinnedSection() {
-    const section = document.getElementById('chatPinnedSection');
-    section.classList.toggle('active');
-}
-
-// ==========================================
-// ✅ PINNED MESSAGES MODAL
-// ==========================================
-
-function openPinnedMessagesModal() {
-    const modal = document.getElementById('pinnedMessagesModal');
-    const modalList = document.getElementById('pinnedMessagesListModal');
-    const emptyState = document.getElementById('pinnedMessagesEmpty');
-
-    if (pinnedMessages.size === 0) {
-        modalList.innerHTML = '';
-        emptyState.style.display = 'block';
-    } else {
-        emptyState.style.display = 'none';
-        modalList.innerHTML = '';
-
-        Array.from(pinnedMessages).forEach(msgId => {
+        pinnedArray.forEach(msgId => {
             const msg = chatMessagesCache.find(m => m.message_id === msgId);
             if (msg) {
                 const item = document.createElement('div');
@@ -1753,224 +1763,278 @@ function openPinnedMessagesModal() {
                         <i class="fas fa-times"></i>
                     </button>
                 `;
-                modalList.appendChild(item);
+                pinnedList.appendChild(item);
             }
         });
     }
 
-    modal.classList.add('active');
-}
-
-function closePinnedMessagesModal() {
-    const modal = document.getElementById('pinnedMessagesModal');
-    modal.classList.remove('active');
-}
-
-// ==========================================
-// ✅ UNSEND FUNCTIONALITY (PERSISTENT)
-// ==========================================
-
-function openUnsendModal() {
-    hideContextMenu();
-    const modal = document.getElementById('unsendModal');
-    modal.classList.add('active');
-    selectedUnsendType = 'everyone';
-}
-
-function closeUnsendModal() {
-    const modal = document.getElementById('unsendModal');
-    modal.classList.remove('active');
-    contextMenuMessageId = null;
-}
-
-function selectUnsendOption(type) {
-    selectedUnsendType = type;
-
-    document.querySelectorAll('.unsend-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
-    document.querySelector(`.unsend-option[data-type="${type}"]`).classList.add('selected');
-}
-
-function confirmUnsend() {
-    if (!contextMenuMessageId || !chatSocket) {
-        console.error('Cannot unsend: missing message ID or socket');
-        return;
-    }
-
-    const removeBtn = document.querySelector('.btn-remove');
-    removeBtn.disabled = true;
-    removeBtn.textContent = 'Removing...';
-
-    chatSocket.send(JSON.stringify({
-        'type': 'unsend_message',
-        'message_id': contextMenuMessageId,
-        'unsend_type': selectedUnsendType,
-        'sender_id': CUSTOMER_ID
-    }));
-
-    setTimeout(() => {
-        closeUnsendModal();
-        removeBtn.disabled = false;
-        removeBtn.textContent = 'Remove';
-    }, 500);
-}
-
-function handleMessageUnsent(data) {
-    const messageId = data.message_id;
-    const unsendType = data.unsend_type;
-    const unsent_by = parseInt(data.unsent_by);
-    const currentUserId = parseInt(CUSTOMER_ID);
-
-    const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
-
-    if (!messageEl) {
-        console.warn('Message element not found:', messageId);
-        return;
-    }
-
-    if (unsendType === 'everyone') {
-        const bubble = messageEl.querySelector('.chat-bubble');
-        messageEl.classList.add('deleted');
-
-        const optionsBtn = messageEl.querySelector('.message-options-btn');
-        if (optionsBtn) {
-            optionsBtn.remove();
+    function unpinMessage(messageId, event) {
+        if (event) {
+            event.stopPropagation();
         }
 
-        bubble.innerHTML = `
-            <div>Message was unsent</div>
-            <span class="chat-timestamp">${new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}</span>
-        `;
-
-        chatMessagesCache = chatMessagesCache.filter(msg => msg.message_id !== messageId);
-    }
-    else if (unsendType === 'you' && unsent_by === currentUserId) {
-        messageEl.remove();
-        chatMessagesCache = chatMessagesCache.filter(msg => msg.message_id !== messageId);
-    }
-
-    // Remove from pinned if it was pinned
-    if (pinnedMessages.has(messageId)) {
         pinnedMessages.delete(messageId);
         savePinnedMessages();
+
+        const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+        if (messageEl) {
+            messageEl.classList.remove('pinned');
+        }
+
         updatePinnedSection();
     }
-}
 
-// Chat Form Submit
-document.addEventListener('DOMContentLoaded', function() {
-    loadPinnedMessages();
+    function togglePinnedSection() {
+        const section = document.getElementById('chatPinnedSection');
+        section.classList.toggle('active');
+    }
 
-    const chatForm = document.getElementById('chatPopupForm');
-    const chatInput = document.getElementById('chatPopupInput');
-    const sendButton = document.getElementById('chatSendBtn');
-    let typingTimeout;
+    // ==========================================
+    // ✅ PINNED MESSAGES MODAL
+    // ==========================================
 
-    if (chatForm) {
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    function openPinnedMessagesModal() {
+        const modal = document.getElementById('pinnedMessagesModal');
+        const modalList = document.getElementById('pinnedMessagesListModal');
+        const emptyState = document.getElementById('pinnedMessagesEmpty');
 
-            const message = chatInput.value.trim();
-            if (!message || !chatSocket) {
-                return;
+        if (pinnedMessages.size === 0) {
+            modalList.innerHTML = '';
+            emptyState.style.display = 'block';
+        } else {
+            emptyState.style.display = 'none';
+            modalList.innerHTML = '';
+
+            Array.from(pinnedMessages).forEach(msgId => {
+                const msg = chatMessagesCache.find(m => m.message_id === msgId);
+                if (msg) {
+                    const item = document.createElement('div');
+                    item.className = 'pinned-message-item';
+                    item.innerHTML = `
+                        <i class="fas fa-thumbtack"></i>
+                        <span class="pinned-message-text">${escapeHtml(msg.message)}</span>
+                        <button class="unpin-btn" onclick="unpinMessage(${msgId}, event)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    modalList.appendChild(item);
+                }
+            });
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closePinnedMessagesModal() {
+        const modal = document.getElementById('pinnedMessagesModal');
+        modal.classList.remove('active');
+    }
+
+    // ==========================================
+    // ✅ UNSEND FUNCTIONALITY (PERSISTENT)
+    // ==========================================
+
+    function openUnsendModal() {
+        hideContextMenu();
+        const modal = document.getElementById('unsendModal');
+        modal.classList.add('active');
+        selectedUnsendType = 'everyone';
+    }
+
+    function closeUnsendModal() {
+        const modal = document.getElementById('unsendModal');
+        modal.classList.remove('active');
+        contextMenuMessageId = null;
+    }
+
+    function selectUnsendOption(type) {
+        selectedUnsendType = type;
+
+        document.querySelectorAll('.unsend-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        document.querySelector(`.unsend-option[data-type="${type}"]`).classList.add('selected');
+    }
+
+    function confirmUnsend() {
+        if (!contextMenuMessageId || !chatSocket) {
+            console.error('Cannot unsend: missing message ID or socket');
+            return;
+        }
+
+        const removeBtn = document.querySelector('.btn-remove');
+        removeBtn.disabled = true;
+        removeBtn.textContent = 'Removing...';
+
+        chatSocket.send(JSON.stringify({
+            'type': 'unsend_message',
+            'message_id': contextMenuMessageId,
+            'unsend_type': selectedUnsendType,
+            'sender_id': CUSTOMER_ID
+        }));
+
+        setTimeout(() => {
+            closeUnsendModal();
+            removeBtn.disabled = false;
+            removeBtn.textContent = 'Remove';
+        }, 500);
+    }
+
+    function handleMessageUnsent(data) {
+        const messageId = data.message_id;
+        const unsendType = data.unsend_type;
+        const unsent_by = parseInt(data.unsent_by);
+        const currentUserId = parseInt(CUSTOMER_ID);
+
+        const messageEl = document.querySelector(`.chat-message[data-message-id="${messageId}"]`);
+
+        if (!messageEl) {
+            console.warn('Message element not found:', messageId);
+            return;
+        }
+
+        if (unsendType === 'everyone') {
+            const bubble = messageEl.querySelector('.chat-bubble');
+            messageEl.classList.add('deleted');
+
+            const optionsBtn = messageEl.querySelector('.message-options-btn');
+            if (optionsBtn) {
+                optionsBtn.remove();
             }
 
-            sendButton.disabled = true;
-            chatInput.disabled = true;
+            bubble.innerHTML = `
+                <div>Message was unsent</div>
+                <span class="chat-timestamp">${new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}</span>
+            `;
 
-            const now = new Date();
-            const timestamp = now.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
+            chatMessagesCache = chatMessagesCache.filter(msg => msg.message_id !== messageId);
+        }
+        else if (unsendType === 'you' && unsent_by === currentUserId) {
+            messageEl.remove();
+            chatMessagesCache = chatMessagesCache.filter(msg => msg.message_id !== messageId);
+        }
+
+        // Remove from pinned if it was pinned
+        if (pinnedMessages.has(messageId)) {
+            pinnedMessages.delete(messageId);
+            savePinnedMessages();
+            updatePinnedSection();
+        }
+    }
+
+    // Chat Form Submit
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPinnedMessages();
+
+        const chatForm = document.getElementById('chatPopupForm');
+        const chatInput = document.getElementById('chatPopupInput');
+        const sendButton = document.getElementById('chatSendBtn');
+        let typingTimeout;
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const message = chatInput.value.trim();
+                if (!message || !chatSocket) {
+                    return;
+                }
+
+                sendButton.disabled = true;
+                chatInput.disabled = true;
+
+                const now = new Date();
+                const timestamp = now.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const tempMessageId = 'temp_' + Date.now();
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'chat_message',
+                    'message': message,
+                    'sender_id': CUSTOMER_ID
+                }));
+
+                const messageData = {
+                    type: 'chat_message',
+                    sender_id: CUSTOMER_ID,
+                    message: message,
+                    timestamp: timestamp,
+                    message_id: tempMessageId
+                };
+                addMessageToChatPopup(messageData, true);
+
+                chatInput.value = '';
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
             });
 
-            const tempMessageId = 'temp_' + Date.now();
+            chatInput.addEventListener('input', function() {
+                if (!chatSocket) return;
 
-            chatSocket.send(JSON.stringify({
-                'type': 'chat_message',
-                'message': message,
-                'sender_id': CUSTOMER_ID
-            }));
-
-            const messageData = {
-                type: 'chat_message',
-                sender_id: CUSTOMER_ID,
-                message: message,
-                timestamp: timestamp,
-                message_id: tempMessageId
-            };
-            addMessageToChatPopup(messageData, true);
-
-            chatInput.value = '';
-            chatInput.disabled = false;
-            sendButton.disabled = false;
-            chatInput.focus();
-        });
-
-        chatInput.addEventListener('input', function() {
-            if (!chatSocket) return;
-
-            chatSocket.send(JSON.stringify({
-                'type': 'typing',
-                'sender_id': CUSTOMER_ID,
-                'is_typing': true
-            }));
-
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
                 chatSocket.send(JSON.stringify({
                     'type': 'typing',
                     'sender_id': CUSTOMER_ID,
-                    'is_typing': false
+                    'is_typing': true
                 }));
-            }, 1000);
+
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    chatSocket.send(JSON.stringify({
+                        'type': 'typing',
+                        'sender_id': CUSTOMER_ID,
+                        'is_typing': false
+                    }));
+                }, 1000);
+            });
+        }
+
+        // Close context menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.message-context-menu') &&
+                !e.target.closest('.message-options-btn') &&
+                !e.target.closest('.chat-message')) {
+                hideContextMenu();
+            }
         });
+
+        // Close modals on outside click
+        document.getElementById('pinnedMessagesModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePinnedMessagesModal();
+            }
+        });
+
+        document.getElementById('unsendModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUnsendModal();
+            }
+        });
+    });
+
+    // Auto-initialize WebSocket
+    if (IS_USER_AUTHENTICATED && CUSTOMER_ID && ESTABLISHMENT_ID) {
+        setTimeout(() => {
+            initializeChatWebSocket();
+        }, 2000);
     }
 
-    // Close context menu when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.message-context-menu') &&
-            !e.target.closest('.message-options-btn') &&
-            !e.target.closest('.chat-message')) {
-            hideContextMenu();
-        }
-    });
-
-    // Close modals on outside click
-    document.getElementById('pinnedMessagesModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closePinnedMessagesModal();
-        }
-    });
-
-    document.getElementById('unsendModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeUnsendModal();
-        }
-    });
-});
-
-// Auto-initialize WebSocket
-if (IS_USER_AUTHENTICATED && CUSTOMER_ID && ESTABLISHMENT_ID) {
-    setTimeout(() => {
-        initializeChatWebSocket();
-    }, 2000);
-}
-
-// Expose functions globally
-window.toggleChatPopup = toggleChatPopup;
-window.closeChatPopup = closeChatPopup;
-window.showContextMenu = showContextMenu;
-window.selectUnsendOption = selectUnsendOption;
-window.openUnsendModal = openUnsendModal;
-window.closeUnsendModal = closeUnsendModal;
-window.confirmUnsend = confirmUnsend;
-window.pinMessage = pinMessage;
-window.unpinMessage = unpinMessage;
-window.togglePinnedSection = togglePinnedSection;
-window.openPinnedMessagesModal = openPinnedMessagesModal;
-window.closePinnedMessagesModal = closePinnedMessagesModal;
+    // Expose functions globally
+    window.toggleChatPopup = toggleChatPopup;
+    window.closeChatPopup = closeChatPopup;
+    window.showContextMenu = showContextMenu;
+    window.selectUnsendOption = selectUnsendOption;
+    window.openUnsendModal = openUnsendModal;
+    window.closeUnsendModal = closeUnsendModal;
+    window.confirmUnsend = confirmUnsend;
+    window.pinMessage = pinMessage;
+    window.unpinMessage = unpinMessage;
+    window.togglePinnedSection = togglePinnedSection;
+    window.openPinnedMessagesModal = openPinnedMessagesModal;
+    window.closePinnedMessagesModal = closePinnedMessagesModal;
 </script>
 {% endblock %}

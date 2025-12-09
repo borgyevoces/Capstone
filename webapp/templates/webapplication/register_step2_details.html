@@ -45,11 +45,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="status">Initial Status *</label>
-                    <select id="status" name="status" required>
-                        <option value="Open">Open</option>
-                        <option value="Closed">Closed</option>
-                    </select>
+                    <label for="opening_time">Opening Time *</label>
+                    <input type="time" id="opening_time" name="opening_time" required>
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
+                        ⏰ Example: 08:00 for 8:00 AM
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="closing_time">Closing Time *</label>
+                    <input type="time" id="closing_time" name="closing_time" required>
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
+                        ⏰ Example: 22:00 for 10:00 PM (can span overnight)
+                    </small>
                 </div>
 
                 <div class="form-group">

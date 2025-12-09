@@ -413,13 +413,14 @@ function initStep2() {
 
     nextBtn.addEventListener('click', () => {
         const details = {
-            name: form.querySelector('#name').value.trim(),
-            address: form.querySelector('#address').value.trim(),
-            status: form.querySelector('#status').value,
-            category: form.querySelector('#category').value,
-            paymentMethods: Array.from(form.querySelectorAll('input[name="payment_methods"]:checked')).map(el => el.value),
-            amenities: Array.from(form.querySelectorAll('input[name="amenities"]:checked')).map(el => el.value)
-        };
+    name: form.querySelector('#name').value.trim(),
+    address: form.querySelector('#address').value.trim(),
+    opening_time: form.querySelector('#opening_time').value,  // ✅ Changed
+    closing_time: form.querySelector('#closing_time').value,   // ✅ Added
+    category: form.querySelector('#category').value,
+    paymentMethods: Array.from(form.querySelectorAll('input[name="payment_methods"]:checked')).map(el => el.value),
+    amenities: Array.from(form.querySelectorAll('input[name="amenities"]:checked')).map(el => el.value)
+};
 
         const fileInput = document.getElementById('establishment_image');
         if (fileInput.files.length > 0) {
