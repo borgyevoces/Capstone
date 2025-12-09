@@ -1257,7 +1257,6 @@
                                     <i class="fas fa-pen"></i> Edit
                                 </button>
                                 <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
-                                      style="display: contents;">
                                     {% csrf_token %}
                                     <button type="submit" class="action-btn seller">
                                         <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
@@ -1349,8 +1348,7 @@
                 <small id="locationStatus" style="display: block; margin-top: 8px; color: #666; font-size: 12px;">
                     {% if establishment.latitude and establishment.longitude %}
                     <i class="fas fa-check-circle" style="color: var(--success);"></i>
-                    Location set: {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6
-                    }}
+                    Location set: {{ establishment.latitude|floatformat:6 }}
                     {% else %}
                     <i class="fas fa-exclamation-circle" style="color: var(--error);"></i>
                     No location set yet
@@ -1394,7 +1392,7 @@
                     <strong>📍 Current Status:</strong>
                     <span class="status-badge status-{{ establishment.status|lower }}">
             {{ establishment.status }}
-        </span>
+        <           </span>
                     <br>
                     <small>Status is automatically calculated based on current time</small>
                 </div>
