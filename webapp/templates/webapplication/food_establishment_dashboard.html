@@ -1296,9 +1296,7 @@
             </div>
             <div>
                 <label style="color: var(--text-muted); font-size: 12px;">Amenities</label>
-                <p style="font-weight: 600; margin-top: 4px;" id="establishmentAmenities">{% for amenity in
-                    establishment.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% empty
-                    %}N/A{% endfor %}</p>
+                <p style="font-weight: 600; margin-top: 4px;" id="establishmentAmenities">{% for amenity in establishment.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% empty %}N/A{% endfor %}</p>
             </div>
             <div>
                 <label style="color: var(--text-muted); font-size: 12px;">Payment Methods</label>
