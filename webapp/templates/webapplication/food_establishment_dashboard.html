@@ -1348,7 +1348,7 @@
                 <small id="locationStatus" style="display: block; margin-top: 8px; color: #666; font-size: 12px;">
                     {% if establishment.latitude and establishment.longitude %}
                     <i class="fas fa-check-circle" style="color: var(--success);"></i>
-                    Location set: {{ establishment.latitude|floatformat:6 }}
+                    Location set: {{ establishment.latitude|floatformat:6 }},{{ establishment.longitude|floatformat:6 }}
                     {% else %}
                     <i class="fas fa-exclamation-circle" style="color: var(--error);"></i>
                     No location set yet
