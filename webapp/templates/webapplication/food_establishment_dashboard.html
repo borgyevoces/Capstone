@@ -1256,12 +1256,12 @@
                                 <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
                                     <i class="fas fa-pen"></i> Edit
                                 </button>
-                                <form action="{% url 'toggle_top_seller' item.id %}" method="post"
+                                <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
                                       style="display: contents;">
                                     {% csrf_token %}
                                     <button type="submit" class="action-btn seller">
-                                        <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{%
-                                        endif %}
+                                        <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
+                                        {% endif %}
                                     </button>
                                 </form>
                                 <button type="button" class="action-btn delete"
