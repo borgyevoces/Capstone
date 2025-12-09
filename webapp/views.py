@@ -1365,94 +1365,126 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    COMPLETELY FIXED: Lightweight email sending without memory-intensive operations
+    ✅ PRODUCTION-READY EMAIL SENDING WITH SENDGRID PRIMARY + GMAIL FALLBACK
+    Priority: SendGrid (reliable on Render) → Gmail SMTP (local backup)
     """
-    # Validate sender email
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # ============================================================================
+    # STEP 1: VALIDATE SENDER EMAIL
+    # ============================================================================
     if not from_email or from_email == 'webmaster@localhost':
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
     if not from_email:
-        print("❌ CRITICAL: No sender email configured")
+        logger.error("❌ CRITICAL: No sender email configured")
         if not fail_silently:
-            raise ValueError("SENDER_EMAIL not configured")
+            raise ValueError("SENDER_EMAIL not configured in environment variables")
         return 0
 
-    # Get SendGrid API key
+    # Ensure recipient_list is a list
+    if isinstance(recipient_list, str):
+        recipient_list = [recipient_list]
+
+    # ============================================================================
+    # STEP 2: TRY SENDGRID FIRST (BEST FOR RENDER/PRODUCTION)
+    # ============================================================================
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
 
-    # If SendGrid not configured, use Django SMTP immediately
-    if not sendgrid_key or sendgrid_key == '********************':
-        print(f"⚠️ SendGrid not configured. Using Django SMTP...")
+    if sendgrid_key and sendgrid_key != '********************':
         try:
-            return django_send_mail(
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail, Email, To, Content
+
+            logger.info(f"📧 Attempting SendGrid email to {recipient_list}")
+
+            # Create SendGrid message
+            sg_msg = Mail(
+                from_email=Email(from_email),
+                to_emails=[To(email) for email in recipient_list],
                 subject=subject,
-                message=message,
-                from_email=from_email,
-                recipient_list=recipient_list,
-                fail_silently=fail_silently,
-                html_message=html_message
+                html_content=Content("text/html", html_message if html_message else message)
             )
-        except Exception as smtp_error:
-            print(f"❌ SMTP error: {smtp_error}")
-            if not fail_silently:
-                raise
-            return 0
 
-    # ✅ FIX: Avoid socket timeout manipulation (causes issues on Render)
+            # Send with timeout
+            sg = SendGridAPIClient(sendgrid_key)
+            response = sg.send(sg_msg)
+
+            if response.status_code in (200, 202):
+                logger.info(f"✅ SendGrid email sent successfully to {recipient_list}")
+                return 1
+            else:
+                logger.warning(f"⚠️ SendGrid returned status {response.status_code}")
+
+        except Exception as sg_error:
+            logger.error(f"❌ SendGrid error: {sg_error}")
+
+            # Provide specific diagnostics
+            error_msg = str(sg_error).lower()
+            if '403' in error_msg or 'forbidden' in error_msg:
+                logger.error("❌ SendGrid 403 Error - Possible causes:")
+                logger.error("   1. API Key is invalid or expired")
+                logger.error("   2. Sender email not verified in SendGrid")
+                logger.error("   3. Free trial expired")
+                logger.error("   Fix: Go to https://app.sendgrid.com/settings/sender_auth")
+            elif '401' in error_msg:
+                logger.error("❌ SendGrid 401 - API Key authentication failed")
+
+            # Continue to Gmail fallback
+    else:
+        logger.warning("⚠️ SendGrid not configured, trying Gmail SMTP...")
+
+    # ============================================================================
+    # STEP 3: FALLBACK TO GMAIL SMTP (LOCAL DEVELOPMENT)
+    # ============================================================================
+    # NOTE: Gmail SMTP often fails on Render due to network restrictions
+    # This fallback is mainly for local development
+
     try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, Email, To, Content
+        logger.info(f"📧 Attempting Gmail SMTP fallback to {recipient_list}")
 
-        # Ensure recipient_list is a list
-        if isinstance(recipient_list, str):
-            recipient_list = [recipient_list]
-
-        # Create SendGrid message
-        sg_msg = Mail(
-            from_email=Email(from_email),
-            to_emails=[To(email) for email in recipient_list],
-            subject=subject,
-            html_content=Content("text/html", html_message if html_message else message)
-        )
-
-        # ✅ FIX: Use default timeout (don't manipulate socket settings)
-        sg = SendGridAPIClient(sendgrid_key)
-
-        # ✅ CRITICAL: Set timeout in the request itself
-        response = sg.send(sg_msg)
-
-        if response.status_code in (200, 202):
-            print(f"✅ Email sent via SendGrid to {recipient_list}")
-            return 1
-        else:
-            print(f"⚠️ SendGrid returned status {response.status_code}")
-
-    except Exception as sg_error:
-        print(f"❌ SendGrid error: {sg_error}")
-
-        if '403' in str(sg_error):
-            print("❌ SendGrid 403 Forbidden - Check:")
-            print("  1. API Key is valid and not expired")
-            print("  2. Sender email is verified in SendGrid")
-            print("  3. API Key has 'Mail Send' permissions")
-
-    # Fallback to Django SMTP
-    print(f"🔄 Falling back to Django SMTP...")
-    try:
-        return django_send_mail(
+        result = django_send_mail(
             subject=subject,
             message=message,
             from_email=from_email,
             recipient_list=recipient_list,
-            fail_silently=fail_silently,
+            fail_silently=False,
             html_message=html_message
         )
+
+        if result and result > 0:
+            logger.info(f"✅ Gmail SMTP email sent successfully to {recipient_list}")
+            return result
+        else:
+            logger.warning(f"⚠️ Gmail SMTP returned {result}")
+
     except Exception as smtp_error:
-        print(f"❌ SMTP error: {smtp_error}")
+        logger.error(f"❌ Gmail SMTP error: {smtp_error}")
+
+        # Provide specific diagnostics
+        error_msg = str(smtp_error).lower()
+        if 'network is unreachable' in error_msg or 'errno 101' in error_msg:
+            logger.error("❌ Network Error - Render cannot reach Gmail SMTP")
+            logger.error("   Solution: Use SendGrid instead (set SENDGRID_API_KEY)")
+        elif 'authentication' in error_msg or '535' in error_msg:
+            logger.error("❌ Gmail Authentication Failed")
+            logger.error("   1. Enable 2-Step Verification: https://myaccount.google.com/security")
+            logger.error("   2. Generate App Password: https://myaccount.google.com/apppasswords")
+            logger.error("   3. Update EMAIL_HOST_PASSWORD in .env")
+
         if not fail_silently:
             raise
-        return 0
 
+    # ============================================================================
+    # STEP 4: ALL METHODS FAILED
+    # ============================================================================
+    logger.error(f"❌ All email sending methods failed for {recipient_list}")
+
+    if not fail_silently:
+        raise Exception("Email sending failed - both SendGrid and Gmail SMTP unavailable")
+
+    return 0
 
 @login_required
 @require_POST
