@@ -223,15 +223,12 @@
                                         </div>
                                     {% endif %}
 
-                                   {% if establishment.calculated_status == 'Open' %}
-    <span class="status-indicator open">
-        <span class="dot"></span> Open
-    </span>
-{% else %}
-    <span class="status-indicator closed">
-        <span class="dot"></span> Closed
-    </span>
-{% endif %}
+                                   <span class="status-indicator {{ establishment.calculated_status|lower }}"
+      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+    <span class="dot"></span>
+    {{ establishment.calculated_status }}
+</span>
 
                                     {% if establishment.category %}
                                         <div class="category-display">{{ establishment.category.name }}</div>
@@ -335,6 +332,7 @@
     <!-- Your custom JavaScript files -->
     <script src="{% static 'js/kabsueats_map.js' %}"></script>
     <script src="{% static 'js/kabsueats.js' %}"></script>
+    <script src="{% static 'js/status_updater.js' %}"></script>
 
     {% block extra_js %}
     <script>
