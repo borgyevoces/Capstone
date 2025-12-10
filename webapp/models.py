@@ -87,15 +87,18 @@ class FoodEstablishment(models.Model):
     def __str__(self):
         return self.name
 
-    # ✅ NEW: Automatic status calculation based on time
+    # ✅ FIXED: Automatic status calculation based on time
     @property
     def status(self):
-        """Automatically determine if establishment is Open or Closed based on current time"""
+        """
+        Automatically determine if establishment is Open or Closed based on current time.
+        Returns 'Open' or 'Closed' string.
+        """
         if not self.opening_time or not self.closing_time:
             return "Closed"  # Default to closed if times not set
 
-        from django.utils import timezone
-        now = timezone.localtime(timezone.now()).time()
+        from datetime import datetime
+        now = datetime.now().time()
 
         if self.opening_time <= self.closing_time:
             # Normal case: opens and closes on same day (e.g., 8 AM - 10 PM)

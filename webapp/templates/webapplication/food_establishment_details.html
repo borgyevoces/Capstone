@@ -869,18 +869,35 @@
             <section class="section-card contact-location">
                 <h2>Location & Contact</h2>
                 <div class="contact-grid">
-                    <p><i class="fas fa-map-marker-alt"></i> <strong>Address:</strong><br> {{
-                        establishment.address|default:"Not Available" }}</p>
-                    <p><i class="fas fa-store"></i> <strong>Categories:</strong><br> {{
-                        establishment.category|default:"N/A" }}</p>
-                    <p><i class="fas fa-clock"></i> <strong>Hours:</strong><br>
-                        <span class="status-badge status-{{ establishment.status|lower }}">
-       {{ establishment.status }}
-   </span>
+                    <p>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <strong>Address:</strong><br>
+                        {{ establishment.address|default:"Not Available" }}
+                    </p>
+
+                    <p>
+                        <i class="fas fa-store"></i>
+                        <strong>Categories:</strong><br>
+                        {% if establishment.category %}
+                        {{ establishment.category.name }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </p>
+
+                    <p>
+                        <i class="fas fa-clock"></i>
+                        <strong>Hours:</strong><br>
+                        {% if establishment.status == 'Open' %}
+                        <span class="status-badge status-open">✅ Open</span>
+                        {% else %}
+                        <span class="status-badge status-closed">🔒 Closed</span>
+                        {% endif %}
+
                         {% if establishment.opening_time and establishment.closing_time %}
                         <br>
                         <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
-                            🕐 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A"
+                            🕕 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A"
                             }}
                         </small>
                         {% else %}
@@ -888,8 +905,16 @@
                         <small style="color: #999; font-size: 13px;">Hours not set</small>
                         {% endif %}
                     </p>
-                    <p><i class="fas fa-money-bill-wave"></i> <strong>Payment:</strong><br> {{
-                        establishment.payment_methods|default:"N/A" }}</p>
+
+                    <p>
+                        <i class="fas fa-money-bill-wave"></i>
+                        <strong>Payment:</strong><br>
+                        {% if establishment.payment_methods %}
+                        {{ establishment.payment_methods }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </p>
                 </div>
             </section>
 
@@ -1056,9 +1081,13 @@
                                     <h3 class="menu-name">{{ item.name }}</h3>
                                     <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
                                 </div>
-                                <p class="menu-description">{{ item.description|default:"No description provided."
-                                    }}</p>
-
+                                <p class="menu-description">
+                                    {% if item.description %}
+                                    {{ item.description }}
+                                    {% else %}
+                                    No description provided.
+                                    {% endif %}
+                                </p>
                                 <div class="menu-stock-status">
                                     {% if item.quantity > 10 %}
                                     <span class="stock-status in-stock">

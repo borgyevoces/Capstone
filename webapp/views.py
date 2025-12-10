@@ -670,25 +670,30 @@ def delete_review(request, establishment_id, review_id):
 
 def food_establishment_details(request, establishment_id):
     """
-    Show establishment details, menu items, and reviews.
+    Show establishment details, menu items, and reviews with proper time-based status.
+    ✅ FIXED: Now properly displays real data instead of template syntax
     """
+    from datetime import datetime
 
-    # 1. Kunin ang establishment, kasama ang Average Rating at Review Count
+    # 1. Get establishment with ratings and related data
     establishment = get_object_or_404(
         FoodEstablishment.objects.annotate(
             average_rating=Avg('reviews__rating'),
             review_count=Count('reviews')
-        ),
+        ).select_related('category').prefetch_related('amenities'),
         id=establishment_id
     )
 
-    # 2. Kunin ang lahat ng reviews
+    # 2. Status is calculated automatically via @property in model
+    # No need to manually set it here - it's done in models.py
+
+    # 3. Get all reviews
     all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
 
     user_review = None
     other_reviews = all_reviews
 
-    # 3. Ihiwalay ang review ng user
+    # 4. Separate user's review
     if request.user.is_authenticated:
         user_review = all_reviews.filter(user=request.user).first()
         if user_review:
@@ -697,8 +702,9 @@ def food_establishment_details(request, establishment_id):
     # Review form setup
     review_form = ReviewForm(instance=user_review) if user_review else ReviewForm()
 
-    # --- Menu Item Filters (Hindi ginalaw) ---
+    # 5. Menu Item Filters
     menu_items = MenuItem.objects.filter(food_establishment=establishment)
+
     search_query = request.GET.get('search')
     filter_first_letter = request.GET.get('filter_first_letter')
     sort_price = request.GET.get('sort_price')
@@ -707,14 +713,14 @@ def food_establishment_details(request, establishment_id):
 
     if search_query:
         menu_items = menu_items.filter(name__icontains=search_query)
-    # ... (iba pang filters)
+
     if filter_first_letter:
         menu_items = menu_items.filter(name__istartswith=filter_first_letter)
 
     if filter_availability == 'available':
-        menu_items = menu_items.filter(is_available=True)
+        menu_items = menu_items.filter(quantity__gt=0)
     elif filter_availability == 'sold_out':
-        menu_items = menu_items.filter(is_available=False)
+        menu_items = menu_items.filter(quantity=0)
 
     if filter_top_seller == 'yes':
         menu_items = menu_items.filter(is_top_seller=True)
@@ -725,9 +731,8 @@ def food_establishment_details(request, establishment_id):
         menu_items = menu_items.order_by('-price')
     else:
         menu_items = menu_items.order_by('-is_top_seller', 'name')
-    # ----------------------------------------
 
-    # 4. Final Context para sa Template
+    # 6. Final Context
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
@@ -740,7 +745,6 @@ def food_establishment_details(request, establishment_id):
         'is_guest': not request.user.is_authenticated,
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
-
 
 @require_POST
 @login_required
