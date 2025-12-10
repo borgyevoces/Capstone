@@ -3398,9 +3398,9 @@ def update_establishment_details_ajax(request, pk):
                 'message': 'Establishment details updated successfully.',
                 'name': instance.name,
                 'address': instance.address,
-                'status': instance.status,  # ✅ This now returns calculated status
-                'opening_time': instance.opening_time.strftime('%H:%M') if instance.opening_time else None,  # ✅ Added
-                'closing_time': instance.closing_time.strftime('%H:%M') if instance.closing_time else None,  # ✅ Added
+                'status': instance.status,
+                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,  # ✅ NEW
+                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,  # ✅ NEW
                 'category': instance.category.name if instance.category else None,
                 'payment_methods': instance.payment_methods,
                 'latitude': str(instance.latitude),

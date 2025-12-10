@@ -328,15 +328,23 @@ function setupUpdateStoreDetailsForm() {
                     }
 
                     if (data.category) {
-                        document.getElementById('establishmentCategory').textContent = data.category;
+                        document.getElementById('establishmentCategory').textContent = data.category || 'N/A';
                     }
+                    const hoursElement = document.getElementById('establishmentHours');
+if (hoursElement) {
+    if (data.opening_time && data.closing_time) {
+        hoursElement.textContent = `${data.opening_time} - ${data.closing_time}`;
+    } else {
+        hoursElement.textContent = 'Not Set';
+    }
+}
 
                     if (data.amenities) {
                         document.getElementById('establishmentAmenities').textContent = data.amenities || 'N/A';
                     }
 
                     if (data.payment_methods) {
-                        document.getElementById('establishmentPaymentMethods').textContent = data.payment_methods;
+                        document.getElementById('establishmentPaymentMethods').textContent = data.payment_methods || 'N/A';
                     }
 
                     if (data.image_url) {

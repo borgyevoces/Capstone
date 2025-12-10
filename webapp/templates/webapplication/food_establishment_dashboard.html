@@ -1290,23 +1290,50 @@
 </main>
 
 <div class="modal" id="viewStoreDetailsModal">
-    <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-content" style="max-width: 450px;">
         <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">×</button>
         <h2><i class="fas fa-info-circle"></i> Store Details</h2>
         <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Category -->
             <div>
-                <label style="color: var(--text-muted); font-size: 12px;">Category</label>
-                <p style="font-weight: 600; margin-top: 4px;" id="establishmentCategory">{{
-                    establishment.category.name|default:"N/A" }}</p>
+                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Category</label>
+                <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentCategory">
+                    {{ establishment.category.name|default:"N/A" }}
+                </p>
             </div>
+
+            <!-- ✅ NEW: Operating Hours -->
             <div>
-                <label style="color: var(--text-muted); font-size: 12px;">Amenities</label>
-                <p style="font-weight: 600; margin-top: 4px;" id="establishmentAmenities">{% for amenity in establishment.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% empty %}N/A{% endfor %}</p>
+                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">
+                    <i class="fas fa-clock"></i> Operating Hours
+                </label>
+                <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentHours">
+                    {% if establishment.opening_time and establishment.closing_time %}
+                        {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+                    {% else %}
+                        Not Set
+                    {% endif %}
+                </p>
             </div>
+
+            <!-- Amenities -->
             <div>
-                <label style="color: var(--text-muted); font-size: 12px;">Payment Methods</label>
-                <p style="font-weight: 600; margin-top: 4px;" id="establishmentPaymentMethods">{{
-                    establishment.payment_methods|default:"N/A" }}</p>
+                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Amenities</label>
+                <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentAmenities">
+                    {% for amenity in establishment.amenities.all %}
+                        {{ amenity.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        N/A
+                    {% endfor %}
+                </p>
+            </div>
+
+            <!-- Payment Methods -->
+            <div>
+                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Payment Methods</label>
+                <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentPaymentMethods">
+                    {{ establishment.payment_methods|default:"N/A" }}
+                </p>
             </div>
         </div>
     </div>
