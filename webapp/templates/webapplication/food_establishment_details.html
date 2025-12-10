@@ -901,12 +901,12 @@
 
     {% if establishment.opening_time and establishment.closing_time %}
         <br>
-        <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
+        <p style="color: #666; font-size: 15px; margin-top: 5px; display: block; ">
             Opening time {{ establishment.opening_time|time:"g:i A" }} / Closing time {{ establishment.closing_time|time:"g:i A" }}
-        </small>
+        </p>
     {% else %}
         <br>
-        <small style="color: #999; font-size: 13px;">Hours not set</small>
+        <p style="color: #999; font-size: 13px;">Hours not set</p>
     {% endif %}
 </p>
 
