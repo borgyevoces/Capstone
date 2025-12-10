@@ -467,22 +467,6 @@ def kabsueats_main_view(request):
             est.distance_meters = 0
             est.distance = 0
 
-        # ✅ FIXED: Use public attribute 'current_status'
-        if est.opening_time and est.closing_time:
-            opening = est.opening_time
-            closing = est.closing_time
-
-            if closing < opening:
-                # Overnight hours (e.g., 10 PM to 2 AM)
-                is_open = current_time >= opening or current_time <= closing
-            else:
-                # Normal hours (e.g., 8 AM to 8 PM)
-                is_open = opening <= current_time <= closing
-
-            est.current_status = 'Open' if is_open else 'Closed'
-        else:
-            est.current_status = 'Closed'
-
         # Calculate ratings
         rating_data = est.reviews.aggregate(Avg('rating'), Count('id'))
         est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
@@ -494,7 +478,7 @@ def kabsueats_main_view(request):
     if status_filter:
         food_establishments_with_data = [
             est for est in food_establishments_with_data
-            if est.current_status == status_filter
+            if est.status == status_filter  # ✅ Use 'status' property instead
         ]
 
     # Sort by distance
@@ -706,13 +690,7 @@ def delete_review(request, establishment_id, review_id):
 
 
 def food_establishment_details(request, establishment_id):
-    """
-    Show establishment details with real-time open/closed status.
-    ✅ FIXED: Uses public attribute 'current_status'
-    """
-    from datetime import datetime
 
-    # Get establishment with ratings
     establishment = get_object_or_404(
         FoodEstablishment.objects.annotate(
             average_rating=Avg('reviews__rating'),
@@ -720,24 +698,6 @@ def food_establishment_details(request, establishment_id):
         ).select_related('category').prefetch_related('amenities'),
         id=establishment_id
     )
-
-    # ✅ Calculate real-time status
-    current_time = datetime.now().time()
-
-    if establishment.opening_time and establishment.closing_time:
-        opening = establishment.opening_time
-        closing = establishment.closing_time
-
-        if closing < opening:
-            # Overnight hours (e.g., 10 PM to 2 AM)
-            is_open = current_time >= opening or current_time <= closing
-        else:
-            # Normal hours (e.g., 8 AM to 8 PM)
-            is_open = opening <= current_time <= closing
-
-        establishment.current_status = 'Open' if is_open else 'Closed'
-    else:
-        establishment.current_status = 'Closed'
 
     # Get all reviews
     all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')

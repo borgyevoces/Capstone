@@ -888,11 +888,11 @@
                     <p>
     <i class="fas fa-clock"></i>
     <strong>Hours:</strong><br>
-    {% if establishment.calculated_status == 'Open' %}
-    <span class="status-badge status-open">Open Now</span>
-{% else %}
-    <span class="status-badge status-closed">Closed Now</span>
-{% endif %}
+    {% if establishment.status == 'Open' %}
+        <span class="status-badge status-open">Open Now</span>
+    {% else %}
+        <span class="status-badge status-closed">Closed Now</span>
+    {% endif %}
 
     {% if establishment.opening_time and establishment.closing_time %}
         <br>
