@@ -415,7 +415,7 @@ def password_reset_complete_redirect(request):
 def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
-    ✅ FIXED: Real-time status calculation for each establishment
+    ✅ FIXED: Uses temporary attribute instead of trying to set @property
     """
     from datetime import datetime
 
@@ -450,7 +450,7 @@ def kabsueats_main_view(request):
     if alpha_filter:
         food_establishments_queryset = food_establishments_queryset.filter(name__istartswith=alpha_filter)
 
-    # ✅ CRITICAL FIX: Calculate real-time status for each establishment
+    # ✅ Calculate real-time status using temporary attribute
     current_time = datetime.now().time()
 
     ref_lat = 14.4607
@@ -467,7 +467,7 @@ def kabsueats_main_view(request):
             est.distance_meters = 0
             est.distance = 0
 
-        # ✅ Calculate real-time Open/Closed status
+        # ✅ FIXED: Store calculated status in temporary attribute (not @property)
         if est.opening_time and est.closing_time:
             opening = est.opening_time
             closing = est.closing_time
@@ -479,9 +479,10 @@ def kabsueats_main_view(request):
                 # Normal hours (e.g., 8 AM to 8 PM)
                 is_open = opening <= current_time <= closing
 
-            est.status = 'Open' if is_open else 'Closed'
+            # Use temporary attribute instead of trying to set @property
+            est._calculated_status = 'Open' if is_open else 'Closed'
         else:
-            est.status = 'Closed'  # Default if times not set
+            est._calculated_status = 'Closed'  # Default if times not set
 
         # Calculate ratings
         rating_data = est.reviews.aggregate(Avg('rating'), Count('id'))
@@ -490,11 +491,11 @@ def kabsueats_main_view(request):
 
         food_establishments_with_data.append(est)
 
-    # ✅ Apply status filter AFTER calculating real-time status
+    # ✅ Apply status filter using temporary attribute
     if status_filter:
         food_establishments_with_data = [
             est for est in food_establishments_with_data
-            if est.status == status_filter
+            if est._calculated_status == status_filter
         ]
 
     # Sort by distance
@@ -708,7 +709,7 @@ def delete_review(request, establishment_id, review_id):
 def food_establishment_details(request, establishment_id):
     """
     Show establishment details with real-time open/closed status.
-    ✅ FIXED: Calculates status based on current time
+    ✅ FIXED: Uses temporary attribute instead of trying to set @property
     """
     from datetime import datetime
 
@@ -721,7 +722,7 @@ def food_establishment_details(request, establishment_id):
         id=establishment_id
     )
 
-    # ✅ Calculate real-time Open/Closed status
+    # ✅ FIXED: Calculate real-time status using temporary attribute
     current_time = datetime.now().time()
 
     if establishment.opening_time and establishment.closing_time:
@@ -735,9 +736,10 @@ def food_establishment_details(request, establishment_id):
             # Normal hours (e.g., 8 AM to 8 PM)
             is_open = opening <= current_time <= closing
 
-        establishment.status = 'Open' if is_open else 'Closed'
+        # Use temporary attribute instead of @property
+        establishment._calculated_status = 'Open' if is_open else 'Closed'
     else:
-        establishment.status = 'Closed'
+        establishment._calculated_status = 'Closed'
 
     # Get all reviews
     all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
