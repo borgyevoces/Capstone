@@ -71,6 +71,25 @@ import base64
 import json
 import requests
 
+from django.core.cache import cache
+from datetime import datetime, time as dt_time
+
+
+# ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
+def get_current_status(opening_time, closing_time):
+    """Calculate real-time status"""
+    if not opening_time or not closing_time:
+        return "Closed"
+
+    now = datetime.now().time()
+
+    if opening_time <= closing_time:
+        # Normal hours (e.g., 8 AM - 10 PM)
+        return "Open" if opening_time <= now <= closing_time else "Closed"
+    else:
+        # Overnight hours (e.g., 10 PM - 2 AM)
+        return "Open" if now >= opening_time or now <= closing_time else "Closed"
+
 
 def about_page(request):
     return render(request, 'webapplication/about.html')
@@ -415,7 +434,7 @@ def password_reset_complete_redirect(request):
 def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
-    ✅ FIXED: Uses public attribute 'current_status' instead of underscore
+    ✅ FIXED: Real-time status calculation on every page load
     """
     from datetime import datetime
 
@@ -450,11 +469,12 @@ def kabsueats_main_view(request):
     if alpha_filter:
         food_establishments_queryset = food_establishments_queryset.filter(name__istartswith=alpha_filter)
 
-    # ✅ Calculate real-time status
-    current_time = datetime.now().time()
-
+    # ✅ Calculate real-time status and other data
     ref_lat = 14.4607
     ref_lon = 120.9822
+
+    # Get current time for status calculation
+    current_time = datetime.now().time()
 
     food_establishments_with_data = []
     for est in food_establishments_queryset:
@@ -472,13 +492,30 @@ def kabsueats_main_view(request):
         est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
         est.review_count = rating_data['id__count']
 
+        # ✅ CRITICAL FIX: Calculate fresh status on every request
+        if est.opening_time and est.closing_time:
+            if est.opening_time <= est.closing_time:
+                # Normal hours (e.g., 8 AM - 10 PM same day)
+                if est.opening_time <= current_time <= est.closing_time:
+                    est.calculated_status = "Open"
+                else:
+                    est.calculated_status = "Closed"
+            else:
+                # Overnight hours (e.g., 10 PM - 2 AM next day)
+                if current_time >= est.opening_time or current_time <= est.closing_time:
+                    est.calculated_status = "Open"
+                else:
+                    est.calculated_status = "Closed"
+        else:
+            est.calculated_status = "Closed"
+
         food_establishments_with_data.append(est)
 
-    # ✅ Apply status filter
+    # ✅ Apply status filter using calculated_status
     if status_filter:
         food_establishments_with_data = [
             est for est in food_establishments_with_data
-            if est.status == status_filter  # ✅ Use 'status' property instead
+            if est.calculated_status == status_filter
         ]
 
     # Sort by distance
@@ -699,7 +736,8 @@ def food_establishment_details(request, establishment_id):
         id=establishment_id
     )
 
-    # Get all reviews
+    _ = establishment.status
+
     all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
 
     user_review = None

@@ -888,23 +888,11 @@
                     <p>
     <i class="fas fa-clock"></i>
     <strong>Hours:</strong><br>
-    <!-- ✅ NEW REAL-TIME STATUS DISPLAY -->
-<div class="status-display-container">
-    <span class="status-badge status-{{ establishment.status|lower }}">
-        {% if establishment.status == 'Open' %}
-            ✅ Open Now
-        {% else %}
-            🔒 Closed Now
-        {% endif %}
-    </span>
-
-    {% if establishment.opening_time and establishment.closing_time %}
-        <div style="margin-top: 8px; font-size: 13px; color: #666;">
-            <i class="fas fa-clock"></i>
-            {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
-        </div>
+    {% if establishment.status == 'Open' %}
+        <span class="status-badge status-open">Open Now</span>
+    {% else %}
+        <span class="status-badge status-closed">Closed Now</span>
     {% endif %}
-</div>
 
     {% if establishment.opening_time and establishment.closing_time %}
         <br>
