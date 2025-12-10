@@ -88,6 +88,7 @@ class FoodEstablishment(models.Model):
         return self.name
 
     # ✅ FIXED: Automatic status calculation based on time
+    # ✅ KEEP THIS - Already correct in models.py (lines 58-72)
     @property
     def status(self):
         """
@@ -95,16 +96,14 @@ class FoodEstablishment(models.Model):
         Returns 'Open' or 'Closed' string.
         """
         if not self.opening_time or not self.closing_time:
-            return "Closed"  # Default to closed if times not set
+            return "Closed"
 
         from datetime import datetime
         now = datetime.now().time()
 
         if self.opening_time <= self.closing_time:
-            # Normal case: opens and closes on same day (e.g., 8 AM - 10 PM)
             return "Open" if self.opening_time <= now <= self.closing_time else "Closed"
         else:
-            # Overnight case: closes after midnight (e.g., 10 PM - 2 AM)
             return "Open" if now >= self.opening_time or now <= self.closing_time else "Closed"
 
 class OTP(models.Model):

@@ -1146,10 +1146,13 @@
                     <div class="store-info">
                         <h1 id="establishmentName">{{ establishment.name }}</h1>
                         <p id="establishmentAddress">{{ establishment.address }}</p>
-                        <span class="status-badge {% if establishment.status == 'Open' %}open{% else %}closed{% endif %}"
-                              id="establishmentStatus">
-                                {{ establishment.status }}
-                            </span>
+                        <span class="status-badge status-{{ establishment.status|lower }}" id="establishmentStatus">
+    {% if establishment.status == 'Open' %}
+        ✅ Open Now
+    {% else %}
+        🔒 Closed Now
+    {% endif %}
+</span>
                     </div>
                 </div>
             </header>
