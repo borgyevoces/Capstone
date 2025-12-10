@@ -204,7 +204,7 @@
                                     data-name="{{ establishment.name|lower }}"
                                     data-lat="{{ establishment.latitude }}"
                                     data-lng="{{ establishment.longitude }}"
-                                    data-status="{{ establishment._calculated_status }}"
+                                    data-status="{{ establishment.calculated_status }}"
                                     data-category="{{ establishment.category.name|default_if_none:''|lower }}"
                                     data-distance="{{ establishment.distance|floatformat:2 }}"
                                     data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}">
@@ -223,7 +223,7 @@
                                         </div>
                                     {% endif %}
 
-                                    {% if establishment._calculated_status == 'Open' %}
+                                    {% if establishment.calculated_status == 'Open' %}
     <span class="status-indicator open">
         <span class="dot"></span> Open
     </span>
