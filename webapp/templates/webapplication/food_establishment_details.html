@@ -886,25 +886,24 @@
                     </p>
 
                     <p>
-                        <i class="fas fa-clock"></i>
-                        <strong>Hours:</strong><br>
-                        {% if establishment.status == 'Open' %}
-                        <span class="status-badge status-open">✅ Open</span>
-                        {% else %}
-                        <span class="status-badge status-closed">🔒 Closed</span>
-                        {% endif %}
+    <i class="fas fa-clock"></i>
+    <strong>Hours:</strong><br>
+    {% if establishment.status == 'Open' %}
+        <span class="status-badge status-open">✅ Open Now</span>
+    {% else %}
+        <span class="status-badge status-closed">🔒 Closed Now</span>
+    {% endif %}
 
-                        {% if establishment.opening_time and establishment.closing_time %}
-                        <br>
-                        <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
-                            🕕 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A"
-                            }}
-                        </small>
-                        {% else %}
-                        <br>
-                        <small style="color: #999; font-size: 13px;">Hours not set</small>
-                        {% endif %}
-                    </p>
+    {% if establishment.opening_time and establishment.closing_time %}
+        <br>
+        <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
+            🕕 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+        </small>
+    {% else %}
+        <br>
+        <small style="color: #999; font-size: 13px;">Hours not set</small>
+    {% endif %}
+</p>
 
                     <p>
                         <i class="fas fa-money-bill-wave"></i>

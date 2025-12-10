@@ -223,15 +223,15 @@
                                         </div>
                                     {% endif %}
 
-                                    {% if establishment.status == "Open" %}
-                                        <span class="status-indicator open">
-                                            <span class="dot"></span> Open
-                                        </span>
-                                    {% else %}
-                                        <span class="status-indicator closed">
-                                            <span class="dot"></span> Closed
-                                        </span>
-                                    {% endif %}
+                                    {% if establishment.status == 'Open' %}
+    <span class="status-indicator open">
+        <span class="dot"></span> Open
+    </span>
+{% else %}
+    <span class="status-indicator closed">
+        <span class="dot"></span> Closed
+    </span>
+{% endif %}
 
                                     {% if establishment.category %}
                                         <div class="category-display">{{ establishment.category.name }}</div>

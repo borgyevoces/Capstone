@@ -415,19 +415,22 @@ def password_reset_complete_redirect(request):
 def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
-    This view handles category, status, search, and alphabetical filtering.
+    ✅ FIXED: Real-time status calculation for each establishment
     """
+    from datetime import datetime
+
     category_name = request.GET.get('category', '')
     search_query = request.GET.get('q', '')
     status_filter = request.GET.get('status', '')
     alpha_filter = request.GET.get('alpha', '')
 
-    # Fetch all categories for the new dropdown filter
+    # Fetch all categories for the dropdown filter
     all_categories = Category.objects.all().order_by('name')
 
     food_establishments_queryset = FoodEstablishment.objects.all()
     current_category = None
 
+    # Category filter
     if category_name:
         try:
             current_category = Category.objects.get(name__iexact=category_name)
@@ -436,51 +439,85 @@ def kabsueats_main_view(request):
             current_category = None
             messages.error(request, f"Category '{category_name}' not found.")
 
+    # Search filter
     if search_query:
         food_establishments_queryset = food_establishments_queryset.filter(
             Q(name__icontains=search_query) |
             Q(amenities__name__icontains=search_query)
         ).distinct()
 
-    if status_filter == 'Open':
-        food_establishments_queryset = food_establishments_queryset.filter(status='Open')
-    elif status_filter == 'Closed':
-        food_establishments_queryset = food_establishments_queryset.filter(status='Closed')
-
+    # Alphabetical filter
     if alpha_filter:
         food_establishments_queryset = food_establishments_queryset.filter(name__istartswith=alpha_filter)
+
+    # ✅ CRITICAL FIX: Calculate real-time status for each establishment
+    current_time = datetime.now().time()
 
     ref_lat = 14.4607
     ref_lon = 120.9822
 
     food_establishments_with_data = []
     for est in food_establishments_queryset:
+        # Calculate distance
         if est.latitude is not None and est.longitude is not None:
             distance_km = haversine(ref_lat, ref_lon, est.latitude, est.longitude)
-            est.distance_meters = distance_km * 70
+            est.distance_meters = distance_km * 1000
             est.distance = distance_km
         else:
             est.distance_meters = 0
             est.distance = 0
 
+        # ✅ Calculate real-time Open/Closed status
+        if est.opening_time and est.closing_time:
+            opening = est.opening_time
+            closing = est.closing_time
+
+            if closing < opening:
+                # Overnight hours (e.g., 10 PM to 2 AM)
+                is_open = current_time >= opening or current_time <= closing
+            else:
+                # Normal hours (e.g., 8 AM to 8 PM)
+                is_open = opening <= current_time <= closing
+
+            est.status = 'Open' if is_open else 'Closed'
+        else:
+            est.status = 'Closed'  # Default if times not set
+
+        # Calculate ratings
         rating_data = est.reviews.aggregate(Avg('rating'), Count('id'))
         est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
         est.review_count = rating_data['id__count']
 
         food_establishments_with_data.append(est)
 
+    # ✅ Apply status filter AFTER calculating real-time status
+    if status_filter:
+        food_establishments_with_data = [
+            est for est in food_establishments_with_data
+            if est.status == status_filter
+        ]
+
+    # Sort by distance
     food_establishments_sorted = sorted(food_establishments_with_data, key=lambda x: x.distance)
+
+    # Calculate cart count for authenticated users
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='PENDING'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
 
     context = {
         'food_establishments': food_establishments_sorted,
         'category': {'name': current_category.name} if current_category else None,
-        'all_categories': all_categories,  # Add this line
+        'all_categories': all_categories,
         'status_filter': status_filter,
         'alpha_filter': alpha_filter,
         'q': search_query,
+        'cart_count': cart_count,
     }
     return render(request, 'webapplication/kabsueats.html', context)
-
 
 @login_required(login_url='user_login_register')
 def search_food_establishments(request):
@@ -670,12 +707,12 @@ def delete_review(request, establishment_id, review_id):
 
 def food_establishment_details(request, establishment_id):
     """
-    Show establishment details, menu items, and reviews with proper time-based status.
-    ✅ FIXED: Now properly displays real data instead of template syntax
+    Show establishment details with real-time open/closed status.
+    ✅ FIXED: Calculates status based on current time
     """
     from datetime import datetime
 
-    # 1. Get establishment with ratings and related data
+    # Get establishment with ratings
     establishment = get_object_or_404(
         FoodEstablishment.objects.annotate(
             average_rating=Avg('reviews__rating'),
@@ -684,25 +721,38 @@ def food_establishment_details(request, establishment_id):
         id=establishment_id
     )
 
-    # 2. Status is calculated automatically via @property in model
-    # No need to manually set it here - it's done in models.py
+    # ✅ Calculate real-time Open/Closed status
+    current_time = datetime.now().time()
 
-    # 3. Get all reviews
+    if establishment.opening_time and establishment.closing_time:
+        opening = establishment.opening_time
+        closing = establishment.closing_time
+
+        if closing < opening:
+            # Overnight hours (e.g., 10 PM to 2 AM)
+            is_open = current_time >= opening or current_time <= closing
+        else:
+            # Normal hours (e.g., 8 AM to 8 PM)
+            is_open = opening <= current_time <= closing
+
+        establishment.status = 'Open' if is_open else 'Closed'
+    else:
+        establishment.status = 'Closed'
+
+    # Get all reviews
     all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
 
     user_review = None
     other_reviews = all_reviews
 
-    # 4. Separate user's review
     if request.user.is_authenticated:
         user_review = all_reviews.filter(user=request.user).first()
         if user_review:
             other_reviews = all_reviews.exclude(id=user_review.id)
 
-    # Review form setup
     review_form = ReviewForm(instance=user_review) if user_review else ReviewForm()
 
-    # 5. Menu Item Filters
+    # Menu Item Filters
     menu_items = MenuItem.objects.filter(food_establishment=establishment)
 
     search_query = request.GET.get('search')
@@ -732,7 +782,6 @@ def food_establishment_details(request, establishment_id):
     else:
         menu_items = menu_items.order_by('-is_top_seller', 'name')
 
-    # 6. Final Context
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
