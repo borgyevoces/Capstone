@@ -128,11 +128,8 @@
        left: 760px;
     }
     .message_owner {
-        position: absolute;
-        top: 398px;
-        right: 35px;
-        font-size: 20px;
-    }
+    display: none; /* Hidden - use floating chat button instead */
+}
 
     /* ================== NEW TWO COLUMN LAYOUT ================== */
     .details-container {
