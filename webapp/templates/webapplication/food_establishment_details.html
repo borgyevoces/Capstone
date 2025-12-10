@@ -889,15 +889,15 @@
     <i class="fas fa-clock"></i>
     <strong>Hours:</strong><br>
     {% if establishment.calculated_status == 'Open' %}
-    <span class="status-badge status-open">✅ Open Now</span>
+    <span class="status-badge status-open">Open Now</span>
 {% else %}
-    <span class="status-badge status-closed">🔒 Closed Now</span>
+    <span class="status-badge status-closed">Closed Now</span>
 {% endif %}
 
     {% if establishment.opening_time and establishment.closing_time %}
         <br>
         <small style="color: #666; font-size: 13px; margin-top: 5px; display: block;">
-            🕕 {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+            Opening time {{ establishment.opening_time|time:"g:i A" }} / Closed time {{ establishment.closing_time|time:"g:i A" }}
         </small>
     {% else %}
         <br>
