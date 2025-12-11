@@ -1,0 +1,27 @@
+# webapp/management/commands/create_superuser.py
+import os
+from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class Command(BaseCommand):
+    help = 'Creates a superuser if it does not exist'
+
+    def handle(self, *args, **kwargs):
+        username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
+        email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
+        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+
+        if username and password:
+            if not User.objects.filter(username=username).exists():
+                User.objects.create_superuser(
+                    username=username,
+                    email=email or "",
+                    password=password
+                )
+                self.stdout.write(self.style.SUCCESS('✅ Superuser created successfully!'))
+            else:
+                self.stdout.write(self.style.WARNING('⚠️ Superuser already exists.'))
+        else:
+            self.stdout.write(self.style.ERROR('❌ Superuser environment variables not set.'))
