@@ -21,7 +21,7 @@ if not SECRET_KEY:
     if DEBUG:
         SECRET_KEY = 'django-insecure-dev-placeholder'
         import warnings
-        warnings.warn('SECRET_KEY not set – using insecure dev fallback.', RuntimeWarning)
+        warnings.warn('SECRET_KEY not set — using insecure dev fallback.', RuntimeWarning)
     else:
         raise RuntimeError('SECRET_KEY environment variable is not set.')
 
@@ -266,6 +266,7 @@ EMAIL_TIMEOUT = 10
 # ============================================================================
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 SENDER_EMAIL = os.getenv('SENDER_EMAIL')
+DEFAULT_FROM_EMAIL = SENDER_EMAIL or 'noreply@kabsueats.com'
 
 # ============================================================================
 # PAYMONGO
@@ -275,6 +276,7 @@ PAYMONGO_PUBLIC_KEY = os.getenv('PAYMONGO_PUBLIC_KEY', '')
 PAYMONGO_API_URL = os.getenv('PAYMONGO_API_URL', 'https://api.paymongo.com/v1')
 PAYMONGO_GCASH_SOURCE_URL = os.getenv('PAYMONGO_GCASH_SOURCE_URL', 'https://api.paymongo.com/v1/sources')
 PAYMONGO_GCASH_CHECKOUT_URL = os.getenv('PAYMONGO_GCASH_CHECKOUT_URL', 'https://api.paymongo.com/v1/checkout_sessions')
+PAYMONGO_MINIMUM_AMOUNT_CENTAVOS = int(os.getenv('PAYMONGO_MINIMUM_AMOUNT_CENTAVOS', '10000'))
 
 # ============================================================================
 # CVSU COORDINATES
@@ -294,26 +296,6 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
 
 # ============================================================================
-# AUTO-CREATE SUPERUSER
+# ⚠️ REMOVED: Database queries during settings load
+# Use management command instead: python manage.py create_superuser
 # ============================================================================
-if os.environ.get("AUTO_CREATE_SUPERUSER") == "1":
-    import django
-    django.setup()
-    from django.contrib.auth.models import User
-
-    username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
-    email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
-    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
-
-    if username and password:
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(
-                username=username,
-                email=email or "",
-                password=password
-            )
-            print("Superuser created successfully!")
-        else:
-            print("Superuser already exists.")
-    else:
-        print("Superuser environment variables not set.")
