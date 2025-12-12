@@ -55,8 +55,8 @@ if DEBUG:
             ALLOWED_HOSTS.append(local_host)
 
 # Always include Render domain
-if 'kabsueats.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('kabsueats.onrender.com')
+if 'capstone-kbqh.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('capstone-kbqh.onrender.com')
 
 # ============================================================================
 # INSTALLED APPS
@@ -227,7 +227,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ============================================================================
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
-    'https://kabsueats.onrender.com',
+    'https://capstone-kbqh.onrender.com',
 ]
 
 # ============================================================================
