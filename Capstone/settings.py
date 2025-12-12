@@ -23,7 +23,7 @@ if not SECRET_KEY:
         import warnings
         warnings.warn('SECRET_KEY not set — using insecure dev fallback.', RuntimeWarning)
     else:
-        raise RuntimeError('SECRET_KEY environment variable is not set.')
+        raise RuntimeError('SECRET_KEY environment variable ifs not set.')
 
 # ============================================================================
 # SITE URL AND ALLOWED HOSTS
@@ -31,9 +31,8 @@ if not SECRET_KEY:
 SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 
 # Normalize SITE_URL
-if not SITE_URL.startswith(('http://', 'https://')):
-    SITE_URL = 'http://' + SITE_URL
-SITE_URL = SITE_URL.rstrip('/')
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
 
 # Compute ALLOWED_HOSTS
 raw_allowed = os.getenv('ALLOWED_HOSTS', '').strip()
