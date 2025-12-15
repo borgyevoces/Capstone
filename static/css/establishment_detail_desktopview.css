@@ -130,7 +130,10 @@
     .message_owner {
     display: none; /* Hidden - use floating chat button instead */
 }
-
+/* ✅ HIDE floating chat button in desktop view */
+.floating-chat-button {
+    display: none !important;
+}
     /* ================== NEW TWO COLUMN LAYOUT ================== */
     .details-container {
         display: block;
@@ -161,7 +164,12 @@
         border-radius: 10px;
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     }
-
+/* ✅ MENU SECTION: Match background with page */
+.menu-section.section-card {
+    background-color: transparent;
+    box-shadow: none;
+    padding: 30px 0;
+}
     .section-card h2 {
         font-size: 1.6em;
         font-weight: 700;
