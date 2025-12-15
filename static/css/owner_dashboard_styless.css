@@ -851,12 +851,16 @@ html, body {
     cursor: pointer;
     user-select: none;
 }
+
 /* Address field styling when readonly */
 #id_address[readonly] {
     background-color: #f8f9fa !important;
     color: #495057;
     border: 1px solid #ced4da;
     font-style: italic;
+    font-size: 14px;
+    padding: 10px 12px;
+    line-height: 1.5;
 }
 
 /* Animation when address updates */
@@ -868,6 +872,7 @@ html, body {
 #id_address.updated {
     animation: addressUpdate 1s ease;
 }
+
 .checkbox-item input[type="checkbox"]:checked {
     accent-color: var(--primary);
 }
@@ -882,6 +887,60 @@ html, body {
     margin: -4px -8px;
     border-radius: 4px;
     transition: all 0.2s;
+}
+
+/* Location status in Update Store Details Modal */
+#locationStatus {
+    display: block;
+    margin-top: 8px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* ==========================================
+   MAP MODAL - RESPONSIVE IMPROVEMENTS
+   ========================================== */
+
+#mapModal .modal-content {
+    max-width: 900px;
+    padding: 16px;
+}
+
+/* Current Location Display - Responsive */
+.location-display-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+
+/* Address Display - Responsive */
+.address-display-card {
+    background: #e8f5e9;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+/* Map Container - Responsive */
+#map {
+    width: 100%;
+    height: 450px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 3px solid #667eea;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Action Buttons - Responsive */
+.map-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* ==========================================
@@ -911,39 +970,6 @@ html, body {
         width: 100%;
         position: static;
         margin-bottom: 24px;
-    }
-
-    .alert {
-        right: 16px;
-        left: 16px;
-        min-width: auto;
-        max-width: none;
-        top: 80px;
-    }
-
-    .store-info h1 {
-        font-size: 24px;
-    }
-
-    .cover-photo {
-        height: 140px;
-    }
-
-    .modal-content {
-        padding: 24px;
-        max-width: 95%;
-    }
-}
-
-@media (max-width: 480px) {
-    .navbar-container {
-        flex-direction: column;
-        gap: 12px;
-        height: 100px;
-    }
-
-    .navbar-logo {
-        font-size: 28px;
     }
 
     .alert {
@@ -987,4 +1013,141 @@ html, body {
         width: 100px;
         height: 100px;
     }
+
+    /* Map Container - Extra Small Screens */
+    #map {
+        height: 280px;
+    }
+}right: 16px;
+        left: 16px;
+        min-width: auto;
+        max-width: none;
+        top: 80px;
+    }
+
+    .store-info h1 {
+        font-size: 24px;
+    }
+
+    .cover-photo {
+        height: 140px;
+    }
+
+    .modal-content {
+        padding: 24px;
+        max-width: 95%;
+    }
+
+    /* Map Modal Responsive */
+    #mapModal .modal-content {
+        max-width: 95%;
+        padding: 16px;
+        margin: 10px;
+    }
+
+    #mapModal h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    #mapModal p {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    /* Location Display Card */
+    .location-display-card {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .location-display-card .location-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
+    }
+
+    .location-display-card .location-label {
+        font-size: 11px !important;
+    }
+
+    .location-display-card .location-coords {
+        font-size: 14px !important;
+    }
+
+    .location-display-card .location-status {
+        font-size: 11px !important;
+    }
+
+    /* Address Display Card */
+    .address-display-card {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .address-display-card .address-icon {
+        font-size: 20px !important;
+    }
+
+    .address-display-card .address-title {
+        font-size: 12px !important;
+    }
+
+    .address-display-card .address-text {
+        font-size: 13px !important;
+    }
+
+    /* Map Container */
+    #map {
+        height: 350px;
+        border-radius: 8px;
+        border-width: 2px;
+        margin-bottom: 10px;
+    }
+
+    /* Map Actions */
+    .map-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .map-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .map-actions .map-info-text {
+        order: -1;
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        padding: 8px;
+        background: #f5f5f5;
+        border-radius: 6px;
+    }
+
+    /* Address Field */
+    #id_address[readonly] {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    /* Location Status */
+    #locationStatus {
+        font-size: 11px;
+        margin-top: 6px;
+    }
 }
+
+@media (max-width: 480px) {
+    .navbar-container {
+        flex-direction: column;
+        gap: 12px;
+        height: 100px;
+    }
+
+    .navbar-logo {
+        font-size: 28px;
+    }
+
+    .alert {

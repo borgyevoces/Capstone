@@ -264,7 +264,7 @@
                                         {% if establishment.amenities.all %}
                                             <div class="amenities-inline">
                                                 <small>
-                                                    <strong>Amenity Offer:</strong>
+                                                    <small>Amenity Offer:</small>
                                                     {% for amenity in establishment.amenities.all %}
                                                         {{ amenity.name }}{% if not forloop.last %}, {% endif %}
                                                     {% endfor %}
