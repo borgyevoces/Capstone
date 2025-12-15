@@ -888,7 +888,7 @@
                     <p>
                     <i class="fas fa-clock"></i>
                     <strong>Hours:</strong><br>
-                    <span class="status-badge status-{{ establishment.calculated_status|lower }}"
+                    <strong class="status-badge status-{{ establishment.calculated_status|lower }}"
                           id="detailStatusBadge"
                           data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
                           data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
@@ -897,14 +897,14 @@
                         {% else %}
                             Closed Now
                         {% endif %}
-                    </span>
+                    </strong>
                     <br>
                     {% if establishment.opening_time and establishment.closing_time %}
-                        <span style="color: #666; font-size: 14px;">
+                        <span>
                             Opening time {{ establishment.opening_time|time:"g:i A" }} / Closing time {{ establishment.closing_time|time:"g:i A" }}
                         </span>
                     {% else %}
-                        <span style="color: #999; font-size: 13px;">Hours not set</span>
+                        <span>Hours not set</span>
                     {% endif %}
                 </p>
 
