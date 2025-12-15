@@ -31,20 +31,26 @@
         }
 
         .cart-badge {
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            background-color: #f87171; /* Tailwind red-400 equivalent */
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            line-height: 1;
-            min-width: 18px;
-            text-align: center;
-            transform: translate(50%, -50%); /* Center on top-right */
-        }
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: #f87171;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+    min-width: 18px;
+    text-align: center;
+    transform: translate(50%, -50%);
+    display: none; /* ✅ NEW: Hidden by default */
+}
+
+/* ✅ NEW: Class to show badge */
+.cart-badge.show {
+    display: block;
+}
     </style>
 </head>
 <body>
@@ -258,6 +264,7 @@
                                         {% if establishment.amenities.all %}
                                             <div class="amenities-inline">
                                                 <small>
+                                                    <strong>Amenity Offer:</strong>
                                                     {% for amenity in establishment.amenities.all %}
                                                         {{ amenity.name }}{% if not forloop.last %}, {% endif %}
                                                     {% endfor %}

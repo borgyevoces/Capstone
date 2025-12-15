@@ -973,8 +973,8 @@
 
     .cart-badge {
         position: absolute;
-        top: -5px;
-        right: -5px;
+        top: 0px;          /* ✅ CHANGED: from -5px */
+        right: 0px;
         background-color: #f87171;
         color: white;
         border-radius: 50%;
@@ -984,6 +984,7 @@
         line-height: 1;
         min-width: 20px;
         text-align: center;
+        transform: translate(50%, -50%); /* ✅ ADDED */
     }
 
     .cart-badge.updated-flash {
