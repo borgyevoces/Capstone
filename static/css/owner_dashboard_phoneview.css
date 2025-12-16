@@ -496,10 +496,12 @@
         box-shadow: none !important;
         border: none !important;
     }
- /* Remove backgrounds from all card children */
+
+    /* Remove backgrounds from all card children */
     .card * {
         background: transparent !important;
     }
+
     .card-title,
     .card-title-center {
         font-size: 17px;
@@ -629,17 +631,19 @@
     }
 
     /* ==========================================
-       MENU SECTION - 2 COLUMNS
+       MENU SECTION - 2 COLUMNS FOR PHONE VIEW (UPDATED)
        ========================================== */
 
     .menu-section {
         margin-bottom: 24px;
+        padding: 16px 0;
     }
 
     .menu-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr); /* ✅ 2 COLUMNS */
         gap: 12px;
+        padding: 0;
     }
 
     .menu-card {
@@ -649,6 +653,8 @@
         overflow: hidden;
         transition: all var(--transition);
         box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
     }
 
     .menu-card:active {
@@ -656,9 +662,10 @@
         box-shadow: var(--shadow-md);
     }
 
+    /* Image */
     .menu-image {
         width: 100%;
-        height: 140px; /* Reduced for 2-column layout */
+        height: 140px;
         overflow: hidden;
         position: relative;
         background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
@@ -671,6 +678,7 @@
         display: block;
     }
 
+    /* Badges */
     .badges-container {
         position: absolute;
         top: 6px;
@@ -707,8 +715,12 @@
         color: white;
     }
 
+    /* Menu Info */
     .menu-info {
         padding: 12px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
     }
 
     .menu-name {
@@ -717,6 +729,10 @@
         color: var(--text-dark);
         margin-bottom: 6px;
         line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .menu-desc {
@@ -728,6 +744,7 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        flex-grow: 1;
     }
 
     .menu-price {
@@ -737,10 +754,12 @@
         margin-bottom: 10px;
     }
 
+    /* Action Buttons */
     .menu-actions {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 6px;
+        margin-top: auto;
     }
 
     .action-btn {
@@ -784,23 +803,7 @@
         font-size: 12px;
     }
 
-    /* Hide button text on very small screens, show icons only */
-    @media (max-width: 380px) {
-        .action-btn {
-            font-size: 0;
-            padding: 10px 6px;
-        }
-
-        .action-btn i {
-            font-size: 14px;
-            margin: 0;
-        }
-    }
-
-    /* ==========================================
-       NO ITEMS
-       ========================================== */
-
+    /* No Items State */
     .no-items {
         text-align: center;
         padding: 50px 20px;
@@ -1082,10 +1085,51 @@
     }
 
     /* ==========================================
+       VERY SMALL SCREENS (< 380px)
+       Hide button text, show icons only
+       ========================================== */
+    @media (max-width: 380px) {
+        .menu-grid {
+            gap: 10px;
+        }
+
+        .menu-image {
+            height: 120px;
+        }
+
+        .menu-info {
+            padding: 10px;
+        }
+
+        .menu-name {
+            font-size: 13px;
+        }
+
+        .menu-desc {
+            font-size: 10px;
+        }
+
+        .menu-price {
+            font-size: 15px;
+        }
+
+        .action-btn {
+            font-size: 0; /* Hide text */
+            padding: 10px 6px;
+        }
+
+        .action-btn i {
+            font-size: 14px;
+            margin: 0;
+        }
+    }
+
+    /* ==========================================
        TABLET (481px - 768px)
        ========================================== */
 
     @media (min-width: 481px) and (max-width: 768px) {
+        /* Header & Profile Styles */
         .navbar-logo {
             font-size: 26px;
         }
@@ -1126,8 +1170,18 @@
             font-size: 18px;
         }
 
+        /* Modal Styles */
+        .modal-content {
+            max-width: 90%;
+            padding: 28px;
+        }
+
+        .modal h2 {
+            font-size: 22px;
+        }
+
+        /* Menu Section Styles */
         .menu-grid {
-            grid-template-columns: repeat(2, 1fr); /* Keep 2 columns on tablet */
             gap: 16px;
         }
 
@@ -1154,15 +1208,6 @@
         .action-btn {
             font-size: 11px;
             padding: 11px 8px;
-        }
-
-        .modal-content {
-            max-width: 90%;
-            padding: 28px;
-        }
-
-        .modal h2 {
-            font-size: 22px;
         }
     }
 }
