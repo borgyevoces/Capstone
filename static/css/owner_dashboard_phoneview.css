@@ -1,13 +1,12 @@
 /* ==========================================
-   MOBILE STYLES - COMPLETE RESPONSIVE FIX
-   Phone View (320px - 768px)
+   OWNER DASHBOARD - MOBILE VIEW (FIXED)
    ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
 
 /* ==========================================
-   BASE MOBILE STYLES
+   1. MAIN MOBILE STYLES (Max-Width: 768px)
    ========================================== */
 
 @media (max-width: 768px) {
@@ -47,10 +46,7 @@
         font-size: 16px;
     }
 
-    /* ==========================================
-       MOBILE NAVBAR - FIXED
-       ========================================== */
-
+    /* --- NAVBAR --- */
     .navbar {
         background: var(--bg);
         border-bottom: 1px solid var(--border);
@@ -81,7 +77,6 @@
         white-space: nowrap;
     }
 
-    /* Navbar right side container - BETTER VISIBILITY */
     .navbar-container > div:last-child {
         display: flex;
         align-items: center;
@@ -89,7 +84,6 @@
         flex-shrink: 0;
     }
 
-    /* Notification and Chat buttons */
     .notification-toggle-btn,
     .chat-toggle-btn {
         position: relative;
@@ -108,12 +102,6 @@
         height: 40px;
     }
 
-    .notification-toggle-btn:active,
-    .chat-toggle-btn:active {
-        background: var(--bg-light);
-        transform: scale(0.95);
-    }
-
     .notification-badge,
     .chat-badge {
         position: absolute;
@@ -128,11 +116,6 @@
         min-width: 16px;
         text-align: center;
         line-height: 1;
-    }
-
-    .navbar-dropdown {
-        position: relative;
-        flex-shrink: 0;
     }
 
     .navbar-btn {
@@ -161,16 +144,6 @@
         white-space: nowrap;
         max-width: 100px;
         display: inline-block;
-    }
-
-    .navbar-btn i.fa-chevron-down {
-        flex-shrink: 0;
-        font-size: 12px;
-    }
-
-    .navbar-btn:active {
-        background: var(--border);
-        transform: scale(0.98);
     }
 
     .navbar-menu {
@@ -208,146 +181,7 @@
         border-bottom: none;
     }
 
-    .navbar-menu a:active {
-        background: var(--bg-light);
-        color: var(--primary);
-    }
-
-    /* ==========================================
-       MOBILE ALERTS
-       ========================================== */
-
-    .alert {
-        position: fixed;
-        top: 70px;
-        right: 8px;
-        left: 8px;
-        padding: 12px 14px;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 13px;
-        box-shadow: var(--shadow-md);
-        animation: slideIn 400ms ease;
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border-left: 4px solid;
-        background: white;
-        max-width: 100%;
-    }
-
-    @keyframes slideIn {
-        0% {
-            transform: translateY(-100px);
-            opacity: 0;
-        }
-        100% {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    .alert.success {
-        color: var(--success);
-        border-left-color: var(--success);
-    }
-
-    .alert.error {
-        color: var(--error);
-        border-left-color: var(--error);
-    }
-
-    .alert.info {
-        color: var(--secondary);
-        border-left-color: var(--secondary);
-    }
-
-    .alert i {
-        font-size: 18px;
-        flex-shrink: 0;
-    }
-
-    .alert-message {
-        flex: 1;
-        color: var(--text-dark);
-        word-break: break-word;
-    }
-
-    .alert-close {
-        background: transparent;
-        border: none;
-        color: var(--text-muted);
-        cursor: pointer;
-        font-size: 16px;
-        padding: 4px;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
-    .alert-close:active {
-        background: var(--bg-light);
-    }
-
-    /* ==========================================
-       MAIN CONTENT
-       ========================================== */
-
-    .main-content {
-        padding: 16px 12px;
-    }
-
-    .dashboard-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    /* ==========================================
-       SIDEBAR
-       ========================================== */
-
-    .dashboard-sidebar {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        position: static !important;
-    }
-
-    .dashboard-content {
-        width: 100%;
-    }
-
-    /* ==========================================
-       SUSPENSION WARNING
-       ========================================== */
-
-    .suspension-warning {
-        background: linear-gradient(135deg, var(--error), #ef5350);
-        color: white;
-        padding: 14px 16px;
-        border-radius: 10px;
-        margin-bottom: 16px;
-        font-weight: 700;
-        text-align: center;
-        box-shadow: var(--shadow-md);
-        font-size: 14px;
-    }
-
-    .suspension-warning i {
-        margin-right: 8px;
-    }
-
-    /* ==========================================
-       STORE HEADER - TRANSPARENT, NO BACKGROUND
-       ========================================== */
-
+    /* --- STORE HEADER --- */
     .store-header {
         position: relative;
         background: transparent;
@@ -373,23 +207,7 @@
         height: 100%;
         object-fit: cover;
         object-position: center;
-        transition: transform var(--transition);
         display: block;
-    }
-
-    .cover-photo:active img {
-        transform: scale(1.05);
-    }
-
-    .cover-photo::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
-        pointer-events: none;
     }
 
     .header-info {
@@ -414,33 +232,19 @@
         box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         cursor: pointer;
         flex-shrink: 0;
-        transition: transform var(--transition);
-    }
-
-    .profile-pic:active {
-        transform: scale(1.05);
     }
 
     .profile-pic img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center;
-        display: block;
-    }
-
-    .store-info {
-        width: 100%;
-        padding: 0 8px;
     }
 
     .store-info h1 {
         font-size: 22px;
-        margin-top: 8px;
-        margin-bottom: 8px;
+        margin: 8px 0;
         color: var(--text-dark);
         font-weight: 800;
-        word-wrap: break-word;
         line-height: 1.3;
     }
 
@@ -448,8 +252,6 @@
         color: var(--text-muted);
         margin-bottom: 12px;
         font-size: 14px;
-        font-weight: 500;
-        line-height: 1.5;
     }
 
     .status-badge {
@@ -459,24 +261,32 @@
         font-weight: 700;
         font-size: 12px;
         text-transform: capitalize;
-        letter-spacing: 0.3px;
     }
 
-    .status-badge.open,
-    .status-badge.status-open {
+    .status-badge.open, .status-badge.status-open {
         background: rgba(47, 138, 74, 0.15);
         color: var(--success);
     }
 
-    .status-badge.closed,
-    .status-badge.status-closed {
+    .status-badge.closed, .status-badge.status-closed {
         background: rgba(198, 40, 40, 0.15);
         color: var(--error);
     }
 
-    /* ==========================================
-       DASHBOARD GRID - NO BACKGROUNDS
-       ========================================== */
+    /* --- DASHBOARD GRID --- */
+    .main-content {
+        padding: 16px 12px;
+    }
+
+    .dashboard-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dashboard-sidebar, .dashboard-content {
+        width: 100%;
+    }
 
     .dashboard-grid {
         display: grid;
@@ -484,10 +294,6 @@
         gap: 0;
         background: transparent !important;
     }
-
-    /* ==========================================
-       CARDS - TRANSPARENT, NO BACKGROUNDS
-       ========================================== */
 
     .card {
         background: transparent !important;
@@ -497,7 +303,6 @@
         border: none !important;
     }
 
-    /* Remove backgrounds from all card children */
     .card * {
         background: transparent !important;
     }
@@ -513,20 +318,10 @@
         gap: 10px;
     }
 
-    .card-title-center {
-        justify-content: center;
-    }
+    .card-title-center { justify-content: center; }
+    .card-title i { color: var(--primary); font-size: 19px; }
 
-    .card-title i,
-    .card-title-center i {
-        color: var(--primary);
-        font-size: 19px;
-    }
-
-    /* ==========================================
-       BUTTONS - FIXED
-       ========================================== */
-
+    /* --- BUTTONS --- */
     .btn {
         display: inline-flex;
         align-items: center;
@@ -536,51 +331,31 @@
         font-size: 14px;
         font-weight: 600;
         border-radius: 10px;
-        cursor: pointer;
-        transition: all var(--transition);
         border: none;
-        text-decoration: none;
         width: 100%;
         min-height: 50px;
-    }
-
-    .btn:active {
-        transform: scale(0.98);
+        text-decoration: none;
     }
 
     .btn-primary {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
         color: white;
-        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
     }
 
     .btn-secondary {
-        background: var(--bg-light);
+        background: var(--bg-light) !important;
         color: var(--text-dark);
-        border: 1px solid var(--border);
-    }
-
-    .btn-secondary:active {
-        background: var(--border);
+        border: 1px solid var(--border) !important;
     }
 
     .btn-transparent {
-        background: transparent;
-        color: var(--text-dark);
-        padding: 12px 16px;
+        background: var(--bg) !important;
+        border: 1px solid var(--border) !important;
         justify-content: flex-start;
-        border: 1px solid var(--border);
-        background: var(--bg);
+        color: var(--text-dark);
     }
 
-    .btn-transparent:active {
-        background: var(--bg-light);
-    }
-
-    .btn-transparent i {
-        color: var(--primary);
-        font-size: 18px;
-    }
+    .btn-transparent i { color: var(--primary); }
 
     .btn-group {
         display: flex;
@@ -588,78 +363,60 @@
         gap: 12px;
     }
 
-    /* ==========================================
-       STATISTICS - TRANSPARENT
-       ========================================== */
-
+    /* --- STATS --- */
     .stat-item {
         display: flex;
         align-items: center;
         gap: 16px;
         padding: 16px;
         background: transparent;
-        border-radius: 0;
-        border: none;
     }
 
     .stat-icon {
         width: 50px;
         height: 50px;
         border-radius: 12px;
+        background: rgba(183, 28, 28, 0.1) !important;
+        color: var(--primary);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 24px;
         flex-shrink: 0;
-        background: rgba(183, 28, 28, 0.1);
-        color: var(--primary);
     }
 
-    .stat-number {
-        font-size: 24px;
-        font-weight: 800;
-        color: var(--text-dark);
-        line-height: 1;
-    }
-
-    .stat-label {
-        font-size: 12px;
-        color: var(--text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
+    .stat-number { font-size: 24px; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
 
     /* ==========================================
-       MENU SECTION - 2 COLUMNS FOR PHONE VIEW (UPDATED)
+       MENU SECTION - 2 COLUMNS FIX
        ========================================== */
 
     .menu-section {
         margin-bottom: 24px;
         padding: 16px 0;
+        width: 100%;
     }
 
     .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); /* ✅ 2 COLUMNS */
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* ✅ FORCE 2 COLUMNS */
         gap: 12px;
         padding: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .menu-card {
-        background: var(--bg);
-        border: 1px solid var(--border);
+        background: var(--bg) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 12px;
         overflow: hidden;
-        transition: all var(--transition);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-sm) !important;
         display: flex;
         flex-direction: column;
-    }
-
-    .menu-card:active {
-        transform: scale(0.98);
-        box-shadow: var(--shadow-md);
+        width: 100%;
+        min-width: 0; /* Prevents overflow */
     }
 
     /* Image */
@@ -668,7 +425,7 @@
         height: 140px;
         overflow: hidden;
         position: relative;
-        background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+        background: #f0f0f0 !important;
     }
 
     .menu-image img {
@@ -687,6 +444,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
+        z-index: 2;
     }
 
     .badge {
@@ -694,26 +452,12 @@
         border-radius: 4px;
         font-size: 9px;
         font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(4px);
     }
 
-    .badge.bestseller {
-        background: rgba(255, 193, 7, 0.95);
-        color: #000;
-    }
-
-    .badge.available {
-        background: rgba(76, 175, 80, 0.95);
-        color: white;
-    }
-
-    .badge.soldout {
-        background: rgba(244, 67, 54, 0.95);
-        color: white;
-    }
+    .badge.bestseller { background: rgba(255, 193, 7, 0.95) !important; color: #000; }
+    .badge.available { background: rgba(76, 175, 80, 0.95) !important; color: white; }
+    .badge.soldout { background: rgba(244, 67, 54, 0.95) !important; color: white; }
 
     /* Menu Info */
     .menu-info {
@@ -721,6 +465,8 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
+        background: white !important;
+        min-width: 0; /* Fix for grid text overflow */
     }
 
     .menu-name {
@@ -772,56 +518,52 @@
         font-weight: 600;
         border-radius: 8px;
         cursor: pointer;
-        transition: all var(--transition);
-        border: 1px solid var(--border);
-        background: var(--bg);
+        border: 1px solid var(--border) !important;
+        background: var(--bg) !important;
         color: var(--text-dark);
         min-height: 40px;
     }
 
-    .action-btn:active {
-        background: var(--bg-light);
-        transform: scale(0.95);
-    }
+    .action-btn.edit { color: var(--secondary); border-color: var(--secondary) !important; }
+    .action-btn.seller { color: var(--warning); border-color: var(--warning) !important; }
+    .action-btn.delete { color: var(--error); border-color: var(--error) !important; }
 
-    .action-btn.edit {
-        color: var(--secondary);
-        border-color: var(--secondary);
-    }
+    .action-btn i { font-size: 12px; margin: 0; }
 
-    .action-btn.seller {
-        color: var(--warning);
-        border-color: var(--warning);
-    }
-
-    .action-btn.delete {
-        color: var(--error);
-        border-color: var(--error);
-    }
-
-    .action-btn i {
-        font-size: 12px;
-    }
-
-    /* No Items State */
+    /* No Items */
     .no-items {
-        text-align: center;
-        padding: 50px 20px;
-        color: var(--text-muted);
         grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
     }
 
-    .no-items i {
-        font-size: 56px;
-        opacity: 0.3;
-        margin-bottom: 16px;
-        display: block;
+    .no-items i { font-size: 48px; opacity: 0.3; margin-bottom: 12px; display: block; }
+
+    /* --- ALERTS --- */
+    .alert {
+        position: fixed;
+        top: 70px;
+        right: 8px;
+        left: 8px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        box-shadow: var(--shadow-md);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 4px solid;
+        background: white;
     }
 
-    /* ==========================================
-       MODALS
-       ========================================== */
+    .alert.success { border-left-color: var(--success); color: var(--success); }
+    .alert.error { border-left-color: var(--error); color: var(--error); }
+    .alert.info { border-left-color: var(--secondary); color: var(--secondary); }
 
+    /* --- MODALS --- */
     .modal {
         display: none;
         position: fixed;
@@ -832,23 +574,16 @@
         overflow-y: auto;
     }
 
-    .modal.show {
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-    }
+    .modal.show { display: flex; align-items: flex-start; justify-content: center; }
 
     .modal-content {
         background: var(--bg);
         border-radius: 12px;
         padding: 24px;
         width: 100%;
-        max-width: 100%;
-        margin: auto;
         box-shadow: var(--shadow-lg);
         position: relative;
-        max-height: calc(100vh - 32px);
-        overflow-y: auto;
+        margin: auto;
     }
 
     .modal-close {
@@ -863,351 +598,100 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
         font-size: 20px;
-        color: var(--text-muted);
-        transition: all var(--transition);
-        z-index: 1;
     }
 
-    .modal-close:active {
-        background: var(--border);
-        transform: scale(0.95);
-    }
+    /* Forms */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
 
-    .modal h2 {
-        font-size: 20px;
-        margin-bottom: 20px;
-        color: var(--text-dark);
-        padding-right: 40px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .modal h2 i {
-        color: var(--primary);
-    }
-
-    /* ==========================================
-       FORMS
-       ========================================== */
-
-    .modal-form {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .form-group {
-        margin-bottom: 0;
-    }
-
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--text-dark);
-        font-size: 14px;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
+    .form-group input, .form-group textarea, .form-group select {
         width: 100%;
         padding: 12px 14px;
         border: 1px solid var(--border);
         border-radius: 10px;
         font-size: 14px;
-        font-family: inherit;
-        transition: all var(--transition);
     }
 
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
-    }
-
-    .form-group textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
-
-    .form-group small {
-        display: block;
-        margin-top: 6px;
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    .checkbox-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 12px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-    }
-
-    .checkbox-item {
-        display: flex;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 6px;
-    }
-
-    .checkbox-item:active {
-        background: rgba(183, 28, 28, 0.05);
-    }
-
-    .checkbox-item input[type="checkbox"] {
-        margin-right: 8px;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        accent-color: var(--primary);
-    }
-
-    .checkbox-item label {
-        font-size: 14px;
-        margin: 0;
-        cursor: pointer;
-    }
-
-    /* ==========================================
-       MAP MODAL
-       ========================================== */
-
-    #mapModal .modal-content {
-        max-width: 100%;
-        padding: 16px;
-    }
-
-    #mapModal h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-    }
-
-    #mapModal p {
-        font-size: 13px;
-        margin-bottom: 12px;
-    }
-
-    #map {
-        width: 100%;
-        height: 300px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        border: 2px solid #667eea;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-
-    .location-display-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 12px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        color: white;
-    }
-
-    .location-label {
-        font-size: 11px;
-        opacity: 0.9;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .location-coords {
-        font-size: 15px;
-        font-weight: 700;
-        margin-top: 4px;
-        word-break: break-all;
-    }
-
-    .address-display-card {
-        background: #e8f5e9;
-        padding: 12px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-    }
-
-    .address-title {
-        font-weight: 700;
-        color: #2e7d32;
-        margin-bottom: 6px;
-        font-size: 12px;
-    }
-
-    .address-text {
-        color: #1b5e20;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .map-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .map-info-text {
-        text-align: center;
-        font-size: 12px;
-        color: #666;
-        padding: 8px;
-    }
-
-    #id_address[readonly] {
-        background-color: #f8f9fa !important;
-        color: #495057;
-        font-style: italic;
-    }
-
-    #locationStatus {
-        display: block;
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    /* ==========================================
-       NOTIFICATION PANEL
-       ========================================== */
-
-    .notification-panel,
-    .chat-panel {
+    .notification-panel, .chat-panel {
         width: 100% !important;
         top: 60px !important;
         height: calc(100vh - 60px) !important;
     }
+}
 
-    /* ==========================================
-       VERY SMALL SCREENS (< 380px)
-       Hide button text, show icons only
-       ========================================== */
-    @media (max-width: 380px) {
-        .menu-grid {
-            gap: 10px;
-        }
-
-        .menu-image {
-            height: 120px;
-        }
-
-        .menu-info {
-            padding: 10px;
-        }
-
-        .menu-name {
-            font-size: 13px;
-        }
-
-        .menu-desc {
-            font-size: 10px;
-        }
-
-        .menu-price {
-            font-size: 15px;
-        }
-
-        .action-btn {
-            font-size: 0; /* Hide text */
-            padding: 10px 6px;
-        }
-
-        .action-btn i {
-            font-size: 14px;
-            margin: 0;
-        }
+/* ==========================================
+   2. SMALL PHONES (< 380px) OVERRIDES
+   ========================================== */
+@media (max-width: 380px) {
+    .menu-grid {
+        gap: 10px; /* Tighter gap */
     }
 
-    /* ==========================================
-       TABLET (481px - 768px)
-       ========================================== */
+    .menu-image {
+        height: 120px;
+    }
 
-    @media (min-width: 481px) and (max-width: 768px) {
-        /* Header & Profile Styles */
-        .navbar-logo {
-            font-size: 26px;
-        }
+    .menu-info {
+        padding: 8px;
+    }
 
-        .navbar-btn {
-            font-size: 14px;
-            padding: 10px 16px;
-        }
+    .menu-name {
+        font-size: 13px;
+    }
 
-        .cover-photo {
-            height: 160px;
-        }
+    .menu-price {
+        font-size: 15px;
+    }
 
-        .profile-pic {
-            width: 110px;
-            height: 110px;
-        }
+    /* Hide button text on very small screens, show icons only */
+    .action-btn {
+        font-size: 0;
+        padding: 8px;
+    }
 
-        .header-info {
-            margin-top: -60px;
-            padding: 0 20px 24px 20px;
-        }
+    .action-btn i {
+        font-size: 14px;
+        margin: 0;
+    }
+}
 
-        .store-info h1 {
-            font-size: 24px;
-        }
+/* ==========================================
+   3. TABLETS (481px - 768px) OVERRIDES
+   ========================================== */
+@media (min-width: 481px) and (max-width: 768px) {
+    .menu-grid {
+        gap: 16px;
+        /* Still 2 columns from main query */
+    }
 
-        .store-info p {
-            font-size: 15px;
-        }
+    .menu-image {
+        height: 160px;
+    }
 
-        .card {
-            padding: 20px 0;
-        }
+    .menu-info {
+        padding: 16px;
+    }
 
-        .card-title,
-        .card-title-center {
-            font-size: 18px;
-        }
+    .menu-name {
+        font-size: 15px;
+    }
 
-        /* Modal Styles */
-        .modal-content {
-            max-width: 90%;
-            padding: 28px;
-        }
+    .menu-price {
+        font-size: 18px;
+    }
 
-        .modal h2 {
-            font-size: 22px;
-        }
+    .action-btn {
+        font-size: 11px;
+        padding: 10px;
+    }
 
-        /* Menu Section Styles */
-        .menu-grid {
-            gap: 16px;
-        }
-
-        .menu-image {
-            height: 160px;
-        }
-
-        .menu-info {
-            padding: 14px;
-        }
-
-        .menu-name {
-            font-size: 15px;
-        }
-
-        .menu-desc {
-            font-size: 12px;
-        }
-
-        .menu-price {
-            font-size: 18px;
-        }
-
-        .action-btn {
-            font-size: 11px;
-            padding: 11px 8px;
-        }
+    .navbar-logo {
+        font-size: 26px;
+    }
+    
+    .profile-pic {
+        width: 120px;
+        height: 120px;
     }
 }
