@@ -1,5 +1,5 @@
 /* ==========================================
-   OWNER DASHBOARD - MOBILE VIEW (ULTRA-COMPACT & CLEAN)
+   OWNER DASHBOARD - MOBILE VIEW (MODERN & CLEAN)
    ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
@@ -69,7 +69,7 @@
         background: transparent !important;
     }
 
-    /* --- NAVBAR & HEADER (Unchanged from previous versions) --- */
+    /* --- NAVBAR & HEADER --- */
     .navbar {
         background: var(--bg);
         border-bottom: 1px solid var(--border);
@@ -135,53 +135,91 @@
     }
 
     /* ==========================================
-       MENU SECTION - FITTING 2 COLUMNS
+       MENU SECTION - MODERN CARD DESIGN
        ========================================== */
 
     .menu-section {
         margin-bottom: 24px;
-        padding: 16px 0;
+        padding: 0;
         width: 100%;
     }
 
     .menu-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important; /* 2 Columns Guarantee */
-        gap: 10px; /* Mas maliit na gap (dati 12px) */
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
         padding: 0;
         width: 100%;
     }
 
     .menu-card {
-        background: var(--bg) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px; /* Bahagyang maliit na radius */
+        background: white !important;
+        border: none !important;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: var(--shadow-sm) !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
         display: flex;
         flex-direction: column;
         width: 100%;
-        height: 100%; /* Ensure uniform height if content allows */
-        box-sizing: border-box;
+        transition: all 0.3s ease;
     }
 
-    /* Image */
+    .menu-card:active {
+        transform: scale(0.98);
+    }
+
+    /* Image Container */
     .menu-image {
         width: 100%;
-        height: 100px; /* Mas maliit na image height (dati 130px) */
+        height: 120px;
         overflow: hidden;
         position: relative;
+        background: #f5f5f5;
+    }
+
+    .menu-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     /* Badges */
-    .badge {
-        padding: 2px 5px;
-        font-size: 8px;
+    .badges-container {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
     }
 
-    /* Menu Info (Core details) */
+    .badge {
+        padding: 4px 8px;
+        font-size: 9px;
+        font-weight: 700;
+        border-radius: 6px;
+        color: white;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .badge.bestseller {
+        background: linear-gradient(135deg, #ff9800, #f57c00);
+    }
+
+    .badge.available {
+        background: linear-gradient(135deg, #4caf50, #2e7d32);
+    }
+
+    .badge.soldout {
+        background: linear-gradient(135deg, #f44336, #c62828);
+    }
+
+    /* Menu Info */
     .menu-info {
-        padding: 8px; /* Mas maliit na padding sa loob ng card (dati 10px) */
+        padding: 12px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
@@ -189,40 +227,41 @@
     }
 
     .menu-name {
-        font-size: 12px; /* Pinakamaliit na font para sa pangalan */
+        font-size: 14px;
         font-weight: 700;
-        margin-bottom: 2px;
-        line-height: 1.2;
+        margin-bottom: 4px;
+        line-height: 1.3;
+        color: #1a1a1a;
         display: -webkit-box;
-        -webkit-line-clamp: 2; /* 2 lines max */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
     .menu-desc {
-        font-size: 9px; /* Pinakamaliit na font para sa deskripsyon */
-        color: var(--text-muted);
-        margin-bottom: 6px;
-        line-height: 1.3;
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 8px;
+        line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 2; /* 2 lines max */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         flex-grow: 1;
     }
 
     .menu-price {
-        font-size: 14px; /* Maliit na presyo */
+        font-size: 16px;
         font-weight: 800;
         color: var(--primary);
-        margin-bottom: 6px; /* Space above buttons */
+        margin-bottom: 10px;
     }
 
-    /* Action Buttons (The most critical part for fitting) */
+    /* Action Buttons - Modern Style */
     .menu-actions {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3px; /* Pinakamaliit na gap */
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
         margin-top: auto;
     }
 
@@ -230,28 +269,54 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0;
-        padding: 6px 2px; /* Pinakamaliit na padding */
-        font-size: 8px; /* Napakaliit na font size */
+        gap: 6px;
+        padding: 10px 8px;
+        font-size: 11px;
         font-weight: 600;
-        border-radius: 5px;
-        border: 1px solid var(--border) !important;
-        min-height: 30px; /* Pinakamaliit na height */
-        line-height: 1;
+        border-radius: 8px;
+        border: none !important;
+        min-height: 38px;
+        line-height: 1.2;
+        transition: all 0.2s ease;
+        cursor: pointer;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
-    /* Ensure icon is visible and text is readable if the card is big enough */
-    .action-btn i { font-size: 10px; margin-right: 2px; }
+    .action-btn i {
+        font-size: 12px;
+    }
 
-    /* Styles for the different button types (colors) */
-    .action-btn.edit { color: var(--secondary); border-color: var(--secondary) !important; }
-    .action-btn.seller { color: var(--warning); border-color: var(--warning) !important; }
-    .action-btn.delete { color: var(--error); border-color: var(--error) !important; }
+    /* Edit Button - Blue */
+    .action-btn.edit {
+        background: #2196F3;
+        color: white;
+    }
 
-    /* --- ALERTS & MODALS (Unchanged from previous versions) --- */
+    .action-btn.edit:active {
+        background: #1976D2;
+    }
+
+    /* Seller Button - Orange */
+    .action-btn.seller {
+        background: #FF9800;
+        color: white;
+    }
+
+    .action-btn.seller:active {
+        background: #F57C00;
+    }
+
+    /* Delete Button - Red */
+    .action-btn.delete {
+        background: #f44336;
+        color: white;
+    }
+
+    .action-btn.delete:active {
+        background: #d32f2f;
+    }
+
+    /* --- ALERTS & MODALS --- */
     .alert {
         position: fixed;
         top: 70px;
@@ -283,44 +348,41 @@
 
 /* ==========================================
    2. SMALL PHONES (< 380px) OVERRIDES
-   Text is removed from buttons, only icons remain.
+   Adjust sizing for very small screens
    ========================================== */
 @media (max-width: 380px) {
     .menu-grid {
-        gap: 6px;
+        gap: 10px;
     }
 
     .menu-image {
-        height: 90px; /* Pinakamaliit na image */
+        height: 100px;
     }
 
     .menu-info {
-        padding: 6px; /* Pinakamaliit na padding */
+        padding: 10px;
     }
 
     .menu-name {
-        font-size: 11px;
-    }
-
-    .menu-desc {
-        font-size: 8px;
-        margin-bottom: 4px;
-    }
-
-    .menu-price {
         font-size: 13px;
     }
 
-    /* Hide button text completely, rely on icons only for the smallest view */
+    .menu-desc {
+        font-size: 10px;
+    }
+
+    .menu-price {
+        font-size: 15px;
+    }
+
     .action-btn {
-        font-size: 0; /* Tago ang text */
-        padding: 4px;
-        min-height: 28px;
+        font-size: 10px;
+        padding: 9px 6px;
+        min-height: 36px;
     }
 
     .action-btn i {
         font-size: 11px;
-        margin: 0;
     }
 }
 
@@ -338,7 +400,7 @@
     }
 
     .menu-info {
-        padding: 12px;
+        padding: 14px;
     }
 
     .menu-name {
@@ -346,11 +408,11 @@
     }
 
     .menu-desc {
-        font-size: 11px;
+        font-size: 12px;
     }
 
     .menu-price {
-        font-size: 17px;
+        font-size: 18px;
     }
 
     .menu-actions {
@@ -358,14 +420,13 @@
     }
 
     .action-btn {
-        font-size: 11px;
-        padding: 10px;
-        min-height: 40px;
-        gap: 4px;
+        font-size: 12px;
+        padding: 12px;
+        min-height: 42px;
     }
 
     .action-btn i {
-        font-size: 12px;
+        font-size: 13px;
     }
 
     .navbar-logo {
