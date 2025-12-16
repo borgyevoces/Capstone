@@ -1,0 +1,691 @@
+/* ==========================================
+   DESKTOP STYLES - FOOD ESTABLISHMENT DASHBOARD
+   Desktop and Large Screen Layouts (769px+)
+   ========================================== */
+
+/* ==========================================
+   DESKTOP BASE (769px+)
+   ========================================== */
+
+@media (min-width: 769px) {
+
+    /* NAVBAR DESKTOP */
+    .navbar {
+        padding: 16px 24px;
+    }
+
+    .navbar-container {
+        max-width: 1400px;
+        height: 35px;
+        margin: 0 auto;
+    }
+
+    .navbar-logo {
+        font-size: 32px;
+    }
+
+    .navbar-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+        gap: 10px;
+    }
+
+    .navbar-menu {
+        min-width: 220px;
+    }
+
+    .navbar-menu a {
+        padding: 12px 16px;
+    }
+
+    /* ALERTS DESKTOP */
+    .alert {
+        top: 90px;
+        right: 24px;
+        left: auto;
+        min-width: 320px;
+        max-width: 400px;
+        font-size: 14px;
+        padding: 16px 20px;
+    }
+
+    @keyframes slideInAlert {
+        0% {
+            transform: translateX(450px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .alert i {
+        font-size: 20px;
+    }
+
+    /* MAIN CONTENT DESKTOP */
+    .main-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 32px 24px;
+    }
+
+    /* DASHBOARD LAYOUT - TWO COLUMN */
+    .dashboard-layout {
+        flex-direction: row;
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    /* LEFT SIDEBAR - STICKY */
+    .dashboard-sidebar {
+        width: 350px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 90px;
+        gap: 24px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+    }
+
+    /* RIGHT CONTENT AREA */
+    .dashboard-content {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    /* STORE HEADER DESKTOP */
+    .store-header {
+        padding-bottom: 24px;
+    }
+
+    .cover-photo {
+        height: 160px;
+    }
+
+    .profile-pic {
+        width: 110px;
+        height: 110px;
+    }
+
+    .header-info {
+        margin-top: -60px;
+        gap: 12px;
+    }
+
+    .store-info h1 {
+        font-size: 26px;
+    }
+
+    .store-info p {
+        font-size: 14px;
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
+    /* DASHBOARD GRID */
+    .dashboard-grid {
+        gap: 24px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .card h3 {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .card h3 i {
+        font-size: 20px;
+    }
+
+    /* QUICK ACTIONS DESKTOP */
+    .action-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+
+    .action-btn {
+        padding: 20px 12px;
+        min-height: 120px;
+        gap: 10px;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-light);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .action-btn i {
+        font-size: 32px;
+    }
+
+    .action-btn span {
+        font-size: 13px;
+    }
+
+    /* STATS DESKTOP */
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 26px;
+    }
+
+    .stat-info h4 {
+        font-size: 12px;
+    }
+
+    .stat-info p {
+        font-size: 26px;
+    }
+
+    /* MENU ITEMS DESKTOP */
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .menu-item:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .menu-item-image {
+        height: 200px;
+    }
+
+    .menu-item-content {
+        padding: 16px;
+    }
+
+    .menu-item-title {
+        font-size: 18px;
+    }
+
+    .menu-item-price {
+        font-size: 20px;
+    }
+
+    .menu-item-description {
+        font-size: 14px;
+        -webkit-line-clamp: 3;
+    }
+
+    .menu-item-tags {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .tag {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+
+    .menu-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .menu-actions .action-btn {
+        padding: 10px 8px;
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    .menu-actions .action-btn i {
+        font-size: 18px;
+    }
+
+    /* BUTTONS DESKTOP */
+    .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        gap: 10px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 16px rgba(183, 28, 28, 0.4);
+    }
+
+    .btn-success:hover {
+        box-shadow: 0 6px 16px rgba(47, 138, 74, 0.4);
+    }
+
+    .btn-group {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+        width: auto;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    /* MODALS DESKTOP */
+    .modal {
+        padding: 24px;
+        align-items: center;
+    }
+
+    .modal-content {
+        padding: 32px;
+        max-width: 600px;
+        max-height: calc(100vh - 48px);
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    .modal-close:hover {
+        background: var(--border);
+        transform: rotate(90deg);
+    }
+
+    .modal h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    /* FORMS DESKTOP */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 15px;
+    }
+
+    .checkbox-group {
+        gap: 12px;
+    }
+
+    .checkbox-item {
+        padding: 6px 10px;
+    }
+
+    .checkbox-item:hover {
+        background: rgba(183, 28, 28, 0.05);
+    }
+
+    .checkbox-item label {
+        font-size: 14px;
+    }
+
+    /* MAP MODAL DESKTOP */
+    #mapModal .modal-content {
+        max-width: 900px;
+        padding: 24px;
+    }
+
+    #mapModal h2 {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .location-display-card,
+    .address-display-card {
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+
+    #map {
+        height: 450px;
+        border-radius: 12px;
+        border-width: 3px;
+    }
+
+    .map-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .map-actions .btn {
+        width: auto;
+    }
+
+    #id_address[readonly] {
+        font-size: 14px;
+    }
+
+    #locationStatus {
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    /* NO ITEMS DESKTOP */
+    .no-items {
+        padding: 60px 20px;
+    }
+
+    .no-items i {
+        font-size: 64px;
+    }
+}
+
+/* ==========================================
+   LARGE DESKTOP (1025px+)
+   ========================================== */
+
+@media (min-width: 1025px) {
+    
+    .dashboard-sidebar {
+        width: 380px;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    .action-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ==========================================
+   EXTRA LARGE DESKTOP (1441px+)
+   ========================================== */
+
+@media (min-width: 1441px) {
+    
+    .main-content {
+        max-width: 1600px;
+        padding: 40px 32px;
+    }
+
+    .dashboard-sidebar {
+        width: 400px;
+        top: 100px;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+    }
+
+    .card {
+        padding: 24px;
+    }
+
+    .modal-content {
+        max-width: 700px;
+        padding: 40px;
+    }
+}
+
+/* ==========================================
+   HOVER EFFECTS (for devices with hover)
+   ========================================== */
+
+@media (hover: hover) and (pointer: fine) {
+    
+    .navbar-btn:hover {
+        background: var(--border);
+        transform: translateY(-1px);
+    }
+
+    .navbar-menu a:hover {
+        background: var(--bg-light);
+        color: var(--primary);
+        padding-left: 20px;
+    }
+
+    .cover-photo:hover img {
+        transform: scale(1.05);
+    }
+
+    .profile-pic:hover {
+        transform: scale(1.05);
+    }
+
+    .action-btn:hover {
+        background: var(--bg-light);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .menu-item:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 16px rgba(183, 28, 28, 0.4);
+    }
+
+    .btn-secondary:hover {
+        background: var(--border);
+    }
+
+    .btn-success:hover {
+        box-shadow: 0 6px 16px rgba(47, 138, 74, 0.4);
+    }
+
+    .btn-transparent:hover {
+        background: var(--bg-light);
+    }
+
+    .modal-close:hover {
+        background: var(--border);
+        transform: rotate(90deg);
+    }
+
+    .alert .alert-close:hover {
+        background: var(--bg-light);
+        color: var(--text-dark);
+    }
+
+    .checkbox-item:hover {
+        background: rgba(183, 28, 28, 0.05);
+    }
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+
+@media print {
+    .navbar,
+    .modal,
+    .alert,
+    .btn,
+    .action-grid,
+    .modal-close {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .dashboard-layout {
+        flex-direction: column;
+    }
+
+    .dashboard-sidebar,
+    .dashboard-content {
+        width: 100%;
+    }
+
+    .card {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    .menu-item {
+        page-break-inside: avoid;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border: #000;
+        --text-muted: #333;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn,
+    .action-btn,
+    .menu-item,
+    .card {
+        border-width: 2px;
+    }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1a1a1a;
+        --bg-light: #2a2a2a;
+        --text-dark: #f5f5f5;
+        --text-muted: #b0b0b0;
+        --border: #3a3a3a;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .alert.success,
+    .alert.error,
+    .alert.info {
+        background: var(--bg-light);
+    }
+
+    .cover-photo,
+    .menu-item-image {
+        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+    }
+}
+
+/* ==========================================
+   LANDSCAPE ORIENTATION (Tablets)
+   ========================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+    
+    .dashboard-sidebar {
+        width: 320px;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .action-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ==========================================
+   FOCUS VISIBLE STYLES (Keyboard Navigation)
+   ========================================== */
+
+.btn:focus-visible,
+.action-btn:focus-visible,
+.navbar-btn:focus-visible,
+.modal-close:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.form-group input:focus-visible,
+.form-group textarea:focus-visible,
+.form-group select:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 1px;
+}
+
+/* ==========================================
+   SCROLLBAR STYLING (Webkit browsers)
+   ========================================== */
+
+@media (min-width: 769px) {
+    .dashboard-sidebar::-webkit-scrollbar,
+    .modal-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .dashboard-sidebar::-webkit-scrollbar-track,
+    .modal-content::-webkit-scrollbar-track {
+        background: var(--bg-light);
+        border-radius: 4px;
+    }
+
+    .dashboard-sidebar::-webkit-scrollbar-thumb,
+    .modal-content::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+    }
+
+    .dashboard-sidebar::-webkit-scrollbar-thumb:hover,
+    .modal-content::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+    }
+}
