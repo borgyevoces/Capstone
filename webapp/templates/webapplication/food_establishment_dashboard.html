@@ -13,11 +13,8 @@
     <meta http-equiv="Expires" content="0"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
-    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
-    <!-- Mobile-First Styles (320px - 768px) -->
-    <link rel="stylesheet" href="{% static 'css/mobile-styles.css' %}">
-    <!-- Desktop Styles (769px+) -->
-    <link rel="stylesheet" href="{% static 'css/desktop-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_phoneview.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_desktopview.css' %}">
     <style>
         /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
         .notification-toggle-btn {
@@ -1424,15 +1421,6 @@
                        value="{{ establishment.closing_time|time:'H:i'|default:'' }}"
                        class="form-control">
                 <small class="form-text text-muted">Example: 22:00 for 10:00 PM</small>
-            </div>
-
-            <div class="form-group">
-                <div class="alert alert-info">
-                    <strong>📍 Current Status:</strong>
-                    <span class="status-badge status-{{ establishment.status|lower }}">{{ establishment.status }}</span>
-                    <br>
-                    <small>Status is automatically calculated based on current time</small>
-                </div>
             </div>
 
             <!-- Category -->
