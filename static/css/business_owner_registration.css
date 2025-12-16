@@ -1,6 +1,12 @@
 /* ================= GENERAL STYLES ================= */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #fff;
@@ -10,7 +16,6 @@ body {
     min-height: 100vh;
     margin: 0;
     padding: 10px;
-    box-sizing: border-box;
 }
 
 .registration-container {
@@ -20,7 +25,6 @@ body {
     box-shadow: none;
     width: 100%;
     max-width: 900px;
-    box-sizing: border-box;
 }
 
 .registration-header {
@@ -113,6 +117,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+
 .leaflet-control-layers-base label {
     display: flex;
     align-items: center;
@@ -128,8 +133,14 @@ body {
     transition: color 0.3s;
     font-size: 14px;
 }
-.map-validation-message.valid { color: #4CAF50; }
-.map-validation-message.invalid { color: #f44336; }
+
+.map-validation-message.valid {
+    color: #4CAF50;
+}
+
+.map-validation-message.invalid {
+    color: #f44336;
+}
 
 /* ================= FORM GRID ================= */
 .form-grid {
@@ -137,22 +148,27 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
 }
+
 .form-group {
     display: flex;
     flex-direction: column;
 }
+
 .form-group.full-width {
     grid-column: 1 / -1;
 }
+
 .form-group label {
     margin-bottom: 6px;
     font-weight: 500;
     color: #555;
     font-size: 13px;
 }
+
 .form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"],
+.form-group input[type="time"],
 .form-group select,
 .form-group input[type="file"] {
     width: 100%;
@@ -160,18 +176,38 @@ body {
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
-    box-sizing: border-box;
     transition: border-color 0.3s;
     background-color: #fff;
 }
-.form-group input:focus, .form-group select:focus {
+
+.form-group input:focus,
+.form-group select:focus {
     border-color: #e53935;
     outline: none;
     box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.2);
 }
+
 input[readonly] {
     background-color: #f0f0f0;
     cursor: not-allowed;
+}
+
+/* Time input specific styling */
+.form-group input[type="time"] {
+    cursor: pointer;
+}
+
+.form-group input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 /* ================= CHECKBOXES ================= */
@@ -184,18 +220,32 @@ input[readonly] {
     border-radius: 6px;
     background-color: #fff;
 }
+
 .checkbox-item {
     display: flex;
     align-items: center;
 }
+
 .checkbox-item input[type="checkbox"] {
     margin-right: 6px;
     width: 16px;
     height: 16px;
+    cursor: pointer;
+    accent-color: #e53935;
 }
+
 .checkbox-item label {
     font-size: 13px;
     margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-item:hover {
+    background-color: rgba(229, 57, 53, 0.05);
+    padding: 4px 8px;
+    margin: -4px -8px;
+    border-radius: 4px;
 }
 
 /* ================= NAVIGATION BUTTONS ================= */
@@ -203,8 +253,11 @@ input[readonly] {
     display: flex;
     justify-content: space-between;
     margin-top: 20px;
+    gap: 15px;
 }
-.btn-secondary, .btn-primary {
+
+.btn-secondary,
+.btn-primary {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
@@ -213,32 +266,49 @@ input[readonly] {
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
 }
+
 .btn-secondary {
     background-color: #6c757d;
     color: white;
 }
+
 .btn-primary {
     background-color: #e53935;
     color: white;
 }
+
 .btn-primary:disabled {
     background-color: #ccc;
     cursor: not-allowed;
     transform: none;
 }
-.btn-secondary:hover { background-color: #5a6268; }
-.btn-primary:not(:disabled):hover { background-color: #c62828; }
-.btn-primary:not(:disabled):active { transform: scale(0.98); }
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-primary:not(:disabled):hover {
+    background-color: #c62828;
+}
+
+.btn-primary:not(:disabled):active {
+    transform: scale(0.98);
+}
 
 .login-link {
     text-align: center;
     margin-top: 15px;
     font-size: 13px;
 }
+
 .login-link a {
     color: #e53935;
     text-decoration: none;
     font-weight: 600;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
 }
 
 /* ================= MODAL BASE ================= */
@@ -250,15 +320,20 @@ input[readonly] {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
     justify-content: center;
     align-items: center;
     animation: fadeIn 0.3s ease forwards;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* ================= MODAL CONTENT ================= */
@@ -270,12 +345,19 @@ input[readonly] {
     width: 90%;
     max-width: 400px;
     position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideDown 0.4s ease-out;
 }
+
 @keyframes slideDown {
-    from { transform: translateY(-40px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(-40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-content h3 {
@@ -298,6 +380,7 @@ input[readonly] {
     border-radius: 8px;
     transition: border-color 0.3s;
 }
+
 #otp-input:focus {
     border-color: #e53935;
     outline: none;
@@ -316,9 +399,11 @@ input[readonly] {
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
+
 .modal-content button:hover {
     background-color: #c62828;
 }
+
 .modal-content button:active {
     transform: scale(0.97);
 }
@@ -341,22 +426,30 @@ input[readonly] {
     animation: spin 1s linear infinite;
     margin: 20px auto;
 }
+
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* ================= SUCCESS MODAL ================= */
 #successModal .modal-content {
     border: 2px solid #4CAF50;
 }
+
 #successModal .spinner {
     border-top: 4px solid #4CAF50;
 }
+
 #successModal h3 {
     color: #4CAF50;
 }
-/* Password field styling */
+
+/* ================= PASSWORD FIELD STYLING ================= */
 .password-wrapper {
     position: relative;
     display: flex;
@@ -391,11 +484,37 @@ input[readonly] {
 }
 
 /* ============================================================
-   PHONE VIEW (RESPONSIVE DESIGN)
+   TABLET VIEW (601px - 768px)
+   ============================================================ */
+@media (min-width: 601px) and (max-width: 768px) {
+    .registration-container {
+        padding: 25px 35px;
+    }
+
+    .registration-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .progress-bar {
+        width: 85%;
+    }
+
+    .form-grid {
+        gap: 16px;
+    }
+
+    .navigation-buttons {
+        gap: 12px;
+    }
+}
+
+/* ============================================================
+   PHONE VIEW (RESPONSIVE DESIGN) - MOBILE FIRST
    ============================================================ */
 @media (max-width: 600px) {
     body {
         padding: 0;
+        align-items: flex-start;
     }
 
     .registration-container {
@@ -416,6 +535,14 @@ input[readonly] {
         font-size: 1.5rem;
     }
 
+    .registration-content h2 {
+        font-size: 1.3rem;
+    }
+
+    .registration-content p {
+        font-size: 13px;
+    }
+
     .progress-bar {
         width: 90%;
     }
@@ -426,36 +553,280 @@ input[readonly] {
         font-size: 13px;
     }
 
+    /* Single column layout on mobile */
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1;
+    }
+
+    .form-group label {
+        font-size: 14px;
     }
 
     .form-group input[type="text"],
     .form-group input[type="email"],
     .form-group input[type="password"],
-    .form-group select {
+    .form-group input[type="time"],
+    .form-group select,
+    .form-group input[type="file"] {
         font-size: 15px;
+        padding: 12px;
     }
 
+    .form-group small {
+        font-size: 12px;
+    }
+
+    /* Stack navigation buttons vertically on mobile */
     .navigation-buttons {
         flex-direction: column-reverse;
         gap: 10px;
     }
 
-    .btn-secondary, .btn-primary {
+    .btn-secondary,
+    .btn-primary {
         width: 100%;
+        padding: 12px 20px;
+        font-size: 15px;
     }
 
+    /* Map adjustments */
     #map {
         height: 350px;
+        border-radius: 6px;
     }
 
+    /* Checkbox adjustments */
+    .checkbox-group {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .checkbox-item {
+        min-width: 45%;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .checkbox-item label {
+        font-size: 14px;
+    }
+
+    /* Modal adjustments */
     .modal-content {
         padding: 20px;
+        max-width: 90%;
+    }
+
+    .modal-content h3 {
+        font-size: 1.3rem;
     }
 
     #otp-input {
         letter-spacing: 8px;
         font-size: 20px;
+        width: 90%;
+    }
+
+    .modal-content button {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+    }
+
+    .login-link {
+        font-size: 14px;
+        margin-top: 20px;
+    }
+}
+
+/* ============================================================
+   VERY SMALL PHONES (max-width: 360px)
+   ============================================================ */
+@media (max-width: 360px) {
+    .registration-container {
+        padding: 15px;
+    }
+
+    .registration-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .registration-content h2 {
+        font-size: 1.2rem;
+    }
+
+    .progress-step {
+        height: 32px;
+        width: 32px;
+        font-size: 12px;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .btn-secondary,
+    .btn-primary {
+        font-size: 14px;
+        padding: 11px 16px;
+    }
+
+    .checkbox-item {
+        min-width: 100%;
+    }
+
+    #map {
+        height: 300px;
+    }
+}
+
+/* ============================================================
+   LANDSCAPE MODE (Mobile Landscape)
+   ============================================================ */
+@media (max-width: 900px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+    }
+
+    .registration-container {
+        padding: 15px 30px;
+    }
+
+    #map {
+        height: 300px;
+    }
+
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* ============================================================
+   DESKTOP ENHANCEMENTS (min-width: 769px)
+   ============================================================ */
+@media (min-width: 769px) {
+    .registration-container {
+        padding: 30px 50px;
+    }
+
+    .registration-header h1 {
+        font-size: 2rem;
+    }
+
+    .registration-content h2 {
+        font-size: 1.6rem;
+    }
+
+    .form-grid {
+        gap: 18px;
+    }
+
+    .btn-secondary,
+    .btn-primary {
+        padding: 12px 30px;
+        font-size: 15px;
+    }
+
+    .btn-secondary:hover,
+    .btn-primary:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    #map {
+        height: 500px;
+    }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+    body {
+        background-color: white;
+    }
+
+    .registration-container {
+        box-shadow: none;
+        max-width: 100%;
+    }
+
+    .navigation-buttons,
+    .login-link {
+        display: none;
+    }
+
+    .form-group input,
+    .form-group select {
+        border: 1px solid #000;
+    }
+}
+
+/* ============================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================================ */
+
+/* Focus visible styles for keyboard navigation */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+    outline: 3px solid #e53935;
+    outline-offset: 2px;
+}
+
+.form-group input:focus-visible,
+.form-group select:focus-visible {
+    outline: 3px solid #e53935;
+    outline-offset: 1px;
+}
+
+.checkbox-item input[type="checkbox"]:focus-visible {
+    outline: 2px solid #e53935;
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .modal {
+        animation: none;
+    }
+
+    .modal-content {
+        animation: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .form-group input,
+    .form-group select {
+        border-width: 2px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        border: 2px solid currentColor;
+    }
+
+    .progress-step {
+        border-width: 4px;
     }
 }
