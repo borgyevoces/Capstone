@@ -35,68 +35,66 @@ html, body {
 }
 
 /* NAVBAR */
-/* NAVBAR */
-.navbar {
+.navbar-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 220px;
+    display: none;
+    overflow: hidden;
+    z-index: 1100;
 }
 
-.navbar-container {
-    max-width: 1400px;
-    margin: 0 auto;
+.navbar-menu.show {
+    display: block;
+    animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.navbar-menu .logout-link {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 12px;
-}
-
-.navbar-logo {
-    font-family: 'Pacifico', cursive;
-    font-size: 28px;
-    color: var(--text-dark);
+    padding: 14px 18px;
+    color: white;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.navbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
-}
-
-.navbar-dropdown {
-    position: relative;
-}
-
-.navbar-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--bg-light);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
     font-weight: 600;
     font-size: 14px;
-    transition: all var(--transition);
-    white-space: nowrap;
+    transition: all 0.3s ease;
+    border: none;
 }
 
-.navbar-btn:hover {
-    background: var(--border);
+.navbar-menu .logout-link:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    padding-left: 22px;
 }
 
-.navbar-btn span {
-    display: inline;
+.navbar-menu .logout-link i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.navbar-menu .logout-link:hover i {
+    transform: translateX(-2px);
+}
+
+.navbar-menu .logout-link span {
+    flex: 1;
 }
 
 /* ALERTS - IMPROVED NOTIFICATION DESIGN */
