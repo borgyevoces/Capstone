@@ -1,6 +1,7 @@
 # Capstone/settings.py
 """
 Django settings for Capstone project.
+✅ FIXED: Works on both localhost and Render
 """
 from pathlib import Path
 import os
@@ -19,26 +20,36 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = 'django-insecure-dev-placeholder'
+        SECRET_KEY = 'django-insecure-dev-placeholder-change-in-production'
         import warnings
-        warnings.warn('SECRET_KEY not set — using insecure dev fallback.', RuntimeWarning)
+        warnings.warn('⚠️ SECRET_KEY not set — using insecure dev fallback.', RuntimeWarning)
     else:
-        raise RuntimeError('SECRET_KEY environment variable ifs not set.')
+        raise RuntimeError('❌ SECRET_KEY environment variable is not set.')
 
 # ============================================================================
-# SITE URL AND ALLOWED HOSTS
+# SITE URL AND ALLOWED_HOSTS
 # ============================================================================
 SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
 
-# Normalize SITE_URL
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-
-# Compute ALLOWED_HOSTS
+# Compute ALLOWED_HOSTS - Fixed to properly extract hostnames
 raw_allowed = os.getenv('ALLOWED_HOSTS', '').strip()
 if raw_allowed:
-    ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
+    from urllib.parse import urlparse
+    ALLOWED_HOSTS = []
+    for host_entry in raw_allowed.split(','):
+        host_entry = host_entry.strip()
+        if not host_entry:
+            continue
+        # If it looks like a URL, extract just the hostname
+        if '://' in host_entry:
+            parsed = urlparse(host_entry)
+            if parsed.hostname:
+                ALLOWED_HOSTS.append(parsed.hostname)
+        else:
+            # It's already just a hostname
+            ALLOWED_HOSTS.append(host_entry)
 else:
+    # Fallback: extract from SITE_URL
     try:
         from urllib.parse import urlparse
         parsed = urlparse(SITE_URL)
@@ -56,6 +67,9 @@ if DEBUG:
 # Always include Render domain
 if 'capstone-kbqh.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('capstone-kbqh.onrender.com')
+
+print(f"🌐 DEBUG={DEBUG}")
+print(f"🌐 ALLOWED_HOSTS={ALLOWED_HOSTS}")
 
 # ============================================================================
 # INSTALLED APPS
@@ -75,7 +89,7 @@ INSTALLED_APPS = [
 ]
 
 # ============================================================================
-# MIDDLEWARE (CRITICAL ORDER FOR ADMIN)
+# MIDDLEWARE
 # ============================================================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -91,7 +105,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'Capstone.urls'
 
 # ============================================================================
-# TEMPLATES (REQUIRED FOR ADMIN)
+# TEMPLATES
 # ============================================================================
 TEMPLATES = [
     {
@@ -118,7 +132,7 @@ ASGI_APPLICATION = 'Capstone.asgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Production: PostgreSQL
+    print("📊 Using PostgreSQL database (Render)")
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -127,7 +141,7 @@ if DATABASE_URL:
         )
     }
 else:
-    # Local: SQLite
+    print("📊 Using SQLite database (Local)")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -140,6 +154,7 @@ else:
 # ============================================================================
 REDIS_URL = os.getenv('REDIS_URL')
 if REDIS_URL:
+    print("🔴 Using Redis for channels (Render)")
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -149,6 +164,7 @@ if REDIS_URL:
         },
     }
 else:
+    print("💾 Using InMemory channels (Local)")
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels.layers.InMemoryChannelLayer'
@@ -177,7 +193,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Use STORAGES instead of deprecated STATICFILES_STORAGE
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -226,6 +241,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ============================================================================
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
+    'http://localhost:8000',
     'https://capstone-kbqh.onrender.com',
 ]
 
@@ -247,7 +263,7 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
 GOOGLE_REDIRECT_URI = f"{SITE_URL}/accounts/google/callback"
 
-print(f"[DEBUG] Effective GOOGLE_REDIRECT_URI={GOOGLE_REDIRECT_URI}")
+print(f"🔑 GOOGLE_REDIRECT_URI={GOOGLE_REDIRECT_URI}")
 
 # ============================================================================
 # EMAIL CONFIGURATION
@@ -268,6 +284,24 @@ SENDER_EMAIL = os.getenv('SENDER_EMAIL')
 DEFAULT_FROM_EMAIL = SENDER_EMAIL or 'noreply@kabsueats.com'
 
 # ============================================================================
+# LOGGING (for debugging)
+# ============================================================================
+if DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    }
+
+# ============================================================================
 # PAYMONGO
 # ============================================================================
 PAYMONGO_SECRET_KEY = os.getenv('PAYMONGO_SECRET_KEY', '')
@@ -284,17 +318,19 @@ CVSU_LATITUDE = os.getenv('CVSU_LATITUDE', '14.412768')
 CVSU_LONGITUDE = os.getenv('CVSU_LONGITUDE', '120.981348')
 
 # ============================================================================
-# SECURITY SETTINGS (PRODUCTION)
+# 🔒 SECURITY SETTINGS - ✅ ONLY IN PRODUCTION
 # ============================================================================
 if not DEBUG:
+    print("🔒 Production security settings enabled")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-
-# ============================================================================
-# ⚠️ REMOVED: Database queries during settings load
-# Use management command instead: python manage.py create_superuser
-# ============================================================================
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    print("🔓 Development mode - Security features relaxed")
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
