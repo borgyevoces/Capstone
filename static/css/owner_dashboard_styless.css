@@ -34,10 +34,8 @@ html, body {
     color: var(--text-dark);
 }
 
-/* NAVBAR */
 /* ==========================================
    NAVBAR - FIXED FOR DESKTOP & MOBILE
-   Clean white background, properly aligned
    ========================================== */
 
 .navbar {
@@ -63,7 +61,6 @@ html, body {
     gap: 20px;
 }
 
-/* Logo */
 .navbar-logo {
     font-family: 'Pacifico', cursive;
     font-size: 28px;
@@ -78,7 +75,6 @@ html, body {
     color: var(--primary-dark, #8c1616);
 }
 
-/* Actions Container */
 .navbar-actions {
     display: flex;
     align-items: center;
@@ -86,7 +82,6 @@ html, body {
     flex-shrink: 0;
 }
 
-/* Notification & Chat Buttons */
 .notification-toggle-btn,
 .chat-toggle-btn {
     position: relative;
@@ -110,7 +105,6 @@ html, body {
     background: var(--bg-light, #f8f9fa);
 }
 
-/* Badges */
 .notification-badge,
 .chat-badge {
     position: absolute;
@@ -127,12 +121,10 @@ html, body {
     line-height: 1.2;
 }
 
-/* Dropdown Container */
 .navbar-dropdown {
     position: relative;
 }
 
-/* Dropdown Button */
 .navbar-btn {
     display: flex;
     align-items: center;
@@ -165,7 +157,6 @@ html, body {
     color: var(--text-muted, #6b7280);
 }
 
-/* Dropdown Menu */
 .navbar-menu {
     position: absolute;
     top: calc(100% + 8px);
@@ -219,186 +210,14 @@ html, body {
     font-size: 16px;
 }
 
-/* Add top spacing to body content */
 body {
     padding-top: 70px;
 }
 
 /* ==========================================
-   MOBILE RESPONSIVE (Phone View)
+   ALERTS
    ========================================== */
 
-@media (max-width: 768px) {
-    .navbar {
-        height: 60px;
-    }
-
-    .navbar-container {
-        padding: 0 16px;
-        gap: 12px;
-    }
-
-    .navbar-logo {
-        font-size: 24px;
-    }
-
-    .navbar-actions {
-        gap: 8px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-        padding: 8px;
-    }
-
-    .navbar-btn {
-        padding: 8px 12px;
-        font-size: 13px;
-        height: 40px;
-        gap: 6px;
-    }
-
-    .navbar-btn span {
-        display: none; /* Hide establishment name on mobile to save space */
-    }
-
-    .navbar-btn i:first-child {
-        font-size: 18px;
-    }
-
-    .navbar-menu {
-        min-width: 180px;
-    }
-
-    body {
-        padding-top: 60px;
-    }
-}
-
-@media (max-width: 480px) {
-    .navbar {
-        height: 56px;
-    }
-
-    .navbar-container {
-        padding: 0 12px;
-        gap: 8px;
-    }
-
-    .navbar-logo {
-        font-size: 22px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        padding: 6px;
-    }
-
-    .navbar-btn {
-        padding: 6px 10px;
-        height: 36px;
-    }
-
-    .navbar-btn i:first-child {
-        font-size: 16px;
-    }
-
-    body {
-        padding-top: 56px;
-    }
-}
-
-/* ==========================================
-   EXTRA: Ensure proper spacing for alerts
-   ========================================== */
-
-.alert {
-    position: fixed;
-    top: 90px; /* Below navbar */
-    right: 24px;
-    z-index: 2000;
-}
-
-@media (max-width: 768px) {
-    .alert {
-        top: 75px;
-        right: 16px;
-        left: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .alert {
-        top: 70px;
-    }
-}
-
-/* ==========================================
-   FIX: Notification & Chat Panels
-   Should appear below navbar
-   ========================================== */
-
-.notification-panel,
-.chat-panel,
-.chat-window {
-    top: 70px;
-    height: calc(100vh - 70px);
-}
-
-@media (max-width: 768px) {
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        top: 60px;
-        height: calc(100vh - 60px);
-    }
-}
-
-@media (max-width: 480px) {
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        top: 56px;
-        height: calc(100vh - 56px);
-    }
-}
-
-/* ==========================================
-   FIX: Main content should start below navbar
-   ========================================== */
-
-.main-content {
-    padding-top: 32px; /* Additional spacing from navbar */
-}
-
-@media (max-width: 768px) {
-    .main-content {
-        padding-top: 20px;
-    }
-}
-
-/* ==========================================
-   FIX: Sidebar sticky positioning
-   ========================================== */
-
-.dashboard-sidebar {
-    position: sticky;
-    top: 90px; /* navbar height + spacing */
-}
-
-@media (max-width: 768px) {
-    .dashboard-sidebar {
-        position: static; /* Remove sticky on mobile */
-    }
-}
-
-/* ALERTS - IMPROVED NOTIFICATION DESIGN */
 .alert {
     position: fixed;
     top: 90px;
@@ -479,7 +298,10 @@ body {
     color: var(--text-dark);
 }
 
-/* MAIN CONTENT - NEW LAYOUT WRAPPER */
+/* ==========================================
+   MAIN CONTENT
+   ========================================== */
+
 .main-content {
     max-width: 1400px;
     margin: 0 auto;
@@ -492,7 +314,6 @@ body {
     align-items: flex-start;
 }
 
-/* LEFT SIDEBAR (Sticky) */
 .dashboard-sidebar {
     width: 350px;
     flex-shrink: 0;
@@ -503,13 +324,11 @@ body {
     gap: 24px;
 }
 
-/* RIGHT CONTENT AREA */
 .dashboard-content {
     flex-grow: 1;
-    min-width: 0; /* Prevents overflow issues in flex children */
+    min-width: 0;
 }
 
-/* SUSPENSION WARNING */
 .suspension-warning {
     background: linear-gradient(135deg, var(--error), #ef5350);
     color: white;
@@ -522,11 +341,10 @@ body {
 }
 
 /* ==========================================
-   STORE HEADER - ADAPTED FOR SIDEBAR
+   STORE HEADER
    ========================================== */
 
 .store-header {
-    /* Removed large margins as it's now in sidebar */
     position: relative;
     background: var(--bg);
     border-radius: var(--radius);
@@ -538,8 +356,8 @@ body {
 
 .cover-photo {
     width: 100%;
-    height: 140px; /* Reduced height for sidebar look */
-    border-radius: 0; /* Flush with card top */
+    height: 140px;
+    border-radius: 0;
     overflow: hidden;
     cursor: pointer;
     background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
@@ -574,10 +392,10 @@ body {
 .header-info {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center everything in sidebar */
+    align-items: center;
     text-align: center;
     gap: 12px;
-    margin-top: -60px; /* Pull profile pic up */
+    margin-top: -60px;
     padding: 0 16px;
     position: relative;
     z-index: 10;
@@ -607,14 +425,13 @@ body {
     object-fit: cover;
 }
 
-/* Adjusted Store Info for White Background (Sidebar Card) */
 .store-info h1 {
     font-size: 26px;
     margin-top: 8px;
     margin-bottom: 4px;
     color: var(--text-dark);
     font-weight: 800;
-    text-shadow: none; /* Removed heavy shadow as it's on white card now */
+    text-shadow: none;
 }
 
 .store-info p {
@@ -647,10 +464,13 @@ body {
     text-shadow: none;
 }
 
-/* GRID LAYOUT - ADAPTED FOR SIDEBAR */
+/* ==========================================
+   CARDS & GRID
+   ========================================== */
+
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr; /* Force 1 column in sidebar */
+    grid-template-columns: 1fr;
     gap: 24px;
 }
 
@@ -682,7 +502,6 @@ body {
     font-size: 18px;
 }
 
-/* CENTERED TITLE FOR MENU SECTION */
 .card-title-center {
     font-size: 24px;
     font-weight: 700;
@@ -690,7 +509,7 @@ body {
     color: var(--text-dark);
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Aligned left for right column */
+    justify-content: flex-start;
     gap: 10px;
     text-align: left;
 }
@@ -702,10 +521,13 @@ body {
 
 .menu-section {
     margin-bottom: 32px;
-    height: 100%; /* Fill the right column */
+    height: 100%;
 }
 
-/* BUTTONS */
+/* ==========================================
+   BUTTONS
+   ========================================== */
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -753,14 +575,13 @@ body {
     gap: 10px;
 }
 
-/* TRANSPARENT BUTTON STYLE */
 .btn-transparent {
     background: var(--bg);
     color: var(--text-dark);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
     justify-content: flex-start;
-    width: 100%; /* Full width in sidebar */
+    width: 100%;
 }
 
 .btn-transparent:hover {
@@ -775,7 +596,10 @@ body {
     text-align: center;
 }
 
-/* STATS */
+/* ==========================================
+   STATS
+   ========================================== */
+
 .stat-item {
     display: flex;
     align-items: center;
@@ -809,7 +633,10 @@ body {
     color: var(--text-muted);
 }
 
-/* MENU GRID - ADAPTED FOR RIGHT COLUMN */
+/* ==========================================
+   MENU GRID - 2 COLUMNS ON MOBILE
+   ========================================== */
+
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -851,7 +678,6 @@ body {
     transform: scale(1.08);
 }
 
-/* IMPROVED BADGE POSITIONING */
 .badges-container {
     position: absolute;
     top: 10px;
@@ -974,7 +800,10 @@ body {
     background: rgba(198, 40, 40, 0.1);
 }
 
-/* MODALS */
+/* ==========================================
+   MODALS
+   ========================================== */
+
 .modal {
     display: none;
     position: fixed;
@@ -1127,7 +956,6 @@ body {
     user-select: none;
 }
 
-/* Address field styling when readonly */
 #id_address[readonly] {
     background-color: #f8f9fa !important;
     color: #495057;
@@ -1138,7 +966,6 @@ body {
     line-height: 1.5;
 }
 
-/* Animation when address updates */
 @keyframes addressUpdate {
     0% { background-color: #e8f5e9; }
     100% { background-color: #f8f9fa; }
@@ -1164,7 +991,6 @@ body {
     transition: all 0.2s;
 }
 
-/* Location status in Update Store Details Modal */
 #locationStatus {
     display: block;
     margin-top: 8px;
@@ -1173,7 +999,7 @@ body {
 }
 
 /* ==========================================
-   MAP MODAL - RESPONSIVE IMPROVEMENTS
+   MAP MODAL
    ========================================== */
 
 #mapModal .modal-content {
@@ -1181,7 +1007,6 @@ body {
     padding: 16px;
 }
 
-/* Current Location Display - Responsive */
 .location-display-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 12px;
@@ -1191,7 +1016,6 @@ body {
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
-/* Address Display - Responsive */
 .address-display-card {
     background: #e8f5e9;
     padding: 12px;
@@ -1199,7 +1023,6 @@ body {
     margin-bottom: 12px;
 }
 
-/* Map Container - Responsive */
 #map {
     width: 100%;
     height: 450px;
@@ -1209,7 +1032,6 @@ body {
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
-/* Action Buttons - Responsive */
 .map-actions {
     display: flex;
     gap: 10px;
@@ -1219,24 +1041,87 @@ body {
 }
 
 /* ==========================================
-   RESPONSIVE ADJUSTMENTS
+   NOTIFICATION & CHAT PANELS
+   ========================================== */
+
+.notification-panel,
+.chat-panel,
+.chat-window {
+    top: 70px;
+    height: calc(100vh - 70px);
+}
+
+/* ==========================================
+   TABLET RESPONSIVE (1024px and below)
    ========================================== */
 
 @media (max-width: 1024px) {
     .dashboard-sidebar {
         width: 300px;
     }
+
     .menu-grid {
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 }
 
+/* ==========================================
+   TABLET RESPONSIVE (768px and below)
+   ========================================== */
+
 @media (max-width: 768px) {
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-container {
+        padding: 0 16px;
+        gap: 12px;
+    }
+
+    .navbar-logo {
+        font-size: 24px;
+    }
+
+    .navbar-actions {
+        gap: 8px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        padding: 8px;
+    }
+
+    .navbar-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+        height: 40px;
+        gap: 6px;
+    }
+
+    .navbar-btn span {
+        display: none;
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 18px;
+    }
+
+    .navbar-menu {
+        min-width: 180px;
+    }
+
+    body {
+        padding-top: 60px;
+    }
+
     .main-content {
         padding: 20px 16px;
     }
 
-    /* Stack sidebar on top of content on mobile */
     .dashboard-layout {
         flex-direction: column;
     }
@@ -1251,14 +1136,20 @@ body {
         font-size: 13px;
         padding: 12px 16px;
         top: 75px;
+        right: 16px;
+        left: 16px;
+        min-width: auto;
+        max-width: none;
     }
 
     .alert i {
         font-size: 18px;
     }
 
+    /* ✅ MENU: 2 COLUMNS ON TABLETS */
     .menu-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
     }
 
     .btn-group {
@@ -1289,23 +1180,192 @@ body {
         height: 100px;
     }
 
-    /* Map Container - Extra Small Screens */
-    #map {
-        height: 280px;
-    }
-}right: 16px;
-        left: 16px;
-        min-width: auto;
-        max-width: none;
-        top: 80px;
+    .cover-photo {
+        height: 140px;
     }
 
     .store-info h1 {
         font-size: 24px;
     }
 
-    .cover-photo {
+    #map {
+        height: 350px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE (480px and below)
+   ========================================== */
+
+@media (max-width: 480px) {
+    .navbar {
+        height: 56px;
+    }
+
+    .navbar-container {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .navbar-logo {
+        font-size: 22px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        padding: 6px;
+    }
+
+    .navbar-btn {
+        padding: 6px 10px;
+        height: 36px;
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 16px;
+    }
+
+    body {
+        padding-top: 56px;
+    }
+
+    .main-content {
+        padding: 16px 12px;
+    }
+
+    .alert {
+        top: 70px;
+        font-size: 12px;
+        padding: 10px 14px;
+        right: 12px;
+        left: 12px;
+    }
+
+    /* ✅ MENU: 2 COLUMNS ON PHONE */
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .menu-card {
+        border-radius: 10px;
+    }
+
+    .menu-image {
         height: 140px;
+    }
+
+    .menu-info {
+        padding: 12px;
+    }
+
+    .menu-name {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .menu-desc {
+        font-size: 12px;
+        margin-bottom: 8px;
+        -webkit-line-clamp: 2;
+    }
+
+    .menu-price {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .menu-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding-top: 8px;
+    }
+
+    .action-btn {
+        font-size: 10px;
+        padding: 6px 2px;
+        gap: 2px;
+    }
+
+    .action-btn i {
+        font-size: 11px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .badges-container {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        gap: 6px;
+    }
+
+    .profile-pic {
+        width: 90px;
+        height: 90px;
+    }
+
+    .cover-photo {
+        height: 120px;
+    }
+
+    .store-info h1 {
+        font-size: 20px;
+    }
+
+    .store-info p {
+        font-size: 13px;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        font-size: 11px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .card-title {
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .card-title-center {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
+    .stat-item {
+        padding: 10px;
+        gap: 12px;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .stat-number {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 11px;
     }
 
     .modal-content {
@@ -1313,7 +1373,11 @@ body {
         max-width: 95%;
     }
 
-    /* Map Modal Responsive */
+    .modal h2 {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
     #mapModal .modal-content {
         max-width: 95%;
         padding: 16px;
@@ -1330,7 +1394,6 @@ body {
         margin-bottom: 12px;
     }
 
-    /* Location Display Card */
     .location-display-card {
         padding: 10px;
         margin-bottom: 10px;
@@ -1354,7 +1417,6 @@ body {
         font-size: 11px !important;
     }
 
-    /* Address Display Card */
     .address-display-card {
         padding: 10px;
         margin-bottom: 10px;
@@ -1372,15 +1434,13 @@ body {
         font-size: 13px !important;
     }
 
-    /* Map Container */
     #map {
-        height: 350px;
+        height: 280px;
         border-radius: 8px;
         border-width: 2px;
         margin-bottom: 10px;
     }
 
-    /* Map Actions */
     .map-actions {
         flex-direction: column;
         gap: 8px;
@@ -1401,28 +1461,20 @@ body {
         border-radius: 6px;
     }
 
-    /* Address Field */
     #id_address[readonly] {
         font-size: 13px;
         padding: 8px 10px;
     }
 
-    /* Location Status */
     #locationStatus {
         font-size: 11px;
         margin-top: 6px;
     }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
 }
-
-@media (max-width: 480px) {
-    .navbar-container {
-        flex-direction: column;
-        gap: 12px;
-        height: 100px;
-    }
-
-    .navbar-logo {
-        font-size: 28px;
-    }
-
-    .alert {
