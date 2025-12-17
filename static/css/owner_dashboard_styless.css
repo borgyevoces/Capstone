@@ -35,14 +35,145 @@ html, body {
 }
 
 /* NAVBAR */
+/* ==========================================
+   NAVBAR - FIXED FOR DESKTOP & MOBILE
+   Clean white background, properly aligned
+   ========================================== */
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    height: 70px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.navbar-container {
+    max-width: 1400px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Logo */
+.navbar-logo {
+    font-family: 'Pacifico', cursive;
+    font-size: 28px;
+    color: var(--primary, #B71C1C);
+    text-decoration: none;
+    font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.navbar-logo:hover {
+    color: var(--primary-dark, #8c1616);
+}
+
+/* Actions Container */
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Notification & Chat Buttons */
+.notification-toggle-btn,
+.chat-toggle-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--text-dark, #1a1a1a);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+}
+
+.notification-toggle-btn:hover,
+.chat-toggle-btn:hover {
+    background: var(--bg-light, #f8f9fa);
+}
+
+/* Badges */
+.notification-badge,
+.chat-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #f02849;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Dropdown Container */
+.navbar-dropdown {
+    position: relative;
+}
+
+/* Dropdown Button */
+.navbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-dark, #1a1a1a);
+    transition: all 0.2s;
+    height: 44px;
+    white-space: nowrap;
+}
+
+.navbar-btn:hover {
+    background: var(--bg-light, #f8f9fa);
+    border-color: var(--primary, #B71C1C);
+}
+
+.navbar-btn i:first-child {
+    font-size: 20px;
+    color: var(--primary, #B71C1C);
+}
+
+.navbar-btn i:last-child {
+    font-size: 12px;
+    color: var(--text-muted, #6b7280);
+}
+
+/* Dropdown Menu */
 .navbar-menu {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
+    background: white;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     min-width: 220px;
     display: none;
     overflow: hidden;
@@ -86,15 +217,185 @@ html, body {
 
 .navbar-menu .logout-link i {
     font-size: 16px;
-    transition: transform 0.3s ease;
 }
 
-.navbar-menu .logout-link:hover i {
-    transform: translateX(-2px);
+/* Add top spacing to body content */
+body {
+    padding-top: 70px;
 }
 
-.navbar-menu .logout-link span {
-    flex: 1;
+/* ==========================================
+   MOBILE RESPONSIVE (Phone View)
+   ========================================== */
+
+@media (max-width: 768px) {
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-container {
+        padding: 0 16px;
+        gap: 12px;
+    }
+
+    .navbar-logo {
+        font-size: 24px;
+    }
+
+    .navbar-actions {
+        gap: 8px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        padding: 8px;
+    }
+
+    .navbar-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+        height: 40px;
+        gap: 6px;
+    }
+
+    .navbar-btn span {
+        display: none; /* Hide establishment name on mobile to save space */
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 18px;
+    }
+
+    .navbar-menu {
+        min-width: 180px;
+    }
+
+    body {
+        padding-top: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        height: 56px;
+    }
+
+    .navbar-container {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .navbar-logo {
+        font-size: 22px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        padding: 6px;
+    }
+
+    .navbar-btn {
+        padding: 6px 10px;
+        height: 36px;
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 16px;
+    }
+
+    body {
+        padding-top: 56px;
+    }
+}
+
+/* ==========================================
+   EXTRA: Ensure proper spacing for alerts
+   ========================================== */
+
+.alert {
+    position: fixed;
+    top: 90px; /* Below navbar */
+    right: 24px;
+    z-index: 2000;
+}
+
+@media (max-width: 768px) {
+    .alert {
+        top: 75px;
+        right: 16px;
+        left: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .alert {
+        top: 70px;
+    }
+}
+
+/* ==========================================
+   FIX: Notification & Chat Panels
+   Should appear below navbar
+   ========================================== */
+
+.notification-panel,
+.chat-panel,
+.chat-window {
+    top: 70px;
+    height: calc(100vh - 70px);
+}
+
+@media (max-width: 768px) {
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+}
+
+/* ==========================================
+   FIX: Main content should start below navbar
+   ========================================== */
+
+.main-content {
+    padding-top: 32px; /* Additional spacing from navbar */
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        padding-top: 20px;
+    }
+}
+
+/* ==========================================
+   FIX: Sidebar sticky positioning
+   ========================================== */
+
+.dashboard-sidebar {
+    position: sticky;
+    top: 90px; /* navbar height + spacing */
+}
+
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        position: static; /* Remove sticky on mobile */
+    }
 }
 
 /* ALERTS - IMPROVED NOTIFICATION DESIGN */
