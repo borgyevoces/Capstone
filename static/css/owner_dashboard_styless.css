@@ -1396,32 +1396,46 @@ body {
     box-shadow: 0 8px 24px rgba(183, 28, 28, 0.5);
 }
 /* ==========================================
-   📱 PHONE VIEW FIX: COMPACT INDICATORS
+   📱 PHONE VIEW FIX: FORCED SINGLE ROW
    ========================================== */
-@media screen and (max-width: 768px) {
+@media only screen and (max-width: 768px) {
 
-    /* Pagdikitin natin yung vertical gap ng checkbox items */
+    /* Target specifically the checkbox container inside the form */
     .checkbox-group {
-        gap: 4px !important;
+        display: flex !important;
+        flex-direction: column !important; /* Stack vertical */
+        gap: 2px !important; /* Super tight gap between rows */
+        margin-bottom: 10px !important;
     }
 
-    /* Bawasan ang height ng container */
+    /* Target the individual item (checkbox + label) */
     .checkbox-item {
-        min-height: 25px; /* Sapat lang para sa isang line */
+        display: flex !important;
+        flex-direction: row !important; /* Ensure side-by-side */
+        align-items: center !important;
+        min-height: 20px !important; /* Force smaller height */
+        height: auto !important;
         margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
     }
 
-    /* Pilitin na maging 1 row lang ang text at liitan ang font */
+    /* Target the Label Text specifically */
     .checkbox-item label {
-        font-size: 12px !important; /* Mas maliit na font para magkasya */
-        white-space: nowrap !important; /* Ito ang pipigil sa text na bumaba (wrap) */
-        line-height: 1.2;
-        font-weight: 500;
+        white-space: nowrap !important; /* BAWAL BUMABA ANG TEXT */
+        font-size: 11px !important; /* Force small font */
+        line-height: 1 !important; /* Tight line height */
+        margin-left: 5px !important;
+        padding-top: 2px !important; /* Alignment fix */
+        width: auto !important;
+        flex: 1 !important; /* Take remaining space */
     }
 
-    /* Optional: Liitan ng konti ang checkbox box para bumagay sa text */
+    /* Target the Checkbox Box */
     .checkbox-item input[type="checkbox"] {
-        transform: scale(0.85);
-        margin-right: 2px;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        transform: scale(0.9) !important; /* Make box slightly smaller */
     }
 }
