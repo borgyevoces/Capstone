@@ -1080,61 +1080,65 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ==========================================
-// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ✅ SCROLL TO TOP BUTTON - FORCED FIX
 // ==========================================
 
-// Show/hide button on scroll
-window.addEventListener('scroll', function() {
-    const scrollBtn = document.getElementById('scrollToTopBtn');
+(function() {
+    'use strict';
 
-    if (scrollBtn) {
-        // Show button when user scrolls down 300px from top
-        if (window.pageYOffset > 300 || document.documentElement.scrollTop > 300) {
+    // Function to show/hide scroll button
+    function toggleScrollButton() {
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+        if (!scrollBtn) {
+            console.error('❌ Scroll button not found!');
+            return;
+        }
+
+        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (scrollPosition > 300) {
             scrollBtn.classList.add('show');
+            console.log('✅ Button should be visible now');
         } else {
             scrollBtn.classList.remove('show');
+            console.log('⚠️ Button hidden (scroll < 300px)');
         }
     }
-});
 
-// Smooth scroll to top function
-function scrollToTop() {
-    // Smooth scroll behavior
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
+    // Smooth scroll to top
+    window.scrollToTop = function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
 
-    // Alternative for older browsers
-    if (!('scrollBehavior' in document.documentElement.style)) {
-        // Fallback for browsers that don't support smooth scroll
-        const scrollStep = -window.scrollY / (500 / 15);
-        const scrollInterval = setInterval(function() {
-            if (window.scrollY !== 0) {
-                window.scrollBy(0, scrollStep);
-            } else {
-                clearInterval(scrollInterval);
-            }
-        }, 15);
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Scroll to top button initialized');
-
-    const scrollBtn = document.getElementById('scrollToTopBtn');
-    if (scrollBtn) {
-        console.log('✅ Scroll button found in DOM');
-
-        // Add click event listener
-        scrollBtn.addEventListener('click', scrollToTop);
-
-        // Check initial scroll position
-        if (window.pageYOffset > 300) {
-            scrollBtn.classList.add('show');
-        }
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        console.error('❌ Scroll button NOT found in DOM');
+        init();
     }
-});
+
+    function init() {
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+
+        if (scrollBtn) {
+            console.log('✅ Scroll button found!');
+
+            // Add scroll event listener
+            window.addEventListener('scroll', toggleScrollButton, { passive: true });
+
+            // Add click event listener
+            scrollBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollToTop();
+            });
+
+            // Check initial position
+            toggleScrollButton();
+        } else {
+            console.error('❌ Scroll button NOT found in DOM!');
+        }
+    }
+})();
