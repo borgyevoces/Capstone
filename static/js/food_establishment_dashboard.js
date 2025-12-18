@@ -1079,28 +1079,49 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 // ==========================================
-// SCROLL TO TOP FUNCTIONALITY
+// SCROLL TO TOP FUNCTIONALITY (UNIVERSAL FIX)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
 
     if (scrollBtn) {
-        // 1. Show/Hide button on scroll
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > 300) {
+        // 1. Universal Scroll Detector (Detects window OR div scrolling)
+        window.addEventListener('scroll', function(e) {
+            // Determine if the scroll is coming from the window or a specific element
+            const target = e.target;
+            const scrollPosition = (target === document) ? window.scrollY : target.scrollTop;
+
+            // Ignore small scrolling boxes (like dropdowns)
+            // Only trigger for the main page or large containers
+            if (target !== document && target.scrollHeight < 500) return;
+
+            // Show button if scrolled more than 300px
+            if (scrollPosition > 300) {
                 scrollBtn.classList.add('show');
             } else {
                 scrollBtn.classList.remove('show');
             }
-        });
+        }, true); // <--- 'true' captures scroll events inside divs!
 
-        // 2. Click event to scroll up
+        // 2. Universal Scroll To Top Action
         scrollBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
+
+            // Method A: Scroll Window
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Method B: Scroll any open container (Fix for dashboards)
+            // This finds whatever element is currently scrolled down and pushes it up
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.scrollTop > 0) {
+                    el.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             });
         });
+
+        console.log("✅ Scroll Button Loaded");
+    } else {
+        console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
     }
 });
