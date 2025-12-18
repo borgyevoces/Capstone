@@ -1082,10 +1082,14 @@ document.head.appendChild(style);
 // ==========================================
 // ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
 // ==========================================
+
+// Show/hide button on scroll
 window.addEventListener('scroll', function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
+
     if (scrollBtn) {
-        if (window.pageYOffset > 300) {
+        // Show button when user scrolls down 300px from top
+        if (window.pageYOffset > 300 || document.documentElement.scrollTop > 300) {
             scrollBtn.classList.add('show');
         } else {
             scrollBtn.classList.remove('show');
@@ -1093,9 +1097,44 @@ window.addEventListener('scroll', function() {
     }
 });
 
+// Smooth scroll to top function
 function scrollToTop() {
+    // Smooth scroll behavior
     window.scrollTo({
         top: 0,
         behavior: 'smooth'
     });
+
+    // Alternative for older browsers
+    if (!('scrollBehavior' in document.documentElement.style)) {
+        // Fallback for browsers that don't support smooth scroll
+        const scrollStep = -window.scrollY / (500 / 15);
+        const scrollInterval = setInterval(function() {
+            if (window.scrollY !== 0) {
+                window.scrollBy(0, scrollStep);
+            } else {
+                clearInterval(scrollInterval);
+            }
+        }, 15);
+    }
 }
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Scroll to top button initialized');
+
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (scrollBtn) {
+        console.log('✅ Scroll button found in DOM');
+
+        // Add click event listener
+        scrollBtn.addEventListener('click', scrollToTop);
+
+        // Check initial scroll position
+        if (window.pageYOffset > 300) {
+            scrollBtn.classList.add('show');
+        }
+    } else {
+        console.error('❌ Scroll button NOT found in DOM');
+    }
+});
