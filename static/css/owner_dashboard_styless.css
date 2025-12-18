@@ -719,7 +719,9 @@ body {
 }
 
 .badge.best-seller {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+    opacity: 1 !important;
+    backdrop-filter: none;
 }
 
 .badge.available {
@@ -1297,9 +1299,16 @@ body {
         right: 6px;
         gap: 4px;
     }
+        flex-direction: row;
+        justify-content: space-between;
 
     .badge {
         padding: 4px 8px;
+    }
+
+    .badge.best-seller {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+        opacity: 1 !important;
         font-size: 9px;
         border-radius: 4px;
     }
@@ -1308,10 +1317,6 @@ body {
         font-size: 9px;
     }
 
-    /* ✅ BADGE AVAILABLE - TOP RIGHT */
-    .badge.available {
-        position: absolute;
-        top: 0;
         right: 0;
         left: auto;
     }
@@ -1535,5 +1540,75 @@ body {
 
     .footer-bottom p {
         font-size: 12px;
+    }
+}
+/* ==========================================
+   SCROLL TO TOP BUTTON
+   ========================================== */
+
+.scroll-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.scroll-to-top.show {
+    display: flex;
+    animation: fadeInUp 0.3s ease;
+}
+
+.scroll-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+    background: linear-gradient(135deg, #d32f2f 0%, #B71C1C 100%);
+}
+
+.scroll-to-top:active {
+    transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile adjustments for scroll-to-top */
+@media (max-width: 768px) {
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
 }
