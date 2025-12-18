@@ -187,6 +187,513 @@ html, body {
     }
 }
 
+/* ==========================================
+   TABLET RESPONSIVE (768px and below)
+   ========================================== */
+
+@media (max-width: 768px) {
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-container {
+        padding: 0 16px;
+        gap: 12px;
+    }
+
+    .navbar-logo {
+        font-size: 24px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        padding: 8px;
+    }
+
+    .navbar-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+        height: 40px;
+        gap: 6px;
+    }
+
+    .navbar-btn span {
+        display: none;
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 18px;
+    }
+
+    .navbar-menu {
+        min-width: 180px;
+    }
+
+    body {
+        padding-top: 60px;
+    }
+
+    .main-content {
+        padding: 20px 16px;
+    }
+
+    .dashboard-layout {
+        flex-direction: column;
+    }
+
+    .dashboard-sidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 24px;
+    }
+
+    .alert {
+        font-size: 13px;
+        padding: 12px 16px;
+        top: 75px;
+        right: 16px;
+        left: 16px;
+        min-width: auto;
+        max-width: none;
+    }
+
+    .alert i {
+        font-size: 18px;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-transparent {
+        justify-content: flex-start;
+    }
+
+    .menu-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .action-btn {
+        font-size: 11px;
+        padding: 8px 4px;
+    }
+
+    .profile-pic {
+        width: 100px;
+        height: 100px;
+    }
+
+    .cover-photo {
+        height: 140px;
+    }
+
+    .store-info h1 {
+        font-size: 24px;
+    }
+
+    #map {
+        height: 350px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+
+    .footer {
+        padding: 40px 16px 20px;
+        margin-top: 60px;
+    }
+
+    .footer-container {
+        gap: 32px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE (480px and below)
+   ========================================== */
+
+@media (max-width: 480px) {
+    .navbar {
+        height: 56px;
+    }
+
+    .navbar-container {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .navbar-logo {
+        font-size: 22px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        padding: 6px;
+    }
+
+    .navbar-btn {
+        padding: 6px 10px;
+        height: 36px;
+    }
+
+    .navbar-btn i:first-child {
+        font-size: 16px;
+    }
+
+    body {
+        padding-top: 56px;
+    }
+
+    .main-content {
+        padding: 12px 8px;
+    }
+
+    .alert {
+        top: 70px;
+        font-size: 12px;
+        padding: 10px 14px;
+        right: 8px;
+        left: 8px;
+    }
+
+    .card {
+        padding: 16px;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-sidebar {
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .menu-section {
+        margin-bottom: 10px;
+    }
+
+    .decorative-line {
+        width: 60px;
+        height: 2px;
+        margin: 8px auto;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .menu-card {
+        border-radius: 10px;
+    }
+
+    .menu-image {
+        height: 120px;
+    }
+
+    .menu-info {
+        padding: 10px;
+    }
+
+    .menu-name {
+        font-size: 13px;
+        margin-bottom: 3px;
+        line-height: 1.3;
+    }
+
+    .menu-desc {
+        font-size: 11px;
+        margin-bottom: 6px;
+        -webkit-line-clamp: 2;
+        line-height: 1.4;
+    }
+
+    .menu-price {
+        font-size: 15px;
+        margin-bottom: 8px;
+        font-weight: 800;
+    }
+
+    .badges-container {
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        gap: 4px;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 9px;
+    }
+
+    .badge.bestseller {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+        opacity: 1 !important;
+        font-size: 9px;
+        border-radius: 4px;
+    }
+
+    .badge i {
+        font-size: 9px;
+    }
+
+    .menu-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding-top: 8px;
+    }
+
+    .action-btn {
+        font-size: 10px;
+        padding: 6px 3px;
+        gap: 2px;
+        flex-direction: column;
+        height: auto;
+    }
+
+    .action-btn i {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    .action-btn span {
+        display: none;
+    }
+
+    .profile-pic {
+        width: 90px;
+        height: 90px;
+    }
+
+    .cover-photo {
+        height: 120px;
+    }
+
+    .store-info h1 {
+        font-size: 20px;
+    }
+
+    .store-info p {
+        font-size: 13px;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        font-size: 11px;
+    }
+
+    .card-title {
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .card-title-center {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
+    .stat-item {
+        padding: 10px;
+        gap: 12px;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .stat-number {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+    }
+
+    .modal-content {
+        padding: 24px;
+        max-width: 95%;
+    }
+
+    .modal h2 {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
+    #mapModal .modal-content {
+        max-width: 95%;
+        padding: 16px;
+        margin: 10px;
+    }
+
+    #mapModal h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    #mapModal p {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .location-display-card {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .location-display-card .location-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
+    }
+
+    .location-display-card .location-label {
+        font-size: 11px !important;
+    }
+
+    .location-display-card .location-coords {
+        font-size: 14px !important;
+    }
+
+    .location-display-card .location-status {
+        font-size: 11px !important;
+    }
+
+    .address-display-card {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .address-display-card .address-icon {
+        font-size: 20px !important;
+    }
+
+    .address-display-card .address-title {
+        font-size: 12px !important;
+    }
+
+    .address-display-card .address-text {
+        font-size: 13px !important;
+    }
+
+    #map {
+        height: 280px;
+        border-radius: 8px;
+        border-width: 2px;
+        margin-bottom: 10px;
+    }
+
+    .map-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .map-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .map-actions .map-info-text {
+        order: -1;
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        padding: 8px;
+        background: #f5f5f5;
+        border-radius: 6px;
+    }
+
+    #id_address[readonly] {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    #locationStatus {
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+
+    .footer {
+        padding: 32px 12px 16px;
+        margin-top: 40px;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .footer-section h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .footer-section p,
+    .footer-links a {
+        font-size: 13px;
+    }
+
+    .footer-social {
+        gap: 10px;
+    }
+
+    .social-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .footer-bottom p {
+        font-size: 12px;
+    }
+
+    .scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
 .navbar-menu .logout-link {
     display: flex;
     align-items: center;
@@ -718,14 +1225,21 @@ body {
     font-size: 11px;
 }
 
-.badge.best-seller {
+/* 🔥 BEST SELLER BADGE - ORANGE GRADIENT */
+.badge.bestseller {
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
     opacity: 1 !important;
     backdrop-filter: none;
 }
 
+/* ✅ AVAILABLE BADGE - GREEN */
 .badge.available {
     background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%);
+}
+
+/* ❌ SOLD OUT BADGE - RED */
+.badge.soldout {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
 }
 
 .menu-info {
@@ -1040,509 +1554,6 @@ body {
 }
 
 /* ==========================================
-   TABLET RESPONSIVE (768px and below)
-   ========================================== */
-
-@media (max-width: 768px) {
-    .navbar {
-        height: 60px;
-    }
-
-    .navbar-container {
-        padding: 0 16px;
-        gap: 12px;
-    }
-
-    .navbar-logo {
-        font-size: 24px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-        padding: 8px;
-    }
-
-    .navbar-btn {
-        padding: 8px 12px;
-        font-size: 13px;
-        height: 40px;
-        gap: 6px;
-    }
-
-    .navbar-btn span {
-        display: none;
-    }
-
-    .navbar-btn i:first-child {
-        font-size: 18px;
-    }
-
-    .navbar-menu {
-        min-width: 180px;
-    }
-
-    body {
-        padding-top: 60px;
-    }
-
-    .main-content {
-        padding: 20px 16px;
-    }
-
-    .dashboard-layout {
-        flex-direction: column;
-    }
-
-    .dashboard-sidebar {
-        width: 100%;
-        position: static;
-        margin-bottom: 24px;
-    }
-
-    .alert {
-        font-size: 13px;
-        padding: 12px 16px;
-        top: 75px;
-        right: 16px;
-        left: 16px;
-        min-width: auto;
-        max-width: none;
-    }
-
-    .alert i {
-        font-size: 18px;
-    }
-
-    /* ✅ MENU: 2 COLUMNS ON TABLETS */
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-    }
-
-    .btn-group {
-        flex-direction: column;
-    }
-
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .btn-transparent {
-        justify-content: flex-start;
-    }
-
-    .menu-actions {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-    }
-
-    .action-btn {
-        font-size: 11px;
-        padding: 8px 4px;
-    }
-
-    .profile-pic {
-        width: 100px;
-        height: 100px;
-    }
-
-    .cover-photo {
-        height: 140px;
-    }
-
-    .store-info h1 {
-        font-size: 24px;
-    }
-
-    #map {
-        height: 350px;
-    }
-
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        top: 60px;
-        height: calc(100vh - 60px);
-    }
-
-    /* Footer adjustments for tablet */
-    .footer {
-        padding: 40px 16px 20px;
-        margin-top: 60px;
-    }
-
-    .footer-container {
-        gap: 32px;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
-}
-
-/* ==========================================
-   MOBILE RESPONSIVE (480px and below)
-   ========================================== */
-
-@media (max-width: 480px) {
-    .navbar {
-        height: 56px;
-    }
-
-    .navbar-container {
-        padding: 0 12px;
-        gap: 8px;
-    }
-
-    .navbar-logo {
-        font-size: 22px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        padding: 6px;
-    }
-
-    .navbar-btn {
-        padding: 6px 10px;
-        height: 36px;
-    }
-
-    .navbar-btn i:first-child {
-        font-size: 16px;
-    }
-
-    body {
-        padding-top: 56px;
-    }
-
-    .main-content {
-        padding: 12px 8px;
-    }
-
-    .alert {
-        top: 70px;
-        font-size: 12px;
-        padding: 10px 14px;
-        right: 8px;
-        left: 8px;
-    }
-
-    /* ✅ REDUCED SPACING BETWEEN SECTIONS */
-    .card {
-        padding: 16px;
-        margin-bottom: 8px;
-    }
-
-    .dashboard-sidebar {
-        gap: 8px;
-        margin-bottom: 8px;
-    }
-
-    .menu-section {
-        margin-bottom: 10px;
-    }
-
-    /* ✅ DECORATIVE LINE SPACING */
-    .decorative-line {
-        width: 60px;
-        height: 2px;
-        margin: 8px auto;
-    }
-
-    /* ✅ MENU: 2 COLUMNS ON PHONE - WIDER WIDTH */
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-
-    .menu-card {
-        border-radius: 10px;
-    }
-
-    /* ✅ MENU IMAGE - SMALLER HEIGHT */
-    .menu-image {
-        height: 120px;
-    }
-
-    .menu-info {
-        padding: 10px;
-    }
-
-    .menu-name {
-        font-size: 13px;
-        margin-bottom: 3px;
-        line-height: 1.3;
-    }
-
-    .menu-desc {
-        font-size: 11px;
-        margin-bottom: 6px;
-        -webkit-line-clamp: 2;
-        line-height: 1.4;
-    }
-
-    .menu-price {
-        font-size: 15px;
-        margin-bottom: 8px;
-        font-weight: 800;
-    }
-
-    /* ✅ BADGES - BETTER POSITIONING */
-    .badges-container {
-        top: 6px;
-        left: 6px;
-        right: 6px;
-        gap: 4px;
-    }
-        flex-direction: row;
-        justify-content: space-between;
-
-    .badge {
-        padding: 4px 8px;
-    }
-
-    .badge.best-seller {
-        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
-        opacity: 1 !important;
-        font-size: 9px;
-        border-radius: 4px;
-    }
-
-    .badge i {
-        font-size: 9px;
-    }
-
-        right: 0;
-        left: auto;
-    }
-
-    /* ✅ MENU ACTIONS - BETTER SPACING */
-    .menu-actions {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 4px;
-        padding-top: 8px;
-    }
-
-    .action-btn {
-        font-size: 10px;
-        padding: 6px 3px;
-        gap: 2px;
-        flex-direction: column;
-        height: auto;
-    }
-
-    .action-btn i {
-        font-size: 12px;
-        margin-bottom: 2px;
-    }
-
-    /* ✅ HIDE TEXT ON MOBILE, SHOW ICON ONLY */
-    .action-btn span {
-        display: none;
-    }
-
-    .profile-pic {
-        width: 90px;
-        height: 90px;
-    }
-
-    .cover-photo {
-        height: 120px;
-    }
-
-    .store-info h1 {
-        font-size: 20px;
-    }
-
-    .store-info p {
-        font-size: 13px;
-    }
-
-    .status-badge {
-        padding: 5px 12px;
-        font-size: 11px;
-    }
-
-    .card-title {
-        font-size: 15px;
-        margin-bottom: 12px;
-    }
-
-    .card-title-center {
-        font-size: 20px;
-        margin-bottom: 16px;
-    }
-
-    .stat-item {
-        padding: 10px;
-        gap: 12px;
-    }
-
-    .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-
-    .stat-number {
-        font-size: 16px;
-    }
-
-    .stat-label {
-        font-size: 11px;
-    }
-
-    .modal-content {
-        padding: 24px;
-        max-width: 95%;
-    }
-
-    .modal h2 {
-        font-size: 20px;
-        margin-bottom: 16px;
-    }
-
-    #mapModal .modal-content {
-        max-width: 95%;
-        padding: 16px;
-        margin: 10px;
-    }
-
-    #mapModal h2 {
-        font-size: 18px;
-        margin-bottom: 8px;
-    }
-
-    #mapModal p {
-        font-size: 13px;
-        margin-bottom: 12px;
-    }
-
-    .location-display-card {
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-
-    .location-display-card .location-icon {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 18px !important;
-    }
-
-    .location-display-card .location-label {
-        font-size: 11px !important;
-    }
-
-    .location-display-card .location-coords {
-        font-size: 14px !important;
-    }
-
-    .location-display-card .location-status {
-        font-size: 11px !important;
-    }
-
-    .address-display-card {
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-
-    .address-display-card .address-icon {
-        font-size: 20px !important;
-    }
-
-    .address-display-card .address-title {
-        font-size: 12px !important;
-    }
-
-    .address-display-card .address-text {
-        font-size: 13px !important;
-    }
-
-    #map {
-        height: 280px;
-        border-radius: 8px;
-        border-width: 2px;
-        margin-bottom: 10px;
-    }
-
-    .map-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .map-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .map-actions .map-info-text {
-        order: -1;
-        width: 100%;
-        text-align: center;
-        font-size: 12px;
-        padding: 8px;
-        background: #f5f5f5;
-        border-radius: 6px;
-    }
-
-    #id_address[readonly] {
-        font-size: 13px;
-        padding: 8px 10px;
-    }
-
-    #locationStatus {
-        font-size: 11px;
-        margin-top: 6px;
-    }
-
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        top: 56px;
-        height: calc(100vh - 56px);
-    }
-
-    /* Footer adjustments for mobile */
-    .footer {
-        padding: 32px 12px 16px;
-        margin-top: 40px;
-    }
-
-    .footer-container {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-
-    .footer-section h3 {
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
-
-    .footer-section p,
-    .footer-links a {
-        font-size: 13px;
-    }
-
-    .footer-social {
-        gap: 10px;
-    }
-
-    .social-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-
-    .footer-bottom p {
-        font-size: 12px;
-    }
-}
-/* ==========================================
    SCROLL TO TOP BUTTON
    ========================================== */
 
@@ -1564,14 +1575,17 @@ body {
     box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
     transition: all 0.3s ease;
     z-index: 9999;
+    opacity: 0;
 }
 
 .scroll-to-top.show {
     display: flex;
-    animation: fadeInUp 0.3s ease;
+    opacity: 0.7;
+    animation: fadeInUp 0.3s ease forwards;
 }
 
 .scroll-to-top:hover {
+    opacity: 1 !important;
     transform: translateY(-5px);
     box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
     background: linear-gradient(135deg, #d32f2f 0%, #B71C1C 100%);
@@ -1587,28 +1601,4 @@ body {
         transform: translateY(20px);
     }
     to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Mobile adjustments for scroll-to-top */
-@media (max-width: 768px) {
-    .scroll-to-top {
-        bottom: 20px;
-        right: 20px;
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 480px) {
-    .scroll-to-top {
-        bottom: 15px;
-        right: 15px;
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-}
+        opacity: 0.7;
