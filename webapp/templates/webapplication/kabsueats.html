@@ -51,6 +51,68 @@
 .cart-badge.show {
     display: block;
 }
+        /* ==========================================
+   ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+   ========================================== */
+
+.scroll-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+}
+
+.scroll-to-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+}
+
+.scroll-to-top:active {
+    transform: translateY(-3px) scale(1.05);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
     </style>
 </head>
 <body>
@@ -485,6 +547,8 @@
         <p>&copy; 2025 <a href="#">KabsuEats</a>. All rights reserved. Made with <i class="fas fa-heart" style="color: #B71C1C;"></i> by CvSU-Bacoor Students</p>
     </div>
 </footer>
-
+<button class="scroll-to-top" id="scrollToTopBtn">
+    <i class="fas fa-arrow-up"></i>
+</button>
 </body>
 </html>

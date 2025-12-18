@@ -1042,3 +1042,79 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+// ==========================================
+// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ==========================================
+
+(function initScrollToTop() {
+    'use strict';
+
+    let scrollBtn = null;
+    let scrollTimeout = null;
+
+    // Throttle function to improve performance
+    function throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    }
+
+    // Function to show/hide scroll button
+    function toggleScrollButton() {
+        if (!scrollBtn) return;
+
+        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (scrollPosition > 300) {
+            scrollBtn.classList.add('show');
+        } else {
+            scrollBtn.classList.remove('show');
+        }
+    }
+
+    // Smooth scroll to top function
+    function scrollToTop(e) {
+        e.preventDefault();
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    // Initialize the scroll button
+    function init() {
+        scrollBtn = document.getElementById('scrollToTopBtn');
+
+        if (!scrollBtn) {
+            console.error('❌ Scroll to top button not found in DOM');
+            return;
+        }
+
+        console.log('✅ Scroll to top button initialized');
+
+        // Add scroll event listener with throttle for better performance
+        window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
+
+        // Add click event listener
+        scrollBtn.addEventListener('click', scrollToTop);
+
+        // Check initial scroll position
+        toggleScrollButton();
+    }
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
