@@ -931,40 +931,133 @@
         padding: 10px !important;
     }
 
-    /* =====================================
-    =      FOOTER                         =
-    =====================================*/
-    .footer_container {
-        width: 100%;
-        margin-top: 20px;
-        padding: 20px 15px;
-        border-top: 1px solid #e5e7eb;
-        background-color: #f9fafb;
-        color: #4b5563;
-        font-size: 13px;
-        text-align: center;
-    }
+    /* ==========================================
+   UPDATED FOOTER STYLES FOR MOBILE/PHONE
+   REPLACE LINES 935-969 in kabsueats_phoneview.css
+   ========================================== */
 
-    .footer-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
+.footer {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    padding: 32px 12px 16px;
+    margin-top: 40px;
+    border-top: 3px solid #B71C1C;
+}
 
-    .social-links {
-        display: flex;
-        gap: 15px;
-        margin-top: 8px;
-    }
+.footer-container {
+    max-width: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
 
-    .social-link {
-        color: #4b5563;
-        font-size: 16px;
-        transition: color 0.2s ease;
-    }
+.footer-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-    .social-link:hover {
-        color: #E9A420;
-    }
+.footer-section h3 i {
+    color: #B71C1C;
+}
+
+.footer-section p {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 8px;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-links a:hover {
+    color: white;
+    padding-left: 8px;
+}
+
+.footer-links a i {
+    color: #B71C1C;
+    font-size: 11px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.social-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background: #B71C1C;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 16px;
+    text-align: center;
+}
+
+.footer-bottom p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.footer-bottom a {
+    color: #B71C1C;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer-bottom a:hover {
+    text-decoration: underline;
+}
+
+/* Remove old footer styles - these are no longer needed */
+.footer_container,
+.footer-content,
+.social-links,
+.social-link {
+    /* Old styles removed - using new footer classes above */
 }
