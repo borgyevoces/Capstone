@@ -1395,3 +1395,33 @@ body {
     transform: translateY(-5px);
     box-shadow: 0 8px 24px rgba(183, 28, 28, 0.5);
 }
+/* ==========================================
+   📱 PHONE VIEW FIX: COMPACT INDICATORS
+   ========================================== */
+@media screen and (max-width: 768px) {
+
+    /* Pagdikitin natin yung vertical gap ng checkbox items */
+    .checkbox-group {
+        gap: 4px !important;
+    }
+
+    /* Bawasan ang height ng container */
+    .checkbox-item {
+        min-height: 25px; /* Sapat lang para sa isang line */
+        margin: 0 !important;
+    }
+
+    /* Pilitin na maging 1 row lang ang text at liitan ang font */
+    .checkbox-item label {
+        font-size: 12px !important; /* Mas maliit na font para magkasya */
+        white-space: nowrap !important; /* Ito ang pipigil sa text na bumaba (wrap) */
+        line-height: 1.2;
+        font-weight: 500;
+    }
+
+    /* Optional: Liitan ng konti ang checkbox box para bumagay sa text */
+    .checkbox-item input[type="checkbox"] {
+        transform: scale(0.85);
+        margin-right: 2px;
+    }
+}
