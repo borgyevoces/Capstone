@@ -1039,7 +1039,6 @@ body {
 /* ==========================================
    ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
    ========================================== */
-
 .scroll-to-top {
     position: fixed;
     bottom: 30px;
@@ -1071,11 +1070,6 @@ body {
     opacity: 1 !important;
     transform: translateY(-5px);
     box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
-    background: linear-gradient(135deg, #d32f2f 0%, #B71C1C 100%);
-}
-
-.scroll-to-top:active {
-    transform: translateY(-2px);
 }
 
 @keyframes fadeInUp {

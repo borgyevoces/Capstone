@@ -2402,13 +2402,17 @@
     }
 
 
-// Scroll to Top Button Functionality
+// ==========================================
+// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ==========================================
 window.addEventListener('scroll', function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
-    if (window.pageYOffset > 300) {
-        scrollBtn.classList.add('show');
-    } else {
-        scrollBtn.classList.remove('show');
+    if (scrollBtn) {
+        if (window.pageYOffset > 300) {
+            scrollBtn.classList.add('show');
+        } else {
+            scrollBtn.classList.remove('show');
+        }
     }
 });
 
@@ -2419,13 +2423,11 @@ function scrollToTop() {
     });
 }
 </script>
-<!-- ============================================ -->
-<!-- SCROLL TO TOP BUTTON - ADD THIS BEFORE </footer> CLOSING TAG -->
-<!-- ============================================ -->
 <!-- Scroll to Top Button -->
 <button class="scroll-to-top" id="scrollToTopBtn" onclick="scrollToTop()">
     <i class="fas fa-arrow-up"></i>
 </button>
+
 </body>
 <!-- FOOTER SECTION - ADD THIS BEFORE THE CLOSING </body> TAG -->
 <footer class="footer">
