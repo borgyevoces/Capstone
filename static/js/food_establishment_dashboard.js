@@ -1078,3 +1078,24 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ==========================================
+// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ==========================================
+window.addEventListener('scroll', function() {
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (scrollBtn) {
+        if (window.pageYOffset > 300) {
+            scrollBtn.classList.add('show');
+        } else {
+            scrollBtn.classList.remove('show');
+        }
+    }
+});
+
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
