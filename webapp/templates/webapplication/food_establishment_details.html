@@ -1090,21 +1090,18 @@
                                     No description provided.
                                     {% endif %}
                                 </p>
+
                                 <div class="menu-stock-status">
-                                    {% if item.quantity > 10 %}
-                                    <span class="stock-status in-stock">
-                                            <i class="fas fa-check-circle"></i> In Stock
-                                        </span>
-                                    {% elif item.quantity > 0 %}
-                                    <span class="stock-status low-stock">
-                                            <p>Available : {{ item.quantity }}</p>
-                                        </span>
-                                    {% else %}
-                                    <span class="stock-status out-of-stock">
-                                            <i class="fas fa-times-circle"></i> Out of Stock
-                                        </span>
-                                    {% endif %}
-                                </div>
+    {% if item.quantity > 0 %}
+        <span class="stock-status in-stock" style="color: #333; font-weight: bold;">
+             {{ item.quantity }} Item{% if item.quantity > 1 %}s{% endif %}
+        </span>
+    {% else %}
+        <span class="stock-status out-of-stock">
+            <i class="fas fa-times-circle"></i> Out of Stock
+        </span>
+    {% endif %}
+</div>
 
                                 <div class="item-actions">
                                     {% if user.is_authenticated %}

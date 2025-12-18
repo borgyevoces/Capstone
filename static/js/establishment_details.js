@@ -509,17 +509,19 @@ document.addEventListener('DOMContentLoaded', function() {
         modalItemDescription.textContent = itemDescription;
         itemQuantityInput.value = 1;
 
-        // Update stock display
-        const stockDisplay = document.getElementById('modalItemStock');
-        if (stockDisplay) {
-            if (itemQuantity > 0) {
-                stockDisplay.textContent = `Stock Available: ${itemQuantity}`;
-                stockDisplay.style.color = '#2f8a4a';
-            } else {
-                stockDisplay.textContent = 'Out of Stock';
-                stockDisplay.style.color = '#c62828';
-            }
+        // Update Stock Display (Number only or Out of Stock)
+    const stockDisplay = document.getElementById('modalItemStock'); // Siguraduhin na tama ang ID na ito sa HTML mo
+
+    if (stockDisplay) {
+        if (itemQuantity > 0) {
+            // Dito tinanggal natin ang word na "In Stock", bilang nalang
+            stockDisplay.innerText = itemQuantity + (itemQuantity === 1 ? ' Item' : ' Items');
+            stockDisplay.style.color = '#28a745'; // Green color for available
+        } else {
+            stockDisplay.innerText = 'Out of Stock';
+            stockDisplay.style.color = '#dc3545'; // Red color for out of stock
         }
+    }
 
         // Disable buttons if out of stock
         const addToCartBtn = document.getElementById('modalAddToCartBtn');
