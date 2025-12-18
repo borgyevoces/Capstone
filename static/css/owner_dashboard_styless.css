@@ -1379,7 +1379,7 @@ body {
     font-size: 20px;
     box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
     transition: all 0.3s ease;
-    z-index: 9999;
+    z-index: 99999;
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);
