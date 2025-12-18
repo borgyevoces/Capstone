@@ -128,12 +128,12 @@
        left: 760px;
     }
     .message_owner {
-    display: none; /* Hidden - use floating chat button instead */
-}
-/* ✅ HIDE floating chat button in desktop view */
-.floating-chat-button {
-    display: none !important;
-}
+        display: none; /* Hidden - use floating chat button instead */
+    }
+    /* ✅ HIDE floating chat button in desktop view */
+    .floating-chat-button {
+        display: none !important;
+    }
     /* ================== NEW TWO COLUMN LAYOUT ================== */
     .details-container {
         display: block;
@@ -164,11 +164,11 @@
         border-radius: 10px;
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     }
-/* ✅ MENU SECTION: Match background with page */
-.menu-section.section-card {
-    box-shadow: none;
-    padding: 50px 0;
-}
+    /* ✅ MENU SECTION: Match background with page */
+    .menu-section.section-card {
+        box-shadow: none;
+        padding: 50px 0;
+    }
     .section-card h2 {
         font-size: 1.6em;
         font-weight: 700;
@@ -359,7 +359,7 @@
     }
 
     /* ========================================================================================= */
-    /* NEW GRID MENU LAYOUT - MATCHING "IMAGE_CD5FCB.JPG" DESIGN                                */
+    /* NEW GRID MENU LAYOUT - MODIFIED BASE SA REQUEST                                          */
     /* ========================================================================================= */
     .menu-list {
         display: grid;
@@ -380,7 +380,7 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         transition: transform 0.3s, box-shadow 0.3s;
         cursor: pointer;
-        position: relative;
+        position: relative; /* REQUIRED: para gumana ang absolute position ng Best Seller badge */
         overflow: hidden; /* Sisiguraduhin na ang image ay susunod sa border-radius ng card */
     }
 
@@ -422,18 +422,27 @@
         border: none;
     }
 
-    /* UPDATED INFO CONTAINER PADDING */
+    /* UPDATED INFO CONTAINER PADDING & ALIGNMENT */
     .menu-info {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         /* Dito inilagay ang padding para may space sa loob ng card sa ilalim ng image */
         padding: 20px;
+        /* ✅ MODIFIED: Lahat ng text sa loob ay left-aligned */
+        text-align: left;
+        align-items: flex-start;
     }
 
-    /* UPDATED TOP SELLER BADGE - Centered above title */
+    /* ✅ UPDATED TOP SELLER BADGE - Top Right (Absolute Position) */
     .badge-top-seller {
         display: inline-block;
+        /* Position absolute para mapunta sa kanang taas, ibabaw ng image */
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+
         /* Kulay gaya sa reference (Gold/Yellow background) */
         background-color: #ffc107;
         color: #212529;
@@ -443,17 +452,16 @@
         border-radius: 20px;
         font-weight: 800;
         text-transform: uppercase;
-        margin-bottom: 12px;
-        /* Center align */
-        margin-left: auto;
-        margin-right: auto;
+        margin: 0; /* Reset margins */
         border: none;
         letter-spacing: 0.5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
-    /* UPDATED HEADER INFO - Name and Price on same line */
+    /* UPDATED HEADER INFO - Name and Price */
     .menu-header-info {
         display: flex;
+        width: 100%;
         justify-content: space-between; /* Paghiwalayin sa magkabilang dulo */
         align-items: center; /* Center vertically */
         margin-bottom: 8px;
@@ -471,6 +479,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-align: left; /* ✅ Left align */
     }
 
     .menu-price {
@@ -480,6 +489,7 @@
         font-size: 1.1em;
         margin: 0;
         white-space: nowrap; /* Huwag hayaang bumaba ang presyo */
+        text-align: right; /* Price stays right for clean header look, or change to left if preferred */
     }
 
     .menu-description {
@@ -493,16 +503,22 @@
         overflow: hidden;
         text-overflow: ellipsis;
         line-height: 1.5;
-        text-align: left;
+        text-align: left; /* ✅ Left align */
+        width: 100%;
     }
 
-    /* Stock Status Text Styles - Centered */
+    /* ✅ UPDATED STOCK STATUS - Moved to Top using 'order' */
     .menu-stock-status {
-        font-size: 0.9em;
+        font-size: 0.8rem;
         font-weight: 700;
-        margin-bottom: 18px; /* Space before buttons */
-        text-align: center; /* Nakagitna gaya sa reference */
+        margin-bottom: 8px; /* Space below */
+        margin-top: 0;
+        text-align: left; /* ✅ Left align */
         text-transform: uppercase;
+        width: 100%;
+
+        /* MAGIC SA PAG-LIPAT SA TAAS: order -1 */
+        order: -1;
     }
 
     .stock-status.in-stock {
@@ -523,6 +539,7 @@
 
     .item-actions {
         margin-top: auto;
+        width: 100%;
     }
 
     /* UPDATED BUTTONS CONTAINER - Side by side with gap */
@@ -1039,13 +1056,13 @@
         margin-bottom: 15px; /* REDUCED: from 20px */
     }
     .quantity-control:has(#menu-section) {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
-    margin: 0;
-    align-items: stretch;
-}
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        align-items: stretch;
+    }
     .quantity-control label {
         font-size: 1em;
         font-weight: 600;
