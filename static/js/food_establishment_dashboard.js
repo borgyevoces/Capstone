@@ -1080,14 +1080,30 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ==========================================
-// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ✅ SCROLL TO TOP BUTTON - FIXED VERSION
+// Add this to the END of your food_establishment_dashboard.js file
 // ==========================================
 
 (function initScrollToTop() {
     'use strict';
 
-    let scrollBtn = null;
-    let scrollTimeout = null;
+    console.log('🔧 Initializing Scroll-to-Top button...');
+
+    let scrollBtn = document.getElementById('scrollToTopBtn');
+
+    if (!scrollBtn) {
+        console.error('❌ Scroll button not found! Creating it...');
+
+        // Create the button if it doesn't exist
+        scrollBtn = document.createElement('button');
+        scrollBtn.id = 'scrollToTopBtn';
+        scrollBtn.className = 'scroll-to-top';
+        scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+        scrollBtn.setAttribute('aria-label', 'Scroll to top');
+        document.body.appendChild(scrollBtn);
+    }
+
+    console.log('✅ Scroll button found:', scrollBtn);
 
     // Throttle function to improve performance
     function throttle(func, limit) {
@@ -1105,20 +1121,21 @@ document.head.appendChild(style);
 
     // Function to show/hide scroll button
     function toggleScrollButton() {
-        if (!scrollBtn) return;
-
         const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
         if (scrollPosition > 300) {
             scrollBtn.classList.add('show');
+            console.log('📍 Scroll position:', scrollPosition, '- Button shown');
         } else {
             scrollBtn.classList.remove('show');
+            console.log('📍 Scroll position:', scrollPosition, '- Button hidden');
         }
     }
 
     // Smooth scroll to top function
     function scrollToTop(e) {
         e.preventDefault();
+        console.log('🔝 Scrolling to top...');
 
         window.scrollTo({
             top: 0,
@@ -1126,31 +1143,14 @@ document.head.appendChild(style);
         });
     }
 
-    // Initialize the scroll button
-    function init() {
-        scrollBtn = document.getElementById('scrollToTopBtn');
+    // Add scroll event listener with throttle
+    window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
 
-        if (!scrollBtn) {
-            console.error('❌ Scroll to top button not found in DOM');
-            return;
-        }
+    // Add click event listener
+    scrollBtn.addEventListener('click', scrollToTop);
 
-        console.log('✅ Scroll to top button initialized');
+    // Check initial scroll position
+    toggleScrollButton();
 
-        // Add scroll event listener with throttle for better performance
-        window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
-
-        // Add click event listener
-        scrollBtn.addEventListener('click', scrollToTop);
-
-        // Check initial scroll position
-        toggleScrollButton();
-    }
-
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    console.log('✅ Scroll-to-Top button fully initialized!');
 })();
