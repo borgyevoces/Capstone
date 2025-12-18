@@ -2400,84 +2400,8 @@
             }, 5000);
         }
     }
-    // Initialize// ==========================================
-// ✅ SCROLL TO TOP BUTTON - FIXED VERSION
-// Add this to the END of your food_establishment_dashboard.js file
-// ==========================================
-
-(function initScrollToTop() {
-    'use strict';
-
-    console.log('🔧 Initializing Scroll-to-Top button...');
-
-    let scrollBtn = document.getElementById('scrollToTopBtn');
-
-    if (!scrollBtn) {
-        console.error('❌ Scroll button not found! Creating it...');
-
-        // Create the button if it doesn't exist
-        scrollBtn = document.createElement('button');
-        scrollBtn.id = 'scrollToTopBtn';
-        scrollBtn.className = 'scroll-to-top';
-        scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-        scrollBtn.setAttribute('aria-label', 'Scroll to top');
-        document.body.appendChild(scrollBtn);
-    }
-
-    console.log('✅ Scroll button found:', scrollBtn);
-
-    // Throttle function to improve performance
-    function throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    }
-
-    // Function to show/hide scroll button
-    function toggleScrollButton() {
-        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-        if (scrollPosition > 300) {
-            scrollBtn.classList.add('show');
-            console.log('📍 Scroll position:', scrollPosition, '- Button shown');
-        } else {
-            scrollBtn.classList.remove('show');
-            console.log('📍 Scroll position:', scrollPosition, '- Button hidden');
-        }
-    }
-
-    // Smooth scroll to top function
-    function scrollToTop(e) {
-        e.preventDefault();
-        console.log('🔝 Scrolling to top...');
-
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    }
-
-    // Add scroll event listener with throttle
-    window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
-
-    // Add click event listener
-    scrollBtn.addEventListener('click', scrollToTop);
-
-    // Check initial scroll position
-    toggleScrollButton();
-
-    console.log('✅ Scroll-to-Top button fully initialized!');
-})();
-    
 </script>
-<button class="scroll-to-top" id="scrollToTopBtn">
+<button id="scrollToTopBtn" class="scroll-to-top" onclick="scrollToTop()">
     <i class="fas fa-arrow-up"></i>
 </button>
 </body>

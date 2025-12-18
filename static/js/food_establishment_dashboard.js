@@ -1078,3 +1078,29 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// ==========================================
+// SCROLL TO TOP FUNCTIONALITY
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+
+    if (scrollBtn) {
+        // 1. Show/Hide button on scroll
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                scrollBtn.classList.add('show');
+            } else {
+                scrollBtn.classList.remove('show');
+            }
+        });
+
+        // 2. Click event to scroll up
+        scrollBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
+});
