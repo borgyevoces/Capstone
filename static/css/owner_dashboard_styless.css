@@ -1439,3 +1439,38 @@ body {
         transform: scale(0.9) !important; /* Make box slightly smaller */
     }
 }
+/* ==========================================
+   🖥️ DESKTOP VIEW ADJUSTMENTS
+   ========================================== */
+
+/* 1. Paghiwalayin ang Statistics at Quick Actions */
+.stats-grid,
+.stats-container {
+    margin-bottom: 40px !important; /* Naglalagay ng space sa ilalim ng stats */
+}
+
+.quick-actions,
+.quick-actions-section {
+    margin-top: 20px !important; /* Extra space sa taas ng Quick Actions kung kailangan */
+}
+
+/* 2. I-angat ang Establishment Image para pantay sa "Owner Dashboard" */
+.sidebar-header img,
+.sidebar-brand img,
+.profile-image {
+    /* Gamitin natin ang transform para ma-adjust ang posisyon pataas */
+    transform: translateY(-5px) !important;
+
+    /* Siguraduhin nating naka-align ito */
+    vertical-align: middle !important;
+    position: relative;
+    top: -3px; /* I-adjust mo ang number na 'to kung kulang pa ang angat */
+}
+
+/* Optional: Ayusin ang alignment ng text mismo kung hindi parin pantay */
+.sidebar-header h2,
+.sidebar-brand h2 {
+    display: inline-block;
+    vertical-align: middle !important;
+    margin-top: 0 !important;
+}
