@@ -539,7 +539,7 @@
 
     .menu-price {
         font-weight: 800;
-        color: #000000;
+        color: #dc3545;
         font-size: 0.85em;
         margin: 0;
         text-align: left;
@@ -960,28 +960,31 @@
     }
 
     .modal-item-description {
-        font-size: 1em;
-        color: #555;
-        line-height: 2;
-        margin: 12px 0;
-        padding: 0 10px;
-    }
+    font-size: 1em;
+    color: #555;
+    line-height: 2;
+    margin: 12px 0 8px 0;
+    padding: 0 10px;
+}
 
     .modal-item-price {
-        font-size: 1em;
-        font-weight: 800;
-        color: #000000;
-        margin: 10px 0;
-    }
+    font-size: 1em;
+    font-weight: 800;
+    color: #dc3545;
+    margin: 5px 0 10px 0;
+    order: 2;
+}
 
     .modal-item-stock {
-        font-size: 1em;
-        padding: 8px 12px;
-        border-radius: 10px;
-        font-weight: 200;
-        display: inline-block;
-        color: #333;
-    }
+    font-size: 1em;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-weight: 200;
+    display: inline-block;
+    color: #333;
+    order: 3;
+    margin-top: 5px;
+}
 
     .quantity-control {
         display: flex;
@@ -1183,11 +1186,11 @@
     }
 
     .menu-price {
-        color: #000000;
+        color: #dc3545;
     }
 
     .modal-item-price {
-        color: #000000;
+        color: #dc3545;
     }
 
     .section-card h2 {
