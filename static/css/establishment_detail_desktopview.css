@@ -530,7 +530,7 @@
 
     .menu-price {
         font-weight: 800;
-        color: #dc3545;
+        color: #000000; 
         font-size: 1.1em;
         margin: 0;
         white-space: nowrap;
@@ -987,7 +987,7 @@
     .modal-item-price {
     font-size: 1.3em;
     font-weight: 800;
-    color: #dc3545;
+    color: #000000;
     margin: 5px 0 10px 0;
     text-align: center;
     order: 2;

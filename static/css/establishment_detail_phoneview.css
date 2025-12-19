@@ -539,7 +539,7 @@
 
     .menu-price {
         font-weight: 800;
-        color: #dc3545;
+        color: #000000;
         font-size: 0.85em;
         margin: 0;
         text-align: left;
@@ -970,7 +970,7 @@
     .modal-item-price {
     font-size: 1em;
     font-weight: 800;
-    color: #dc3545;
+    color: #000000;
     margin: 5px 0 10px 0;
     order: 2;
 }
@@ -1186,11 +1186,11 @@
     }
 
     .menu-price {
-        color: #dc3545;
+        color: #000000;
     }
 
     .modal-item-price {
-        color: #dc3545;
+       color: #000000;
     }
 
     .section-card h2 {
