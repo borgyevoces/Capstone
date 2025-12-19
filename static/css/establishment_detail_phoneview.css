@@ -406,11 +406,13 @@
 
     /* ✅ NEW: Image Wrapper Container */
     .menu-item-image-wrapper {
-        position: relative;
-        width: 100%;
-        height: 110px;
-        overflow: hidden;
-    }
+    position: relative;
+    width: 100%;
+    height: 110px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;  /* 👈 ADDED: Center image vertically */
+}
 
     .menu-item-image {
         width: 100%;
@@ -422,58 +424,62 @@
     /* ============================================ */
     /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
     /* ============================================ */
-    .badge-top-seller {
+    /* ============================================ */
+/* ✅ BEST SELLER BADGE - Top Left (Orange)     */
+/* ============================================ */
+.badge-top-seller {
     position: absolute;
-    top: 6px;
-    left: 6px;
+    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
+    left: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
     z-index: 10;
 
     /* Orange/Gold color like reference */
     background: linear-gradient(135deg, #ff9800, #ff6f00);
     color: white;
 
-    font-size: 0.45em;  /* 👈 CHANGED: Reduced from 0.55em */
+    font-size: 0.45em;
     font-weight: 700;
-    padding: 2px 6px;  /* 👈 CHANGED: Reduced from 3px 8px */
-    border-radius: 8px;  /* 👈 CHANGED: Reduced from 12px */
+    padding: 2px 6px;
+    border-radius: 8px;
 
     display: flex;
     align-items: center;
-    gap: 2px;  /* 👈 CHANGED: Reduced from 3px */
+    gap: 2px;
 
     box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    white-space: nowrap;  /* 👈 ADDED: Prevent text wrapping */
-    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
+    white-space: nowrap;
+    max-width: calc(50% - 4px);
 }
+
 .badge-top-seller i {
-    font-size: 0.9em;  /* 👈 CHANGED: Reduced from 1em */
+    font-size: 0.9em;
     color: #fff;
 }
 
-    /* ============================================ */
-    /* ✅ STOCK BADGE - Top Right (Green/Red)       */
-    /* ============================================ */
-    .badge-stock {
+/* ============================================ */
+/* ✅ STOCK BADGE - Top Right (Green/Red)       */
+/* ============================================ */
+.badge-stock {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
+    right: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
     z-index: 10;
 
-    font-size: 0.45em;  /* 👈 CHANGED: Reduced from 0.55em */
+    font-size: 0.45em;
     font-weight: 700;
-    padding: 2px 6px;  /* 👈 CHANGED: Reduced from 3px 8px */
-    border-radius: 8px;  /* 👈 CHANGED: Reduced from 12px */
+    padding: 2px 6px;
+    border-radius: 8px;
 
     display: flex;
     align-items: center;
-    gap: 2px;  /* 👈 CHANGED: Reduced from 3px */
+    gap: 2px;
 
     text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
-    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
+    max-width: calc(50% - 4px);
 }
 
     /* Available - Green */
