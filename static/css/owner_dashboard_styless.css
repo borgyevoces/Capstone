@@ -634,28 +634,31 @@ body {
 
 .badges-container {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: 8px;  /* 👈 CHANGED: Reduced from 10px */
+    left: 8px;  /* 👈 CHANGED: Reduced from 10px */
+    right: 8px;  /* 👈 CHANGED: Reduced from 10px */
     display: flex;
-    gap: 8px;
+    gap: 6px;  /* 👈 CHANGED: Reduced from 8px */
     justify-content: space-between;
+    flex-wrap: nowrap;  /* 👈 ADDED: Prevent wrapping to new line */
 }
 
 .badge {
-    padding: 6px 12px;
+    padding: 4px 8px;  /* 👈 CHANGED: Reduced from 6px 12px */
     border-radius: 6px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 10px;  /* 👈 CHANGED: Reduced from 12px */
     color: white;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;  /* 👈 CHANGED: Reduced from 4px */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;  /* 👈 ADDED: Prevent text wrapping */
+    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
 }
 
 .badge i {
-    font-size: 11px;
+    font-size: 9px;  /* 👈 CHANGED: Reduced from 11px */
 }
 
 .badge.bestseller {
