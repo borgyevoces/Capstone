@@ -8,7 +8,6 @@
     #food-details-page {
         width: 100%;
         max-width: 1400px;
-        /* UPDATED: Added margin: 0 auto; to center the entire container */
         margin: 0 auto;
         padding: 20px;
         box-sizing: border-box;
@@ -128,7 +127,7 @@
        left: 760px;
     }
     .message_owner {
-        display: none; /* Hidden - use floating chat button instead */
+        display: none;
     }
     /* ✅ HIDE floating chat button in desktop view */
     .floating-chat-button {
@@ -164,11 +163,12 @@
         border-radius: 10px;
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     }
-    /* ✅ MENU SECTION: Match background with page */
+
     .menu-section.section-card {
         box-shadow: none;
         padding: 50px 0;
     }
+
     .section-card h2 {
         font-size: 1.6em;
         font-weight: 700;
@@ -201,7 +201,6 @@
     }
 
     .contact-location i {
-        /* UPDATED: Changed icon color from #ff5733 to #000000 (black) */
         color: darkred;
         width: 25px;
         text-align: center;
@@ -243,7 +242,6 @@
         margin-right: 8px;
     }
 
-    /* Hide the amenities section card since it's now in overlay */
     .amenities-section.section-card{
         position: absolute;
         top: 260px;
@@ -288,9 +286,7 @@
     }
 
     .menu-search-bar input:focus {
-        /* UPDATED: Changed focus border color to black */
         border-color: #000000;
-        /* UPDATED: Changed box-shadow color to black */
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         outline: none;
     }
@@ -324,7 +320,7 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
-        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%2Mxmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%20117.8L146.2%20258.6L5.4%20117.8z%22%2F%3E%3C%2Fsvg%3E');
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%20117.8L146.2%20258.6L5.4%20117.8z%22%2F%3E%3C%2Fsvg%3E');
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 10px;
@@ -332,9 +328,7 @@
     }
 
     .menu-filters-group select:hover {
-        /* UPDATED: Changed select hover border color to black */
         border-color: #000000;
-        /* UPDATED: Changed box-shadow color to black */
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
     }
 
@@ -352,18 +346,17 @@
     }
 
     #bestSellerFilter.active {
-        /* UPDATED: Changed active background and border to black */
         background-color: #495051;
         color: white;
         border-color: #000000;
     }
 
     /* ========================================================================================= */
-    /* NEW GRID MENU LAYOUT - MODIFIED BASE SA REQUEST                                          */
+    /* NEW GRID MENU LAYOUT WITH BADGE DESIGN                                                   */
     /* ========================================================================================= */
+
     .menu-list {
         display: grid;
-        /* 4 columns para malinis at hindi siksikan */
         grid-template-columns: repeat(4, 1fr);
         gap: 25px;
     }
@@ -371,17 +364,15 @@
     .menu-item {
         display: flex;
         flex-direction: column;
-        /* INALIS ang padding dito para sagad ang image sa gilid */
         padding: 0;
         border: 1px solid #eeeeee;
-        /* Mas bilugan na corners gaya sa reference */
         border-radius: 15px;
         background-color: white;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         transition: transform 0.3s, box-shadow 0.3s;
         cursor: pointer;
-        position: relative; /* REQUIRED: para gumana ang absolute position ng Best Seller badge */
-        overflow: hidden; /* Sisiguraduhin na ang image ay susunod sa border-radius ng card */
+        position: relative;
+        overflow: hidden;
     }
 
     .menu-item:hover {
@@ -402,68 +393,124 @@
         display: none;
     }
 
-    /* --- REMOVED Old Stock Indicator Badge --- */
-    .stock-indicator,
-    .stock-indicator.in-stock,
-    .stock-indicator.low-stock,
-    .stock-indicator.out-of-stock {
-        display: none;
+    /* ✅ NEW: Image Wrapper Container */
+    .menu-item-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
     }
 
-    /* UPDATED IMAGE STYLE */
     .menu-item-image {
         width: 100%;
-        height: 180px; /* Fixed height para pantay-pantay */
+        height: 100%;
         object-fit: cover;
-        /* Inalis ang sariling border-radius para sumunod sa container */
         border-radius: 0;
         margin-bottom: 0;
-        /* Inalis ang border sa image */
         border: none;
     }
 
-    /* UPDATED INFO CONTAINER PADDING & ALIGNMENT */
-    .menu-info {
-        flex-grow: 1;
+    /* ============================================ */
+    /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
+    /* ============================================ */
+    .badge-top-seller {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 10;
+
+        /* Orange/Gold gradient matching reference */
+        background: linear-gradient(135deg, #ff9800, #ff6f00);
+        color: white;
+
+        font-size: 0.7em;
+        font-weight: 800;
+        padding: 6px 12px;
+        border-radius: 20px;
+
         display: flex;
-        flex-direction: column;
-        /* Dito inilagay ang padding para may space sa loob ng card sa ilalim ng image */
-        padding: 20px;
-        /* ✅ MODIFIED: Lahat ng text sa loob ay left-aligned */
-        text-align: left;
-        align-items: flex-start;
+        align-items: center;
+        gap: 5px;
+
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 3px 10px rgba(255, 152, 0, 0.5);
+        border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
-    /* ✅ UPDATED TOP SELLER BADGE - Top Right (Absolute Position) */
-    .badge-top-seller {
-        display: inline-block;
-        /* Position absolute para mapunta sa kanang taas, ibabaw ng image */
+    .badge-top-seller i {
+        font-size: 1.1em;
+        color: #fff;
+    }
+
+    /* ============================================ */
+    /* ✅ STOCK BADGE - Top Right (Green/Red)       */
+    /* ============================================ */
+    .badge-stock {
         position: absolute;
         top: 10px;
         right: 10px;
         z-index: 10;
 
-        /* Kulay gaya sa reference (Gold/Yellow background) */
-        background-color: #ffc107;
-        color: #212529;
         font-size: 0.7em;
-        padding: 5px 12px;
-        width: auto;
-        border-radius: 20px;
         font-weight: 800;
+        padding: 6px 12px;
+        border-radius: 20px;
+
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
         text-transform: uppercase;
-        margin: 0; /* Reset margins */
-        border: none;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
-    /* UPDATED HEADER INFO - Name and Price */
+    /* Available - Green gradient */
+    .badge-stock.available {
+        background: linear-gradient(135deg, #4caf50, #2e7d32);
+        color: white;
+        box-shadow: 0 3px 10px rgba(76, 175, 80, 0.5);
+    }
+
+    /* Out of Stock - Red gradient */
+    .badge-stock.out-of-stock {
+        background: linear-gradient(135deg, #f44336, #c62828);
+        color: white;
+        box-shadow: 0 3px 10px rgba(244, 67, 54, 0.5);
+    }
+
+    .badge-stock i {
+        font-size: 1.1em;
+    }
+
+    /* ✅ REMOVE OLD STOCK STATUS & INDICATORS */
+    .stock-indicator,
+    .menu-stock-status,
+    .stock-status,
+    .stock-status.in-stock,
+    .stock-status.low-stock,
+    .stock-status.out-of-stock {
+        display: none !important;
+    }
+
+    /* ✅ MENU INFO: Content below image */
+    .menu-info {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    /* ✅ HEADER INFO: Name and Price */
     .menu-header-info {
         display: flex;
         width: 100%;
-        justify-content: space-between; /* Paghiwalayin sa magkabilang dulo */
-        align-items: center; /* Center vertically */
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 8px;
         text-align: left;
     }
@@ -471,30 +518,28 @@
     .menu-info h3.menu-name {
         font-size: 1.1em;
         margin: 0;
-        font-weight: 800; /* Mas makapal na font */
-        color: #212529; /* Darker black */
+        font-weight: 800;
+        color: #212529;
         flex: 1;
-        /* Siguraduhin hindi didikit sa presyo kung mahaba ang pangalan */
         padding-right: 10px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        text-align: left; /* ✅ Left align */
+        text-align: left;
     }
 
     .menu-price {
         font-weight: 800;
-        /* Kulay itim gaya sa reference */
         color: #212529;
         font-size: 1.1em;
         margin: 0;
-        white-space: nowrap; /* Huwag hayaang bumaba ang presyo */
-        text-align: right; /* Price stays right for clean header look, or change to left if preferred */
+        white-space: nowrap;
+        text-align: right;
     }
 
     .menu-description {
         font-size: 0.85em;
-        color: #888; /* Lighter gray para sa description */
+        color: #888;
         margin: 5px 0 15px 0;
         flex-grow: 1;
         display: -webkit-box;
@@ -503,38 +548,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
         line-height: 1.5;
-        text-align: left; /* ✅ Left align */
+        text-align: left;
         width: 100%;
-    }
-
-    /* ✅ UPDATED STOCK STATUS - Moved to Top using 'order' */
-    .menu-stock-status {
-        font-size: 0.8rem;
-        font-weight: 700;
-        margin-bottom: 8px; /* Space below */
-        margin-top: 0;
-        text-align: left; /* ✅ Left align */
-        text-transform: uppercase;
-        width: 100%;
-
-        /* MAGIC SA PAG-LIPAT SA TAAS: order -1 */
-        order: -1;
-    }
-
-    .stock-status.in-stock {
-        color: #198754; /* Green */
-    }
-
-    .stock-status.low-stock {
-        color: #ffc107; /* Yellow/Orange */
-    }
-
-    .stock-status.out-of-stock {
-        color: #dc3545; /* Red */
-    }
-
-    .stock-status i {
-        margin-right: 5px;
     }
 
     .item-actions {
@@ -542,37 +557,34 @@
         width: 100%;
     }
 
-    /* UPDATED BUTTONS CONTAINER - Side by side with gap */
     .item-action-buttons {
         display: flex;
-        gap: 12px; /* Space sa pagitan ng buttons */
+        gap: 12px;
         width: 100%;
     }
 
-    /* Common Button Styles */
     .btn-add-to-cart,
     .btn-buy-now {
-        flex: 1; /* Equal width sila */
+        flex: 1;
         border: none;
-        padding: 12px 5px; /* Mas mataas na padding */
+        padding: 12px 5px;
         border-radius: 8px;
         cursor: pointer;
         font-size: 0.9em;
         font-weight: 700;
         transition: all 0.2s;
         white-space: nowrap;
-        margin-top: 0; /* Reset margin */
+        margin-top: 0;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px; /* Space between icon and text */
-        box-shadow: none; /* Flat design gaya sa reference */
+        gap: 8px;
+        box-shadow: none;
     }
 
-    /* UPDATED Add to Cart Button Color (Solid Blue) */
     .btn-add-to-cart {
-        background: #0d6efd; /* Bootstrap primary blue */
+        background: #0d6efd;
         color: white;
     }
 
@@ -580,9 +592,8 @@
         background-color: #0b5ed7;
     }
 
-    /* UPDATED Buy Now Button Color (Solid Green) */
     .btn-buy-now {
-        background: #198754; /* Bootstrap success green */
+        background: #198754;
         color: white;
     }
 
@@ -590,7 +601,6 @@
         background: #157347;
     }
 
-    /* Login Prompt & Disabled States */
     .btn-add-to-cart.disabled {
         width: 100%;
         background-color: #e9ecef;
@@ -606,16 +616,13 @@
         background: #0d6efd;
     }
 
-
     /* ================== REVIEW SECTION (NEW DESIGN) ================== */
     .reviews-section {
         max-width: 100%;
-        /* CHANGED: Center section content */
         text-align: center;
     }
 
     .reviews-section h2 {
-         /* Keep inline-block for border */
         display: inline-block;
         margin-bottom: 25px;
     }
@@ -632,12 +639,11 @@
         font-weight: 600;
         transition: background-color 0.3s, transform 0.2s;
         box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
-        display: inline-block; /* CHANGED */
+        display: inline-block;
         margin-bottom: 10px;
     }
 
     .btn-review:hover {
-        /* UPDATED: Changed review button hover to a dark grey with white text */
         background-color: #333333;
         color: white;
         transform: translateY(-1px);
@@ -654,13 +660,12 @@
 
     .all-reviews-list {
         margin-top: 15px;
-        text-align: left; /* Reset text-align for children */
+        text-align: left;
     }
 
-    /* +++ UPDATED REVIEW ITEM STYLES +++ */
     .review-item {
         display: flex;
-        align-items: flex-start; /* +++ CHANGED: Align pic to the top +++ */
+        align-items: flex-start;
         gap: 15px;
         border: 1px solid #e0e0e0;
         padding: 20px;
@@ -681,10 +686,9 @@
         height: 45px;
         border-radius: 50%;
         object-fit: cover;
-        /* UPDATED: Changed border color to black */
         border: 2px solid #000000;
-        flex-shrink: 0; /* Prevent pic from shrinking */
-        margin-top: 3px; /* +++ ADDED: Small top margin to align with text +++ */
+        flex-shrink: 0;
+        margin-top: 3px;
     }
 
     .review-item.user-highlight .review-user-pic {
@@ -692,32 +696,32 @@
     }
 
     .review-main {
-        flex-grow: 1; /* Take up available space */
+        flex-grow: 1;
     }
 
     .review-main-top {
         display: flex;
-        flex-direction: column; /* +++ CHANGED: STACK user info and comment +++ */
-        justify-content: flex-start; /* +++ CHANGED: Remove space-between +++ */
-        align-items: flex-start; /* +++ ADDED: Align to left +++ */
-        gap: 8px; /* +++ ADDED: gap between user info and comment +++ */
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 8px;
     }
 
     .review-user-info {
         display: flex;
-        flex-direction: row; /* +++ CHANGED: Keep user info items in a row +++ */
-        align-items: center; /* +++ ADDED: Center-align name, stars, date +++ */
-        gap: 10px; /* +++ ADDED: Space between name, stars, date +++ */
-        flex-wrap: wrap; /* +++ ADDED: Allow wrapping +++ */
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .review-username {
         font-weight: 700;
-        font-size: 1em; /* +++ CHANGED: Slightly larger +++ */
+        font-size: 1em;
         color: #333;
         display: flex;
         align-items: center;
-        order: 1; /* +++ ADDED: Order this first +++ */
+        order: 1;
     }
 
     .badge-user-review {
@@ -731,7 +735,7 @@
     }
 
     .review-stars {
-        order: 2; /* +++ ADDED: Order this before date +++ */
+        order: 2;
     }
 
     .review-stars i {
@@ -740,30 +744,28 @@
     }
 
     .review-date {
-        font-size: 0.8em; /* +++ CHANGED: Slightly larger +++ */
-        color: #888; /* +++ CHANGED: Darker grey +++ */
-        order: 3; /* +++ ADDED: Order this last +++ */
+        font-size: 0.8em;
+        color: #888;
+        order: 3;
     }
 
     .review-comment {
-        font-size: 0.95em; /* +++ CHANGED: Larger comment text +++ */
-        color: #333; /* +++ CHANGED: Darker text +++ */
-        font-weight: 400; /* +++ CHANGED: Not bold +++ */
+        font-size: 0.95em;
+        color: #333;
+        font-weight: 400;
         margin: 0;
-        text-align: left; /* +++ CHANGED: Ensure left-aligned +++ */
-        flex-basis: 100%; /* +++ CHANGED: Take full width +++ */
-        line-height: 1.5; /* +++ ADDED: line height +++ */
+        text-align: left;
+        flex-basis: 100%;
+        line-height: 1.5;
         word-wrap: break-word;
     }
 
     .review-actions {
         display: flex;
         gap: 12px;
-        margin-left: auto; /* Push to the end of the flex container */
+        margin-left: auto;
         flex-shrink: 0;
     }
-    /* +++ END UPDATED REVIEW STYLES +++ */
-
 
     .review-actions i {
         cursor: pointer;
@@ -779,12 +781,10 @@
         color: #dc3545;
     }
 
-
     .btn-load-more {
         display: none;
     }
 
-    /* Scrollable Review Container */
     .all-reviews-list-wrapper {
         max-height: 500px;
         overflow-y: auto;
@@ -796,13 +796,12 @@
         max-height: none;
     }
 
-    /* Review Filters */
     .review-filters {
         margin-bottom: 25px;
         display: flex;
         gap: 20px;
         flex-wrap: wrap;
-        justify-content: center; /* CHANGED: Center filters */
+        justify-content: center;
     }
 
     .btn-review-filter {
@@ -810,7 +809,7 @@
         border: 1px solid #ced4da;
         color: #495057;
         padding: 6px 14px;
-        border-radius: 7px; /* CHANGED: Pill shape */
+        border-radius: 7px;
         cursor: pointer;
         transition: all 0.2s;
         font-size: 0.9em;
@@ -823,11 +822,9 @@
     }
 
     .btn-review-filter.active {
-        /* UPDATED: Changed active filter background and border to black */
         background-color: #495051;
         color: white;
         border-color: #000000;
-        /* UPDATED: Changed box-shadow color to black */
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
 
@@ -854,7 +851,7 @@
         top: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden; /* FIXED: Para alisin ang scrollbar ng overlay */
+        overflow: hidden;
         background-color: rgba(0, 0, 0, 0.6);
         padding: 20px;
         box-sizing: border-box;
@@ -864,19 +861,14 @@
         background-color: #fefefe;
         width: 90%;
         max-width: 380px;
-
-        /* FIXED: Ito ang nagse-center ng modal vertically at horizontally */
         position: absolute;
         top: 28%;
         left: 50%;
         transform: translate(-50%, -50%);
-
         padding: 20px;
         border: none;
         border-radius: 10px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-
-        /* Para ang LOOB ng modal ang mag-scroll */
         max-height: 90vh;
         overflow-y: auto;
     }
@@ -892,14 +884,12 @@
 
     .close-btn:hover,
     .close-btn:focus {
-        /* UPDATED: Changed close button hover color to black */
         color: #000000;
         text-decoration: none;
         cursor: pointer;
     }
 
     .modal-content h2 {
-        /* UPDATED: Changed modal header color to black */
         color: #000000;
         border-bottom: 2px solid #eee;
         padding-bottom: 10px;
@@ -960,7 +950,6 @@
     }
 
     /* ================== ITEM DETAIL MODAL STYLES ================== */
-    /* ADDED: Specific styles for item modal content */
     .item-detail-modal-content {
         padding-top: 20px;
         padding-bottom: 25px;
@@ -997,13 +986,10 @@
     .modal-item-price {
         font-size: 1.3em;
         font-weight: 800;
-        /* UPDATED: Changed modal item price color to black */
         color: #000000;
         margin: 10px 0;
         text-align: center;
     }
-    /* ================== END ITEM DETAIL MODAL STYLES ================== */
-
 
     .cart-icon-wrapper {
         position: relative;
@@ -1038,23 +1024,21 @@
         100% { transform: scale(1); }
     }
 
-    /* +++ MODIFIED: Modal Actions Container Style for Desktop +++ */
     .modal-actions {
         display: flex;
-        flex-direction: row; /* MODIFIED: Changed back to row */
-        gap: 12px; /* This adds space between the buttons */
+        flex-direction: row;
+        gap: 12px;
         width: 100%;
-        margin-top: 15px; /* REDUCED: from 20px */
+        margin-top: 15px;
     }
-    /* +++ END MODIFIED STYLE +++ */
 
-    /* +++ BAGONG DAGDAG: Quantity Control Styles +++ */
     .quantity-control {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 15px; /* REDUCED: from 20px */
+        margin-bottom: 15px;
     }
+
     .quantity-control:has(#menu-section) {
         display: block;
         width: 100%;
@@ -1063,6 +1047,7 @@
         margin: 0;
         align-items: stretch;
     }
+
     .quantity-control label {
         font-size: 1em;
         font-weight: 600;
@@ -1084,13 +1069,13 @@
         font-weight: bold;
         font-size: 1.2em;
         cursor: pointer;
-        width: 40px; /* Fixed width */
-        height: 40px; /* Fixed height */
-        line-height: 38px; /* Center text vertically */
+        width: 40px;
+        height: 40px;
+        line-height: 38px;
         text-align: center;
-        border-radius: 50%; /* Circular buttons */
+        border-radius: 50%;
         transition: background-color 0.2s, transform 0.1s;
-        user-select: none; /* Prevent text selection */
+        user-select: none;
     }
 
     .btn-quantity-minus:hover,
@@ -1104,14 +1089,13 @@
     }
 
     .quantity-input-group input {
-        width: 50px; /* Fixed width for the number */
+        width: 50px;
         text-align: center;
         font-size: 1.2em;
         font-weight: 700;
         border: none;
         background-color: transparent;
         color: #333;
-        /* Remove arrows for number input */
         -moz-appearance: textfield;
     }
 
@@ -1120,10 +1104,7 @@
         -webkit-appearance: none;
         margin: 0;
     }
-    /* +++ END Quantity Control Styles +++ */
 
-
-    /* Buy Now & Add to Cart Modal Buttons */
     .btn-buy-now-modal {
         flex: 1;
         padding: 14px 20px;

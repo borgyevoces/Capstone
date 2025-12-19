@@ -1062,81 +1062,91 @@
 
                 <div class="menu-list-wrapper">
                     <div class="menu-list" id="menuList">
-                        {% for item in menu_items %}
-                        <div class="menu-item"
-                             data-price="{{ item.price|floatformat:2 }}"
-                             data-is-top-seller="{% if item.is_top_seller %}true{% else %}false{% endif %}"
-                             data-item-id="{{ item.id }}"
-                             data-item-name="{{ item.name }}"
-                             data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
-                             data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
-                             data-item-quantity="{{ item.quantity|default:0 }}"
-                             onclick="openItemDetailModal(this)">
+    {% for item in menu_items %}
+    <div class="menu-item"
+         data-price="{{ item.price|floatformat:2 }}"
+         data-is-top-seller="{% if item.is_top_seller %}true{% else %}false{% endif %}"
+         data-item-id="{{ item.id }}"
+         data-item-name="{{ item.name }}"
+         data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
+         data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+         data-item-quantity="{{ item.quantity|default:0 }}"
+         onclick="openItemDetailModal(this)">
 
-                            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
-                                 alt="{{ item.name }}" class="menu-item-image">
-                            <div class="menu-info">
-                                {% if item.is_top_seller %}
-                                <span class="badge-top-seller">TOP SELLER</span>
-                                {% endif %}
-                                <div class="menu-header-info">
-                                    <h3 class="menu-name">{{ item.name }}</h3>
-                                    <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
-                                </div>
-                                <p class="menu-description">
-                                    {% if item.description %}
-                                    {{ item.description }}
-                                    {% else %}
-                                    No description provided.
-                                    {% endif %}
-                                </p>
+        <!-- Image Container with Badges -->
+        <div class="menu-item-image-wrapper">
+            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+                 alt="{{ item.name }}" class="menu-item-image">
 
-                                <div class="menu-stock-status">
-                                {% if item.quantity > 0 %}
-                                <span class="stock-status in-stock">
-                                    <p>Available : {{ item.quantity }} Item{% if item.quantity > 1 %}s{% endif %}</p>
-                                </span>
-                                {% else %}
-                                <span class="stock-status out-of-stock">
-                                <i class="fas fa-times-circle"></i> Out of Stock
-                                </span>
-                                {% endif %}
-                                </div>
+            <!-- Top Left: Best Seller Badge -->
+            {% if item.is_top_seller %}
+            <span class="badge-top-seller">
+                <i class="fas fa-medal"></i> Best Seller
+            </span>
+            {% endif %}
 
-                                <div class="item-actions">
-                                    {% if user.is_authenticated %}
-                                    {% if item.quantity > 0 %}
-                                    <div class="item-action-buttons">
-                                        <button class="btn-add-to-cart quick-add-btn"
-                                                data-item-id="{{ item.id }}"
-                                                data-item-name="{{ item.name }}"
-                                                data-item-price="{{ item.price|floatformat:2 }}"
-                                                onclick="handleQuickAddToCart(this, event)">
-                                            <i class="fas fa-cart-plus"></i> Add to Cart
-                                        </button>
-                                        <button class="btn-buy-now quick-buy-btn"
-                                                onclick="openItemDetailModal(this.closest('.menu-item'))">
-                                            <i class="fas fa-money-bill"></i> Buy Now
-                                        </button>
-                                    </div>
-                                    {% else %}
-                                    <button class="btn-add-to-cart disabled" disabled>
-                                        <i class="fas fa-times-circle"></i> Out of Stock
-                                    </button>
-                                    {% endif %}
-                                    {% else %}
-                                    <a href="{% url 'user_login_register' %}" class="btn-add-to-cart login-prompt-btn">
-                                        <i class="fas fa-sign-in-alt"></i> Log in to Order
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <p class="text-muted">No menu items available yet.</p>
-                        {% endfor %}
-                        <p id="noMenuItemsFound" class="hidden-message">No menu items found.</p>
-                    </div>
+            <!-- Top Right: Stock Badge -->
+            {% if item.quantity > 0 %}
+            <span class="badge-stock available">
+                <i class="fas fa-check-circle"></i> Available: {{ item.quantity }}
+            </span>
+            {% else %}
+            <span class="badge-stock out-of-stock">
+                <i class="fas fa-times-circle"></i> Out of Stock
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Menu Info Section -->
+        <div class="menu-info">
+            <div class="menu-header-info">
+                <h3 class="menu-name">{{ item.name }}</h3>
+                <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
+            </div>
+
+            <p class="menu-description">
+                {% if item.description %}
+                {{ item.description }}
+                {% else %}
+                No description provided.
+                {% endif %}
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="item-actions">
+                {% if user.is_authenticated %}
+                {% if item.quantity > 0 %}
+                <div class="item-action-buttons">
+                    <button class="btn-add-to-cart quick-add-btn"
+                            data-item-id="{{ item.id }}"
+                            data-item-name="{{ item.name }}"
+                            data-item-price="{{ item.price|floatformat:2 }}"
+                            onclick="handleQuickAddToCart(this, event)">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button class="btn-buy-now quick-buy-btn"
+                            onclick="openItemDetailModal(this.closest('.menu-item'))">
+                        <i class="fas fa-money-bill"></i> Buy Now
+                    </button>
+                </div>
+                {% else %}
+                <button class="btn-add-to-cart disabled" disabled>
+                    <i class="fas fa-times-circle"></i> Out of Stock
+                </button>
+                {% endif %}
+                {% else %}
+                <a href="{% url 'user_login_register' %}" class="btn-add-to-cart login-prompt-btn">
+                    <i class="fas fa-sign-in-alt"></i> Log in to Order
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">No menu items available yet.</p>
+    {% endfor %}
+    <p id="noMenuItemsFound" class="hidden-message">No menu items found.</p>
+</div>
                 </div>
             </section>
         </div>
