@@ -491,7 +491,7 @@
 }
 
     .badge-stock i {
-    font-size: 0.8em;  /* 👈 CHANGED: Reduced from 1em */
+    font-size: 0.9em;  /* 👈 CHANGED: Reduced from 1em */
 }
 
     /* ✅ REMOVE OLD STOCK STATUS & INDICATORS */
