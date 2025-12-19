@@ -423,74 +423,76 @@
     /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
     /* ============================================ */
     .badge-top-seller {
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        z-index: 10;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 10;
 
-        /* Orange/Gold color like reference */
-        background: linear-gradient(135deg, #ff9800, #ff6f00);
-        color: white;
+    /* Orange/Gold color like reference */
+    background: linear-gradient(135deg, #ff9800, #ff6f00);
+    color: white;
 
-        font-size: 0.55em;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 12px;
+    font-size: 0.45em;  /* 👈 CHANGED: Reduced from 0.55em */
+    font-weight: 700;
+    padding: 2px 6px;  /* 👈 CHANGED: Reduced from 3px 8px */
+    border-radius: 8px;  /* 👈 CHANGED: Reduced from 12px */
 
-        display: flex;
-        align-items: center;
-        gap: 3px;
+    display: flex;
+    align-items: center;
+    gap: 2px;  /* 👈 CHANGED: Reduced from 3px */
 
-        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .badge-top-seller i {
-        font-size: 1em;
-        color: #fff;
-    }
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;  /* 👈 ADDED: Prevent text wrapping */
+    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
+}
+.badge-top-seller i {
+    font-size: 0.9em;  /* 👈 CHANGED: Reduced from 1em */
+    color: #fff;
+}
 
     /* ============================================ */
     /* ✅ STOCK BADGE - Top Right (Green/Red)       */
     /* ============================================ */
     .badge-stock {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        z-index: 10;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 10;
 
-        font-size: 0.55em;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 12px;
+    font-size: 0.45em;  /* 👈 CHANGED: Reduced from 0.55em */
+    font-weight: 700;
+    padding: 2px 6px;  /* 👈 CHANGED: Reduced from 3px 8px */
+    border-radius: 8px;  /* 👈 CHANGED: Reduced from 12px */
 
-        display: flex;
-        align-items: center;
-        gap: 3px;
+    display: flex;
+    align-items: center;
+    gap: 2px;  /* 👈 CHANGED: Reduced from 3px */
 
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-    }
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
+}
 
     /* Available - Green */
     .badge-stock.available {
-        background: linear-gradient(135deg, #4caf50, #2e7d32);
-        color: white;
-        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-    }
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
 
     /* Out of Stock - Red */
     .badge-stock.out-of-stock {
-        background: linear-gradient(135deg, #f44336, #c62828);
-        color: white;
-        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
-    }
+    background: linear-gradient(135deg, #f44336, #c62828);
+    color: white;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
+}
 
     .badge-stock i {
-        font-size: 1em;
-    }
+    font-size: 0.8em;  /* 👈 CHANGED: Reduced from 1em */
+}
 
     /* ✅ REMOVE OLD STOCK STATUS & INDICATORS */
     .stock-indicator,
@@ -1125,8 +1127,8 @@
 
     .badge-top-seller,
     .badge-stock {
-        font-size: 0.6em;
-        padding: 4px 10px;
+        font-size: 0.5em;  /* 👈 CHANGED: Reduced from 0.6em */
+        padding: 3px 7px;  /* 👈 CHANGED: Reduced from 4px 10px */
     }
 
     .menu-info h3 {
