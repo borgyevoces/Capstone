@@ -1101,7 +1101,6 @@
         <div class="menu-info">
             <div class="menu-header-info">
                 <h3 class="menu-name">{{ item.name }}</h3>
-                <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
             </div>
 
             <p class="menu-description">
@@ -1110,6 +1109,7 @@
                 {% else %}
                 No description provided.
                 {% endif %}
+                <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
             </p>
 
             <!-- Action Buttons -->
