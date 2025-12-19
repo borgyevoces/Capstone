@@ -850,19 +850,7 @@ function loadNotifications() {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
-                list.innerHTML = data.notifications.map(notif => `
-                    <div class="notification-item ${notif.is_read ? '' : 'unread'}" onclick="markNotificationRead(${notif.id})">
-                        <div class="notification-icon">
-                            <i class="fas fa-${getNotificationIcon(notif.type)}"></i>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-message">${notif.message}</div>
-                            <div class="notification-details">${notif.details || ''}</div>
-                            <div class="notification-time">${notif.time}</div>
-                        </div>
-                    </div>
-                `).join('');
-
+                list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
                 updateNotificationBadge(data.unread_count);
             } else {
                 list.innerHTML = `
@@ -879,6 +867,94 @@ function loadNotifications() {
         console.error('Error loading notifications:', error);
     });
 }
+// ✅ ENHANCED: Render notification with complete order details
+function renderNotification(notif) {
+    const isUnread = notif.is_new ? 'unread' : '';
+    const statusClass = notif.order.status.toLowerCase();
+
+    // Get first letter of customer name for avatar
+    const customerInitial = notif.customer.name.charAt(0).toUpperCase();
+
+    // Format order items
+    const orderItemsHTML = notif.order.items.map(item => `
+        <div class="order-item-row">
+            <div class="item-name-qty">
+                <strong>${item.name}</strong> x${item.quantity}
+            </div>
+            <div class="item-price">₱${item.total.toFixed(2)}</div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="notification-item ${isUnread}" onclick="markNotificationRead(${notif.id})" data-notification-id="${notif.id}">
+            <div class="notification-header">
+                <div class="notification-icon">
+                    <i class="fas fa-${getNotificationIcon(notif.type)}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">
+                        <span>${getNotificationTitle(notif.type)}</span>
+                        <span class="notification-type-badge ${notif.type}">${notif.type.replace('_', ' ')}</span>
+                    </div>
+                    <div class="notification-message">${notif.message}</div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="customer-info">
+                <div class="customer-avatar">${customerInitial}</div>
+                <div class="customer-details">
+                    <div class="customer-name">${notif.customer.name}</div>
+                    <div class="customer-email">${notif.customer.email}</div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <div class="order-summary-header">
+                    <span class="order-id">Order #${notif.order.id}</span>
+                    <span class="order-total">₱${notif.order.total_amount.toFixed(2)}</span>
+                </div>
+
+                ${notif.order.reference_number !== 'N/A' ? `
+                    <div class="order-reference">
+                        <i class="fas fa-hashtag"></i> Ref: ${notif.order.reference_number}
+                    </div>
+                ` : ''}
+
+                <div class="order-items-list">
+                    ${orderItemsHTML}
+                </div>
+
+                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="order-status-badge ${statusClass}">
+                        <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
+                        ${notif.order.status}
+                    </span>
+                    <span style="font-size: 12px; color: #6b7280;">
+                        ${notif.order.item_count} item${notif.order.item_count > 1 ? 's' : ''}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Timestamps -->
+            <div class="notification-time">
+                <i class="far fa-clock"></i>
+                <span class="time-ago">${notif.time_ago}</span>
+                <span style="margin-left: auto; font-size: 11px;">
+                    ${notif.created_at}
+                </span>
+            </div>
+
+            ${notif.payment_confirmed_at ? `
+                <div class="notification-time" style="margin-top: 4px; color: #10b981;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Paid: ${notif.payment_confirmed_at}</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
 
 function pollNotifications() {
     if (!document.getElementById('notificationPanel').classList.contains('open')) {
@@ -893,6 +969,14 @@ function pollNotifications() {
         .then(data => {
             if (data.success) {
                 updateNotificationBadge(data.unread_count);
+
+                // Show toast notification if new orders
+                if (data.unread_count > 0) {
+                    const latestNotif = data.notifications[0];
+                    if (latestNotif && latestNotif.is_new) {
+                        showToastNotification(latestNotif);
+                    }
+                }
             }
         })
         .catch(error => {
@@ -900,29 +984,67 @@ function pollNotifications() {
         });
     }
 }
+// ✅ Show toast notification for new orders
+function showToastNotification(notif) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">New Order #${notif.order.id}</div>
+            <div class="toast-message">${notif.customer.name} • ₱${notif.order.total_amount.toFixed(2)}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
 
+    document.body.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 300ms ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
 function getNotificationIcon(type) {
     const icons = {
-        'order': 'shopping-cart',
+        'new_order': 'shopping-cart',
+        'payment_confirmed': 'check-circle',
+        'order_cancelled': 'times-circle',
         'review': 'star',
         'message': 'envelope',
         'alert': 'exclamation-circle'
     };
     return icons[type] || 'bell';
 }
-
+function getNotificationTitle(type) {
+    const titles = {
+        'new_order': 'New Order Received',
+        'payment_confirmed': 'Payment Confirmed',
+        'order_cancelled': 'Order Cancelled',
+        'review': 'New Review',
+        'message': 'New Message',
+        'alert': 'Alert'
+    };
+    return titles[type] || 'Notification';
+}
 function updateNotificationBadge(count) {
     const badge = document.getElementById('notificationBadge');
-    if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.style.display = 'block';
-    } else {
-        badge.style.display = 'none';
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
     }
 }
 
 function markNotificationRead(notificationId) {
-    fetch(`/api/notifications/${notificationId}/read/`, {
+    fetch(`/api/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
@@ -932,6 +1054,13 @@ function markNotificationRead(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Update UI
+            const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notifElement) {
+                notifElement.classList.remove('unread');
+            }
+
+            // Refresh list to update count
             loadNotifications();
         }
     })
@@ -997,7 +1126,7 @@ document.addEventListener('keydown', function(e) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard initializing...');
-
+    setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
@@ -1078,3 +1207,50 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// ==========================================
+// SCROLL TO TOP FUNCTIONALITY (UNIVERSAL FIX)
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+
+    if (scrollBtn) {
+        // 1. Universal Scroll Detector (Detects window OR div scrolling)
+        window.addEventListener('scroll', function(e) {
+            // Determine if the scroll is coming from the window or a specific element
+            const target = e.target;
+            const scrollPosition = (target === document) ? window.scrollY : target.scrollTop;
+
+            // Ignore small scrolling boxes (like dropdowns)
+            // Only trigger for the main page or large containers
+            if (target !== document && target.scrollHeight < 500) return;
+
+            // Show button if scrolled more than 300px
+            if (scrollPosition > 300) {
+                scrollBtn.classList.add('show');
+            } else {
+                scrollBtn.classList.remove('show');
+            }
+        }, true); // <--- 'true' captures scroll events inside divs!
+
+        // 2. Universal Scroll To Top Action
+        scrollBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Method A: Scroll Window
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Method B: Scroll any open container (Fix for dashboards)
+            // This finds whatever element is currently scrolled down and pushes it up
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.scrollTop > 0) {
+                    el.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+
+        console.log("✅ Scroll Button Loaded");
+    } else {
+        console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
+    }
+});
