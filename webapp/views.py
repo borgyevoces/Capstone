@@ -2436,7 +2436,7 @@ def create_buynow_payment_link(request):
 @login_required
 def get_owner_notifications(request):
     """
-    API endpoint to get unread notifications for establishment owner
+    ✅ ENHANCED: Get detailed notifications with order information
     """
     establishment_id = request.session.get('food_establishment_id')
 
@@ -2449,22 +2449,66 @@ def get_owner_notifications(request):
     try:
         establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
 
-        # Get unread notifications
+        # Get unread notifications with complete order details
         notifications = OrderNotification.objects.filter(
             establishment=establishment,
             is_read=False
-        ).select_related('order', 'order__user').order_by('-created_at')[:10]
+        ).select_related(
+            'order',
+            'order__user',
+            'order__establishment'
+        ).prefetch_related(
+            'order__orderitem_set__menu_item'
+        ).order_by('-created_at')[:20]  # Last 20 notifications
 
-        notifications_data = [{
-            'id': notif.id,
-            'type': notif.notification_type,
-            'message': notif.message,
-            'order_id': notif.order.id,
-            'customer_name': notif.order.user.username,
-            'total_amount': float(notif.order.total_amount),
-            'created_at': notif.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'time_ago': get_time_ago(notif.created_at)
-        } for notif in notifications]
+        notifications_data = []
+
+        for notif in notifications:
+            order = notif.order
+
+            # Get order items
+            order_items = []
+            for item in order.orderitem_set.all():
+                order_items.append({
+                    'name': item.menu_item.name,
+                    'quantity': item.quantity,
+                    'price': float(item.price_at_order),
+                    'total': float(item.total_price)
+                })
+
+            # Format notification data
+            notifications_data.append({
+                'id': notif.id,
+                'type': notif.notification_type,
+                'message': notif.message,
+
+                # Order Details
+                'order': {
+                    'id': order.id,
+                    'reference_number': order.gcash_reference_number or 'N/A',
+                    'status': order.status,
+                    'total_amount': float(order.total_amount),
+                    'items': order_items,
+                    'item_count': order.orderitem_set.count(),
+                },
+
+                # Customer Details
+                'customer': {
+                    'name': order.user.username,
+                    'email': order.user.email,
+                    'id': order.user.id
+                },
+
+                # Timestamps
+                'created_at': notif.created_at.strftime('%B %d, %Y at %I:%M %p'),
+                'payment_confirmed_at': order.payment_confirmed_at.strftime(
+                    '%B %d, %Y at %I:%M %p') if order.payment_confirmed_at else None,
+                'time_ago': get_time_ago(notif.created_at),
+
+                # Status indicators
+                'is_new': not notif.is_read,
+                'is_paid': order.status == 'PAID',
+            })
 
         # Get total unread count
         unread_count = OrderNotification.objects.filter(
@@ -2479,11 +2523,46 @@ def get_owner_notifications(request):
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
             'error': str(e)
         }, status=500)
 
+def get_time_ago(timestamp):
+    """
+    ✅ Enhanced: Convert timestamp to human-readable time ago
+    """
+    from django.utils.timezone import now
+
+    diff = now() - timestamp
+
+    if diff.days > 0:
+        if diff.days == 1:
+            return "1 day ago"
+        elif diff.days < 7:
+            return f"{diff.days} days ago"
+        elif diff.days < 30:
+            weeks = diff.days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+        else:
+            months = diff.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+
+    hours = diff.seconds // 3600
+    if hours > 0:
+        if hours == 1:
+            return "1 hour ago"
+        return f"{hours} hours ago"
+
+    minutes = diff.seconds // 60
+    if minutes > 0:
+        if minutes == 1:
+            return "1 minute ago"
+        return f"{minutes} minutes ago"
+
+    return "Just now"
 
 @login_required
 @require_POST
@@ -2563,35 +2642,6 @@ def mark_all_notifications_read(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
-
-def get_time_ago(timestamp):
-    """
-    Convert timestamp to human-readable time ago
-    """
-    from django.utils.timezone import now
-
-    diff = now() - timestamp
-
-    if diff.days > 0:
-        if diff.days == 1:
-            return "1 day ago"
-        return f"{diff.days} days ago"
-
-    hours = diff.seconds // 3600
-    if hours > 0:
-        if hours == 1:
-            return "1 hour ago"
-        return f"{hours} hours ago"
-
-    minutes = diff.seconds // 60
-    if minutes > 0:
-        if minutes == 1:
-            return "1 minute ago"
-        return f"{minutes} minutes ago"
-
-    return "Just now"
-
 
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
