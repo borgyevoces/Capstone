@@ -798,6 +798,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
 
+            // ========== LOAD ESTABLISHMENTS IMMEDIATELY ON MAP OPEN ==========
+            loadEstablishments();
+
             mapInitialized = true;
         }
     });
