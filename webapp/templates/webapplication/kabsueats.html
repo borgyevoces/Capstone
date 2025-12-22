@@ -198,164 +198,127 @@
         </div>
     </header>
 
-    <main class="main-content">
+    <!-- Main Content -->
+    <main class="main_content">
         {% block content %}
-        <div class="pagecontent" id="Home">
+        <div class="tabs">
+            <button class="pagelinks" onclick="openPage(event, 'List')" id="defaultOpen">
+                <i class="fas fa-list"></i> List
+            </button>
+            <button class="pagelinks" onclick="openPage(event, 'Map')">
+                <i class="fas fa-map"></i> Map
+            </button>
 
-            <div class="welcome-hero-section">
-                {% if user.is_authenticated %}
-                    <h1 class="hero-title">Dashboard</h1>
-                    <h1 class="hero-title">Welcome to kabsuEats</h1>
-                    <p class="hero-subtitle">What delicious food are you craving today? Explore your favorite spots or try something new!</p>
-                {% else %}
-                    <h1 class="hero-title">Landing</h1>
-                    <h2 class="hero-title">Your one-stop <span class="highlight-food">food</span> guide</h2>
-                    <p class="hero-subtitle">Find the best restaurants, cafes, and food stalls near you.</p>
+            <!-- Sort and Filter Controls -->
+            <div class="filter-controls">
+                <select id="statusFilter" onchange="applyFilters();">
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
+                </select>
+                <select id="alphabetFilter" onchange="applyFilters();">
+                    <option value="">Alphabetical</option>
+                    {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+                    <option value="{{ letter }}">{{ letter }}</option>
+                    {% endfor %}
+                </select>
+                <select id="distanceFilter" onchange="applyFilters();">
+                    <option value="">Distance</option>
+                    <option value="nearest">Nearest</option>
+                    <option value="farthest">Farthest</option>
+                </select>
+                <select id="ratingsFilter" onchange="applyFilters();">
+                    <option value="">Ratings</option>
+                    <option value="highest">Highest</option>
+                    <option value="lowest">Lowest</option>
+                </select>
+                {% if not show_category_filter|default:False %}
+                <select id="categoryFilter" onchange="applyFilters();">
+                    <option value="">Category</option>
+                    <option value="karenderya">Karenderya</option>
+                    <option value="cafe">Cafe</option>
+                </select>
                 {% endif %}
             </div>
+        </div>
 
-            {% block filters %}
-            <div class="filter_container">
-                <div class="select_wrapper">
-                    <select id="statusFilter" onchange="applyFilters()">
-                        <option value="">Status</option>
-                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
-                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="alphabetFilter" onchange="applyFilters()">
-                        <option value="">Alphabetical</option>
-                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="distanceFilter" onchange="applyFilters()">
-                        <option value="">Distance</option>
-                        <option value="nearest">Nearest to Farthest</option>
-                        <option value="farthest">Farthest to Nearest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="ratingsFilter" onchange="applyFilters()">
-                        <option value="">Ratings</option>
-                        <option value="highest">Highest to Lowest</option>
-                        <option value="lowest">Lowest to Lowest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="categoryFilter" onchange="applyFilters()">
-                        <option value="">Categories</option>
-                        {% for cat in all_categories %}
-                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            {% endblock %}
-
-            <!-- Map Toggle Button and Map Section -->
-            <button id="toggleMapBtn">🗺️ View Map</button>
-            <div id="mapSection">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-            </div>
-
-            <div class="nearest_container">
-                <div class="nearest_slidescontainer">
-                    <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
-                    {% if food_establishments %}
-                        {% for establishment in food_establishments %}
-                            {% if establishment.status != 'Disabled' %}
-                                <div class="nearest_box food-establishment-item"
-    data-name="{{ establishment.name|lower }}"
-    data-lat="{{ establishment.latitude }}"
-    data-lng="{{ establishment.longitude }}"
-    data-status="{{ establishment.calculated_status }}"
-    data-category="{{ establishment.category.name|default_if_none:''|lower }}"
-    data-distance="{{ establishment.distance|floatformat:2 }}"
-    data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
-    data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-    data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-
-                                    <a href="{% url 'food_establishment_details' establishment.id %}">
-                                        {% if establishment.image %}
-                                            <img class="food-image" src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
-                                        {% else %}
-                                            <img class="food-image" src="{% static 'images/menu.png' %}" alt="Default" />
-                                        {% endif %}
-                                    </a>
-
-                                    {% if establishment.last_updated|recently_updated %}
-                                        <div class="update-indicator">
-                                            Updated {{ establishment.last_updated|timesince }} ago
-                                        </div>
-                                    {% endif %}
-
-                                   <span class="status-indicator {{ establishment.calculated_status|lower }}"
-      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-    <span class="dot"></span>
-    <span class="status-text">{{ establishment.calculated_status }}</span>
-</span>
-
-                                    {% if establishment.category %}
-                                        <div class="category-display">{{ establishment.category.name }}</div>
-                                    {% endif %}
-
-                                    <div class="food-name">
-                                        <div class="d-flex align-items-center justify-content-between w-100">
-                                            <div class="star-rating-display">
-                                                {% if establishment.average_rating > 0 %}
-                                                    {% for i in "12345" %}
-                                                        {% if forloop.counter <= establishment.average_rating %}
-                                                            <i class="fas fa-star"></i>
-                                                        {% else %}
-                                                            <i class="far fa-star"></i>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                    <span class="rating-value">{{ establishment.average_rating|floatformat:1 }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="review-count">
-                                            ({{ establishment.review_count }} Reviews)
-                                        </div>
-                                        <p class="mb-0">{{ establishment.name }}</p>
-                                        {% if establishment.amenities.all %}
-                                            <div class="amenities-inline">
-                                                <small>
-                                                    Amenity Offer:
-                                                    {% for amenity in establishment.amenities.all %}
-                                                        {{ amenity.name }}{% if not forloop.last %}, {% endif %}
-                                                    {% endfor %}
-                                                </small>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-
-                                    <div class="distance-info">
-                                        {% if establishment.distance_meters %}
-                                            <small>Distance from CvSU-Bacoor: {{ establishment.distance_meters|floatformat:0 }} meters</small>
-                                        {% else %}
-                                            <small>Distance: Not available</small>
-                                        {% endif %}
-                                    </div>
-
-                                    {% if establishment.payment_methods %}
-                                        <div class="payment-methods">
-                                            <small>Payment Methods : {{ establishment.payment_methods }}</small>
-                                        </div>
-                                    {% endif %}
+        <!-- LIST VIEW -->
+        <div id="List" class="pagecontent" style="margin-top: 1px;">
+            <div class="nearest_slidescontainer">
+                {% for estab in establishments %}
+                <div class="food-establishment-item"
+                     data-name="{{ estab.establishment_name|lower }}"
+                     data-status="{{ estab.status }}"
+                     data-category="{{ estab.category.name|lower }}"
+                     data-distance="{{ estab.distance|default:'0' }}"
+                     data-rating="{{ estab.average_rating|default:'0' }}">
+                    <a href="{% url 'establishment_view' estab.id %}">
+                        <div class="item-wrapper">
+                            <div class="image_container">
+                                {% if estab.establishment_image %}
+                                <img src="{{ estab.establishment_image.url }}" alt="{{ estab.establishment_name }}">
+                                {% else %}
+                                <img src="{% static 'images/placeholder.jpg' %}" alt="No Image">
+                                {% endif %}
+                            </div>
+                            <div class="info_container">
+                                <div class="estab_name">
+                                    <strong>{{ estab.establishment_name }}</strong>
                                 </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <p id="noInitialEstablishments" class="no-establishments-found">No food establishments found.</p>
-                    {% endif %}
+                                <div class="estab_ratings">
+                                    <span class="rating-value">{{ estab.average_rating|default:"0.0" }}</span>
+                                    <i class="fas fa-star"></i>
+                                    <span class="review-count">({{ estab.review_count|default:"0" }})</span>
+                                </div>
+                                <div class="estab_location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ estab.distance|default:"0.0" }} km away
+                                </div>
+                                {% if estab.status == 'Open' %}
+                                <div class="estab_status open">
+                                    <i class="fas fa-door-open"></i> Open
+                                </div>
+                                {% else %}
+                                <div class="estab_status closed">
+                                    <i class="fas fa-door-closed"></i> Closed
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% empty %}
+                <p>No establishments found.</p>
+                {% endfor %}
+            </div>
+            <div id="noResultsMessage" style="display: none; text-align: center; padding: 20px;">
+                <p>No establishments match your search or filters.</p>
+            </div>
+        </div>
+
+        <!-- MAP VIEW -->
+        <div id="Map" class="pagecontent" style="display: none;">
+            <div class="map-container">
+                <div id="map" style="height: 600px; width: 100%; border-radius: 8px;"></div>
+
+                <!-- Show My Location Button -->
+                <button id="showLocationBtn" class="show-location-btn">
+                    <i class="fas fa-location-arrow"></i> Show My Location
+                </button>
+
+                <!-- Search Controls on Map -->
+                <div class="map-search-controls">
+                    <input type="text" id="mapSearchInput" placeholder="Search establishments..." class="map-search-input">
+                    <button onclick="searchOnMap()" class="map-search-button">
+                        <i class="fas fa-search"></i> Search
+                    </button>
                 </div>
             </div>
+
+            <script>
+                // Map data passed from Django
+                const establishments = {{ establishments_json|safe }};
+            </script>
         </div>
         {% endblock %}
     </main>
@@ -550,5 +513,101 @@
 <button class="scroll-to-top" id="scrollToTopBtn">
     <i class="fas fa-arrow-up"></i>
 </button>
+
+<style>
+/* Show My Location Button Style */
+.show-location-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.show-location-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+}
+
+.show-location-btn:active {
+    transform: translateY(0);
+}
+
+.show-location-btn i {
+    font-size: 16px;
+}
+
+/* Map Search Controls */
+.map-search-controls {
+    position: absolute;
+    top: 10px;
+    left: 50px;
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+}
+
+.map-search-input {
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    width: 300px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.map-search-input:focus {
+    border-color: #B71C1C;
+    box-shadow: 0 2px 8px rgba(183, 28, 28, 0.2);
+}
+
+.map-search-button {
+    background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.map-search-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+}
+
+@media (max-width: 768px) {
+    .show-location-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+
+    .map-search-controls {
+        flex-direction: column;
+        width: calc(100% - 100px);
+    }
+
+    .map-search-input {
+        width: 100%;
+    }
+}
+</style>
 </body>
 </html>

@@ -10,6 +10,13 @@ function openPage(evt, pageName) {
     }
     document.getElementById(pageName).style.display = "block";
     evt.currentTarget.className += " active";
+
+    // ✅ NEW: Initialize map when Map tab is opened
+    if (pageName === 'Map' && typeof initializeMap === 'function') {
+        setTimeout(() => {
+            initializeMap();
+        }, 100);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -217,612 +224,424 @@ if (logoutModal) {
     });
 }
 
-// Toggle dropdown for user menu (KabsuEats project)
-window.toggleDropdown = function() {
-    const dropdown = document.getElementById("userDropdown");
-    if (dropdown) {
-        dropdown.classList.toggle("show");
-    }
-};
+// ==========================================
+// ✅ MAP INITIALIZATION AND LOCATION TRACKING
+// ==========================================
 
-// Close dropdown if clicked outside
-window.addEventListener("click", function(event) {
-    const dropdown = document.getElementById("userDropdown");
-    const profileImage = document.querySelector(".profile-image");
-    if (dropdown && !dropdown.contains(event.target) && event.target !== profileImage) {
-        dropdown.classList.remove("show");
-    }
-});
+let map;
+let userMarker;
+let userCircle;
+let locationWatchId;
+let markersGroup;
+let isMapInitialized = false;
 
-// Open settings modal (KabsuEats project)
-window.openSettingsModal = function(event) {
-    event.preventDefault();
-    const modal = document.getElementById("settingsModal");
-    if (modal) {
-        modal.style.display = "flex";
-    }
-};
-
-// Close settings modal (KabsuEats project)
-window.closeSettingsModal = function() {
-    const modal = document.getElementById("settingsModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
-};
-
-// ====== NEW: Image Preview Function for Profile Picture ======
-window.previewImage = function(event) {
-    const input = event.target;
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const preview = document.getElementById('profileImagePreview');
-            if (preview) {
-                preview.src = e.target.result;
-            }
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-};
-
-// Close modals on clicking outside content
-window.onclick = function(event) {
-    const settingsModal = document.getElementById("settingsModal");
-    if (event.target === settingsModal) {
-        settingsModal.style.display = "none";
-    }
-};
-
-// =========================ENHANCED MAP FUNCTIONS (MODIFIED WITH BUTTON)==================================
-document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggleMapBtn");
-    const mapSection = document.getElementById("mapSection");
-
-    if (!toggleBtn || !mapSection) {
+function initializeMap() {
+    // Prevent multiple initializations
+    if (isMapInitialized) {
+        map.invalidateSize();
         return;
     }
 
-    let mapInitialized = false;
-    let map;
-    let markers = [];
-    let userLocation = null;
-    let routingControl = null;
-    let userMarker = null;
-    let watchId = null;
-    let cvsuCircle = null;
-    let locationAccuracyCircle = null;
-    let locationButton = null; // NEW: Button reference
-    let establishmentsLoaded = false; // NEW: Track if establishments are shown
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+        console.error('Map element not found');
+        return;
+    }
 
-    const CVSU_LAT = 14.4128;
-    const CVSU_LNG = 120.9813;
-    const RADIUS_METERS = 500;
+    // ✅ INITIAL VIEW: Centered on Soldiers Hills IV area (coordinates from your image)
+    // Latitude: 14.4246, Longitude: 120.9644 (approximate center of Soldiers Hills IV)
+    const initialLat = 14.4246;
+    const initialLng = 120.9644;
+    const initialZoom = 16; // Good zoom level to see the neighborhood
 
-    toggleBtn.addEventListener("click", function () {
-        mapSection.classList.toggle("active");
-        toggleBtn.textContent = mapSection.classList.contains("active") ? "✖ Hide Map" : "🗺️ View Map";
+    // Initialize the map
+    map = L.map('map', {
+        center: [initialLat, initialLng],
+        zoom: initialZoom,
+        zoomControl: true
+    });
 
-        if (!mapInitialized && mapSection.classList.contains("active")) {
-            if (typeof L === 'undefined') {
-                console.error("Leaflet is not loaded.");
-                return;
-            }
+    // Add OpenStreetMap tile layer (or use Esri World Imagery for satellite view)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a> | <a href="https://leafletjs.com/">Leaflet</a>',
+        maxZoom: 19
+    }).addTo(map);
 
-            map = L.map("establishmentsMap", {
-                center: [CVSU_LAT, CVSU_LNG],
-                zoom: 16,
-                maxZoom: 22,
-                minZoom: 10,
-                zoomControl: true
-            });
+    // Initialize markers group
+    markersGroup = L.layerGroup().addTo(map);
 
-            const highResSatellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-                attribution: "© Esri World Imagery",
-                maxZoom: 22,
-                maxNativeZoom: 19
-            });
-
-            const enhancedLabels = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png", {
-                attribution: "© CARTO",
-                maxZoom: 22,
-                subdomains: 'abcd',
-                pane: 'shadowPane'
-            });
-
-            const hybridGroup = L.layerGroup([highResSatellite, enhancedLabels]).addTo(map);
-
-            const googleSatellite = L.tileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-                attribution: "© Google Satellite",
-                maxZoom: 22,
-                maxNativeZoom: 20
-            });
-
-            const googleHybrid = L.layerGroup([
-                L.tileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-                    maxZoom: 22,
-                    maxNativeZoom: 20
-                }),
-                L.tileLayer("https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}", {
-                    maxZoom: 22,
-                    maxNativeZoom: 20
-                })
-            ]);
-
-            const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "© OpenStreetMap",
-                maxZoom: 22,
-                maxNativeZoom: 19
-            });
-
-            const terrainLayer = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-                attribution: "© OpenTopoMap",
-                maxZoom: 22,
-                maxNativeZoom: 17
-            });
-
-            L.control.layers({
-                "Hybrid HD (Recommended)": hybridGroup,
-                "Google Hybrid": googleHybrid,
-                "Google Satellite": googleSatellite,
-                "Street Map": streetLayer,
-                "Terrain": terrainLayer
-            }).addTo(map);
-
-            cvsuCircle = L.circle([CVSU_LAT, CVSU_LNG], {
-                color: '#E9A420',
-                fillColor: '#E9A420',
-                fillOpacity: 0.15,
-                radius: RADIUS_METERS,
-                weight: 3,
-                dashArray: '10, 10'
-            }).addTo(map);
-
-            cvsuCircle.bindPopup("<strong>CvSU-Bacoor Campus</strong><br>500m radius zone");
-
-            // ========== NEW: FUNCTION TO LOAD ESTABLISHMENTS ==========
-            function loadEstablishments() {
-                if (establishmentsLoaded) return; // Prevent loading twice
-
-                const items = document.querySelectorAll(".food-establishment-item");
-                let bounds = [];
-
-                items.forEach(item => {
-                    const name = item.getAttribute("data-name");
-                    const lat = parseFloat(item.getAttribute("data-lat"));
-                    const lng = parseFloat(item.getAttribute("data-lng"));
-                    const imageEl = item.querySelector(".food-image");
-                    const image = imageEl ? imageEl.src : "";
-
-                    const linkEl = item.querySelector('a[href*="establishment"]');
-                    let establishmentId = '';
-                    if (linkEl) {
-                        const href = linkEl.getAttribute('href');
-                        const matches = href.match(/establishment\/(\d+)/);
-                        if (matches && matches[1]) {
-                            establishmentId = matches[1];
-                        }
-                    }
-
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        const icon = L.divIcon({
-                            html: `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;border:3px solid #E9A420;box-shadow: 0 3px 10px rgba(0,0,0,0.4);cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                                    <img src="${image}" style="width:100%;height:100%;object-fit:cover;">
-                                   </div>`,
-                            className: "",
-                            iconSize: [48, 48]
-                        });
-
-                        const marker = L.marker([lat, lng], { icon }).addTo(map);
-
-                        marker.on('click', function() {
-                            let popupText = `<div style="text-align:center;min-width:200px;"><strong style="font-size:15px;color:#111;">${name}</strong>`;
-
-                            if (userLocation) {
-                                const distance = map.distance(userLocation, [lat, lng]);
-                                const meters = Math.round(distance);
-                                const km = (distance / 1000).toFixed(2);
-
-                                if (meters < 1000) {
-                                    popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${meters}m from you</span>`;
-                                } else {
-                                    popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${km}km from you</span>`;
-                                }
-
-                                if (typeof L.Routing !== 'undefined') {
-                                    if (routingControl) {
-                                        map.removeControl(routingControl);
-                                    }
-
-                                    routingControl = L.Routing.control({
-                                        waypoints: [
-                                            L.latLng(userLocation[0], userLocation[1]),
-                                            L.latLng(lat, lng)
-                                        ],
-                                        routeWhileDragging: false,
-                                        addWaypoints: false,
-                                        draggableWaypoints: false,
-                                        fitSelectedRoutes: true,
-                                        showAlternatives: true,
-                                        altLineOptions: {
-                                            styles: [
-                                                { color: '#888', opacity: 0.5, weight: 4 },
-                                                { color: '#ccc', opacity: 0.3, weight: 6 }
-                                            ]
-                                        },
-                                        lineOptions: {
-                                            styles: [
-                                                { color: '#E9A420', opacity: 0.8, weight: 6 },
-                                                { color: '#fff', opacity: 0.4, weight: 9 }
-                                            ]
-                                        },
-                                        createMarker: function() { return null; },
-                                        show: false
-                                    }).on('routesfound', function(e) {
-                                        const routes = e.routes;
-                                        const mainRoute = routes[0];
-                                        const distanceKm = (mainRoute.summary.totalDistance / 1000).toFixed(2);
-                                        const timeMin = Math.round(mainRoute.summary.totalTime / 60);
-
-                                        const updatedPopupText = `<div style="text-align:center;min-width:200px;">
-                                            <strong style="font-size:15px;color:#111;">${name}</strong><br>
-                                            <span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${distanceKm} km away</span><br>
-                                            <span style="font-size:12px;color:#666;">🕒 About ${timeMin} minutes</span><br>
-                                            <a href="/food_establishment/${establishmentId}/"
-                                               style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                                               View Details →
-                                            </a></div>`;
-
-                                        marker.getPopup().setContent(updatedPopupText);
-                                    }).addTo(map);
-
-                                    routingControl.on('routingerror', function(e) {
-                                        console.error('Routing error:', e);
-                                        alert('Could not calculate route. Please try again.');
-                                    });
-                                } else {
-                                    popupText += `<div style="margin-top:10px;padding:8px;background:#fef2f2;border-radius:6px;font-size:12px;color:#991b1b;">
-                                        ⚠️ Routing library not loaded
-                                    </div>`;
-                                }
-                            }
-
-                            popupText += `<br><a href="/food_establishment/${establishmentId}/"
-                               style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                               View Details →
-                            </a></div>`;
-
-                            marker.bindPopup(popupText, {
-                                maxWidth: 300,
-                                className: 'custom-popup'
-                            }).openPopup();
-
-                            map.setView([lat, lng], 19, {
-                                animate: true,
-                                duration: 0.8,
-                                easeLinearity: 0.5
-                            });
-                        });
-
-                        markers.push({
-                            name: (name || '').toLowerCase(),
-                            marker: marker,
-                            lat: lat,
-                            lng: lng,
-                            id: establishmentId
-                        });
-                        bounds.push([lat, lng]);
-                    }
+    // Add establishment markers
+    if (typeof establishments !== 'undefined' && establishments.length > 0) {
+        establishments.forEach(estab => {
+            if (estab.latitude && estab.longitude) {
+                // Custom icon for establishments
+                const estabIcon = L.divIcon({
+                    className: 'custom-establishment-marker',
+                    html: `<div style="
+                        background: #B71C1C;
+                        color: white;
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        font-size: 16px;
+                    "><i class="fas fa-utensils"></i></div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
                 });
 
-                if (bounds.length > 0) {
-                    // If user location exists, include it in bounds
-                    if (userLocation) {
-                        bounds.push(userLocation);
-                    }
-                    map.fitBounds(bounds, { padding: [60, 60] });
-                }
+                const marker = L.marker([estab.latitude, estab.longitude], {
+                    icon: estabIcon
+                }).addTo(markersGroup);
 
-                establishmentsLoaded = true;
-            }
-
-            // ========== NEW: CREATE LOCATION BUTTON ==========
-            const locationButtonContainer = document.createElement("div");
-            locationButtonContainer.style.cssText = `
-                position: absolute;
-                bottom: 30px;
-                right: 10px;
-                z-index: 1000;
-            `;
-
-            locationButton = document.createElement("button");
-            locationButton.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-location-arrow"></i>
-                    <span>Show My Location</span>
-                </div>
-            `;
-            locationButton.style.cssText = `
-                background: linear-gradient(135deg, #E9A420 0%, #d89410 100%);
-                color: white;
-                border: none;
-                padding: 12px 20px;
-                border-radius: 25px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-                box-shadow: 0 4px 15px rgba(233, 164, 32, 0.4);
-                transition: all 0.3s ease;
-                font-family: inherit;
-            `;
-
-            // Hover effects
-            locationButton.onmouseover = function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
-            };
-            locationButton.onmouseout = function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
-            };
-
-            // ========== NEW: BUTTON CLICK EVENT TO GET LOCATION ==========
-            locationButton.addEventListener("click", function() {
-                if (!navigator.geolocation) {
-                    alert("Geolocation is not supported by your browser.");
-                    return;
-                }
-
-                // Change button to loading state
-                locationButton.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <span>Getting Location...</span>
+                // Popup with establishment info
+                const popupContent = `
+                    <div style="min-width: 200px;">
+                        <h3 style="margin: 0 0 8px 0; color: #B71C1C; font-size: 16px; font-weight: bold;">
+                            ${estab.name}
+                        </h3>
+                        ${estab.image ? `<img src="${estab.image}" alt="${estab.name}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;">` : ''}
+                        <p style="margin: 4px 0; font-size: 13px;">
+                            <i class="fas fa-star" style="color: #FFD700;"></i>
+                            <strong>${estab.rating || 'N/A'}</strong> (${estab.reviews || 0} reviews)
+                        </p>
+                        <p style="margin: 4px 0; font-size: 13px;">
+                            <i class="fas fa-map-marker-alt" style="color: #B71C1C;"></i>
+                            ${estab.distance || 'N/A'} km away
+                        </p>
+                        <p style="margin: 4px 0; font-size: 13px;">
+                            <i class="fas fa-door-${estab.status === 'Open' ? 'open' : 'closed'}" style="color: ${estab.status === 'Open' ? '#4CAF50' : '#f44336'};"></i>
+                            <strong style="color: ${estab.status === 'Open' ? '#4CAF50' : '#f44336'};">${estab.status}</strong>
+                        </p>
+                        ${estab.url ? `<a href="${estab.url}" style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: #B71C1C; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">View Details</a>` : ''}
                     </div>
                 `;
-                locationButton.disabled = true;
-                locationButton.style.opacity = '0.7';
 
-                const geoOptions = {
+                marker.bindPopup(popupContent);
+            }
+        });
+    }
+
+    // ✅ Setup "Show My Location" button
+    const showLocationBtn = document.getElementById('showLocationBtn');
+    if (showLocationBtn) {
+        showLocationBtn.addEventListener('click', startLocationTracking);
+    }
+
+    isMapInitialized = true;
+    console.log('✅ Map initialized successfully with initial view');
+}
+
+// ✅ REAL-TIME LOCATION TRACKING
+function startLocationTracking() {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+    }
+
+    const showLocationBtn = document.getElementById('showLocationBtn');
+
+    // Show loading state
+    if (showLocationBtn) {
+        showLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+        showLocationBtn.disabled = true;
+    }
+
+    // Get current position and start watching
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+
+            // Update or create user marker
+            updateUserLocation(lat, lng, accuracy);
+
+            // Center map on user location
+            map.setView([lat, lng], 17, {
+                animate: true,
+                duration: 1
+            });
+
+            // Start watching position for real-time updates
+            if (locationWatchId) {
+                navigator.geolocation.clearWatch(locationWatchId);
+            }
+
+            locationWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    updateUserLocation(lat, lng, accuracy);
+                },
+                (error) => {
+                    console.error('Error watching position:', error);
+                },
+                {
                     enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                };
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
 
-                navigator.geolocation.getCurrentPosition(
-                    function (position) {
-                        const userLat = position.coords.latitude;
-                        const userLng = position.coords.longitude;
-                        const accuracy = position.coords.accuracy;
-                        userLocation = [userLat, userLng];
-
-                        console.log(`Location accuracy: ${accuracy} meters`);
-
-                        // Remove existing markers and circles
-                        if (userMarker) {
-                            map.removeLayer(userMarker);
-                        }
-                        if (locationAccuracyCircle) {
-                            map.removeLayer(locationAccuracyCircle);
-                        }
-
-                        // Add accuracy circle
-                        locationAccuracyCircle = L.circle(userLocation, {
-                            radius: accuracy,
-                            fillColor: "#007bff",
-                            fillOpacity: 0.1,
-                            color: "#007bff",
-                            weight: 1
-                        }).addTo(map);
-
-                        // Create pulsing icon
-                        const pulsingIcon = L.divIcon({
-                            html: `<div style="position:relative;">
-                                    <div style="position:absolute;width:24px;height:24px;border-radius:50%;
-                                                background:#007bff;animation:pulse 2s infinite;
-                                                top:50%;left:50%;transform:translate(-50%,-50%);"></div>
-                                    <div style="width:16px;height:16px;border-radius:50%;
-                                                background:#007bff;border:3px solid #fff;
-                                                box-shadow:0 2px 8px rgba(0,123,255,0.5);"></div>
-                                   </div>
-                                   <style>
-                                   @keyframes pulse {
-                                       0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-                                       50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
-                                       100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
-                                   }
-                                   </style>`,
-                            className: "",
-                            iconSize: [24, 24]
-                        });
-
-                        // Add user marker
-                        userMarker = L.marker(userLocation, { icon: pulsingIcon }).addTo(map);
-
-                        userMarker.bindPopup(`
-                            <div style="text-align:center;">
-                                <strong style="color:#007bff;">📍 Your Location</strong><br>
-                                <small>Accuracy: ±${Math.round(accuracy)}m</small>
-                            </div>
-                        `);
-
-                        // Zoom to user location
-                        map.setView(userLocation, 19, {
-                            animate: true,
-                            duration: 1.2,
-                            easeLinearity: 0.5
-                        });
-
-                        // ========== NEW: LOAD ESTABLISHMENTS AFTER LOCATION IS FOUND ==========
-                        setTimeout(() => {
-                            loadEstablishments();
-                        }, 500);
-
-                        // Update button to success state
-                        locationButton.innerHTML = `
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Location Found!</span>
-                            </div>
-                        `;
-                        locationButton.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
-
-                        // Start watching position for real-time updates
-                        if (watchId) {
-                            navigator.geolocation.clearWatch(watchId);
-                        }
-
-                        watchId = navigator.geolocation.watchPosition(
-                            function (position) {
-                                const userLat = position.coords.latitude;
-                                const userLng = position.coords.longitude;
-                                const accuracy = position.coords.accuracy;
-                                userLocation = [userLat, userLng];
-
-                                if (userMarker) {
-                                    userMarker.setLatLng(userLocation);
-                                }
-                                if (locationAccuracyCircle) {
-                                    locationAccuracyCircle.setLatLng(userLocation);
-                                    locationAccuracyCircle.setRadius(accuracy);
-                                }
-                            },
-                            function (error) {
-                                console.error("Watch position error:", error.message);
-                            },
-                            geoOptions
-                        );
-                    },
-                    function (error) {
-                        console.error("Geolocation error:", error.message);
-                        alert("Unable to get your location. Please enable location services.");
-
-                        // Reset button to original state
-                        locationButton.innerHTML = `
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-location-arrow"></i>
-                                <span>Show My Location</span>
-                            </div>
-                        `;
-                        locationButton.disabled = false;
-                        locationButton.style.opacity = '1';
-                        locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
-                    },
-                    geoOptions
-                );
-            });
-
-            locationButtonContainer.appendChild(locationButton);
-            document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
-
-            // COMPACT SEARCH BAR - REDUCED HEIGHT, NO OVERLAP
-            const mapSearchContainer = document.createElement("div");
-            const isMobile = window.innerWidth <= 768;
-
-            if (isMobile) {
-                // Phone view search bar
-                mapSearchContainer.innerHTML = `
-                    <div style="position:absolute;top:10px;left:10px;right:10px;z-index:800;">
-                        <div style="background:white;border-radius:18px;padding:4px;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;gap:4px;align-items:center;">
-                            <div style="position:relative;flex:1;">
-                                <input id="mapSearchInput" type="text" placeholder="Search..."
-                                    style="width:100%;padding:6px 10px;border:none;border-radius:14px;font-size:13px;outline:none;background:transparent;" />
-                            </div>
-                            <button id="mapSearchBtn"
-                                style="background:#E9A420;color:white;border:none;padding:6px 14px;border-radius:14px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">
-                                🔍 Search
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Desktop view search bar
-                mapSearchContainer.innerHTML = `
-                    <div style="position:absolute;top:10px;left:60px;z-index:800;">
-                        <div style="background:white;border-radius:20px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;gap:6px;align-items:center;">
-                            <div style="position:relative;flex:1;">
-                                <input id="mapSearchInput" type="text" placeholder="Search establishments..."
-                                    style="width:280px;padding:8px 12px;border:none;border-radius:16px;font-size:14px;outline:none;background:transparent;" />
-                            </div>
-                            <button id="mapSearchBtn"
-                                style="background:#E9A420;color:white;border:none;padding:8px 18px;border-radius:16px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:background 0.2s;"
-                                onmouseover="this.style.background='#d89410'" onmouseout="this.style.background='#E9A420'">
-                                🔍 Search
-                            </button>
-                        </div>
-                    </div>
-                `;
+            // Update button state
+            if (showLocationBtn) {
+                showLocationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Tracking Location';
+                showLocationBtn.disabled = false;
+                showLocationBtn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)';
             }
 
-            document.getElementById("establishmentsMap").appendChild(mapSearchContainer);
+            console.log('✅ Location tracking started');
+        },
+        (error) => {
+            console.error('Error getting location:', error);
+            let errorMessage = 'Unable to get your location. ';
 
-            const searchInput = document.getElementById("mapSearchInput");
-            const searchBtn = document.getElementById("mapSearchBtn");
-
-            function performSearch() {
-                const query = searchInput.value.trim().toLowerCase();
-                if (!query) {
-                    markers.forEach(m => {
-                        if (m.marker._icon) {
-                            m.marker._icon.style.display = '';
-                        }
-                    });
-                    return;
-                }
-
-                let found = false;
-                markers.forEach(m => {
-                    const matches = m.name.includes(query);
-                    if (m.marker._icon) {
-                        m.marker._icon.style.display = matches ? '' : 'none';
-                    }
-                    if (matches && !found) {
-                        map.setView([m.lat, m.lng], 19, {
-                            animate: true,
-                            duration: 0.8
-                        });
-                        m.marker.fire('click');
-                        found = true;
-                    }
-                });
-
-                if (!found) {
-                    alert(`No results found for "${query}"`);
-                }
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Please enable location permissions.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+                default:
+                    errorMessage += 'An unknown error occurred.';
             }
 
-            searchBtn.addEventListener("click", performSearch);
-            searchInput.addEventListener("keypress", function(e) {
-                if (e.key === "Enter") {
-                    performSearch();
-                }
-            });
+            alert(errorMessage);
 
-            // ========== LOAD ESTABLISHMENTS IMMEDIATELY ON MAP OPEN ==========
-            loadEstablishments();
+            // Reset button state
+            if (showLocationBtn) {
+                showLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+                showLocationBtn.disabled = false;
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
 
-            mapInitialized = true;
+// Update user location marker
+function updateUserLocation(lat, lng, accuracy) {
+    // Custom icon for user location
+    const userIcon = L.divIcon({
+        className: 'custom-user-marker',
+        html: `<div style="
+            background: #2196F3;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            position: relative;
+        ">
+            <div style="
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 8px;
+                height: 8px;
+                background: white;
+                border-radius: 50%;
+            "></div>
+        </div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    // Remove existing user marker and circle
+    if (userMarker) {
+        map.removeLayer(userMarker);
+    }
+    if (userCircle) {
+        map.removeLayer(userCircle);
+    }
+
+    // Add new user marker
+    userMarker = L.marker([lat, lng], {
+        icon: userIcon,
+        zIndexOffset: 1000
+    }).addTo(map);
+
+    userMarker.bindPopup(`
+        <div style="text-align: center;">
+            <strong style="color: #2196F3;">You are here</strong><br>
+            <small>Accuracy: ±${Math.round(accuracy)} meters</small>
+        </div>
+    `);
+
+    // Add accuracy circle
+    userCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#2196F3',
+        fillColor: '#2196F3',
+        fillOpacity: 0.1,
+        weight: 1
+    }).addTo(map);
+
+    console.log(`📍 Location updated: ${lat}, ${lng} (±${Math.round(accuracy)}m)`);
+}
+
+// Stop location tracking
+function stopLocationTracking() {
+    if (locationWatchId) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+    }
+
+    const showLocationBtn = document.getElementById('showLocationBtn');
+    if (showLocationBtn) {
+        showLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+        showLocationBtn.style.background = 'linear-gradient(135deg, #B71C1C 0%, #8c1616 100%)';
+    }
+
+    console.log('🛑 Location tracking stopped');
+}
+
+// Search establishments on map
+function searchOnMap() {
+    const searchInput = document.getElementById('mapSearchInput');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.toLowerCase().trim();
+
+    if (!searchTerm) {
+        // Show all markers
+        markersGroup.eachLayer(marker => {
+            marker.setOpacity(1);
+        });
+        return;
+    }
+
+    let foundCount = 0;
+    let firstFoundMarker = null;
+
+    markersGroup.eachLayer(marker => {
+        const popupContent = marker.getPopup().getContent().toLowerCase();
+
+        if (popupContent.includes(searchTerm)) {
+            marker.setOpacity(1);
+            foundCount++;
+            if (!firstFoundMarker) {
+                firstFoundMarker = marker;
+            }
+        } else {
+            marker.setOpacity(0.3);
         }
     });
+
+    if (firstFoundMarker) {
+        map.setView(firstFoundMarker.getLatLng(), 17, {
+            animate: true,
+            duration: 1
+        });
+        firstFoundMarker.openPopup();
+    }
+
+    if (foundCount === 0) {
+        alert('No establishments found matching your search.');
+    }
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    stopLocationTracking();
 });
 
-// ============================================
-// Profile Update Form Handler
-// ============================================
+function toggleDropdown() {
+    document.getElementById("userDropdown").classList.toggle("show");
+}
+
+window.onclick = function(event) {
+    if (!event.target.matches('.profile-image')) {
+        var dropdowns = document.getElementsByClassName("dropdown-menu");
+        for (var i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+        }
+    }
+}
+
+function openSettingsModal(event) {
+    event.preventDefault();
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('settingsModal');
+    if (event.target === modal) {
+        closeSettingsModal();
+    }
+
+    if (!event.target.matches('.profile-image')) {
+        var dropdowns = document.getElementsByClassName("dropdown-menu");
+        for (var i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+        }
+    }
+}
+
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function() {
+        const output = document.getElementById('profileImagePreview');
+        if (output) {
+            output.src = reader.result;
+        }
+    };
+    if (event.target.files && event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.getElementById('profileUpdateForm');
-
     if (profileForm) {
-        profileForm.addEventListener('submit', function(event) {
-            event.preventDefault();
+        profileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
             const formData = new FormData(profileForm);
+
+            if (typeof UPDATE_PROFILE_URL === 'undefined') {
+                console.error('UPDATE_PROFILE_URL is not defined');
+                alert('Configuration error. Please contact support.');
+                return;
+            }
 
             fetch(UPDATE_PROFILE_URL, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    'X-Requested-With': 'XMLHttpRequest',
                 }
             })
             .then(response => response.json())
@@ -831,9 +650,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Profile updated successfully!');
                     closeSettingsModal();
 
-                    // Update profile picture in header if changed
-                    const profileImages = document.querySelectorAll('.profile-image');
                     if (data.profile_picture_url) {
+                        const profileImages = document.querySelectorAll('.profile-image');
                         profileImages.forEach(img => {
                             img.src = data.profile_picture_url;
                         });
