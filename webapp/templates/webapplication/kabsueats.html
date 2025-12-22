@@ -13,8 +13,8 @@
 
     <!-- External libraries for icons and maps -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
     <!-- Tailwind CSS for utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -108,6 +108,29 @@
                 height: 40px;
                 font-size: 16px;
             }
+        }
+
+        /* Enhanced pulsing location marker */
+        @keyframes pulse-location {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        .user-location-marker {
+            animation: pulse-location 2s infinite;
+        }
+
+        /* Accuracy circle styling */
+        .leaflet-interactive.accuracy-circle {
+            fill-opacity: 0.1;
+            stroke-opacity: 0.3;
         }
     </style>
 </head>
@@ -390,11 +413,10 @@
     </div>
 
     <!-- JavaScript Libraries -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
     <!-- Your custom JavaScript files -->
-    <script src="{% static 'js/kabsueats_map.js' %}"></script>
     <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/status_updater.js' %}"></script>
 
@@ -464,7 +486,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Other custom JS files -->
-    <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/establishment_details.js' %}"></script>
     <script src="{% static 'js/cart.js' %}"></script>
     {% endblock %}

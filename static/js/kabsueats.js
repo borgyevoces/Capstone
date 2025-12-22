@@ -274,7 +274,7 @@ window.onclick = function(event) {
     }
 };
 
-// =========================ENHANCED MAP FUNCTIONS (FIXED)==================================
+// =========================ENHANCED MAP WITH ACCURATE GEOLOCATION==================================
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggleMapBtn");
     const mapSection = document.getElementById("mapSection");
@@ -293,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let cvsuCircle = null;
     let locationAccuracyCircle = null;
     let locationButton = null;
+    let isTrackingLocation = false;
 
     const CVSU_LAT = 14.4128;
     const CVSU_LNG = 120.9813;
@@ -413,20 +414,37 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
 
             locationButton.onmouseover = function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
+                }
             };
             locationButton.onmouseout = function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
+                }
             };
 
-            // ========== BUTTON CLICK EVENT ==========
+            // ========== BUTTON CLICK EVENT - HIGH ACCURACY GEOLOCATION ==========
             locationButton.addEventListener("click", function() {
                 if (!navigator.geolocation) {
-                    alert("Geolocation is not supported by your browser.");
+                    alert("❌ Geolocation is not supported by your browser. Please use a modern browser like Chrome, Firefox, or Safari.");
                     return;
                 }
+
+                if (isTrackingLocation) {
+                    // Stop tracking
+                    stopLocationTracking();
+                    return;
+                }
+
+                // Start tracking
+                startLocationTracking();
+            });
+
+            function startLocationTracking() {
+                isTrackingLocation = true;
 
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -437,12 +455,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 locationButton.disabled = true;
                 locationButton.style.opacity = '0.7';
 
+                // CRITICAL: High accuracy geolocation options
                 const geoOptions = {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                    enableHighAccuracy: true,  // Use GPS if available
+                    timeout: 30000,            // 30 seconds timeout
+                    maximumAge: 0              // Always get fresh location
                 };
 
+                // Get initial position
                 navigator.geolocation.getCurrentPosition(
                     function (position) {
                         const userLat = position.coords.latitude;
@@ -450,55 +470,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         const accuracy = position.coords.accuracy;
                         userLocation = [userLat, userLng];
 
-                        console.log(`Location found: ${userLat}, ${userLng} (±${accuracy}m)`);
+                        console.log(`✅ Initial location: ${userLat.toFixed(6)}, ${userLng.toFixed(6)} (±${accuracy.toFixed(1)}m)`);
 
-                        // Remove existing markers
-                        if (userMarker) {
-                            map.removeLayer(userMarker);
-                        }
-                        if (locationAccuracyCircle) {
-                            map.removeLayer(locationAccuracyCircle);
-                        }
-
-                        // Add accuracy circle
-                        locationAccuracyCircle = L.circle(userLocation, {
-                            radius: accuracy,
-                            fillColor: "#007bff",
-                            fillOpacity: 0.1,
-                            color: "#007bff",
-                            weight: 1
-                        }).addTo(map);
-
-                        // Create pulsing icon
-                        const pulsingIcon = L.divIcon({
-                            html: `<div style="position:relative;">
-                                    <div style="position:absolute;width:24px;height:24px;border-radius:50%;
-                                                background:#007bff;animation:pulse 2s infinite;
-                                                top:50%;left:50%;transform:translate(-50%,-50%);"></div>
-                                    <div style="width:16px;height:16px;border-radius:50%;
-                                                background:#007bff;border:3px solid #fff;
-                                                box-shadow:0 2px 8px rgba(0,123,255,0.5);"></div>
-                                   </div>
-                                   <style>
-                                   @keyframes pulse {
-                                       0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-                                       50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
-                                       100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
-                                   }
-                                   </style>`,
-                            className: "",
-                            iconSize: [24, 24]
-                        });
-
-                        // Add user marker
-                        userMarker = L.marker(userLocation, { icon: pulsingIcon }).addTo(map);
-
-                        userMarker.bindPopup(`
-                            <div style="text-align:center;">
-                                <strong style="color:#007bff;">📍 Your Location</strong><br>
-                                <small>Accuracy: ±${Math.round(accuracy)}m</small>
-                            </div>
-                        `);
+                        updateUserMarker(userLat, userLng, accuracy);
 
                         // Zoom to user location
                         map.setView(userLocation, 19, {
@@ -507,20 +481,18 @@ document.addEventListener("DOMContentLoaded", function () {
                             easeLinearity: 0.5
                         });
 
-                        // Update button success
+                        // Update button to show tracking is active
                         locationButton.innerHTML = `
                             <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Location Found!</span>
+                                <i class="fas fa-crosshairs" style="animation: spin 2s linear infinite;"></i>
+                                <span>Tracking Active</span>
                             </div>
                         `;
+                        locationButton.disabled = false;
+                        locationButton.style.opacity = '1';
                         locationButton.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
 
-                        // Start watching position
-                        if (watchId) {
-                            navigator.geolocation.clearWatch(watchId);
-                        }
-
+                        // Start continuous tracking
                         watchId = navigator.geolocation.watchPosition(
                             function (position) {
                                 const userLat = position.coords.latitude;
@@ -528,37 +500,173 @@ document.addEventListener("DOMContentLoaded", function () {
                                 const accuracy = position.coords.accuracy;
                                 userLocation = [userLat, userLng];
 
-                                if (userMarker) {
-                                    userMarker.setLatLng(userLocation);
-                                }
-                                if (locationAccuracyCircle) {
-                                    locationAccuracyCircle.setLatLng(userLocation);
-                                    locationAccuracyCircle.setRadius(accuracy);
-                                }
+                                console.log(`📍 Updated: ${userLat.toFixed(6)}, ${userLng.toFixed(6)} (±${accuracy.toFixed(1)}m)`);
+
+                                updateUserMarker(userLat, userLng, accuracy);
                             },
                             function (error) {
-                                console.error("Watch position error:", error.message);
+                                console.error("❌ Watch position error:", error.message);
+                                handleLocationError(error);
                             },
                             geoOptions
                         );
                     },
                     function (error) {
-                        console.error("Geolocation error:", error.message);
-                        alert("Unable to get your location. Please enable location services and try again.");
-
-                        locationButton.innerHTML = `
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-location-arrow"></i>
-                                <span>Show My Location</span>
-                            </div>
-                        `;
-                        locationButton.disabled = false;
-                        locationButton.style.opacity = '1';
-                        locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
+                        console.error("❌ Initial geolocation error:", error.message);
+                        handleLocationError(error);
+                        stopLocationTracking();
                     },
                     geoOptions
                 );
-            });
+            }
+
+            function updateUserMarker(lat, lng, accuracy) {
+                // Remove existing markers
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                if (locationAccuracyCircle) {
+                    map.removeLayer(locationAccuracyCircle);
+                }
+
+                // Add accuracy circle (shows GPS accuracy)
+                locationAccuracyCircle = L.circle([lat, lng], {
+                    radius: accuracy,
+                    fillColor: "#3b82f6",
+                    fillOpacity: 0.1,
+                    color: "#3b82f6",
+                    weight: 1,
+                    className: 'accuracy-circle'
+                }).addTo(map);
+
+                // Create highly visible pulsing marker
+                const pulsingIcon = L.divIcon({
+                    html: `
+                        <div style="position:relative;width:24px;height:24px;">
+                            <div class="pulse-ring" style="
+                                position:absolute;
+                                width:40px;
+                                height:40px;
+                                border-radius:50%;
+                                background:rgba(59, 130, 246, 0.4);
+                                top:50%;
+                                left:50%;
+                                transform:translate(-50%,-50%);
+                                animation:pulse-expand 2s infinite;
+                            "></div>
+                            <div style="
+                                position:absolute;
+                                width:24px;
+                                height:24px;
+                                border-radius:50%;
+                                background:#3b82f6;
+                                border:4px solid #fff;
+                                box-shadow:0 3px 15px rgba(59, 130, 246, 0.7);
+                                top:50%;
+                                left:50%;
+                                transform:translate(-50%,-50%);
+                                z-index:10;
+                            "></div>
+                            <div style="
+                                position:absolute;
+                                width:8px;
+                                height:8px;
+                                border-radius:50%;
+                                background:#fff;
+                                top:50%;
+                                left:50%;
+                                transform:translate(-50%,-50%);
+                                z-index:11;
+                            "></div>
+                        </div>
+                        <style>
+                        @keyframes pulse-expand {
+                            0% { opacity:1; transform:translate(-50%,-50%) scale(0.5); }
+                            50% { opacity:0.4; transform:translate(-50%,-50%) scale(1.5); }
+                            100% { opacity:0; transform:translate(-50%,-50%) scale(2); }
+                        }
+                        </style>
+                    `,
+                    className: "user-location-marker",
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                // Add user marker
+                userMarker = L.marker([lat, lng], {
+                    icon: pulsingIcon,
+                    zIndexOffset: 1000
+                }).addTo(map);
+
+                const accuracyText = accuracy < 20 ?
+                    `<span style="color:#16a34a;">Excellent (±${Math.round(accuracy)}m)</span>` :
+                    accuracy < 50 ?
+                    `<span style="color:#f59e0b;">Good (±${Math.round(accuracy)}m)</span>` :
+                    `<span style="color:#ef4444;">Fair (±${Math.round(accuracy)}m)</span>`;
+
+                userMarker.bindPopup(`
+                    <div style="text-align:center;min-width:180px;">
+                        <strong style="color:#3b82f6;font-size:15px;">📍 Your Current Location</strong><br>
+                        <small style="color:#666;font-size:12px;">
+                            GPS Accuracy: ${accuracyText}<br>
+                            Lat: ${lat.toFixed(6)}<br>
+                            Lng: ${lng.toFixed(6)}
+                        </small>
+                    </div>
+                `);
+            }
+
+            function stopLocationTracking() {
+                if (watchId) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+
+                isTrackingLocation = false;
+
+                locationButton.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-location-arrow"></i>
+                        <span>Show My Location</span>
+                    </div>
+                `;
+                locationButton.disabled = false;
+                locationButton.style.opacity = '1';
+                locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
+
+                console.log("🛑 Location tracking stopped");
+            }
+
+            function handleLocationError(error) {
+                let errorMessage = "";
+
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "❌ Location access denied. Please enable location permissions in your browser settings.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "❌ Location information is unavailable. Please check if location services are enabled on your device.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "❌ Location request timed out. Please try again.";
+                        break;
+                    default:
+                        errorMessage = "❌ An unknown error occurred while getting your location.";
+                        break;
+                }
+
+                alert(errorMessage);
+
+                locationButton.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-location-arrow"></i>
+                        <span>Show My Location</span>
+                    </div>
+                `;
+                locationButton.disabled = false;
+                locationButton.style.opacity = '1';
+                locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
+            }
 
             locationButtonContainer.appendChild(locationButton);
             document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
@@ -668,167 +776,84 @@ document.addEventListener("DOMContentLoaded", function () {
                     let popupText = `<div style="text-align:center;min-width:200px;"><strong style="font-size:15px;color:#111;">${name}</strong>`;
 
                     if (userLocation) {
-                        const distance = map.distance(userLocation, [lat, lng]);
-                        const meters = Math.round(distance);
-                        const km = (distance / 1000).toFixed(2);
-
-                        if (meters < 1000) {
-                            popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${meters}m from you</span>`;
-                        } else {
-                            popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${km}km from you</span>`;
-                        }
+                        const dist = map.distance(userLocation, [lat, lng]);
+                        const m = Math.round(dist);
+                        const km = (dist / 1000).toFixed(2);
+                        popup += `<br><span style="color:#16a34a;font-weight:600;">📍 ${m < 1000 ? m + 'm' : km + 'km'} away</span>`;
 
                         if (typeof L.Routing !== 'undefined') {
-                            if (routingControl) {
-                                map.removeControl(routingControl);
-                            }
-
+                            if (routingControl) map.removeControl(routingControl);
                             routingControl = L.Routing.control({
-                                waypoints: [
-                                    L.latLng(userLocation[0], userLocation[1]),
-                                    L.latLng(lat, lng)
-                                ],
+                                waypoints: [L.latLng(userLocation[0], userLocation[1]), L.latLng(lat, lng)],
                                 routeWhileDragging: false,
                                 addWaypoints: false,
-                                draggableWaypoints: false,
-                                fitSelectedRoutes: true,
-                                showAlternatives: true,
-                                altLineOptions: {
-                                    styles: [
-                                        { color: '#888', opacity: 0.5, weight: 4 },
-                                        { color: '#ccc', opacity: 0.3, weight: 6 }
-                                    ]
-                                },
-                                lineOptions: {
-                                    styles: [
-                                        { color: '#E9A420', opacity: 0.8, weight: 6 },
-                                        { color: '#fff', opacity: 0.4, weight: 9 }
-                                    ]
-                                },
-                                createMarker: function() { return null; },
-                                show: false
-                            }).on('routesfound', function(e) {
-                                const routes = e.routes;
-                                const mainRoute = routes[0];
-                                const distanceKm = (mainRoute.summary.totalDistance / 1000).toFixed(2);
-                                const timeMin = Math.round(mainRoute.summary.totalTime / 60);
-
-                                const updatedPopupText = `<div style="text-align:center;min-width:200px;">
-                                    <strong style="font-size:15px;color:#111;">${name}</strong><br>
-                                    <span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${distanceKm} km away</span><br>
-                                    <span style="font-size:12px;color:#666;">🕒 About ${timeMin} minutes</span><br>
-                                    <a href="/food_establishment/${establishmentId}/"
-                                       style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                                       View Details →
-                                    </a></div>`;
-
-                                marker.getPopup().setContent(updatedPopupText);
+                                show: false,
+                                createMarker: () => null
                             }).addTo(map);
                         }
                     }
 
-                    popupText += `<br><a href="/food_establishment/${establishmentId}/"
-                       style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                       View Details →
-                    </a></div>`;
+                    popup += `<br><a href="/food_establishment/${estId}/" style="display:inline-block;margin-top:10px;padding:8px 16px;
+                                    background:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;
+                                    box-shadow:0 2px 6px rgba(233,164,32,0.3);">View Details →</a></div>`;
 
-                    marker.bindPopup(popupText, {
-                        maxWidth: 300,
-                        className: 'custom-popup'
-                    }).openPopup();
-
-                    map.setView([lat, lng], 19, {
-                        animate: true,
-                        duration: 0.8,
-                        easeLinearity: 0.5
-                    });
+                    marker.bindPopup(popup, {maxWidth: 300}).openPopup();
+                    map.setView([lat, lng], 19, {animate: true, duration: 0.8});
                 });
 
-                markers.push({
-                    name: (name || '').toLowerCase(),
-                    marker: marker,
-                    lat: lat,
-                    lng: lng,
-                    id: establishmentId
-                });
+                markers.push({name: (name || '').toLowerCase(), marker, lat, lng, id: estId});
                 bounds.push([lat, lng]);
             }
         });
 
         if (bounds.length > 0) {
-            if (userLocation) {
-                bounds.push(userLocation);
-            }
-            map.fitBounds(bounds, { padding: [60, 60] });
+            if (userLocation) bounds.push(userLocation);
+            map.fitBounds(bounds, {padding: [60, 60]});
         }
     }
 });
 
-// ============================================
-// Profile Update Form Handler
-// ============================================
+// Profile Update
 document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.getElementById('profileUpdateForm');
+    if (!profileForm) return;
 
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(event) {
-            event.preventDefault();
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(profileForm);
 
-            const formData = new FormData(profileForm);
-
-            fetch(UPDATE_PROFILE_URL, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        fetch(UPDATE_PROFILE_URL, {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Profile updated!');
+                closeSettingsModal();
+                if (data.profile_picture_url) {
+                    document.querySelectorAll('.profile-image').forEach(img => img.src = data.profile_picture_url);
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Profile updated successfully!');
-                    closeSettingsModal();
-
-                    const profileImages = document.querySelectorAll('.profile-image');
-                    if (data.profile_picture_url) {
-                        profileImages.forEach(img => {
-                            img.src = data.profile_picture_url;
-                        });
-                    }
-                    const usernameInput = document.getElementById('id_username');
-                    if (usernameInput) {
-                        usernameInput.value = data.username;
-                    }
-                } else {
-                    alert('Error updating profile: ' + (data.errors || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                alert('An unexpected error occurred.');
-            });
+            } else {
+                alert('Error: ' + (data.errors || 'Unknown'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Unexpected error');
         });
-    }
+    });
 });
 
-// =====================================================PAYMENTS================================================
-
+// Cart Functions
 window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, itemName = 'Item', action = 'add') {
     return new Promise((resolve, reject) => {
-
         if (typeof IS_USER_AUTHENTICATED === 'undefined' || !IS_USER_AUTHENTICATED) {
             if (confirm("You must log in to order. Go to Login page?")) {
-                if(typeof LOGIN_REGISTER_URL !== 'undefined') {
-                    window.location.href = LOGIN_REGISTER_URL;
-                } else {
-                     console.error("LOGIN_REGISTER_URL is not defined.");
-                }
+                if(typeof LOGIN_REGISTER_URL !== 'undefined') window.location.href = LOGIN_REGISTER_URL;
             }
-            if (buttonElement) {
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = buttonElement.dataset.originalText || '<i class="fas fa-cart-plus"></i> Add to Cart';
-            }
-            return reject(new Error("User not authenticated."));
+            return reject(new Error("Not authenticated"));
         }
 
         if (buttonElement) {
@@ -837,83 +862,42 @@ window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, i
             buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
         }
 
-        const data = {
-            item_id: itemId,
-            quantity: quantity,
-            action: action
-        };
-
-        if (typeof ADD_TO_CART_URL === 'undefined') {
-            console.error("ADD_TO_CART_URL is not defined.");
-            return reject(new Error("Configuration error."));
-        }
-
         fetch(ADD_TO_CART_URL, {
             method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'menu_item_id': itemId,
-                'quantity': quantity
-            })
+            headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'},
+            body: JSON.stringify({'menu_item_id': itemId, 'quantity': quantity})
         })
-        .then(response => {
-            if (response.status === 409) {
-                return response.json().then(data => {
-                    if (data.error_type === 'DIFFERENT_ESTABLISHMENT') {
-                        if (confirm(data.message)) {
-                            return window.addToCart(itemId, quantity, csrfToken, buttonElement, itemName, 'replace')
-                                .then(resolve)
-                                .catch(reject);
-                        } else {
-                            return Promise.reject(new Error("Cart operation cancelled by user."));
-                        }
-                    } else {
-                         return Promise.reject(new Error(data.message || "An error occurred."));
+        .then(r => {
+            if (r.status === 409) {
+                return r.json().then(data => {
+                    if (data.error_type === 'DIFFERENT_ESTABLISHMENT' && confirm(data.message)) {
+                        return window.addToCart(itemId, quantity, csrfToken, buttonElement, itemName, 'replace');
                     }
-                });
-            } else if (!response.ok) {
-                return response.json().catch(() => ({ message: 'Server error occurred.' })).then(errorData => {
-                    throw new Error(errorData.message || 'Unknown network error.');
+                    throw new Error(data.message || "Error");
                 });
             }
-            return response.json();
+            if (!r.ok) throw new Error('Network error');
+            return r.json();
         })
         .then(data => {
             if (data.success) {
-                if (typeof updateCartBadge === 'function') {
-                    updateCartBadge(data.cart_count);
-                }
+                if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
                 alert(data.message);
-
-                if (buttonElement && buttonElement.dataset.action === 'buy_now') {
-                     if(typeof VIEW_CART_URL !== 'undefined') {
-                        window.location.href = VIEW_CART_URL;
-                     } else {
-                        console.error("VIEW_CART_URL is not defined.");
-                     }
+                if (buttonElement?.dataset.action === 'buy_now' && typeof VIEW_CART_URL !== 'undefined') {
+                    window.location.href = VIEW_CART_URL;
                 }
-
                 resolve();
             } else {
-                alert(`Failed to add item to cart: ${data.message}`);
+                alert(`Failed: ${data.message}`);
                 reject(new Error(data.message));
             }
         })
-        .catch(error => {
-            console.error('Add to Cart Error:', error);
-            if (error.message !== "Cart operation cancelled by user.") {
-                alert(`An error occurred: ${error.message}`);
-            }
-            reject(error);
+        .catch(err => {
+            if (err.message !== "Cart operation cancelled by user.") alert(`Error: ${err.message}`);
+            reject(err);
         })
         .finally(() => {
-            const isRedirecting = (typeof VIEW_CART_URL !== 'undefined' && window.location.href.includes(VIEW_CART_URL)) ||
-                                  (typeof LOGIN_REGISTER_URL !== 'undefined' && window.location.href.includes(LOGIN_REGISTER_URL));
-
-            if (buttonElement && !isRedirecting) {
+            if (buttonElement) {
                 buttonElement.disabled = false;
                 buttonElement.innerHTML = buttonElement.dataset.originalText || '<i class="fas fa-cart-plus"></i> Add to Cart';
             }
@@ -921,80 +905,25 @@ window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, i
     });
 };
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// ==========================================
-// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
-// ==========================================
-
-(function initScrollToTop() {
-    'use strict';
-
+// Scroll to Top
+(function() {
     let scrollBtn = null;
-    let scrollTimeout = null;
 
-    function throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    }
-
-    function toggleScrollButton() {
+    function toggleBtn() {
         if (!scrollBtn) return;
-
-        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-        if (scrollPosition > 300) {
-            scrollBtn.classList.add('show');
-        } else {
-            scrollBtn.classList.remove('show');
-        }
-    }
-
-    function scrollToTop(e) {
-        e.preventDefault();
-
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        const scroll = window.pageYOffset || document.documentElement.scrollTop;
+        scrollBtn.classList.toggle('show', scroll > 300);
     }
 
     function init() {
         scrollBtn = document.getElementById('scrollToTopBtn');
-
-        if (!scrollBtn) {
-            console.error('❌ Scroll to top button not found in DOM');
-            return;
-        }
-
-        console.log('✅ Scroll to top button initialized');
-
-        window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
-
-        scrollBtn.addEventListener('click', scrollToTop);
-
-        toggleScrollButton();
+        if (!scrollBtn) return;
+        window.addEventListener('scroll', () => toggleBtn(), {passive: true});
+        scrollBtn.onclick = e => {
+            e.preventDefault();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+        toggleBtn();
     }
 
     if (document.readyState === 'loading') {
