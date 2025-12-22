@@ -274,7 +274,7 @@ window.onclick = function(event) {
     }
 };
 
-// =========================ENHANCED MAP FUNCTIONS (FIXED)==================================
+// =========================ENHANCED MAP FUNCTIONS (OPTIMIZED FOR FAST LOCATION)==================================
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggleMapBtn");
     const mapSection = document.getElementById("mapSection");
@@ -293,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let cvsuCircle = null;
     let locationAccuracyCircle = null;
     let locationButton = null;
+    let isGettingLocation = false;
 
     const CVSU_LAT = 14.4128;
     const CVSU_LNG = 120.9813;
@@ -421,12 +422,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
             };
 
-            // ========== BUTTON CLICK EVENT ==========
+            // ========== OPTIMIZED BUTTON CLICK EVENT - FAST LOCATION ==========
             locationButton.addEventListener("click", function() {
+                if (isGettingLocation) {
+                    console.log("Already getting location, please wait...");
+                    return;
+                }
+
                 if (!navigator.geolocation) {
                     alert("Geolocation is not supported by your browser.");
                     return;
                 }
+
+                isGettingLocation = true;
 
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -437,12 +445,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 locationButton.disabled = true;
                 locationButton.style.opacity = '0.7';
 
-                const geoOptions = {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
+                // OPTIMIZED: Use maximumAge to get cached location first for speed
+                const fastGeoOptions = {
+                    enableHighAccuracy: false,  // Start with low accuracy for speed
+                    timeout: 5000,
+                    maximumAge: 30000  // Accept 30-second old position for instant response
+                };
+
+                const preciseGeoOptions = {
+                    enableHighAccuracy: true,  // Then get precise location
+                    timeout: 15000,
                     maximumAge: 0
                 };
 
+                let locationShown = false;
+
+                // STEP 1: Get fast (possibly cached) location
                 navigator.geolocation.getCurrentPosition(
                     function (position) {
                         const userLat = position.coords.latitude;
@@ -450,115 +468,192 @@ document.addEventListener("DOMContentLoaded", function () {
                         const accuracy = position.coords.accuracy;
                         userLocation = [userLat, userLng];
 
-                        console.log(`Location found: ${userLat}, ${userLng} (±${accuracy}m)`);
+                        console.log(`Fast location: ${userLat}, ${userLng} (±${accuracy}m)`);
 
-                        // Remove existing markers
-                        if (userMarker) {
-                            map.removeLayer(userMarker);
-                        }
-                        if (locationAccuracyCircle) {
-                            map.removeLayer(locationAccuracyCircle);
-                        }
+                        locationShown = true;
+                        showUserLocation(userLat, userLng, accuracy, false);
 
-                        // Add accuracy circle
-                        locationAccuracyCircle = L.circle(userLocation, {
-                            radius: accuracy,
-                            fillColor: "#007bff",
-                            fillOpacity: 0.1,
-                            color: "#007bff",
-                            weight: 1
-                        }).addTo(map);
+                        // STEP 2: Get precise location in background
+                        navigator.geolocation.getCurrentPosition(
+                            function (precisePosition) {
+                                const preciseLat = precisePosition.coords.latitude;
+                                const preciseLng = precisePosition.coords.longitude;
+                                const preciseAccuracy = precisePosition.coords.accuracy;
+                                userLocation = [preciseLat, preciseLng];
 
-                        // Create pulsing icon
-                        const pulsingIcon = L.divIcon({
-                            html: `<div style="position:relative;">
-                                    <div style="position:absolute;width:24px;height:24px;border-radius:50%;
-                                                background:#007bff;animation:pulse 2s infinite;
-                                                top:50%;left:50%;transform:translate(-50%,-50%);"></div>
-                                    <div style="width:16px;height:16px;border-radius:50%;
-                                                background:#007bff;border:3px solid #fff;
-                                                box-shadow:0 2px 8px rgba(0,123,255,0.5);"></div>
-                                   </div>
-                                   <style>
-                                   @keyframes pulse {
-                                       0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-                                       50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
-                                       100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
-                                   }
-                                   </style>`,
-                            className: "",
-                            iconSize: [24, 24]
-                        });
+                                console.log(`Precise location: ${preciseLat}, ${preciseLng} (±${preciseAccuracy}m)`);
 
-                        // Add user marker
-                        userMarker = L.marker(userLocation, { icon: pulsingIcon }).addTo(map);
-
-                        userMarker.bindPopup(`
-                            <div style="text-align:center;">
-                                <strong style="color:#007bff;">📍 Your Location</strong><br>
-                                <small>Accuracy: ±${Math.round(accuracy)}m</small>
-                            </div>
-                        `);
-
-                        // Zoom to user location
-                        map.setView(userLocation, 19, {
-                            animate: true,
-                            duration: 1.2,
-                            easeLinearity: 0.5
-                        });
-
-                        // Update button success
-                        locationButton.innerHTML = `
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Location Found!</span>
-                            </div>
-                        `;
-                        locationButton.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
-
-                        // Start watching position
-                        if (watchId) {
-                            navigator.geolocation.clearWatch(watchId);
-                        }
-
-                        watchId = navigator.geolocation.watchPosition(
-                            function (position) {
-                                const userLat = position.coords.latitude;
-                                const userLng = position.coords.longitude;
-                                const accuracy = position.coords.accuracy;
-                                userLocation = [userLat, userLng];
-
-                                if (userMarker) {
-                                    userMarker.setLatLng(userLocation);
-                                }
-                                if (locationAccuracyCircle) {
-                                    locationAccuracyCircle.setLatLng(userLocation);
-                                    locationAccuracyCircle.setRadius(accuracy);
-                                }
+                                // Update with precise location
+                                showUserLocation(preciseLat, preciseLng, preciseAccuracy, true);
                             },
                             function (error) {
-                                console.error("Watch position error:", error.message);
+                                console.log("Precise location failed, using fast location:", error.message);
+                                // Keep the fast location if precise fails
                             },
-                            geoOptions
+                            preciseGeoOptions
                         );
                     },
                     function (error) {
-                        console.error("Geolocation error:", error.message);
-                        alert("Unable to get your location. Please enable location services and try again.");
+                        console.error("Fast location error:", error.message);
 
-                        locationButton.innerHTML = `
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-location-arrow"></i>
-                                <span>Show My Location</span>
-                            </div>
-                        `;
-                        locationButton.disabled = false;
-                        locationButton.style.opacity = '1';
-                        locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
+                        // If fast location fails, try precise location directly
+                        if (!locationShown) {
+                            navigator.geolocation.getCurrentPosition(
+                                function (position) {
+                                    const userLat = position.coords.latitude;
+                                    const userLng = position.coords.longitude;
+                                    const accuracy = position.coords.accuracy;
+                                    userLocation = [userLat, userLng];
+
+                                    console.log(`Direct precise location: ${userLat}, ${userLng} (±${accuracy}m)`);
+                                    showUserLocation(userLat, userLng, accuracy, true);
+                                },
+                                function (preciseError) {
+                                    console.error("All geolocation attempts failed:", preciseError.message);
+                                    handleLocationError(preciseError);
+                                },
+                                preciseGeoOptions
+                            );
+                        }
                     },
-                    geoOptions
+                    fastGeoOptions
                 );
             });
+
+            // ========== FUNCTION TO SHOW USER LOCATION ==========
+            function showUserLocation(lat, lng, accuracy, isPrecise) {
+                // Remove existing markers
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                if (locationAccuracyCircle) {
+                    map.removeLayer(locationAccuracyCircle);
+                }
+
+                // Add accuracy circle
+                locationAccuracyCircle = L.circle([lat, lng], {
+                    radius: accuracy,
+                    fillColor: isPrecise ? "#16a34a" : "#007bff",
+                    fillOpacity: 0.1,
+                    color: isPrecise ? "#16a34a" : "#007bff",
+                    weight: 1
+                }).addTo(map);
+
+                // Create pulsing icon
+                const pulsingIcon = L.divIcon({
+                    html: `<div style="position:relative;">
+                            <div style="position:absolute;width:24px;height:24px;border-radius:50%;
+                                        background:${isPrecise ? '#16a34a' : '#007bff'};animation:pulse 2s infinite;
+                                        top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+                            <div style="width:16px;height:16px;border-radius:50%;
+                                        background:${isPrecise ? '#16a34a' : '#007bff'};border:3px solid #fff;
+                                        box-shadow:0 2px 8px rgba(${isPrecise ? '22, 163, 74' : '0, 123, 255'}, 0.5);"></div>
+                           </div>
+                           <style>
+                           @keyframes pulse {
+                               0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+                               50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
+                               100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
+                           }
+                           </style>`,
+                    className: "",
+                    iconSize: [24, 24]
+                });
+
+                // Add user marker
+                userMarker = L.marker([lat, lng], { icon: pulsingIcon }).addTo(map);
+
+                const accuracyText = accuracy > 1000 ?
+                    `±${(accuracy/1000).toFixed(1)}km` :
+                    `±${Math.round(accuracy)}m`;
+
+                userMarker.bindPopup(`
+                    <div style="text-align:center;">
+                        <strong style="color:${isPrecise ? '#16a34a' : '#007bff'};">📍 Your Location</strong><br>
+                        <small>${isPrecise ? 'Precise' : 'Fast'} Location</small><br>
+                        <small>Accuracy: ${accuracyText}</small>
+                    </div>
+                `);
+
+                // Zoom to user location on first show
+                if (!locationShown || isPrecise) {
+                    map.setView([lat, lng], 19, {
+                        animate: true,
+                        duration: 0.8,
+                        easeLinearity: 0.5
+                    });
+                }
+
+                // Update button
+                locationButton.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-check-circle"></i>
+                        <span>${isPrecise ? 'Precise' : 'Fast'} Location!</span>
+                    </div>
+                `;
+                locationButton.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                locationButton.disabled = false;
+                locationButton.style.opacity = '1';
+                isGettingLocation = false;
+
+                // Start watching position for continuous updates
+                if (isPrecise && !watchId) {
+                    watchId = navigator.geolocation.watchPosition(
+                        function (position) {
+                            const userLat = position.coords.latitude;
+                            const userLng = position.coords.longitude;
+                            const accuracy = position.coords.accuracy;
+                            userLocation = [userLat, userLng];
+
+                            if (userMarker) {
+                                userMarker.setLatLng(userLocation);
+                            }
+                            if (locationAccuracyCircle) {
+                                locationAccuracyCircle.setLatLng(userLocation);
+                                locationAccuracyCircle.setRadius(accuracy);
+                            }
+                        },
+                        function (error) {
+                            console.error("Watch position error:", error.message);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 5000
+                        }
+                    );
+                }
+            }
+
+            // ========== FUNCTION TO HANDLE LOCATION ERRORS ==========
+            function handleLocationError(error) {
+                let errorMessage = "Unable to get your location.";
+
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "Location access denied. Please enable location services in your browser settings.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Location information unavailable. Please check your device settings.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "Location request timed out. Please try again.";
+                        break;
+                }
+
+                alert(errorMessage);
+
+                locationButton.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-location-arrow"></i>
+                        <span>Show My Location</span>
+                    </div>
+                `;
+                locationButton.disabled = false;
+                locationButton.style.opacity = '1';
+                locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
+                isGettingLocation = false;
+            }
 
             locationButtonContainer.appendChild(locationButton);
             document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
