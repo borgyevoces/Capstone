@@ -31,88 +31,84 @@
         }
 
         .cart-badge {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    background-color: #f87171;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 10px;
-    font-weight: bold;
-    line-height: 1;
-    min-width: 18px;
-    text-align: center;
-    transform: translate(50%, -50%);
-    display: none; /* ✅ NEW: Hidden by default */
-}
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background-color: #f87171;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            line-height: 1;
+            min-width: 18px;
+            text-align: center;
+            transform: translate(50%, -50%);
+            display: none;
+        }
 
-/* ✅ NEW: Class to show badge */
-.cart-badge.show {
-    display: block;
-}
-        /* ==========================================
-   ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
-   ========================================== */
+        .cart-badge.show {
+            display: block;
+        }
 
-.scroll-to-top {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
-    transition: all 0.3s ease;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(20px);
-}
+        /* Scroll to Top Button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+            transition: all 0.3s ease;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+        }
 
-.scroll-to-top.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
+        .scroll-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
 
-.scroll-to-top:hover {
-    transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
-}
+        .scroll-to-top:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+        }
 
-.scroll-to-top:active {
-    transform: translateY(-3px) scale(1.05);
-}
+        .scroll-to-top:active {
+            transform: translateY(-3px) scale(1.05);
+        }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .scroll-to-top {
-        bottom: 20px;
-        right: 20px;
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-    }
-}
+        @media (max-width: 768px) {
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+        }
 
-@media (max-width: 480px) {
-    .scroll-to-top {
-        bottom: 15px;
-        right: 15px;
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-}
+        @media (max-width: 480px) {
+            .scroll-to-top {
+                bottom: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -269,15 +265,15 @@
                         {% for establishment in food_establishments %}
                             {% if establishment.status != 'Disabled' %}
                                 <div class="nearest_box food-establishment-item"
-    data-name="{{ establishment.name|lower }}"
-    data-lat="{{ establishment.latitude }}"
-    data-lng="{{ establishment.longitude }}"
-    data-status="{{ establishment.calculated_status }}"
-    data-category="{{ establishment.category.name|default_if_none:''|lower }}"
-    data-distance="{{ establishment.distance|floatformat:2 }}"
-    data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
-    data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-    data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                     data-name="{{ establishment.name|lower }}"
+                                     data-lat="{{ establishment.latitude }}"
+                                     data-lng="{{ establishment.longitude }}"
+                                     data-status="{{ establishment.calculated_status }}"
+                                     data-category="{{ establishment.category.name|default_if_none:''|lower }}"
+                                     data-distance="{{ establishment.distance|floatformat:2 }}"
+                                     data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
+                                     data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                     data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
 
                                     <a href="{% url 'food_establishment_details' establishment.id %}">
                                         {% if establishment.image %}
@@ -294,11 +290,11 @@
                                     {% endif %}
 
                                    <span class="status-indicator {{ establishment.calculated_status|lower }}"
-      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-    <span class="dot"></span>
-    <span class="status-text">{{ establishment.calculated_status }}</span>
-</span>
+                                         data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                         data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                       <span class="dot"></span>
+                                       <span class="status-text">{{ establishment.calculated_status }}</span>
+                                   </span>
 
                                     {% if establishment.category %}
                                         <div class="category-display">{{ establishment.category.name }}</div>
@@ -371,7 +367,6 @@
 
                 <div class="profile-form-group" style="text-align: center;">
                     <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    <!-- UPDATED: Changed ID to match JS and ensure preview works -->
                     <img id="profileImagePreview"
                         src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
                         alt="Current Profile">
@@ -379,13 +374,11 @@
 
                 <div class="profile-form-group">
                     <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
-                    <!-- UPDATED: Added onchange event for live preview -->
                     <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
                 </div>
 
                 <div class="profile-form-group">
                     <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
-                    <!-- UPDATED: Added readonly and gray background style -->
                     <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
                 </div>
 
@@ -447,7 +440,7 @@
                             }
                         }, 300);
                     });
-                }, 5000); // 5 seconds
+                }, 5000);
             }
         });
 
@@ -476,9 +469,6 @@
     <script src="{% static 'js/cart.js' %}"></script>
     {% endblock %}
 
-   <!-- ============================================ -->
-<!-- UPDATED FOOTER - REPLACE LINES 417-428      -->
-<!-- ============================================ -->
 <footer class="footer">
     <div class="footer-container">
         <div class="footer-section">
