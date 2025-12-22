@@ -44,12 +44,16 @@
     min-width: 18px;
     text-align: center;
     transform: translate(50%, -50%);
-    display: none;
+    display: none; /* ✅ NEW: Hidden by default */
 }
 
+/* ✅ NEW: Class to show badge */
 .cart-badge.show {
     display: block;
 }
+        /* ==========================================
+   ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+   ========================================== */
 
 .scroll-to-top {
     position: fixed;
@@ -89,6 +93,7 @@
     transform: translateY(-3px) scale(1.05);
 }
 
+/* Mobile responsive */
 @media (max-width: 768px) {
     .scroll-to-top {
         bottom: 20px;
@@ -137,106 +142,119 @@
     {% endif %}
 
     <!-- Header Section -->
-    <header>
-        <div class="top_navigation">
+    <header class="search-and-filters-wrapper">
+        <div class="header-left">
             <div class="title_kabsueats">
-                <a href="{% url 'kabsueats_home' %}"><h2>KabsuEats</h2></a>
-            </div>
-
-            <div class="search_and_nav_btns">
-                <div class="Home_buttons">
-                    <div class="auth_links_Home_About">
-                        {% block back_button %}{% endblock %}
-                    </div>
-                </div>
-
-                {% block search_visibility_control %}
-                    {% if show_search|default:True %}
-                        <div class="search_container">
-                            <i class="fas fa-search search-icon"></i>
-                            <form id="search-form" onsubmit="event.preventDefault();">
-                                <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
-                                       value="{{ q|default_if_none:'' }}" oninput="applyFilters();" />
-                            </form>
-                        </div>
-                    {% endif %}
-                {% endblock search_visibility_control %}
-
-                {% if user.is_authenticated %}
-                <div class="cart_client">
-                    <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
-                        <i class="fas fa-shopping-cart"></i> Cart
-                        <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if user.is_authenticated %}
-                    <div class="profile-container">
-                        <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
-                        <div id="userDropdown" class="dropdown-menu">
-                            <a href="#" onclick="openSettingsModal(event)"><i class="fas fa-cog"></i> Settings</a>
-                            <a href="{% url 'user_logout' %}"><i class="fas fa-sign-out-alt"></i> Log Out</a>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="auth_links">
-                        <a href="{% url 'user_login_register' %}" class="pagelinks">Sign up</a>
-                        <a href="{% url 'user_login_register' %}" class="pagelinks login_button">Log In</a>
-                    </div>
-                {% endif %}
+                <a href="{% url 'kabsueats_home' %}" class="nav_button"><h2>KabsuEats</h2></a>
             </div>
         </div>
 
-        <div class="filter_btns">
-            {% block category_buttons %}
-            {# Category filter removed to avoid URL errors - use dropdown filter instead #}
-            {% endblock %}
-
-            <div class="filter_select">
-                <select class="filter_options" id="statusFilter" onchange="applyFilters();">
-                    <option value="">All Statuses</option>
-                    <option value="Open">Open</option>
-                    <option value="Closed">Closed</option>
-                </select>
-
-                <select class="filter_options" id="alphabetFilter" onchange="applyFilters();">
-                    <option value="">Alphabetical</option>
-                    {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
-                        <option value="{{ letter }}">{{ letter }}</option>
-                    {% endfor %}
-                </select>
-
-                <select class="filter_options" id="distanceFilter" onchange="applyFilters();">
-                    <option value="">Distance</option>
-                    <option value="nearest">Nearest</option>
-                    <option value="farthest">Farthest</option>
-                </select>
-
-                <select class="filter_options" id="ratingsFilter" onchange="applyFilters();">
-                    <option value="">Ratings</option>
-                    <option value="highest">Highest</option>
-                    <option value="lowest">Lowest</option>
-                </select>
-
-                <select class="filter_options" id="categoryFilter" onchange="applyFilters();">
-                    <option value="">All Categories</option>
-                    <option value="karenderya">Karenderya</option>
-                    <option value="cafe">Cafe</option>
-                </select>
+    {% block search_visibility_control %}
+        {# Search bar logic using show_search variable #}
+        {% if show_search|default:True %}
+        <div class="header-center">
+            <div class="search_container">
+                <i class="fas fa-search search-icon"></i>
+                <form id="search-form" onsubmit="event.preventDefault();">
+                    <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
+                           value="{{ q|default_if_none:'' }}" oninput="applyFilters();" />
+                </form>
             </div>
+        </div>
+        {% endif %}
+    {% endblock search_visibility_control %}
+
+        <div class="Home_buttons">
+            <div class="auth_links_Home_About">
+                {# Block for extra buttons like chat #}
+                {% block extra_nav_buttons %}{% endblock %}
+            </div>
+        </div>
+
+        <div class="header-right">
+            {% if user.is_authenticated %}
+            <div class="cart_client">
+                <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
+                </a>
+            </div>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                <div class="profile-container">
+                    <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
+                    <div id="userDropdown" class="dropdown-menu">
+                        <a href="#" onclick="openSettingsModal(event)"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="{% url 'user_logout' %}"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="auth_links">
+                    <a href="{% url 'user_login_register' %}" class="auth_link">Sign up</a>
+                    <a href="{% url 'user_login_register' %}" class="login_button">Log In</a>
+                </div>
+            {% endif %}
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main_content">
+    <main class="main-content">
         {% block content %}
-        <div class="Foodshops_container">
-            <div class="foodshop_container_header">
-                <h2>Food Establishments</h2>
+        <div class="pagecontent" id="Home">
+
+            <div class="welcome-hero-section">
+                {% if user.is_authenticated %}
+                    <h1 class="hero-title">Dashboard</h1>
+                    <h1 class="hero-title">Welcome to kabsuEats</h1>
+                    <p class="hero-subtitle">What delicious food are you craving today? Explore your favorite spots or try something new!</p>
+                {% else %}
+                    <h1 class="hero-title">Landing</h1>
+                    <h2 class="hero-title">Your one-stop <span class="highlight-food">food</span> guide</h2>
+                    <p class="hero-subtitle">Find the best restaurants, cafes, and food stalls near you.</p>
+                {% endif %}
             </div>
 
-            {% block search %}{% endblock %}
+            {% block filters %}
+            <div class="filter_container">
+                <div class="select_wrapper">
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">Status</option>
+                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
+                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="alphabetFilter" onchange="applyFilters()">
+                        <option value="">Alphabetical</option>
+                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="distanceFilter" onchange="applyFilters()">
+                        <option value="">Distance</option>
+                        <option value="nearest">Nearest to Farthest</option>
+                        <option value="farthest">Farthest to Nearest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="ratingsFilter" onchange="applyFilters()">
+                        <option value="">Ratings</option>
+                        <option value="highest">Highest to Lowest</option>
+                        <option value="lowest">Lowest to Lowest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="categoryFilter" onchange="applyFilters()">
+                        <option value="">Categories</option>
+                        {% for cat in all_categories %}
+                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endblock %}
 
             <!-- Map Toggle Button and Map Section -->
             <button id="toggleMapBtn">🗺️ View Map</button>
@@ -255,7 +273,9 @@
     data-lat="{{ establishment.latitude }}"
     data-lng="{{ establishment.longitude }}"
     data-status="{{ establishment.calculated_status }}"
-    data-category="{% if establishment.category %}{{ establishment.category.name|lower }}{% endif %}"
+    data-category="{{ establishment.category.name|default_if_none:''|lower }}"
+    data-distance="{{ establishment.distance|floatformat:2 }}"
+    data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
     data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
     data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
 
@@ -351,6 +371,7 @@
 
                 <div class="profile-form-group" style="text-align: center;">
                     <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
+                    <!-- UPDATED: Changed ID to match JS and ensure preview works -->
                     <img id="profileImagePreview"
                         src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
                         alt="Current Profile">
@@ -358,11 +379,13 @@
 
                 <div class="profile-form-group">
                     <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
+                    <!-- UPDATED: Added onchange event for live preview -->
                     <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
                 </div>
 
                 <div class="profile-form-group">
                     <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
+                    <!-- UPDATED: Added readonly and gray background style -->
                     <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
                 </div>
 
@@ -378,6 +401,7 @@
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
     <!-- Your custom JavaScript files -->
+    <script src="{% static 'js/kabsueats_map.js' %}"></script>
     <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/status_updater.js' %}"></script>
 
@@ -405,9 +429,11 @@
         // Message Notification Auto-Dismiss and Manual Close
         document.addEventListener('DOMContentLoaded', function() {
             if (IS_USER_AUTHENTICATED) {
+                // Initial load of cart count from Django view
                 updateCartBadge({{ cart_count|default:0 }});
             }
 
+            // Auto-dismiss messages after 5 seconds
             const messagesContainer = document.getElementById('messagesContainer');
             if (messagesContainer) {
                 setTimeout(function() {
@@ -421,10 +447,11 @@
                             }
                         }, 300);
                     });
-                }, 5000);
+                }, 5000); // 5 seconds
             }
         });
 
+        // Manual close button function
         function dismissMessage(button) {
             const message = button.closest('.message-alert');
             const container = document.getElementById('messagesContainer');
@@ -439,27 +466,48 @@
         }
     </script>
 
+    <!-- Additional JS libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Other custom JS files -->
+    <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/establishment_details.js' %}"></script>
     <script src="{% static 'js/cart.js' %}"></script>
     {% endblock %}
 
+   <!-- ============================================ -->
+<!-- UPDATED FOOTER - REPLACE LINES 417-428      -->
+<!-- ============================================ -->
 <footer class="footer">
     <div class="footer-container">
         <div class="footer-section">
-            <h3><i class="fas fa-utensils"></i> KabsuEats</h3>
+            <h3>
+                <i class="fas fa-utensils"></i>
+                KabsuEats
+            </h3>
             <p>Your trusted food delivery platform connecting you with the best local restaurants and food establishments.</p>
             <div class="footer-social">
-                <a href="#" class="social-icon" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" class="social-icon" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="social-icon" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="social-icon" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="#" class="social-icon" aria-label="Facebook">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-icon" aria-label="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="social-icon" aria-label="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="social-icon" aria-label="TikTok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
             </div>
         </div>
 
         <div class="footer-section">
-            <h3><i class="fas fa-link"></i> Quick Links</h3>
+            <h3>
+                <i class="fas fa-link"></i>
+                Quick Links
+            </h3>
             <ul class="footer-links">
                 <li><a href="#"><i class="fas fa-chevron-right"></i> About Us</a></li>
                 <li><a href="#"><i class="fas fa-chevron-right"></i> How It Works</a></li>
@@ -469,7 +517,10 @@
         </div>
 
         <div class="footer-section">
-            <h3><i class="fas fa-file-alt"></i> Legal</h3>
+            <h3>
+                <i class="fas fa-file-alt"></i>
+                Legal
+            </h3>
             <ul class="footer-links">
                 <li><a href="#"><i class="fas fa-chevron-right"></i> Terms & Conditions</a></li>
                 <li><a href="#"><i class="fas fa-chevron-right"></i> Privacy Policy</a></li>
@@ -479,7 +530,10 @@
         </div>
 
         <div class="footer-section">
-            <h3><i class="fas fa-headset"></i> Contact Us</h3>
+            <h3>
+                <i class="fas fa-headset"></i>
+                Contact Us
+            </h3>
             <ul class="footer-links">
                 <li><a href="mailto:support@kabsueats.com"><i class="fas fa-envelope"></i> support@kabsueats.com</a></li>
                 <li><a href="tel:+639123456789"><i class="fas fa-phone"></i> +63 912 345 6789</a></li>

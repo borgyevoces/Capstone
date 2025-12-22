@@ -217,39 +217,56 @@ if (logoutModal) {
     });
 }
 
-function toggleDropdown() {
-    document.getElementById("userDropdown").classList.toggle("show");
-}
-
-window.onclick = function(event) {
-    if (!event.target.matches('.profile-image')) {
-        var dropdowns = document.getElementsByClassName("dropdown-menu");
-        for (var i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
+// Toggle dropdown for user menu (KabsuEats project)
+window.toggleDropdown = function() {
+    const dropdown = document.getElementById("userDropdown");
+    if (dropdown) {
+        dropdown.classList.toggle("show");
     }
-}
+};
 
-function openSettingsModal(event) {
+// Close dropdown if clicked outside
+window.addEventListener("click", function(event) {
+    const dropdown = document.getElementById("userDropdown");
+    const profileImage = document.querySelector(".profile-image");
+    if (dropdown && !dropdown.contains(event.target) && event.target !== profileImage) {
+        dropdown.classList.remove("show");
+    }
+});
+
+// Open settings modal (KabsuEats project)
+window.openSettingsModal = function(event) {
     event.preventDefault();
-    const modal = document.getElementById('settingsModal');
+    const modal = document.getElementById("settingsModal");
     if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        modal.style.display = "flex";
     }
-}
+};
 
-function closeSettingsModal() {
-    const modal = document.getElementById('settingsModal');
+// Close settings modal (KabsuEats project)
+window.closeSettingsModal = function() {
+    const modal = document.getElementById("settingsModal");
     if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
+        modal.style.display = "none";
     }
-}
+};
 
+// ====== NEW: Image Preview Function for Profile Picture ======
+window.previewImage = function(event) {
+    const input = event.target;
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById('profileImagePreview');
+            if (preview) {
+                preview.src = e.target.result;
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+// Close modals on clicking outside content
 window.onclick = function(event) {
     const settingsModal = document.getElementById("settingsModal");
     if (event.target === settingsModal) {
@@ -257,7 +274,7 @@ window.onclick = function(event) {
     }
 };
 
-// =========================✅ FIXED MAP WITH AUTO-OPEN AND REAL-TIME LOCATION==================================
+// =========================ENHANCED MAP FUNCTIONS (MODIFIED WITH BUTTON)==================================
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggleMapBtn");
     const mapSection = document.getElementById("mapSection");
@@ -275,13 +292,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let watchId = null;
     let cvsuCircle = null;
     let locationAccuracyCircle = null;
-    let locationButton = null;
-    let establishmentsLoaded = false;
-
-    // ✅ Soldiers Hills IV coordinates (from your screenshot)
-    const INITIAL_CENTER_LAT = 14.4246;
-    const INITIAL_CENTER_LNG = 120.9644;
-    const INITIAL_ZOOM = 16;
+    let locationButton = null; // NEW: Button reference
+    let establishmentsLoaded = false; // NEW: Track if establishments are shown
 
     const CVSU_LAT = 14.4128;
     const CVSU_LNG = 120.9813;
@@ -297,10 +309,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // ✅ Initialize map centered on Soldiers Hills IV
             map = L.map("establishmentsMap", {
-                center: [INITIAL_CENTER_LAT, INITIAL_CENTER_LNG],
-                zoom: INITIAL_ZOOM,
+                center: [CVSU_LAT, CVSU_LNG],
+                zoom: 16,
                 maxZoom: 22,
                 minZoom: 10,
                 zoomControl: true
@@ -369,9 +380,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             cvsuCircle.bindPopup("<strong>CvSU-Bacoor Campus</strong><br>500m radius zone");
 
-            // ========== ✅ FUNCTION TO LOAD ESTABLISHMENTS ==========
+            // ========== NEW: FUNCTION TO LOAD ESTABLISHMENTS ==========
             function loadEstablishments() {
-                if (establishmentsLoaded) return;
+                if (establishmentsLoaded) return; // Prevent loading twice
 
                 const items = document.querySelectorAll(".food-establishment-item");
                 let bounds = [];
@@ -441,176 +452,240 @@ document.addEventListener("DOMContentLoaded", function () {
                                         },
                                         lineOptions: {
                                             styles: [
-                                                { color: '#16a34a', opacity: 0.8, weight: 6 },
-                                                { color: '#22c55e', opacity: 0.5, weight: 8 }
+                                                { color: '#E9A420', opacity: 0.8, weight: 6 },
+                                                { color: '#fff', opacity: 0.4, weight: 9 }
                                             ]
-                                        }
+                                        },
+                                        createMarker: function() { return null; },
+                                        show: false
+                                    }).on('routesfound', function(e) {
+                                        const routes = e.routes;
+                                        const mainRoute = routes[0];
+                                        const distanceKm = (mainRoute.summary.totalDistance / 1000).toFixed(2);
+                                        const timeMin = Math.round(mainRoute.summary.totalTime / 60);
+
+                                        const updatedPopupText = `<div style="text-align:center;min-width:200px;">
+                                            <strong style="font-size:15px;color:#111;">${name}</strong><br>
+                                            <span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${distanceKm} km away</span><br>
+                                            <span style="font-size:12px;color:#666;">🕒 About ${timeMin} minutes</span><br>
+                                            <a href="/food_establishment/${establishmentId}/"
+                                               style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
+                                               View Details →
+                                            </a></div>`;
+
+                                        marker.getPopup().setContent(updatedPopupText);
                                     }).addTo(map);
+
+                                    routingControl.on('routingerror', function(e) {
+                                        console.error('Routing error:', e);
+                                        alert('Could not calculate route. Please try again.');
+                                    });
+                                } else {
+                                    popupText += `<div style="margin-top:10px;padding:8px;background:#fef2f2;border-radius:6px;font-size:12px;color:#991b1b;">
+                                        ⚠️ Routing library not loaded
+                                    </div>`;
                                 }
                             }
 
-                            if (establishmentId) {
-                                popupText += `<br><a href="/kabsueats/establishment/${establishmentId}/" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#E9A420;color:white;text-decoration:none;border-radius:20px;font-size:12px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='#d89410'" onmouseout="this.style.background='#E9A420'">View Details</a>`;
-                            }
+                            popupText += `<br><a href="/food_establishment/${establishmentId}/"
+                               style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
+                               View Details →
+                            </a></div>`;
 
-                            popupText += `</div>`;
-                            marker.bindPopup(popupText).openPopup();
+                            marker.bindPopup(popupText, {
+                                maxWidth: 300,
+                                className: 'custom-popup'
+                            }).openPopup();
+
+                            map.setView([lat, lng], 19, {
+                                animate: true,
+                                duration: 0.8,
+                                easeLinearity: 0.5
+                            });
                         });
 
-                        markers.push({ marker, lat, lng, name: name.toLowerCase() });
+                        markers.push({
+                            name: (name || '').toLowerCase(),
+                            marker: marker,
+                            lat: lat,
+                            lng: lng,
+                            id: establishmentId
+                        });
                         bounds.push([lat, lng]);
                     }
                 });
 
+                if (bounds.length > 0) {
+                    // If user location exists, include it in bounds
+                    if (userLocation) {
+                        bounds.push(userLocation);
+                    }
+                    map.fitBounds(bounds, { padding: [60, 60] });
+                }
+
                 establishmentsLoaded = true;
-                console.log(`✅ Loaded ${markers.length} establishments on map`);
             }
 
-            // ✅ IMMEDIATELY LOAD ESTABLISHMENTS ON MAP INITIALIZATION
-            setTimeout(() => {
-                loadEstablishments();
-            }, 500);
-
-            // ========== ✅ "SHOW MY LOCATION" BUTTON WITH REAL-TIME TRACKING ==========
+            // ========== NEW: CREATE LOCATION BUTTON ==========
             const locationButtonContainer = document.createElement("div");
-            locationButtonContainer.style.cssText = "position:absolute;bottom:30px;right:30px;z-index:1000;";
-
-            locationButton = document.createElement("button");
-            locationButton.style.cssText = `
-                padding: 12px 20px;
-                background: linear-gradient(135deg, #E9A420 0%, #d89410 100%);
-                color: white;
-                border: none;
-                border-radius: 25px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                box-shadow: 0 4px 12px rgba(233, 164, 32, 0.4);
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
+            locationButtonContainer.style.cssText = `
+                position: absolute;
+                bottom: 30px;
+                right: 10px;
+                z-index: 1000;
             `;
 
+            locationButton = document.createElement("button");
             locationButton.innerHTML = `
                 <div style="display:flex;align-items:center;gap:8px;">
                     <i class="fas fa-location-arrow"></i>
                     <span>Show My Location</span>
                 </div>
             `;
+            locationButton.style.cssText = `
+                background: linear-gradient(135deg, #E9A420 0%, #d89410 100%);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 25px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(233, 164, 32, 0.4);
+                transition: all 0.3s ease;
+                font-family: inherit;
+            `;
 
+            // Hover effects
             locationButton.onmouseover = function() {
-                if (!this.disabled) {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
-                }
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
             };
-
             locationButton.onmouseout = function() {
                 this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 4px 12px rgba(233, 164, 32, 0.4)';
+                this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
             };
 
-            const geoOptions = {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            };
-
-            locationButton.addEventListener("click", function () {
+            // ========== NEW: BUTTON CLICK EVENT TO GET LOCATION ==========
+            locationButton.addEventListener("click", function() {
                 if (!navigator.geolocation) {
                     alert("Geolocation is not supported by your browser.");
                     return;
                 }
 
-                locationButton.disabled = true;
-                locationButton.style.opacity = '0.7';
+                // Change button to loading state
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-spinner fa-spin"></i>
                         <span>Getting Location...</span>
                     </div>
                 `;
+                locationButton.disabled = true;
+                locationButton.style.opacity = '0.7';
+
+                const geoOptions = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                };
 
                 navigator.geolocation.getCurrentPosition(
                     function (position) {
                         const userLat = position.coords.latitude;
                         const userLng = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
-
                         userLocation = [userLat, userLng];
 
-                        // ✅ CREATE/UPDATE USER MARKER
-                        const userIcon = L.divIcon({
-                            html: `<div style="width:24px;height:24px;border-radius:50%;background:#2196F3;border:4px solid white;box-shadow: 0 2px 8px rgba(0,0,0,0.4);position:relative;">
-                                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:white;border-radius:50%;"></div>
-                                   </div>`,
+                        console.log(`Location accuracy: ${accuracy} meters`);
+
+                        // Remove existing markers and circles
+                        if (userMarker) {
+                            map.removeLayer(userMarker);
+                        }
+                        if (locationAccuracyCircle) {
+                            map.removeLayer(locationAccuracyCircle);
+                        }
+
+                        // Add accuracy circle
+                        locationAccuracyCircle = L.circle(userLocation, {
+                            radius: accuracy,
+                            fillColor: "#007bff",
+                            fillOpacity: 0.1,
+                            color: "#007bff",
+                            weight: 1
+                        }).addTo(map);
+
+                        // Create pulsing icon
+                        const pulsingIcon = L.divIcon({
+                            html: `<div style="position:relative;">
+                                    <div style="position:absolute;width:24px;height:24px;border-radius:50%;
+                                                background:#007bff;animation:pulse 2s infinite;
+                                                top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+                                    <div style="width:16px;height:16px;border-radius:50%;
+                                                background:#007bff;border:3px solid #fff;
+                                                box-shadow:0 2px 8px rgba(0,123,255,0.5);"></div>
+                                   </div>
+                                   <style>
+                                   @keyframes pulse {
+                                       0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+                                       50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
+                                       100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
+                                   }
+                                   </style>`,
                             className: "",
                             iconSize: [24, 24]
                         });
 
-                        if (userMarker) {
-                            map.removeLayer(userMarker);
-                        }
-                        userMarker = L.marker(userLocation, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-                        userMarker.bindPopup(`<div style="text-align:center;"><strong style="color:#2196F3;">You are here</strong><br><small>Accuracy: ±${Math.round(accuracy)} meters</small></div>`);
+                        // Add user marker
+                        userMarker = L.marker(userLocation, { icon: pulsingIcon }).addTo(map);
 
-                        // ✅ ACCURACY CIRCLE
-                        if (locationAccuracyCircle) {
-                            map.removeLayer(locationAccuracyCircle);
-                        }
-                        locationAccuracyCircle = L.circle(userLocation, {
-                            radius: accuracy,
-                            color: '#2196F3',
-                            fillColor: '#2196F3',
-                            fillOpacity: 0.1,
-                            weight: 1
-                        }).addTo(map);
+                        userMarker.bindPopup(`
+                            <div style="text-align:center;">
+                                <strong style="color:#007bff;">📍 Your Location</strong><br>
+                                <small>Accuracy: ±${Math.round(accuracy)}m</small>
+                            </div>
+                        `);
 
-                        // ✅ CENTER MAP ON USER LOCATION
+                        // Zoom to user location
                         map.setView(userLocation, 19, {
                             animate: true,
                             duration: 1.2,
                             easeLinearity: 0.5
                         });
 
+                        // ========== NEW: LOAD ESTABLISHMENTS AFTER LOCATION IS FOUND ==========
+                        setTimeout(() => {
+                            loadEstablishments();
+                        }, 500);
+
                         // Update button to success state
                         locationButton.innerHTML = `
                             <div style="display:flex;align-items:center;gap:8px;">
-                                <i class="fas fa-crosshairs"></i>
-                                <span>Tracking Location</span>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Location Found!</span>
                             </div>
                         `;
                         locationButton.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
-                        locationButton.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.4)';
-                        locationButton.disabled = false;
-                        locationButton.style.opacity = '1';
 
-                        // ✅ START REAL-TIME POSITION TRACKING
+                        // Start watching position for real-time updates
                         if (watchId) {
                             navigator.geolocation.clearWatch(watchId);
                         }
 
                         watchId = navigator.geolocation.watchPosition(
                             function (position) {
-                                const newLat = position.coords.latitude;
-                                const newLng = position.coords.longitude;
-                                const newAccuracy = position.coords.accuracy;
-                                userLocation = [newLat, newLng];
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+                                const accuracy = position.coords.accuracy;
+                                userLocation = [userLat, userLng];
 
-                                // Update marker position
                                 if (userMarker) {
                                     userMarker.setLatLng(userLocation);
-                                    userMarker.setPopupContent(`<div style="text-align:center;"><strong style="color:#2196F3;">You are here</strong><br><small>Accuracy: ±${Math.round(newAccuracy)} meters</small></div>`);
                                 }
-
-                                // Update accuracy circle
                                 if (locationAccuracyCircle) {
                                     locationAccuracyCircle.setLatLng(userLocation);
-                                    locationAccuracyCircle.setRadius(newAccuracy);
+                                    locationAccuracyCircle.setRadius(accuracy);
                                 }
-
-                                console.log(`📍 Location updated: ${newLat}, ${newLng} (±${Math.round(newAccuracy)}m)`);
                             },
                             function (error) {
                                 console.error("Watch position error:", error.message);
@@ -620,23 +695,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                     function (error) {
                         console.error("Geolocation error:", error.message);
-                        let errorMsg = "Unable to get your location. ";
-
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMsg += "Please enable location permissions.";
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMsg += "Location information is unavailable.";
-                                break;
-                            case error.TIMEOUT:
-                                errorMsg += "Location request timed out.";
-                                break;
-                            default:
-                                errorMsg += "An unknown error occurred.";
-                        }
-
-                        alert(errorMsg);
+                        alert("Unable to get your location. Please enable location services.");
 
                         // Reset button to original state
                         locationButton.innerHTML = `
@@ -656,11 +715,12 @@ document.addEventListener("DOMContentLoaded", function () {
             locationButtonContainer.appendChild(locationButton);
             document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
 
-            // COMPACT SEARCH BAR
+            // COMPACT SEARCH BAR - REDUCED HEIGHT, NO OVERLAP
             const mapSearchContainer = document.createElement("div");
             const isMobile = window.innerWidth <= 768;
 
             if (isMobile) {
+                // Phone view search bar
                 mapSearchContainer.innerHTML = `
                     <div style="position:absolute;top:10px;left:10px;right:10px;z-index:800;">
                         <div style="background:white;border-radius:18px;padding:4px;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;gap:4px;align-items:center;">
@@ -676,6 +736,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 `;
             } else {
+                // Desktop view search bar
                 mapSearchContainer.innerHTML = `
                     <div style="position:absolute;top:10px;left:60px;z-index:800;">
                         <div style="background:white;border-radius:20px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;gap:6px;align-items:center;">
@@ -737,51 +798,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
 
-            mapInitialized = true;
-            console.log("✅ Map initialized successfully");
-        }
+            // ========== LOAD ESTABLISHMENTS IMMEDIATELY ON MAP OPEN ==========
+            loadEstablishments();
 
-        // Resize map when toggled
-        if (map) {
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 300);
+            mapInitialized = true;
         }
     });
 });
 
-function previewImage(event) {
-    const reader = new FileReader();
-    reader.onload = function() {
-        const output = document.getElementById('profileImagePreview');
-        if (output) {
-            output.src = reader.result;
-        }
-    };
-    if (event.target.files && event.target.files[0]) {
-        reader.readAsDataURL(event.target.files[0]);
-    }
-}
-
+// ============================================
+// Profile Update Form Handler
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.getElementById('profileUpdateForm');
+
     if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+        profileForm.addEventListener('submit', function(event) {
+            event.preventDefault();
 
             const formData = new FormData(profileForm);
-
-            if (typeof UPDATE_PROFILE_URL === 'undefined') {
-                console.error('UPDATE_PROFILE_URL is not defined');
-                alert('Configuration error. Please contact support.');
-                return;
-            }
 
             fetch(UPDATE_PROFILE_URL, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                 }
             })
             .then(response => response.json())
@@ -790,8 +831,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Profile updated successfully!');
                     closeSettingsModal();
 
+                    // Update profile picture in header if changed
+                    const profileImages = document.querySelectorAll('.profile-image');
                     if (data.profile_picture_url) {
-                        const profileImages = document.querySelectorAll('.profile-image');
                         profileImages.forEach(img => {
                             img.src = data.profile_picture_url;
                         });
@@ -811,6 +853,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// =====================================================PAYMENTS================================================
 
 window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, itemName = 'Item', action = 'add') {
     return new Promise((resolve, reject) => {
@@ -935,12 +979,17 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// ==========================================
+// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
+// ==========================================
+
 (function initScrollToTop() {
     'use strict';
 
     let scrollBtn = null;
     let scrollTimeout = null;
 
+    // Throttle function to improve performance
     function throttle(func, limit) {
         let inThrottle;
         return function() {
@@ -954,6 +1003,7 @@ function getCookie(name) {
         };
     }
 
+    // Function to show/hide scroll button
     function toggleScrollButton() {
         if (!scrollBtn) return;
 
@@ -966,6 +1016,7 @@ function getCookie(name) {
         }
     }
 
+    // Smooth scroll to top function
     function scrollToTop(e) {
         e.preventDefault();
 
@@ -975,6 +1026,7 @@ function getCookie(name) {
         });
     }
 
+    // Initialize the scroll button
     function init() {
         scrollBtn = document.getElementById('scrollToTopBtn');
 
@@ -985,11 +1037,17 @@ function getCookie(name) {
 
         console.log('✅ Scroll to top button initialized');
 
+        // Add scroll event listener with throttle for better performance
         window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
+
+        // Add click event listener
         scrollBtn.addEventListener('click', scrollToTop);
+
+        // Check initial scroll position
         toggleScrollButton();
     }
 
+    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
