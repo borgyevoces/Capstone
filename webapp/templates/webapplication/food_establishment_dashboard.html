@@ -184,6 +184,9 @@
         }
 
         .chat-panel {
+         max-width: 100vw; /* ✅ NEW: Prevents panel from exceeding viewport */
+        overflow-x: hidden; /* ✅ NEW: Prevents horizontal scrolling */
+        box-sizing: border-box; /* ✅ NEW */
             position: fixed;
             right: 0;
             top: 70px;
@@ -620,45 +623,57 @@
            ======================================== */
 
         .chat-input-container {
-            padding: 16px;
-            border-top: 1px solid var(--border, #e4e6eb);
-            background: white;
-        }
+    padding: 12px 16px;
+    border-top: 1px solid var(--border, #e4e6eb);
+    background: white;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box; /* ✅ NEW: Ensures padding doesn't cause overflow */
+}
 
         .chat-input-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 100%; /* ✅ NEW */
+    box-sizing: border-box; /* ✅ NEW */
+}
 
         .chat-input {
-            flex: 1;
-            padding: 10px 14px;
-            border: 1px solid var(--border, #e4e6eb);
-            border-radius: 20px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
+    flex: 1;
+    min-width: 0; /* ✅ NEW: CRITICAL - Allows input to shrink properly */
+    padding: 10px 14px;
+    border: 1px solid var(--border, #e4e6eb);
+    border-radius: 20px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+    box-sizing: border-box; /* ✅ NEW */
+}
 
         .chat-input:focus {
             border-color: #667eea;
         }
 
         .chat-send-btn {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-            flex-shrink: 0;
-        }
+    width: 40px;
+    height: 40px;
+    min-width: 40px; /* ✅ NEW: Prevents button from shrinking */
+    max-width: 40px; /* ✅ NEW: Prevents button from expanding */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    padding: 0; /* ✅ NEW */
+    box-sizing: border-box; /* ✅ NEW */
+}
 
         .chat-send-btn:hover {
             transform: scale(1.05);
@@ -668,7 +683,70 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        /* ✅ Mobile Optimization for Chat Input */
+@media (max-width: 768px) {
+    .chat-input-container {
+        padding: 10px 12px;
+    }
 
+    .chat-input-form {
+        gap: 6px;
+    }
+
+    .chat-input {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .chat-send-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-input-container {
+        padding: 8px 10px;
+    }
+
+    .chat-input-form {
+        gap: 6px;
+    }
+
+    .chat-input {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .chat-send-btn {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 360px) {
+    .chat-input-container {
+        padding: 6px 8px;
+    }
+
+    .chat-input-form {
+        gap: 5px;
+    }
+
+    .chat-input {
+        padding: 7px 9px;
+        font-size: 13px;
+    }
+
+    .chat-send-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+    }
+}
         /* ========================================
            TOGGLE BUTTON IN NAVBAR
            ======================================== */
