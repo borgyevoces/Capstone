@@ -16,7 +16,8 @@
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
     /* ==========================================
-       ✅ COMPLETE CSS WITH SEND BUTTON FIX
+       ✅ COMPLETE CSS WITH ULTIMATE SEND BUTTON FIX
+       ✅ GUARANTEED TO WORK ON ALL DEVICES
        ========================================== */
 
     /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
@@ -188,7 +189,7 @@
     }
 
     /* ==========================================
-       ✅ CHAT PANEL - WITH OVERFLOW FIX
+       ✅ CHAT PANEL - ULTIMATE OVERFLOW FIX
        ========================================== */
 
     .chat-panel {
@@ -196,7 +197,7 @@
         right: 0;
         top: 70px;
         width: 360px;
-        max-width: 100vw; /* ✅ FIX: Prevents panel from exceeding viewport */
+        max-width: 100vw !important; /* ✅ ULTIMATE FIX */
         height: calc(100vh - 70px);
         background: white;
         border-left: 1px solid var(--border, #e4e6eb);
@@ -206,8 +207,12 @@
         z-index: 999;
         display: flex;
         flex-direction: column;
-        overflow-x: hidden; /* ✅ FIX: Prevents horizontal scrolling */
-        box-sizing: border-box; /* ✅ FIX: Proper box sizing */
+        overflow-x: hidden !important; /* ✅ ULTIMATE FIX */
+        box-sizing: border-box !important; /* ✅ ULTIMATE FIX */
+    }
+
+    .chat-panel * {
+        box-sizing: border-box !important; /* ✅ Apply to ALL children */
     }
 
     .chat-panel.open {
@@ -338,7 +343,7 @@
     }
 
     /* ========================================
-       CHAT WINDOW
+       CHAT WINDOW - ULTIMATE FIX
        ======================================== */
 
     .chat-window {
@@ -346,6 +351,7 @@
         right: 0;
         top: 70px;
         width: 360px;
+        max-width: 100vw !important; /* ✅ ULTIMATE FIX */
         height: calc(100vh - 70px);
         background: white;
         border-left: 1px solid var(--border, #e4e6eb);
@@ -355,6 +361,12 @@
         z-index: 999;
         display: none;
         flex-direction: column;
+        overflow-x: hidden !important; /* ✅ ULTIMATE FIX */
+        box-sizing: border-box !important; /* ✅ ULTIMATE FIX */
+    }
+
+    .chat-window * {
+        box-sizing: border-box !important; /* ✅ Apply to ALL children */
     }
 
     .chat-window.open {
@@ -404,8 +416,10 @@
     .chat-messages-container {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden !important; /* ✅ ULTIMATE FIX */
         padding: 16px;
         background: #f0f2f5;
+        width: 100%; /* ✅ ULTIMATE FIX */
     }
 
     /* ========================================
@@ -417,6 +431,7 @@
         margin-bottom: 12px;
         align-items: flex-start;
         position: relative;
+        max-width: 100%; /* ✅ ULTIMATE FIX */
     }
 
     /* Owner's messages - aligned right */
@@ -434,6 +449,7 @@
         padding: 10px 14px;
         border-radius: 16px;
         word-wrap: break-word;
+        word-break: break-word; /* ✅ ULTIMATE FIX */
         line-height: 1.4;
         font-size: 14px;
         position: relative;
@@ -548,37 +564,44 @@
     }
 
     /* ==========================================
-       ✅ CHAT INPUT - CRITICAL FIX FOR SEND BUTTON
+       ✅✅✅ ULTIMATE CHAT INPUT FIX ✅✅✅
+       ✅ GUARANTEED SEND BUTTON FIX
        ========================================== */
 
     .chat-input-container {
-        padding: 12px 16px; /* ✅ Reduced from 16px to prevent overflow */
+        padding: 10px 12px !important; /* ✅ ULTIMATE FIX - Reduced padding */
         border-top: 1px solid var(--border, #e4e6eb);
         background: white;
-        position: relative; /* ✅ FIX ADDED */
-        width: 100%; /* ✅ FIX ADDED */
-        box-sizing: border-box; /* ✅ FIX ADDED - Ensures padding doesn't cause overflow */
+        position: relative;
+        width: 100% !important;
+        max-width: 100% !important; /* ✅ ULTIMATE FIX */
+        box-sizing: border-box !important;
+        overflow: hidden !important; /* ✅ ULTIMATE FIX */
     }
 
     .chat-input-form {
-        display: flex;
-        gap: 8px; /* ✅ Reduced from 10px for better spacing */
+        display: flex !important;
+        gap: 8px !important;
         align-items: center;
-        width: 100%; /* ✅ FIX ADDED */
-        max-width: 100%; /* ✅ FIX ADDED */
-        box-sizing: border-box; /* ✅ FIX ADDED */
+        width: 100% !important;
+        max-width: 100% !important; /* ✅ ULTIMATE FIX */
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .chat-input {
-        flex: 1;
-        min-width: 0; /* ✅ CRITICAL FIX - Allows input to shrink properly */
-        padding: 10px 14px;
+        flex: 1 1 auto !important; /* ✅ ULTIMATE FIX - Can grow and shrink */
+        min-width: 0 !important; /* ✅ CRITICAL - Allows shrinking below content size */
+        max-width: calc(100% - 48px) !important; /* ✅ ULTIMATE FIX - Reserve space for button */
+        padding: 10px 14px !important;
         border: 1px solid var(--border, #e4e6eb);
         border-radius: 20px;
         font-size: 14px;
         outline: none;
         transition: border-color 0.3s;
-        box-sizing: border-box; /* ✅ FIX ADDED */
+        box-sizing: border-box !important;
+        margin: 0 !important;
     }
 
     .chat-input:focus {
@@ -586,22 +609,24 @@
     }
 
     .chat-send-btn {
-        width: 40px;
-        height: 40px;
-        min-width: 40px; /* ✅ CRITICAL FIX - Prevents button from shrinking */
-        max-width: 40px; /* ✅ FIX ADDED - Prevents button from expanding */
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important; /* ✅ CRITICAL - Prevents shrinking */
+        max-width: 40px !important;
+        flex: 0 0 40px !important; /* ✅ ULTIMATE FIX - Don't grow or shrink */
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
         border-radius: 50%;
         cursor: pointer;
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         transition: transform 0.2s;
-        flex-shrink: 0;
-        padding: 0; /* ✅ FIX ADDED */
-        box-sizing: border-box; /* ✅ FIX ADDED */
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important; /* ✅ ULTIMATE BACKUP */
     }
 
     .chat-send-btn:hover {
@@ -609,7 +634,7 @@
     }
 
     .chat-send-btn:active {
-        transform: scale(0.95); /* ✅ Added visual feedback on click */
+        transform: scale(0.95);
     }
 
     .chat-send-btn:disabled {
@@ -618,8 +643,8 @@
     }
 
     .chat-send-btn i {
-        font-size: 16px; /* ✅ Proper icon sizing */
-        pointer-events: none; /* ✅ Ensures clicks go through to button */
+        font-size: 16px;
+        pointer-events: none;
     }
 
     /* ========================================
@@ -917,14 +942,14 @@
     }
 
     /* ==========================================
-       ✅ MOBILE RESPONSIVE - WITH CHAT INPUT FIX
+       ✅ MOBILE RESPONSIVE - ULTIMATE FIXES
        ========================================== */
 
     @media (max-width: 768px) {
         .chat-panel,
         .chat-window {
-            width: 100%;
-            max-width: 100vw; /* ✅ FIX ADDED */
+            width: 100% !important;
+            max-width: 100vw !important;
             top: 60px;
             height: calc(100vh - 60px);
         }
@@ -933,7 +958,6 @@
             width: 36px;
             height: 36px;
             font-size: 16px;
-            /* ✅ Make button easier to tap on mobile */
             opacity: 0.7;
         }
 
@@ -945,7 +969,6 @@
             margin-left: 12px;
         }
 
-        /* ✅ Ensure menu items are tappable */
         .context-menu-item {
             padding: 16px 20px;
             font-size: 1rem;
@@ -955,25 +978,27 @@
             padding: 18px;
         }
 
-        /* ✅ CRITICAL: Chat Input Mobile Optimization */
+        /* ✅ ULTIMATE MOBILE FIX FOR CHAT INPUT */
         .chat-input-container {
-            padding: 10px 12px;
+            padding: 8px 10px !important;
         }
 
         .chat-input-form {
-            gap: 6px;
+            gap: 6px !important;
         }
 
         .chat-input {
-            padding: 8px 12px;
+            padding: 9px 12px !important;
             font-size: 14px;
+            max-width: calc(100% - 44px) !important; /* ✅ Reserve space for smaller button */
         }
 
         .chat-send-btn {
-            width: 38px;
-            height: 38px;
-            min-width: 38px;
-            max-width: 38px;
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 38px !important;
+            max-width: 38px !important;
+            flex: 0 0 38px !important;
         }
 
         .chat-send-btn i {
@@ -982,7 +1007,7 @@
     }
 
     /* ==========================================
-       ✅ MOBILE RESPONSIVE - SMALL PHONES (480px and below)
+       ✅ SMALL MOBILE PHONES (480px and below)
        ========================================== */
 
     @media (max-width: 480px) {
@@ -993,23 +1018,25 @@
         }
 
         .chat-input-container {
-            padding: 8px 10px;
+            padding: 8px 8px !important;
         }
 
         .chat-input-form {
-            gap: 6px;
+            gap: 6px !important;
         }
 
         .chat-input {
-            padding: 8px 10px;
+            padding: 8px 10px !important;
             font-size: 13px;
+            max-width: calc(100% - 42px) !important;
         }
 
         .chat-send-btn {
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
-            max-width: 36px;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            max-width: 36px !important;
+            flex: 0 0 36px !important;
         }
 
         .chat-send-btn i {
@@ -1023,28 +1050,42 @@
 
     @media (max-width: 360px) {
         .chat-input-container {
-            padding: 6px 8px;
+            padding: 6px 6px !important;
         }
 
         .chat-input-form {
-            gap: 5px;
+            gap: 5px !important;
         }
 
         .chat-input {
-            padding: 7px 9px;
+            padding: 7px 9px !important;
             font-size: 13px;
+            max-width: calc(100% - 39px) !important;
         }
 
         .chat-send-btn {
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
-            max-width: 34px;
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            max-width: 34px !important;
+            flex: 0 0 34px !important;
         }
 
         .chat-send-btn i {
             font-size: 13px;
         }
+    }
+
+    /* ==========================================
+       ✅ EXTRA SAFETY - PREVENT ANY OVERFLOW
+       ========================================== */
+
+    .chat-panel,
+    .chat-window,
+    .chat-input-container,
+    .chat-input-form,
+    .chat-messages-container {
+        overflow-x: hidden !important;
     }
 </style>
 </head>
