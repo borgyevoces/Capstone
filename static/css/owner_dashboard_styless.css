@@ -1522,3 +1522,8 @@ body {
 .toast-close:hover {
     color: #f02849;
 }
+@media (min-width: 1024px) {
+    .dashboard-content > div:first-child {
+        padding-top: 0 !important;
+    }
+}
