@@ -1185,19 +1185,21 @@ body {
 
     /* ✅ CRITICAL FIX: Single column on very small screens */
     .menu-grid {
-        grid-template-columns: 1fr !important; /* ✅ Force single column */
-        gap: 12px;
-        padding: 0 4px; /* ✅ Tiny padding for breathing room */
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 0 8px !important;
     }
 
     .menu-card {
+        max-width: 100% !important;
+        margin: 0 auto !important;
         border-radius: 12px;
-        max-width: 100%; /* ✅ Never exceed container */
-        margin: 0 auto; /* ✅ Center the card */
+        overflow: hidden;
     }
 
     .menu-image {
-        height: 180px; /* ✅ Increased for better view */
+        height: 200px !important;
+        position: relative;
     }
 
     .menu-info {
@@ -1228,26 +1230,143 @@ body {
     /* ✅ BADGES FIX: Better positioning and sizing */
 /* ✅ BADGES FIX: Stacked vertically on mobile */
     .badges-container {
-        top: 6px;
-        left: 6px;
-        right: 6px;
-        gap: 5px;
-        flex-direction: column !important;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        display: flex !important;
+        flex-direction: column !important; /* ← Stack badges */
+        gap: 6px !important;
         align-items: flex-start !important;
+        z-index: 10;
     }
 
     .badge {
-        padding: 4px 8px;
-        font-size: 10px;
-        font-weight: 700;
-        white-space: nowrap;
-        max-width: 85%;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        max-width: 90%;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .badge i {
-        font-size: 9px;
+        font-size: 10px;
     }
 
+.badge.bestseller {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+        color: white;
+    }
+
+    .badge.available {
+        background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%) !important;
+        color: white;
+    }
+
+    .badge.soldout {
+        background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+        color: white;
+    }
+    /* ✅ 5. MENU INFO - Better Padding */
+    .menu-info {
+        padding: 14px !important;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* ✅ 6. MENU NAME - ONE LINE GUARANTEED */
+    .menu-name {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        margin-bottom: 4px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: var(--text-dark);
+    }
+
+    /* ✅ 7. MENU DESCRIPTION - TWO LINES MAX */
+    .menu-desc {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        color: var(--text-muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 6px !important;
+    }
+
+    /* ✅ 8. MENU PRICE - LARGER & BOLD */
+    .menu-price {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: var(--primary);
+        margin-bottom: 12px !important;
+    }
+
+    /* ✅ 9. BUTTONS - CRITICAL FIX: Stack Vertically */
+    .menu-actions {
+        display: flex !important;
+        flex-direction: column !important; /* ← Stack buttons vertically */
+        gap: 8px !important;
+        width: 100%;
+        margin-top: auto;
+    }
+
+    /* ✅ 10. ACTION BUTTONS - Full Width & Touch-Friendly */
+    .action-btn {
+        width: 100% !important;
+        padding: 12px 16px !important; /* ← Bigger padding */
+        font-size: 14px !important; /* ← Larger text */
+        font-weight: 600 !important;
+        border-radius: 8px;
+        display: flex !important;
+        flex-direction: row !important; /* ← Icon + text side by side */
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px; /* ← Touch-friendly height */
+        transition: all 0.2s;
+        border: 1px solid var(--border);
+        background: var(--bg-light);
+        color: var(--text-dark);
+    }
+
+    .action-btn i {
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+
+    .action-btn:active {
+        transform: scale(0.98);
+    }
+
+    /* ✅ 11. FORMS INSIDE ACTIONS - Full Width */
+    .menu-actions form {
+        display: block !important;
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    .menu-actions form button {
+        width: 100% !important;
+    }
+
+    /* ✅ 12. BUTTON HOVER STATES (Mobile Touch) */
+    .action-btn:active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
     /* ✅ BUTTONS FIX: Full width, larger, stacked vertically */
     .menu-actions {
         display: flex !important;
@@ -1337,6 +1456,17 @@ body {
 
     .footer-section h3 {
         font-size: 16px;
+    }
+    .no-items {
+        padding: 50px 20px !important;
+    }
+
+    .no-items i {
+        font-size: 48px !important;
+    }
+
+    .no-items p {
+        font-size: 14px !important;
     }
 
 }
@@ -1707,7 +1837,8 @@ body {
     }
 
     .menu-grid {
-        gap: 10px;
+        gap: 12px !important;
+        padding: 0 4px !important;
     }
 
     .menu-card {
@@ -1715,38 +1846,40 @@ body {
     }
 
     .menu-image {
-        height: 160px;
+        height: 180px !important;
     }
 
     .menu-info {
-        padding: 10px;
+        padding: 12px !important;
+        gap: 6px;
     }
 
     .menu-name {
-        font-size: 14px;
+        font-size: 15px !important;
     }
 
     .menu-desc {
-        font-size: 12px;
+        font-size: 12px !important;
     }
 
     .menu-price {
-        font-size: 16px;
+        font-size: 18px !important;
+        margin-bottom: 10px !important;
     }
 
     .badge {
-        padding: 4px 8px;
-        font-size: 9px;
+        padding: 5px 8px !important;
+        font-size: 10px !important;
     }
 
     .action-btn {
-        font-size: 12px !important;
-        padding: 8px 10px !important;
-        min-height: 38px;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        min-height: 42px;
     }
 
     .action-btn i {
-        font-size: 13px;
+        font-size: 14px;
     }
     .store-stats-display {
         gap: 10px;
@@ -1772,10 +1905,10 @@ body {
     }
     /* ✅ CRITICAL: Ensure badges stack properly on smallest screens */
     .badges-container {
-        top: 5px;
-        left: 5px;
-        right: 5px;
-        gap: 4px;
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        gap: 5px !important;
     }
 
     .badge {
@@ -1785,7 +1918,7 @@ body {
     }
 
     .badge i {
-        font-size: 8px;
+        font-size: 9px;
     }
     .dashboard-grid {
     display: flex;
