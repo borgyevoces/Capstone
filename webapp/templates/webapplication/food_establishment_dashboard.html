@@ -1259,26 +1259,39 @@
                     </div>
                 </div>
             </header>
-            <div class="store-stats-display">
-    <div class="stat-card">
-        <div class="stat-icon bestseller">
-            <i class="fas fa-award"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-number" id="bestSellerCount">0</div>
-            <div class="stat-label">Best Sellers</div>
-        </div>
+<div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; gap: 24px;">
+    <!-- LEFT SIDE: Welcome Text -->
+    <div style="flex: 1;">
+        <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px;">
+            Owner Dashboard
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px;">
+            Welcome back! Manage your establishment <span style="color: var(--primary); font-weight: 600;">{{ establishment.name }}</span> here.
+        </p>
     </div>
 
-    <div class="stat-divider"></div>
-
-    <div class="stat-card">
-        <div class="stat-icon available">
-            <i class="fas fa-check-circle"></i>
+    <!-- RIGHT SIDE: Stats Display -->
+    <div class="store-stats-display" style="margin: 0; flex-shrink: 0;">
+        <div class="stat-card">
+            <div class="stat-icon bestseller">
+                <i class="fas fa-award"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="bestSellerCount">0</div>
+                <div class="stat-label">Best Sellers</div>
+            </div>
         </div>
-        <div class="stat-content">
-            <div class="stat-number" id="availableCount">0</div>
-            <div class="stat-label">Available Items</div>
+
+        <div class="stat-divider"></div>
+
+        <div class="stat-card">
+            <div class="stat-icon available">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="availableCount">0</div>
+                <div class="stat-label">Available Items</div>
+            </div>
         </div>
     </div>
 </div>
