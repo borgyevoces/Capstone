@@ -15,1094 +15,1094 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
-    /* ==========================================
-       ✅ REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
-       ✅ Problem: Fixed width 360px sa chat panel nag-cause ng overflow
-       ✅ Solution: Responsive width from the start
-       ========================================== */
+        /* ==========================================
+           ✅ REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
+           ✅ Problem: Fixed width 360px sa chat panel nag-cause ng overflow
+           ✅ Solution: Responsive width from the start
+           ========================================== */
 
-    /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
-    .notification-toggle-btn {
-        position: relative;
-        background: transparent;
-        border: none;
-        color: var(--text-dark, #333);
-        font-size: 20px;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 8px;
-        transition: background 0.2s;
-    }
+        /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
+        .notification-toggle-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--text-dark, #333);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
 
-    .notification-toggle-btn:hover {
-        background: var(--bg-light, #f5f7fa);
-    }
+        .notification-toggle-btn:hover {
+            background: var(--bg-light, #f5f7fa);
+        }
 
-    .notification-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        background: #f02849;
-        color: white;
-        border-radius: 10px;
-        padding: 2px 6px;
-        font-size: 11px;
-        font-weight: 700;
-        min-width: 18px;
-        text-align: center;
-    }
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #f02849;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
 
-    .notification-panel {
-        position: fixed;
-        right: 0;
-        top: 70px;
-        width: 400px;
-        height: calc(100vh - 70px);
-        background: white;
-        border-left: 1px solid var(--border, #e4e6eb);
-        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        z-index: 998;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .notification-panel.open {
-        transform: translateX(0);
-    }
-
-    .notification-panel-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border, #e4e6eb);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-        color: white;
-    }
-
-    .notification-panel-header h3 {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .mark-all-read-btn,
-    .notification-close-btn {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 5px;
-        transition: opacity 0.2s;
-    }
-
-    .mark-all-read-btn:hover,
-    .notification-close-btn:hover {
-        opacity: 0.8;
-    }
-
-    .notification-list {
-        flex: 1;
-        overflow-y: auto;
-        padding: 10px;
-    }
-
-    .notification-item {
-        display: flex;
-        align-items: start;
-        padding: 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-bottom: 8px;
-        border: 1px solid var(--border, #e4e6eb);
-        position: relative;
-    }
-
-    .notification-item:hover {
-        background: var(--bg-light, #f5f7fa);
-    }
-
-    .notification-item.unread {
-        background: rgba(240, 40, 73, 0.05);
-        border-color: #f02849;
-    }
-
-    .notification-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 18px;
-        margin-right: 12px;
-        flex-shrink: 0;
-    }
-
-    .notification-content {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .notification-message {
-        font-weight: 600;
-        font-size: 14px;
-        margin-bottom: 4px;
-        color: var(--text-dark, #333);
-    }
-
-    .notification-details {
-        font-size: 12px;
-        color: var(--text-muted, #65676b);
-        margin-bottom: 4px;
-    }
-
-    .notification-time {
-        font-size: 11px;
-        color: var(--text-muted, #65676b);
-    }
-
-    .notification-empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text-muted, #65676b);
-    }
-
-    .notification-empty-state i {
-        font-size: 48px;
-        opacity: 0.3;
-        margin-bottom: 16px;
-        display: block;
-    }
-
-    /* ==========================================
-       ✅ REAL FIX: RESPONSIVE NOTIFICATION PANEL
-       ========================================== */
-    @media (max-width: 768px) {
         .notification-panel {
-            width: 100vw !important;
-            max-width: 100vw !important;
-            top: 60px;
-            height: calc(100vh - 60px);
-        }
-    }
-
-    /* ==========================================
-       ✅ CHAT PANEL - REAL ULTIMATE FIX
-       ✅ KEY CHANGE: Make it responsive from desktop to mobile
-       ========================================== */
-
-    .chat-panel {
-        position: fixed;
-        right: 0;
-        top: 70px;
-        width: 360px; /* Desktop width */
-        max-width: 100vw !important; /* ✅ Never exceed viewport */
-        height: calc(100vh - 70px);
-        background: white;
-        border-left: 1px solid var(--border, #e4e6eb);
-        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        z-index: 999;
-        display: flex;
-        flex-direction: column;
-        overflow-x: hidden !important;
-        box-sizing: border-box !important;
-    }
-
-    /* ✅ CRITICAL: Force box-sizing on ALL children */
-    .chat-panel *,
-    .chat-panel *::before,
-    .chat-panel *::after {
-        box-sizing: border-box !important;
-    }
-
-    .chat-panel.open {
-        transform: translateX(0);
-    }
-
-    .chat-panel-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border, #e4e6eb);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        flex-shrink: 0; /* ✅ Prevent header from shrinking */
-    }
-
-    .chat-panel-header h3 {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .chat-close-btn {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 5px;
-        transition: transform 0.2s;
-    }
-
-    .chat-close-btn:hover {
-        transform: scale(1.1);
-    }
-
-    .chat-conversations-list {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 10px;
-    }
-
-    .chat-conversation-item {
-        display: flex;
-        align-items: center;
-        padding: 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-bottom: 8px;
-        position: relative;
-    }
-
-    .chat-conversation-item:hover {
-        background: var(--bg-light, #f5f7fa);
-    }
-
-    .chat-conversation-item.active {
-        background: rgba(102, 126, 234, 0.1);
-    }
-
-    .chat-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 18px;
-        margin-right: 12px;
-        flex-shrink: 0;
-    }
-
-    .chat-conversation-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .chat-conversation-name {
-        font-weight: 600;
-        font-size: 14px;
-        margin-bottom: 4px;
-        color: var(--text-dark, #333);
-    }
-
-    .chat-conversation-preview {
-        font-size: 13px;
-        color: var(--text-muted, #65676b);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .chat-conversation-time {
-        font-size: 11px;
-        color: var(--text-muted, #65676b);
-        position: absolute;
-        top: 12px;
-        right: 12px;
-    }
-
-    .chat-unread-badge {
-        background: var(--primary, #667eea);
-        color: white;
-        border-radius: 12px;
-        padding: 2px 8px;
-        font-size: 11px;
-        font-weight: 700;
-        position: absolute;
-        bottom: 12px;
-        right: 12px;
-    }
-
-    .chat-empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--text-muted, #65676b);
-    }
-
-    .chat-empty-state i {
-        font-size: 64px;
-        opacity: 0.2;
-        margin-bottom: 16px;
-        display: block;
-    }
-
-    /* ========================================
-       CHAT WINDOW - SAME FIX AS CHAT PANEL
-       ======================================== */
-
-    .chat-window {
-        position: fixed;
-        right: 0;
-        top: 70px;
-        width: 360px; /* Desktop width */
-        max-width: 100vw !important; /* ✅ Never exceed viewport */
-        height: calc(100vh - 70px);
-        background: white;
-        border-left: 1px solid var(--border, #e4e6eb);
-        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        z-index: 999;
-        display: none;
-        flex-direction: column;
-        overflow-x: hidden !important;
-        box-sizing: border-box !important;
-    }
-
-    /* ✅ CRITICAL: Force box-sizing on ALL children */
-    .chat-window *,
-    .chat-window *::before,
-    .chat-window *::after {
-        box-sizing: border-box !important;
-    }
-
-    .chat-window.open {
-        display: flex;
-        transform: translateX(0);
-    }
-
-    .chat-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border, #e4e6eb);
-        display: flex;
-        align-items: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        flex-shrink: 0; /* ✅ Prevent header from shrinking */
-    }
-
-    .back-to-conversations {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 5px;
-        margin-right: 12px;
-        transition: transform 0.2s;
-    }
-
-    .back-to-conversations:hover {
-        transform: translateX(-3px);
-    }
-
-    .chat-header-info {
-        flex: 1;
-        min-width: 0; /* ✅ Allow shrinking */
-    }
-
-    .chat-header-name {
-        font-weight: 700;
-        font-size: 16px;
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .chat-header-status {
-        font-size: 12px;
-        opacity: 0.9;
-    }
-
-    .chat-messages-container {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden !important;
-        padding: 16px;
-        background: #f0f2f5;
-        width: 100%;
-    }
-
-    /* ========================================
-       CHAT MESSAGES
-       ======================================== */
-
-    .chat-message {
-        display: flex;
-        margin-bottom: 12px;
-        align-items: flex-start;
-        position: relative;
-        max-width: 100%;
-    }
-
-    /* Owner's messages - aligned right */
-    .chat-message.sent {
-        justify-content: flex-end;
-    }
-
-    /* Customer's messages - aligned left */
-    .chat-message.received {
-        justify-content: flex-start;
-    }
-
-    .chat-message-bubble {
-        max-width: 70%;
-        padding: 10px 14px;
-        border-radius: 16px;
-        word-wrap: break-word;
-        word-break: break-word;
-        line-height: 1.4;
-        font-size: 14px;
-        position: relative;
-    }
-
-    /* Owner's bubble - Purple gradient */
-    .chat-message.sent .chat-message-bubble {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-bottom-right-radius: 4px;
-    }
-
-    /* Customer's bubble - White */
-    .chat-message.received .chat-message-bubble {
-        background: white;
-        color: var(--text-dark, #333);
-        border-bottom-left-radius: 4px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .chat-message-time {
-        font-size: 11px;
-        opacity: 0.7;
-        margin-top: 4px;
-        display: block;
-    }
-
-    /* ========================================
-       THREE DOTS BUTTON - NAKADIKIT TALAGA SA BUBBLE
-       ======================================== */
-
-    .message-options-btn {
-        background: rgba(0, 0, 0, 0.5);
-        border: none;
-        color: white;
-        font-size: 14px;
-        cursor: pointer;
-        padding: 6px 8px;
-        border-radius: 50%;
-        opacity: 0;
-        transition: all 0.2s ease;
-        z-index: 10;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    /* For sent messages (owner) - button sa KALIWA ng bubble */
-    .chat-message.sent .message-options-btn {
-        order: -1;
-        margin-right: 10px;
-    }
-
-    /* For received messages (customer) - button sa KANAN ng bubble */
-    .chat-message.received .message-options-btn {
-        order: 1;
-        margin-left: 10px;
-    }
-
-    /* Show on hover (Desktop) */
-    @media (hover: hover) {
-        .chat-message:hover .message-options-btn {
-            opacity: 1;
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 400px;
+            height: calc(100vh - 70px);
+            background: white;
+            border-left: 1px solid var(--border, #e4e6eb);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 998;
+            display: flex;
+            flex-direction: column;
         }
 
-        .message-options-btn:hover {
-            background: rgba(0, 0, 0, 0.7);
+        .notification-panel.open {
+            transform: translateX(0);
+        }
+
+        .notification-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border, #e4e6eb);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+            color: white;
+        }
+
+        .notification-panel-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .mark-all-read-btn,
+        .notification-close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            transition: opacity 0.2s;
+        }
+
+        .mark-all-read-btn:hover,
+        .notification-close-btn:hover {
+            opacity: 0.8;
+        }
+
+        .notification-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: start;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+            border: 1px solid var(--border, #e4e6eb);
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background: var(--bg-light, #f5f7fa);
+        }
+
+        .notification-item.unread {
+            background: rgba(240, 40, 73, 0.05);
+            border-color: #f02849;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-message {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-dark, #333);
+        }
+
+        .notification-details {
+            font-size: 12px;
+            color: var(--text-muted, #65676b);
+            margin-bottom: 4px;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: var(--text-muted, #65676b);
+        }
+
+        .notification-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted, #65676b);
+        }
+
+        .notification-empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        /* ==========================================
+           ✅ REAL FIX: RESPONSIVE NOTIFICATION PANEL
+           ========================================== */
+        @media (max-width: 768px) {
+            .notification-panel {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                top: 60px;
+                height: calc(100vh - 60px);
+            }
+        }
+
+        /* ==========================================
+           ✅ CHAT PANEL - REAL ULTIMATE FIX
+           ✅ KEY CHANGE: Make it responsive from desktop to mobile
+           ========================================== */
+
+        .chat-panel {
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 360px; /* Desktop width */
+            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            height: calc(100vh - 70px);
+            background: white;
+            border-left: 1px solid var(--border, #e4e6eb);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+
+        /* ✅ CRITICAL: Force box-sizing on ALL children */
+        .chat-panel *,
+        .chat-panel *::before,
+        .chat-panel *::after {
+            box-sizing: border-box !important;
+        }
+
+        .chat-panel.open {
+            transform: translateX(0);
+        }
+
+        .chat-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border, #e4e6eb);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+        }
+
+        .chat-panel-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .chat-close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s;
+        }
+
+        .chat-close-btn:hover {
             transform: scale(1.1);
         }
-    }
 
-    /* Always visible on touch devices when message is active */
-    .chat-message.active .message-options-btn {
-        opacity: 1;
-    }
-
-    /* Mobile: Show indicator when long-pressing */
-    .chat-message.long-pressing .chat-message-bubble {
-        transform: scale(0.98);
-        opacity: 0.9;
-    }
-
-    /* ✅ PINNED MESSAGE INDICATOR */
-    .chat-message.pinned .chat-message-bubble::before {
-        content: '📌 ';
-        margin-right: 4px;
-    }
-
-    /* ✅ SEE ALL PINS LINK */
-    .owner-see-pins-link {
-        background: #f0f2f5;
-        padding: 10px 15px;
-        border-top: 1px solid #e4e6eb;
-        text-align: center;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #667eea;
-        display: none;
-        flex-shrink: 0; /* ✅ Prevent from shrinking */
-    }
-
-    .owner-see-pins-link.active {
-        display: block;
-    }
-
-    .owner-see-pins-link:hover {
-        background: #e4e6eb;
-    }
-
-    /* ==========================================
-       ✅✅✅ REAL ULTIMATE CHAT INPUT FIX ✅✅✅
-       ✅ THE ABSOLUTE FINAL SOLUTION
-       ========================================== */
-
-    .chat-input-container {
-        padding: 10px !important;
-        border-top: 1px solid var(--border, #e4e6eb);
-        background: white;
-        position: relative;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
-        flex-shrink: 0 !important; /* ✅ Don't shrink the input area */
-    }
-
-    .chat-input-form {
-        display: flex !important;
-        gap: 8px !important;
-        align-items: center;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    .chat-input {
-        flex: 1 1 auto !important;
-        min-width: 0 !important; /* ✅ CRITICAL */
-        width: 100% !important;
-        padding: 10px 14px !important;
-        border: 1px solid var(--border, #e4e6eb);
-        border-radius: 20px;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.3s;
-        box-sizing: border-box !important;
-        margin: 0 !important;
-    }
-
-    .chat-input:focus {
-        border-color: #667eea;
-    }
-
-    .chat-send-btn {
-        width: 40px !important;
-        height: 40px !important;
-        min-width: 40px !important; /* ✅ CRITICAL */
-        max-width: 40px !important;
-        flex: 0 0 40px !important; /* ✅ Don't grow or shrink */
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s;
-        padding: 0 !important;
-        margin: 0 !important;
-        box-sizing: border-box !important;
-    }
-
-    .chat-send-btn:hover {
-        transform: scale(1.05);
-    }
-
-    .chat-send-btn:active {
-        transform: scale(0.95);
-    }
-
-    .chat-send-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .chat-send-btn i {
-        font-size: 16px;
-        pointer-events: none;
-    }
-
-    /* ========================================
-       TOGGLE BUTTON IN NAVBAR
-       ======================================== */
-
-    .chat-toggle-btn {
-        position: relative;
-        background: transparent;
-        border: none;
-        color: var(--text-dark, #333);
-        font-size: 20px;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 8px;
-        transition: background 0.2s;
-    }
-
-    .chat-toggle-btn:hover {
-        background: var(--bg-light, #f5f7fa);
-    }
-
-    .chat-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        background: var(--primary, #667eea);
-        color: white;
-        border-radius: 10px;
-        padding: 2px 6px;
-        font-size: 11px;
-        font-weight: 700;
-        min-width: 18px;
-        text-align: center;
-    }
-
-    /* ========================================
-       CONTEXT MENU STYLES
-       ======================================== */
-
-    .message-context-menu {
-        position: fixed;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-        padding: 8px 0;
-        min-width: 180px;
-        z-index: 10002;
-        display: none;
-        animation: menuSlideIn 0.15s ease-out;
-    }
-
-    .message-context-menu.active {
-        display: block;
-    }
-
-    @keyframes menuSlideIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95) translateY(-10px);
+        .chat-conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
         }
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
+
+        .chat-conversation-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+            position: relative;
         }
-    }
 
-    .context-menu-item {
-        padding: 12px 20px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.9rem;
-        color: #333;
-        transition: background 0.2s;
-    }
-
-    .context-menu-item:hover {
-        background: #f5f5f5;
-    }
-
-    .context-menu-item i {
-        width: 18px;
-        font-size: 1rem;
-    }
-
-    .context-menu-item.danger {
-        color: #f02849;
-    }
-
-    .context-menu-item.danger:hover {
-        background: #ffebee;
-    }
-
-    /* ========================================
-       UNSEND MODAL STYLES
-       ======================================== */
-
-    .unsend-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 10003;
-        animation: fadeIn 0.2s ease;
-    }
-
-    .unsend-modal.active {
-        display: flex;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    .unsend-modal-content {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 400px;
-        width: 90%;
-        animation: modalSlideUp 0.3s ease-out;
-    }
-
-    @keyframes modalSlideUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
+        .chat-conversation-item:hover {
+            background: var(--bg-light, #f5f7fa);
         }
-        to {
-            opacity: 1;
-            transform: translateY(0);
+
+        .chat-conversation-item.active {
+            background: rgba(102, 126, 234, 0.1);
         }
-    }
 
-    .unsend-modal h3 {
-        margin: 0 0 16px 0;
-        font-size: 1.2rem;
-        font-weight: 600;
-    }
+        .chat-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
 
-    .unsend-option {
-        padding: 16px;
-        border: 2px solid #e4e6eb;
-        border-radius: 12px;
-        margin-bottom: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+        .chat-conversation-info {
+            flex: 1;
+            min-width: 0;
+        }
 
-    .unsend-option:hover {
-        border-color: #667eea;
-        background: #f8f9ff;
-    }
+        .chat-conversation-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-dark, #333);
+        }
 
-    .unsend-option.selected {
-        border-color: #667eea;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    }
+        .chat-conversation-preview {
+            font-size: 13px;
+            color: var(--text-muted, #65676b);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .unsend-option-title {
-        font-weight: 600;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+        .chat-conversation-time {
+            font-size: 11px;
+            color: var(--text-muted, #65676b);
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }
 
-    .unsend-option-desc {
-        font-size: 0.85rem;
-        color: #65676b;
-    }
+        .chat-unread-badge {
+            background: var(--primary, #667eea);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+        }
 
-    .unsend-modal-buttons {
-        display: flex;
-        gap: 12px;
-        margin-top: 20px;
-    }
+        .chat-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted, #65676b);
+        }
 
-    .unsend-modal-buttons button {
-        flex: 1;
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+        .chat-empty-state i {
+            font-size: 64px;
+            opacity: 0.2;
+            margin-bottom: 16px;
+            display: block;
+        }
 
-    .btn-cancel {
-        background: #e4e6eb;
-        color: #333;
-    }
+        /* ========================================
+           CHAT WINDOW - SAME FIX AS CHAT PANEL
+           ======================================== */
 
-    .btn-cancel:hover {
-        background: #d0d2d7;
-    }
-
-    .btn-remove {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .btn-remove:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-remove:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    /* ========================================
-       MESSAGE STATES
-       ======================================== */
-
-    /* Message Deleted State */
-    .chat-message.deleted .chat-message-bubble {
-        background: #f5f5f5 !important;
-        color: #999 !important;
-        font-style: italic;
-        opacity: 0.7;
-    }
-
-    .chat-message.deleted .chat-message-bubble::before {
-        content: '🚫 ';
-    }
-
-    /* ✅ PINNED MESSAGES LIST MODAL */
-    .pinned-messages-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 10004;
-        animation: fadeIn 0.2s ease;
-    }
-
-    .pinned-messages-modal.active {
-        display: flex;
-    }
-
-    .pinned-messages-modal-content {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 500px;
-        width: 90%;
-        max-height: 70vh;
-        overflow-y: auto;
-        animation: modalSlideUp 0.3s ease-out;
-    }
-
-    .pinned-messages-modal h3 {
-        margin: 0 0 16px 0;
-        font-size: 1.3rem;
-        font-weight: 600;
-    }
-
-    .pinned-messages-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .pinned-messages-list .pinned-message-item {
-        padding: 12px;
-        border: 1px solid #e4e6eb;
-    }
-
-    .pinned-messages-empty {
-        text-align: center;
-        padding: 40px 20px;
-        color: #999;
-    }
-
-    .pinned-messages-empty i {
-        font-size: 48px;
-        opacity: 0.3;
-        display: block;
-        margin-bottom: 12px;
-    }
-
-    /* ==========================================
-       ✅✅✅ MOBILE RESPONSIVE - REAL FIX ✅✅✅
-       ✅ Key: Change width from 360px to 100vw on mobile
-       ========================================== */
-
-    @media (max-width: 768px) {
-        /* ✅ CRITICAL: Make panels full width on mobile */
-        .chat-panel,
         .chat-window {
-            width: 100vw !important; /* ✅ THE KEY FIX */
-            max-width: 100vw !important;
-            top: 60px;
-            height: calc(100vh - 60px);
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 360px; /* Desktop width */
+            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            height: calc(100vh - 70px);
+            background: white;
+            border-left: 1px solid var(--border, #e4e6eb);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
         }
+
+        /* ✅ CRITICAL: Force box-sizing on ALL children */
+        .chat-window *,
+        .chat-window *::before,
+        .chat-window *::after {
+            box-sizing: border-box !important;
+        }
+
+        .chat-window.open {
+            display: flex;
+            transform: translateX(0);
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border, #e4e6eb);
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+        }
+
+        .back-to-conversations {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            margin-right: 12px;
+            transition: transform 0.2s;
+        }
+
+        .back-to-conversations:hover {
+            transform: translateX(-3px);
+        }
+
+        .chat-header-info {
+            flex: 1;
+            min-width: 0; /* ✅ Allow shrinking */
+        }
+
+        .chat-header-name {
+            font-weight: 700;
+            font-size: 16px;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-header-status {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chat-messages-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden !important;
+            padding: 16px;
+            background: #f0f2f5;
+            width: 100%;
+        }
+
+        /* ========================================
+           CHAT MESSAGES
+           ======================================== */
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+            position: relative;
+            max-width: 100%;
+        }
+
+        /* Owner's messages - aligned right */
+        .chat-message.sent {
+            justify-content: flex-end;
+        }
+
+        /* Customer's messages - aligned left */
+        .chat-message.received {
+            justify-content: flex-start;
+        }
+
+        .chat-message-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.4;
+            font-size: 14px;
+            position: relative;
+        }
+
+        /* Owner's bubble - Purple gradient */
+        .chat-message.sent .chat-message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Customer's bubble - White */
+        .chat-message.received .chat-message-bubble {
+            background: white;
+            color: var(--text-dark, #333);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .chat-message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* ========================================
+           THREE DOTS BUTTON - NAKADIKIT TALAGA SA BUBBLE
+           ======================================== */
 
         .message-options-btn {
-            width: 36px;
-            height: 36px;
-            font-size: 16px;
-            opacity: 0.7;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 10;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
+        /* For sent messages (owner) - button sa KALIWA ng bubble */
         .chat-message.sent .message-options-btn {
-            margin-right: 12px;
+            order: -1;
+            margin-right: 10px;
         }
 
+        /* For received messages (customer) - button sa KANAN ng bubble */
         .chat-message.received .message-options-btn {
-            margin-left: 12px;
+            order: 1;
+            margin-left: 10px;
+        }
+
+        /* Show on hover (Desktop) */
+        @media (hover: hover) {
+            .chat-message:hover .message-options-btn {
+                opacity: 1;
+            }
+
+            .message-options-btn:hover {
+                background: rgba(0, 0, 0, 0.7);
+                transform: scale(1.1);
+            }
+        }
+
+        /* Always visible on touch devices when message is active */
+        .chat-message.active .message-options-btn {
+            opacity: 1;
+        }
+
+        /* Mobile: Show indicator when long-pressing */
+        .chat-message.long-pressing .chat-message-bubble {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        /* ✅ PINNED MESSAGE INDICATOR */
+        .chat-message.pinned .chat-message-bubble::before {
+            content: '📌 ';
+            margin-right: 4px;
+        }
+
+        /* ✅ SEE ALL PINS LINK */
+        .owner-see-pins-link {
+            background: #f0f2f5;
+            padding: 10px 15px;
+            border-top: 1px solid #e4e6eb;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #667eea;
+            display: none;
+            flex-shrink: 0; /* ✅ Prevent from shrinking */
+        }
+
+        .owner-see-pins-link.active {
+            display: block;
+        }
+
+        .owner-see-pins-link:hover {
+            background: #e4e6eb;
+        }
+
+        /* ==========================================
+           ✅✅✅ REAL ULTIMATE CHAT INPUT FIX ✅✅✅
+           ✅ THE ABSOLUTE FINAL SOLUTION
+           ========================================== */
+
+        .chat-input-container {
+            padding: 10px !important;
+            border-top: 1px solid var(--border, #e4e6eb);
+            background: white;
+            position: relative;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            flex-shrink: 0 !important; /* ✅ Don't shrink the input area */
+        }
+
+        .chat-input-form {
+            display: flex !important;
+            gap: 8px !important;
+            align-items: center;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .chat-input {
+            flex: 1 1 auto !important;
+            min-width: 0 !important; /* ✅ CRITICAL */
+            width: 100% !important;
+            padding: 10px 14px !important;
+            border: 1px solid var(--border, #e4e6eb);
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .chat-send-btn {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important; /* ✅ CRITICAL */
+            max-width: 40px !important;
+            flex: 0 0 40px !important; /* ✅ Don't grow or shrink */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chat-send-btn i {
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        /* ========================================
+           TOGGLE BUTTON IN NAVBAR
+           ======================================== */
+
+        .chat-toggle-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--text-dark, #333);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .chat-toggle-btn:hover {
+            background: var(--bg-light, #f5f7fa);
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--primary, #667eea);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* ========================================
+           CONTEXT MENU STYLES
+           ======================================== */
+
+        .message-context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+            padding: 8px 0;
+            min-width: 180px;
+            z-index: 10002;
+            display: none;
+            animation: menuSlideIn 0.15s ease-out;
+        }
+
+        .message-context-menu.active {
+            display: block;
+        }
+
+        @keyframes menuSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .context-menu-item {
-            padding: 16px 20px;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            color: #333;
+            transition: background 0.2s;
+        }
+
+        .context-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .context-menu-item i {
+            width: 18px;
             font-size: 1rem;
         }
 
+        .context-menu-item.danger {
+            color: #f02849;
+        }
+
+        .context-menu-item.danger:hover {
+            background: #ffebee;
+        }
+
+        /* ========================================
+           UNSEND MODAL STYLES
+           ======================================== */
+
+        .unsend-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10003;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .unsend-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .unsend-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .unsend-modal h3 {
+            margin: 0 0 16px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
         .unsend-option {
-            padding: 18px;
+            padding: 16px;
+            border: 2px solid #e4e6eb;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        /* ✅ Chat Input Mobile Adjustments */
-        .chat-input-container {
-            padding: 8px !important;
+        .unsend-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
         }
 
-        .chat-input-form {
-            gap: 6px !important;
+        .unsend-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
         }
 
-        .chat-input {
-            padding: 9px 12px !important;
-            font-size: 14px;
+        .unsend-option-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .chat-send-btn {
-            width: 38px !important;
-            height: 38px !important;
-            min-width: 38px !important;
-            max-width: 38px !important;
-            flex: 0 0 38px !important;
+        .unsend-option-desc {
+            font-size: 0.85rem;
+            color: #65676b;
         }
 
-        .chat-send-btn i {
-            font-size: 15px;
-        }
-    }
-
-    /* ==========================================
-       ✅ SMALL MOBILE (480px and below)
-       ========================================== */
-
-    @media (max-width: 480px) {
-        .chat-panel,
-        .chat-window {
-            width: 100vw !important; /* ✅ THE KEY FIX */
-            max-width: 100vw !important;
-            top: 56px;
-            height: calc(100vh - 56px);
+        .unsend-modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
         }
 
-        .chat-input-container {
-            padding: 8px !important;
+        .unsend-modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .chat-input-form {
-            gap: 6px !important;
+        .btn-cancel {
+            background: #e4e6eb;
+            color: #333;
         }
 
-        .chat-input {
-            padding: 8px 10px !important;
-            font-size: 13px;
+        .btn-cancel:hover {
+            background: #d0d2d7;
         }
 
-        .chat-send-btn {
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            max-width: 36px !important;
-            flex: 0 0 36px !important;
+        .btn-remove {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
-        .chat-send-btn i {
-            font-size: 14px;
-        }
-    }
-
-    /* ==========================================
-       ✅ EXTRA SMALL (360px and below)
-       ========================================== */
-
-    @media (max-width: 360px) {
-        .chat-panel,
-        .chat-window {
-            width: 100vw !important; /* ✅ THE KEY FIX */
-            max-width: 100vw !important;
+        .btn-remove:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .chat-input-container {
-            padding: 6px !important;
+        .btn-remove:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        .chat-input-form {
-            gap: 5px !important;
+        /* ========================================
+           MESSAGE STATES
+           ======================================== */
+
+        /* Message Deleted State */
+        .chat-message.deleted .chat-message-bubble {
+            background: #f5f5f5 !important;
+            color: #999 !important;
+            font-style: italic;
+            opacity: 0.7;
         }
 
-        .chat-input {
-            padding: 7px 9px !important;
-            font-size: 13px;
+        .chat-message.deleted .chat-message-bubble::before {
+            content: '🚫 ';
         }
 
-        .chat-send-btn {
-            width: 34px !important;
-            height: 34px !important;
-            min-width: 34px !important;
-            max-width: 34px !important;
-            flex: 0 0 34px !important;
+        /* ✅ PINNED MESSAGES LIST MODAL */
+        .pinned-messages-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10004;
+            animation: fadeIn 0.2s ease;
         }
 
-        .chat-send-btn i {
-            font-size: 13px;
+        .pinned-messages-modal.active {
+            display: flex;
         }
-    }
-</style>
+
+        .pinned-messages-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        .pinned-messages-modal h3 {
+            margin: 0 0 16px 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .pinned-messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pinned-messages-list .pinned-message-item {
+            padding: 12px;
+            border: 1px solid #e4e6eb;
+        }
+
+        .pinned-messages-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .pinned-messages-empty i {
+            font-size: 48px;
+            opacity: 0.3;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        /* ==========================================
+           ✅✅✅ MOBILE RESPONSIVE - REAL FIX ✅✅✅
+           ✅ Key: Change width from 360px to 100vw on mobile
+           ========================================== */
+
+        @media (max-width: 768px) {
+            /* ✅ CRITICAL: Make panels full width on mobile */
+            .chat-panel,
+            .chat-window {
+                width: 100vw !important; /* ✅ THE KEY FIX */
+                max-width: 100vw !important;
+                top: 60px;
+                height: calc(100vh - 60px);
+            }
+
+            .message-options-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+                opacity: 0.7;
+            }
+
+            .chat-message.sent .message-options-btn {
+                margin-right: 12px;
+            }
+
+            .chat-message.received .message-options-btn {
+                margin-left: 12px;
+            }
+
+            .context-menu-item {
+                padding: 16px 20px;
+                font-size: 1rem;
+            }
+
+            .unsend-option {
+                padding: 18px;
+            }
+
+            /* ✅ Chat Input Mobile Adjustments */
+            .chat-input-container {
+                padding: 8px !important;
+            }
+
+            .chat-input-form {
+                gap: 6px !important;
+            }
+
+            .chat-input {
+                padding: 9px 12px !important;
+                font-size: 14px;
+            }
+
+            .chat-send-btn {
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+                max-width: 38px !important;
+                flex: 0 0 38px !important;
+            }
+
+            .chat-send-btn i {
+                font-size: 15px;
+            }
+        }
+
+        /* ==========================================
+           ✅ SMALL MOBILE (480px and below)
+           ========================================== */
+
+        @media (max-width: 480px) {
+            .chat-panel,
+            .chat-window {
+                width: 100vw !important; /* ✅ THE KEY FIX */
+                max-width: 100vw !important;
+                top: 56px;
+                height: calc(100vh - 56px);
+            }
+
+            .chat-input-container {
+                padding: 8px !important;
+            }
+
+            .chat-input-form {
+                gap: 6px !important;
+            }
+
+            .chat-input {
+                padding: 8px 10px !important;
+                font-size: 13px;
+            }
+
+            .chat-send-btn {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                max-width: 36px !important;
+                flex: 0 0 36px !important;
+            }
+
+            .chat-send-btn i {
+                font-size: 14px;
+            }
+        }
+
+        /* ==========================================
+           ✅ EXTRA SMALL (360px and below)
+           ========================================== */
+
+        @media (max-width: 360px) {
+            .chat-panel,
+            .chat-window {
+                width: 100vw !important; /* ✅ THE KEY FIX */
+                max-width: 100vw !important;
+            }
+
+            .chat-input-container {
+                padding: 6px !important;
+            }
+
+            .chat-input-form {
+                gap: 5px !important;
+            }
+
+            .chat-input {
+                padding: 7px 9px !important;
+                font-size: 13px;
+            }
+
+            .chat-send-btn {
+                width: 34px !important;
+                height: 34px !important;
+                min-width: 34px !important;
+                max-width: 34px !important;
+                flex: 0 0 34px !important;
+            }
+
+            .chat-send-btn i {
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar">
@@ -1111,7 +1111,8 @@
             KabsuEats
         </a>
         <div class="navbar-actions">
-            <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn" title="Notifications">
+            <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
+                    title="Notifications">
                 <i class="fas fa-bell"></i>
                 <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
             </button>
@@ -1247,9 +1248,9 @@
                         <h1 id="establishmentName">{{ establishment.name }}</h1>
                         <p id="establishmentAddress">{{ establishment.address }}</p>
                         <span class="status-badge status-{{ establishment.calculated_status|lower }}"
-      id="establishmentStatus"
-      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                              id="establishmentStatus"
+                              data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                              data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
     {% if establishment.calculated_status == 'Open' %}
           Open Now
     {% else %}
@@ -1259,7 +1260,8 @@
                     </div>
                 </div>
             </header>
-<div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; gap: 24px;">
+
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; gap: 24px;">
     <!-- LEFT SIDE: Welcome Text -->
     <div style="flex: 1;">
         <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px;">
@@ -1295,6 +1297,7 @@
         </div>
     </div>
 </div>
+
             <div class="dashboard-grid">
                 <div class="card">
                     <div class="card-title">
@@ -1397,7 +1400,8 @@
                                 <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
                                     <i class="fas fa-pen"></i> Edit
                                 </button>
-                                <form action="{% url 'toggle_top_seller' item.id %}" method="post" style="display: contents;">
+                                <form action="{% url 'toggle_top_seller' item.id %}" method="post"
+                                      style="display: contents;">
                                     {% csrf_token %}
                                     <button type="submit" class="action-btn seller">
                                         <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
@@ -1444,9 +1448,9 @@
                 </label>
                 <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentHours">
                     {% if establishment.opening_time and establishment.closing_time %}
-                        {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+                    {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
                     {% else %}
-                        Not Set
+                    Not Set
                     {% endif %}
                 </p>
             </div>
@@ -1456,16 +1460,17 @@
                 <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Amenities</label>
                 <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentAmenities">
                     {% for amenity in establishment.amenities.all %}
-                        {{ amenity.name }}{% if not forloop.last %}, {% endif %}
+                    {{ amenity.name }}{% if not forloop.last %}, {% endif %}
                     {% empty %}
-                        N/A
+                    N/A
                     {% endfor %}
                 </p>
             </div>
 
             <!-- Payment Methods -->
             <div>
-                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Payment Methods</label>
+                <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">Payment
+                    Methods</label>
                 <p style="font-weight: 600; margin-top: 4px; font-size: 15px;" id="establishmentPaymentMethods">
                     {{ establishment.payment_methods|default:"N/A" }}
                 </p>
@@ -1492,39 +1497,42 @@
 
             <!-- ✅ UPDATED: Address (Auto-filled, Read-only) -->
             <div class="form-group">
-    <label for="id_address">
-        Address
-        <span style="color: #999; font-size: 11px; font-weight: normal;">
+                <label for="id_address">
+                    Address
+                    <span style="color: #999; font-size: 11px; font-weight: normal;">
             (Auto-filled from pin location)
         </span>
-    </label>
-    <textarea
-        name="address"
-        id="id_address"
-        rows="3"
-        readonly
-        placeholder="Pin your location on the map to auto-fill address">{{ establishment.address }}</textarea>
-    <small style="color: #666; font-size: 11px; display: block; margin-top: 4px;">
-        <i class="fas fa-info-circle"></i> Address is automatically set when you pin your location on the map
-    </small>
-</div>
+                </label>
+                <textarea
+                        name="address"
+                        id="id_address"
+                        rows="3"
+                        readonly
+                        placeholder="Pin your location on the map to auto-fill address">{{ establishment.address }}</textarea>
+                <small style="color: #666; font-size: 11px; display: block; margin-top: 4px;">
+                    <i class="fas fa-info-circle"></i> Address is automatically set when you pin your location on the
+                    map
+                </small>
+            </div>
 
             <!-- ✅ Pin Location Button -->
             <div class="form-group">
-    <label>Pin Location <span style="color: red;">*</span></label>
-    <button type="button" class="btn btn-secondary" onclick="openLocationModal()" style="width: 100%; justify-content: center;">
-        <i class="fas fa-map-marker-alt"></i> Set Location on Map
-    </button>
-    <small id="locationStatus">
-        {% if establishment.latitude and establishment.longitude %}
-        <i class="fas fa-check-circle" style="color: var(--success);"></i>
-        Location set: {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6 }}
-        {% else %}
-        <i class="fas fa-exclamation-circle" style="color: var(--error);"></i>
-        No location set yet
-        {% endif %}
-    </small>
-</div>
+                <label>Pin Location <span style="color: red;">*</span></label>
+                <button type="button" class="btn btn-secondary" onclick="openLocationModal()"
+                        style="width: 100%; justify-content: center;">
+                    <i class="fas fa-map-marker-alt"></i> Set Location on Map
+                </button>
+                <small id="locationStatus">
+                    {% if establishment.latitude and establishment.longitude %}
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    Location set: {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6
+                    }}
+                    {% else %}
+                    <i class="fas fa-exclamation-circle" style="color: var(--error);"></i>
+                    No location set yet
+                    {% endif %}
+                </small>
+            </div>
 
             <!-- Hidden fields for coordinates -->
             <input type="hidden" name="latitude" id="id_latitude" value="{{ establishment.latitude|default:'' }}">
@@ -1759,14 +1767,17 @@
         <!-- Current Location Display - Simplified & Responsive -->
         <div class="location-display-card">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="location-icon" style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                <div class="location-icon"
+                     style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
                     📍
                 </div>
                 <div style="flex: 1; min-width: 0;">
-                    <div class="location-label" style="font-size: 11px; opacity: 0.9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <div class="location-label"
+                         style="font-size: 11px; opacity: 0.9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                         Current Location
                     </div>
-                    <div class="location-coords" id="currentLocationDisplay" style="font-size: 16px; font-weight: 700; margin-top: 2px; word-break: break-all;">
+                    <div class="location-coords" id="currentLocationDisplay"
+                         style="font-size: 16px; font-weight: 700; margin-top: 2px; word-break: break-all;">
                         {{ location_display }}
                     </div>
                     <div class="location-status" style="font-size: 11px; opacity: 0.8; margin-top: 2px;">
@@ -1785,10 +1796,12 @@
             <div style="display: flex; align-items: start; gap: 10px;">
                 <div class="address-icon" style="font-size: 22px; flex-shrink: 0;">🏠</div>
                 <div style="flex: 1; min-width: 0;">
-                    <div class="address-title" style="font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 12px;">
+                    <div class="address-title"
+                         style="font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 12px;">
                         NEW ADDRESS FOR THIS LOCATION
                     </div>
-                    <div class="address-text" id="geocodedAddressText" style="color: #1b5e20; font-size: 13px; line-height: 1.5; word-break: break-word;">
+                    <div class="address-text" id="geocodedAddressText"
+                         style="color: #1b5e20; font-size: 13px; line-height: 1.5; word-break: break-word;">
                         <i class="fas fa-spinner fa-spin"></i> Getting address...
                     </div>
                 </div>
@@ -2536,7 +2549,6 @@
             }, 5000);
         }
     }
-
 </script>
 <button id="scrollToTopBtn" class="scroll-to-top" style="z-index: 10000;">
     <i class="fas fa-arrow-up"></i>
@@ -2550,7 +2562,8 @@
                 <i class="fas fa-utensils"></i>
                 KabsuEats
             </h3>
-            <p>Your trusted food delivery platform connecting you with the best local restaurants and food establishments.</p>
+            <p>Your trusted food delivery platform connecting you with the best local restaurants and food
+                establishments.</p>
             <div class="footer-social">
                 <a href="#" class="social-icon" aria-label="Facebook">
                     <i class="fab fa-facebook-f"></i>
@@ -2599,7 +2612,8 @@
                 Contact Us
             </h3>
             <ul class="footer-links">
-                <li><a href="mailto:support@kabsueats.com"><i class="fas fa-envelope"></i> support@kabsueats.com</a></li>
+                <li><a href="mailto:support@kabsueats.com"><i class="fas fa-envelope"></i> support@kabsueats.com</a>
+                </li>
                 <li><a href="tel:+639123456789"><i class="fas fa-phone"></i> +63 920 772 6237</a></li>
                 <li><a href="#"><i class="fas fa-map-marker-alt"></i> Cavite, Philippines</a></li>
                 <li><a href="#"><i class="fas fa-clock"></i> 24/7 Support</a></li>
@@ -2608,7 +2622,9 @@
     </div>
 
     <div class="footer-bottom">
-        <p>&copy; 2024 <a href="#">KabsuEats</a>. All rights reserved. Made with <i class="fas fa-heart" style="color: var(--primary);"></i> in the Philippines</p>
+        <p>&copy; 2024 <a href="#">KabsuEats</a>. All rights reserved. Made with <i class="fas fa-heart"
+                                                                                    style="color: var(--primary);"></i>
+            in the Philippines</p>
     </div>
 </footer>
 </html>
