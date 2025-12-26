@@ -1168,7 +1168,7 @@ body {
     }
 
     .main-content {
-        padding: 16px 12px 50px;
+        padding: 16px 8px 50px; /* ✅ Reduced side padding */
     }
 
     .alert {
@@ -1180,74 +1180,103 @@ body {
     }
 
     .card {
-        padding: 16px;
+        padding: 12px; /* ✅ Reduced padding */
     }
 
+    /* ✅ CRITICAL FIX: Single column on very small screens */
     .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: 1fr !important; /* ✅ Force single column */
+        gap: 12px;
+        padding: 0 4px; /* ✅ Tiny padding for breathing room */
     }
 
     .menu-card {
-        border-radius: 10px;
+        border-radius: 12px;
+        max-width: 100%; /* ✅ Never exceed container */
+        margin: 0 auto; /* ✅ Center the card */
     }
 
     .menu-image {
-        height: 120px;
+        height: 180px; /* ✅ Increased for better view */
     }
 
     .menu-info {
-        padding: 10px;
+        padding: 12px;
     }
 
     .menu-name {
-        font-size: 13px;
-        line-height: 1.3;
-        margin-bottom: 4px;
+        font-size: 15px; /* ✅ Larger for readability */
+        line-height: 1.4;
+        margin-bottom: 6px;
+        font-weight: 700;
     }
 
     .menu-desc {
-        font-size: 11px;
-        margin-bottom: 6px;
+        font-size: 13px; /* ✅ Larger */
+        margin-bottom: 8px;
         -webkit-line-clamp: 2;
+        line-height: 1.5;
     }
 
     .menu-price {
-        font-size: 15px;
-        margin-bottom: 8px;
+        font-size: 18px; /* ✅ Larger price */
+        margin-bottom: 10px;
         font-weight: 800;
+        color: var(--primary);
     }
 
+    /* ✅ BADGES FIX: Better positioning and sizing */
     .badges-container {
-        top: 6px;
-        left: 6px;
-        right: 6px;
-        gap: 4px;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        gap: 6px;
+        flex-wrap: wrap; /* ✅ Allow wrapping if needed */
     }
 
     .badge {
-        padding: 4px 8px;
-        font-size: 9px;
+        padding: 5px 10px; /* ✅ Larger badges */
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
     }
 
     .badge i {
-        font-size: 9px;
+        font-size: 10px;
     }
 
+    /* ✅ BUTTONS FIX: Full width, larger, stacked vertically */
     .menu-actions {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 4px;
+        display: flex !important;
+        flex-direction: column !important; /* ✅ Stack vertically */
+        gap: 8px;
+        width: 100%;
     }
 
     .action-btn {
-        font-size: 10px;
-        padding: 6px 4px;
-        gap: 2px;
-        flex-direction: column;
+        font-size: 13px !important; /* ✅ Larger text */
+        padding: 10px 12px !important; /* ✅ More padding */
+        gap: 6px;
+        flex-direction: row !important; /* ✅ Icon + text side by side */
+        justify-content: center;
+        align-items: center;
+        width: 100%; /* ✅ Full width buttons */
+        height: auto;
+        min-height: 40px; /* ✅ Minimum touch target */
     }
 
     .action-btn i {
-        font-size: 12px;
+        font-size: 14px;
+    }
+
+    /* ✅ Make forms inside actions work properly */
+    .menu-actions form {
+        display: block !important;
+        width: 100%;
+    }
+
+    .menu-actions form button {
+        width: 100%;
     }
 
     .profile-pic {
@@ -1670,6 +1699,52 @@ body {
 
 /* Extra Small (360px and below) */
 @media (max-width: 360px) {
+ .main-content {
+        padding: 12px 4px 40px;
+    }
+
+    .menu-grid {
+        gap: 10px;
+    }
+
+    .menu-card {
+        border-radius: 10px;
+    }
+
+    .menu-image {
+        height: 160px;
+    }
+
+    .menu-info {
+        padding: 10px;
+    }
+
+    .menu-name {
+        font-size: 14px;
+    }
+
+    .menu-desc {
+        font-size: 12px;
+    }
+
+    .menu-price {
+        font-size: 16px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 9px;
+    }
+
+    .action-btn {
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+        min-height: 38px;
+    }
+
+    .action-btn i {
+        font-size: 13px;
+    }
     .store-stats-display {
         gap: 10px;
         padding: 10px 12px;
