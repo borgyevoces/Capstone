@@ -1,22 +1,19 @@
 /* ==========================================
-   📱 MOBILE VIEW - COMPLETE CSS
-   For screens 768px and below
+   📱 MOBILE RESPONSIVE (768px and below)
    ========================================== */
 
 @media (max-width: 768px) {
-    /* Body adjustments */
     body {
         padding-top: 60px;
     }
 
-    /* Navbar */
     .navbar {
         height: 60px;
     }
 
     .navbar-container {
         padding: 0 16px;
-        gap: 10px;
+        gap: 8px;
     }
 
     .navbar-logo {
@@ -39,209 +36,42 @@
         display: none;
     }
 
-    /* Main Content */
     .main-content {
-        padding: 24px 16px 60px;
+        padding: 20px 16px 60px;
     }
 
-    /* Dashboard Layout - Stack Vertically */
     .dashboard-layout {
         flex-direction: column;
-        gap: 20px;
     }
 
     .dashboard-sidebar {
         width: 100%;
         position: static;
-        margin-bottom: 0;
+        margin-bottom: 24px;
     }
 
-    .dashboard-content {
-        width: 100%;
-    }
-
-    /* Store Header */
-    .cover-photo {
-        height: 130px;
-    }
-
-    .profile-pic {
-        width: 100px;
-        height: 100px;
-    }
-
-    .header-info {
-        margin-top: -50px;
-    }
-
-    .store-info h1 {
-        font-size: 22px;
-    }
-
-    .store-info p {
-        font-size: 13px;
-    }
-
-    /* Cards */
-    .card {
-        padding: 16px;
-    }
-
-    .card-title {
-        font-size: 15px;
-        margin-bottom: 12px;
-    }
-
-    .card-title-center {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
-
-    /* Stats Display - Mobile */
-    .store-stats-display {
-        max-width: 100%;
-        padding: 16px 18px;
-        gap: 18px;
-        margin: 16px auto 0;
-    }
-
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-    }
-
-    .stat-number {
-        font-size: 24px;
-    }
-
-    .stat-label {
-        font-size: 11px;
-    }
-
-    .stat-divider {
-        height: 40px;
-    }
-
-    /* Menu Grid - 2 columns on tablets */
-    .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        padding: 0 4px;
-    }
-
-    .menu-card {
-        border-radius: 14px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .menu-card:hover {
-        transform: translateY(-3px);
-    }
-
-    .menu-image {
-        height: 160px;
-    }
-
-    .menu-info {
-        padding: 14px;
-    }
-
-    .menu-name {
-        font-size: 15px;
-        margin-bottom: 6px;
-        min-height: auto;
-    }
-
-    .menu-desc {
-        font-size: 13px;
-        margin-bottom: 8px;
-    }
-
-    .menu-price {
-        font-size: 18px;
-        margin-bottom: 10px;
-    }
-
-    /* Badges */
-    .badges-container {
-        top: 8px;
-        left: 8px;
-        gap: 6px;
-    }
-
-    .badge {
-        padding: 5px 10px;
-        font-size: 10px;
-    }
-
-    .badge i {
-        font-size: 9px;
-    }
-
-    /* Buttons - Still 3 in a row but smaller */
-    .menu-actions {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-    }
-
-    .menu-actions form {
-        display: contents;
-    }
-
-    .action-btn {
-        padding: 8px 4px;
-        font-size: 11px;
-        border-radius: 6px;
-        flex-direction: column;
-        gap: 3px;
-        min-height: 48px;
-    }
-
-    .action-btn i {
-        font-size: 15px;
-        margin-bottom: 2px;
-    }
-
-    /* Alerts */
     .alert {
         top: 75px;
         right: 16px;
         left: 16px;
         min-width: auto;
         max-width: none;
-        font-size: 13px;
-        padding: 14px 16px;
     }
 
-    /* Modals */
-    .modal-content {
-        padding: 28px;
-        max-width: 90%;
-        margin: 16px;
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
 
-    .modal h2 {
-        font-size: 20px;
-    }
-
-    /* Map */
-    #map {
-        height: 320px;
-    }
-
-    /* Panels */
     .notification-panel,
     .chat-panel,
     .chat-window {
-        width: 100%;
+        width: 100vw !important;
+        max-width: 100vw !important;
         top: 60px;
         height: calc(100vh - 60px);
     }
 
-    /* Footer */
     .footer {
         padding: 40px 16px 20px;
         margin-top: 60px;
@@ -251,109 +81,16 @@
         gap: 32px;
     }
 
-    /* No Items */
-    .no-items {
-        padding: 60px 20px;
-    }
-
-    .no-items i {
-        font-size: 64px;
-    }
-
-    .no-items p {
-        font-size: 16px;
-    }
-}
-
-/* ==========================================
-   📱 PHONE VIEW - ENHANCED (480px and below)
-   ========================================== */
-
-@media (max-width: 480px) {
-    /* Body */
-    body {
-        padding-top: 56px;
-    }
-
-    /* Navbar */
-    .navbar {
-        height: 56px;
-    }
-
-    .navbar-container {
-        padding: 0 12px;
-        gap: 8px;
-    }
-
-    .navbar-logo {
-        font-size: 22px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 38px;
-        height: 38px;
-        font-size: 17px;
-    }
-
-    .navbar-btn {
-        padding: 6px 10px;
-        height: 38px;
-    }
-
-    /* Main Content */
-    .main-content {
-        padding: 16px 12px 50px;
-    }
-
-    /* Store Header */
-    .cover-photo {
-        height: 120px;
-    }
-
-    .profile-pic {
-        width: 90px;
-        height: 90px;
-    }
-
-    .header-info {
-        margin-top: -45px;
-    }
-
-    .store-info h1 {
-        font-size: 20px;
-    }
-
-    .store-info p {
-        font-size: 12px;
-    }
-
-    /* Cards */
-    .card {
-        padding: 14px;
-    }
-
-    .card-title {
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-
-    .card-title-center {
-        font-size: 18px;
-        margin-bottom: 16px;
-    }
-
-    /* Stats Display - Phone */
     .store-stats-display {
+        max-width: 90%;
         padding: 14px 16px;
         gap: 16px;
-        margin: 12px auto 0;
     }
 
     .stat-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
     }
 
     .stat-number {
@@ -363,175 +100,196 @@
     .stat-label {
         font-size: 10px;
     }
+}
 
-    .stat-divider {
-        height: 38px;
+/* ==========================================
+   📱 MOBILE RESPONSIVE (480px and below)
+   ========================================== */
+
+@media (max-width: 480px) {
+    body {
+        padding-top: 56px;
     }
 
-    /* Menu Grid - SINGLE COLUMN */
+    .navbar {
+        height: 56px;
+    }
+
+    .navbar-container {
+        padding: 0 12px;
+        gap: 6px;
+    }
+
+    .navbar-logo {
+        font-size: 22px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .navbar-btn {
+        padding: 6px 10px;
+        height: 36px;
+    }
+
+    .main-content {
+        padding: 16px 8px 50px;
+    }
+
+    .alert {
+        top: 70px;
+        font-size: 12px;
+        padding: 10px 14px;
+        right: 8px;
+        left: 8px;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
     .menu-grid {
         grid-template-columns: 1fr !important;
-        gap: 16px;
-        padding: 0 8px;
+        gap: 12px;
+        padding: 0 4px;
     }
 
     .menu-card {
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-radius: 12px;
         max-width: 100%;
         margin: 0 auto;
     }
 
-    /* Menu Image - Taller for better view */
     .menu-image {
-        height: 200px;
+        height: 180px;
     }
 
-    .menu-image img {
-        object-fit: cover;
-    }
-
-    /* Badges - Top Left, Stacked */
-    .badges-container {
-        top: 10px;
-        left: 10px;
-        gap: 7px;
-    }
-
-    .badge {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .badge i {
-        font-size: 10px;
-    }
-
-    /* Menu Info */
     .menu-info {
-        padding: 16px;
+        padding: 12px;
     }
 
     .menu-name {
-        font-size: 16px;
-        font-weight: 700;
-        line-height: 1.3;
+        font-size: 15px;
+        line-height: 1.4;
         margin-bottom: 6px;
-        min-height: auto;
+        font-weight: 700;
     }
 
     .menu-desc {
         font-size: 13px;
-        font-weight: 500;
-        line-height: 1.4;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        -webkit-line-clamp: 2;
+        line-height: 1.5;
     }
 
     .menu-price {
-        font-size: 20px;
+        font-size: 18px;
+        margin-bottom: 10px;
         font-weight: 800;
-        margin-bottom: 12px;
-        letter-spacing: -0.5px;
+        color: var(--primary);
     }
 
-    /* ✅ CRITICAL: Three Buttons in ONE ROW */
+    .badges-container {
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        gap: 5px;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        max-width: 85%;
+    }
+
+    .badge i {
+        font-size: 9px;
+    }
+
     .menu-actions {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px;
         width: 100%;
     }
 
-    .menu-actions form {
-        display: contents !important;
-    }
-
-    /* Button Styling - Vertical Layout */
     .action-btn {
-        padding: 10px 4px !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        border-radius: 8px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 4px !important;
-        min-height: 52px !important;
-        background: #f8f9fa !important;
-        border: 1.5px solid #e5e7eb !important;
-        color: #1a1a1a !important;
-        transition: all 0.2s !important;
-        text-align: center !important;
-        line-height: 1.2 !important;
+        font-size: 13px !important;
+        padding: 10px 12px !important;
+        gap: 6px;
+        flex-direction: row !important;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: auto;
+        min-height: 40px;
     }
 
     .action-btn i {
-        font-size: 16px !important;
-        margin-bottom: 2px;
+        font-size: 14px;
     }
 
-    /* Active States for Touch */
-    .action-btn:active {
-        transform: scale(0.95);
-        background: #B71C1C !important;
-        color: white !important;
-        border-color: #B71C1C !important;
+    .menu-actions form {
+        display: block !important;
+        width: 100%;
     }
 
-    .action-btn.edit:active {
-        background: #2563eb !important;
-        border-color: #2563eb !important;
+    .menu-actions form button {
+        width: 100%;
     }
 
-    .action-btn.seller:active {
-        background: #ff6b35 !important;
-        border-color: #ff6b35 !important;
+    .profile-pic {
+        width: 90px;
+        height: 90px;
     }
 
-    .action-btn.delete:active {
-        background: #dc2626 !important;
-        border-color: #dc2626 !important;
+    .cover-photo {
+        height: 120px;
     }
 
-    /* Alerts */
-    .alert {
-        top: 70px;
-        font-size: 12px;
-        padding: 12px 14px;
-        right: 12px;
-        left: 12px;
+    .store-info h1 {
+        font-size: 20px;
     }
 
-    /* Modals */
+    .store-info p {
+        font-size: 13px;
+    }
+
+    .card-title {
+        font-size: 15px;
+    }
+
+    .card-title-center {
+        font-size: 20px;
+    }
+
     .modal-content {
         padding: 24px;
         max-width: 95%;
-        margin: 12px;
+        margin: 10px;
     }
 
-    .modal h2 {
-        font-size: 18px;
-    }
-
-    /* Map */
     #map {
         height: 280px;
     }
 
-    /* Panels */
     .notification-panel,
     .chat-panel,
     .chat-window {
-        width: 100%;
+        width: 100vw !important;
+        max-width: 100vw !important;
         top: 56px;
         height: calc(100vh - 56px);
     }
 
-    /* Footer */
     .footer {
         padding: 32px 12px 16px;
         margin-top: 40px;
@@ -546,43 +304,16 @@
         font-size: 16px;
     }
 
-    /* No Items */
-    .no-items {
-        padding: 50px 16px;
-    }
-
-    .no-items i {
-        font-size: 56px;
-    }
-
-    .no-items p {
-        font-size: 14px;
-    }
-}
-
-/* ==========================================
-   📱 EXTRA SMALL - 360px and below
-   ========================================== */
-
-@media (max-width: 360px) {
-    .main-content {
-        padding: 12px 8px 40px;
-    }
-
-    /* Stats Display */
     .store-stats-display {
+        gap: 12px;
         padding: 12px 14px;
-        gap: 14px;
-    }
-
-    .stat-card {
-        gap: 10px;
+        max-width: 95%;
     }
 
     .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
     }
 
     .stat-number {
@@ -596,27 +327,75 @@
     .stat-divider {
         height: 35px;
     }
+}
 
-    /* Menu Grid */
+/* ==========================================
+   📱 PHONE VIEW FIX: FORCED SINGLE ROW
+   ========================================== */
+@media only screen and (max-width: 768px) {
+    .checkbox-group {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .checkbox-item {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        min-height: 20px !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .checkbox-item label {
+        white-space: nowrap !important;
+        font-size: 11px !important;
+        line-height: 1 !important;
+        margin-left: 5px !important;
+        padding-top: 2px !important;
+        width: auto !important;
+        flex: 1 !important;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        transform: scale(0.9) !important;
+    }
+}
+
+/* ==========================================
+   📱 EXTRA SMALL (360px and below)
+   ========================================== */
+
+@media (max-width: 360px) {
+    .main-content {
+        padding: 12px 4px 40px;
+    }
+
     .menu-grid {
-        gap: 14px;
-        padding: 0 6px;
+        gap: 10px;
     }
 
     .menu-card {
-        border-radius: 14px;
+        border-radius: 10px;
     }
 
     .menu-image {
-        height: 180px;
+        height: 160px;
     }
 
     .menu-info {
-        padding: 14px;
+        padding: 10px;
     }
 
     .menu-name {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .menu-desc {
@@ -624,33 +403,269 @@
     }
 
     .menu-price {
-        font-size: 18px;
-    }
-
-    /* Badges */
-    .badges-container {
-        top: 8px;
-        left: 8px;
-        gap: 6px;
+        font-size: 16px;
     }
 
     .badge {
-        padding: 5px 10px;
-        font-size: 10px;
-    }
-
-    .badge i {
+        padding: 4px 8px;
         font-size: 9px;
     }
 
-    /* Buttons */
     .action-btn {
-        font-size: 10px !important;
-        padding: 9px 3px !important;
-        min-height: 50px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+        min-height: 38px;
     }
 
     .action-btn i {
-        font-size: 15px !important;
+        font-size: 13px;
+    }
+
+    .store-stats-display {
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .stat-card {
+        gap: 10px;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .stat-number {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 8px;
+    }
+
+    .badges-container {
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        gap: 4px;
+    }
+
+    .badge {
+        padding: 3px 7px;
+        font-size: 9px;
+        max-width: 80%;
+    }
+
+    .badge i {
+        font-size: 8px;
+    }
+
+    .dashboard-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .dashboard-grid .card:first-child {
+        margin-bottom: 8px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        width: 100vw !important;
+        max-width: 100vw !important;
+    }
+
+    .chat-input-container {
+        padding: 6px !important;
+    }
+
+    .chat-input-form {
+        gap: 5px !important;
+    }
+
+    .chat-input {
+        padding: 7px 9px !important;
+        font-size: 13px;
+    }
+
+    .chat-send-btn {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        flex: 0 0 34px !important;
+    }
+
+    .chat-send-btn i {
+        font-size: 13px;
+    }
+}
+
+/* ==========================================
+   ✅ Toast Notification Mobile
+   ========================================== */
+@media (max-width: 768px) {
+    .notification-toast {
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-toast {
+        top: 65px;
+        padding: 12px;
+        min-width: auto;
+    }
+
+    .toast-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .toast-title {
+        font-size: 13px;
+    }
+
+    .toast-message {
+        font-size: 12px;
+    }
+}
+
+/* ==========================================
+   CHAT PANEL MOBILE RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .chat-panel,
+    .chat-window {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+
+    .message-options-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        opacity: 0.7;
+    }
+
+    .chat-message.sent .message-options-btn {
+        margin-right: 12px;
+    }
+
+    .chat-message.received .message-options-btn {
+        margin-left: 12px;
+    }
+
+    .context-menu-item {
+        padding: 16px 20px;
+        font-size: 1rem;
+    }
+
+    .unsend-option {
+        padding: 18px;
+    }
+
+    .chat-input-container {
+        padding: 8px !important;
+    }
+
+    .chat-input-form {
+        gap: 6px !important;
+    }
+
+    .chat-input {
+        padding: 9px 12px !important;
+        font-size: 14px;
+    }
+
+    .chat-send-btn {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+        flex: 0 0 38px !important;
+    }
+
+    .chat-send-btn i {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-panel,
+    .chat-window {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+
+    .chat-input-container {
+        padding: 8px !important;
+    }
+
+    .chat-input-form {
+        gap: 6px !important;
+    }
+
+    .chat-input {
+        padding: 8px 10px !important;
+        font-size: 13px;
+    }
+
+    .chat-send-btn {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        flex: 0 0 36px !important;
+    }
+
+    .chat-send-btn i {
+        font-size: 14px;
+    }
+}
+
+/* ==========================================
+   SCROLL TO TOP BUTTON MOBILE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 360px) {
+    .scroll-to-top {
+        bottom: 12px;
+        right: 12px;
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
     }
 }
