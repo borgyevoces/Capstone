@@ -650,23 +650,23 @@ body {
     left: 8px;
     right: 8px;
     display: flex;
+    flex-direction: column; /* ✅ Stack badges vertically */
     gap: 6px;
-    justify-content: space-between;
-    flex-wrap: nowrap;
+    align-items: flex-start; /* ✅ Align to left */
 }
 
 .badge {
-    padding: 4px 8px;
+    padding: 5px 10px;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 11px;
     color: white;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
-    max-width: calc(50% - 4px);
+    max-width: 90%; /* ✅ Allow badges to be wider */
 }
 
 .badge i {
@@ -1226,23 +1226,26 @@ body {
     }
 
     /* ✅ BADGES FIX: Better positioning and sizing */
+/* ✅ BADGES FIX: Stacked vertically on mobile */
     .badges-container {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        gap: 6px;
-        flex-wrap: wrap; /* ✅ Allow wrapping if needed */
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        gap: 5px;
+        flex-direction: column !important;
+        align-items: flex-start !important;
     }
 
     .badge {
-        padding: 5px 10px; /* ✅ Larger badges */
+        padding: 4px 8px;
         font-size: 10px;
         font-weight: 700;
         white-space: nowrap;
+        max-width: 85%;
     }
 
     .badge i {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     /* ✅ BUTTONS FIX: Full width, larger, stacked vertically */
@@ -1767,8 +1770,24 @@ body {
     .stat-label {
         font-size: 8px;
     }
-}
-.dashboard-grid {
+    /* ✅ CRITICAL: Ensure badges stack properly on smallest screens */
+    .badges-container {
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        gap: 4px;
+    }
+
+    .badge {
+        padding: 3px 7px;
+        font-size: 9px;
+        max-width: 80%;
+    }
+
+    .badge i {
+        font-size: 8px;
+    }
+    .dashboard-grid {
     display: flex;
     flex-direction: column;
     gap: 24px; /* ✅ Space between all cards */
@@ -1778,3 +1797,6 @@ body {
 .dashboard-grid .card:first-child {
     margin-bottom: 8px;
 }
+}
+
+
