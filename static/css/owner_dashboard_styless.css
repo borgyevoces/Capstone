@@ -1522,3 +1522,10 @@ body {
 .toast-close:hover {
     color: #f02849;
 }
+
+@media (min-width: 1024px) {
+    .cover-photo {
+        margin-top: 0;
+        height: 200px;
+    }
+}
