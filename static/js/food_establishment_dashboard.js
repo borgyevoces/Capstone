@@ -1254,3 +1254,56 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
     }
 });
+document.addEventListener('DOMContentLoaded', function() {
+    updateStoreStats();
+
+    // Update stats whenever menu changes
+    const observer = new MutationObserver(updateStoreStats);
+    const menuGrid = document.querySelector('.menu-grid');
+    if (menuGrid) {
+        observer.observe(menuGrid, { childList: true, subtree: true });
+    }
+});
+
+function updateStoreStats() {
+    // Count Best Sellers (items with "Best Seller" badge)
+    const bestSellerBadges = document.querySelectorAll('.badge.bestseller');
+    const bestSellerCount = bestSellerBadges.length;
+
+    // Count Available Items (items with quantity > 0)
+    const availableBadges = document.querySelectorAll('.badge.available');
+    const availableCount = availableBadges.length;
+
+    // Update display with animation
+    animateCount('bestSellerCount', bestSellerCount);
+    animateCount('availableCount', availableCount);
+
+    console.log(`âœ… Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
+}
+
+function animateCount(elementId, targetCount) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    const currentCount = parseInt(element.textContent) || 0;
+    const duration = 500; // milliseconds
+    const steps = 20;
+    const increment = (targetCount - currentCount) / steps;
+    let current = currentCount;
+    let step = 0;
+
+    const timer = setInterval(() => {
+        step++;
+        current += increment;
+
+        if (step >= steps) {
+            element.textContent = targetCount;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.round(current);
+        }
+    }, duration / steps);
+}
+
+// âœ… Auto-update when menu items are added/edited/deleted
+window.addEventListener('menuUpdated', updateStoreStats);
