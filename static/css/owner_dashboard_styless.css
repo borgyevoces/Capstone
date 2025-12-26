@@ -304,7 +304,7 @@ body {
 }
 
 /* ==========================================
-   MAIN CONTENT
+   MAIN CONTENT - ✅ FIXED ALIGNMENT
    ========================================== */
 
 .main-content {
@@ -317,7 +317,7 @@ body {
 .dashboard-layout {
     display: flex;
     gap: 24px;
-    align-items: flex-start;
+    align-items: stretch; /* ✅ Changed from flex-start to stretch */
 }
 
 .dashboard-sidebar {
@@ -333,6 +333,18 @@ body {
 .dashboard-content {
     flex-grow: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ==========================================
+   ✅ OWNER DASHBOARD WELCOME BOX ALIGNMENT
+   ========================================== */
+
+.dashboard-content > div:first-child {
+    /* This targets the white welcome box */
+    margin-top: 0 !important;
+    align-self: flex-start;
 }
 
 /* ==========================================
@@ -634,31 +646,31 @@ body {
 
 .badges-container {
     position: absolute;
-    top: 8px;  /* 👈 CHANGED: Reduced from 10px */
-    left: 8px;  /* 👈 CHANGED: Reduced from 10px */
-    right: 8px;  /* 👈 CHANGED: Reduced from 10px */
+    top: 8px;
+    left: 8px;
+    right: 8px;
     display: flex;
-    gap: 6px;  /* 👈 CHANGED: Reduced from 8px */
+    gap: 6px;
     justify-content: space-between;
-    flex-wrap: nowrap;  /* 👈 ADDED: Prevent wrapping to new line */
+    flex-wrap: nowrap;
 }
 
 .badge {
-    padding: 4px 8px;  /* 👈 CHANGED: Reduced from 6px 12px */
+    padding: 4px 8px;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 10px;  /* 👈 CHANGED: Reduced from 12px */
+    font-size: 10px;
     color: white;
     display: inline-flex;
     align-items: center;
-    gap: 3px;  /* 👈 CHANGED: Reduced from 4px */
+    gap: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    white-space: nowrap;  /* 👈 ADDED: Prevent text wrapping */
-    max-width: calc(50% - 4px);  /* 👈 ADDED: Limit width to half minus gap */
+    white-space: nowrap;
+    max-width: calc(50% - 4px);
 }
 
 .badge i {
-    font-size: 9px;  /* 👈 CHANGED: Reduced from 11px */
+    font-size: 9px;
 }
 
 .badge.bestseller {
@@ -1120,10 +1132,8 @@ body {
     .footer-container {
         gap: 32px;
     }
-
 }
-
-/* ==========================================
+=================================
    ✅ MOBILE RESPONSIVE (480px and below)
    ========================================== */
 
