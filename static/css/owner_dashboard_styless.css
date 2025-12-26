@@ -1693,3 +1693,13 @@ body {
         font-size: 8px;
     }
 }
+.dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px; /* ✅ Space between all cards */
+}
+
+/* ✅ Extra space after Quick Actions card */
+.dashboard-grid .card:first-child {
+    margin-bottom: 8px;
+}
