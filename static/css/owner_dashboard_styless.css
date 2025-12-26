@@ -368,25 +368,7 @@ body {
 .cover-photo:hover img {
     transform: scale(1.05);
 }
-@media (min-width: 1024px) {
-    .cover-photo {
-        display: none;
-    }
 
-    .header-info {
-        margin-top: 0;
-        padding-top: 24px;
-    }
-
-    .store-header {
-        padding-top: 24px;
-        overflow: visible;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e5e7eb;
-    }
-}
 .header-info {
     display: flex;
     flex-direction: column;
