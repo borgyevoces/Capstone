@@ -1089,7 +1089,7 @@ body {
     }
 
     .main-content {
-        padding: 20px 2px 60px;
+        padding: 20px 16px 60px;
     }
 
     .dashboard-layout {
@@ -1787,11 +1787,18 @@ body {
 /* Tablet (768px and below) */
 @media (max-width: 768px) {
     /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS WITH WIDER CARDS */
+    /* ✅ MENU SECTION - SUPER THIN SIDES */
+    .menu-section {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+    }
+
+    /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS WITH WIDER CARDS */
     .menu-grid {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important; /* ✅ 2 columns sa phone */
-        gap: 6px !important; /* ✅ Smaller gap = wider cards */
-        padding: 0 2px !important; /* ✅ Less padding = wider cards */
+        gap: 4px !important; /* ✅ Smaller gap = wider cards */
+        padding: 0 1px !important; /* ✅ Less padding = wider cards */
     }
 
     .menu-card {
@@ -1984,12 +1991,17 @@ body {
 /* Extra Small (360px and below) */
 @media (max-width: 360px) {
     .main-content {
-        padding: 12px 1px 40px; /* ✅ Less padding for wider cards */
+        padding: 12px 4px 40px; /* ✅ Less padding for wider cards */
+
+    /* ✅ MENU SECTION - EXTRA THIN SIDES FOR SMALL SCREENS */
+    .menu-section {
+        padding-left: 1px !important;
+        padding-right: 1px !important;
     }
 
     .menu-grid {
-        gap: 4px !important; /* ✅ Smaller gap for wider cards */
-        padding: 0 1px !important; /* ✅ Less padding for wider cards */
+        gap: 3px !important; /* ✅ Smaller gap for wider cards */
+        padding: 0 0px !important; /* ✅ Less padding for wider cards */
     }
 
     .menu-card {
