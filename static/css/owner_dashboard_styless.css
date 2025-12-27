@@ -1089,7 +1089,7 @@ body {
     }
 
     .main-content {
-        padding: 20px 16px 60px;
+        padding: 20px 2px 60px;
     }
 
     .dashboard-layout {
@@ -1802,7 +1802,7 @@ body {
     }
 
     .menu-image {
-        height: 140px !important; /* ✅ Reduced from 160px to 140px */
+        height: 130px !important; /* ✅ Reduced from 160px to 140px */
         position: relative;
     }
 
@@ -1997,7 +1997,7 @@ body {
     }
 
     .menu-image {
-        height: 120px !important; /* ✅ Reduced from 140px to 120px */
+        height: 110px !important; /* ✅ Reduced from 140px to 120px */
     }
 
     .menu-info {
