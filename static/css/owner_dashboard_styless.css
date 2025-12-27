@@ -1786,12 +1786,12 @@ body {
 
 /* Tablet (768px and below) */
 @media (max-width: 768px) {
-    /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS */
+    /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS WITH WIDER CARDS */
     .menu-grid {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important; /* ✅ 2 columns sa phone */
-        gap: 12px !important;
-        padding: 0 8px !important;
+        gap: 8px !important; /* ✅ Smaller gap = wider cards */
+        padding: 0 4px !important; /* ✅ Less padding = wider cards */
     }
 
     .menu-card {
@@ -1802,7 +1802,7 @@ body {
     }
 
     .menu-image {
-        height: 160px !important;
+        height: 140px !important; /* ✅ Reduced from 160px to 140px */
         position: relative;
     }
 
@@ -1984,12 +1984,12 @@ body {
 /* Extra Small (360px and below) */
 @media (max-width: 360px) {
     .main-content {
-        padding: 12px 4px 40px;
+        padding: 12px 2px 40px; /* ✅ Less padding for wider cards */
     }
 
     .menu-grid {
-        gap: 10px !important;
-        padding: 0 4px !important;
+        gap: 6px !important; /* ✅ Smaller gap for wider cards */
+        padding: 0 2px !important; /* ✅ Less padding for wider cards */
     }
 
     .menu-card {
@@ -1997,7 +1997,7 @@ body {
     }
 
     .menu-image {
-        height: 140px !important;
+        height: 120px !important; /* ✅ Reduced from 140px to 120px */
     }
 
     .menu-info {
