@@ -27,6 +27,7 @@
     --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ✅ FIX: Prevent horizontal overflow */
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
@@ -47,8 +48,10 @@ html, body {
 body {
     padding-top: 70px;
 }
+/* ==========================================
+   ✅ NAVBAR - COMPLETELY FIXED
+   ========================================== */
 
-/* NAVBAR */
 .navbar {
     position: fixed;
     top: 0;
@@ -216,7 +219,10 @@ body {
     font-size: 16px;
 }
 
-/* ALERTS */
+/* ==========================================
+   ALERTS
+   ========================================== */
+
 .alert {
     position: fixed;
     top: 90px;
@@ -296,7 +302,10 @@ body {
     color: var(--text-dark);
 }
 
-/* ✅ MAIN CONTENT - FIXED WIDTH & SPACING */
+/* ==========================================
+   MAIN CONTENT - ✅ FIXED ALIGNMENT
+   ========================================== */
+
 .main-content {
     max-width: 1400px;
     margin: 0 auto;
@@ -307,11 +316,11 @@ body {
 .dashboard-layout {
     display: flex;
     gap: 24px;
-    align-items: flex-start;
+    align-items: stretch; /* ✅ Changed from flex-start to stretch */
 }
 
 .dashboard-sidebar {
-    width: 380px; /* ✅ INCREASED FROM 350px */
+    width: 350px;
     flex-shrink: 0;
     position: sticky;
     top: 90px;
@@ -327,12 +336,20 @@ body {
     flex-direction: column;
 }
 
+/* ==========================================
+   ✅ OWNER DASHBOARD WELCOME BOX ALIGNMENT
+   ========================================== */
+
 .dashboard-content > div:first-child {
+    /* This targets the white welcome box */
     margin-top: 0 !important;
     align-self: flex-start;
 }
 
-/* STORE HEADER */
+/* ==========================================
+   STORE HEADER
+   ========================================== */
+
 .store-header {
     position: relative;
     background: var(--bg);
@@ -430,7 +447,10 @@ body {
     color: var(--error);
 }
 
-/* ✅ CARDS - WITH SPACING */
+/* ==========================================
+   CARDS
+   ========================================== */
+
 .card {
     background: var(--bg);
     border-radius: var(--radius);
@@ -442,13 +462,6 @@ body {
 
 .card:hover {
     box-shadow: var(--shadow-md);
-}
-
-/* ✅ SPACING BETWEEN QUICK ACTIONS & STATISTICS */
-.dashboard-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
 }
 
 .card-title {
@@ -481,7 +494,10 @@ body {
     font-size: 26px;
 }
 
-/* BUTTONS */
+/* ==========================================
+   BUTTONS
+   ========================================== */
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -545,7 +561,10 @@ body {
     text-align: center;
 }
 
-/* STATS */
+/* ==========================================
+   STATS
+   ========================================== */
+
 .stat-item {
     display: flex;
     align-items: center;
@@ -579,7 +598,10 @@ body {
     color: var(--text-muted);
 }
 
-/* MENU GRID */
+/* ==========================================
+   MENU GRID
+   ========================================== */
+
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -627,9 +649,9 @@ body {
     left: 8px;
     right: 8px;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* ✅ Stack badges vertically */
     gap: 6px;
-    align-items: flex-start;
+    align-items: flex-start; /* ✅ Align to left */
 }
 
 .badge {
@@ -643,7 +665,7 @@ body {
     gap: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
-    max-width: 90%;
+    max-width: 90%; /* ✅ Allow badges to be wider */
 }
 
 .badge i {
@@ -733,7 +755,10 @@ body {
     font-size: 13px;
 }
 
-/* MODALS */
+/* ==========================================
+   MODALS
+   ========================================== */
+
 .modal {
     display: none;
     position: fixed;
@@ -838,7 +863,10 @@ body {
     min-height: 100px;
 }
 
-/* MAP */
+/* ==========================================
+   MAP
+   ========================================== */
+
 #map {
     height: 400px;
     border-radius: 10px;
@@ -867,7 +895,10 @@ body {
     display: block;
 }
 
-/* PANELS */
+/* ==========================================
+   PANELS
+   ========================================== */
+
 .notification-panel,
 .chat-panel {
     position: fixed;
@@ -908,7 +939,10 @@ body {
     display: flex;
 }
 
-/* FOOTER */
+/* ==========================================
+   FOOTER
+   ========================================== */
+
 .footer {
     background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     color: white;
@@ -1016,7 +1050,430 @@ body {
     font-weight: 600;
 }
 
-/* NO ITEMS STATE */
+/* ==========================================
+   ✅ MOBILE RESPONSIVE (768px and below)
+   ========================================== */
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 60px;
+    }
+
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-container {
+        padding: 0 16px;
+        gap: 8px;
+    }
+
+    .navbar-logo {
+        font-size: 24px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .navbar-btn {
+        padding: 8px 12px;
+        height: 40px;
+    }
+
+    .navbar-btn span {
+        display: none;
+    }
+
+    .main-content {
+        padding: 20px 16px 60px;
+    }
+
+    .dashboard-layout {
+        flex-direction: column;
+    }
+
+    .dashboard-sidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 24px;
+    }
+
+    .alert {
+        top: 75px;
+        right: 16px;
+        left: 16px;
+        min-width: auto;
+        max-width: none;
+    }
+
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        width: 100%;
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+
+    .footer {
+        padding: 40px 16px 20px;
+        margin-top: 60px;
+    }
+
+    .footer-container {
+        gap: 32px;
+    }
+}
+=================================
+   ✅ MOBILE RESPONSIVE (480px and below)
+   ========================================== */
+
+@media (max-width: 480px) {
+    body {
+        padding-top: 56px;
+    }
+
+    .navbar {
+        height: 56px;
+    }
+
+    .navbar-container {
+        padding: 0 12px;
+        gap: 6px;
+    }
+
+    .navbar-logo {
+        font-size: 22px;
+    }
+
+    .notification-toggle-btn,
+    .chat-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .navbar-btn {
+        padding: 6px 10px;
+        height: 36px;
+    }
+
+    .main-content {
+        padding: 16px 8px 50px; /* ✅ Reduced side padding */
+    }
+
+    .alert {
+        top: 70px;
+        font-size: 12px;
+        padding: 10px 14px;
+        right: 8px;
+        left: 8px;
+    }
+
+    .card {
+        padding: 12px; /* ✅ Reduced padding */
+    }
+
+    /* ✅ CRITICAL FIX: Single column on very small screens */
+    .menu-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 0 8px !important;
+    }
+
+    .menu-card {
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .menu-image {
+        height: 200px !important;
+        position: relative;
+    }
+
+    .menu-info {
+        padding: 12px;
+    }
+
+    .menu-name {
+        font-size: 15px; /* ✅ Larger for readability */
+        line-height: 1.4;
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+
+    .menu-desc {
+        font-size: 13px; /* ✅ Larger */
+        margin-bottom: 8px;
+        -webkit-line-clamp: 2;
+        line-height: 1.5;
+    }
+
+    .menu-price {
+        font-size: 18px; /* ✅ Larger price */
+        margin-bottom: 10px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    /* ✅ BADGES FIX: Better positioning and sizing */
+/* ✅ BADGES FIX: Stacked vertically on mobile */
+    .badges-container {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        display: flex !important;
+        flex-direction: column !important; /* ← Stack badges */
+        gap: 6px !important;
+        align-items: flex-start !important;
+        z-index: 10;
+    }
+
+    .badge {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        max-width: 90%;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge i {
+        font-size: 10px;
+    }
+
+.badge.bestseller {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+        color: white;
+    }
+
+    .badge.available {
+        background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%) !important;
+        color: white;
+    }
+
+    .badge.soldout {
+        background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+        color: white;
+    }
+    /* ✅ 5. MENU INFO - Better Padding */
+    .menu-info {
+        padding: 14px !important;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* ✅ 6. MENU NAME - ONE LINE GUARANTEED */
+    .menu-name {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        margin-bottom: 4px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: var(--text-dark);
+    }
+
+    /* ✅ 7. MENU DESCRIPTION - TWO LINES MAX */
+    .menu-desc {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        color: var(--text-muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 6px !important;
+    }
+
+    /* ✅ 8. MENU PRICE - LARGER & BOLD */
+    .menu-price {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: var(--primary);
+        margin-bottom: 12px !important;
+    }
+
+    /* ✅ 9. BUTTONS - CRITICAL FIX: Stack Vertically */
+    .menu-actions {
+        display: flex !important;
+        flex-direction: column !important; /* ← Stack buttons vertically */
+        gap: 8px !important;
+        width: 100%;
+        margin-top: auto;
+    }
+
+    /* ✅ 10. ACTION BUTTONS - Full Width & Touch-Friendly */
+    .action-btn {
+        width: 100% !important;
+        padding: 12px 16px !important; /* ← Bigger padding */
+        font-size: 14px !important; /* ← Larger text */
+        font-weight: 600 !important;
+        border-radius: 8px;
+        display: flex !important;
+        flex-direction: row !important; /* ← Icon + text side by side */
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px; /* ← Touch-friendly height */
+        transition: all 0.2s;
+        border: 1px solid var(--border);
+        background: var(--bg-light);
+        color: var(--text-dark);
+    }
+
+    .action-btn i {
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+
+    .action-btn:active {
+        transform: scale(0.98);
+    }
+
+    /* ✅ 11. FORMS INSIDE ACTIONS - Full Width */
+    .menu-actions form {
+        display: block !important;
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    .menu-actions form button {
+        width: 100% !important;
+    }
+
+    /* ✅ 12. BUTTON HOVER STATES (Mobile Touch) */
+    .action-btn:active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    /* ✅ BUTTONS FIX: Full width, larger, stacked vertically */
+    .menu-actions {
+        display: flex !important;
+        flex-direction: column !important; /* ✅ Stack vertically */
+        gap: 8px;
+        width: 100%;
+    }
+
+    .action-btn {
+        font-size: 13px !important; /* ✅ Larger text */
+        padding: 10px 12px !important; /* ✅ More padding */
+        gap: 6px;
+        flex-direction: row !important; /* ✅ Icon + text side by side */
+        justify-content: center;
+        align-items: center;
+        width: 100%; /* ✅ Full width buttons */
+        height: auto;
+        min-height: 40px; /* ✅ Minimum touch target */
+    }
+
+    .action-btn i {
+        font-size: 14px;
+    }
+
+    /* ✅ Make forms inside actions work properly */
+    .menu-actions form {
+        display: block !important;
+        width: 100%;
+    }
+
+    .menu-actions form button {
+        width: 100%;
+    }
+
+    .profile-pic {
+        width: 90px;
+        height: 90px;
+    }
+
+    .cover-photo {
+        height: 120px;
+    }
+
+    .store-info h1 {
+        font-size: 20px;
+    }
+
+    .store-info p {
+        font-size: 13px;
+    }
+
+    .card-title {
+        font-size: 15px;
+    }
+
+    .card-title-center {
+        font-size: 20px;
+    }
+
+    .modal-content {
+        padding: 24px;
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    #map {
+        height: 280px;
+    }
+
+    .notification-panel,
+    .chat-panel,
+    .chat-window {
+        width: 100%;
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+
+    .footer {
+        padding: 32px 12px 16px;
+        margin-top: 40px;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .footer-section h3 {
+        font-size: 16px;
+    }
+    .no-items {
+        padding: 50px 20px !important;
+    }
+
+    .no-items i {
+        font-size: 48px !important;
+    }
+
+    .no-items p {
+        font-size: 14px !important;
+    }
+
+}
+
+/* ==========================================
+   ✅ NO ITEMS STATE
+   ========================================== */
+
 .no-items {
     grid-column: 1 / -1;
     text-align: center;
@@ -1036,7 +1493,10 @@ body {
     font-weight: 500;
 }
 
-/* DECORATIVE LINE */
+/* ==========================================
+   ✅ DECORATIVE LINE
+   ========================================== */
+
 .decorative-line {
     width: 80px;
     height: 3px;
@@ -1045,7 +1505,10 @@ body {
     border-radius: 2px;
 }
 
-/* CHECKBOX GROUP */
+/* ==========================================
+   ✅ CHECKBOX GROUP
+   ========================================== */
+
 .checkbox-group {
     display: flex;
     flex-direction: column;
@@ -1069,7 +1532,7 @@ body {
     font-weight: 500;
 }
 
-/* SCROLL TO TOP BUTTON */
+/* Ensure these styles are in your CSS file */
 .scroll-to-top {
     position: fixed;
     bottom: 30px;
@@ -1088,11 +1551,14 @@ body {
     box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
     transition: all 0.3s ease;
     z-index: 9999;
+
+    /* Hide by default */
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);
 }
 
+/* This class is added by JS to show the button */
 .scroll-to-top.show {
     opacity: 1;
     visibility: visible;
@@ -1103,8 +1569,52 @@ body {
     transform: translateY(-5px);
     box-shadow: 0 8px 24px rgba(183, 28, 28, 0.5);
 }
+/* ==========================================
+   📱 PHONE VIEW FIX: FORCED SINGLE ROW
+   ========================================== */
+@media only screen and (max-width: 768px) {
 
-/* TOAST NOTIFICATION */
+    /* Target specifically the checkbox container inside the form */
+    .checkbox-group {
+        display: flex !important;
+        flex-direction: column !important; /* Stack vertical */
+        gap: 2px !important; /* Super tight gap between rows */
+        margin-bottom: 10px !important;
+    }
+
+    /* Target the individual item (checkbox + label) */
+    .checkbox-item {
+        display: flex !important;
+        flex-direction: row !important; /* Ensure side-by-side */
+        align-items: center !important;
+        min-height: 20px !important; /* Force smaller height */
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Target the Label Text specifically */
+    .checkbox-item label {
+        white-space: nowrap !important; /* BAWAL BUMABA ANG TEXT */
+        font-size: 11px !important; /* Force small font */
+        line-height: 1 !important; /* Tight line height */
+        margin-left: 5px !important;
+        padding-top: 2px !important; /* Alignment fix */
+        width: auto !important;
+        flex: 1 !important; /* Take remaining space */
+    }
+
+    /* Target the Checkbox Box */
+    .checkbox-item input[type="checkbox"] {
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        transform: scale(0.9) !important; /* Make box slightly smaller */
+    }
+}
+
+/* ✅ Toast Notification */
 .notification-toast {
     position: fixed;
     top: 90px;
@@ -1184,7 +1694,6 @@ body {
     color: #f02849;
 }
 
-/* STORE STATS DISPLAY */
 .store-stats-display {
     display: flex;
     align-items: center;
@@ -1266,290 +1775,30 @@ body {
     background: linear-gradient(to bottom, transparent, #e5e7eb, transparent);
 }
 
-/* NOTIFICATION ITEM STYLES */
-.notification-item {
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
+/* ==========================================
+   âœ… RESPONSIVE DESIGN
+   ========================================== */
 
-.notification-item:hover {
-    background: var(--bg-light);
-    box-shadow: var(--shadow-sm);
-}
 
-.notification-item.unread {
-    background: rgba(240, 40, 73, 0.05);
-    border-color: #f02849;
-}
+/* ==========================================
+   ✅ RESPONSIVE DESIGN
+   ========================================== */
 
-.notification-header {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.notification-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.notification-type-badge {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    background: var(--bg-light);
-    color: var(--text-muted);
-}
-
-.notification-message {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-}
-
-.customer-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background: var(--bg-light);
-    border-radius: 6px;
-    margin-bottom: 10px;
-}
-
-.customer-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 14px;
-}
-
-.customer-details {
-    flex: 1;
-}
-
-.customer-name {
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--text-dark);
-}
-
-.customer-email {
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-.order-summary {
-    padding: 12px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    margin-bottom: 10px;
-}
-
-.order-summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.order-id {
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--primary);
-}
-
-.order-total {
-    font-weight: 800;
-    font-size: 16px;
-    color: var(--text-dark);
-}
-
-.order-reference {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-}
-
-.order-items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 8px;
-}
-
-.order-item-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 6px 0;
-    border-bottom: 1px dashed var(--border);
-}
-
-.item-name-qty {
-    flex: 1;
-    color: var(--text-dark);
-}
-
-.item-price {
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.order-status-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.order-status-badge.pending {
-    background: rgba(255, 152, 0, 0.15);
-    color: var(--warning);
-}
-
-.order-status-badge.confirmed {
-    background: rgba(47, 138, 74, 0.15);
-    color: var(--success);
-}
-
-.order-status-badge.cancelled {
-    background: rgba(198, 40, 40, 0.15);
-    color: var(--error);
-}
-
-.notification-time {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
-}
-
-.time-ago {
-    font-weight: 600;
-}
-
-/* MAP ACTIONS */
-.map-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.map-info-text {
-    flex: 1;
-    text-align: center;
-}
-
-/* ========================================== */
-/* MOBILE RESPONSIVE - TABLET (768px) */
-/* ========================================== */
-
+/* Tablet (768px and below) */
 @media (max-width: 768px) {
-    body {
-        padding-top: 60px;
-    }
-
-    .navbar {
-        height: 60px;
-    }
-
-    .navbar-container {
-        padding: 0 16px;
-        gap: 8px;
-    }
-
-    .navbar-logo {
-        font-size: 24px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }
-
-    .navbar-btn {
-        padding: 8px 12px;
-        height: 40px;
-    }
-
-    .navbar-btn span {
-        display: none;
-    }
-
-    .main-content {
-        padding: 20px 16px 60px;
-    }
-
-    .dashboard-layout {
-        flex-direction: column;
-    }
-
-    .dashboard-sidebar {
-        width: 100%;
-        position: static;
-        margin-bottom: 24px;
-    }
-
-    .alert {
-        top: 75px;
-        right: 16px;
-        left: 16px;
-        min-width: auto;
-        max-width: none;
-    }
-
+    /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS WITH WIDER CARDS */
+    /* ✅ MENU SECTION - SUPER THIN SIDES */
     .menu-section {
         padding-left: 2px !important;
         padding-right: 2px !important;
     }
 
+    /* ✅ ONLY MENU SECTION CHANGES - 2 COLUMNS WITH WIDER CARDS */
     .menu-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 4px !important;
-        padding: 0 1px !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* ✅ 2 columns sa phone */
+        gap: 4px !important; /* ✅ Smaller gap = wider cards */
+        padding: 0 1px !important; /* ✅ Less padding = wider cards */
     }
 
     .menu-card {
@@ -1560,18 +1809,19 @@ body {
     }
 
     .menu-image {
-        height: 130px !important;
+        height: 130px !important; /* ✅ Reduced from 160px to 140px */
         position: relative;
     }
 
+    /* ✅ BADGES - LEFT AND RIGHT POSITION */
     .badges-container {
         position: absolute;
         top: 6px;
         left: 6px;
         right: 6px;
         display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
+        flex-direction: row !important; /* ✅ Side by side */
+        justify-content: space-between !important; /* ✅ LEFT and RIGHT */
         align-items: flex-start !important;
         gap: 4px !important;
         z-index: 10;
@@ -1645,9 +1895,10 @@ body {
         margin-bottom: 8px !important;
     }
 
+    /* ✅ THREE BUTTONS IN ONE ROW */
     .menu-actions {
         display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* ✅ 3 buttons in 1 row */
         gap: 4px !important;
         width: 100%;
         margin-top: auto;
@@ -1664,7 +1915,7 @@ body {
         font-weight: 600 !important;
         border-radius: 4px;
         display: flex !important;
-        flex-direction: column !important;
+        flex-direction: column !important; /* ✅ Icon above text */
         align-items: center;
         justify-content: center;
         gap: 2px !important;
@@ -1708,354 +1959,10 @@ body {
     .stat-label {
         font-size: 10px;
     }
-
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        width: 100%;
-        top: 60px;
-        height: calc(100vh - 60px);
-    }
-
-    .footer {
-        padding: 40px 16px 20px;
-        margin-top: 60px;
-    }
-
-    .footer-container {
-        gap: 32px;
-    }
-
-    .checkbox-group {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 2px !important;
-        margin-bottom: 10px !important;
-    }
-
-    .checkbox-item {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        min-height: 20px !important;
-        height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-    }
-
-    .checkbox-item label {
-        white-space: nowrap !important;
-        font-size: 11px !important;
-        line-height: 1 !important;
-        margin-left: 5px !important;
-        padding-top: 2px !important;
-        width: auto !important;
-        flex: 1 !important;
-    }
-
-    .checkbox-item input[type="checkbox"] {
-        width: 14px !important;
-        height: 14px !important;
-        margin: 0 !important;
-        transform: scale(0.9) !important;
-    }
 }
 
-/* ========================================== */
-/* MOBILE RESPONSIVE - SMALL PHONE (480px) */
-/* ========================================== */
-
+/* Mobile (480px and below) */
 @media (max-width: 480px) {
-    body {
-        padding-top: 56px;
-    }
-
-    .navbar {
-        height: 56px;
-    }
-
-    .navbar-container {
-        padding: 0 12px;
-        gap: 6px;
-    }
-
-    .navbar-logo {
-        font-size: 22px;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-
-    .navbar-btn {
-        padding: 6px 10px;
-        height: 36px;
-    }
-
-    .main-content {
-        padding: 16px 8px 50px;
-    }
-
-    .alert {
-        top: 70px;
-        font-size: 12px;
-        padding: 10px 14px;
-        right: 8px;
-        left: 8px;
-    }
-
-    .card {
-        padding: 12px;
-    }
-
-    .menu-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-        padding: 0 8px !important;
-    }
-
-    .menu-card {
-        max-width: 100% !important;
-        margin: 0 auto !important;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .menu-image {
-        height: 200px !important;
-        position: relative;
-    }
-
-    .menu-info {
-        padding: 12px;
-    }
-
-    .menu-name {
-        font-size: 15px !important;
-        line-height: 1.4;
-        margin-bottom: 6px;
-        font-weight: 700;
-    }
-
-    .menu-desc {
-        font-size: 13px !important;
-        margin-bottom: 8px;
-        -webkit-line-clamp: 2;
-        line-height: 1.5;
-    }
-
-    .menu-price {
-        font-size: 18px !important;
-        margin-bottom: 10px;
-        font-weight: 800;
-        color: var(--primary);
-    }
-
-    .badges-container {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 6px !important;
-        align-items: flex-start !important;
-        z-index: 10;
-    }
-
-    .badge {
-        padding: 6px 10px !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
-        max-width: 90%;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .badge i {
-        font-size: 10px;
-    }
-
-    .badge.bestseller {
-        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
-        color: white;
-    }
-
-    .badge.available {
-        background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%) !important;
-        color: white;
-    }
-
-    .badge.soldout {
-        background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
-        color: white;
-    }
-
-    .menu-info {
-        padding: 14px !important;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .menu-name {
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        line-height: 1.3 !important;
-        margin-bottom: 4px !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        color: var(--text-dark);
-    }
-
-    .menu-desc {
-        font-size: 13px !important;
-        line-height: 1.4 !important;
-        color: var(--text-muted);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        margin-bottom: 6px !important;
-    }
-
-    .menu-price {
-        font-size: 20px !important;
-        font-weight: 800 !important;
-        color: var(--primary);
-        margin-bottom: 12px !important;
-    }
-
-    .menu-actions {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 8px !important;
-        width: 100%;
-        margin-top: auto;
-    }
-
-    .action-btn {
-        width: 100% !important;
-        padding: 12px 16px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        border-radius: 8px;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        min-height: 44px !important;
-        transition: all 0.2s;
-        border: 1px solid var(--border);
-        background: var(--bg-light);
-        color: var(--text-dark);
-    }
-
-    .action-btn i {
-        font-size: 15px;
-        flex-shrink: 0;
-    }
-
-    .action-btn:active {
-        transform: scale(0.98);
-    }
-
-    .menu-actions form {
-        display: block !important;
-        width: 100%;
-        margin: 0 !important;
-    }
-
-    .menu-actions form button {
-        width: 100% !important;
-    }
-
-    .action-btn:active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    .profile-pic {
-        width: 90px;
-        height: 90px;
-    }
-
-    .cover-photo {
-        height: 120px;
-    }
-
-    .store-info h1 {
-        font-size: 20px;
-    }
-
-    .store-info p {
-        font-size: 13px;
-    }
-
-    .card-title {
-        font-size: 15px;
-    }
-
-    .card-title-center {
-        font-size: 20px;
-    }
-
-    .modal-content {
-        padding: 24px;
-        max-width: 95%;
-        margin: 10px;
-    }
-
-    #map {
-        height: 280px;
-    }
-
-    .notification-panel,
-    .chat-panel,
-    .chat-window {
-        width: 100%;
-        top: 56px;
-        height: calc(100vh - 56px);
-    }
-
-    .footer {
-        padding: 32px 12px 16px;
-        margin-top: 40px;
-    }
-
-    .footer-container {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-
-    .footer-section h3 {
-        font-size: 16px;
-    }
-
-    .no-items {
-        padding: 50px 20px !important;
-    }
-
-    .no-items i {
-        font-size: 48px !important;
-    }
-
-    .no-items p {
-        font-size: 14px !important;
-    }
-
     .store-stats-display {
         gap: 12px;
         padding: 12px 14px;
@@ -2081,23 +1988,20 @@ body {
     }
 }
 
-/* ========================================== */
-/* EXTRA SMALL (360px and below) */
-/* ========================================== */
-
+/* Extra Small (360px and below) */
 @media (max-width: 360px) {
     .main-content {
-        padding: 12px 4px 40px;
-    }
+        padding: 12px 4px 40px; /* ✅ Less padding for wider cards */
 
+    /* ✅ MENU SECTION - EXTRA THIN SIDES FOR SMALL SCREENS */
     .menu-section {
         padding-left: 1px !important;
         padding-right: 1px !important;
     }
 
     .menu-grid {
-        gap: 3px !important;
-        padding: 0 0px !important;
+        gap: 3px !important; /* ✅ Smaller gap for wider cards */
+        padding: 0 0px !important; /* ✅ Less padding for wider cards */
     }
 
     .menu-card {
@@ -2105,7 +2009,7 @@ body {
     }
 
     .menu-image {
-        height: 110px !important;
+        height: 110px !important; /* ✅ Reduced from 140px to 120px */
     }
 
     .menu-info {
