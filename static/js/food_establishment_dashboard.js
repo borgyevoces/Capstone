@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - FIXED VERSION
 // ==========================================
 
 // ==========================================
@@ -59,8 +59,7 @@ function getCookie(name) {
 }
 
 // ==========================================
-// ✅ FIXED: ADD MENU ITEM FORM HANDLER
-// Continuous adding without refresh
+// ADD MENU ITEM FORM HANDLER
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
@@ -157,22 +156,22 @@ function setupAddMenuItemForm() {
                     }
                 }
 
-                // ✅ CRITICAL: Reset form and keep modal open
+                // Reset form
                 newForm.reset();
 
-                // ✅ Update token for next submission
+                // Update token for next submission
                 const tokenInput = newForm.querySelector('input[name="menu_add_token"]');
                 if (tokenInput && data.new_menu_token) {
                     tokenInput.value = data.new_menu_token;
                     console.log('🔑 Token updated for next submission');
                 }
 
-                // ✅ Re-enable button immediately
+                // Re-enable button immediately
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
                 isSubmitting = false;
 
-                // ✅ Focus on name field for quick next entry
+                // Focus on name field
                 const nameInput = newForm.querySelector('input[name="name"]');
                 if (nameInput) {
                     setTimeout(() => nameInput.focus(), 100);
@@ -837,7 +836,6 @@ function toggleNotificationPanel() {
 }
 
 function loadNotifications() {
-    // ✅ FIX: Add timestamp to prevent caching
     const timestamp = new Date().getTime();
     const url = `/api/notifications/?t=${timestamp}`;
 
@@ -883,7 +881,6 @@ function loadNotifications() {
         console.error('❌ Error loading notifications:', error);
     });
 }
-// ✅ ENHANCED: Render notification with complete order details
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
     const statusClass = notif.order.status.toLowerCase();
@@ -974,8 +971,6 @@ function renderNotification(notif) {
 }
 
 function pollNotifications() {
-    // Poll even if panel is closed to show badge/toasts
-    // ✅ FIX: Add timestamp to prevent caching
     const timestamp = new Date().getTime();
     const url = `/api/notifications/?t=${timestamp}`;
 
@@ -998,13 +993,8 @@ function pollNotifications() {
 
             updateNotificationBadge(data.unread_count);
 
-            // Show toast notification if new orders found
-            // This logic assumes the backend returns notifications ordered by date DESC
             if (data.notifications && data.notifications.length > 0) {
                 const latestNotif = data.notifications[0];
-
-                // Simple check to avoid showing same toast repeatedly:
-                // In a real app, track 'lastSeenNotificationId'
                 const lastSeenId = localStorage.getItem('lastSeenNotificationId');
 
                 if (latestNotif.is_new && (!lastSeenId || latestNotif.id > parseInt(lastSeenId))) {
@@ -1012,7 +1002,6 @@ function pollNotifications() {
                     showToastNotification(latestNotif);
                     localStorage.setItem('lastSeenNotificationId', latestNotif.id);
 
-                    // Also refresh list if panel is open
                     if (document.getElementById('notificationPanel').classList.contains('open')) {
                          const list = document.getElementById('notificationList');
                          list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
@@ -1028,20 +1017,14 @@ function pollNotifications() {
 
 function startNotificationAutoRefresh() {
     console.log('🔄 Starting notification auto-refresh with 3-second polling...');
-
-    // Initial load
     loadNotifications();
-
-    // ✅ FASTER POLLING: Every 3 seconds for immediate GCash payment notifications
     setInterval(() => {
         console.log('⏱️ Polling for new notifications...');
         pollNotifications();
-    }, 3000); // Changed from 5000 to 3000 for faster updates
-
+    }, 3000);
     console.log('✅ Auto-refresh active - checking every 3 seconds');
 }
 
-// ✅ Show toast notification for new orders
 function showToastNotification(notif) {
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
@@ -1060,7 +1043,6 @@ function showToastNotification(notif) {
 
     document.body.appendChild(toast);
 
-    // Auto remove after 5 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOut 300ms ease';
         setTimeout(() => toast.remove(), 300);
@@ -1115,8 +1097,6 @@ function markNotificationRead(notificationId) {
             if (notifElement) {
                 notifElement.classList.remove('unread');
             }
-            // Optional: Reload to update counts
-            // loadNotifications();
             if (data.unread_count !== undefined) {
                 updateNotificationBadge(data.unread_count);
             }
@@ -1148,6 +1128,101 @@ function markAllNotificationsRead() {
 }
 
 // ==========================================
+// CHAT & PANEL MANAGEMENT (FIXED)
+// ==========================================
+function toggleChatPanel() {
+    const panel = document.getElementById('chatPanel');
+    const chatWindow = document.getElementById('chatWindow');
+
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+    } else {
+        panel.classList.add('open');
+        // FIX: Remove 'open' instead of 'active'
+        chatWindow.classList.remove('open');
+        loadConversations();
+    }
+}
+
+function loadConversations() {
+    // Note: establishmentId is defined in the HTML script tag
+    fetch(`/owner/chat/conversations/${establishmentId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const list = document.getElementById('conversationsList');
+
+            if (data.conversations && data.conversations.length > 0) {
+                list.innerHTML = data.conversations.map(conv => `
+                    <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${conv.customer_name}')">
+                        <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
+                        <div class="chat-conversation-info">
+                            <div class="chat-conversation-name">${conv.customer_name}</div>
+                            <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
+                        </div>
+                        <div class="chat-conversation-time">${conv.time || ''}</div>
+                        ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
+                    </div>
+                `).join('');
+
+                const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+                updateChatBadge(totalUnread);
+            } else {
+                list.innerHTML = `
+                    <div class="chat-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No conversations yet</p>
+                    </div>
+                `;
+                updateChatBadge(0);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading conversations:', error);
+        });
+}
+
+function openConversation(customerId, customerName) {
+    activeCustomerId = customerId;
+
+    document.getElementById('chatWindowName').textContent = customerName;
+    document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
+
+    document.getElementById('chatPanel').classList.remove('open');
+    // FIX: Add 'open' class instead of 'active' to match CSS
+    document.getElementById('chatWindow').classList.add('open');
+
+    loadMessages(customerId);
+    connectWebSocket(customerId);
+}
+
+function backToConversations() {
+    // FIX: Remove 'open' class instead of 'active'
+    document.getElementById('chatWindow').classList.remove('open');
+    document.getElementById('chatPanel').classList.add('open');
+
+    if (chatSocket) {
+        chatSocket.close();
+        chatSocket = null;
+    }
+
+    activeCustomerId = null;
+    // Clearing variables defined in HTML script
+    if (typeof ownerPinnedMessages !== 'undefined') ownerPinnedMessages.clear();
+    if (typeof ownerMessagesCache !== 'undefined') ownerMessagesCache = [];
+    loadConversations();
+}
+
+function updateChatBadge(count) {
+    const badge = document.getElementById('chatBadge');
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ==========================================
 // EVENT LISTENERS
 // ==========================================
 document.addEventListener('click', function(e) {
@@ -1173,7 +1248,11 @@ document.addEventListener('keydown', function(e) {
         }
 
         const chatPanel = document.getElementById('chatPanel');
-        if (chatPanel && chatPanel.classList.contains('open')) {
+        const chatWindow = document.getElementById('chatWindow');
+
+        if (chatWindow && chatWindow.classList.contains('open')) {
+            backToConversations();
+        } else if (chatPanel && chatPanel.classList.contains('open')) {
             toggleChatPanel();
         }
     }
@@ -1260,40 +1339,30 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
 // ==========================================
-// SCROLL TO TOP FUNCTIONALITY (UNIVERSAL FIX)
+// SCROLL TO TOP FUNCTIONALITY
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
 
     if (scrollBtn) {
-        // 1. Universal Scroll Detector (Detects window OR div scrolling)
         window.addEventListener('scroll', function(e) {
-            // Determine if the scroll is coming from the window or a specific element
             const target = e.target;
             const scrollPosition = (target === document) ? window.scrollY : target.scrollTop;
 
-            // Ignore small scrolling boxes (like dropdowns)
-            // Only trigger for the main page or large containers
             if (target !== document && target.scrollHeight < 500) return;
 
-            // Show button if scrolled more than 300px
             if (scrollPosition > 300) {
                 scrollBtn.classList.add('show');
             } else {
                 scrollBtn.classList.remove('show');
             }
-        }, true); // <--- 'true' captures scroll events inside divs!
+        }, true);
 
-        // 2. Universal Scroll To Top Action
         scrollBtn.addEventListener('click', function(e) {
             e.preventDefault();
-
-            // Method A: Scroll Window
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            // Method B: Scroll any open container (Fix for dashboards)
-            // This finds whatever element is currently scrolled down and pushes it up
             const allElements = document.querySelectorAll('*');
             allElements.forEach(el => {
                 if (el.scrollTop > 0) {
@@ -1307,10 +1376,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
     }
 });
+
 document.addEventListener('DOMContentLoaded', function() {
     updateStoreStats();
 
-    // Update stats whenever menu changes
     const observer = new MutationObserver(updateStoreStats);
     const menuGrid = document.querySelector('.menu-grid');
     if (menuGrid) {
@@ -1319,15 +1388,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateStoreStats() {
-    // Count Best Sellers (items with "Best Seller" badge)
     const bestSellerBadges = document.querySelectorAll('.badge.bestseller');
     const bestSellerCount = bestSellerBadges.length;
 
-    // Count Available Items (items with quantity > 0)
     const availableBadges = document.querySelectorAll('.badge.available');
     const availableCount = availableBadges.length;
 
-    // Update display with animation
     animateCount('bestSellerCount', bestSellerCount);
     animateCount('availableCount', availableCount);
 
@@ -1339,7 +1405,7 @@ function animateCount(elementId, targetCount) {
     if (!element) return;
 
     const currentCount = parseInt(element.textContent) || 0;
-    const duration = 500; // milliseconds
+    const duration = 500;
     const steps = 20;
     const increment = (targetCount - currentCount) / steps;
     let current = currentCount;
@@ -1358,5 +1424,4 @@ function animateCount(elementId, targetCount) {
     }, duration / steps);
 }
 
-// ✅ Auto-update when menu items are added/edited/deleted
 window.addEventListener('menuUpdated', updateStoreStats);
