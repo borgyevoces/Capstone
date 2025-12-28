@@ -1259,17 +1259,15 @@ body {
     flex: 1;
 }
 
-/* ✅ FIXED: Match phone view colors for DESKTOP VIEW ONLY */
-@media (min-width: 769px) {
-    .stat-icon.bestseller {
-        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-        color: white !important;
-    }
+/* ✅ FIXED: Match badge colors for ALL VIEWS (mobile and desktop) */
+.stat-icon.bestseller {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white !important;
+}
 
-    .stat-icon.available {
-        background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%);
-        color: white !important;
-    }
+.stat-icon.available {
+    background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%);
+    color: white !important;
 }
 
 .stat-content {
