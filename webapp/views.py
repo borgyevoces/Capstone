@@ -2145,7 +2145,6 @@ def gcash_payment_success(request):
 
         # Redirect logic
         return_to = request.GET.get('return_to')
-
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, '✅ Payment successful! Your order has been confirmed.')
             return redirect('order_confirmation', order_id=order.id)
