@@ -15,214 +15,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
-        .notification-item {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.notification-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-
-.notification-item.unread {
-    background: #fffbeb;
-    border-left: 4px solid #f59e0b;
-}
-
-.notification-header {
-    display: flex;
-    align-items: start;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.notification-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    font-weight: 700;
-    font-size: 16px;
-}
-
-.notification-type-badge {
-    background: #10b981;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.notification-message {
-    color: #6b7280;
-    font-size: 14px;
-}
-
-/* Customer Info */
-.customer-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: #f9fafb;
-    border-radius: 8px;
-    margin: 12px 0;
-}
-
-.customer-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 20px;
-}
-
-.customer-details {
-    flex: 1;
-}
-
-.customer-name {
-    font-weight: 700;
-    font-size: 15px;
-    color: #1a1a1a;
-}
-
-.customer-email {
-    font-size: 13px;
-    color: #6b7280;
-    margin-top: 2px;
-}
-
-/* Order Summary */
-.order-summary {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
-    margin-top: 12px;
-}
-
-.order-summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.order-id {
-    font-weight: 700;
-    font-size: 14px;
-    color: #1a1a1a;
-}
-
-.order-total {
-    font-weight: 800;
-    font-size: 18px;
-    color: #B71C1C;
-}
-
-.order-reference {
-    background: #f0f7ff;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #1877F2;
-    margin-bottom: 12px;
-    font-weight: 600;
-}
-
-.order-items-list {
-    margin: 12px 0;
-}
-
-.order-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px;
-    background: #f9fafb;
-    border-radius: 6px;
-    margin-bottom: 6px;
-}
-
-.item-name-qty {
-    font-size: 14px;
-    color: #1a1a1a;
-}
-
-.item-price {
-    font-weight: 700;
-    color: #B71C1C;
-    font-size: 14px;
-}
-
-.order-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.order-status-badge.paid {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.order-status-badge.pending {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
-.notification-time {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #f3f4f6;
-}
-
-.time-ago {
-    font-weight: 600;
-    color: #6b7280;
-}
         /* ==========================================
-           ✅ REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
-           ✅ Problem: Fixed width 360px sa chat panel nag-cause ng overflow
-           ✅ Solution: Responsive width from the start
+           âœ… REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
+           âœ… Problem: Fixed width 360px sa chat panel nag-cause ng overflow
+           âœ… Solution: Responsive width from the start
            ========================================== */
 
         /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
@@ -386,7 +182,7 @@
         }
 
         /* ==========================================
-           ✅ REAL FIX: RESPONSIVE NOTIFICATION PANEL
+           âœ… REAL FIX: RESPONSIVE NOTIFICATION PANEL
            ========================================== */
         @media (max-width: 768px) {
             .notification-panel {
@@ -398,8 +194,8 @@
         }
 
         /* ==========================================
-           ✅ CHAT PANEL - REAL ULTIMATE FIX
-           ✅ KEY CHANGE: Make it responsive from desktop to mobile
+           âœ… CHAT PANEL - REAL ULTIMATE FIX
+           âœ… KEY CHANGE: Make it responsive from desktop to mobile
            ========================================== */
 
         .chat-panel {
@@ -407,7 +203,7 @@
             right: 0;
             top: 70px;
             width: 360px; /* Desktop width */
-            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            max-width: 100vw !important; /* âœ… Never exceed viewport */
             height: calc(100vh - 70px);
             background: white;
             border-left: 1px solid var(--border, #e4e6eb);
@@ -421,7 +217,7 @@
             box-sizing: border-box !important;
         }
 
-        /* ✅ CRITICAL: Force box-sizing on ALL children */
+        /* âœ… CRITICAL: Force box-sizing on ALL children */
         .chat-panel *,
         .chat-panel *::before,
         .chat-panel *::after {
@@ -440,7 +236,7 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+            flex-shrink: 0; /* âœ… Prevent header from shrinking */
         }
 
         .chat-panel-header h3 {
@@ -566,7 +362,7 @@
             right: 0;
             top: 70px;
             width: 360px; /* Desktop width */
-            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            max-width: 100vw !important; /* âœ… Never exceed viewport */
             height: calc(100vh - 70px);
             background: white;
             border-left: 1px solid var(--border, #e4e6eb);
@@ -580,7 +376,7 @@
             box-sizing: border-box !important;
         }
 
-        /* ✅ CRITICAL: Force box-sizing on ALL children */
+        /* âœ… CRITICAL: Force box-sizing on ALL children */
         .chat-window *,
         .chat-window *::before,
         .chat-window *::after {
@@ -599,7 +395,7 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+            flex-shrink: 0; /* âœ… Prevent header from shrinking */
         }
 
         .back-to-conversations {
@@ -619,7 +415,7 @@
 
         .chat-header-info {
             flex: 1;
-            min-width: 0; /* ✅ Allow shrinking */
+            min-width: 0; /* âœ… Allow shrinking */
         }
 
         .chat-header-name {
@@ -758,13 +554,13 @@
             opacity: 0.9;
         }
 
-        /* ✅ PINNED MESSAGE INDICATOR */
+        /* âœ… PINNED MESSAGE INDICATOR */
         .chat-message.pinned .chat-message-bubble::before {
-            content: '📌 ';
+            content: 'ðŸ“Œ ';
             margin-right: 4px;
         }
 
-        /* ✅ SEE ALL PINS LINK */
+        /* âœ… SEE ALL PINS LINK */
         .owner-see-pins-link {
             background: #f0f2f5;
             padding: 10px 15px;
@@ -776,7 +572,7 @@
             font-weight: 600;
             color: #667eea;
             display: none;
-            flex-shrink: 0; /* ✅ Prevent from shrinking */
+            flex-shrink: 0; /* âœ… Prevent from shrinking */
         }
 
         .owner-see-pins-link.active {
@@ -788,8 +584,8 @@
         }
 
         /* ==========================================
-           ✅✅✅ REAL ULTIMATE CHAT INPUT FIX ✅✅✅
-           ✅ THE ABSOLUTE FINAL SOLUTION
+           âœ…âœ…âœ… REAL ULTIMATE CHAT INPUT FIX âœ…âœ…âœ…
+           âœ… THE ABSOLUTE FINAL SOLUTION
            ========================================== */
 
         .chat-input-container {
@@ -801,7 +597,7 @@
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
-            flex-shrink: 0 !important; /* ✅ Don't shrink the input area */
+            flex-shrink: 0 !important; /* âœ… Don't shrink the input area */
         }
 
         .chat-input-form {
@@ -817,7 +613,7 @@
 
         .chat-input {
             flex: 1 1 auto !important;
-            min-width: 0 !important; /* ✅ CRITICAL */
+            min-width: 0 !important; /* âœ… CRITICAL */
             width: 100% !important;
             padding: 10px 14px !important;
             border: 1px solid var(--border, #e4e6eb);
@@ -836,9 +632,9 @@
         .chat-send-btn {
             width: 40px !important;
             height: 40px !important;
-            min-width: 40px !important; /* ✅ CRITICAL */
+            min-width: 40px !important; /* âœ… CRITICAL */
             max-width: 40px !important;
-            flex: 0 0 40px !important; /* ✅ Don't grow or shrink */
+            flex: 0 0 40px !important; /* âœ… Don't grow or shrink */
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -1102,10 +898,10 @@
         }
 
         .chat-message.deleted .chat-message-bubble::before {
-            content: '🚫 ';
+            content: 'ðŸš« ';
         }
 
-        /* ✅ PINNED MESSAGES LIST MODAL */
+        /* âœ… PINNED MESSAGES LIST MODAL */
         .pinned-messages-modal {
             position: fixed;
             top: 0;
@@ -1166,15 +962,15 @@
         }
 
         /* ==========================================
-           ✅✅✅ MOBILE RESPONSIVE - REAL FIX ✅✅✅
-           ✅ Key: Change width from 360px to 100vw on mobile
+           âœ…âœ…âœ… MOBILE RESPONSIVE - REAL FIX âœ…âœ…âœ…
+           âœ… Key: Change width from 360px to 100vw on mobile
            ========================================== */
 
         @media (max-width: 768px) {
-            /* ✅ CRITICAL: Make panels full width on mobile */
+            /* âœ… CRITICAL: Make panels full width on mobile */
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important; /* âœ… THE KEY FIX */
                 max-width: 100vw !important;
                 top: 60px;
                 height: calc(100vh - 60px);
@@ -1204,7 +1000,7 @@
                 padding: 18px;
             }
 
-            /* ✅ Chat Input Mobile Adjustments */
+            /* âœ… Chat Input Mobile Adjustments */
             .chat-input-container {
                 padding: 8px !important;
             }
@@ -1232,13 +1028,13 @@
         }
 
         /* ==========================================
-           ✅ SMALL MOBILE (480px and below)
+           âœ… SMALL MOBILE (480px and below)
            ========================================== */
 
         @media (max-width: 480px) {
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important; /* âœ… THE KEY FIX */
                 max-width: 100vw !important;
                 top: 56px;
                 height: calc(100vh - 56px);
@@ -1271,13 +1067,13 @@
         }
 
         /* ==========================================
-           ✅ EXTRA SMALL (360px and below)
+           âœ… EXTRA SMALL (360px and below)
            ========================================== */
 
         @media (max-width: 360px) {
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important; /* âœ… THE KEY FIX */
                 max-width: 100vw !important;
             }
 
@@ -1393,7 +1189,7 @@
 
     <div class="owner-pinned-section" id="ownerPinnedSection">
         <div class="owner-pinned-section-header">
-            <span class="owner-pinned-section-title">📌 Pinned Messages</span>
+            <span class="owner-pinned-section-title">ðŸ“Œ Pinned Messages</span>
             <button class="owner-pinned-collapse" onclick="toggleOwnerPinnedSection()">
                 <i class="fas fa-chevron-up"></i>
             </button>
@@ -1582,7 +1378,7 @@
                         <div class="menu-info">
                             <div class="menu-name">{{ item.name }}</div>
                             <div class="menu-desc">{{ item.description }}</div>
-                            <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
+                            <div class="menu-price">â‚±{{ item.price|floatformat:2 }}</div>
                             <div class="menu-actions">
                                 <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
                                     <i class="fas fa-pen"></i> Edit
@@ -1617,7 +1413,7 @@
 
 <div class="modal" id="viewStoreDetailsModal">
     <div class="modal-content" style="max-width: 450px;">
-        <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">Ã—</button>
         <h2><i class="fas fa-info-circle"></i> Store Details</h2>
         <div style="display: flex; flex-direction: column; gap: 16px;">
             <!-- Category -->
@@ -1628,7 +1424,7 @@
                 </p>
             </div>
 
-            <!-- ✅ NEW: Operating Hours -->
+            <!-- âœ… NEW: Operating Hours -->
             <div>
                 <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">
                     <i class="fas fa-clock"></i> Operating Hours
@@ -1668,7 +1464,7 @@
 
 <div class="modal" id="updateStoreDetailsModal">
     <div class="modal-content" style="max-width: 600px;">
-        <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">Ã—</button>
         <h2><i class="fas fa-edit"></i> Update Store Details</h2>
         <form method="POST" enctype="multipart/form-data" class="modal-form" id="updateStoreDetailsForm"
               action="{% url 'update_establishment_details_ajax' establishment.id %}">
@@ -1682,7 +1478,7 @@
                 {{ status_form.name }}
             </div>
 
-            <!-- ✅ UPDATED: Address (Auto-filled, Read-only) -->
+            <!-- âœ… UPDATED: Address (Auto-filled, Read-only) -->
             <div class="form-group">
                 <label for="id_address">
                     Address
@@ -1702,7 +1498,7 @@
                 </small>
             </div>
 
-            <!-- ✅ Pin Location Button -->
+            <!-- âœ… Pin Location Button -->
             <div class="form-group">
                 <label>Pin Location <span style="color: red;">*</span></label>
                 <button type="button" class="btn btn-secondary" onclick="openLocationModal()"
@@ -1802,7 +1598,7 @@
 
 <div class="modal" id="addMenuItemModal">
     <div class="modal-content" style="max-width: 500px;">
-        <button class="modal-close" onclick="closeModal('addMenuItemModal')">×</button>
+        <button class="modal-close" onclick="closeModal('addMenuItemModal')">Ã—</button>
         <h2><i class="fas fa-plus"></i> Add New Menu Item</h2>
 
         <div id="debugInfo"
@@ -1826,7 +1622,7 @@
             </div>
 
             <div class="form-group">
-                <label for="id_price">Price (₱) *</label>
+                <label for="id_price">Price (â‚±) *</label>
                 <input type="number" name="price" id="id_price" step="0.01" min="0" required>
             </div>
 
@@ -1850,7 +1646,7 @@
 
 <div class="modal" id="editMenuItemModal">
     <div class="modal-content" style="max-width: 500px;">
-        <button class="modal-close" onclick="closeModal('editMenuItemModal')">×</button>
+        <button class="modal-close" onclick="closeModal('editMenuItemModal')">Ã—</button>
         <h2><i class="fas fa-edit"></i> Edit Menu Item</h2>
         <form id="editMenuItemForm" method="post" action="" enctype="multipart/form-data" class="modal-form">
             {% csrf_token %}
@@ -1886,7 +1682,7 @@
 
 <div class="modal" id="storeReviewsModal">
     <div class="modal-content" style="max-width: 600px; max-height: 70vh;">
-        <button class="modal-close" onclick="closeModal('storeReviewsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('storeReviewsModal')">Ã—</button>
         <h2><i class="fas fa-star"></i> Customer Reviews</h2>
         <div style="display: flex; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
             <div>
@@ -1934,21 +1730,21 @@
 </div>
 
 <div class="modal" id="ownerProfileImageModal" style="background: rgba(0, 0, 0, 0.9);">
-    <button class="modal-close" onclick="closeModal('ownerProfileImageModal')" style="color: white;">×</button>
+    <button class="modal-close" onclick="closeModal('ownerProfileImageModal')" style="color: white;">Ã—</button>
     <img id="ownerModalImageView" src="" alt="Profile"
          style="max-width: 90%; max-height: 90vh; border-radius: var(--radius);">
 </div>
 
 <div class="modal" id="mapModal">
     <div class="modal-content" style="max-width: 900px; padding: 16px;">
-        <button class="modal-close" onclick="closeModal('mapModal')">×</button>
+        <button class="modal-close" onclick="closeModal('mapModal')">Ã—</button>
 
         <h2 style="margin-bottom: 8px;">
             <i class="fas fa-map-marker-alt"></i> Set Establishment Location
         </h2>
 
         <p style="color: #666; font-size: 14px; margin-bottom: 12px;">
-            📍 Click or drag the pin inside the red circle (500m from CvSU-Bacoor)
+            ðŸ“ Click or drag the pin inside the red circle (500m from CvSU-Bacoor)
         </p>
 
         <!-- Current Location Display - Simplified & Responsive -->
@@ -1956,7 +1752,7 @@
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="location-icon"
                      style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-                    📍
+                    ðŸ“
                 </div>
                 <div style="flex: 1; min-width: 0;">
                     <div class="location-label"
@@ -1969,9 +1765,9 @@
                     </div>
                     <div class="location-status" style="font-size: 11px; opacity: 0.8; margin-top: 2px;">
                         {% if has_location %}
-                        ✓ Location is set
+                        âœ“ Location is set
                         {% else %}
-                        ⚠ Please pin location
+                        âš  Please pin location
                         {% endif %}
                     </div>
                 </div>
@@ -1981,7 +1777,7 @@
         <!-- Address Display - Simplified & Responsive -->
         <div class="address-display-card" id="geocodedAddressDisplay" style="display: none;">
             <div style="display: flex; align-items: start; gap: 10px;">
-                <div class="address-icon" style="font-size: 22px; flex-shrink: 0;">🏠</div>
+                <div class="address-icon" style="font-size: 22px; flex-shrink: 0;">ðŸ </div>
                 <div style="flex: 1; min-width: 0;">
                     <div class="address-title"
                          style="font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 12px;">
@@ -2269,7 +2065,7 @@
 
                     updateOwnerPinnedSection();
                 } else {
-                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Start the conversation! 💬</div>';
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Start the conversation! ðŸ’¬</div>';
                 }
 
                 scrollToBottom();
@@ -2291,7 +2087,7 @@
         chatSocket = new WebSocket(wsUrl);
 
         chatSocket.onopen = function(e) {
-            console.log('✅ Chat connected');
+            console.log('âœ… Chat connected');
         };
 
         chatSocket.onmessage = function(e) {
@@ -2376,7 +2172,7 @@
     }
 
     // ==========================================
-    // ✅ LONG PRESS DETECTION (MOBILE)
+    // âœ… LONG PRESS DETECTION (MOBILE)
     // ==========================================
 
     function attachLongPressHandlers(messageElement, messageId) {
@@ -2433,7 +2229,7 @@
     }
 
     // ==========================================
-    // ✅ CONTEXT MENU (DESKTOP & MOBILE)
+    // âœ… CONTEXT MENU (DESKTOP & MOBILE)
     // ==========================================
 
     function showOwnerOptionsMenu(event, messageId) {
@@ -2509,7 +2305,7 @@
     }
 
     // ==========================================
-    // ✅ PIN FUNCTIONALITY (PERSISTENT)
+    // âœ… PIN FUNCTIONALITY (PERSISTENT)
     // ==========================================
 
     function pinOwnerMessage() {
@@ -2593,7 +2389,7 @@
     }
 
     // ==========================================
-    // ✅ PINNED MESSAGES MODAL
+    // âœ… PINNED MESSAGES MODAL
     // ==========================================
 
     function openOwnerPinnedMessagesModal() {
@@ -2634,7 +2430,7 @@
     }
 
     // ==========================================
-    // ✅ UNSEND FUNCTIONALITY (PERSISTENT)
+    // âœ… UNSEND FUNCTIONALITY (PERSISTENT)
     // ==========================================
 
     function openOwnerUnsendModal() {
@@ -2725,7 +2521,7 @@
     }
 
     function debugLog(message) {
-        console.log('🔍 DEBUG:', message);
+        console.log('ðŸ” DEBUG:', message);
         const debugDiv = document.getElementById('debugInfo');
         const debugMsg = document.getElementById('debugMessage');
         if (debugDiv && debugMsg) {
