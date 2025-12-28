@@ -2066,7 +2066,7 @@ def debug_create_gcash_payload(request, order_id):
 @login_required
 def gcash_payment_success(request):
     """
-    ✅ COMPLETE FIX: Handle successful payment with GUARANTEED REAL-TIME notifications
+    ✅ COMPLETE FIX: Handle successful payment with REAL-TIME notifications
     """
     order_id = request.GET.get('order_id')
 
@@ -2086,44 +2086,30 @@ def gcash_payment_success(request):
             order.payment_confirmed_at = timezone.now()
             order.save()
 
-            # ✅ CRITICAL FIX: Force notification creation with retry
-            notification_created = False
-            max_retries = 3
+            # ✅ CRITICAL FIX: Ensure notification is created
+            try:
+                # Check if a notification already exists for this order to avoid duplicates
+                existing_notif = OrderNotification.objects.filter(
+                    order=order,
+                    notification_type='new_order'
+                ).exists()
 
-            for attempt in range(max_retries):
-                try:
-                    # Check if notification already exists
-                    existing_notif = OrderNotification.objects.filter(
+                if not existing_notif:
+                    notification = OrderNotification.objects.create(
+                        establishment=order.establishment,
                         order=order,
-                        notification_type='new_order'
-                    ).first()
+                        notification_type='new_order',
+                        message=f'New order #{order.id} from {order.user.username}',
+                        is_read=False  # Explicitly set as unread
+                    )
+                    print(f"✅ Notification #{notification.id} created for Order #{order.id}")
+                else:
+                    print(f"ℹ️ Notification already exists for Order #{order.id}")
 
-                    if existing_notif:
-                        print(f"ℹ️ Notification already exists for Order #{order.id}")
-                        notification_created = True
-                        break
-                    else:
-                        # Create new notification
-                        notification = OrderNotification.objects.create(
-                            establishment=order.establishment,
-                            order=order,
-                            notification_type='new_order',
-                            message=f'New order #{order.id} from {order.user.username}',
-                            is_read=False
-                        )
-                        print(
-                            f"✅ Notification #{notification.id} created for Order #{order.id} (attempt {attempt + 1})")
-                        notification_created = True
-                        break
-
-                except Exception as notif_error:
-                    print(f"❌ Notification creation attempt {attempt + 1} failed: {notif_error}")
-                    if attempt < max_retries - 1:
-                        import time
-                        time.sleep(0.5)  # Wait before retry
-
-            if not notification_created:
-                print(f"⚠️ WARNING: Failed to create notification after {max_retries} attempts")
+            except Exception as notif_error:
+                print(f"❌ Notification creation error: {notif_error}")
+                # Don't fail the whole request just because notification failed
+                pass
 
             # Reduce stock
             for order_item in order.orderitem_set.all():
@@ -2137,14 +2123,15 @@ def gcash_payment_success(request):
                 except Exception as stock_err:
                     print(f"❌ Error reducing stock for {menu_item.id}: {stock_err}")
 
-            # Send confirmation emails (non-blocking)
+            # Send confirmation emails
             try:
                 send_order_confirmation_email(order)
             except Exception as e:
                 print(f"⚠️ Email error (non-critical): {e}")
 
-        # Redirect logic
+        # Decide where to redirect
         return_to = request.GET.get('return_to')
+
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, '✅ Payment successful! Your order has been confirmed.')
             return redirect('order_confirmation', order_id=order.id)
@@ -2159,8 +2146,6 @@ def gcash_payment_success(request):
 
     except Exception as e:
         print(f"❌ Payment success handler error: {e}")
-        import traceback
-        traceback.print_exc()
         messages.error(request, 'An error occurred processing your payment confirmation')
         return redirect('view_cart')
 
