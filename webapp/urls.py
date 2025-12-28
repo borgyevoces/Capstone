@@ -69,7 +69,7 @@ urlpatterns = [
                   path('api/notifications/', views.get_owner_notifications,name='get_owner_notifications'),
                   path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
-
+                  path('establishment/<int:establishment_id>/get_updates/', views.get_dashboard_updates, name='get_dashboard_updates'),
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 

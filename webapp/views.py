@@ -4337,3 +4337,60 @@ To: {test_email}
             'error': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
+
+
+@login_required
+def get_dashboard_updates(request, establishment_id):
+    """
+    Automatic updater para sa dashboard. Tinatawag ng JS every 5 seconds.
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, id=establishment_id)
+
+        # Security check: Dapat owner lang ang makakita
+        if request.user != establishment.owner:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+        # Kunin ang active orders (Paid, Pending, Preparing)
+        # Excluded ang Completed/Cancelled para hindi humaba ang listahan
+        recent_orders = Order.objects.filter(
+            establishment=establishment
+        ).exclude(
+            status__in=['Cancelled', 'Completed', 'Declined']
+        ).order_by('-created_at')[:15]  # Latest 15 orders
+
+        orders_data = []
+        for order in recent_orders:
+            # Format ng petsa
+            local_time = timezone.localtime(order.created_at)
+            formatted_date = local_time.strftime("%b %d, %I:%M %p")
+
+            # Siguraduhin tama ang URL ng details button
+            details_url = reverse('order_details', args=[order.id])
+
+            orders_data.append({
+                'id': order.id,
+                'order_id': order.order_id,
+                'customer_name': f"{order.user.first_name} {order.user.last_name}",
+                'total_amount': float(order.total_amount),
+                'status': order.status,
+                'created_at': formatted_date,
+                'details_url': details_url
+            })
+
+        # Update din natin ang counters sa taas ng dashboard
+        stats = {
+            'pending_count': Order.objects.filter(establishment=establishment, status='Pending').count(),
+            'preparing_count': Order.objects.filter(establishment=establishment, status='Preparing').count(),
+            'ready_count': Order.objects.filter(establishment=establishment, status='Ready').count(),
+        }
+
+        return JsonResponse({
+            'success': True,
+            'orders': orders_data,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Dashboard Update Error: {e}")
+        return JsonResponse({'success': False, 'error': str(e)})
