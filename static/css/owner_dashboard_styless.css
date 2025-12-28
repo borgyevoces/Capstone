@@ -1134,10 +1134,7 @@ body {
    SCROLL TO TOP
    ========================================== */
 
-.scroll-to-top:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 24px rgba(183, 28, 28, 0.5);
-}
+/* Main scroll-to-top styling is at the bottom of the file after media queries */
 
 /* ==========================================
    TOAST NOTIFICATIONS
@@ -1950,7 +1947,9 @@ body {
     .dashboard-grid {
         gap: 16px;
     }
-} {
+}
+
+.scroll-to-top {
     position: fixed;
     bottom: 30px;
     right: 30px;
@@ -1975,3 +1974,37 @@ body {
 
 .scroll-to-top.show {
     opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #B71C1C 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(183, 28, 28, 0.5);
+}
+
+.scroll-to-top:active {
+    transform: translateY(-1px);
+}
+
+/* Mobile responsiveness for scroll-to-top button */
+@media (max-width: 768px) {
+    .scroll-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
