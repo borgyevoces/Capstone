@@ -649,6 +649,29 @@ body {
     align-items: flex-start;
 }
 
+/* ✅ DESKTOP VIEW: Horizontal layout with bestseller left, available right */
+@media (min-width: 769px) {
+    .badges-container {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .badge.bestseller {
+        order: 1; /* Force bestseller to left */
+    }
+
+    .badge.available {
+        order: 2; /* Force available to right */
+        margin-left: auto; /* Push to right side */
+    }
+
+    .badge.soldout {
+        order: 2; /* Same position as available when sold out */
+        margin-left: auto; /* Push to right side */
+    }
+}
+
 .badge {
     padding: 5px 10px;
     border-radius: 6px;
@@ -1236,13 +1259,17 @@ body {
     flex: 1;
 }
 
-/* ✅ FIXED: Match phone view colors */
-.stat-icon.bestseller {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-}
+/* ✅ FIXED: Match phone view colors for DESKTOP VIEW ONLY */
+@media (min-width: 769px) {
+    .stat-icon.bestseller {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        color: white !important;
+    }
 
-.stat-icon.available {
-    background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%);
+    .stat-icon.available {
+        background: linear-gradient(135deg, #2f8a4a 0%, #27ae60 100%);
+        color: white !important;
+    }
 }
 
 .stat-content {
