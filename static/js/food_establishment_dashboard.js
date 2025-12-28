@@ -59,14 +59,14 @@ function getCookie(name) {
 }
 
 // ==========================================
-// âœ… FIXED: ADD MENU ITEM FORM HANDLER
+// ✅ FIXED: ADD MENU ITEM FORM HANDLER
 // Continuous adding without refresh
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
 
     if (!addMenuForm) {
-        console.log('âš ï¸ Add menu form not found');
+        console.log('⚠️ Add menu form not found');
         return;
     }
 
@@ -74,18 +74,18 @@ function setupAddMenuItemForm() {
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
-    console.log('âœ… Setting up add menu form handler');
+    console.log('✅ Setting up add menu form handler');
 
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('ðŸ“ Form submit triggered');
+        console.log('📝 Form submit triggered');
 
         // Prevent double submission
         if (isSubmitting) {
-            console.log('â³ Already submitting, ignoring...');
-            showNotification('â³ Please wait, submission in progress...', 'info');
+            console.log('⏳ Already submitting, ignoring...');
+            showNotification('⏳ Please wait, submission in progress...', 'info');
             return false;
         }
 
@@ -99,18 +99,18 @@ function setupAddMenuItemForm() {
         const description = formData.get('description');
 
         if (!name || !price || !description) {
-            showNotification('âŒ Please fill in all required fields', 'error');
+            showNotification('❌ Please fill in all required fields', 'error');
             return false;
         }
 
         // Get CSRF token
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
-            showNotification('âŒ Security token missing. Please refresh the page.', 'error');
+            showNotification('❌ Security token missing. Please refresh the page.', 'error');
             return false;
         }
 
-        console.log('ðŸš€ Submitting menu item:', name);
+        console.log('🚀 Submitting menu item:', name);
 
         // Set flag
         isSubmitting = true;
@@ -129,67 +129,67 @@ function setupAddMenuItemForm() {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 return response.text().then(text => {
-                    console.error('âŒ Server returned HTML:', text.substring(0, 500));
+                    console.error('❌ Server returned HTML:', text.substring(0, 500));
                     throw new Error('Server error - check server logs');
                 });
             }
             return response.json();
         })
         .then(data => {
-            console.log('ðŸ“¦ Response received:', data);
+            console.log('📦 Response received:', data);
 
             if (data.success) {
                 if (data.skipped) {
-                    console.log('âš ï¸ Duplicate request detected, skipping');
+                    console.log('⚠️ Duplicate request detected, skipping');
                     return;
                 }
 
-                showNotification('âœ… ' + data.message, 'success');
+                showNotification('✅ ' + data.message, 'success');
 
                 // Add item to grid
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
                     if (!existingItem) {
-                        console.log('âž• Adding new item to grid');
+                        console.log('➕ Adding new item to grid');
                         addMenuItemToGrid(data.item);
                     } else {
-                        console.log('âš ï¸ Item already exists in grid');
+                        console.log('⚠️ Item already exists in grid');
                     }
                 }
 
-                // âœ… CRITICAL: Reset form and keep modal open
+                // ✅ CRITICAL: Reset form and keep modal open
                 newForm.reset();
 
-                // âœ… Update token for next submission
+                // ✅ Update token for next submission
                 const tokenInput = newForm.querySelector('input[name="menu_add_token"]');
                 if (tokenInput && data.new_menu_token) {
                     tokenInput.value = data.new_menu_token;
-                    console.log('ðŸ”‘ Token updated for next submission');
+                    console.log('🔑 Token updated for next submission');
                 }
 
-                // âœ… Re-enable button immediately
+                // ✅ Re-enable button immediately
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
                 isSubmitting = false;
 
-                // âœ… Focus on name field for quick next entry
+                // ✅ Focus on name field for quick next entry
                 const nameInput = newForm.querySelector('input[name="name"]');
                 if (nameInput) {
                     setTimeout(() => nameInput.focus(), 100);
                 }
 
-                console.log('âœ… Ready for next item');
+                console.log('✅ Ready for next item');
 
             } else {
-                showNotification('âŒ ' + (data.error || 'Failed to add menu item'), 'error');
+                showNotification('❌ ' + (data.error || 'Failed to add menu item'), 'error');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
                 isSubmitting = false;
             }
         })
         .catch(error => {
-            console.error('âŒ Error:', error);
-            showNotification('âŒ ' + error.message, 'error');
+            console.error('❌ Error:', error);
+            showNotification('❌ ' + error.message, 'error');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
             isSubmitting = false;
@@ -198,14 +198,14 @@ function setupAddMenuItemForm() {
         return false;
     });
 
-    console.log('âœ… Add menu form handler attached successfully');
+    console.log('✅ Add menu form handler attached successfully');
 }
 
 // ==========================================
 // ADD MENU ITEM TO GRID (REAL-TIME)
 // ==========================================
 function addMenuItemToGrid(item) {
-    console.log('âž• Adding item to grid:', item.id);
+    console.log('➕ Adding item to grid:', item.id);
 
     const menuGrid = document.querySelector('.menu-grid');
     const noItems = document.querySelector('.no-items');
@@ -217,7 +217,7 @@ function addMenuItemToGrid(item) {
     // Check if item already exists (prevent duplicates)
     const existingItem = document.querySelector(`.menu-card[data-item-id="${item.id}"]`);
     if (existingItem) {
-        console.log('âš ï¸ Item already exists, skipping add');
+        console.log('⚠️ Item already exists, skipping add');
         return;
     }
 
@@ -243,7 +243,7 @@ function addMenuItemToGrid(item) {
         <div class="menu-info">
             <div class="menu-name">${item.name}</div>
             <div class="menu-desc">${item.description}</div>
-            <div class="menu-price">â‚±${parseFloat(item.price).toFixed(2)}</div>
+            <div class="menu-price">₱${parseFloat(item.price).toFixed(2)}</div>
             <div class="menu-actions">
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
@@ -273,7 +273,7 @@ function addMenuItemToGrid(item) {
         menuGrid.appendChild(menuCard);
     }
 
-    console.log('âœ… Item added to grid successfully');
+    console.log('✅ Item added to grid successfully');
 }
 
 // ==========================================
@@ -295,7 +295,7 @@ function setupUpdateStoreDetailsForm() {
             const longitude = formData.get('longitude');
 
             if (!latitude || !longitude) {
-                showNotification('âš ï¸ Please set your location on the map', 'warning');
+                showNotification('⚠️ Please set your location on the map', 'warning');
                 return;
             }
 
@@ -352,18 +352,18 @@ if (hoursElement) {
                         document.getElementById('storeCoverPhoto').src = data.image_url;
                     }
 
-                    showNotification('âœ… Store details updated successfully!', 'success');
+                    showNotification('✅ Store details updated successfully!', 'success');
 
                     setTimeout(() => {
                         closeModal('updateStoreDetailsModal');
                     }, 1000);
                 } else {
-                    showNotification('âŒ ' + (data.error || 'Failed to update store details'), 'error');
+                    showNotification('❌ ' + (data.error || 'Failed to update store details'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('âŒ An error occurred while updating', 'error');
+                showNotification('❌ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -400,19 +400,19 @@ function setupEditMenuItemForm() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification('âœ… ' + data.message, 'success');
+                    showNotification('✅ ' + data.message, 'success');
                     updateMenuItemInGrid(data.item);
 
                     setTimeout(() => {
                         closeModal('editMenuItemModal');
                     }, 1000);
                 } else {
-                    showNotification('âŒ ' + (data.error || 'Failed to update menu item'), 'error');
+                    showNotification('❌ ' + (data.error || 'Failed to update menu item'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('âŒ An error occurred while updating', 'error');
+                showNotification('❌ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -452,7 +452,7 @@ function updateMenuItemInGrid(item) {
 
     menuCard.querySelector('.menu-name').textContent = item.name;
     menuCard.querySelector('.menu-desc').textContent = item.description;
-    menuCard.querySelector('.menu-price').textContent = `â‚±${parseFloat(item.price).toFixed(2)}`;
+    menuCard.querySelector('.menu-price').textContent = `₱${parseFloat(item.price).toFixed(2)}`;
 
     menuCard.style.animation = 'pulse 0.5s ease';
     setTimeout(() => {
@@ -504,16 +504,16 @@ function deleteMenuItem(itemId, button) {
                 }, 300);
             }
 
-            showNotification('âœ… ' + data.message, 'success');
+            showNotification('✅ ' + data.message, 'success');
         } else {
-            showNotification('âŒ ' + data.message, 'error');
+            showNotification('❌ ' + data.message, 'error');
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-trash"></i> Delete';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('âŒ An error occurred', 'error');
+        showNotification('❌ An error occurred', 'error');
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash"></i> Delete';
     });
@@ -625,25 +625,25 @@ function initializeMap() {
 
     // Map layers
     const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: 'Â© Google',
+        attribution: '© Google',
         maxZoom: 21,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     });
 
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        attribution: 'Â© Google',
+        attribution: '© Google',
         maxZoom: 21
     });
 
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: 'Â© OpenStreetMap',
+        attribution: '© OpenStreetMap',
         maxZoom: 22
     });
 
     const baseMaps = {
-        "ðŸ—ºï¸ Hybrid (Best View)": hybridLayer,
-        "ðŸ›°ï¸ Satellite": satelliteLayer,
-        "ðŸ—ºï¸ Street Map": streetLayer
+        "🗺️ Hybrid (Best View)": hybridLayer,
+        "🛰️ Satellite": satelliteLayer,
+        "🗺️ Street Map": streetLayer
     };
 
     // Initialize map
@@ -661,14 +661,14 @@ function initializeMap() {
 
     // Add CvSU marker
     const cvsuIcon = L.divIcon({
-        html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">ðŸ«</div>',
+        html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏫</div>',
         className: 'cvsu-marker',
         iconSize: [36, 36]
     });
 
     L.marker([cvsuLat, cvsuLng], { icon: cvsuIcon })
         .addTo(map)
-        .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">ðŸŽ“ CvSU-Bacoor<br><small>500m Radius Center</small></div>')
+        .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">🎓 CvSU-Bacoor<br><small>500m Radius Center</small></div>')
         .openPopup();
 
     // Add restriction circle
@@ -683,7 +683,7 @@ function initializeMap() {
 
     // Add establishment marker
     const establishmentIcon = L.divIcon({
-        html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">ðŸ“</span></div>',
+        html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">📍</span></div>',
         className: 'establishment-marker',
         iconSize: [40, 40],
         iconAnchor: [20, 40]
@@ -706,10 +706,10 @@ function initializeMap() {
                 }
             );
             const data = await response.json();
-            return data?.display_name || `ðŸ“ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            return data?.display_name || `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         } catch (error) {
             console.error('Geocoding error:', error);
-            return `ðŸ“ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            return `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         }
     }
 
@@ -741,14 +741,14 @@ function initializeMap() {
 
             return true;
         } else {
-            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} âš ï¸ OUTSIDE RADIUS`;
+            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} ⚠️ OUTSIDE RADIUS`;
             displayEl.style.color = 'white';
             displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #f44336 0%, #c62828 100%)';
 
             document.getElementById('geocodedAddressDisplay').style.display = 'none';
             currentGeocodedAddress = '';
 
-            showNotification('âš ï¸ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
+            showNotification('⚠️ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
 
             return false;
         }
@@ -796,13 +796,13 @@ function resetToCvSU() {
         document.getElementById('geocodedAddressDisplay').style.display = 'none';
         currentGeocodedAddress = '';
 
-        showNotification('âœ… Location reset to CvSU-Bacoor Campus', 'success');
+        showNotification('✅ Location reset to CvSU-Bacoor Campus', 'success');
     }
 }
 
 function confirmMapLocation() {
     if (!currentGeocodedAddress) {
-        showNotification('âš ï¸ Please pin a location on the map first', 'warning');
+        showNotification('⚠️ Please pin a location on the map first', 'warning');
         return;
     }
 
@@ -810,7 +810,7 @@ function confirmMapLocation() {
     const lng = document.getElementById('id_longitude').value;
 
     if (!lat || !lng) {
-        showNotification('âš ï¸ Please pin a location on the map first', 'warning');
+        showNotification('⚠️ Please pin a location on the map first', 'warning');
         return;
     }
 
@@ -820,7 +820,7 @@ function confirmMapLocation() {
     }
 
     closeModal('mapModal');
-    showNotification('âœ… Location and address updated successfully!', 'success');
+    showNotification('✅ Location and address updated successfully!', 'success');
 }
 
 // ==========================================
@@ -867,7 +867,7 @@ function loadNotifications() {
         console.error('Error loading notifications:', error);
     });
 }
-// âœ… ENHANCED: Render notification with complete order details
+// ✅ ENHANCED: Render notification with complete order details
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
     const statusClass = notif.order.status.toLowerCase();
@@ -881,7 +881,7 @@ function renderNotification(notif) {
             <div class="item-name-qty">
                 <strong>${item.name}</strong> x${item.quantity}
             </div>
-            <div class="item-price">â‚±${item.total.toFixed(2)}</div>
+            <div class="item-price">₱${item.total.toFixed(2)}</div>
         </div>
     `).join('');
 
@@ -913,7 +913,7 @@ function renderNotification(notif) {
             <div class="order-summary">
                 <div class="order-summary-header">
                     <span class="order-id">Order #${notif.order.id}</span>
-                    <span class="order-total">â‚±${notif.order.total_amount.toFixed(2)}</span>
+                    <span class="order-total">₱${notif.order.total_amount.toFixed(2)}</span>
                 </div>
 
                 ${notif.order.reference_number !== 'N/A' ? `
@@ -984,7 +984,7 @@ function pollNotifications() {
         });
     }
 }
-// âœ… Show toast notification for new orders
+// ✅ Show toast notification for new orders
 function showToastNotification(notif) {
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
@@ -994,7 +994,7 @@ function showToastNotification(notif) {
         </div>
         <div class="toast-content">
             <div class="toast-title">New Order #${notif.order.id}</div>
-            <div class="toast-message">${notif.customer.name} â€¢ â‚±${notif.order.total_amount.toFixed(2)}</div>
+            <div class="toast-message">${notif.customer.name} • ₱${notif.order.total_amount.toFixed(2)}</div>
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
@@ -1081,7 +1081,7 @@ function markAllNotificationsRead() {
     .then(data => {
         if (data.success) {
             loadNotifications();
-            showNotification('âœ… All notifications marked as read', 'success');
+            showNotification('✅ All notifications marked as read', 'success');
         }
     })
     .catch(error => {
@@ -1125,14 +1125,14 @@ document.addEventListener('keydown', function(e) {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('ðŸš€ Dashboard initializing...');
+    console.log('🚀 Dashboard initializing...');
     setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
 
     if (loginSuccess === 'true') {
-        showNotification('âœ… Successfully logged in! Welcome to your dashboard.', 'success');
+        showNotification('✅ Successfully logged in! Welcome to your dashboard.', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -1156,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    console.log('âœ… Dashboard initialized successfully');
+    console.log('✅ Dashboard initialized successfully');
 });
 
 // ==========================================
@@ -1249,9 +1249,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        console.log("âœ… Scroll Button Loaded");
+        console.log("✅ Scroll Button Loaded");
     } else {
-        console.error("âŒ Scroll Button Element NOT found. Check your HTML placement.");
+        console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
     }
 });
 document.addEventListener('DOMContentLoaded', function() {
@@ -1278,7 +1278,7 @@ function updateStoreStats() {
     animateCount('bestSellerCount', bestSellerCount);
     animateCount('availableCount', availableCount);
 
-    console.log(`Ã¢Å“â€¦ Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
+    console.log(`âœ… Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
 }
 
 function animateCount(elementId, targetCount) {
@@ -1305,5 +1305,5 @@ function animateCount(elementId, targetCount) {
     }, duration / steps);
 }
 
-// Ã¢Å“â€¦ Auto-update when menu items are added/edited/deleted
+// âœ… Auto-update when menu items are added/edited/deleted
 window.addEventListener('menuUpdated', updateStoreStats);
