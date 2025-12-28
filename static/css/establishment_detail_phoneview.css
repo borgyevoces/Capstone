@@ -686,6 +686,11 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
 
+    .btn-review-filter:active {
+        background-color: #666;
+        transform: scale(0.98);
+    }
+
     .all-reviews-list-wrapper {
         max-height: 450px;
         padding-right: 1px;
@@ -1189,6 +1194,12 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
 
+    .btn-review-filter:active:not(.active) {
+        background-color: #e0e0e0;
+        border-color: #ccc;
+        transform: scale(0.98);
+    }
+
     .review-user-pic {
         border: 2px solid #000000;
     }
@@ -1212,6 +1223,14 @@
     .close-btn:hover {
         background-color: #000000;
         color: white;
+    }
+
+    /* ============================================================
+       CART BUTTON TEXT SIZE - PHONE VIEW
+       ============================================================ */
+    .navbar-actions a,
+    .navbar-actions button {
+        font-size: 16px !important;
     }
 
     /* ============================================================

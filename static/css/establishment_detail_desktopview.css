@@ -828,6 +828,12 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
 
+    .btn-review-filter:active:not(.active) {
+        background-color: #d0d0d0;
+        border-color: #aaa;
+        transform: scale(0.98);
+    }
+
     .review-filters button[data-filter="good"] i {
         color: gold;
     }
