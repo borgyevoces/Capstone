@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof toggleSearchButton === 'function') {
         toggleSearchButton();
     }
+
+    // âœ… Update statuses on page load
+    if (typeof updateEstablishmentStatuses === 'function') {
+        updateEstablishmentStatuses();
+    }
 });
 
 function on() { document.getElementById("overlay").style.display = "block"; }
@@ -56,7 +61,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// THE FIXED AND IMPROVED applyFilters() FUNCTION
+// ============================================
+// âœ… FIXED AND IMPROVED applyFilters() FUNCTION
+// ============================================
 function applyFilters() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -96,23 +103,28 @@ function applyFilters() {
 
         let isVisible = true;
 
+        // Search filter
         if (searchTerm && !itemName.includes(searchTerm)) {
             isVisible = false;
         }
 
+        // âœ… CRITICAL FIX: Status filter now works correctly
         if (selectedStatus && itemStatus !== selectedStatus) {
             isVisible = false;
         }
 
+        // Alphabetical filter
         if (selectedAlphabet && !itemName.startsWith(selectedAlphabet)) {
             isVisible = false;
         }
 
+        // URL category filter
         if (urlCategory && itemCategory !== urlCategory) {
             isVisible = false;
         }
 
-         if (selectedCategory && itemCategory !== selectedCategory) {
+        // Category dropdown filter
+        if (selectedCategory && itemCategory !== selectedCategory) {
             isVisible = false;
         }
 
@@ -121,6 +133,7 @@ function applyFilters() {
         }
     });
 
+    // Apply sorting
     if (selectedAlphabet) {
         visibleItems.sort((a, b) => (a.dataset.name || '').localeCompare(b.dataset.name || ''));
         if (distanceFilter) distanceFilter.value = '';
@@ -159,15 +172,18 @@ function applyFilters() {
         if (distanceFilter) distanceFilter.value = '';
     }
 
+    // Hide all items first
     allItems.forEach(item => {
         item.style.display = 'none';
     });
 
+    // Show filtered items
     visibleItems.forEach(item => {
         item.style.display = '';
         container.appendChild(item);
     });
 
+    // Show/hide no results message
     if (noResultsMessage) {
         if (visibleItems.length === 0) {
             noResultsMessage.style.display = 'block';
@@ -176,6 +192,75 @@ function applyFilters() {
         }
     }
 }
+
+// ============================================
+// âœ… REAL-TIME STATUS UPDATE FUNCTION
+// ============================================
+function updateEstablishmentStatuses() {
+    const establishments = document.querySelectorAll('.food-establishment-item');
+
+    establishments.forEach(establishment => {
+        const statusIndicator = establishment.querySelector('.status-indicator');
+        if (!statusIndicator) return;
+
+        const openingTime = statusIndicator.dataset.openingTime;
+        const closingTime = statusIndicator.dataset.closingTime;
+
+        if (!openingTime || !closingTime) {
+            establishment.dataset.status = 'Closed';
+            updateStatusDisplay(statusIndicator, 'Closed');
+            return;
+        }
+
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const [openHour, openMin] = openingTime.split(':').map(Number);
+        const [closeHour, closeMin] = closingTime.split(':').map(Number);
+
+        const openMinutes = openHour * 60 + openMin;
+        const closeMinutes = closeHour * 60 + closeMin;
+
+        let isOpen = false;
+
+        if (openMinutes <= closeMinutes) {
+            isOpen = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+        } else {
+            isOpen = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+        }
+
+        const newStatus = isOpen ? 'Open' : 'Closed';
+        establishment.dataset.status = newStatus;
+        updateStatusDisplay(statusIndicator, newStatus);
+    });
+
+    if (typeof applyFilters === 'function') {
+        applyFilters();
+    }
+}
+
+function updateStatusDisplay(statusIndicator, status) {
+    const statusText = statusIndicator.querySelector('.status-text');
+    const statusDot = statusIndicator.querySelector('.dot');
+
+    if (statusText) {
+        statusText.textContent = status;
+    }
+
+    statusIndicator.classList.remove('open', 'closed');
+    statusIndicator.classList.add(status.toLowerCase());
+
+    if (statusDot) {
+        if (status === 'Open') {
+            statusDot.style.backgroundColor = '#10b981';
+        } else {
+            statusDot.style.backgroundColor = '#ef4444';
+        }
+    }
+}
+
+// âœ… Update statuses every minute
+setInterval(updateEstablishmentStatuses, 60000);
 
 // Logout Modal Logic
 const showLogoutModalButton = document.getElementById('showLogoutModal');
@@ -294,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let locationAccuracyCircle = null;
     let locationButton = null;
     let isGettingLocation = false;
-    let cachedLocation = null; // Cache for instant subsequent loads
+    let cachedLocation = null;
 
     const CVSU_LAT = 14.4128;
     const CVSU_LNG = 120.9813;
@@ -381,10 +466,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             cvsuCircle.bindPopup("<strong>CvSU-Bacoor Campus</strong><br>500m radius zone");
 
-            // Load establishments immediately
             loadEstablishments();
 
-            // ========== CREATE "SHOW MY LOCATION" BUTTON ==========
             const locationButtonContainer = document.createElement("div");
             locationButtonContainer.style.cssText = `
                 position: absolute;
@@ -423,7 +506,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
             };
 
-            // ========== ULTRA-FAST LOCATION BUTTON CLICK - INSTANT RESPONSE ==========
             locationButton.addEventListener("click", function() {
                 if (isGettingLocation) {
                     console.log("Already getting location, please wait...");
@@ -437,7 +519,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 isGettingLocation = true;
 
-                // Show loading state immediately
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-spinner fa-spin"></i>
@@ -447,7 +528,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 locationButton.disabled = true;
                 locationButton.style.opacity = '0.7';
 
-                // ✅ INSTANT CACHED LOCATION (if available)
                 if (cachedLocation) {
                     console.log("⚡ Using cached location for instant display");
                     showUserLocation(
@@ -456,28 +536,24 @@ document.addEventListener("DOMContentLoaded", function () {
                         cachedLocation.accuracy,
                         false
                     );
-
-                    // Then update with fresh location in background
                     updateLocationInBackground();
                     return;
                 }
 
-                // ✅ OPTIMIZED: Low accuracy first (FAST), high accuracy second (PRECISE)
                 const fastOptions = {
-                    enableHighAccuracy: false,  // Fast mode
+                    enableHighAccuracy: false,
                     timeout: 3000,
-                    maximumAge: 60000  // Accept up to 60-second old position
+                    maximumAge: 60000
                 };
 
                 const preciseOptions = {
-                    enableHighAccuracy: true,  // Precise mode
+                    enableHighAccuracy: true,
                     timeout: 10000,
                     maximumAge: 0
                 };
 
                 let locationShown = false;
 
-                // STEP 1: Get FAST location (usually instant)
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         const lat = position.coords.latitude;
@@ -490,14 +566,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         console.log(`⚡ Fast location: ${lat}, ${lng} (±${accuracy}m)`);
                         showUserLocation(lat, lng, accuracy, false);
-
-                        // STEP 2: Get PRECISE location in background
                         updateLocationInBackground();
                     },
                     function(error) {
                         console.error("Fast location failed:", error.message);
-
-                        // If fast fails, try precise directly
                         if (!locationShown) {
                             getPreciseLocation();
                         }
@@ -505,7 +577,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     fastOptions
                 );
 
-                // Helper function to get precise location
                 function getPreciseLocation() {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
@@ -527,7 +598,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     );
                 }
 
-                // Helper function to update location in background
                 function updateLocationInBackground() {
                     navigator.geolocation.getCurrentPosition(
                         function(precisePosition) {
@@ -540,23 +610,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             console.log(`🎯 Precise location updated: ${lat}, ${lng} (±${accuracy}m)`);
 
-                            // Update marker with precise location
                             if (userMarker) {
                                 showUserLocation(lat, lng, accuracy, true);
                             }
                         },
                         function(error) {
                             console.log("Background precise location failed:", error.message);
-                            // Keep using fast location - no error shown to user
                         },
                         preciseOptions
                     );
                 }
             });
 
-            // ========== FUNCTION TO SHOW USER LOCATION ==========
             function showUserLocation(lat, lng, accuracy, isPrecise) {
-                // Remove existing markers
                 if (userMarker) {
                     map.removeLayer(userMarker);
                 }
@@ -564,7 +630,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     map.removeLayer(locationAccuracyCircle);
                 }
 
-                // Add accuracy circle
                 locationAccuracyCircle = L.circle([lat, lng], {
                     radius: accuracy,
                     fillColor: isPrecise ? "#16a34a" : "#3b82f6",
@@ -573,7 +638,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     weight: 1
                 }).addTo(map);
 
-                // Create pulsing icon
                 const pulsingIcon = L.divIcon({
                     html: `<div style="position:relative;">
                             <div style="position:absolute;width:24px;height:24px;border-radius:50%;
@@ -594,7 +658,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     iconSize: [24, 24]
                 });
 
-                // Add user marker
                 userMarker = L.marker([lat, lng], { icon: pulsingIcon }).addTo(map);
 
                 const accuracyText = accuracy > 1000 ?
@@ -609,14 +672,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 `);
 
-                // Smooth zoom to user location
                 map.flyTo([lat, lng], 19, {
                     animate: true,
                     duration: 0.6,
                     easeLinearity: 0.3
                 });
 
-                // Update button state
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-check-circle"></i>
@@ -628,7 +689,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 locationButton.style.opacity = '1';
                 isGettingLocation = false;
 
-                // Start continuous tracking for precise locations
                 if (isPrecise && !watchId) {
                     watchId = navigator.geolocation.watchPosition(
                         function(position) {
@@ -639,7 +699,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             userLocation = [newLat, newLng];
                             cachedLocation = { lat: newLat, lng: newLng, accuracy: newAccuracy };
 
-                            // Update marker position silently
                             if (userMarker) {
                                 userMarker.setLatLng([newLat, newLng]);
                             }
@@ -660,7 +719,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            // ========== FUNCTION TO HANDLE LOCATION ERRORS ==========
             function handleLocationError(error) {
                 let errorMessage = "Unable to get your location.";
 
@@ -678,7 +736,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 alert(errorMessage);
 
-                // Reset button
                 locationButton.innerHTML = `
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-location-arrow"></i>
@@ -694,7 +751,6 @@ document.addEventListener("DOMContentLoaded", function () {
             locationButtonContainer.appendChild(locationButton);
             document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
 
-            // ========== CENTERED SEARCH BAR ==========
             const mapSearchContainer = document.createElement("div");
             const isMobile = window.innerWidth <= 768;
 
@@ -762,7 +818,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Function to load establishments
     function loadEstablishments() {
         const items = document.querySelectorAll(".food-establishment-item");
         let bounds = [];
