@@ -1,17 +1,18 @@
 // ==========================================
-// 🔥 SUPER DEBUG VERSION - INSTANT NOTIFICATION DETECTION
+// 🔥 ULTIMATE FIX: REAL-TIME NOTIFICATION SYSTEM WITH INSTANT DETECTION
 // ==========================================
 console.log('🚀 NOTIFICATION SYSTEM LOADING...');
 
 // Store interval ID globally so we can clear it if needed
 let notificationPollingInterval = null;
 let lastKnownNotificationId = 0;
+let lastCheckTimestamp = 0;
 
 // ==========================================
-// 🔔 SUPER FAST POLLING - 2 SECONDS!
+// 🔔 SUPER FAST POLLING - 1 SECOND AFTER PAYMENT!
 // ==========================================
 function startSuperFastNotificationPolling() {
-    console.log('🔥 STARTING SUPER FAST NOTIFICATION POLLING (2 SECOND INTERVAL)');
+    console.log('🔥 STARTING SUPER FAST NOTIFICATION POLLING (1 SECOND INTERVAL)');
 
     // Clear any existing interval
     if (notificationPollingInterval) {
@@ -21,12 +22,12 @@ function startSuperFastNotificationPolling() {
     // Load immediately
     checkForNewNotifications();
 
-    // Then check every 2 seconds
+    // Then check every 1 second for INSTANT detection
     notificationPollingInterval = setInterval(() => {
         checkForNewNotifications();
-    }, 2000); // 2 seconds for INSTANT detection
+    }, 1000); // ✅ 1 SECOND for INSTANT notification
 
-    console.log('✅ Polling started - checking every 2 seconds');
+    console.log('✅ Polling started - checking every 1 second');
 }
 
 // ==========================================
@@ -34,6 +35,13 @@ function startSuperFastNotificationPolling() {
 // ==========================================
 function checkForNewNotifications() {
     const timestamp = Date.now();
+
+    // Prevent duplicate requests within 500ms
+    if (timestamp - lastCheckTimestamp < 500) {
+        return;
+    }
+    lastCheckTimestamp = timestamp;
+
     const random = Math.random();
     const url = `/api/notifications/?t=${timestamp}&r=${random}`;
 
@@ -82,13 +90,13 @@ function checkForNewNotifications() {
                 console.log('🎉 NEW NOTIFICATION DETECTED! ID:', latest.id);
                 lastKnownNotificationId = latest.id;
 
-                // Show toast notification
+                // ✅ Show toast notification
                 showBigToast(latest);
 
                 // Update the panel if it's open
                 updateNotificationPanel(data.notifications);
 
-                // Play sound alert (optional)
+                // Play sound alert
                 playNotificationSound();
             }
         }
@@ -111,14 +119,14 @@ function updateNotificationPanel(notifications) {
     }
 
     if (notifications && notifications.length > 0) {
-        console.log(`📝 Rendering ${notifications.length} notifications`);
+        console.log(`🔍 Rendering ${notifications.length} notifications`);
         list.innerHTML = notifications.map(n => renderNotification(n)).join('');
 
         if (emptyState) {
             emptyState.style.display = 'none';
         }
     } else {
-        console.log('📭 No notifications to display');
+        console.log('🔭 No notifications to display');
         list.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #9ca3af;">
                 <i class="fas fa-bell-slash fa-2x"></i>
@@ -288,7 +296,7 @@ function showBigToast(notif) {
                         font-size: 13px;
                         font-family: 'Courier New', monospace;
                     ">
-                        🔖 ${notif.order.reference_number}
+                        📖 ${notif.order.reference_number}
                     </div>
                 ` : ''}
             </div>
@@ -314,11 +322,11 @@ function showBigToast(notif) {
 
     document.body.appendChild(toast);
 
-    // Auto-remove after 8 seconds
+    // Auto-remove after 10 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => toast.remove(), 300);
-    }, 8000);
+    }, 10000);
 }
 
 // ==========================================
@@ -395,7 +403,7 @@ function markAsRead(notificationId) {
 }
 
 // ==========================================
-// 🍪 GET CSRF COOKIE
+// 🪙 GET CSRF COOKIE
 // ==========================================
 function getCookie(name) {
     let cookieValue = null;
@@ -417,13 +425,13 @@ function getCookie(name) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎬 PAGE LOADED - STARTING SUPER FAST NOTIFICATION SYSTEM');
-    console.log('📍 URL:', window.location.href);
+    console.log('🔍 URL:', window.location.href);
     console.log('⏰ Time:', new Date().toLocaleString());
 
     // Start immediately
     startSuperFastNotificationPolling();
 
-    console.log('✅ NOTIFICATION SYSTEM ACTIVE - POLLING EVERY 2 SECONDS');
+    console.log('✅ NOTIFICATION SYSTEM ACTIVE - POLLING EVERY 1 SECOND');
 });
 
 // Add animation CSS
@@ -463,4 +471,4 @@ document.head.appendChild(style);
 
 console.log('🎉 SUPER DEBUG NOTIFICATION SYSTEM LOADED!');
 console.log('👀 Watch console for real-time updates');
-console.log('⚡ Polling every 2 seconds for INSTANT notifications');
+console.log('⚡ Polling every 1 SECOND for INSTANT notifications');
