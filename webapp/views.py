@@ -2436,7 +2436,11 @@ def create_buynow_payment_link(request):
 @login_required
 def get_owner_notifications(request):
     """
+<<<<<<< HEAD
     âœ… ENHANCED: Get detailed notifications with order information
+=======
+    ✅ ENHANCED: Get detailed notifications with order information
+>>>>>>> parent of 8b90f7c (notifications)
     """
     establishment_id = request.session.get('food_establishment_id')
 
@@ -2532,7 +2536,11 @@ def get_owner_notifications(request):
 
 def get_time_ago(timestamp):
     """
+<<<<<<< HEAD
     âœ… Enhanced: Convert timestamp to human-readable time ago
+=======
+    ✅ Enhanced: Convert timestamp to human-readable time ago
+>>>>>>> parent of 8b90f7c (notifications)
     """
     from django.utils.timezone import now
 
