@@ -838,22 +838,37 @@ function toggleNotificationPanel() {
 
 function loadNotifications() {
     // ✅ FIX: Add timestamp to prevent caching
-    fetch(`/api/notifications/?t=${new Date().getTime()}`, {
+    const timestamp = new Date().getTime();
+    const url = `/api/notifications/?t=${timestamp}`;
+
+    console.log(`📬 Loading notifications: ${url}`);
+
+    fetch(url, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('📦 Data received:', data);
+
         if (data.success) {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
+                console.log(`✅ Rendering ${data.notifications.length} notifications`);
                 list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
                 updateNotificationBadge(data.unread_count);
             } else {
+                console.log('ℹ️ No notifications to display');
                 list.innerHTML = `
                     <div class="notification-empty-state">
                         <i class="fas fa-bell-slash"></i>
@@ -865,7 +880,7 @@ function loadNotifications() {
         }
     })
     .catch(error => {
-        console.error('Error loading notifications:', error);
+        console.error('❌ Error loading notifications:', error);
     });
 }
 // ✅ ENHANCED: Render notification with complete order details
@@ -961,16 +976,26 @@ function renderNotification(notif) {
 function pollNotifications() {
     // Poll even if panel is closed to show badge/toasts
     // ✅ FIX: Add timestamp to prevent caching
-    fetch(`/api/notifications/?t=${new Date().getTime()}`, {
+    const timestamp = new Date().getTime();
+    const url = `/api/notifications/?t=${timestamp}`;
+
+    console.log(`🔍 Polling notifications: ${url}`);
+
+    fetch(url, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            console.log(`✅ Poll successful - ${data.notifications ? data.notifications.length : 0} notifications, ${data.unread_count} unread`);
+
             updateNotificationBadge(data.unread_count);
 
             // Show toast notification if new orders found
@@ -983,6 +1008,7 @@ function pollNotifications() {
                 const lastSeenId = localStorage.getItem('lastSeenNotificationId');
 
                 if (latestNotif.is_new && (!lastSeenId || latestNotif.id > parseInt(lastSeenId))) {
+                    console.log('🆕 NEW NOTIFICATION DETECTED!', latestNotif);
                     showToastNotification(latestNotif);
                     localStorage.setItem('lastSeenNotificationId', latestNotif.id);
 
@@ -996,18 +1022,23 @@ function pollNotifications() {
         }
     })
     .catch(error => {
-        console.error('Error polling notifications:', error);
+        console.error('❌ Polling error:', error);
     });
 }
 
 function startNotificationAutoRefresh() {
+    console.log('🔄 Starting notification auto-refresh with 3-second polling...');
+
     // Initial load
     loadNotifications();
 
-    // Poll every 5 seconds (Faster for real-time feel)
+    // ✅ FASTER POLLING: Every 3 seconds for immediate GCash payment notifications
     setInterval(() => {
+        console.log('⏱️ Polling for new notifications...');
         pollNotifications();
-    }, 5000);
+    }, 3000); // Changed from 5000 to 3000 for faster updates
+
+    console.log('✅ Auto-refresh active - checking every 3 seconds');
 }
 
 // ✅ Show toast notification for new orders
