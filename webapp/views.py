@@ -2086,29 +2086,30 @@ def gcash_payment_success(request):
             order.payment_confirmed_at = timezone.now()
             order.save()
 
-            # ✅ CRITICAL FIX: Create notification AFTER order is saved
+            # ✅ CRITICAL FIX: Ensure notification is created
             try:
-                notification = OrderNotification.objects.create(
-                    establishment=order.establishment,
+                # Check if a notification already exists for this order to avoid duplicates
+                existing_notif = OrderNotification.objects.filter(
                     order=order,
-                    notification_type='new_order',
-                    message=f'New order #{order.id} from {order.user.username}'
-                )
-                print(f"✅ Notification #{notification.id} created for Order #{order.id}")
+                    notification_type='new_order'
+                ).exists()
 
-                # ✅ Log detailed information for debugging
-                print(f"📦 Order Details:")
-                print(f"   - Order ID: {order.id}")
-                print(f"   - Customer: {order.user.username} ({order.user.email})")
-                print(f"   - Establishment: {order.establishment.name}")
-                print(f"   - Total: ₱{order.total_amount}")
-                print(f"   - Reference: {order.gcash_reference_number}")
-                print(f"   - Notification ID: {notification.id}")
+                if not existing_notif:
+                    notification = OrderNotification.objects.create(
+                        establishment=order.establishment,
+                        order=order,
+                        notification_type='new_order',
+                        message=f'New order #{order.id} from {order.user.username}',
+                        is_read=False  # Explicitly set as unread
+                    )
+                    print(f"✅ Notification #{notification.id} created for Order #{order.id}")
+                else:
+                    print(f"ℹ️ Notification already exists for Order #{order.id}")
 
             except Exception as notif_error:
                 print(f"❌ Notification creation error: {notif_error}")
-                import traceback
-                traceback.print_exc()
+                # Don't fail the whole request just because notification failed
+                pass
 
             # Reduce stock
             for order_item in order.orderitem_set.all():
@@ -2117,16 +2118,14 @@ def gcash_payment_success(request):
                     if menu_item.quantity >= order_item.quantity:
                         menu_item.quantity -= order_item.quantity
                         menu_item.save()
-                        print(f"✅ Stock reduced for {menu_item.name}: {menu_item.quantity} remaining")
                     else:
                         print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
                 except Exception as stock_err:
                     print(f"❌ Error reducing stock for {menu_item.id}: {stock_err}")
 
-            # Send confirmation emails (best-effort)
+            # Send confirmation emails
             try:
                 send_order_confirmation_email(order)
-                print(f"✅ Confirmation emails sent")
             except Exception as e:
                 print(f"⚠️ Email error (non-critical): {e}")
 
@@ -2147,8 +2146,6 @@ def gcash_payment_success(request):
 
     except Exception as e:
         print(f"❌ Payment success handler error: {e}")
-        import traceback
-        traceback.print_exc()
         messages.error(request, 'An error occurred processing your payment confirmation')
         return redirect('view_cart')
 
@@ -2463,7 +2460,7 @@ def get_owner_notifications(request):
     try:
         establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
 
-        # Get unread notifications with complete order details
+        # Get unread notifications
         notifications = OrderNotification.objects.filter(
             establishment=establishment,
             is_read=False
@@ -2480,15 +2477,18 @@ def get_owner_notifications(request):
         for notif in notifications:
             order = notif.order
 
-            # Get order items with details
+            # Safe access for items
             order_items = []
-            for item in order.orderitem_set.all():
-                order_items.append({
-                    'name': item.menu_item.name,
-                    'quantity': item.quantity,
-                    'price': float(item.price_at_order),
-                    'total': float(item.total_price)
-                })
+            try:
+                for item in order.orderitem_set.all():
+                    order_items.append({
+                        'name': item.menu_item.name,
+                        'quantity': item.quantity,
+                        'price': float(item.price_at_order),
+                        'total': float(item.total_price)
+                    })
+            except Exception as e:
+                print(f"Error processing items for order {order.id}: {e}")
 
             # Format notification data
             notifications_data.append({
@@ -2503,7 +2503,7 @@ def get_owner_notifications(request):
                     'status': order.status,
                     'total_amount': float(order.total_amount),
                     'items': order_items,
-                    'item_count': order.orderitem_set.count(),
+                    'item_count': len(order_items),
                 },
 
                 # Customer Details
