@@ -1,5 +1,5 @@
 // ==========================================
-// FOOD ESTABLISHMENT DASHBOARD JS - FIXED VERSION
+// FOOD ESTABLISHMENT DASHBOARD JS - COMPLETE FIXED VERSION
 // ==========================================
 
 // ==========================================
@@ -59,13 +59,14 @@ function getCookie(name) {
 }
 
 // ==========================================
-// ADD MENU ITEM FORM HANDLER
+// âœ… FIXED: ADD MENU ITEM FORM HANDLER
+// Continuous adding without refresh
 // ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
 
     if (!addMenuForm) {
-        console.log('⚠️ Add menu form not found');
+        console.log('âš ï¸ Add menu form not found');
         return;
     }
 
@@ -73,18 +74,18 @@ function setupAddMenuItemForm() {
     const newForm = addMenuForm.cloneNode(true);
     addMenuForm.parentNode.replaceChild(newForm, addMenuForm);
 
-    console.log('✅ Setting up add menu form handler');
+    console.log('âœ… Setting up add menu form handler');
 
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('📝 Form submit triggered');
+        console.log('ðŸ“ Form submit triggered');
 
         // Prevent double submission
         if (isSubmitting) {
-            console.log('⏳ Already submitting, ignoring...');
-            showNotification('⏳ Please wait, submission in progress...', 'info');
+            console.log('â³ Already submitting, ignoring...');
+            showNotification('â³ Please wait, submission in progress...', 'info');
             return false;
         }
 
@@ -98,18 +99,18 @@ function setupAddMenuItemForm() {
         const description = formData.get('description');
 
         if (!name || !price || !description) {
-            showNotification('❌ Please fill in all required fields', 'error');
+            showNotification('âŒ Please fill in all required fields', 'error');
             return false;
         }
 
         // Get CSRF token
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
-            showNotification('❌ Security token missing. Please refresh the page.', 'error');
+            showNotification('âŒ Security token missing. Please refresh the page.', 'error');
             return false;
         }
 
-        console.log('🚀 Submitting menu item:', name);
+        console.log('ðŸš€ Submitting menu item:', name);
 
         // Set flag
         isSubmitting = true;
@@ -128,67 +129,67 @@ function setupAddMenuItemForm() {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 return response.text().then(text => {
-                    console.error('❌ Server returned HTML:', text.substring(0, 500));
+                    console.error('âŒ Server returned HTML:', text.substring(0, 500));
                     throw new Error('Server error - check server logs');
                 });
             }
             return response.json();
         })
         .then(data => {
-            console.log('📦 Response received:', data);
+            console.log('ðŸ“¦ Response received:', data);
 
             if (data.success) {
                 if (data.skipped) {
-                    console.log('⚠️ Duplicate request detected, skipping');
+                    console.log('âš ï¸ Duplicate request detected, skipping');
                     return;
                 }
 
-                showNotification('✅ ' + data.message, 'success');
+                showNotification('âœ… ' + data.message, 'success');
 
                 // Add item to grid
                 if (data.item) {
                     const existingItem = document.querySelector(`.menu-card[data-item-id="${data.item.id}"]`);
                     if (!existingItem) {
-                        console.log('➕ Adding new item to grid');
+                        console.log('âž• Adding new item to grid');
                         addMenuItemToGrid(data.item);
                     } else {
-                        console.log('⚠️ Item already exists in grid');
+                        console.log('âš ï¸ Item already exists in grid');
                     }
                 }
 
-                // Reset form
+                // âœ… CRITICAL: Reset form and keep modal open
                 newForm.reset();
 
-                // Update token for next submission
+                // âœ… Update token for next submission
                 const tokenInput = newForm.querySelector('input[name="menu_add_token"]');
                 if (tokenInput && data.new_menu_token) {
                     tokenInput.value = data.new_menu_token;
-                    console.log('🔑 Token updated for next submission');
+                    console.log('ðŸ”‘ Token updated for next submission');
                 }
 
-                // Re-enable button immediately
+                // âœ… Re-enable button immediately
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
                 isSubmitting = false;
 
-                // Focus on name field
+                // âœ… Focus on name field for quick next entry
                 const nameInput = newForm.querySelector('input[name="name"]');
                 if (nameInput) {
                     setTimeout(() => nameInput.focus(), 100);
                 }
 
-                console.log('✅ Ready for next item');
+                console.log('âœ… Ready for next item');
 
             } else {
-                showNotification('❌ ' + (data.error || 'Failed to add menu item'), 'error');
+                showNotification('âŒ ' + (data.error || 'Failed to add menu item'), 'error');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
                 isSubmitting = false;
             }
         })
         .catch(error => {
-            console.error('❌ Error:', error);
-            showNotification('❌ ' + error.message, 'error');
+            console.error('âŒ Error:', error);
+            showNotification('âŒ ' + error.message, 'error');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
             isSubmitting = false;
@@ -197,14 +198,14 @@ function setupAddMenuItemForm() {
         return false;
     });
 
-    console.log('✅ Add menu form handler attached successfully');
+    console.log('âœ… Add menu form handler attached successfully');
 }
 
 // ==========================================
 // ADD MENU ITEM TO GRID (REAL-TIME)
 // ==========================================
 function addMenuItemToGrid(item) {
-    console.log('➕ Adding item to grid:', item.id);
+    console.log('âž• Adding item to grid:', item.id);
 
     const menuGrid = document.querySelector('.menu-grid');
     const noItems = document.querySelector('.no-items');
@@ -216,7 +217,7 @@ function addMenuItemToGrid(item) {
     // Check if item already exists (prevent duplicates)
     const existingItem = document.querySelector(`.menu-card[data-item-id="${item.id}"]`);
     if (existingItem) {
-        console.log('⚠️ Item already exists, skipping add');
+        console.log('âš ï¸ Item already exists, skipping add');
         return;
     }
 
@@ -242,7 +243,7 @@ function addMenuItemToGrid(item) {
         <div class="menu-info">
             <div class="menu-name">${item.name}</div>
             <div class="menu-desc">${item.description}</div>
-            <div class="menu-price">₱${parseFloat(item.price).toFixed(2)}</div>
+            <div class="menu-price">â‚±${parseFloat(item.price).toFixed(2)}</div>
             <div class="menu-actions">
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
@@ -272,7 +273,7 @@ function addMenuItemToGrid(item) {
         menuGrid.appendChild(menuCard);
     }
 
-    console.log('✅ Item added to grid successfully');
+    console.log('âœ… Item added to grid successfully');
 }
 
 // ==========================================
@@ -294,7 +295,7 @@ function setupUpdateStoreDetailsForm() {
             const longitude = formData.get('longitude');
 
             if (!latitude || !longitude) {
-                showNotification('⚠️ Please set your location on the map', 'warning');
+                showNotification('âš ï¸ Please set your location on the map', 'warning');
                 return;
             }
 
@@ -330,13 +331,13 @@ function setupUpdateStoreDetailsForm() {
                         document.getElementById('establishmentCategory').textContent = data.category || 'N/A';
                     }
                     const hoursElement = document.getElementById('establishmentHours');
-                    if (hoursElement) {
-                        if (data.opening_time && data.closing_time) {
-                            hoursElement.textContent = `${data.opening_time} - ${data.closing_time}`;
-                        } else {
-                            hoursElement.textContent = 'Not Set';
-                        }
-                    }
+if (hoursElement) {
+    if (data.opening_time && data.closing_time) {
+        hoursElement.textContent = `${data.opening_time} - ${data.closing_time}`;
+    } else {
+        hoursElement.textContent = 'Not Set';
+    }
+}
 
                     if (data.amenities) {
                         document.getElementById('establishmentAmenities').textContent = data.amenities || 'N/A';
@@ -351,18 +352,18 @@ function setupUpdateStoreDetailsForm() {
                         document.getElementById('storeCoverPhoto').src = data.image_url;
                     }
 
-                    showNotification('✅ Store details updated successfully!', 'success');
+                    showNotification('âœ… Store details updated successfully!', 'success');
 
                     setTimeout(() => {
                         closeModal('updateStoreDetailsModal');
                     }, 1000);
                 } else {
-                    showNotification('❌ ' + (data.error || 'Failed to update store details'), 'error');
+                    showNotification('âŒ ' + (data.error || 'Failed to update store details'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('❌ An error occurred while updating', 'error');
+                showNotification('âŒ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -399,19 +400,19 @@ function setupEditMenuItemForm() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification('✅ ' + data.message, 'success');
+                    showNotification('âœ… ' + data.message, 'success');
                     updateMenuItemInGrid(data.item);
 
                     setTimeout(() => {
                         closeModal('editMenuItemModal');
                     }, 1000);
                 } else {
-                    showNotification('❌ ' + (data.error || 'Failed to update menu item'), 'error');
+                    showNotification('âŒ ' + (data.error || 'Failed to update menu item'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('❌ An error occurred while updating', 'error');
+                showNotification('âŒ An error occurred while updating', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -451,7 +452,7 @@ function updateMenuItemInGrid(item) {
 
     menuCard.querySelector('.menu-name').textContent = item.name;
     menuCard.querySelector('.menu-desc').textContent = item.description;
-    menuCard.querySelector('.menu-price').textContent = `₱${parseFloat(item.price).toFixed(2)}`;
+    menuCard.querySelector('.menu-price').textContent = `â‚±${parseFloat(item.price).toFixed(2)}`;
 
     menuCard.style.animation = 'pulse 0.5s ease';
     setTimeout(() => {
@@ -503,16 +504,16 @@ function deleteMenuItem(itemId, button) {
                 }, 300);
             }
 
-            showNotification('✅ ' + data.message, 'success');
+            showNotification('âœ… ' + data.message, 'success');
         } else {
-            showNotification('❌ ' + data.message, 'error');
+            showNotification('âŒ ' + data.message, 'error');
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-trash"></i> Delete';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('❌ An error occurred', 'error');
+        showNotification('âŒ An error occurred', 'error');
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash"></i> Delete';
     });
@@ -624,25 +625,25 @@ function initializeMap() {
 
     // Map layers
     const hybridLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: '© Google',
+        attribution: 'Â© Google',
         maxZoom: 21,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     });
 
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        attribution: '© Google',
+        attribution: 'Â© Google',
         maxZoom: 21
     });
 
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
+        attribution: 'Â© OpenStreetMap',
         maxZoom: 22
     });
 
     const baseMaps = {
-        "🗺️ Hybrid (Best View)": hybridLayer,
-        "🛰️ Satellite": satelliteLayer,
-        "🗺️ Street Map": streetLayer
+        "ðŸ—ºï¸ Hybrid (Best View)": hybridLayer,
+        "ðŸ›°ï¸ Satellite": satelliteLayer,
+        "ðŸ—ºï¸ Street Map": streetLayer
     };
 
     // Initialize map
@@ -660,14 +661,14 @@ function initializeMap() {
 
     // Add CvSU marker
     const cvsuIcon = L.divIcon({
-        html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏫</div>',
+        html: '<div style="background: #f02849; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">ðŸ«</div>',
         className: 'cvsu-marker',
         iconSize: [36, 36]
     });
 
     L.marker([cvsuLat, cvsuLng], { icon: cvsuIcon })
         .addTo(map)
-        .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">🎓 CvSU-Bacoor<br><small>500m Radius Center</small></div>')
+        .bindPopup('<div style="text-align: center; font-weight: bold; padding: 8px;">ðŸŽ“ CvSU-Bacoor<br><small>500m Radius Center</small></div>')
         .openPopup();
 
     // Add restriction circle
@@ -682,7 +683,7 @@ function initializeMap() {
 
     // Add establishment marker
     const establishmentIcon = L.divIcon({
-        html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">📍</span></div>',
+        html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);"><span style="transform: rotate(45deg);">ðŸ“</span></div>',
         className: 'establishment-marker',
         iconSize: [40, 40],
         iconAnchor: [20, 40]
@@ -705,10 +706,10 @@ function initializeMap() {
                 }
             );
             const data = await response.json();
-            return data?.display_name || `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            return data?.display_name || `ðŸ“ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         } catch (error) {
             console.error('Geocoding error:', error);
-            return `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            return `ðŸ“ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         }
     }
 
@@ -740,14 +741,14 @@ function initializeMap() {
 
             return true;
         } else {
-            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} ⚠️ OUTSIDE RADIUS`;
+            displayEl.innerHTML = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} âš ï¸ OUTSIDE RADIUS`;
             displayEl.style.color = 'white';
             displayEl.parentElement.parentElement.parentElement.style.background = 'linear-gradient(135deg, #f44336 0%, #c62828 100%)';
 
             document.getElementById('geocodedAddressDisplay').style.display = 'none';
             currentGeocodedAddress = '';
 
-            showNotification('⚠️ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
+            showNotification('âš ï¸ Please pin inside the red circle (within 500m of CvSU-Bacoor)', 'warning');
 
             return false;
         }
@@ -795,13 +796,13 @@ function resetToCvSU() {
         document.getElementById('geocodedAddressDisplay').style.display = 'none';
         currentGeocodedAddress = '';
 
-        showNotification('✅ Location reset to CvSU-Bacoor Campus', 'success');
+        showNotification('âœ… Location reset to CvSU-Bacoor Campus', 'success');
     }
 }
 
 function confirmMapLocation() {
     if (!currentGeocodedAddress) {
-        showNotification('⚠️ Please pin a location on the map first', 'warning');
+        showNotification('âš ï¸ Please pin a location on the map first', 'warning');
         return;
     }
 
@@ -809,7 +810,7 @@ function confirmMapLocation() {
     const lng = document.getElementById('id_longitude').value;
 
     if (!lat || !lng) {
-        showNotification('⚠️ Please pin a location on the map first', 'warning');
+        showNotification('âš ï¸ Please pin a location on the map first', 'warning');
         return;
     }
 
@@ -819,11 +820,11 @@ function confirmMapLocation() {
     }
 
     closeModal('mapModal');
-    showNotification('✅ Location and address updated successfully!', 'success');
+    showNotification('âœ… Location and address updated successfully!', 'success');
 }
 
 // ==========================================
-// NOTIFICATION PANEL (FIXED CACHING)
+// NOTIFICATION PANEL
 // ==========================================
 function toggleNotificationPanel() {
     const panel = document.getElementById('notificationPanel');
@@ -836,37 +837,22 @@ function toggleNotificationPanel() {
 }
 
 function loadNotifications() {
-    const timestamp = new Date().getTime();
-    const url = `/api/notifications/?t=${timestamp}`;
-
-    console.log(`📬 Loading notifications: ${url}`);
-
-    fetch(url, {
+    fetch('/api/notifications/', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => {
-        console.log('📡 Response status:', response.status);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('📦 Data received:', data);
-
         if (data.success) {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
-                console.log(`✅ Rendering ${data.notifications.length} notifications`);
                 list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
                 updateNotificationBadge(data.unread_count);
             } else {
-                console.log('ℹ️ No notifications to display');
                 list.innerHTML = `
                     <div class="notification-empty-state">
                         <i class="fas fa-bell-slash"></i>
@@ -878,37 +864,37 @@ function loadNotifications() {
         }
     })
     .catch(error => {
-        console.error('❌ Error loading notifications:', error);
+        console.error('Error loading notifications:', error);
     });
 }
+// âœ… ENHANCED: Render notification with complete order details
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
     const statusClass = notif.order.status.toLowerCase();
+
+    // Get first letter of customer name for avatar
     const customerInitial = notif.customer.name.charAt(0).toUpperCase();
 
     // Format order items
-    let orderItemsHTML = '';
-    if (notif.order && notif.order.items) {
-        orderItemsHTML = notif.order.items.map(item => `
-            <div class="order-item-row">
-                <div class="item-name-qty">
-                    <strong>${item.name}</strong> x${item.quantity}
-                </div>
-                <div class="item-price">₱${item.total.toFixed(2)}</div>
+    const orderItemsHTML = notif.order.items.map(item => `
+        <div class="order-item-row">
+            <div class="item-name-qty">
+                <strong>${item.name}</strong> x${item.quantity}
             </div>
-        `).join('');
-    }
+            <div class="item-price">â‚±${item.total.toFixed(2)}</div>
+        </div>
+    `).join('');
 
     return `
         <div class="notification-item ${isUnread}" onclick="markNotificationRead(${notif.id})" data-notification-id="${notif.id}">
             <div class="notification-header">
                 <div class="notification-icon">
-                    <i class="fas fa-shopping-cart"></i>
+                    <i class="fas fa-${getNotificationIcon(notif.type)}"></i>
                 </div>
                 <div class="notification-content">
                     <div class="notification-title">
-                        <span>New Order #${notif.order.id}</span>
-                        <span class="notification-type-badge ${notif.type}">NEW ORDER</span>
+                        <span>${getNotificationTitle(notif.type)}</span>
+                        <span class="notification-type-badge ${notif.type}">${notif.type.replace('_', ' ')}</span>
                     </div>
                     <div class="notification-message">${notif.message}</div>
                 </div>
@@ -927,7 +913,7 @@ function renderNotification(notif) {
             <div class="order-summary">
                 <div class="order-summary-header">
                     <span class="order-id">Order #${notif.order.id}</span>
-                    <span class="order-total">₱${notif.order.total_amount.toFixed(2)}</span>
+                    <span class="order-total">â‚±${notif.order.total_amount.toFixed(2)}</span>
                 </div>
 
                 ${notif.order.reference_number !== 'N/A' ? `
@@ -971,60 +957,34 @@ function renderNotification(notif) {
 }
 
 function pollNotifications() {
-    const timestamp = new Date().getTime();
-    const url = `/api/notifications/?t=${timestamp}`;
+    if (!document.getElementById('notificationPanel').classList.contains('open')) {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationBadge(data.unread_count);
 
-    console.log(`🔍 Polling notifications: ${url}`);
-
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log(`✅ Poll successful - ${data.notifications ? data.notifications.length : 0} notifications, ${data.unread_count} unread`);
-
-            updateNotificationBadge(data.unread_count);
-
-            if (data.notifications && data.notifications.length > 0) {
-                const latestNotif = data.notifications[0];
-                const lastSeenId = localStorage.getItem('lastSeenNotificationId');
-
-                if (latestNotif.is_new && (!lastSeenId || latestNotif.id > parseInt(lastSeenId))) {
-                    console.log('🆕 NEW NOTIFICATION DETECTED!', latestNotif);
-                    showToastNotification(latestNotif);
-                    localStorage.setItem('lastSeenNotificationId', latestNotif.id);
-
-                    if (document.getElementById('notificationPanel').classList.contains('open')) {
-                         const list = document.getElementById('notificationList');
-                         list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
+                // Show toast notification if new orders
+                if (data.unread_count > 0) {
+                    const latestNotif = data.notifications[0];
+                    if (latestNotif && latestNotif.is_new) {
+                        showToastNotification(latestNotif);
                     }
                 }
             }
-        }
-    })
-    .catch(error => {
-        console.error('❌ Polling error:', error);
-    });
+        })
+        .catch(error => {
+            console.error('Error polling notifications:', error);
+        });
+    }
 }
-
-function startNotificationAutoRefresh() {
-    console.log('🔄 Starting notification auto-refresh with 3-second polling...');
-    loadNotifications();
-    setInterval(() => {
-        console.log('⏱️ Polling for new notifications...');
-        pollNotifications();
-    }, 3000);
-    console.log('✅ Auto-refresh active - checking every 3 seconds');
-}
-
+// âœ… Show toast notification for new orders
 function showToastNotification(notif) {
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
@@ -1034,7 +994,7 @@ function showToastNotification(notif) {
         </div>
         <div class="toast-content">
             <div class="toast-title">New Order #${notif.order.id}</div>
-            <div class="toast-message">${notif.customer.name} • ₱${notif.order.total_amount.toFixed(2)}</div>
+            <div class="toast-message">${notif.customer.name} â€¢ â‚±${notif.order.total_amount.toFixed(2)}</div>
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
@@ -1043,6 +1003,7 @@ function showToastNotification(notif) {
 
     document.body.appendChild(toast);
 
+    // Auto remove after 5 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOut 300ms ease';
         setTimeout(() => toast.remove(), 300);
@@ -1093,13 +1054,14 @@ function markNotificationRead(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Update UI
             const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
             if (notifElement) {
                 notifElement.classList.remove('unread');
             }
-            if (data.unread_count !== undefined) {
-                updateNotificationBadge(data.unread_count);
-            }
+
+            // Refresh list to update count
+            loadNotifications();
         }
     })
     .catch(error => {
@@ -1119,107 +1081,12 @@ function markAllNotificationsRead() {
     .then(data => {
         if (data.success) {
             loadNotifications();
-            showNotification('✅ All notifications marked as read', 'success');
+            showNotification('âœ… All notifications marked as read', 'success');
         }
     })
     .catch(error => {
         console.error('Error marking all notifications as read:', error);
     });
-}
-
-// ==========================================
-// CHAT & PANEL MANAGEMENT (FIXED)
-// ==========================================
-function toggleChatPanel() {
-    const panel = document.getElementById('chatPanel');
-    const chatWindow = document.getElementById('chatWindow');
-
-    if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
-    } else {
-        panel.classList.add('open');
-        // FIX: Remove 'open' instead of 'active'
-        chatWindow.classList.remove('open');
-        loadConversations();
-    }
-}
-
-function loadConversations() {
-    // Note: establishmentId is defined in the HTML script tag
-    fetch(`/owner/chat/conversations/${establishmentId}/`)
-        .then(response => response.json())
-        .then(data => {
-            const list = document.getElementById('conversationsList');
-
-            if (data.conversations && data.conversations.length > 0) {
-                list.innerHTML = data.conversations.map(conv => `
-                    <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${conv.customer_name}')">
-                        <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
-                        <div class="chat-conversation-info">
-                            <div class="chat-conversation-name">${conv.customer_name}</div>
-                            <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
-                        </div>
-                        <div class="chat-conversation-time">${conv.time || ''}</div>
-                        ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
-                    </div>
-                `).join('');
-
-                const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
-                updateChatBadge(totalUnread);
-            } else {
-                list.innerHTML = `
-                    <div class="chat-empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>No conversations yet</p>
-                    </div>
-                `;
-                updateChatBadge(0);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading conversations:', error);
-        });
-}
-
-function openConversation(customerId, customerName) {
-    activeCustomerId = customerId;
-
-    document.getElementById('chatWindowName').textContent = customerName;
-    document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
-
-    document.getElementById('chatPanel').classList.remove('open');
-    // FIX: Add 'open' class instead of 'active' to match CSS
-    document.getElementById('chatWindow').classList.add('open');
-
-    loadMessages(customerId);
-    connectWebSocket(customerId);
-}
-
-function backToConversations() {
-    // FIX: Remove 'open' class instead of 'active'
-    document.getElementById('chatWindow').classList.remove('open');
-    document.getElementById('chatPanel').classList.add('open');
-
-    if (chatSocket) {
-        chatSocket.close();
-        chatSocket = null;
-    }
-
-    activeCustomerId = null;
-    // Clearing variables defined in HTML script
-    if (typeof ownerPinnedMessages !== 'undefined') ownerPinnedMessages.clear();
-    if (typeof ownerMessagesCache !== 'undefined') ownerMessagesCache = [];
-    loadConversations();
-}
-
-function updateChatBadge(count) {
-    const badge = document.getElementById('chatBadge');
-    if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.style.display = 'block';
-    } else {
-        badge.style.display = 'none';
-    }
 }
 
 // ==========================================
@@ -1248,11 +1115,7 @@ document.addEventListener('keydown', function(e) {
         }
 
         const chatPanel = document.getElementById('chatPanel');
-        const chatWindow = document.getElementById('chatWindow');
-
-        if (chatWindow && chatWindow.classList.contains('open')) {
-            backToConversations();
-        } else if (chatPanel && chatPanel.classList.contains('open')) {
+        if (chatPanel && chatPanel.classList.contains('open')) {
             toggleChatPanel();
         }
     }
@@ -1262,17 +1125,22 @@ document.addEventListener('keydown', function(e) {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard initializing with auto-refresh...');
-    startNotificationAutoRefresh();
-
+    console.log('ðŸš€ Dashboard initializing...');
+    setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
 
     if (loginSuccess === 'true') {
-        showNotification('✅ Successfully logged in! Welcome to your dashboard.', 'success');
+        showNotification('âœ… Successfully logged in! Welcome to your dashboard.', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Load notifications
+    loadNotifications();
+
+    // Poll for new notifications every 60 seconds
+    setInterval(pollNotifications, 60000);
 
     // Setup form handlers
     setupUpdateStoreDetailsForm();
@@ -1288,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    console.log('✅ Dashboard initialized successfully');
+    console.log('âœ… Dashboard initialized successfully');
 });
 
 // ==========================================
@@ -1339,30 +1207,40 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
 // ==========================================
-// SCROLL TO TOP FUNCTIONALITY
+// SCROLL TO TOP FUNCTIONALITY (UNIVERSAL FIX)
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
 
     if (scrollBtn) {
+        // 1. Universal Scroll Detector (Detects window OR div scrolling)
         window.addEventListener('scroll', function(e) {
+            // Determine if the scroll is coming from the window or a specific element
             const target = e.target;
             const scrollPosition = (target === document) ? window.scrollY : target.scrollTop;
 
+            // Ignore small scrolling boxes (like dropdowns)
+            // Only trigger for the main page or large containers
             if (target !== document && target.scrollHeight < 500) return;
 
+            // Show button if scrolled more than 300px
             if (scrollPosition > 300) {
                 scrollBtn.classList.add('show');
             } else {
                 scrollBtn.classList.remove('show');
             }
-        }, true);
+        }, true); // <--- 'true' captures scroll events inside divs!
 
+        // 2. Universal Scroll To Top Action
         scrollBtn.addEventListener('click', function(e) {
             e.preventDefault();
+
+            // Method A: Scroll Window
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Method B: Scroll any open container (Fix for dashboards)
+            // This finds whatever element is currently scrolled down and pushes it up
             const allElements = document.querySelectorAll('*');
             allElements.forEach(el => {
                 if (el.scrollTop > 0) {
@@ -1371,15 +1249,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        console.log("✅ Scroll Button Loaded");
+        console.log("âœ… Scroll Button Loaded");
     } else {
-        console.error("❌ Scroll Button Element NOT found. Check your HTML placement.");
+        console.error("âŒ Scroll Button Element NOT found. Check your HTML placement.");
     }
 });
-
 document.addEventListener('DOMContentLoaded', function() {
     updateStoreStats();
 
+    // Update stats whenever menu changes
     const observer = new MutationObserver(updateStoreStats);
     const menuGrid = document.querySelector('.menu-grid');
     if (menuGrid) {
@@ -1388,16 +1266,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateStoreStats() {
+    // Count Best Sellers (items with "Best Seller" badge)
     const bestSellerBadges = document.querySelectorAll('.badge.bestseller');
     const bestSellerCount = bestSellerBadges.length;
 
+    // Count Available Items (items with quantity > 0)
     const availableBadges = document.querySelectorAll('.badge.available');
     const availableCount = availableBadges.length;
 
+    // Update display with animation
     animateCount('bestSellerCount', bestSellerCount);
     animateCount('availableCount', availableCount);
 
-    console.log(`✅ Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
+    console.log(`Ã¢Å“â€¦ Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
 }
 
 function animateCount(elementId, targetCount) {
@@ -1405,7 +1286,7 @@ function animateCount(elementId, targetCount) {
     if (!element) return;
 
     const currentCount = parseInt(element.textContent) || 0;
-    const duration = 500;
+    const duration = 500; // milliseconds
     const steps = 20;
     const increment = (targetCount - currentCount) / steps;
     let current = currentCount;
@@ -1424,4 +1305,5 @@ function animateCount(elementId, targetCount) {
     }, duration / steps);
 }
 
+// Ã¢Å“â€¦ Auto-update when menu items are added/edited/deleted
 window.addEventListener('menuUpdated', updateStoreStats);
