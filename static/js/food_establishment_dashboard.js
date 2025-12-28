@@ -871,8 +871,6 @@ function loadNotifications() {
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
     const statusClass = notif.order.status.toLowerCase();
-
-    // Get first letter of customer name for avatar
     const customerInitial = notif.customer.name.charAt(0).toUpperCase();
 
     // Format order items
@@ -889,12 +887,12 @@ function renderNotification(notif) {
         <div class="notification-item ${isUnread}" onclick="markNotificationRead(${notif.id})" data-notification-id="${notif.id}">
             <div class="notification-header">
                 <div class="notification-icon">
-                    <i class="fas fa-${getNotificationIcon(notif.type)}"></i>
+                    <i class="fas fa-shopping-cart"></i>
                 </div>
                 <div class="notification-content">
                     <div class="notification-title">
-                        <span>${getNotificationTitle(notif.type)}</span>
-                        <span class="notification-type-badge ${notif.type}">${notif.type.replace('_', ' ')}</span>
+                        <span>New Order #${notif.order.id}</span>
+                        <span class="notification-type-badge ${notif.type}">NEW ORDER</span>
                     </div>
                     <div class="notification-message">${notif.message}</div>
                 </div>
@@ -1054,13 +1052,10 @@ function markNotificationRead(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update UI
             const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
             if (notifElement) {
                 notifElement.classList.remove('unread');
             }
-
-            // Refresh list to update count
             loadNotifications();
         }
     })

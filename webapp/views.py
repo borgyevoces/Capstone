@@ -2066,7 +2066,7 @@ def debug_create_gcash_payload(request, order_id):
 @login_required
 def gcash_payment_success(request):
     """
-    Handle successful payment - UPDATED with stock reduction
+    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS
     """
     order_id = request.GET.get('order_id')
 
@@ -2075,9 +2075,7 @@ def gcash_payment_success(request):
         return redirect('view_cart')
 
     try:
-        # Try to find the order. The user may or may not be authenticated
-        # (redirects from PayMongo may not include session cookies). Prefer matching by id.
-        order = Order.objects.filter(id=order_id).select_related('user').first()
+        order = Order.objects.filter(id=order_id).select_related('user', 'establishment').first()
         if not order:
             messages.error(request, 'Order not found')
             return redirect('view_cart')
@@ -2087,6 +2085,18 @@ def gcash_payment_success(request):
             order.status = 'PAID'
             order.payment_confirmed_at = timezone.now()
             order.save()
+
+            # ✅ CREATE ORDER NOTIFICATION FOR OWNER
+            try:
+                OrderNotification.objects.create(
+                    establishment=order.establishment,
+                    order=order,
+                    notification_type='new_order',
+                    message=f'New order #{order.id} from {order.user.username}'
+                )
+                print(f"✅ Notification created for Order #{order.id}")
+            except Exception as notif_error:
+                print(f"⚠️ Notification creation error: {notif_error}")
 
             # Reduce stock
             for order_item in order.orderitem_set.all():
@@ -2106,37 +2116,24 @@ def gcash_payment_success(request):
             except Exception as e:
                 print(f"Email error: {e}")
 
-        # Decide where to redirect the user after payment.
-        # PayMongo will redirect to this view and include our `return_to` param
-        # when creating the payment link.
+        # Decide where to redirect
         return_to = request.GET.get('return_to')
 
-        # If the request is authenticated and belongs to the order owner,
-        # send them to the order confirmation page.
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, 'Payment successful! Your order has been confirmed.')
             return redirect('order_confirmation', order_id=order.id)
 
-        # If PayMongo returned us here and requested a cart redirect,
-        # send the user to the cart page. Since the order was marked PAID,
-        # it will no longer appear in the pending cart and the cart will
-        # effectively be cleared for that establishment.
         if return_to == 'cart':
             return redirect('view_cart')
 
-        # For buy-now flows, redirect to a public payment status / order page.
         if return_to == 'buynow':
-            # If possible, prefer showing a public payment status page that can
-            # link to the order confirmation after the user signs in.
             return redirect('payment_status', status='success')
 
-        # Fallback: public success page
         return redirect('payment_status', status='success')
 
     except Order.DoesNotExist:
         messages.error(request, 'Order not found')
         return redirect('view_cart')
-
 
 @login_required
 def gcash_payment_cancel(request):
@@ -2436,7 +2433,7 @@ def create_buynow_payment_link(request):
 @login_required
 def get_owner_notifications(request):
     """
-    ✅ ENHANCED: Get detailed notifications with order information
+    ✅ ENHANCED: Get detailed notifications with complete order information
     """
     establishment_id = request.session.get('food_establishment_id')
 
@@ -2459,14 +2456,14 @@ def get_owner_notifications(request):
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:20]  # Last 20 notifications
+        ).order_by('-created_at')[:20]
 
         notifications_data = []
 
         for notif in notifications:
             order = notif.order
 
-            # Get order items
+            # Get order items with details
             order_items = []
             for item in order.orderitem_set.all():
                 order_items.append({
@@ -2532,7 +2529,7 @@ def get_owner_notifications(request):
 
 def get_time_ago(timestamp):
     """
-    ✅ Enhanced: Convert timestamp to human-readable time ago
+    Convert timestamp to human-readable time ago
     """
     from django.utils.timezone import now
 
@@ -2609,7 +2606,6 @@ def mark_notification_read(request, notification_id):
             'error': str(e)
         }, status=500)
 
-
 @login_required
 @require_POST
 def mark_all_notifications_read(request):
@@ -2642,7 +2638,6 @@ def mark_all_notifications_read(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
 # ===================================================================================================================
