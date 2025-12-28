@@ -982,6 +982,17 @@ function pollNotifications() {
         });
     }
 }
+function startNotificationAutoRefresh() {
+    // Initial load
+    loadNotifications();
+
+    // Poll every 10 seconds for new orders
+    setInterval(() => {
+        if (!document.getElementById('notificationPanel').classList.contains('open')) {
+            pollNotifications();
+        }
+    }, 10000); // 10 seconds
+}
 // ✅ Show toast notification for new orders
 function showToastNotification(notif) {
     const toast = document.createElement('div');
@@ -1120,7 +1131,8 @@ document.addEventListener('keydown', function(e) {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard initializing...');
+    console.log('🚀 Dashboard initializing with auto-refresh...');
+    startNotificationAutoRefresh();
     setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
