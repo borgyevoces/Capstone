@@ -1402,6 +1402,22 @@ body {
         padding: 14px 16px !important;
     }
 
+    /* ✅ REMOVE WHITE BOX SA "YOUR MENU" SECTION - PHONE ONLY */
+    .menu-section {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    /* ✅ "YOUR MENU" TITLE - NO CARD */
+    .card-title-center {
+        background: transparent !important;
+        padding: 16px 8px !important;
+        margin-bottom: 16px !important;
+    }
+
     /* ✅ MENU GRID - 2 COLUMNS WIDE CARDS */
     .menu-section {
         padding-left: 0 !important;
