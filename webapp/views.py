@@ -2437,7 +2437,11 @@ def create_buynow_payment_link(request):
 def get_owner_notifications(request):
     """
 <<<<<<< HEAD
+<<<<<<< HEAD
     âœ… ENHANCED: Get detailed notifications with order information
+=======
+    ✅ ENHANCED: Get detailed notifications with order information
+>>>>>>> parent of 8b90f7c (notifications)
 =======
     ✅ ENHANCED: Get detailed notifications with order information
 >>>>>>> parent of 8b90f7c (notifications)
@@ -2537,7 +2541,11 @@ def get_owner_notifications(request):
 def get_time_ago(timestamp):
     """
 <<<<<<< HEAD
+<<<<<<< HEAD
     âœ… Enhanced: Convert timestamp to human-readable time ago
+=======
+    ✅ Enhanced: Convert timestamp to human-readable time ago
+>>>>>>> parent of 8b90f7c (notifications)
 =======
     ✅ Enhanced: Convert timestamp to human-readable time ago
 >>>>>>> parent of 8b90f7c (notifications)
