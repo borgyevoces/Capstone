@@ -1373,6 +1373,35 @@ body {
         max-width: none;
     }
 
+    /* ✅ REMOVE WHITE BOX SA "OWNER DASHBOARD" SECTION - PHONE ONLY */
+    .dashboard-content > div:first-child {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 16px 8px !important;
+        border-radius: 0 !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* ✅ TEXT STYLING FOR HEADER */
+    .dashboard-content > div:first-child h2 {
+        font-size: 20px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .dashboard-content > div:first-child p {
+        font-size: 13px !important;
+    }
+
+    /* ✅ STATS DISPLAY - KEEP VISIBLE */
+    .store-stats-display {
+        background: white !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+    }
+
     /* ✅ MENU GRID - 2 COLUMNS WIDE CARDS */
     .menu-section {
         padding-left: 0 !important;
