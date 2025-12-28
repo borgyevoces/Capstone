@@ -1014,6 +1014,8 @@
         min-width: 20px;
         text-align: center;
         line-height: 1;
+        display: none;
+        z-index: 10;
     }
 
     .cart-badge.updated-flash {
