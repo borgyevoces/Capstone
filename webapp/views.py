@@ -75,7 +75,7 @@ from django.core.cache import cache
 from datetime import datetime, time as dt_time
 
 
-# âœ… ADD THIS HELPER FUNCTION at the top of views.py (after imports)
+# ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
 def get_current_status(opening_time, closing_time):
     """Calculate real-time status"""
     if not opening_time or not closing_time:
@@ -286,7 +286,7 @@ def google_callback(request):
             message = f"Hello {user.username},\n\nThis is to confirm that your account was logged in using your Google account."
             send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
-            messages.success(request, f'ðŸŽ‰ Welcome back, {user.username}!')
+            messages.success(request, f'🎉 Welcome back, {user.username}!')
             return redirect('kabsueats_home')
         else:
             username = email.split('@')[0]
@@ -300,7 +300,7 @@ def google_callback(request):
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
 
-            messages.success(request, f'âœ¨ Welcome to KabsuEats, {user.username}! Your account has been created.')
+            messages.success(request, f'✨ Welcome to KabsuEats, {user.username}! Your account has been created.')
             return redirect('kabsueats_home')
     except Exception as e:
         messages.error(request, f'An error occurred while retrieving user data: {e}')
@@ -434,7 +434,7 @@ def password_reset_complete_redirect(request):
 def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
-    âœ… FIXED: Real-time status calculation on every page load
+    ✅ FIXED: Real-time status calculation on every page load
     """
     from datetime import datetime
 
@@ -469,7 +469,7 @@ def kabsueats_main_view(request):
     if alpha_filter:
         food_establishments_queryset = food_establishments_queryset.filter(name__istartswith=alpha_filter)
 
-    # âœ… Calculate real-time status and other data
+    # ✅ Calculate real-time status and other data
     ref_lat = 14.4607
     ref_lon = 120.9822
 
@@ -492,7 +492,7 @@ def kabsueats_main_view(request):
         est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
         est.review_count = rating_data['id__count']
 
-        # âœ… CRITICAL FIX: Calculate fresh status on every request
+        # ✅ CRITICAL FIX: Calculate fresh status on every request
         if est.opening_time and est.closing_time:
             if est.opening_time <= est.closing_time:
                 # Normal hours (e.g., 8 AM - 10 PM same day)
@@ -511,7 +511,7 @@ def kabsueats_main_view(request):
 
         food_establishments_with_data.append(est)
 
-    # âœ… Apply status filter using calculated_status
+    # ✅ Apply status filter using calculated_status
     if status_filter:
         food_establishments_with_data = [
             est for est in food_establishments_with_data
@@ -960,8 +960,8 @@ def send_registration_otp(request):
     from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
     if not from_email:
-        print("âŒ CRITICAL: No sender email configured")
-        print(f"âš ï¸ OTP saved for {email}: {otp_code}")
+        print("❌ CRITICAL: No sender email configured")
+        print(f"⚠️ OTP saved for {email}: {otp_code}")
         return JsonResponse({
             'success': True,
             'message': 'OTP generated (email not configured)',
@@ -1001,7 +1001,7 @@ def send_registration_otp(request):
 
                 <p>This OTP is valid for <strong>10 minutes</strong>.</p>
 
-                <p class="warning">âš ï¸ Do not share this code with anyone. KabsuEats staff will never ask for your OTP.</p>
+                <p class="warning">⚠️ Do not share this code with anyone. KabsuEats staff will never ask for your OTP.</p>
 
                 <p>If you didn't request this code, please ignore this email.</p>
             </div>
@@ -1025,13 +1025,13 @@ def send_registration_otp(request):
         )
 
         if result:
-            print(f"âœ… OTP sent to {email}: {otp_code}")
+            print(f"✅ OTP sent to {email}: {otp_code}")
             return JsonResponse({
                 'success': True,
                 'message': 'OTP sent successfully to your email'
             })
         else:
-            print(f"âš ï¸ Email failed but OTP saved for {email}: {otp_code}")
+            print(f"⚠️ Email failed but OTP saved for {email}: {otp_code}")
             return JsonResponse({
                 'success': True,
                 'message': 'OTP generated',
@@ -1040,7 +1040,7 @@ def send_registration_otp(request):
             })
 
     except Exception as e:
-        print(f"âŒ Error sending OTP email: {e}")
+        print(f"❌ Error sending OTP email: {e}")
         return JsonResponse({
             'success': True,
             'message': 'OTP generated',
@@ -1063,7 +1063,7 @@ def verify_otp_and_register(request):
             body = request.body.decode('utf-8') or '{}'
             data = json.loads(body) if body else {}
         except Exception as e:
-            print(f"âŒ JSON parse error: {e}")
+            print(f"❌ JSON parse error: {e}")
             data = request.POST.dict()
 
         email = data.get('email')
@@ -1071,7 +1071,7 @@ def verify_otp_and_register(request):
         password = data.get('password')
 
         # CRITICAL: Log received data
-        print(f"ðŸ“¥ Verification attempt:")
+        print(f"📥 Verification attempt:")
         print(f"   Email: {email}")
         print(f"   OTP received: {otp_code}")
         print(f"   Password length: {len(password) if password else 0}")
@@ -1092,31 +1092,31 @@ def verify_otp_and_register(request):
         try:
             from datetime import timedelta
             otp_entry = OTP.objects.get(email=email)
-            print(f"ðŸ” DB OTP: {otp_entry.code}, Received: {otp_code}")
+            print(f"🔍 DB OTP: {otp_entry.code}, Received: {otp_code}")
 
             if otp_entry.code == str(otp_code).strip():
                 # Check expiration
                 if timezone.now() - otp_entry.created_at > timedelta(minutes=10):
-                    print("âŒ OTP expired")
+                    print("❌ OTP expired")
                     return JsonResponse({
                         'error': 'OTP has expired. Please request a new one.'
                     }, status=400)
 
                 # Check if blocked
                 if otp_entry.is_blocked():
-                    print("âŒ OTP blocked")
+                    print("❌ OTP blocked")
                     return JsonResponse({
                         'error': 'Too many failed attempts. Please request a new OTP.'
                     }, status=400)
 
                 otp_valid = True
-                print("âœ… OTP valid from database")
+                print("✅ OTP valid from database")
             else:
                 otp_entry.increment_attempts()
-                print(f"âŒ OTP mismatch")
+                print(f"❌ OTP mismatch")
 
         except OTP.DoesNotExist:
-            print("âš ï¸ OTP not found in database")
+            print("⚠️ OTP not found in database")
             return JsonResponse({
                 'error': 'Invalid or expired OTP.'
             }, status=400)
@@ -1126,11 +1126,11 @@ def verify_otp_and_register(request):
                 'error': 'Invalid OTP. Please check your code.'
             }, status=400)
 
-        print(f"âœ… OTP validated from database")
+        print(f"✅ OTP validated from database")
 
         # Check if user already exists
         if User.objects.filter(email=email).exists():
-            print(f"âŒ Email already registered: {email}")
+            print(f"❌ Email already registered: {email}")
             return JsonResponse({
                 'error': 'This email is already registered.'
             }, status=400)
@@ -1146,38 +1146,38 @@ def verify_otp_and_register(request):
         if not re.search(r'\d', password):
             return JsonResponse({'error': 'Password must contain at least one number'}, status=400)
 
-        # âœ… CRITICAL FIX: Create user and return immediately
+        # ✅ CRITICAL FIX: Create user and return immediately
         try:
             user = User.objects.create_user(
                 username=email,
                 email=email,
                 password=password
             )
-            print(f"âœ… User created: {user.username}")
+            print(f"✅ User created: {user.username}")
 
-            # âœ… Delete OTP after successful registration
+            # ✅ Delete OTP after successful registration
             try:
                 OTP.objects.filter(email=email).delete()
-                print("âœ… OTP cleaned up from database")
+                print("✅ OTP cleaned up from database")
             except Exception as cleanup_error:
-                print(f"âš ï¸ OTP cleanup error (non-critical): {cleanup_error}")
+                print(f"⚠️ OTP cleanup error (non-critical): {cleanup_error}")
 
             # Clear session OTP
             try:
                 request.session.pop('otp', None)
                 request.session.pop('otp_email', None)
-                print("âœ… OTP cleaned up from session")
+                print("✅ OTP cleaned up from session")
             except Exception:
                 pass
 
-            # âœ… CRITICAL: Return success IMMEDIATELY without waiting for email
+            # ✅ CRITICAL: Return success IMMEDIATELY without waiting for email
             response_data = {
                 'success': True,
                 'message': 'Account created successfully! You can now log in.',
                 'redirect_url': '/accounts/login_register/'
             }
 
-            # âœ… Send welcome email in background (non-blocking)
+            # ✅ Send welcome email in background (non-blocking)
             try:
                 from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
                 if from_email:
@@ -1193,9 +1193,9 @@ def verify_otp_and_register(request):
                                 recipient_list=[user.email],
                                 fail_silently=True
                             )
-                            print(f"âœ… Welcome email sent to {user.email}")
+                            print(f"✅ Welcome email sent to {user.email}")
                         except Exception as e:
-                            print(f"âš ï¸ Welcome email error (non-critical): {e}")
+                            print(f"⚠️ Welcome email error (non-critical): {e}")
 
                     # Start background thread (daemon=True ensures it won't block)
                     email_thread = threading.Thread(
@@ -1205,13 +1205,13 @@ def verify_otp_and_register(request):
                     email_thread.start()
 
             except Exception as email_setup_error:
-                print(f"âš ï¸ Email setup error (non-critical): {email_setup_error}")
+                print(f"⚠️ Email setup error (non-critical): {email_setup_error}")
 
             # Return success immediately
             return JsonResponse(response_data)
 
         except Exception as user_create_error:
-            print(f"âŒ User creation error: {user_create_error}")
+            print(f"❌ User creation error: {user_create_error}")
             import traceback
             traceback.print_exc()
 
@@ -1220,7 +1220,7 @@ def verify_otp_and_register(request):
             }, status=500)
 
     except Exception as outer_error:
-        print(f"âŒ Outer exception: {outer_error}")
+        print(f"❌ Outer exception: {outer_error}")
         import traceback
         traceback.print_exc()
 
@@ -1232,7 +1232,7 @@ def verify_otp_and_register(request):
 @csrf_exempt
 def verify_otp_only(request):
     """
-    âœ… NEW: Verify OTP code BEFORE password step
+    ✅ NEW: Verify OTP code BEFORE password step
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -1334,9 +1334,9 @@ def resend_otp(request):
         otp_obj.created_at = timezone.now()
         otp_obj.save()
 
-        print(f"âœ… New OTP generated for {email}: {otp_code}")
+        print(f"✅ New OTP generated for {email}: {otp_code}")
     except Exception as e:
-        print(f"âŒ OTP save error: {e}")
+        print(f"❌ OTP save error: {e}")
         return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
 
     # Update session
@@ -1345,7 +1345,7 @@ def resend_otp(request):
         request.session['otp_email'] = email
         request.session.modified = True
     except Exception as e:
-        print(f"âš ï¸ Session update error: {e}")
+        print(f"⚠️ Session update error: {e}")
 
     # Send email
     from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
@@ -1387,7 +1387,7 @@ def resend_otp(request):
         })
 
     except Exception as e:
-        print(f"âŒ Resend email error: {e}")
+        print(f"❌ Resend email error: {e}")
         return JsonResponse({
             'success': True,
             'message': 'New OTP generated',
@@ -1416,8 +1416,8 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    âœ… PRODUCTION-READY EMAIL SENDING WITH SENDGRID PRIMARY + GMAIL FALLBACK
-    Priority: SendGrid (reliable on Render) â†’ Gmail SMTP (local backup)
+    ✅ PRODUCTION-READY EMAIL SENDING WITH SENDGRID PRIMARY + GMAIL FALLBACK
+    Priority: SendGrid (reliable on Render) → Gmail SMTP (local backup)
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -1429,7 +1429,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
     if not from_email:
-        logger.error("âŒ CRITICAL: No sender email configured")
+        logger.error("❌ CRITICAL: No sender email configured")
         if not fail_silently:
             raise ValueError("SENDER_EMAIL not configured in environment variables")
         return 0
@@ -1448,7 +1448,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             from sendgrid import SendGridAPIClient
             from sendgrid.helpers.mail import Mail, Email, To, Content
 
-            logger.info(f"ðŸ“§ Attempting SendGrid email to {recipient_list}")
+            logger.info(f"📧 Attempting SendGrid email to {recipient_list}")
 
             # Create SendGrid message
             sg_msg = Mail(
@@ -1463,28 +1463,28 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             response = sg.send(sg_msg)
 
             if response.status_code in (200, 202):
-                logger.info(f"âœ… SendGrid email sent successfully to {recipient_list}")
+                logger.info(f"✅ SendGrid email sent successfully to {recipient_list}")
                 return 1
             else:
-                logger.warning(f"âš ï¸ SendGrid returned status {response.status_code}")
+                logger.warning(f"⚠️ SendGrid returned status {response.status_code}")
 
         except Exception as sg_error:
-            logger.error(f"âŒ SendGrid error: {sg_error}")
+            logger.error(f"❌ SendGrid error: {sg_error}")
 
             # Provide specific diagnostics
             error_msg = str(sg_error).lower()
             if '403' in error_msg or 'forbidden' in error_msg:
-                logger.error("âŒ SendGrid 403 Error - Possible causes:")
+                logger.error("❌ SendGrid 403 Error - Possible causes:")
                 logger.error("   1. API Key is invalid or expired")
                 logger.error("   2. Sender email not verified in SendGrid")
                 logger.error("   3. Free trial expired")
                 logger.error("   Fix: Go to https://app.sendgrid.com/settings/sender_auth")
             elif '401' in error_msg:
-                logger.error("âŒ SendGrid 401 - API Key authentication failed")
+                logger.error("❌ SendGrid 401 - API Key authentication failed")
 
             # Continue to Gmail fallback
     else:
-        logger.warning("âš ï¸ SendGrid not configured, trying Gmail SMTP...")
+        logger.warning("⚠️ SendGrid not configured, trying Gmail SMTP...")
 
     # ============================================================================
     # STEP 3: FALLBACK TO GMAIL SMTP (LOCAL DEVELOPMENT)
@@ -1493,7 +1493,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
     # This fallback is mainly for local development
 
     try:
-        logger.info(f"ðŸ“§ Attempting Gmail SMTP fallback to {recipient_list}")
+        logger.info(f"📧 Attempting Gmail SMTP fallback to {recipient_list}")
 
         result = django_send_mail(
             subject=subject,
@@ -1505,21 +1505,21 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         )
 
         if result and result > 0:
-            logger.info(f"âœ… Gmail SMTP email sent successfully to {recipient_list}")
+            logger.info(f"✅ Gmail SMTP email sent successfully to {recipient_list}")
             return result
         else:
-            logger.warning(f"âš ï¸ Gmail SMTP returned {result}")
+            logger.warning(f"⚠️ Gmail SMTP returned {result}")
 
     except Exception as smtp_error:
-        logger.error(f"âŒ Gmail SMTP error: {smtp_error}")
+        logger.error(f"❌ Gmail SMTP error: {smtp_error}")
 
         # Provide specific diagnostics
         error_msg = str(smtp_error).lower()
         if 'network is unreachable' in error_msg or 'errno 101' in error_msg:
-            logger.error("âŒ Network Error - Render cannot reach Gmail SMTP")
+            logger.error("❌ Network Error - Render cannot reach Gmail SMTP")
             logger.error("   Solution: Use SendGrid instead (set SENDGRID_API_KEY)")
         elif 'authentication' in error_msg or '535' in error_msg:
-            logger.error("âŒ Gmail Authentication Failed")
+            logger.error("❌ Gmail Authentication Failed")
             logger.error("   1. Enable 2-Step Verification: https://myaccount.google.com/security")
             logger.error("   2. Generate App Password: https://myaccount.google.com/apppasswords")
             logger.error("   3. Update EMAIL_HOST_PASSWORD in .env")
@@ -1530,7 +1530,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
     # ============================================================================
     # STEP 4: ALL METHODS FAILED
     # ============================================================================
-    logger.error(f"âŒ All email sending methods failed for {recipient_list}")
+    logger.error(f"❌ All email sending methods failed for {recipient_list}")
 
     if not fail_silently:
         raise Exception("Email sending failed - both SendGrid and Gmail SMTP unavailable")
@@ -1730,13 +1730,13 @@ Your order from {order.establishment.name} has been confirmed!
 Order Details:
 - Order ID: {order.id}
 - Reference Number: {order.gcash_reference_number}
-- Total Amount: â‚±{order.total_amount:.2f}
+- Total Amount: ₱{order.total_amount:.2f}
 - Status: Payment Confirmed
 
 Items Ordered:
 """
         for item in order.orderitem_set.all():
-            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ â‚±{item.price_at_order:.2f} = â‚±{item.total_price:.2f}"
+            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ ₱{item.price_at_order:.2f} = ₱{item.total_price:.2f}"
 
         user_message += f"\n\nThank you for ordering with KabsuEats!"
 
@@ -1759,7 +1759,7 @@ Email: {order.user.email}
 Order Details:
 - Order ID: {order.id}
 - Reference Number: {order.gcash_reference_number}
-- Total Amount: â‚±{order.total_amount:.2f}
+- Total Amount: ₱{order.total_amount:.2f}
 - Payment Method: GCash (PayMongo)
 
 Items to Prepare:
@@ -1777,10 +1777,10 @@ Items to Prepare:
             fail_silently=True
         )
 
-        print(f"âœ… Confirmation emails sent for Order #{order.id}")
+        print(f"✅ Confirmation emails sent for Order #{order.id}")
 
     except Exception as e:
-        print(f"âŒ Error sending emails: {e}")
+        print(f"❌ Error sending emails: {e}")
 
 
 @login_required
@@ -1852,7 +1852,7 @@ def create_gcash_payment_link(request):
                 'message': 'Order total must be greater than zero.'
             }, status=400)
 
-        # PayMongo enforces a minimum amount (typically â‚±100). If the order is
+        # PayMongo enforces a minimum amount (typically ₱100). If the order is
         # below that threshold we cannot create a PayMongo link. For local
         # development (DEBUG=True) we simulate a successful payment so you can
         # test the checkout flow without calling the external API. In
@@ -1895,7 +1895,7 @@ def create_gcash_payment_link(request):
             else:
                 return JsonResponse({
                     'success': False,
-                    'message': f'PayMongo requires a minimum payment of â‚±{MIN_AMOUNT_CENTAVOS / 100:.2f}. Please increase your order or use another payment method.'
+                    'message': f'PayMongo requires a minimum payment of ₱{MIN_AMOUNT_CENTAVOS / 100:.2f}. Please increase your order or use another payment method.'
                 }, status=400)
 
         # PayMongo API setup
@@ -2066,7 +2066,7 @@ def debug_create_gcash_payload(request, order_id):
 @login_required
 def gcash_payment_success(request):
     """
-    Handle successful payment - UPDATED with stock reduction
+    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS
     """
     order_id = request.GET.get('order_id')
 
@@ -2075,9 +2075,7 @@ def gcash_payment_success(request):
         return redirect('view_cart')
 
     try:
-        # Try to find the order. The user may or may not be authenticated
-        # (redirects from PayMongo may not include session cookies). Prefer matching by id.
-        order = Order.objects.filter(id=order_id).select_related('user').first()
+        order = Order.objects.filter(id=order_id).select_related('user', 'establishment').first()
         if not order:
             messages.error(request, 'Order not found')
             return redirect('view_cart')
@@ -2088,6 +2086,18 @@ def gcash_payment_success(request):
             order.payment_confirmed_at = timezone.now()
             order.save()
 
+            # ✅ CREATE ORDER NOTIFICATION FOR OWNER
+            try:
+                OrderNotification.objects.create(
+                    establishment=order.establishment,
+                    order=order,
+                    notification_type='new_order',
+                    message=f'New order #{order.id} from {order.user.username}'
+                )
+                print(f"✅ Notification created for Order #{order.id}")
+            except Exception as notif_error:
+                print(f"⚠️ Notification creation error: {notif_error}")
+
             # Reduce stock
             for order_item in order.orderitem_set.all():
                 menu_item = order_item.menu_item
@@ -2096,7 +2106,7 @@ def gcash_payment_success(request):
                         menu_item.quantity -= order_item.quantity
                         menu_item.save()
                     else:
-                        print(f"âš ï¸ Warning: Insufficient stock for {menu_item.name}")
+                        print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
                 except Exception as stock_err:
                     print(f"Error reducing stock for {menu_item.id}: {stock_err}")
 
@@ -2106,37 +2116,24 @@ def gcash_payment_success(request):
             except Exception as e:
                 print(f"Email error: {e}")
 
-        # Decide where to redirect the user after payment.
-        # PayMongo will redirect to this view and include our `return_to` param
-        # when creating the payment link.
+        # Decide where to redirect
         return_to = request.GET.get('return_to')
 
-        # If the request is authenticated and belongs to the order owner,
-        # send them to the order confirmation page.
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, 'Payment successful! Your order has been confirmed.')
             return redirect('order_confirmation', order_id=order.id)
 
-        # If PayMongo returned us here and requested a cart redirect,
-        # send the user to the cart page. Since the order was marked PAID,
-        # it will no longer appear in the pending cart and the cart will
-        # effectively be cleared for that establishment.
         if return_to == 'cart':
             return redirect('view_cart')
 
-        # For buy-now flows, redirect to a public payment status / order page.
         if return_to == 'buynow':
-            # If possible, prefer showing a public payment status page that can
-            # link to the order confirmation after the user signs in.
             return redirect('payment_status', status='success')
 
-        # Fallback: public success page
         return redirect('payment_status', status='success')
 
     except Order.DoesNotExist:
         messages.error(request, 'Order not found')
         return redirect('view_cart')
-
 
 @login_required
 def gcash_payment_cancel(request):
@@ -2175,7 +2172,7 @@ def paymongo_webhook(request):
     This is optional but recommended for production to handle payment confirmations.
 
     To set up:
-    1. Go to PayMongo Dashboard â†’ Developers â†’ Webhooks
+    1. Go to PayMongo Dashboard → Developers → Webhooks
     2. Add webhook URL: https://yourdomain.com/payment/webhook/
     3. Subscribe to events: payment.paid, payment.failed
     """
@@ -2246,13 +2243,13 @@ Your order from {order.establishment.name} has been confirmed!
 Order Details:
 - Order ID: {order.id}
 - Reference: {order.gcash_reference_number}
-- Total: â‚±{order.total_amount:.2f}
+- Total: ₱{order.total_amount:.2f}
 - Status: Payment Confirmed
 
 Items:
 """
         for item in order.orderitem_set.all():
-            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ â‚±{item.price_at_order:.2f} = â‚±{item.total_price:.2f}"
+            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ ₱{item.price_at_order:.2f} = ₱{item.total_price:.2f}"
 
         user_message += "\n\nThank you for ordering with KabsuEats!"
 
@@ -2275,7 +2272,7 @@ Email: {order.user.email}
 Order Details:
 - Order ID: {order.id}
 - Reference: {order.gcash_reference_number}
-- Total: â‚±{order.total_amount:.2f}
+- Total: ₱{order.total_amount:.2f}
 
 Items to Prepare:
 """
@@ -2292,10 +2289,10 @@ Items to Prepare:
             fail_silently=True
         )
 
-        print(f"âœ… Emails sent for Order #{order.id}")
+        print(f"✅ Emails sent for Order #{order.id}")
 
     except Exception as e:
-        print(f"âŒ Email error: {e}")
+        print(f"❌ Email error: {e}")
 
 
 @login_required
@@ -2325,7 +2322,7 @@ def create_buynow_payment_link(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # âœ… REMOVED DELIVERY FEE - Calculate item total only
+        # ✅ REMOVED DELIVERY FEE - Calculate item total only
         item_total = Decimal(str(menu_item.price)) * quantity
         grand_total = item_total  # No delivery fee
         amount_in_centavos = int(grand_total * 100)
@@ -2402,7 +2399,7 @@ def create_buynow_payment_link(request):
                 order.gcash_reference_number = reference_number
                 order.save(update_fields=['gcash_reference_number'])
             except Exception as e:
-                print(f"âš ï¸ Warning: Could not save reference number: {e}")
+                print(f"⚠️ Warning: Could not save reference number: {e}")
 
             return JsonResponse({
                 'success': True,
@@ -2423,7 +2420,7 @@ def create_buynow_payment_link(request):
             }, status=500)
 
     except Exception as e:
-        print(f"âŒ Error creating Buy Now payment: {e}")
+        print(f"❌ Error creating Buy Now payment: {e}")
         import traceback
         traceback.print_exc()
 
@@ -2436,15 +2433,7 @@ def create_buynow_payment_link(request):
 @login_required
 def get_owner_notifications(request):
     """
-<<<<<<< HEAD
-<<<<<<< HEAD
-    âœ… ENHANCED: Get detailed notifications with order information
-=======
-    ✅ ENHANCED: Get detailed notifications with order information
->>>>>>> parent of 8b90f7c (notifications)
-=======
-    ✅ ENHANCED: Get detailed notifications with order information
->>>>>>> parent of 8b90f7c (notifications)
+    ✅ ENHANCED: Get detailed notifications with complete order information
     """
     establishment_id = request.session.get('food_establishment_id')
 
@@ -2467,14 +2456,14 @@ def get_owner_notifications(request):
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:20]  # Last 20 notifications
+        ).order_by('-created_at')[:20]
 
         notifications_data = []
 
         for notif in notifications:
             order = notif.order
 
-            # Get order items
+            # Get order items with details
             order_items = []
             for item in order.orderitem_set.all():
                 order_items.append({
@@ -2540,15 +2529,7 @@ def get_owner_notifications(request):
 
 def get_time_ago(timestamp):
     """
-<<<<<<< HEAD
-<<<<<<< HEAD
-    âœ… Enhanced: Convert timestamp to human-readable time ago
-=======
-    ✅ Enhanced: Convert timestamp to human-readable time ago
->>>>>>> parent of 8b90f7c (notifications)
-=======
-    ✅ Enhanced: Convert timestamp to human-readable time ago
->>>>>>> parent of 8b90f7c (notifications)
+    Convert timestamp to human-readable time ago
     """
     from django.utils.timezone import now
 
@@ -2625,7 +2606,6 @@ def mark_notification_read(request, notification_id):
             'error': str(e)
         }, status=500)
 
-
 @login_required
 @require_POST
 def mark_all_notifications_read(request):
@@ -2658,7 +2638,6 @@ def mark_all_notifications_read(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
 # ===================================================================================================================
@@ -2672,7 +2651,7 @@ User = get_user_model()
 def owner_login(request):
     """
     Owner login: accepts email & password, authenticates, sets session 'food_establishment_id'
-    Ã¢Å“â€¦ FIXED: Redirects with login_success parameter for notification
+    âœ… FIXED: Redirects with login_success parameter for notification
     """
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
@@ -2689,7 +2668,7 @@ def owner_login(request):
             if est:
                 request.session['food_establishment_id'] = est.id
 
-                # Ã¢Å“â€¦ REDIRECT WITH SUCCESS PARAMETER
+                # âœ… REDIRECT WITH SUCCESS PARAMETER
                 return redirect(reverse('food_establishment_dashboard') + '?login_success=true')
             else:
                 messages.error(request, "No establishment found for this account.")
@@ -2736,7 +2715,7 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    âœ… COMPLETELY FIXED: Owner registration OTP with comprehensive debugging
+    ✅ COMPLETELY FIXED: Owner registration OTP with comprehensive debugging
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -2747,7 +2726,7 @@ def send_otp(request):
             body = request.body.decode('utf-8') or '{}'
             data = json.loads(body) if body else {}
         except Exception as parse_error:
-            print(f"âŒ JSON parse error: {parse_error}")
+            print(f"❌ JSON parse error: {parse_error}")
             data = request.POST.dict()
 
         email = data.get('email') or request.POST.get('email')
@@ -2764,7 +2743,7 @@ def send_otp(request):
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999)).zfill(6)
 
-        print(f"ðŸ” Generating OTP for {email}: {otp_code}")
+        print(f"🔐 Generating OTP for {email}: {otp_code}")
 
         # Save OTP to database with fresh timestamp
         try:
@@ -2781,9 +2760,9 @@ def send_otp(request):
                 otp_obj.created_at = timezone.now()
                 otp_obj.save()
 
-            print(f"âœ… OTP saved to database: {otp_obj.code}")
+            print(f"✅ OTP saved to database: {otp_obj.code}")
         except Exception as db_error:
-            print(f"âŒ OTP DB save error: {db_error}")
+            print(f"❌ OTP DB save error: {db_error}")
             return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
 
         # Save in session as backup
@@ -2791,9 +2770,9 @@ def send_otp(request):
             request.session['otp'] = otp_code
             request.session['otp_email'] = email
             request.session.modified = True
-            print(f"âœ… OTP saved to session")
+            print(f"✅ OTP saved to session")
         except Exception as session_error:
-            print(f"âš ï¸ Session OTP save error (non-critical): {session_error}")
+            print(f"⚠️ Session OTP save error (non-critical): {session_error}")
 
         # ============================================================================
         # EMAIL SENDING WITH COMPREHENSIVE DIAGNOSTICS
@@ -2803,7 +2782,7 @@ def send_otp(request):
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
         if not from_email:
-            print("âŒ CRITICAL: No SENDER_EMAIL configured")
+            print("❌ CRITICAL: No SENDER_EMAIL configured")
             return JsonResponse({
                 'success': True,
                 'warning': 'Email not configured - check .env file',
@@ -2811,7 +2790,7 @@ def send_otp(request):
                 'message': 'OTP generated but email not sent'
             })
 
-        print(f"ðŸ“§ Attempting to send OTP email from: {from_email}")
+        print(f"📧 Attempting to send OTP email from: {from_email}")
 
         # Prepare HTML content
         html_content = f"""
@@ -2843,7 +2822,7 @@ def send_otp(request):
             </div>
 
             <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-            <p style="color: #d9534f;">âš ï¸ Do not share this code with anyone.</p>
+            <p style="color: #d9534f;">⚠️ Do not share this code with anyone.</p>
         </div>
         <div class="footer">
             <p>&copy; 2024 KabsuEats. All rights reserved.</p>
@@ -2871,7 +2850,7 @@ The KabsuEats Team
         # SEND EMAIL WITH DETAILED ERROR LOGGING
         # ============================================================================
         try:
-            print("ðŸ“¤ Calling send_mail function...")
+            print("📤 Calling send_mail function...")
 
             result = send_mail(
                 subject='KabsuEats Business Registration - Verification Code',
@@ -2882,16 +2861,16 @@ The KabsuEats Team
                 html_message=html_content
             )
 
-            print(f"ðŸ“¬ Email send result: {result}")
+            print(f"📬 Email send result: {result}")
 
             if result and result > 0:
-                print(f"âœ… OTP email sent successfully to {email}")
+                print(f"✅ OTP email sent successfully to {email}")
                 return JsonResponse({
                     'success': True,
                     'message': 'OTP sent successfully to your email'
                 })
             else:
-                print(f"âš ï¸ Email send returned 0 or None")
+                print(f"⚠️ Email send returned 0 or None")
                 return JsonResponse({
                     'success': True,
                     'warning': 'OTP generated but email may be delayed',
@@ -2900,7 +2879,7 @@ The KabsuEats Team
                 })
 
         except Exception as email_error:
-            print(f"âŒ Email sending error: {email_error}")
+            print(f"❌ Email sending error: {email_error}")
             import traceback
             traceback.print_exc()
 
@@ -2926,7 +2905,7 @@ The KabsuEats Team
             })
 
     except Exception as outer_error:
-        print(f"âŒ Outer exception in send_otp: {outer_error}")
+        print(f"❌ Outer exception in send_otp: {outer_error}")
         import traceback
         traceback.print_exc()
 
@@ -2990,7 +2969,7 @@ def verify_and_register(request):
     category = Category.objects.filter(id=category_id).first() if category_id else None
     from datetime import time as dt_time
 
-    # âœ… Parse time strings to time objects
+    # ✅ Parse time strings to time objects
     opening_time_str = data.get('opening_time')
     closing_time_str = data.get('closing_time')
 
@@ -3002,20 +2981,20 @@ def verify_and_register(request):
             # Handle both "HH:MM" and "HH:MM:SS" formats
             opening_time = dt_time.fromisoformat(opening_time_str)
         except ValueError as e:
-            print(f"âš ï¸ Invalid opening_time format: {opening_time_str} - {e}")
+            print(f"⚠️ Invalid opening_time format: {opening_time_str} - {e}")
 
     if closing_time_str:
         try:
             closing_time = dt_time.fromisoformat(closing_time_str)
         except ValueError as e:
-            print(f"âš ï¸ Invalid closing_time format: {closing_time_str} - {e}")
+            print(f"⚠️ Invalid closing_time format: {closing_time_str} - {e}")
 
     establishment = FoodEstablishment.objects.create(
         owner=user,
         name=name,
         address=address,
-        opening_time=opening_time,  # âœ… Changed
-        closing_time=closing_time,  # âœ… Added
+        opening_time=opening_time,  # ✅ Changed
+        closing_time=closing_time,  # ✅ Added
         latitude=float(latitude) if latitude else None,
         longitude=float(longitude) if longitude else None,
         category=category,
@@ -3029,7 +3008,7 @@ def verify_and_register(request):
         except Exception:
             establishment.amenities.clear()
 
-    # âœ… Handle uploaded image (profile or cover)
+    # ✅ Handle uploaded image (profile or cover)
     if 'profile_image' in request.FILES:
         establishment.image = request.FILES['profile_image']
     elif 'cover_image' in request.FILES:
@@ -3037,7 +3016,7 @@ def verify_and_register(request):
 
     establishment.save()
 
-    # âœ… Auto-login user
+    # ✅ Auto-login user
     user = authenticate(request, username=email, password=password)
     if user:
         login(request, user)
@@ -3070,7 +3049,7 @@ def food_establishment_dashboard(request):
 
     if request.method == 'POST':
         # ========================================
-        # âœ… ADD NEW MENU ITEM - COMPLETE FIX WITH BETTER ERROR HANDLING
+        # ✅ ADD NEW MENU ITEM - COMPLETE FIX WITH BETTER ERROR HANDLING
         # ========================================
         if 'add_menu_item' in request.POST:
             try:
@@ -3111,7 +3090,7 @@ def food_establishment_dashboard(request):
 
                         menu_item.save()
 
-                        # âœ… CRITICAL: Return complete item data for AJAX
+                        # ✅ CRITICAL: Return complete item data for AJAX
                         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                             # Get absolute URL for image
                             image_url = ''
@@ -3143,7 +3122,7 @@ def food_establishment_dashboard(request):
                         return redirect('food_establishment_dashboard')
 
                     except Exception as save_error:
-                        print(f"âŒ Error saving menu item: {save_error}")
+                        print(f"❌ Error saving menu item: {save_error}")
                         import traceback
                         traceback.print_exc()
 
@@ -3156,7 +3135,7 @@ def food_establishment_dashboard(request):
                         return redirect('food_establishment_dashboard')
                 else:
                     # Return validation errors
-                    print(f"âŒ Form validation errors: {menu_item_form.errors}")
+                    print(f"❌ Form validation errors: {menu_item_form.errors}")
 
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                         errors = {}
@@ -3181,7 +3160,7 @@ def food_establishment_dashboard(request):
                     return redirect('food_establishment_dashboard')
 
             except Exception as outer_error:
-                print(f"âŒ Outer exception in add_menu_item: {outer_error}")
+                print(f"❌ Outer exception in add_menu_item: {outer_error}")
                 import traceback
                 traceback.print_exc()
 
@@ -3332,7 +3311,7 @@ def edit_menu_item(request, item_id):
         form.save()
         menu_item.refresh_from_db()
 
-        # âœ… CRITICAL: Return item data for real-time update
+        # ✅ CRITICAL: Return item data for real-time update
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             item_data = {
                 'id': menu_item.id,
@@ -3439,7 +3418,7 @@ def update_establishment_details_ajax(request, pk):
 
             instance = form.save(commit=False)
 
-            # âœ… Handle time fields from POST data
+            # ✅ Handle time fields from POST data
             opening_time_str = request.POST.get('opening_time')
             closing_time_str = request.POST.get('closing_time')
 
@@ -3465,8 +3444,8 @@ def update_establishment_details_ajax(request, pk):
                 'name': instance.name,
                 'address': instance.address,
                 'status': instance.status,
-                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,  # âœ… NEW
-                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,  # âœ… NEW
+                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,  # ✅ NEW
+                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,  # ✅ NEW
                 'category': instance.category.name if instance.category else None,
                 'payment_methods': instance.payment_methods,
                 'latitude': str(instance.latitude),
@@ -4033,7 +4012,7 @@ def get_chat_messages(request, customer_id, establishment_id):
         for msg in unread_messages:
             msg.mark_as_read()
 
-        # âœ… CRITICAL: Include sender_id for proper alignment
+        # ✅ CRITICAL: Include sender_id for proper alignment
         messages_data = [{
             'id': msg.id,
             'sender_id': msg.sender.id,  # Essential for alignment logic
@@ -4128,7 +4107,7 @@ def get_chat_messages_api(request, customer_id, establishment_id):
         for msg in unread_messages:
             msg.mark_as_read()
 
-        # âœ… CRITICAL: Include sender_id for proper alignment
+        # ✅ CRITICAL: Include sender_id for proper alignment
         messages_data = [{
             'id': msg.id,
             'sender_id': msg.sender.id,  # Essential for alignment
@@ -4154,7 +4133,7 @@ def get_chat_messages_api(request, customer_id, establishment_id):
 @csrf_exempt
 def test_email_config(request):
     """
-    ðŸ”§ Diagnostic endpoint to test email configuration
+    🔧 Diagnostic endpoint to test email configuration
     Access at: /api/test-email-config/
     """
     if request.method != 'POST':
@@ -4178,13 +4157,13 @@ def test_email_config(request):
             'timestamp': timezone.now().isoformat(),
             'test_email': test_email,
             'environment_check': {
-                'SENDER_EMAIL': 'âœ… Set' if os.getenv('SENDER_EMAIL') else 'âŒ Missing',
+                'SENDER_EMAIL': '✅ Set' if os.getenv('SENDER_EMAIL') else '❌ Missing',
                 'SENDER_EMAIL_value': os.getenv('SENDER_EMAIL'),
                 'EMAIL_HOST': os.getenv('EMAIL_HOST'),
                 'EMAIL_PORT': os.getenv('EMAIL_PORT'),
                 'EMAIL_USE_TLS': os.getenv('EMAIL_USE_TLS'),
-                'SENDGRID_API_KEY': 'âœ… Set' if os.getenv('SENDGRID_API_KEY') else 'âŒ Missing',
-                'EMAIL_HOST_PASSWORD': 'âœ… Set' if os.getenv('EMAIL_HOST_PASSWORD') else 'âŒ Missing',
+                'SENDGRID_API_KEY': '✅ Set' if os.getenv('SENDGRID_API_KEY') else '❌ Missing',
+                'EMAIL_HOST_PASSWORD': '✅ Set' if os.getenv('EMAIL_HOST_PASSWORD') else '❌ Missing',
             },
             'django_settings': {
                 'EMAIL_BACKEND': settings.EMAIL_BACKEND,
@@ -4196,26 +4175,26 @@ def test_email_config(request):
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
         if not from_email:
-            diagnostics['tests']['sender_email'] = 'âŒ FAILED - No sender email configured'
+            diagnostics['tests']['sender_email'] = '❌ FAILED - No sender email configured'
             diagnostics['error'] = 'SENDER_EMAIL not set in environment'
             diagnostics['fix'] = 'Add SENDER_EMAIL=robbyrosstanaelmajaba16@gmail.com to .env and Render'
             return JsonResponse(diagnostics)
 
-        diagnostics['tests']['sender_email'] = f'âœ… PASSED - Using {from_email}'
+        diagnostics['tests']['sender_email'] = f'✅ PASSED - Using {from_email}'
 
         # Test 2: Try sending test email
-        print(f"\nðŸ§ª Testing email configuration...")
-        print(f"ðŸ“§ From: {from_email}")
-        print(f"ðŸ“§ To: {test_email}")
+        print(f"\n🧪 Testing email configuration...")
+        print(f"📧 From: {from_email}")
+        print(f"📧 To: {test_email}")
 
         try:
-            test_subject = 'ðŸ§ª KabsuEats Email Configuration Test'
+            test_subject = '🧪 KabsuEats Email Configuration Test'
             test_message = f"""
 KabsuEats Email Configuration Test
 
 This is a test email to verify your email settings.
 
-âœ… If you receive this, your email configuration is working!
+✅ If you receive this, your email configuration is working!
 
 Timestamp: {timezone.now()}
 From: {from_email}
@@ -4238,12 +4217,12 @@ To: {test_email}
 <body>
     <div class="container">
         <div class="header">
-            <h1>ðŸ§ª KabsuEats Email Test</h1>
+            <h1>🧪 KabsuEats Email Test</h1>
         </div>
         <div class="content">
             <h2>Email Configuration Test</h2>
             <div class="success-box">
-                <strong>âœ… SUCCESS!</strong><br>
+                <strong>✅ SUCCESS!</strong><br>
                 If you're reading this, your email configuration is working correctly!
             </div>
             <p><strong>Details:</strong></p>
@@ -4261,7 +4240,7 @@ To: {test_email}
 </html>
             """
 
-            print("ðŸ“¤ Attempting to send test email...")
+            print("📤 Attempting to send test email...")
 
             result = send_mail(
                 subject=test_subject,
@@ -4272,25 +4251,25 @@ To: {test_email}
                 html_message=html_message
             )
 
-            print(f"ðŸ“¬ Email send result: {result}")
+            print(f"📬 Email send result: {result}")
 
             if result and result > 0:
-                diagnostics['tests']['email_send'] = 'âœ… PASSED - Test email sent successfully'
+                diagnostics['tests']['email_send'] = '✅ PASSED - Test email sent successfully'
                 diagnostics['status'] = 'success'
-                diagnostics['message'] = f'âœ… Test email sent to {test_email}. Check your inbox and spam folder!'
-                print(f"âœ… SUCCESS: Test email sent to {test_email}")
+                diagnostics['message'] = f'✅ Test email sent to {test_email}. Check your inbox and spam folder!'
+                print(f"✅ SUCCESS: Test email sent to {test_email}")
             else:
-                diagnostics['tests']['email_send'] = 'âš ï¸ WARNING - Email function returned 0'
+                diagnostics['tests']['email_send'] = '⚠️ WARNING - Email function returned 0'
                 diagnostics['status'] = 'warning'
                 diagnostics['message'] = 'Email may have been sent but confirmation uncertain'
-                print(f"âš ï¸ WARNING: Email send returned 0")
+                print(f"⚠️ WARNING: Email send returned 0")
 
         except Exception as email_error:
-            print(f"âŒ EMAIL ERROR: {email_error}")
+            print(f"❌ EMAIL ERROR: {email_error}")
             import traceback
             traceback.print_exc()
 
-            diagnostics['tests']['email_send'] = f'âŒ FAILED - {str(email_error)}'
+            diagnostics['tests']['email_send'] = f'❌ FAILED - {str(email_error)}'
             diagnostics['status'] = 'error'
             diagnostics['error_details'] = str(email_error)
 
@@ -4299,7 +4278,7 @@ To: {test_email}
 
             if 'authentication' in error_msg or '535' in error_msg:
                 diagnostics['fix'] = [
-                    'âŒ Gmail Authentication Failed',
+                    '❌ Gmail Authentication Failed',
                     '1. Go to https://myaccount.google.com/apppasswords',
                     '2. Enable 2-Step Verification first',
                     '3. Generate App Password for "Mail"',
@@ -4308,7 +4287,7 @@ To: {test_email}
                 ]
             elif 'sendgrid' in error_msg or '403' in error_msg or '401' in error_msg:
                 diagnostics['fix'] = [
-                    'âŒ SendGrid Authentication Failed',
+                    '❌ SendGrid Authentication Failed',
                     '1. Go to https://app.sendgrid.com/settings/api_keys',
                     '2. Create NEW API key with "Mail Send" permission',
                     '3. Copy FULL key (starts with SG.)',
@@ -4317,7 +4296,7 @@ To: {test_email}
                 ]
             elif 'connection' in error_msg or 'timeout' in error_msg:
                 diagnostics['fix'] = [
-                    'âŒ Connection Issue',
+                    '❌ Connection Issue',
                     '1. Check EMAIL_HOST=smtp.gmail.com',
                     '2. Check EMAIL_PORT=587',
                     '3. Check EMAIL_USE_TLS=True',
@@ -4325,7 +4304,7 @@ To: {test_email}
                 ]
             else:
                 diagnostics['fix'] = [
-                    'âŒ Unknown Error',
+                    '❌ Unknown Error',
                     f'Error: {str(email_error)}',
                     'Check all email settings in .env file'
                 ]
@@ -4333,7 +4312,7 @@ To: {test_email}
         return JsonResponse(diagnostics)
 
     except Exception as e:
-        print(f"âŒ OUTER ERROR: {e}")
+        print(f"❌ OUTER ERROR: {e}")
         import traceback
         traceback.print_exc()
 

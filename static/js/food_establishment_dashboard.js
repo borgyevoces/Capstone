@@ -331,13 +331,13 @@ function setupUpdateStoreDetailsForm() {
                         document.getElementById('establishmentCategory').textContent = data.category || 'N/A';
                     }
                     const hoursElement = document.getElementById('establishmentHours');
-                    if (hoursElement) {
-                        if (data.opening_time && data.closing_time) {
-                            hoursElement.textContent = `${data.opening_time} - ${data.closing_time}`;
-                        } else {
-                            hoursElement.textContent = 'Not Set';
-                        }
-                    }
+if (hoursElement) {
+    if (data.opening_time && data.closing_time) {
+        hoursElement.textContent = `${data.opening_time} - ${data.closing_time}`;
+    } else {
+        hoursElement.textContent = 'Not Set';
+    }
+}
 
                     if (data.amenities) {
                         document.getElementById('establishmentAmenities').textContent = data.amenities || 'N/A';
@@ -824,7 +824,7 @@ function confirmMapLocation() {
 }
 
 // ==========================================
-// NOTIFICATION PANEL (FIXED CACHING)
+// NOTIFICATION PANEL
 // ==========================================
 function toggleNotificationPanel() {
     const panel = document.getElementById('notificationPanel');
@@ -837,38 +837,22 @@ function toggleNotificationPanel() {
 }
 
 function loadNotifications() {
-    // ✅ FIX: Add timestamp to prevent caching
-    const timestamp = new Date().getTime();
-    const url = `/api/notifications/?t=${timestamp}`;
-
-    console.log(`📬 Loading notifications: ${url}`);
-
-    fetch(url, {
+    fetch('/api/notifications/', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => {
-        console.log('📡 Response status:', response.status);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('📦 Data received:', data);
-
         if (data.success) {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
-                console.log(`✅ Rendering ${data.notifications.length} notifications`);
                 list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
                 updateNotificationBadge(data.unread_count);
             } else {
-                console.log('ℹ️ No notifications to display');
                 list.innerHTML = `
                     <div class="notification-empty-state">
                         <i class="fas fa-bell-slash"></i>
@@ -880,40 +864,35 @@ function loadNotifications() {
         }
     })
     .catch(error => {
-        console.error('❌ Error loading notifications:', error);
+        console.error('Error loading notifications:', error);
     });
 }
 // ✅ ENHANCED: Render notification with complete order details
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
     const statusClass = notif.order.status.toLowerCase();
-
-    // Get first letter of customer name for avatar
     const customerInitial = notif.customer.name.charAt(0).toUpperCase();
 
     // Format order items
-    let orderItemsHTML = '';
-    if (notif.order && notif.order.items) {
-        orderItemsHTML = notif.order.items.map(item => `
-            <div class="order-item-row">
-                <div class="item-name-qty">
-                    <strong>${item.name}</strong> x${item.quantity}
-                </div>
-                <div class="item-price">₱${item.total.toFixed(2)}</div>
+    const orderItemsHTML = notif.order.items.map(item => `
+        <div class="order-item-row">
+            <div class="item-name-qty">
+                <strong>${item.name}</strong> x${item.quantity}
             </div>
-        `).join('');
-    }
+            <div class="item-price">₱${item.total.toFixed(2)}</div>
+        </div>
+    `).join('');
 
     return `
         <div class="notification-item ${isUnread}" onclick="markNotificationRead(${notif.id})" data-notification-id="${notif.id}">
             <div class="notification-header">
                 <div class="notification-icon">
-                    <i class="fas fa-${getNotificationIcon(notif.type)}"></i>
+                    <i class="fas fa-shopping-cart"></i>
                 </div>
                 <div class="notification-content">
                     <div class="notification-title">
-                        <span>${getNotificationTitle(notif.type)}</span>
-                        <span class="notification-type-badge ${notif.type}">${notif.type.replace('_', ' ')}</span>
+                        <span>New Order #${notif.order.id}</span>
+                        <span class="notification-type-badge ${notif.type}">NEW ORDER</span>
                     </div>
                     <div class="notification-message">${notif.message}</div>
                 </div>
@@ -976,73 +955,33 @@ function renderNotification(notif) {
 }
 
 function pollNotifications() {
-    // Poll even if panel is closed to show badge/toasts
-    // ✅ FIX: Add timestamp to prevent caching
-    const timestamp = new Date().getTime();
-    const url = `/api/notifications/?t=${timestamp}`;
+    if (!document.getElementById('notificationPanel').classList.contains('open')) {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationBadge(data.unread_count);
 
-    console.log(`🔍 Polling notifications: ${url}`);
-
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log(`✅ Poll successful - ${data.notifications ? data.notifications.length : 0} notifications, ${data.unread_count} unread`);
-
-            updateNotificationBadge(data.unread_count);
-
-            // Show toast notification if new orders found
-            // This logic assumes the backend returns notifications ordered by date DESC
-            if (data.notifications && data.notifications.length > 0) {
-                const latestNotif = data.notifications[0];
-
-                // Simple check to avoid showing same toast repeatedly:
-                // In a real app, track 'lastSeenNotificationId'
-                const lastSeenId = localStorage.getItem('lastSeenNotificationId');
-
-                if (latestNotif.is_new && (!lastSeenId || latestNotif.id > parseInt(lastSeenId))) {
-                    console.log('🆕 NEW NOTIFICATION DETECTED!', latestNotif);
-                    showToastNotification(latestNotif);
-                    localStorage.setItem('lastSeenNotificationId', latestNotif.id);
-
-                    // Also refresh list if panel is open
-                    if (document.getElementById('notificationPanel').classList.contains('open')) {
-                         const list = document.getElementById('notificationList');
-                         list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
+                // Show toast notification if new orders
+                if (data.unread_count > 0) {
+                    const latestNotif = data.notifications[0];
+                    if (latestNotif && latestNotif.is_new) {
+                        showToastNotification(latestNotif);
                     }
                 }
             }
-        }
-    })
-    .catch(error => {
-        console.error('❌ Polling error:', error);
-    });
+        })
+        .catch(error => {
+            console.error('Error polling notifications:', error);
+        });
+    }
 }
-
-function startNotificationAutoRefresh() {
-    console.log('🔄 Starting notification auto-refresh with 3-second polling...');
-
-    // Initial load
-    loadNotifications();
-
-    // ✅ FASTER POLLING: Every 3 seconds for immediate GCash payment notifications
-    setInterval(() => {
-        console.log('⏱️ Polling for new notifications...');
-        pollNotifications();
-    }, 3000); // Changed from 5000 to 3000 for faster updates
-
-    console.log('✅ Auto-refresh active - checking every 3 seconds');
-}
-
 // ✅ Show toast notification for new orders
 function showToastNotification(notif) {
     const toast = document.createElement('div');
@@ -1113,22 +1052,11 @@ function markNotificationRead(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update UI
             const notifElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
             if (notifElement) {
                 notifElement.classList.remove('unread');
             }
-<<<<<<< HEAD
-            // Optional: Reload to update counts
-            // loadNotifications();
-            if (data.unread_count !== undefined) {
-                updateNotificationBadge(data.unread_count);
-            }
-=======
-
-            // Refresh list to update count
             loadNotifications();
->>>>>>> parent of 8b90f7c (notifications)
         }
     })
     .catch(error => {
@@ -1192,9 +1120,8 @@ document.addEventListener('keydown', function(e) {
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard initializing with auto-refresh...');
-    startNotificationAutoRefresh();
-
+    console.log('🚀 Dashboard initializing...');
+    setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
@@ -1203,6 +1130,12 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('✅ Successfully logged in! Welcome to your dashboard.', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Load notifications
+    loadNotifications();
+
+    // Poll for new notifications every 60 seconds
+    setInterval(pollNotifications, 60000);
 
     // Setup form handlers
     setupUpdateStoreDetailsForm();
@@ -1340,7 +1273,7 @@ function updateStoreStats() {
     animateCount('bestSellerCount', bestSellerCount);
     animateCount('availableCount', availableCount);
 
-    console.log(`✅ Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
+    console.log(`âœ… Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
 }
 
 function animateCount(elementId, targetCount) {
@@ -1367,5 +1300,5 @@ function animateCount(elementId, targetCount) {
     }, duration / steps);
 }
 
-// ✅ Auto-update when menu items are added/edited/deleted
+// âœ… Auto-update when menu items are added/edited/deleted
 window.addEventListener('menuUpdated', updateStoreStats);
