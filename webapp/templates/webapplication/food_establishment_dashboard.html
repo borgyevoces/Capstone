@@ -947,11 +947,13 @@
             padding: 12px 20px;
             cursor: pointer;
             display: flex;
-            align-items: center;
+            align-items: center; /* Ensures vertical center */
             gap: 12px;
             font-size: 0.9rem;
             color: #333;
             transition: background 0.2s;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .context-menu-item:hover {
@@ -961,6 +963,7 @@
         .context-menu-item i {
             width: 18px;
             font-size: 1rem;
+            text-align: center; /* Center icon in its width */
         }
 
         .context-menu-item.danger {
@@ -1070,6 +1073,10 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            /* FIX: Ensure text is centered */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-cancel {
