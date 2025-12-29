@@ -3,10 +3,7 @@
 /*======================================================*/
 @media (max-width: 1024px) {
 
-    /* FIX para sa Header Layout sa Details Page.
-      Inaayos nito ang pagkakasunod-sunod at itsura ng header items
-      kapag ang search bar ay nakatago.
-    */
+    /* FIX para sa Header Layout sa Details Page. */
     .search-and-filters-wrapper {
         display: flex;
         flex-wrap: wrap;
@@ -95,8 +92,7 @@
         display: flex;
     }
 
-    /* -- Simula ng datihang CSS para sa #food-details-page -- */
-
+    /* -- Main Page Styles -- */
     #food-details-page {
         width: 100%;
         margin: 0 auto;
@@ -111,7 +107,7 @@
         margin: 10px 0;
     }
 
-    /* ================== HERO SECTION - REDUCED HEIGHT ================== */
+    /* ================== HERO SECTION ================== */
     .establishment-hero {
         height: 165px;
         margin-bottom: 20px;
@@ -174,10 +170,11 @@
     .message_owner {
          display: none;
     }
+
     /* ================== MAIN CONTENT LAYOUT ================== */
     .details-container {
         display: block;
-        padding: 0 7px;
+        padding: 0 10px; /* Slight padding for the main container */
         gap: 20px;
     }
 
@@ -187,10 +184,11 @@
         width: 100%;
     }
 
+    /* Default Section Card (For Info, Contact, Reviews) */
     .section-card {
-        padding: 7px;
+        padding: 15px;
         margin-top: 0px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         border-radius: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         background-color: #ffffff;
@@ -204,6 +202,25 @@
         padding-bottom: 6px;
         margin-bottom: 10px;
         display: inline-block;
+    }
+
+    /* ========================================================= */
+    /* ✅ MENU SECTION SPECIFIC - "Walang Card" Design           */
+    /* ========================================================= */
+    #menu-section.section-card {
+        background-color: transparent; /* No white background */
+        box-shadow: none; /* No shadow */
+        padding: 0; /* Remove padding */
+        border-radius: 0;
+        margin-top: 10px;
+    }
+
+    #menu-section h2 {
+        margin-left: 5px; /* Align title slightly */
+        font-size: 1.1em;
+        margin-bottom: 15px;
+        color: #222;
+        border-bottom: none; /* Optional: remove underline for cleaner look */
     }
 
     /* Contact and Location Section */
@@ -277,9 +294,10 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        margin-top: 12px;
-        margin-bottom: 16px;
+        margin-top: 0;
+        margin-bottom: 15px;
         align-items: stretch;
+        padding: 0 5px; /* Align with grid */
     }
 
     .menu-search-bar {
@@ -290,20 +308,20 @@
 
     .menu-search-bar input {
         width: 100%;
-        height: 35px;
-        padding: 10px 10px 10px 30px;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        font-size: 0.8em;
-        background-color: #fafafa;
-        transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+        height: 40px;
+        padding: 10px 10px 10px 35px;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.85em;
+        background-color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s;
     }
 
     .menu-search-bar input:focus {
-        border-color: #000000;
         background-color: white;
         outline: none;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
     .menu-search-bar i {
@@ -331,37 +349,21 @@
         height: 35px;
         font-size: 0.75em;
         font-weight: 500;
-        border: 1px solid #e0e0e0;
+        border: none;
         border-radius: 8px;
-        background-color: white;
-        transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
-    }
-
-    .menu-filters-group select:focus {
-        border-color: #000000;
-        outline: none;
-    }
-
-    #bestSellerFilter {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        cursor: pointer;
-        background-color: white;
-        color: #555;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0);
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        color: #333;
     }
 
     #bestSellerFilter.active {
         background-color: #495051;
         color: white;
-        border-color: #000000;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
     }
 
     /* ========================================================================================= */
-    /* MOBILE MENU LAYOUT - 2 COLUMNS WITH NEW BADGE DESIGN                                     */
+    /* MENU LAYOUT & ITEM DESIGN                                                                 */
     /* ========================================================================================= */
     .menu-list-wrapper {
         max-height: none;
@@ -370,7 +372,7 @@
 
     .menu-list {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr); /* 2 Column Grid */
         gap: 12px;
     }
 
@@ -379,17 +381,17 @@
         flex-direction: column;
         padding: 0;
         border: none;
-        border-radius: 14px;
+        border-radius: 16px; /* Larger radius for modern look */
         background-color: white;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* Softer shadow */
+        transition: transform 0.2s;
         cursor: pointer;
         overflow: hidden;
         position: relative;
     }
 
     .menu-item:active {
-        transform: scale(0.97);
+        transform: scale(0.98);
     }
 
     .menu-item.hidden-by-filter {
@@ -404,169 +406,138 @@
         display: none;
     }
 
-    /* ✅ NEW: Image Wrapper Container */
+    /* ✅ Image Wrapper - Taller and Cleaner */
     .menu-item-image-wrapper {
-    position: relative;
-    width: 100%;
-    height: 110px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;  /* 👈 ADDED: Center image vertically */
-}
+        position: relative;
+        width: 100%;
+        height: 125px; /* Slightly taller */
+        overflow: hidden;
+    }
 
     .menu-item-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 0;
     }
 
     /* ============================================ */
-    /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
+    /* ✅ INDICATORS / BADGES (Design Update)       */
     /* ============================================ */
-    /* ============================================ */
-/* ✅ BEST SELLER BADGE - Top Left (Orange)     */
-/* ============================================ */
-.badge-top-seller {
-    position: absolute;
-    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    left: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    z-index: 10;
 
-    /* Orange/Gold color like reference */
-    background: linear-gradient(135deg, #ff9800, #ff6f00);
-    color: white;
+    .badge-top-seller {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        background: #ff9800; /* Solid Orange */
+        color: white;
+        font-size: 0.55em;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-    font-size: 0.45em;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 8px;
+    .badge-top-seller i {
+        font-size: 0.9em;
+    }
 
-    display: flex;
-    align-items: center;
-    gap: 2px;
-
-    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    max-width: calc(50% - 4px);
-}
-
-.badge-top-seller i {
-    font-size: 0.9em;
-    color: #fff;
-}
-
-/* ============================================ */
-/* ✅ STOCK BADGE - Top Right (Green/Red)       */
-/* ============================================ */
-.badge-stock {
-    position: absolute;
-    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    right: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    z-index: 10;
-
-    font-size: 0.45em;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 8px;
-
-    display: flex;
-    align-items: center;
-    gap: 2px;
-
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    max-width: calc(50% - 4px);
-}
+    .badge-stock {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        font-size: 0.55em;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
 
     /* Available - Green */
     .badge-stock.available {
-    background: linear-gradient(135deg, #4caf50, #2e7d32);
-    color: white;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-}
+        background: #4caf50;
+        color: white;
+    }
 
     /* Out of Stock - Red */
     .badge-stock.out-of-stock {
-    background: linear-gradient(135deg, #f44336, #c62828);
-    color: white;
-    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
-}
+        background: #f44336;
+        color: white;
+    }
 
     .badge-stock i {
-    font-size: 0.9em;  /* 👈 CHANGED: Reduced from 1em */
-}
+        font-size: 0.9em;
+    }
 
-    /* ✅ REMOVE OLD STOCK STATUS & INDICATORS */
+    /* Remove old indicators */
     .stock-indicator,
     .menu-stock-status,
-    .stock-status,
-    .stock-status.in-stock,
-    .stock-status.low-stock,
-    .stock-status.out-of-stock {
+    .stock-status {
         display: none !important;
     }
 
-    /* ✅ MENU INFO: Text Left Aligned */
+    /* ✅ MENU INFO AREA */
     .menu-info {
-        padding: 10px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        text-align: left;
-        align-items: flex-start;
         flex-grow: 1;
+        gap: 4px;
+        background: white;
     }
 
-    /* ✅ HEADER INFO: Left Aligned */
     .menu-header-info {
         display: flex;
         flex-direction: column;
-        gap: 1px;
         width: 100%;
         text-align: left;
     }
 
     .menu-info h3 {
-        font-size: 0.9em;
-        margin-top: 5px;
-        margin-bottom: 3px;
+        font-size: 0.95em;
         font-weight: 700;
-        color: #1a1a1a;
-        line-height: 1.2;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-align: left;
-    }
-
-    .menu-price {
-        font-weight: 800;
-        color: #000000;
-        font-size: 0.85em;
+        color: #222;
         margin: 0;
-        text-align: left;
-    }
-
-    .menu-description {
-        font-size: 0.7em;
-        color: #666;
-        margin: 5px 0;
-        text-align: left;
         line-height: 1.3;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .menu-price {
+        font-weight: 800;
+        color: #000;
+        font-size: 0.9em;
+        margin-top: 2px;
+    }
+
+    .menu-description {
+        font-size: 0.7em;
+        color: #888;
+        margin: 4px 0 8px 0;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
         width: 100%;
     }
 
+    /* ✅ ACTION BUTTONS - Unchanged Colors as requested */
     .item-actions {
         margin-top: auto;
         width: 100%;
@@ -575,46 +546,31 @@
     .item-action-buttons {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
     }
 
     .btn-add-to-cart,
     .btn-buy-now {
-        height: 30px;
+        height: 32px;
         border: none;
-        border-radius: 5px;
-        font-size: 0.78em;
-        font-weight: 200;
+        border-radius: 6px;
+        font-size: 0.8em;
+        font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        transition: transform 0.3s, box-shadow 0.3s;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        gap: 5px;
         width: 100%;
+        transition: opacity 0.2s;
+        /* Shadows kept from original */
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
+    /* Original colors preserved */
     .btn-add-to-cart {
         background: linear-gradient(135deg, #007bff, #0056b3);
         color: white;
-    }
-
-    .btn-add-to-cart:active {
-        transform: scale(0.96);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-add-to-cart.disabled {
-        background: #e0e0e0;
-        color: #999;
-        cursor: not-allowed;
-        box-shadow: none;
-    }
-
-    a.btn-add-to-cart.login-prompt-btn {
-        text-decoration: none;
-        background: linear-gradient(135deg, #1976d2, #2196f3);
     }
 
     .btn-buy-now {
@@ -622,12 +578,18 @@
         color: white;
     }
 
-    .btn-buy-now:active {
-        transform: scale(0.96);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    .btn-add-to-cart.disabled {
+        background: #e0e0e0;
+        color: #999;
+        cursor: not-allowed;
     }
 
-    /* ================== REVIEW SECTION - COMPACT FILTERS ================== */
+    a.btn-add-to-cart.login-prompt-btn {
+        text-decoration: none;
+        background: linear-gradient(135deg, #1976d2, #2196f3);
+    }
+
+    /* ================== REVIEW SECTION ================== */
     .reviews-section {
         text-align: center;
     }
@@ -645,16 +607,8 @@
         border-radius: 5px;
         font-weight: 100;
         box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
     }
 
-    .btn-review:active {
-        transform: scale(0.98);
-        background-color: #333333;
-        color: white;
-    }
-
-    /* COMPACT 3-COLUMN FILTER BUTTONS - GRID LAYOUT */
     .review-filters {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -671,24 +625,14 @@
         border: 1px solid #e0e0e0;
         color: #666;
         font-weight: 200;
-        transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
         text-align: center;
-        white-space: nowrap;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .btn-review-filter.active {
         background-color: #495051;
         color: white;
         border-color: #000000;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-review-filter:active {
-        background-color: #666;
-        transform: scale(0.98);
     }
 
     .all-reviews-list-wrapper {
@@ -698,20 +642,20 @@
         overflow-y: auto;
     }
 
-    /* IMPROVED REVIEW LAYOUT - NO TEXT OVERFLOW */
     .review-item {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        padding: 3px;
+        padding: 10px;
         margin-bottom: 10px;
+        background: #f9f9f9;
+        border-radius: 12px;
         position: relative;
     }
 
     .review-item.user-highlight {
         border: 2px solid #2196f3;
         background-color: #e3f2fd;
-        box-shadow: 0 2px 10px rgba(33, 150, 243, 0.15);
     }
 
     .review-user-pic {
@@ -722,40 +666,15 @@
         flex-shrink: 0;
     }
 
-    .review-item.user-highlight .review-user-pic {
-        border-color: #2196f3;
-    }
-
     .review-main {
         flex: 1;
         min-width: 0;
-        overflow: hidden;
-    }
-
-    .review-main-top {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .review-user-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        align-items: flex-start;
     }
 
     .review-username {
         font-size: 0.8em;
-        font-weight: 500;
+        font-weight: 600;
         color: #1a1a1a;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        max-width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
     }
 
     .badge-user-review {
@@ -765,13 +684,6 @@
         color: white;
         border-radius: 4px;
         font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .review-stars {
-        display: flex;
-        gap: 2px;
-        align-items: center;
     }
 
     .review-stars i {
@@ -779,46 +691,19 @@
         color: #ffc107;
     }
 
-    .review-date {
-        font-size: 0.72em;
-        color: #999;
-    }
-
     .review-comment {
-        font-size: 0.7em;
+        font-size: 0.75em;
         color: #444;
-        line-height: 1.5;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-word;
-        max-width: 100%;
+        line-height: 1.4;
         margin-top: 4px;
     }
 
     .review-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-left: 6px;
-        flex-shrink: 0;
         position: absolute;
-        right: 12px;
-        top: 45px;
-    }
-
-    .review-actions i {
-        font-size: 1em;
-        color: #999;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-
-    .review-actions i.fa-edit:hover {
-        color: #2196f3;
-    }
-
-    .review-actions i.fa-trash-alt:hover {
-        color: #f44336;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
     }
 
     /* ================== MODAL STYLES ================== */
@@ -828,13 +713,12 @@
 
     .modal-content {
         margin-top: 10%;
-        width: 80%;
+        width: 85%;
         max-width: 420px;
-        padding: 24px;
+        padding: 20px;
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-        background: linear-gradient(to bottom, #ffffff, #f8f9fa);
-        border: 1px solid rgba(255, 255, 255, 0.8);
+        background: #ffffff;
     }
 
     .close-btn {
@@ -843,7 +727,6 @@
         font-size: 28px;
         font-weight: bold;
         line-height: 1;
-        transition: background-color 0.3s, color 0.3s, transform 0.3s;
         cursor: pointer;
         width: 32px;
         height: 32px;
@@ -852,112 +735,20 @@
         justify-content: center;
         border-radius: 50%;
         background-color: #f0f0f0;
-        margin: -8px -8px 0 0;
-    }
-
-    .close-btn:hover {
-        background-color: #000000;
-        color: white;
-        transform: rotate(90deg);
+        margin: -5px -5px 0 0;
     }
 
     .modal-content h2 {
         color: #1a1a1a;
-        font-size: 1.4em;
+        font-size: 1.3em;
         margin-bottom: 20px;
         text-align: center;
         font-weight: 700;
     }
 
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 0.95em;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 8px;
-        text-align: center;
-    }
-
-    .modal-stars-container {
-        font-size: 2.2em;
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-        padding: 15px 0;
-        margin-bottom: 10px;
-    }
-
-    .modal-stars-container i {
-        transition: transform 0.2s;
-        cursor: pointer;
-    }
-
-    .modal-stars-container i:hover {
-        transform: scale(1.15);
-    }
-
-    .form-group textarea {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        font-size: 0.95em;
-        resize: vertical;
-        min-height: 100px;
-        transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-        background-color: #fafafa;
-    }
-
-    .form-group textarea:focus {
-        border-color: #2196f3;
-        background-color: white;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-    }
-
-    .btn-submit-review {
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        padding: 13px;
-        font-size: 1.05em;
-        border-radius: 12px;
-        font-weight: 200;
-        width: 100%;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-        transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .btn-submit-review:hover {
-        background: linear-gradient(135deg, #1976d2, #1565c0);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
-    }
-
-    .btn-submit-review:active {
-        transform: translateY(0);
-    }
-
     /* ITEM DETAIL MODAL - Mobile */
     .item-detail-modal-content {
         text-align: center;
-        background: linear-gradient(to bottom, #ffffff, #f8f9fa);
-    }
-
-    .item-name-header {
-        color: #333;
-        font-size: 1.4em;
-        margin-bottom: 1px;
-        font-weight: 200;
     }
 
     .modal-item-image {
@@ -973,269 +764,103 @@
     }
 
     .modal-item-description {
-    font-size: 1em;
-    color: #555;
-    line-height: 2;
-    margin: 12px 0 8px 0;
-    padding: 0 10px;
-}
+        font-size: 0.95em;
+        color: #555;
+        line-height: 1.5;
+        margin: 12px 0;
+        padding: 0 10px;
+    }
 
     .modal-item-price {
-    font-size: 1em;
-    font-weight: 800;
-    color: #000000;
-    margin: 5px 0 10px 0;
-    order: 2;
-}
-
-    .modal-item-stock {
-    font-size: 1em;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-weight: 200;
-    display: inline-block;
-    color: #333;
-    order: 3;
-    margin-top: 5px;
-}
+        font-size: 1.2em;
+        font-weight: 800;
+        color: #000;
+        margin: 5px 0 10px 0;
+    }
 
     .quantity-control {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin: 14px 0;
-    }
-
-    .quantity-control label{
-        font-size: 0.9em;
-        font-weight: 600;
-        margin-bottom: 8px;
+        margin: 15px 0;
     }
 
     .quantity-input-group {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+        gap: 15px;
     }
 
     .btn-quantity-minus,
     .btn-quantity-plus {
-        background: linear-gradient(135deg, #f5f5ff, #e8e8e8);
+        background: #f0f0f0;
         border: none;
         color: #333;
         font-weight: bold;
         font-size: 1.2em;
         cursor: pointer;
-        width: 30px;
-        height: 30px;
+        width: 35px;
+        height: 35px;
         border-radius: 50%;
-        transition: transform 0.2s;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-quantity-minus:active,
-    .btn-quantity-plus:active {
-        transform: scale(0.92);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .quantity-input-group input {
         width: 45px;
         text-align: center;
-        font-size: 1em;
-        font-weight: 200;
+        font-size: 1.1em;
+        font-weight: 600;
         border: none;
         background-color: transparent;
-        color: #333;
-    }
-
-    .quantity-input-group input::-webkit-outer-spin-button,
-    .quantity-input-group input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
     }
 
     .modal-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-top: 18px;
+        margin-top: 20px;
     }
 
     .btn-add-to-cart-modal,
     .btn-buy-now-modal,
     .btn-full-width {
-        height: 35px;
+        height: 40px;
         padding: 0 10px;
-        font-size: 0.8em;
+        font-size: 0.9em;
         border-radius: 10px;
-        font-weight: 100;
+        font-weight: 600;
         border: none;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        transition: transform 0.3s, box-shadow 0.3s;
+        color: white;
     }
 
     .btn-add-to-cart-modal {
         background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
-    }
-
-    .btn-add-to-cart-modal:active {
-        transform: scale(0.97);
     }
 
     .btn-buy-now-modal {
         background: linear-gradient(135deg, #2e7d32, #43a047);
-        color: white;
-        box-shadow: 0 3px 10px rgba(46, 125, 50, 0.3);
-    }
-
-    .btn-buy-now-modal:active {
-        transform: scale(0.97);
     }
 
     .btn-full-width {
         grid-column: 1 / -1;
         background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
-    }
-
-    .text-muted.text-center {
-        font-size: 0.9em;
-        color: #666;
-    }
-    .text-muted{
-        margin: 13px;
-        font-size: 12px;
-    }
-}
-
-/* ========================================================================================= */
-/* TABLET ADJUSTMENTS (768px - 1024px) - 3 COLUMNS FOR TABLETS                             */
-/* ========================================================================================= */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .establishment-hero {
-        height: 240px;
-    }
-
-    .hero-content h1 {
-        font-size: 2.2em;
-    }
-
-    .menu-list {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
-
-    .menu-item-image-wrapper {
-        height: 160px;
-    }
-
-    .badge-top-seller,
-    .badge-stock {
-        font-size: 0.5em;  /* 👈 CHANGED: Reduced from 0.6em */
-        padding: 3px 7px;  /* 👈 CHANGED: Reduced from 4px 10px */
-    }
-
-    .menu-info h3 {
-        font-size: 1em;
-    }
-
-    .item-action-buttons {
-        flex-direction: row;
-        gap: 8px;
-    }
-
-    .btn-add-to-cart,
-    .btn-buy-now {
-        height: 35px;
-        font-size: 0.85em;
-    }
-
-    .review-filters {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        max-width: 600px;
-        margin: 15px auto;
-    }
-
-    .btn-review-filter {
-        font-size: 0.8em;
-        padding: 8px 10px;
-    }
-
-    .modal-content {
-        max-width: 500px;
-        margin: 6% auto;
-    }
-
-    .contact-location i {
-        color: darkred;
-    }
-
-    .menu-search-bar input:focus {
-        border-color: #000000;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-    }
-
-    #bestSellerFilter.active {
-        background-color: #000000;
-        border-color: #000000;
-    }
-
-    .btn-review-filter.active {
-        background-color: #000000;
-        border-color: #000000;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-review-filter:active:not(.active) {
-        background-color: #e0e0e0;
-        border-color: #ccc;
-        transform: scale(0.98);
-    }
-
-    .review-user-pic {
-        border: 2px solid #000000;
-    }
-
-    .menu-price {
-        color: #000000;
-    }
-
-    .modal-item-price {
-       color: #000000;
-    }
-
-    .section-card h2 {
-        border-bottom: 2px solid #000000;
-    }
-
-    .contact-location strong {
-        color: #000000;
-    }
-
-    .close-btn:hover {
-        background-color: #000000;
-        color: white;
     }
 
     /* ============================================================
-       CART BUTTON TEXT SIZE - PHONE VIEW
+       CART BADGE - MOBILE VIEW
        ============================================================ */
     .navbar-actions a,
     .navbar-actions button {
         font-size: 16px !important;
     }
 
-    /* ============================================================
-       CART BADGE - MOBILE VIEW
-       ============================================================ */
     .cart-badge {
         position: absolute;
         top: -5px;
@@ -1261,5 +886,32 @@
         0% { transform: scale(1); }
         50% { transform: scale(1.3); background-color: darkred; }
         100% { transform: scale(1); }
+    }
+}
+
+/* ========================================================================================= */
+/* TABLET ADJUSTMENTS (768px - 1024px) - 3 COLUMNS FOR TABLETS                             */
+/* ========================================================================================= */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .establishment-hero {
+        height: 240px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.2em;
+    }
+
+    .menu-list {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .menu-item-image-wrapper {
+        height: 160px;
+    }
+
+    .modal-content {
+        max-width: 500px;
+        margin: 6% auto;
     }
 }
