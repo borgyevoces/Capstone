@@ -220,12 +220,6 @@
             color: #6b7280;
         }
 
-        /* ==========================================
-           ✅ REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
-           ✅ Problem: Fixed width 360px sa chat panel nag-cause ng overflow
-           ✅ Solution: Responsive width from the start
-           ========================================== */
-
         .notification-toggle-btn {
             position: relative;
             background: transparent;
@@ -314,64 +308,6 @@
             padding: 10px;
         }
 
-        .notification-item {
-            display: flex;
-            align-items: start;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-bottom: 8px;
-            border: 1px solid var(--border, #e4e6eb);
-            position: relative;
-        }
-
-        .notification-item:hover {
-            background: var(--bg-light, #f5f7fa);
-        }
-
-        .notification-item.unread {
-            background: rgba(240, 40, 73, 0.05);
-            border-color: #f02849;
-        }
-
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .notification-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .notification-message {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-            color: var(--text-dark, #333);
-        }
-
-        .notification-details {
-            font-size: 12px;
-            color: var(--text-muted, #65676b);
-            margin-bottom: 4px;
-        }
-
-        .notification-time {
-            font-size: 11px;
-            color: var(--text-muted, #65676b);
-        }
-
         .notification-empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -385,9 +321,6 @@
             display: block;
         }
 
-        /* ==========================================
-           ✅ REAL FIX: RESPONSIVE NOTIFICATION PANEL
-           ========================================== */
         @media (max-width: 768px) {
             .notification-panel {
                 width: 100vw !important;
@@ -398,16 +331,15 @@
         }
 
         /* ==========================================
-           ✅ CHAT PANEL - REAL ULTIMATE FIX
-           ✅ KEY CHANGE: Make it responsive from desktop to mobile
+           CHAT PANEL STYLES
            ========================================== */
 
         .chat-panel {
             position: fixed;
             right: 0;
             top: 70px;
-            width: 360px; /* Desktop width */
-            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            width: 360px;
+            max-width: 100vw !important;
             height: calc(100vh - 70px);
             background: white;
             border-left: 1px solid var(--border, #e4e6eb);
@@ -421,7 +353,6 @@
             box-sizing: border-box !important;
         }
 
-        /* ✅ CRITICAL: Force box-sizing on ALL children */
         .chat-panel *,
         .chat-panel *::before,
         .chat-panel *::after {
@@ -440,7 +371,7 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+            flex-shrink: 0;
         }
 
         .chat-panel-header h3 {
@@ -565,23 +496,22 @@
             position: fixed;
             right: 0;
             top: 70px;
-            width: 360px; /* Desktop width */
-            max-width: 100vw !important; /* ✅ Never exceed viewport */
+            width: 360px;
+            max-width: 100vw !important;
             height: calc(100vh - 70px);
             background: white;
             border-left: 1px solid var(--border, #e4e6eb);
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             transform: translateX(100%);
             transition: transform 0.3s ease;
-            z-index: 1000; /* ✅ Higher z-index than panel */
-            display: flex; /* ✅ Always flex, toggle visibility/transform */
+            z-index: 1000;
+            display: flex;
             flex-direction: column;
             overflow-x: hidden !important;
             box-sizing: border-box !important;
-            visibility: hidden; /* ✅ Hide when closed */
+            visibility: hidden;
         }
 
-        /* ✅ CRITICAL: Force box-sizing on ALL children */
         .chat-window *,
         .chat-window *::before,
         .chat-window *::after {
@@ -590,10 +520,9 @@
 
         .chat-window.open {
             transform: translateX(0);
-            visibility: visible; /* ✅ Show when open */
+            visibility: visible;
         }
 
-        /* ✅ FIXED: Class name matches HTML 'chat-window-header' */
         .chat-window-header {
             padding: 16px 20px;
             border-bottom: 1px solid var(--border, #e4e6eb);
@@ -601,7 +530,7 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            flex-shrink: 0; /* ✅ Prevent header from shrinking */
+            flex-shrink: 0;
         }
 
         .back-to-conversations {
@@ -621,7 +550,7 @@
 
         .chat-header-info {
             flex: 1;
-            min-width: 0; /* ✅ Allow shrinking */
+            min-width: 0;
         }
 
         .chat-header-name {
@@ -633,11 +562,121 @@
             white-space: nowrap;
         }
 
-        .chat-header-status {
-            font-size: 12px;
-            opacity: 0.9;
+        /* ========================================
+           ✅ PINNED SECTION STYLES - REDESIGNED
+           ======================================== */
+
+        .owner-pinned-section {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 90;
         }
 
+        .owner-pinned-section.active {
+            display: flex;
+        }
+
+        .owner-pinned-section-header {
+            padding: 10px 16px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .owner-pinned-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .owner-pinned-collapse {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .owner-pinned-collapse:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 4px;
+        }
+
+        #ownerPinnedMessagesList {
+            max-height: 120px;
+            overflow-y: auto;
+            background: #fff;
+            display: block; /* Visible by default when section is active */
+        }
+
+        .pinned-message-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .pinned-message-item:hover {
+            background: #f8fafc;
+        }
+
+        .pinned-message-item:last-child {
+            border-bottom: none;
+        }
+
+        .pinned-message-item i.fa-thumbtack {
+            color: #667eea;
+            font-size: 11px;
+            transform: rotate(45deg);
+        }
+
+        .pinned-message-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .unpin-btn {
+            background: none;
+            border: none;
+            color: #cbd5e0;
+            cursor: pointer;
+            padding: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .unpin-btn:hover {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+
+        /* Chat messages area */
         .chat-messages-container {
             flex: 1;
             overflow-y: auto;
@@ -659,12 +698,10 @@
             max-width: 100%;
         }
 
-        /* Owner's messages - aligned right */
         .chat-message.sent {
             justify-content: flex-end;
         }
 
-        /* Customer's messages - aligned left */
         .chat-message.received {
             justify-content: flex-start;
         }
@@ -680,14 +717,12 @@
             position: relative;
         }
 
-        /* Owner's bubble - Purple gradient */
         .chat-message.sent .chat-message-bubble {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-bottom-right-radius: 4px;
         }
 
-        /* Customer's bubble - White */
         .chat-message.received .chat-message-bubble {
             background: white;
             color: var(--text-dark, #333);
@@ -701,10 +736,6 @@
             margin-top: 4px;
             display: block;
         }
-
-        /* ========================================
-           THREE DOTS BUTTON - NAKADIKIT TALAGA SA BUBBLE
-           ======================================== */
 
         .message-options-btn {
             background: rgba(0, 0, 0, 0.5);
@@ -725,19 +756,16 @@
             flex-shrink: 0;
         }
 
-        /* For sent messages (owner) - button sa KALIWA ng bubble */
         .chat-message.sent .message-options-btn {
             order: -1;
             margin-right: 10px;
         }
 
-        /* For received messages (customer) - button sa KANAN ng bubble */
         .chat-message.received .message-options-btn {
             order: 1;
             margin-left: 10px;
         }
 
-        /* Show on hover (Desktop) */
         @media (hover: hover) {
             .chat-message:hover .message-options-btn {
                 opacity: 1;
@@ -749,24 +777,20 @@
             }
         }
 
-        /* Always visible on touch devices when message is active */
         .chat-message.active .message-options-btn {
             opacity: 1;
         }
 
-        /* Mobile: Show indicator when long-pressing */
         .chat-message.long-pressing .chat-message-bubble {
             transform: scale(0.98);
             opacity: 0.9;
         }
 
-        /* ✅ PINNED MESSAGE INDICATOR */
         .chat-message.pinned .chat-message-bubble::before {
             content: '📌 ';
             margin-right: 4px;
         }
 
-        /* ✅ SEE ALL PINS LINK */
         .owner-see-pins-link {
             background: #f0f2f5;
             padding: 10px 15px;
@@ -778,7 +802,7 @@
             font-weight: 600;
             color: #667eea;
             display: none;
-            flex-shrink: 0; /* ✅ Prevent from shrinking */
+            flex-shrink: 0;
         }
 
         .owner-see-pins-link.active {
@@ -789,11 +813,6 @@
             background: #e4e6eb;
         }
 
-        /* ==========================================
-           ✅✅✅ REAL ULTIMATE CHAT INPUT FIX ✅✅✅
-           ✅ THE ABSOLUTE FINAL SOLUTION
-           ========================================== */
-
         .chat-input-container {
             padding: 10px !important;
             border-top: 1px solid var(--border, #e4e6eb);
@@ -803,7 +822,7 @@
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
-            flex-shrink: 0 !important; /* ✅ Don't shrink the input area */
+            flex-shrink: 0 !important;
         }
 
         .chat-input-form {
@@ -819,7 +838,7 @@
 
         .chat-input {
             flex: 1 1 auto !important;
-            min-width: 0 !important; /* ✅ CRITICAL */
+            min-width: 0 !important;
             width: 100% !important;
             padding: 10px 14px !important;
             border: 1px solid var(--border, #e4e6eb);
@@ -838,9 +857,9 @@
         .chat-send-btn {
             width: 40px !important;
             height: 40px !important;
-            min-width: 40px !important; /* ✅ CRITICAL */
+            min-width: 40px !important;
             max-width: 40px !important;
-            flex: 0 0 40px !important; /* ✅ Don't grow or shrink */
+            flex: 0 0 40px !important;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -862,20 +881,6 @@
         .chat-send-btn:active {
             transform: scale(0.95);
         }
-
-        .chat-send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .chat-send-btn i {
-            font-size: 16px;
-            pointer-events: none;
-        }
-
-        /* ========================================
-           TOGGLE BUTTON IN NAVBAR
-           ======================================== */
 
         .chat-toggle-btn {
             position: relative;
@@ -1091,11 +1096,6 @@
             cursor: not-allowed;
         }
 
-        /* ========================================
-           MESSAGE STATES
-           ======================================== */
-
-        /* Message Deleted State */
         .chat-message.deleted .chat-message-bubble {
             background: #f5f5f5 !important;
             color: #999 !important;
@@ -1107,7 +1107,6 @@
             content: '🚫 ';
         }
 
-        /* ✅ PINNED MESSAGES LIST MODAL */
         .pinned-messages-modal {
             position: fixed;
             top: 0;
@@ -1167,16 +1166,10 @@
             margin-bottom: 12px;
         }
 
-        /* ==========================================
-           ✅✅✅ MOBILE RESPONSIVE - REAL FIX ✅✅✅
-           ✅ Key: Change width from 360px to 100vw on mobile
-           ========================================== */
-
         @media (max-width: 768px) {
-            /* ✅ CRITICAL: Make panels full width on mobile */
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important;
                 max-width: 100vw !important;
                 top: 60px;
                 height: calc(100vh - 60px);
@@ -1206,7 +1199,6 @@
                 padding: 18px;
             }
 
-            /* ✅ Chat Input Mobile Adjustments */
             .chat-input-container {
                 padding: 8px !important;
             }
@@ -1233,14 +1225,10 @@
             }
         }
 
-        /* ==========================================
-           ✅ SMALL MOBILE (480px and below)
-           ========================================== */
-
         @media (max-width: 480px) {
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important;
                 max-width: 100vw !important;
                 top: 56px;
                 height: calc(100vh - 56px);
@@ -1272,14 +1260,10 @@
             }
         }
 
-        /* ==========================================
-           ✅ EXTRA SMALL (360px and below)
-           ========================================== */
-
         @media (max-width: 360px) {
             .chat-panel,
             .chat-window {
-                width: 100vw !important; /* ✅ THE KEY FIX */
+                width: 100vw !important;
                 max-width: 100vw !important;
             }
 
@@ -1393,14 +1377,18 @@
         </div>
     </div>
 
+    <!-- ✅ REDESIGNED: PINNED MESSAGE SECTION -->
     <div class="owner-pinned-section" id="ownerPinnedSection">
         <div class="owner-pinned-section-header">
-            <span class="owner-pinned-section-title">📌 Pinned Messages</span>
+            <span class="owner-pinned-section-title">
+                <i class="fas fa-thumbtack"></i> Pinned Messages
+            </span>
             <button class="owner-pinned-collapse" onclick="toggleOwnerPinnedSection()">
                 <i class="fas fa-chevron-up"></i>
             </button>
         </div>
         <div id="ownerPinnedMessagesList">
+            <!-- Messages injected here -->
         </div>
     </div>
 
@@ -1630,7 +1618,7 @@
                 </p>
             </div>
 
-            <!-- ✅ NEW: Operating Hours -->
+            <!-- Operating Hours -->
             <div>
                 <label style="color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600;">
                     <i class="fas fa-clock"></i> Operating Hours
@@ -1684,7 +1672,7 @@
                 {{ status_form.name }}
             </div>
 
-            <!-- ✅ UPDATED: Address (Auto-filled, Read-only) -->
+            <!-- Address (Auto-filled, Read-only) -->
             <div class="form-group">
                 <label for="id_address">
                     Address
@@ -1704,7 +1692,7 @@
                 </small>
             </div>
 
-            <!-- ✅ Pin Location Button -->
+            <!-- Pin Location Button -->
             <div class="form-group">
                 <label>Pin Location <span style="color: red;">*</span></label>
                 <button type="button" class="btn btn-secondary" onclick="openLocationModal()"
@@ -2122,7 +2110,6 @@
             panel.classList.remove('open');
         } else {
             panel.classList.add('open');
-            // ✅ FIX: Use 'open' instead of 'active'
             chatWindow.classList.remove('open');
             loadConversations();
         }
@@ -2136,7 +2123,6 @@
 
                 if (data.conversations && data.conversations.length > 0) {
                     list.innerHTML = data.conversations.map(conv => {
-                        // ✅ FIX: Escape quotes in customer name to prevent syntax errors
                         const safeName = conv.customer_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                         return `
@@ -2175,7 +2161,6 @@
         document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
 
         document.getElementById('chatPanel').classList.remove('open');
-        // ✅ FIX: Use 'open' instead of 'active' to match CSS
         document.getElementById('chatWindow').classList.add('open');
 
         loadMessages(customerId);
@@ -2183,7 +2168,6 @@
     }
 
     function backToConversations() {
-        // ✅ FIX: Use 'open' instead of 'active'
         document.getElementById('chatWindow').classList.remove('open');
         document.getElementById('chatPanel').classList.add('open');
 
@@ -2385,7 +2369,7 @@
     }
 
     // ==========================================
-    // ✅ LONG PRESS DETECTION (MOBILE)
+    // LONG PRESS DETECTION (MOBILE)
     // ==========================================
 
     function attachLongPressHandlers(messageElement, messageId) {
@@ -2442,7 +2426,7 @@
     }
 
     // ==========================================
-    // ✅ CONTEXT MENU (DESKTOP & MOBILE)
+    // CONTEXT MENU (DESKTOP & MOBILE FIX)
     // ==========================================
 
     function showOwnerOptionsMenu(event, messageId) {
@@ -2481,14 +2465,21 @@
 
         contextMenu.classList.add('active');
 
+        // ✅ FIX: Delay listening for clicks slightly
         setTimeout(() => {
             document.addEventListener('click', hideOwnerContextMenu);
             document.addEventListener('touchstart', hideOwnerContextMenu);
         }, 100);
     }
 
-    function hideOwnerContextMenu() {
+    function hideOwnerContextMenu(e) {
         const contextMenu = document.getElementById('ownerMessageContextMenu');
+
+        // ✅ CRITICAL FIX: Don't close if clicking INSIDE the menu
+        if (contextMenu && contextMenu.contains(e.target)) {
+            return;
+        }
+
         contextMenu.classList.remove('active');
         document.removeEventListener('click', hideOwnerContextMenu);
         document.removeEventListener('touchstart', hideOwnerContextMenu);
@@ -2518,11 +2509,15 @@
     }
 
     // ==========================================
-    // ✅ PIN FUNCTIONALITY (PERSISTENT)
+    // PIN FUNCTIONALITY (PERSISTENT)
     // ==========================================
 
     function pinOwnerMessage() {
-        hideOwnerContextMenu();
+        // ✅ FORCE CLOSE MENU MANUALLY (Since we prevented auto-close inside menu)
+        const contextMenu = document.getElementById('ownerMessageContextMenu');
+        contextMenu.classList.remove('active');
+        document.removeEventListener('click', hideOwnerContextMenu);
+        document.removeEventListener('touchstart', hideOwnerContextMenu);
 
         if (!ownerContextMenuMessageId) return;
 
@@ -2568,6 +2563,11 @@
             if (msg) {
                 const item = document.createElement('div');
                 item.className = 'pinned-message-item';
+                item.onclick = function() {
+                     // Scroll to message functionality
+                    const el = document.querySelector(`.chat-message[data-message-id="${msgId}"]`);
+                    if(el) el.scrollIntoView({behavior: "smooth", block: "center"});
+                };
                 item.innerHTML = `
                     <i class="fas fa-thumbtack"></i>
                     <span class="pinned-message-text">${escapeHtml(msg.content)}</span>
@@ -2596,13 +2596,22 @@
         updateOwnerPinnedSection();
     }
 
+    // ✅ UPDATED TOGGLE FUNCTION
     function toggleOwnerPinnedSection() {
-        const section = document.getElementById('ownerPinnedSection');
-        section.classList.toggle('active');
+        const list = document.getElementById('ownerPinnedMessagesList');
+        const icon = document.querySelector('.owner-pinned-collapse i');
+
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            icon.className = 'fas fa-chevron-up';
+        } else {
+            list.style.display = 'none';
+            icon.className = 'fas fa-chevron-down';
+        }
     }
 
     // ==========================================
-    // ✅ PINNED MESSAGES MODAL
+    // PINNED MESSAGES MODAL
     // ==========================================
 
     function openOwnerPinnedMessagesModal() {
@@ -2643,11 +2652,16 @@
     }
 
     // ==========================================
-    // ✅ UNSEND FUNCTIONALITY (PERSISTENT)
+    // UNSEND FUNCTIONALITY (PERSISTENT)
     // ==========================================
 
     function openOwnerUnsendModal() {
-        hideOwnerContextMenu();
+        // ✅ FORCE CLOSE MENU MANUALLY
+        const contextMenu = document.getElementById('ownerMessageContextMenu');
+        contextMenu.classList.remove('active');
+        document.removeEventListener('click', hideOwnerContextMenu);
+        document.removeEventListener('touchstart', hideOwnerContextMenu);
+
         const modal = document.getElementById('ownerUnsendModal');
         modal.classList.add('active');
         ownerSelectedUnsendType = 'everyone';
