@@ -2081,12 +2081,6 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
 <script src="{% static 'js/status_updater.js' %}"></script>
-
-<!-- ==========================================
-     ✅ COMPLETE SCRIPT SECTION FOR HTML FILE
-     Replace the <script> section (around line 2085-2739) with this complete code
-     ========================================== -->
-
 <script>
     const establishmentId = {{ establishment.id }};
     const currentUserId = {{ request.user.id }};
@@ -2117,101 +2111,101 @@
         return cookieValue;
     }
 
-    // ==========================================
-    // ✅ FIXED: Toggle Chat Panel
-    // ==========================================
     function toggleChatPanel() {
         const panel = document.getElementById('chatPanel');
         const chatWindow = document.getElementById('chatWindow');
-        const notificationPanel = document.getElementById('notificationPanel');
-
-        console.log('📱 Toggling chat panel');
-
-        // Close notification panel if open
-        if (notificationPanel && notificationPanel.classList.contains('open')) {
-            notificationPanel.classList.remove('open');
-        }
 
         if (panel.classList.contains('open')) {
-            console.log('✅ Closing chat panel');
             panel.classList.remove('open');
         } else {
-            console.log('✅ Opening chat panel');
             panel.classList.add('open');
-            if (chatWindow) {
-                chatWindow.classList.remove('active');
-            }
-            // ✅ FIX: Always load conversations when opening
+            chatWindow.classList.remove('active');
             loadConversations();
         }
     }
 
     // ==========================================
-    // ✅ FIXED: Load Conversations with better error handling
+    // ✅ FIXED: Load Conversations - Proper Event Binding
     // ==========================================
     function loadConversations() {
-        console.log('📥 Loading conversations for establishment:', establishmentId);
-
-        const list = document.getElementById('conversationsList');
-        if (!list) {
-            console.error('❌ Conversations list element not found');
-            return;
-        }
-
-        // Show loading state
-        list.innerHTML = `
-            <div class="chat-empty-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading conversations...</p>
-            </div>
-        `;
+        console.log('📥 Loading conversations...');
 
         fetch(`/owner/chat/conversations/${establishmentId}/`)
-            .then(response => {
-                console.log('📡 Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('📦 Conversations data received:', data);
+                const list = document.getElementById('conversationsList');
 
                 if (data.conversations && data.conversations.length > 0) {
                     console.log(`✅ Loaded ${data.conversations.length} conversations`);
 
-                    // ✅ FIX: Use proper HTML escaping and ensure onclick works
-                    list.innerHTML = data.conversations.map(conv => {
-                        const customerName = conv.customer_name.replace(/'/g, "\\'");
-                        const lastMessage = conv.last_message || 'No messages yet';
+                    // ✅ CRITICAL FIX: Clear existing content first
+                    list.innerHTML = '';
 
-                        return `
-                            <div class="chat-conversation-item"
-                                 onclick="openConversation(${conv.customer_id}, '${customerName}')"
-                                 data-customer-id="${conv.customer_id}"
-                                 style="cursor: pointer;">
-                                <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
-                                <div class="chat-conversation-info">
-                                    <div class="chat-conversation-name">${escapeHtml(conv.customer_name)}</div>
-                                    <div class="chat-conversation-preview">${escapeHtml(lastMessage)}</div>
-                                </div>
-                                <div class="chat-conversation-time">${conv.time || ''}</div>
-                                ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('');
+                    // ✅ CRITICAL FIX: Create elements programmatically instead of innerHTML
+                    // This prevents issues with special characters in names
+                    data.conversations.forEach(conv => {
+                        const item = document.createElement('div');
+                        item.className = 'chat-conversation-item';
+                        item.style.cursor = 'pointer';
+
+                        // ✅ CRITICAL FIX: Use addEventListener instead of onclick attribute
+                        // This handles special characters properly
+                        item.addEventListener('click', function() {
+                            openConversation(conv.customer_id, conv.customer_name);
+                        });
+
+                        // Create avatar
+                        const avatar = document.createElement('div');
+                        avatar.className = 'chat-avatar';
+                        avatar.textContent = conv.customer_name.charAt(0).toUpperCase();
+
+                        // Create info container
+                        const info = document.createElement('div');
+                        info.className = 'chat-conversation-info';
+
+                        // Create name
+                        const name = document.createElement('div');
+                        name.className = 'chat-conversation-name';
+                        name.textContent = conv.customer_name;
+
+                        // Create preview
+                        const preview = document.createElement('div');
+                        preview.className = 'chat-conversation-preview';
+                        preview.textContent = conv.last_message || 'No messages yet';
+
+                        info.appendChild(name);
+                        info.appendChild(preview);
+
+                        // Create time
+                        const time = document.createElement('div');
+                        time.className = 'chat-conversation-time';
+                        time.textContent = conv.time || '';
+
+                        // Assemble the item
+                        item.appendChild(avatar);
+                        item.appendChild(info);
+                        item.appendChild(time);
+
+                        // Add unread badge if needed
+                        if (conv.unread_count > 0) {
+                            const badge = document.createElement('div');
+                            badge.className = 'chat-unread-badge';
+                            badge.textContent = conv.unread_count;
+                            item.appendChild(badge);
+                        }
+
+                        list.appendChild(item);
+                    });
 
                     const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
                     updateChatBadge(totalUnread);
 
-                    console.log('✅ Conversations rendered successfully');
+                    console.log('✅ Conversations rendered with event listeners');
                 } else {
-                    console.log('ℹ️ No conversations found');
                     list.innerHTML = `
                         <div class="chat-empty-state">
                             <i class="fas fa-inbox"></i>
                             <p>No conversations yet</p>
-                            <small style="color: #999; font-size: 12px; margin-top: 8px; display: block;">Customers who message you will appear here</small>
                         </div>
                     `;
                     updateChatBadge(0);
@@ -2219,13 +2213,13 @@
             })
             .catch(error => {
                 console.error('❌ Error loading conversations:', error);
+                const list = document.getElementById('conversationsList');
                 list.innerHTML = `
                     <div class="chat-empty-state" style="color: #c62828;">
                         <i class="fas fa-exclamation-triangle"></i>
                         <p>Error loading conversations</p>
-                        <small style="font-size: 12px; margin-top: 8px; display: block;">${escapeHtml(error.message)}</small>
                         <button onclick="loadConversations()"
-                                style="margin-top: 12px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                                style="margin-top: 10px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
                             <i class="fas fa-redo"></i> Retry
                         </button>
                     </div>
@@ -2234,61 +2228,26 @@
     }
 
     // ==========================================
-    // ✅ FIXED: Open Conversation with validation
+    // ✅ FIXED: Open Conversation with logging
     // ==========================================
     function openConversation(customerId, customerName) {
-        console.log('💬 Opening conversation - Customer:', customerName, 'ID:', customerId);
-
-        if (!customerId) {
-            console.error('❌ Invalid customer ID');
-            return;
-        }
+        console.log('💬 Opening conversation:', customerName, 'ID:', customerId);
 
         activeCustomerId = customerId;
 
-        const nameElement = document.getElementById('chatWindowName');
-        const avatarElement = document.getElementById('chatWindowAvatar');
+        document.getElementById('chatWindowName').textContent = customerName;
+        document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
 
-        if (nameElement) {
-            nameElement.textContent = customerName;
-        }
-
-        if (avatarElement) {
-            avatarElement.textContent = customerName.charAt(0).toUpperCase();
-        }
-
-        const chatPanel = document.getElementById('chatPanel');
-        const chatWindow = document.getElementById('chatWindow');
-
-        if (chatPanel) {
-            chatPanel.classList.remove('open');
-        }
-
-        if (chatWindow) {
-            chatWindow.classList.add('active');
-            console.log('✅ Chat window opened');
-        } else {
-            console.error('❌ Chat window element not found');
-            return;
-        }
+        document.getElementById('chatPanel').classList.remove('open');
+        document.getElementById('chatWindow').classList.add('active');
 
         loadMessages(customerId);
         connectWebSocket(customerId);
     }
 
     function backToConversations() {
-        console.log('⬅️ Returning to conversations list');
-
-        const chatWindow = document.getElementById('chatWindow');
-        const chatPanel = document.getElementById('chatPanel');
-
-        if (chatWindow) {
-            chatWindow.classList.remove('active');
-        }
-
-        if (chatPanel) {
-            chatPanel.classList.add('open');
-        }
+        document.getElementById('chatWindow').classList.remove('active');
+        document.getElementById('chatPanel').classList.add('open');
 
         if (chatSocket) {
             chatSocket.close();
@@ -2323,15 +2282,8 @@
     }
 
     function loadMessages(customerId) {
-        console.log('📬 Loading messages for customer:', customerId);
-
         const container = document.getElementById('chatMessagesContainer');
-        if (!container) {
-            console.error('❌ Messages container not found');
-            return;
-        }
-
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;"><i class="fas fa-spinner fa-spin"></i><p>Loading messages...</p></div>';
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Loading messages...</div>';
 
         // Load pinned messages for this conversation
         loadOwnerPinnedMessages();
@@ -2340,8 +2292,6 @@
         fetch(`/owner/chat/messages/${customerId}/${establishmentId}/`)
             .then(response => response.json())
             .then(data => {
-                console.log('📦 Messages loaded:', data.messages?.length || 0);
-
                 if (data.messages && data.messages.length > 0) {
                     container.innerHTML = '';
 
@@ -2396,14 +2346,12 @@
                 scrollToBottom();
             })
             .catch(error => {
-                console.error('❌ Error loading messages:', error);
+                console.error('Error loading messages:', error);
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Failed to load messages</div>';
             });
     }
 
     function connectWebSocket(customerId) {
-        console.log('🔌 Connecting WebSocket for customer:', customerId);
-
         if (chatSocket) {
             chatSocket.close();
         }
@@ -2411,36 +2359,30 @@
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws/chat/${customerId}/${establishmentId}/`;
 
-        console.log('🔌 WebSocket URL:', wsUrl);
+        chatSocket = new WebSocket(wsUrl);
 
-        try {
-            chatSocket = new WebSocket(wsUrl);
+        chatSocket.onopen = function(e) {
+            console.log('✅ Chat connected');
+        };
 
-            chatSocket.onopen = function(e) {
-                console.log('✅ Chat connected');
-            };
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
 
-            chatSocket.onmessage = function(e) {
-                const data = JSON.parse(e.data);
+            if (data.type === 'chat_message') {
+                addMessageToChat(data);
+            }
+            else if (data.type === 'message_unsent') {
+                handleOwnerMessageUnsent(data);
+            }
+        };
 
-                if (data.type === 'chat_message') {
-                    addMessageToChat(data);
-                }
-                else if (data.type === 'message_unsent') {
-                    handleOwnerMessageUnsent(data);
-                }
-            };
+        chatSocket.onerror = function(e) {
+            console.error('Chat connection error');
+        };
 
-            chatSocket.onerror = function(e) {
-                console.error('❌ Chat connection error');
-            };
-
-            chatSocket.onclose = function(e) {
-                console.log('Chat disconnected');
-            };
-        } catch (error) {
-            console.error('❌ WebSocket connection error:', error);
-        }
+        chatSocket.onclose = function(e) {
+            console.log('Chat disconnected');
+        };
     }
 
     function sendMessage(event) {
@@ -2616,13 +2558,11 @@
 
     function updateChatBadge(count) {
         const badge = document.getElementById('chatBadge');
-        if (badge) {
-            if (count > 0) {
-                badge.textContent = count > 99 ? '99+' : count;
-                badge.style.display = 'block';
-            } else {
-                badge.style.display = 'none';
-            }
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
         }
     }
 
@@ -2634,7 +2574,6 @@
     }
 
     function escapeHtml(text) {
-        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
@@ -2868,25 +2807,6 @@
             }, 5000);
         }
     }
-
-    // ==========================================
-    // ✅ INITIALIZE: Load conversations on page load
-    // ==========================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Chat system initialized');
-        console.log('📍 Establishment ID:', establishmentId);
-
-        // Load conversations initially
-        loadConversations();
-
-        // Poll for new messages every 30 seconds when panel is open
-        setInterval(function() {
-            const chatPanel = document.getElementById('chatPanel');
-            if (chatPanel && chatPanel.classList.contains('open')) {
-                loadConversations();
-            }
-        }, 30000);
-    });
 </script>
 <button id="scrollToTopBtn" class="scroll-to-top" style="z-index: 10000;">
     <i class="fas fa-arrow-up"></i>
