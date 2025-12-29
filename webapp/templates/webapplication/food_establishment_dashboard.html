@@ -558,7 +558,7 @@
         }
 
         /* ========================================
-           CHAT WINDOW - SAME FIX AS CHAT PANEL
+           CHAT WINDOW - FIXED DISPLAY & HEADER
            ======================================== */
 
         .chat-window {
@@ -573,11 +573,12 @@
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             transform: translateX(100%);
             transition: transform 0.3s ease;
-            z-index: 999;
-            display: none;
+            z-index: 1000; /* ✅ Higher z-index than panel */
+            display: flex; /* ✅ Always flex, toggle visibility/transform */
             flex-direction: column;
             overflow-x: hidden !important;
             box-sizing: border-box !important;
+            visibility: hidden; /* ✅ Hide when closed */
         }
 
         /* ✅ CRITICAL: Force box-sizing on ALL children */
@@ -588,11 +589,12 @@
         }
 
         .chat-window.open {
-            display: flex;
             transform: translateX(0);
+            visibility: visible; /* ✅ Show when open */
         }
 
-        .chat-header {
+        /* ✅ FIXED: Class name matches HTML 'chat-window-header' */
+        .chat-window-header {
             padding: 16px 20px;
             border-bottom: 1px solid var(--border, #e4e6eb);
             display: flex;
