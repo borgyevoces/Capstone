@@ -16,216 +16,216 @@
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
         .notification-item {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.2s;
-}
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-.notification-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
+        .notification-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
 
-.notification-item.unread {
-    background: #fffbeb;
-    border-left: 4px solid #f59e0b;
-}
+        .notification-item.unread {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
 
-.notification-header {
-    display: flex;
-    align-items: start;
-    gap: 12px;
-    margin-bottom: 12px;
-}
+        .notification-header {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
 
-.notification-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-    flex-shrink: 0;
-}
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
 
-.notification-content {
-    flex: 1;
-}
+        .notification-content {
+            flex: 1;
+        }
 
-.notification-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    font-weight: 700;
-    font-size: 16px;
-}
+        .notification-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-weight: 700;
+            font-size: 16px;
+        }
 
-.notification-type-badge {
-    background: #10b981;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
+        .notification-type-badge {
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
 
-.notification-message {
-    color: #6b7280;
-    font-size: 14px;
-}
+        .notification-message {
+            color: #6b7280;
+            font-size: 14px;
+        }
 
-/* Customer Info */
-.customer-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: #f9fafb;
-    border-radius: 8px;
-    margin: 12px 0;
-}
+        /* Customer Info */
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
 
-.customer-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 20px;
-}
+        .customer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+        }
 
-.customer-details {
-    flex: 1;
-}
+        .customer-details {
+            flex: 1;
+        }
 
-.customer-name {
-    font-weight: 700;
-    font-size: 15px;
-    color: #1a1a1a;
-}
+        .customer-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1a1a1a;
+        }
 
-.customer-email {
-    font-size: 13px;
-    color: #6b7280;
-    margin-top: 2px;
-}
+        .customer-email {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
 
-/* Order Summary */
-.order-summary {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
-    margin-top: 12px;
-}
+        /* Order Summary */
+        .order-summary {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
 
-.order-summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
+        .order-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
 
-.order-id {
-    font-weight: 700;
-    font-size: 14px;
-    color: #1a1a1a;
-}
+        .order-id {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1a1a1a;
+        }
 
-.order-total {
-    font-weight: 800;
-    font-size: 18px;
-    color: #B71C1C;
-}
+        .order-total {
+            font-weight: 800;
+            font-size: 18px;
+            color: #B71C1C;
+        }
 
-.order-reference {
-    background: #f0f7ff;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #1877F2;
-    margin-bottom: 12px;
-    font-weight: 600;
-}
+        .order-reference {
+            background: #f0f7ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #1877F2;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
 
-.order-items-list {
-    margin: 12px 0;
-}
+        .order-items-list {
+            margin: 12px 0;
+        }
 
-.order-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px;
-    background: #f9fafb;
-    border-radius: 6px;
-    margin-bottom: 6px;
-}
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
 
-.item-name-qty {
-    font-size: 14px;
-    color: #1a1a1a;
-}
+        .item-name-qty {
+            font-size: 14px;
+            color: #1a1a1a;
+        }
 
-.item-price {
-    font-weight: 700;
-    color: #B71C1C;
-    font-size: 14px;
-}
+        .item-price {
+            font-weight: 700;
+            color: #B71C1C;
+            font-size: 14px;
+        }
 
-.order-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-}
+        .order-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
 
-.order-status-badge.paid {
-    background: #d1fae5;
-    color: #10b981;
-}
+        .order-status-badge.paid {
+            background: #d1fae5;
+            color: #10b981;
+        }
 
-.order-status-badge.pending {
-    background: #fef3c7;
-    color: #f59e0b;
-}
+        .order-status-badge.pending {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
 
-.notification-time {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #f3f4f6;
-}
+        .notification-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+        }
 
-.time-ago {
-    font-weight: 600;
-    color: #6b7280;
-}
+        .time-ago {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
         /* ==========================================
            ✅ REAL ULTIMATE FIX - 100% WORKING ON ALL DEVICES
            ✅ Problem: Fixed width 360px sa chat panel nag-cause ng overflow
            ✅ Solution: Responsive width from the start
            ========================================== */
 
-        /* Notification and Chat Panel styles remain unchanged inside the HTML as per original file */
         .notification-toggle-btn {
             position: relative;
             background: transparent;
@@ -1382,12 +1382,12 @@
 
 <div class="chat-window" id="chatWindow">
     <div class="chat-window-header">
-        <button class="chat-back-btn" onclick="backToConversations()">
+        <button class="back-to-conversations" onclick="backToConversations()">
             <i class="fas fa-arrow-left"></i>
         </button>
         <div class="chat-avatar" id="chatWindowAvatar">U</div>
-        <div class="chat-window-info">
-            <h4 id="chatWindowName">Customer</h4>
+        <div class="chat-header-info">
+            <h4 class="chat-header-name" id="chatWindowName">Customer</h4>
         </div>
     </div>
 
@@ -2081,6 +2081,7 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
 <script src="{% static 'js/status_updater.js' %}"></script>
+
 <script>
     const establishmentId = {{ establishment.id }};
     const currentUserId = {{ request.user.id }};
@@ -2119,88 +2120,37 @@
             panel.classList.remove('open');
         } else {
             panel.classList.add('open');
-            chatWindow.classList.remove('active');
+            // ✅ FIX: Use 'open' instead of 'active'
+            chatWindow.classList.remove('open');
             loadConversations();
         }
     }
 
-    // ==========================================
-    // ✅ FIXED: Load Conversations - Proper Event Binding
-    // ==========================================
     function loadConversations() {
-        console.log('📥 Loading conversations...');
-
         fetch(`/owner/chat/conversations/${establishmentId}/`)
             .then(response => response.json())
             .then(data => {
                 const list = document.getElementById('conversationsList');
 
                 if (data.conversations && data.conversations.length > 0) {
-                    console.log(`✅ Loaded ${data.conversations.length} conversations`);
+                    list.innerHTML = data.conversations.map(conv => {
+                        // ✅ FIX: Escape quotes in customer name to prevent syntax errors
+                        const safeName = conv.customer_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-                    // ✅ CRITICAL FIX: Clear existing content first
-                    list.innerHTML = '';
-
-                    // ✅ CRITICAL FIX: Create elements programmatically instead of innerHTML
-                    // This prevents issues with special characters in names
-                    data.conversations.forEach(conv => {
-                        const item = document.createElement('div');
-                        item.className = 'chat-conversation-item';
-                        item.style.cursor = 'pointer';
-
-                        // ✅ CRITICAL FIX: Use addEventListener instead of onclick attribute
-                        // This handles special characters properly
-                        item.addEventListener('click', function() {
-                            openConversation(conv.customer_id, conv.customer_name);
-                        });
-
-                        // Create avatar
-                        const avatar = document.createElement('div');
-                        avatar.className = 'chat-avatar';
-                        avatar.textContent = conv.customer_name.charAt(0).toUpperCase();
-
-                        // Create info container
-                        const info = document.createElement('div');
-                        info.className = 'chat-conversation-info';
-
-                        // Create name
-                        const name = document.createElement('div');
-                        name.className = 'chat-conversation-name';
-                        name.textContent = conv.customer_name;
-
-                        // Create preview
-                        const preview = document.createElement('div');
-                        preview.className = 'chat-conversation-preview';
-                        preview.textContent = conv.last_message || 'No messages yet';
-
-                        info.appendChild(name);
-                        info.appendChild(preview);
-
-                        // Create time
-                        const time = document.createElement('div');
-                        time.className = 'chat-conversation-time';
-                        time.textContent = conv.time || '';
-
-                        // Assemble the item
-                        item.appendChild(avatar);
-                        item.appendChild(info);
-                        item.appendChild(time);
-
-                        // Add unread badge if needed
-                        if (conv.unread_count > 0) {
-                            const badge = document.createElement('div');
-                            badge.className = 'chat-unread-badge';
-                            badge.textContent = conv.unread_count;
-                            item.appendChild(badge);
-                        }
-
-                        list.appendChild(item);
-                    });
+                        return `
+                        <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${safeName}')">
+                            <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
+                            <div class="chat-conversation-info">
+                                <div class="chat-conversation-name">${conv.customer_name}</div>
+                                <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
+                            </div>
+                            <div class="chat-conversation-time">${conv.time || ''}</div>
+                            ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
+                        </div>
+                    `}).join('');
 
                     const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
                     updateChatBadge(totalUnread);
-
-                    console.log('✅ Conversations rendered with event listeners');
                 } else {
                     list.innerHTML = `
                         <div class="chat-empty-state">
@@ -2212,41 +2162,27 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Error loading conversations:', error);
-                const list = document.getElementById('conversationsList');
-                list.innerHTML = `
-                    <div class="chat-empty-state" style="color: #c62828;">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Error loading conversations</p>
-                        <button onclick="loadConversations()"
-                                style="margin-top: 10px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
-                            <i class="fas fa-redo"></i> Retry
-                        </button>
-                    </div>
-                `;
+                console.error('Error loading conversations:', error);
             });
     }
 
-    // ==========================================
-    // ✅ FIXED: Open Conversation with logging
-    // ==========================================
     function openConversation(customerId, customerName) {
-        console.log('💬 Opening conversation:', customerName, 'ID:', customerId);
-
         activeCustomerId = customerId;
 
         document.getElementById('chatWindowName').textContent = customerName;
         document.getElementById('chatWindowAvatar').textContent = customerName.charAt(0).toUpperCase();
 
         document.getElementById('chatPanel').classList.remove('open');
-        document.getElementById('chatWindow').classList.add('active');
+        // ✅ FIX: Use 'open' instead of 'active' to match CSS
+        document.getElementById('chatWindow').classList.add('open');
 
         loadMessages(customerId);
         connectWebSocket(customerId);
     }
 
     function backToConversations() {
-        document.getElementById('chatWindow').classList.remove('active');
+        // ✅ FIX: Use 'open' instead of 'active'
+        document.getElementById('chatWindow').classList.remove('open');
         document.getElementById('chatPanel').classList.add('open');
 
         if (chatSocket) {
