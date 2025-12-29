@@ -3,6 +3,11 @@
 {% load custom_filters %}
 {% load static custom_filters webapp_filters %}
 
+{# ✅ ADDED: Hide Search Bar Logic #}
+{% block search_visibility_control %}
+{% with show_search=False %}{% endwith %}
+{% endblock search_visibility_control %}
+
 {% block title %}Shopping Cart - KabsuEats{% endblock %}
 
 {% block extra_css %}
