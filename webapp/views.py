@@ -2066,7 +2066,11 @@ def debug_create_gcash_payload(request, order_id):
 @login_required
 def gcash_payment_success(request):
     """
-    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS
+    Handle successful payment:
+    1. Updates Order Status to PAID
+    2. Deducts Inventory (Stocks)
+    3. Creates Notification for Owner
+    4. Sends Email
     """
     order_id = request.GET.get('order_id')
 
@@ -2075,53 +2079,67 @@ def gcash_payment_success(request):
         return redirect('view_cart')
 
     try:
-        order = Order.objects.filter(id=order_id).select_related('user', 'establishment').first()
-        if not order:
-            messages.error(request, 'Order not found')
+        # Get order with related data for efficiency
+        order = Order.objects.select_related('user', 'establishment').prefetch_related('orderitem_set__menu_item').get(
+            id=order_id)
+
+        # Verify ownership or if user is authorized
+        if request.user.is_authenticated and order.user != request.user:
+            messages.error(request, 'Unauthorized access to this order.')
             return redirect('view_cart')
 
         # Update order status if still pending
         if order.status != 'PAID':
-            order.status = 'PAID'
-            order.payment_confirmed_at = timezone.now()
-            order.save()
+            with transaction.atomic():  # Use transaction to ensure data integrity
+                order.status = 'PAID'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
 
-            # ✅ CREATE ORDER NOTIFICATION FOR OWNER
-            try:
-                OrderNotification.objects.create(
-                    establishment=order.establishment,
-                    order=order,
-                    notification_type='new_order',
-                    message=f'New order #{order.id} from {order.user.username}'
-                )
-                print(f"✅ Notification created for Order #{order.id}")
-            except Exception as notif_error:
-                print(f"⚠️ Notification creation error: {notif_error}")
-
-            # Reduce stock
-            for order_item in order.orderitem_set.all():
-                menu_item = order_item.menu_item
+                # ✅ 1. CREATE ORDER NOTIFICATION FOR OWNER
+                # Ito ang magpapalabas ng notif sa dashboard
                 try:
-                    if menu_item.quantity >= order_item.quantity:
-                        menu_item.quantity -= order_item.quantity
-                        menu_item.save()
-                    else:
-                        print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
-                except Exception as stock_err:
-                    print(f"Error reducing stock for {menu_item.id}: {stock_err}")
+                    OrderNotification.objects.create(
+                        establishment=order.establishment,
+                        order=order,
+                        notification_type='new_order',
+                        message=f'New Order Received! Customer: {order.user.username} ({order.user.email})'
+                    )
+                    print(f"✅ Notification created for Order #{order.id}")
+                except Exception as notif_error:
+                    print(f"⚠️ Notification creation error: {notif_error}")
 
-            # Send confirmation emails (best-effort)
-            try:
-                send_order_confirmation_email(order)
-            except Exception as e:
-                print(f"Email error: {e}")
+                # ✅ 2. AUTO-DEDUCT STOCKS (Inventory Management)
+                # Ito ang magbabawas ng items sa menu
+                items_deducted = []
+                for order_item in order.orderitem_set.all():
+                    menu_item = order_item.menu_item
+                    try:
+                        if menu_item.quantity >= order_item.quantity:
+                            menu_item.quantity -= order_item.quantity
+                            menu_item.save()
+                            items_deducted.append(f"{menu_item.name} (-{order_item.quantity})")
+                        else:
+                            # Kung kulang ang stock, gawing 0 na lang
+                            print(f"⚠️ Warning: Insufficient stock for {menu_item.name}. Setting to 0.")
+                            menu_item.quantity = 0
+                            menu_item.save()
+                    except Exception as stock_err:
+                        print(f"Error reducing stock for {menu_item.id}: {stock_err}")
+
+                print(f"✅ Stocks updated: {', '.join(items_deducted)}")
+
+                # 3. Send confirmation emails (best-effort)
+                try:
+                    send_order_confirmation_email(order)
+                except Exception as e:
+                    print(f"Email error: {e}")
 
         # Decide where to redirect
         return_to = request.GET.get('return_to')
 
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, 'Payment successful! Your order has been confirmed.')
-            return redirect('order_confirmation', order_id=order.id)
+            return redirect('view_order_confirmation', order_id=order.id)
 
         if return_to == 'cart':
             return redirect('view_cart')
@@ -2133,6 +2151,10 @@ def gcash_payment_success(request):
 
     except Order.DoesNotExist:
         messages.error(request, 'Order not found')
+        return redirect('view_cart')
+    except Exception as e:
+        print(f"Critical error in payment success: {e}")
+        messages.error(request, 'An error occurred while processing your order.')
         return redirect('view_cart')
 
 @login_required
@@ -2433,27 +2455,24 @@ def create_buynow_payment_link(request):
 @login_required
 def get_owner_notifications(request):
     """
-    ✅ ENHANCED: Get detailed notifications with complete order information
+    API endpoint para kunin ang notifications at ipakita sa Dashboard JS.
+    Isinasama dito ang Name, Email, Items, at Price.
     """
     establishment_id = request.session.get('food_establishment_id')
 
     if not establishment_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authorized'
-        }, status=403)
+        return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
 
     try:
         establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
 
-        # Get unread notifications with complete order details
+        # Get unread notifications
         notifications = OrderNotification.objects.filter(
             establishment=establishment,
             is_read=False
         ).select_related(
             'order',
-            'order__user',
-            'order__establishment'
+            'order__user'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
         ).order_by('-created_at')[:20]
@@ -2463,7 +2482,7 @@ def get_owner_notifications(request):
         for notif in notifications:
             order = notif.order
 
-            # Get order items with details
+            # ✅ Kunin ang listahan ng items at presyo para sa summary
             order_items = []
             for item in order.orderitem_set.all():
                 order_items.append({
@@ -2473,7 +2492,7 @@ def get_owner_notifications(request):
                     'total': float(item.total_price)
                 })
 
-            # Format notification data
+            # ✅ I-structure ang data na ibabalik sa JS
             notifications_data.append({
                 'id': notif.id,
                 'type': notif.notification_type,
@@ -2489,29 +2508,21 @@ def get_owner_notifications(request):
                     'item_count': order.orderitem_set.count(),
                 },
 
-                # Customer Details
+                # Customer Details (Kasama ang GMAIL)
                 'customer': {
                     'name': order.user.username,
-                    'email': order.user.email,
+                    'email': order.user.email,  # ✅ Ito ang Gmail na ginamit
                     'id': order.user.id
                 },
 
                 # Timestamps
                 'created_at': notif.created_at.strftime('%B %d, %Y at %I:%M %p'),
-                'payment_confirmed_at': order.payment_confirmed_at.strftime(
-                    '%B %d, %Y at %I:%M %p') if order.payment_confirmed_at else None,
                 'time_ago': get_time_ago(notif.created_at),
-
-                # Status indicators
                 'is_new': not notif.is_read,
                 'is_paid': order.status == 'PAID',
             })
 
-        # Get total unread count
-        unread_count = OrderNotification.objects.filter(
-            establishment=establishment,
-            is_read=False
-        ).count()
+        unread_count = OrderNotification.objects.filter(establishment=establishment, is_read=False).count()
 
         return JsonResponse({
             'success': True,
@@ -2522,10 +2533,7 @@ def get_owner_notifications(request):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def get_time_ago(timestamp):
     """
