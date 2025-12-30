@@ -74,7 +74,6 @@ import requests
 from django.core.cache import cache
 from datetime import datetime, time as dt_time
 
-
 # ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
 def get_current_status(opening_time, closing_time):
     """Calculate real-time status"""
@@ -90,10 +89,8 @@ def get_current_status(opening_time, closing_time):
         # Overnight hours (e.g., 10 PM - 2 AM)
         return "Open" if now >= opening_time or now <= closing_time else "Closed"
 
-
 def about_page(request):
     return render(request, 'webapplication/about.html')
-
 
 # ===================================================================================================================
 # ===================================================CLIENT=========================================================
@@ -108,7 +105,6 @@ def haversine(lat1, lon1, lat2, lon2):
     a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
-
 
 def user_login_register(request):
     User = get_user_model()
@@ -177,7 +173,6 @@ def user_login_register(request):
 
     return render(request, "webapplication/login.html", {'show_done_modal': show_done_modal, 'active_tab': active_tab})
 
-
 @login_required
 def user_logout(request):
     """
@@ -186,7 +181,6 @@ def user_logout(request):
     logout(request)
     messages.success(request, "Successfully logged out.")
     return redirect(reverse_lazy('kabsueats_home'))
-
 
 def google_login(request):
     params = {
@@ -198,7 +192,6 @@ def google_login(request):
     }
     google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
     return redirect(google_auth_url)
-
 
 def google_callback(request):
     User = get_user_model()
@@ -305,7 +298,6 @@ def google_callback(request):
     except Exception as e:
         messages.error(request, f'An error occurred while retrieving user data: {e}')
         return redirect('user_login_register')
-
 
 def forgot_password(request):
     """
@@ -417,19 +409,16 @@ The KabsuEats Team
 
     return redirect('user_login_register')
 
-
 def password_reset_done_redirect(request):
     """Redirect to login with success message"""
     messages.info(request,
                   "We've emailed you instructions for setting your password. Please check your inbox and spam folder.")
     return redirect(reverse('user_login_register') + '?reset_done=true')
 
-
 def password_reset_complete_redirect(request):
     """Custom redirect after password reset"""
     messages.success(request, 'Your password has been reset successfully! You can now log in.')
     return redirect('user_login_register')
-
 
 def kabsueats_main_view(request):
     """
@@ -553,7 +542,6 @@ def search_food_establishments(request):
         'q': query
     })
 
-
 @login_required
 @require_http_methods(["POST"])
 def update_profile(request):
@@ -591,7 +579,6 @@ def update_profile(request):
         # I-extract ang errors para i-display
         errors = '; '.join([f"{k}: {v[0]}" for k, v in form.errors.items()])
         return JsonResponse({'success': False, 'errors': errors}, status=400)
-
 
 def category_establishments_view(request, category_name):
     try:
@@ -637,7 +624,6 @@ def category_establishments_view(request, category_name):
     }
     return render(request, 'home.html', context)
 
-
 @require_POST
 @login_required
 @require_http_methods(['POST'])
@@ -672,7 +658,6 @@ def submit_review(request, establishment_id):
             return redirect('food_establishment_details', establishment_id=establishment_id)
 
     return redirect('food_establishment_details', establishment_id=establishment_id)
-
 
 @login_required
 def edit_review(request, establishment_id, review_id):
@@ -710,7 +695,6 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
-
 @login_required
 @require_POST
 def delete_review(request, establishment_id, review_id):
@@ -724,7 +708,6 @@ def delete_review(request, establishment_id, review_id):
     cache.delete(f'establishment_{establishment_id}_reviews')
     messages.success(request, 'Review deleted successfully!')
     return redirect('food_establishment_details', establishment_id=establishment_id)
-
 
 def food_establishment_details(request, establishment_id):
 
@@ -819,7 +802,6 @@ def submit_review(request, establishment_id):
             return redirect('food_establishment_details', establishment_id=establishment_id)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
-
 @login_required
 def edit_review(request, establishment_id, review_id):
     """
@@ -854,7 +836,6 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
-
 @login_required(login_url='user_login_register')
 def view_directions(request, establishment_id):
     establishment = get_object_or_404(FoodEstablishment, id=establishment_id)
@@ -872,7 +853,6 @@ def view_directions(request, establishment_id):
         'longitude': longitude,
     }
     return render(request, 'webapplication/view_directions.html', context)
-
 
 @login_required(login_url='user_login_register')
 def toggle_item_availability(request, item_id):
@@ -896,7 +876,6 @@ def toggle_item_availability(request, item_id):
 
     messages.error(request, "Invalid request method.")
     return redirect(reverse_lazy('food_establishment_dashboard'))
-
 
 @csrf_exempt
 def send_registration_otp(request):
@@ -1047,7 +1026,6 @@ def send_registration_otp(request):
             'warning': 'Email sending failed',
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-
 
 @csrf_exempt
 def verify_otp_and_register(request):
@@ -1228,7 +1206,6 @@ def verify_otp_and_register(request):
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
 
-
 @csrf_exempt
 def verify_otp_only(request):
     """
@@ -1290,7 +1267,6 @@ def verify_otp_only(request):
             return JsonResponse({
                 'error': 'Invalid OTP. Please check your code.'
             }, status=400)
-
 
 @csrf_exempt
 def resend_otp(request):
@@ -1395,7 +1371,6 @@ def resend_otp(request):
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
 
-
 import base64
 import json
 import requests
@@ -1408,11 +1383,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from decimal import Decimal
 
-
 def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
-
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
@@ -1629,7 +1602,6 @@ def gcash_payment_request(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
 
-
 @login_required
 @require_POST
 def confirm_gcash_payment(request):
@@ -1710,79 +1682,6 @@ def confirm_gcash_payment(request):
             'message': f'Error confirming payment: {str(e)}'
         }, status=500)
 
-
-def send_order_confirmation_email(order):
-    """
-    Sends confirmation emails to customer and store owner.
-    (This function already exists in your code, keeping it for completeness)
-    """
-    try:
-        user_email = order.user.email
-        owner_email = order.establishment.owner.email
-
-        # Email to customer
-        user_subject = f"Order #{order.id} Confirmed - KabsuEats"
-        user_message = f"""
-Hello {order.user.username},
-
-Your order from {order.establishment.name} has been confirmed!
-
-Order Details:
-- Order ID: {order.id}
-- Reference Number: {order.gcash_reference_number}
-- Total Amount: ₱{order.total_amount:.2f}
-- Status: Payment Confirmed
-
-Items Ordered:
-"""
-        for item in order.orderitem_set.all():
-            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ ₱{item.price_at_order:.2f} = ₱{item.total_price:.2f}"
-
-        user_message += f"\n\nThank you for ordering with KabsuEats!"
-
-        send_mail(
-            user_subject,
-            user_message,
-            settings.EMAIL_HOST_USER,
-            [user_email],
-            fail_silently=True
-        )
-
-        # Email to owner
-        owner_subject = f"New Order #{order.id} - {order.establishment.name}"
-        owner_message = f"""
-New order received for {order.establishment.name}!
-
-Customer: {order.user.username}
-Email: {order.user.email}
-
-Order Details:
-- Order ID: {order.id}
-- Reference Number: {order.gcash_reference_number}
-- Total Amount: ₱{order.total_amount:.2f}
-- Payment Method: GCash (PayMongo)
-
-Items to Prepare:
-"""
-        for item in order.orderitem_set.all():
-            owner_message += f"\n- {item.menu_item.name} x{item.quantity}"
-
-        owner_message += "\n\nPlease prepare this order as soon as possible."
-
-        send_mail(
-            owner_subject,
-            owner_message,
-            settings.EMAIL_HOST_USER,
-            [owner_email],
-            fail_silently=True
-        )
-
-        print(f"✅ Confirmation emails sent for Order #{order.id}")
-
-    except Exception as e:
-        print(f"❌ Error sending emails: {e}")
-
-
 @login_required
 def view_order_confirmation(request, order_id):
     """
@@ -1799,7 +1698,6 @@ def view_order_confirmation(request, order_id):
     }
 
     return render(request, 'webapplication/order_confirmation.html', context)
-
 
 @login_required
 @require_POST
@@ -2000,7 +1898,6 @@ def create_gcash_payment_link(request):
             'message': 'Internal server error while creating payment link'
         }, status=500)
 
-
 @login_required
 def debug_create_gcash_payload(request, order_id):
     """
@@ -2062,79 +1959,6 @@ def debug_create_gcash_payload(request, order_id):
         traceback.print_exc()
         return JsonResponse({'success': False, 'message': 'Error building payload'}, status=500)
 
-
-@login_required
-def gcash_payment_success(request):
-    """
-    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS
-    """
-    order_id = request.GET.get('order_id')
-
-    if not order_id:
-        messages.error(request, 'Invalid payment confirmation')
-        return redirect('view_cart')
-
-    try:
-        order = Order.objects.filter(id=order_id).select_related('user', 'establishment').first()
-        if not order:
-            messages.error(request, 'Order not found')
-            return redirect('view_cart')
-
-        # Update order status if still pending
-        if order.status != 'PAID':
-            order.status = 'PAID'
-            order.payment_confirmed_at = timezone.now()
-            order.save()
-
-            # ✅ CREATE ORDER NOTIFICATION FOR OWNER
-            try:
-                OrderNotification.objects.create(
-                    establishment=order.establishment,
-                    order=order,
-                    notification_type='new_order',
-                    message=f'New order #{order.id} from {order.user.username}'
-                )
-                print(f"✅ Notification created for Order #{order.id}")
-            except Exception as notif_error:
-                print(f"⚠️ Notification creation error: {notif_error}")
-
-            # Reduce stock
-            for order_item in order.orderitem_set.all():
-                menu_item = order_item.menu_item
-                try:
-                    if menu_item.quantity >= order_item.quantity:
-                        menu_item.quantity -= order_item.quantity
-                        menu_item.save()
-                    else:
-                        print(f"⚠️ Warning: Insufficient stock for {menu_item.name}")
-                except Exception as stock_err:
-                    print(f"Error reducing stock for {menu_item.id}: {stock_err}")
-
-            # Send confirmation emails (best-effort)
-            try:
-                send_order_confirmation_email(order)
-            except Exception as e:
-                print(f"Email error: {e}")
-
-        # Decide where to redirect
-        return_to = request.GET.get('return_to')
-
-        if request.user.is_authenticated and request.user == order.user:
-            messages.success(request, 'Payment successful! Your order has been confirmed.')
-            return redirect('order_confirmation', order_id=order.id)
-
-        if return_to == 'cart':
-            return redirect('view_cart')
-
-        if return_to == 'buynow':
-            return redirect('payment_status', status='success')
-
-        return redirect('payment_status', status='success')
-
-    except Order.DoesNotExist:
-        messages.error(request, 'Order not found')
-        return redirect('view_cart')
-
 @login_required
 def gcash_payment_cancel(request):
     """Handle cancelled payment"""
@@ -2150,7 +1974,6 @@ def gcash_payment_cancel(request):
 
     return redirect('view_cart')
 
-
 @login_required
 def order_confirmation_view(request, order_id):
     """Display order confirmation"""
@@ -2162,138 +1985,6 @@ def order_confirmation_view(request, order_id):
         'order_items': order_items,
     }
     return render(request, 'webapplication/order_confirmation.html', context)
-
-
-@csrf_exempt
-@require_POST
-def paymongo_webhook(request):
-    """
-    Webhook endpoint for PayMongo payment events.
-    This is optional but recommended for production to handle payment confirmations.
-
-    To set up:
-    1. Go to PayMongo Dashboard → Developers → Webhooks
-    2. Add webhook URL: https://yourdomain.com/payment/webhook/
-    3. Subscribe to events: payment.paid, payment.failed
-    """
-    try:
-        payload = json.loads(request.body.decode('utf-8'))
-        event_type = payload.get('data', {}).get('attributes', {}).get('type')
-
-        if event_type == 'payment.paid':
-            # Handle successful payment
-            payment_data = payload.get('data', {}).get('attributes', {}).get('data', {})
-            reference_number = payment_data.get('id')
-
-            if reference_number:
-                try:
-                    order = Order.objects.get(gcash_reference_number=reference_number)
-                    if order.status == 'PENDING':
-                        order.status = 'PAID'
-                        order.payment_confirmed_at = timezone.now()
-                        order.save()
-
-                        # Reduce stock
-                        for order_item in order.orderitem_set.all():
-                            menu_item = order_item.menu_item
-                            menu_item.quantity = max(menu_item.quantity - order_item.quantity, 0)
-                            menu_item.save()
-
-                        # Send email
-                        send_order_confirmation_email(order)
-
-                except Order.DoesNotExist:
-                    pass
-
-        elif event_type == 'payment.failed':
-            # Handle failed payment
-            payment_data = payload.get('data', {}).get('attributes', {}).get('data', {})
-            reference_number = payment_data.get('id')
-
-            if reference_number:
-                try:
-                    order = Order.objects.get(gcash_reference_number=reference_number)
-                    order.status = 'CANCELLED'
-                    order.save()
-                except Order.DoesNotExist:
-                    pass
-
-        return HttpResponse(status=200)
-
-    except Exception as e:
-        print(f"Webhook error: {e}")
-        return HttpResponse(status=400)
-
-
-def send_order_confirmation_email(order):
-    """Send confirmation emails to customer and store owner"""
-    from django.core.mail import send_mail
-
-    try:
-        user_email = order.user.email
-        owner_email = order.establishment.owner.email
-
-        # Customer email
-        user_subject = f"Order #{order.id} Confirmed - KabsuEats"
-        user_message = f"""
-Hello {order.user.username},
-
-Your order from {order.establishment.name} has been confirmed!
-
-Order Details:
-- Order ID: {order.id}
-- Reference: {order.gcash_reference_number}
-- Total: ₱{order.total_amount:.2f}
-- Status: Payment Confirmed
-
-Items:
-"""
-        for item in order.orderitem_set.all():
-            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ ₱{item.price_at_order:.2f} = ₱{item.total_price:.2f}"
-
-        user_message += "\n\nThank you for ordering with KabsuEats!"
-
-        send_mail(
-            user_subject,
-            user_message,
-            settings.EMAIL_HOST_USER,
-            [user_email],
-            fail_silently=True
-        )
-
-        # Owner email
-        owner_subject = f"New Order #{order.id} - {order.establishment.name}"
-        owner_message = f"""
-New order for {order.establishment.name}!
-
-Customer: {order.user.username}
-Email: {order.user.email}
-
-Order Details:
-- Order ID: {order.id}
-- Reference: {order.gcash_reference_number}
-- Total: ₱{order.total_amount:.2f}
-
-Items to Prepare:
-"""
-        for item in order.orderitem_set.all():
-            owner_message += f"\n- {item.menu_item.name} x{item.quantity}"
-
-        owner_message += "\n\nPlease prepare this order."
-
-        send_mail(
-            owner_subject,
-            owner_message,
-            settings.EMAIL_HOST_USER,
-            [owner_email],
-            fail_silently=True
-        )
-
-        print(f"✅ Emails sent for Order #{order.id}")
-
-    except Exception as e:
-        print(f"❌ Email error: {e}")
-
 
 @login_required
 @require_POST
@@ -2429,215 +2120,6 @@ def create_buynow_payment_link(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
 
-
-@login_required
-def get_owner_notifications(request):
-    """
-    ✅ ENHANCED: Get detailed notifications with complete order information
-    """
-    establishment_id = request.session.get('food_establishment_id')
-
-    if not establishment_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authorized'
-        }, status=403)
-
-    try:
-        establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
-
-        # Get unread notifications with complete order details
-        notifications = OrderNotification.objects.filter(
-            establishment=establishment,
-            is_read=False
-        ).select_related(
-            'order',
-            'order__user',
-            'order__establishment'
-        ).prefetch_related(
-            'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:20]
-
-        notifications_data = []
-
-        for notif in notifications:
-            order = notif.order
-
-            # Get order items with details
-            order_items = []
-            for item in order.orderitem_set.all():
-                order_items.append({
-                    'name': item.menu_item.name,
-                    'quantity': item.quantity,
-                    'price': float(item.price_at_order),
-                    'total': float(item.total_price)
-                })
-
-            # Format notification data
-            notifications_data.append({
-                'id': notif.id,
-                'type': notif.notification_type,
-                'message': notif.message,
-
-                # Order Details
-                'order': {
-                    'id': order.id,
-                    'reference_number': order.gcash_reference_number or 'N/A',
-                    'status': order.status,
-                    'total_amount': float(order.total_amount),
-                    'items': order_items,
-                    'item_count': order.orderitem_set.count(),
-                },
-
-                # Customer Details
-                'customer': {
-                    'name': order.user.username,
-                    'email': order.user.email,
-                    'id': order.user.id
-                },
-
-                # Timestamps
-                'created_at': notif.created_at.strftime('%B %d, %Y at %I:%M %p'),
-                'payment_confirmed_at': order.payment_confirmed_at.strftime(
-                    '%B %d, %Y at %I:%M %p') if order.payment_confirmed_at else None,
-                'time_ago': get_time_ago(notif.created_at),
-
-                # Status indicators
-                'is_new': not notif.is_read,
-                'is_paid': order.status == 'PAID',
-            })
-
-        # Get total unread count
-        unread_count = OrderNotification.objects.filter(
-            establishment=establishment,
-            is_read=False
-        ).count()
-
-        return JsonResponse({
-            'success': True,
-            'notifications': notifications_data,
-            'unread_count': unread_count
-        })
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-def get_time_ago(timestamp):
-    """
-    Convert timestamp to human-readable time ago
-    """
-    from django.utils.timezone import now
-
-    diff = now() - timestamp
-
-    if diff.days > 0:
-        if diff.days == 1:
-            return "1 day ago"
-        elif diff.days < 7:
-            return f"{diff.days} days ago"
-        elif diff.days < 30:
-            weeks = diff.days // 7
-            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
-        else:
-            months = diff.days // 30
-            return f"{months} month{'s' if months > 1 else ''} ago"
-
-    hours = diff.seconds // 3600
-    if hours > 0:
-        if hours == 1:
-            return "1 hour ago"
-        return f"{hours} hours ago"
-
-    minutes = diff.seconds // 60
-    if minutes > 0:
-        if minutes == 1:
-            return "1 minute ago"
-        return f"{minutes} minutes ago"
-
-    return "Just now"
-
-@login_required
-@require_POST
-def mark_notification_read(request, notification_id):
-    """
-    Mark a notification as read
-    """
-    establishment_id = request.session.get('food_establishment_id')
-
-    if not establishment_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authorized'
-        }, status=403)
-
-    try:
-        establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
-        notification = OrderNotification.objects.get(
-            id=notification_id,
-            establishment=establishment
-        )
-
-        notification.mark_as_read()
-
-        # Get updated unread count
-        unread_count = OrderNotification.objects.filter(
-            establishment=establishment,
-            is_read=False
-        ).count()
-
-        return JsonResponse({
-            'success': True,
-            'unread_count': unread_count
-        })
-
-    except OrderNotification.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Notification not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_POST
-def mark_all_notifications_read(request):
-    """
-    Mark all notifications as read
-    """
-    establishment_id = request.session.get('food_establishment_id')
-
-    if not establishment_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authorized'
-        }, status=403)
-
-    try:
-        establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
-
-        OrderNotification.objects.filter(
-            establishment=establishment,
-            is_read=False
-        ).update(is_read=True)
-
-        return JsonResponse({
-            'success': True,
-            'unread_count': 0
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
 # ===================================================================================================================
@@ -2646,7 +2128,6 @@ def mark_all_notifications_read(request):
 # =================================================== OWNER ========================================================
 # ===================================================================================================================
 User = get_user_model()
-
 
 def owner_login(request):
     """
@@ -2680,7 +2161,6 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
-
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2689,14 +2169,12 @@ def owner_logout(request):
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
 
-
 def owner_register_step1_location(request):
     """Nagre-render ng Page 1: Location Pinning."""
     return render(request, 'webapplication/register_step1_location.html', {
         'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
         'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE')
     })
-
 
 def owner_register_step2_details(request):
     payment_methods = ["Cash", "GCash"]
@@ -2707,10 +2185,8 @@ def owner_register_step2_details(request):
     }
     return render(request, 'webapplication/register_step2_details.html', context)
 
-
 def owner_register_step3_credentials(request):
     return render(request, 'webapplication/register_step3_credentials.html')
-
 
 @csrf_exempt
 def send_otp(request):
@@ -3036,7 +2512,6 @@ def verify_and_register(request):
 
     return JsonResponse({'success': True, 'redirect_url': '/food_establishment/dashboard/'})
 
-
 @login_required(login_url='owner_login')
 def food_establishment_dashboard(request):
     establishment_id = request.session.get('food_establishment_id')
@@ -3201,7 +2676,6 @@ def food_establishment_dashboard(request):
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
 
-
 def toggle_item_availability(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(MenuItem, id=item_id, establishment=request.user.food_establishment)
@@ -3209,7 +2683,6 @@ def toggle_item_availability(request, item_id):
         item.save()
         return redirect('food_establishment_dashboard')
     return HttpResponseBadRequest()
-
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -3269,7 +2742,6 @@ def delete_menu_item(request, item_id):
         messages.error(request, f'An error occurred while deleting the menu item: {str(e)}')
         return redirect('food_establishment_dashboard')
 
-
 @login_required(login_url='owner_login')
 def store_reviews_view(request):
     """
@@ -3288,7 +2760,6 @@ def store_reviews_view(request):
         'reviews': reviews,
     }
     return render(request, 'webapplication/store_reviews.html', context)
-
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -3343,7 +2814,6 @@ def edit_menu_item(request, item_id):
                 messages.error(request, f"Error in '{form.fields[field].label}': {error}")
         return redirect("food_establishment_dashboard")
 
-
 @csrf_exempt
 @require_http_methods(["PATCH"])
 def toggle_establishment_status(request, establishment_id):
@@ -3365,7 +2835,6 @@ def toggle_establishment_status(request, establishment_id):
         return JsonResponse({'message': message, 'status': establishment.status})
     except FoodEstablishment.DoesNotExist:
         return HttpResponseBadRequest("Food establishment not found.")
-
 
 @require_POST
 def toggle_top_seller(request, item_id):
@@ -3397,7 +2866,6 @@ def toggle_top_seller(request, item_id):
     # Ito ay temporary placeholder lamang. Palitan ito ng actual logic mo.
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
     return redirect('food_establishment_dashboard')
-
 
 @login_required
 @require_POST
@@ -3470,7 +2938,6 @@ def update_establishment_details_ajax(request, pk):
             'errors': errors
         }, status=400)
 
-
 # ===================================================================================================================
 # ================================================END OWNER ========================================================
 # ===================================================================================================================
@@ -3481,14 +2948,12 @@ def update_establishment_details_ajax(request, pk):
 from django.db import transaction
 from .models import MenuItem, OrderItem
 
-
 @transaction.atomic
 def handle_payment_success(order):
     """When payment is confirmed, reduce item stock."""
     for item in order.items.all():
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
-
 
 @require_POST
 @login_required
@@ -3578,7 +3043,6 @@ def add_to_cart(request):
             'message': 'Error adding item to cart.'
         }, status=500)
 
-
 @login_required
 def view_cart(request):
     """
@@ -3622,7 +3086,6 @@ def view_cart(request):
     }
     return render(request, 'webapplication/cart.html', context)
 
-
 @login_required
 @require_POST
 def paymongo_checkout(request):
@@ -3636,7 +3099,6 @@ def paymongo_checkout(request):
             'success': False,
             'message': 'Checkout failed'
         }, status=500)
-
 
 def payment_status(request, status):
     """payment status page"""
@@ -3658,7 +3120,6 @@ def payment_status(request, status):
     }
     return render(request, 'webapplication/payment_status.html', context)
 
-
 @login_required
 @require_POST
 def clear_cart(request):
@@ -3676,7 +3137,6 @@ def clear_cart(request):
             'success': False,
             'message': 'Error clearing cart'
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -3742,7 +3202,6 @@ def update_cart_item(request):
             'message': 'Error updating cart'
         }, status=500)
 
-
 @login_required
 @require_POST
 def remove_from_cart(request):
@@ -3796,7 +3255,6 @@ def remove_from_cart(request):
             'message': 'Error removing item'
         }, status=500)
 
-
 @login_required
 def get_cart_count(request):
     """
@@ -3818,7 +3276,6 @@ def get_cart_count(request):
             'success': False,
             'cart_count': 0
         })
-
 
 @login_required
 @require_POST
@@ -3857,7 +3314,6 @@ def clear_establishment_cart(request):
             'message': 'Error clearing cart'
         }, status=500)
 
-
 # =======ORIGINAL CODE==========
 
 from django.shortcuts import render, get_object_or_404
@@ -3869,7 +3325,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .models import ChatRoom, Message, FoodEstablishment
-
 
 @login_required
 def customer_chat_view(request, establishment_id):
@@ -3905,7 +3360,6 @@ def customer_chat_view(request, establishment_id):
     }
 
     return render(request, 'webapplication/customer_chat.html', context)
-
 
 @login_required
 def owner_chat_view(request, customer_id):
@@ -3949,7 +3403,6 @@ def owner_chat_view(request, customer_id):
 
     return render(request, 'webapplication/owner_chat.html', context)
 
-
 @login_required
 def owner_inbox_view(request):
     """
@@ -3976,7 +3429,6 @@ def owner_inbox_view(request):
     }
 
     return render(request, 'webapplication/owner_inbox.html', context)
-
 
 @login_required
 def get_chat_messages(request, customer_id, establishment_id):
@@ -4035,7 +3487,6 @@ def get_chat_messages(request, customer_id, establishment_id):
             'error': str(e)
         }, status=400)
 
-
 @login_required
 def get_owner_conversations(request, establishment_id):
     """
@@ -4079,7 +3530,6 @@ def get_owner_conversations(request, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
-
 
 @login_required
 def get_chat_messages_api(request, customer_id, establishment_id):
@@ -4128,7 +3578,6 @@ def get_chat_messages_api(request, customer_id, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
-
 
 @csrf_exempt
 def test_email_config(request):
@@ -4319,4 +3768,523 @@ To: {test_email}
         return JsonResponse({
             'error': str(e),
             'traceback': traceback.format_exc()
+        }, status=500)# ==========================================
+
+# ==========================================
+# NOTIFICATION API ENDPOINTS
+# ==========================================
+
+@login_required
+def get_notifications(request):
+    """
+    API endpoint to get notifications for the establishment owner
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+
+        if not establishment:
+            return JsonResponse({
+                'success': False,
+                'message': 'No establishment found for this user'
+            })
+
+        # Get notifications for this establishment
+        notifications = OrderNotification.objects.filter(
+            establishment=establishment
+        ).select_related(
+            'order__user',
+            'order__establishment'
+        ).prefetch_related(
+            'order__orderitem_set__menu_item'
+        ).order_by('-created_at')[:50]  # Get latest 50 notifications
+
+        # Count unread notifications
+        unread_count = notifications.filter(is_read=False).count()
+
+        # Format notifications data
+        notifications_data = []
+        for notif in notifications:
+            order = notif.order
+
+            # Get order items
+            order_items = []
+            for item in order.orderitem_set.all():
+                order_items.append({
+                    'name': item.menu_item.name,
+                    'quantity': item.quantity,
+                    'price': float(item.price_at_order),
+                    'total': float(item.total_price)
+                })
+
+            notifications_data.append({
+                'id': notif.id,
+                'type': notif.notification_type,
+                'message': notif.message,
+                'is_new': not notif.is_read,
+                'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'time_ago': get_time_ago(notif.created_at),
+                'is_paid': order.status == 'PAID',
+                'payment_confirmed_at': order.payment_confirmed_at.strftime('%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
+                'customer': {
+                    'name': order.user.username,
+                    'email': order.user.email
+                },
+                'order': {
+                    'id': order.id,
+                    'status': order.status,
+                    'total_amount': float(order.total_amount),
+                    'reference_number': order.gcash_reference_number or 'N/A',
+                    'item_count': order.orderitem_set.count(),
+                    'items': order_items
+                }
+            })
+
+        return JsonResponse({
+            'success': True,
+            'notifications': notifications_data,
+            'unread_count': unread_count
+        })
+
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def get_time_ago(timestamp):
+    """
+    Convert timestamp to human-readable time ago
+    """
+    from django.utils.timezone import now
+
+    diff = now() - timestamp
+
+    if diff.days > 0:
+        if diff.days == 1:
+            return "1 day ago"
+        elif diff.days < 7:
+            return f"{diff.days} days ago"
+        elif diff.days < 30:
+            weeks = diff.days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+        else:
+            months = diff.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+
+    hours = diff.seconds // 3600
+    if hours > 0:
+        if hours == 1:
+            return "1 hour ago"
+        return f"{hours} hours ago"
+
+    minutes = diff.seconds // 60
+    if minutes > 0:
+        if minutes == 1:
+            return "1 minute ago"
+        return f"{minutes} minutes ago"
+
+    return "Just now"
+
+@login_required
+@require_POST
+def mark_notification_read(request, notification_id):
+    """
+    Mark a single notification as read
+    """
+    try:
+        notification = OrderNotification.objects.get(
+            id=notification_id,
+            establishment__owner=request.user
+        )
+        notification.is_read = True
+        notification.read_at = timezone.now()
+        notification.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Notification marked as read'
+        })
+    except OrderNotification.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Notification not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_POST
+def mark_all_notifications_read(request):
+    """
+    Mark all notifications as read for the establishment owner
+    """
+    try:
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+
+        if not establishment:
+            return JsonResponse({
+                'success': False,
+                'message': 'No establishment found'
+            })
+
+        # Mark all unread notifications as read
+        updated_count = OrderNotification.objects.filter(
+            establishment=establishment,
+            is_read=False
+        ).update(
+            is_read=True,
+            read_at=timezone.now()
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'{updated_count} notifications marked as read'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def gcash_payment_success(request):
+    """
+    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS and STOCK REDUCTION
+    """
+    order_id = request.GET.get('order_id')
+
+    if not order_id:
+        messages.error(request, 'Invalid payment confirmation')
+        return redirect('view_cart')
+
+    try:
+        order = Order.objects.filter(id=order_id).select_related('user', 'establishment').first()
+        if not order:
+            messages.error(request, 'Order not found')
+            return redirect('view_cart')
+
+        # Update order status if still pending
+        if order.status != 'PAID':
+            with transaction.atomic():
+                # 1. Update order status
+                order.status = 'PAID'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
+
+                # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER
+                try:
+                    OrderNotification.objects.create(
+                        establishment=order.establishment,
+                        order=order,
+                        notification_type='new_order',
+                        message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                    )
+                    print(f"✅ Notification created for Order #{order.id}")
+                except Exception as notif_error:
+                    print(f"⚠️ Notification creation error: {notif_error}")
+
+                # 3. ✅ REDUCE STOCK FOR EACH ORDER ITEM
+                for order_item in order.orderitem_set.select_related('menu_item'):
+                    menu_item = order_item.menu_item
+                    try:
+                        if menu_item.quantity >= order_item.quantity:
+                            # Reduce the quantity
+                            menu_item.quantity -= order_item.quantity
+                            menu_item.save()
+                            print(f"✅ Stock reduced for {menu_item.name}: {order_item.quantity} units")
+                        else:
+                            print(f"⚠️ Warning: Insufficient stock for {menu_item.name}. Available: {menu_item.quantity}, Ordered: {order_item.quantity}")
+                            # Still process the order but log the issue
+                            menu_item.quantity = 0
+                            menu_item.save()
+                    except Exception as stock_err:
+                        print(f"❌ Error reducing stock for {menu_item.name}: {stock_err}")
+
+            # 4. Send confirmation emails (best-effort)
+            try:
+                send_order_confirmation_email(order)
+            except Exception as e:
+                print(f"Email error: {e}")
+
+        # Decide where to redirect
+        return_to = request.GET.get('return_to')
+
+        if request.user.is_authenticated and request.user == order.user:
+            messages.success(request, 'Payment successful! Your order has been confirmed.')
+            return redirect('order_confirmation', order_id=order.id)
+
+        if return_to == 'cart':
+            return redirect('view_cart')
+
+        if return_to == 'buynow':
+            return redirect('payment_status', status='success')
+
+        return redirect('payment_status', status='success')
+
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('view_cart')
+    except Exception as e:
+        print(f"❌ Error in payment success handler: {e}")
+        messages.error(request, 'An error occurred processing your payment')
+        return redirect('view_cart')
+
+@csrf_exempt
+@require_POST
+def paymongo_webhook(request):
+    """
+    ✅ ENHANCED: Webhook endpoint for PayMongo payment events with notifications
+
+    To set up:
+    1. Go to PayMongo Dashboard → Developers → Webhooks
+    2. Add webhook URL: https://yourdomain.com/payment/webhook/
+    3. Subscribe to events: payment.paid, payment.failed
+    """
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+        event_type = payload.get('data', {}).get('attributes', {}).get('type')
+
+        if event_type == 'payment.paid':
+            # Handle successful payment
+            payment_data = payload.get('data', {}).get('attributes', {}).get('data', {})
+            reference_number = payment_data.get('id')
+
+            if reference_number:
+                try:
+                    order = Order.objects.select_related('establishment', 'user').get(
+                        gcash_reference_number=reference_number
+                    )
+
+                    if order.status == 'PENDING':
+                        with transaction.atomic():
+                            # Update order
+                            order.status = 'PAID'
+                            order.payment_confirmed_at = timezone.now()
+                            order.save()
+
+                            # Create notification
+                            OrderNotification.objects.create(
+                                establishment=order.establishment,
+                                order=order,
+                                notification_type='new_order',
+                                message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                            )
+                            print(f"✅ Webhook: Notification created for Order #{order.id}")
+
+                            # Reduce stock
+                            for order_item in order.orderitem_set.select_related('menu_item'):
+                                menu_item = order_item.menu_item
+                                if menu_item.quantity >= order_item.quantity:
+                                    menu_item.quantity -= order_item.quantity
+                                    menu_item.save()
+                                    print(f"✅ Webhook: Stock reduced for {menu_item.name}")
+                                else:
+                                    menu_item.quantity = 0
+                                    menu_item.save()
+                                    print(f"⚠️ Webhook: Insufficient stock for {menu_item.name}")
+
+                        # Send email
+                        try:
+                            send_order_confirmation_email(order)
+                        except Exception as email_err:
+                            print(f"Email error in webhook: {email_err}")
+
+                except Order.DoesNotExist:
+                    print(f"⚠️ Webhook: Order not found for reference {reference_number}")
+                except Exception as order_err:
+                    print(f"❌ Webhook error processing order: {order_err}")
+
+        elif event_type == 'payment.failed':
+            # Handle failed payment
+            payment_data = payload.get('data', {}).get('attributes', {}).get('data', {})
+            reference_number = payment_data.get('id')
+
+            if reference_number:
+                try:
+                    order = Order.objects.get(gcash_reference_number=reference_number)
+                    order.status = 'CANCELLED'
+                    order.save()
+                    print(f"✅ Webhook: Order #{order.id} marked as CANCELLED")
+                except Order.DoesNotExist:
+                    print(f"⚠️ Webhook: Order not found for reference {reference_number}")
+
+        return HttpResponse(status=200)
+
+    except Exception as e:
+        print(f"❌ Webhook error: {e}")
+        import traceback
+        traceback.print_exc()
+        return HttpResponse(status=400)
+
+# ==========================================
+# HELPER: Send Order Confirmation Email
+# ==========================================
+def send_order_confirmation_email(order):
+    """Send confirmation emails to customer and store owner"""
+    try:
+        user_email = order.user.email
+        owner_email = order.establishment.owner.email
+
+        # Customer email
+        user_subject = f"Order #{order.id} Confirmed - KabsuEats"
+        user_message = f"""
+Hello {order.user.username},
+
+Your order from {order.establishment.name} has been confirmed!
+
+Order Details:
+- Order ID: {order.id}
+- Reference: {order.gcash_reference_number}
+- Total: ₱{order.total_amount:.2f}
+- Status: Payment Confirmed
+
+Items:
+"""
+        for item in order.orderitem_set.all():
+            user_message += f"\n- {item.menu_item.name} x{item.quantity} @ ₱{item.price_at_order:.2f} = ₱{item.total_price:.2f}"
+
+        user_message += "\n\nThank you for ordering with KabsuEats!"
+
+        send_mail(
+            user_subject,
+            user_message,
+            settings.EMAIL_HOST_USER,
+            [user_email],
+            fail_silently=True
+        )
+
+        # Owner email
+        owner_subject = f"New Order #{order.id} - {order.establishment.name}"
+        owner_message = f"""
+New order for {order.establishment.name}!
+
+Customer: {order.user.username}
+Email: {order.user.email}
+
+Order Details:
+- Order ID: {order.id}
+- Reference: {order.gcash_reference_number}
+- Total: ₱{order.total_amount:.2f}
+
+Items to Prepare:
+"""
+        for item in order.orderitem_set.all():
+            owner_message += f"\n- {item.menu_item.name} x{item.quantity}"
+
+        owner_message += "\n\nPlease prepare this order."
+
+        send_mail(
+            owner_subject,
+            owner_message,
+            settings.EMAIL_HOST_USER,
+            [owner_email],
+            fail_silently=True
+        )
+
+        print(f"✅ Emails sent for Order #{order.id}")
+
+    except Exception as e:
+        print(f"❌ Email error: {e}")
+        import traceback
+        traceback.print_exc()
+
+@login_required
+def get_owner_notifications(request):
+    """
+    ✅ ENHANCED: Get detailed notifications with complete order information
+    """
+    establishment_id = request.session.get('food_establishment_id')
+
+    if not establishment_id:
+        return JsonResponse({
+            'success': False,
+            'error': 'Not authorized'
+        }, status=403)
+
+    try:
+        establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
+
+        # Get unread notifications with complete order details
+        notifications = OrderNotification.objects.filter(
+            establishment=establishment,
+            is_read=False
+        ).select_related(
+            'order',
+            'order__user',
+            'order__establishment'
+        ).prefetch_related(
+            'order__orderitem_set__menu_item'
+        ).order_by('-created_at')[:20]
+
+        notifications_data = []
+
+        for notif in notifications:
+            order = notif.order
+
+            # Get order items with details
+            order_items = []
+            for item in order.orderitem_set.all():
+                order_items.append({
+                    'name': item.menu_item.name,
+                    'quantity': item.quantity,
+                    'price': float(item.price_at_order),
+                    'total': float(item.total_price)
+                })
+
+            # Format notification data
+            notifications_data.append({
+                'id': notif.id,
+                'type': notif.notification_type,
+                'message': notif.message,
+
+                # Order Details
+                'order': {
+                    'id': order.id,
+                    'reference_number': order.gcash_reference_number or 'N/A',
+                    'status': order.status,
+                    'total_amount': float(order.total_amount),
+                    'items': order_items,
+                    'item_count': order.orderitem_set.count(),
+                },
+
+                # Customer Details
+                'customer': {
+                    'name': order.user.username,
+                    'email': order.user.email,
+                    'id': order.user.id
+                },
+
+                # Timestamps
+                'created_at': notif.created_at.strftime('%B %d, %Y at %I:%M %p'),
+                'payment_confirmed_at': order.payment_confirmed_at.strftime(
+                    '%B %d, %Y at %I:%M %p') if order.payment_confirmed_at else None,
+                'time_ago': get_time_ago(notif.created_at),
+
+                # Status indicators
+                'is_new': not notif.is_read,
+                'is_paid': order.status == 'PAID',
+            })
+
+        # Get total unread count
+        unread_count = OrderNotification.objects.filter(
+            establishment=establishment,
+            is_read=False
+        ).count()
+
+        return JsonResponse({
+            'success': True,
+            'notifications': notifications_data,
+            'unread_count': unread_count
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         }, status=500)

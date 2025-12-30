@@ -456,15 +456,17 @@ class Message(models.Model):
                 'owner_unread_count'
             ])
 
+
 class OrderNotification(models.Model):
     """
-    Real-time notifications for store owners when orders are placed
+    Stores notifications for food establishment owners about new orders
     """
-    NOTIFICATION_TYPES = [
+    NOTIFICATION_TYPES = (
         ('new_order', 'New Order'),
         ('payment_confirmed', 'Payment Confirmed'),
         ('order_cancelled', 'Order Cancelled'),
-    ]
+        ('order_completed', 'Order Completed'),
+    )
 
     establishment = models.ForeignKey(
         'FoodEstablishment',
@@ -484,15 +486,21 @@ class OrderNotification(models.Model):
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['establishment', '-created_at']),
+            models.Index(fields=['is_read', '-created_at']),
+        ]
 
     def __str__(self):
-        return f"{self.notification_type} - {self.establishment.name} - Order #{self.order.id}"
+        return f"Notification for {self.establishment.name} - Order #{self.order.id}"
 
     def mark_as_read(self):
-        """Mark notification as read"""
+        """Mark this notification as read"""
         if not self.is_read:
             self.is_read = True
-            self.save(update_fields=['is_read'])
+            self.read_at = timezone.now()
+            self.save()

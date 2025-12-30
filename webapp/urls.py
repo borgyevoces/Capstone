@@ -67,10 +67,11 @@ urlpatterns = [
                   path('payment/create-buynow-link/', views.create_buynow_payment_link, name='create_buynow_payment_link'),
 
                   path('api/notifications/', views.get_owner_notifications,name='get_owner_notifications'),
-                  path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
-                  # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
+                  path('api/notifications/', views.get_notifications, name='get_notifications'),
+                  path('api/notifications/<int:notification_id>/mark-read/',  views.mark_notification_read, name='mark_notification_read'),
+                  path('api/notifications/', views.get_notifications, name='get_notifications'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,
