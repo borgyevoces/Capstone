@@ -59,19 +59,20 @@ urlpatterns = [
                   path('payment/create-gcash-link/', views.create_gcash_payment_link, name='create_gcash_payment_link'),
                   path('payment/gcash-success/', views.gcash_payment_success, name='gcash_payment_success'),
                   path('payment/gcash-cancel/', views.gcash_payment_cancel, name='gcash_payment_cancel'),
-                  # Debug payload builder (development only)
                   path('payment/debug-create-payload/<int:order_id>/', views.debug_create_gcash_payload, name='debug_create_gcash_payload'),
                   path('payment/webhook/', views.paymongo_webhook, name='paymongo_webhook'),
                   path('paymongo_checkout/', views.paymongo_checkout, name='paymongo_checkout'),
                   path('payment-status/<str:status>/', views.payment_status, name='payment_status'),
                   path('payment/create-buynow-link/', views.create_buynow_payment_link, name='create_buynow_payment_link'),
 
-                  path('api/notifications/', views.get_owner_notifications,name='get_owner_notifications'),
+                  # ✅ FIXED: Notification API Endpoints (removed duplicates)
+                  path('api/notifications/', views.get_notifications, name='get_notifications'),
+                  path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+                  path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
+
+                  # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
-                  path('api/notifications/', views.get_notifications, name='get_notifications'),
-                  path('api/notifications/<int:notification_id>/mark-read/',  views.mark_notification_read, name='mark_notification_read'),
-                  path('api/notifications/', views.get_notifications, name='get_notifications'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,
@@ -126,5 +127,6 @@ urlpatterns = [
                   path('owner/chat/messages/<int:customer_id>/<int:establishment_id>/',views.get_chat_messages_api,name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

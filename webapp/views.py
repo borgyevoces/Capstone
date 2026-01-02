@@ -3777,17 +3777,24 @@ To: {test_email}
 @login_required
 def get_notifications(request):
     """
-    API endpoint to get notifications for the establishment owner
+    ✅ ENHANCED: API endpoint to get notifications with detailed error logging
     """
     try:
+        print(f"🔍 Notification request from user: {request.user.username}")
+
         # Get the establishment owned by the current user
         establishment = FoodEstablishment.objects.filter(owner=request.user).first()
 
         if not establishment:
+            print(f"❌ No establishment found for user: {request.user.username}")
             return JsonResponse({
                 'success': False,
-                'message': 'No establishment found for this user'
+                'message': 'No establishment found for this user',
+                'notifications': [],
+                'unread_count': 0
             })
+
+        print(f"✅ Found establishment: {establishment.name}")
 
         # Get notifications for this establishment
         notifications = OrderNotification.objects.filter(
@@ -3797,60 +3804,75 @@ def get_notifications(request):
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:50]  # Get latest 50 notifications
+        ).order_by('-created_at')[:50]
+
+        print(f"📊 Found {notifications.count()} notifications")
 
         # Count unread notifications
         unread_count = notifications.filter(is_read=False).count()
+        print(f"🔔 Unread count: {unread_count}")
 
         # Format notifications data
         notifications_data = []
         for notif in notifications:
-            order = notif.order
+            try:
+                order = notif.order
 
-            # Get order items
-            order_items = []
-            for item in order.orderitem_set.all():
-                order_items.append({
-                    'name': item.menu_item.name,
-                    'quantity': item.quantity,
-                    'price': float(item.price_at_order),
-                    'total': float(item.total_price)
+                # Get order items
+                order_items = []
+                for item in order.orderitem_set.all():
+                    order_items.append({
+                        'name': item.menu_item.name,
+                        'quantity': item.quantity,
+                        'price': float(item.price_at_order),
+                        'total': float(item.total_price)
+                    })
+
+                notifications_data.append({
+                    'id': notif.id,
+                    'type': notif.notification_type,
+                    'message': notif.message,
+                    'is_new': not notif.is_read,
+                    'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
+                    'time_ago': get_time_ago(notif.created_at),
+                    'is_paid': order.status == 'PAID',
+                    'payment_confirmed_at': order.payment_confirmed_at.strftime(
+                        '%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
+                    'customer': {
+                        'name': order.user.username,
+                        'email': order.user.email
+                    },
+                    'order': {
+                        'id': order.id,
+                        'status': order.status,
+                        'total_amount': float(order.total_amount),
+                        'reference_number': order.gcash_reference_number or 'N/A',
+                        'item_count': order.orderitem_set.count(),
+                        'items': order_items
+                    }
                 })
+            except Exception as item_error:
+                print(f"⚠️ Error formatting notification {notif.id}: {item_error}")
+                continue
 
-            notifications_data.append({
-                'id': notif.id,
-                'type': notif.notification_type,
-                'message': notif.message,
-                'is_new': not notif.is_read,
-                'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
-                'time_ago': get_time_ago(notif.created_at),
-                'is_paid': order.status == 'PAID',
-                'payment_confirmed_at': order.payment_confirmed_at.strftime('%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
-                'customer': {
-                    'name': order.user.username,
-                    'email': order.user.email
-                },
-                'order': {
-                    'id': order.id,
-                    'status': order.status,
-                    'total_amount': float(order.total_amount),
-                    'reference_number': order.gcash_reference_number or 'N/A',
-                    'item_count': order.orderitem_set.count(),
-                    'items': order_items
-                }
-            })
-
-        return JsonResponse({
+        response_data = {
             'success': True,
             'notifications': notifications_data,
             'unread_count': unread_count
-        })
+        }
+
+        print(f"✅ Returning {len(notifications_data)} formatted notifications")
+        return JsonResponse(response_data)
 
     except Exception as e:
-        print(f"Error fetching notifications: {e}")
+        print(f"❌ Error fetching notifications: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'notifications': [],
+            'unread_count': 0
         }, status=500)
 
 def get_time_ago(timestamp):
@@ -4287,4 +4309,76 @@ def get_owner_notifications(request):
         return JsonResponse({
             'success': False,
             'error': str(e)
+        }, status=500)
+
+@login_required
+def create_test_notification(request):
+    """
+    🧪 TEST ENDPOINT: Creates a test notification manually
+    Access at: /api/test-notification/
+    """
+    try:
+        print(f"🧪 Test notification request from user: {request.user.username}")
+
+        # Get the establishment
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+
+        if not establishment:
+            print(f"❌ No establishment found for user: {request.user.username}")
+            return JsonResponse({
+                'success': False,
+                'message': 'No establishment found for this user'
+            })
+
+        print(f"✅ Found establishment: {establishment.name}")
+
+        # Get any PAID order for this establishment
+        order = Order.objects.filter(
+            establishment=establishment,
+            status='PAID'
+        ).order_by('-created_at').first()
+
+        if not order:
+            print(f"❌ No paid orders found for {establishment.name}")
+
+            # Check if there are ANY orders
+            any_order = Order.objects.filter(establishment=establishment).first()
+            if not any_order:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No orders found. Please make a test order first.'
+                })
+
+            # Use the first available order even if not paid (for testing)
+            order = any_order
+            print(f"⚠️ Using order #{order.id} with status: {order.status}")
+
+        # Create test notification
+        notification = OrderNotification.objects.create(
+            establishment=establishment,
+            order=order,
+            notification_type='new_order',
+            message=f'🧪 TEST NOTIFICATION: Order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+        )
+
+        print(f"✅ Test notification created! ID: {notification.id}")
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Test notification created successfully!',
+            'notification_id': notification.id,
+            'order_id': order.id,
+            'customer': order.user.username,
+            'establishment': establishment.name
+        })
+
+    except Exception as e:
+        print(f"❌ Error creating test notification: {e}")
+        import traceback
+        traceback.print_exc()
+
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
         }, status=500)
