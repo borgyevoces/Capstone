@@ -1302,3 +1302,87 @@ function animateCount(elementId, targetCount) {
 
 // âœ… Auto-update when menu items are added/edited/deleted
 window.addEventListener('menuUpdated', updateStoreStats);
+// ==========================================
+// DELETE ESTABLISHMENT FUNCTIONALITY
+// ==========================================
+function showDeleteConfirmation(event) {
+    event.preventDefault();
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('active');
+    // Close the dropdown menu
+    const navMenu = document.getElementById('navMenu');
+    if (navMenu) {
+        navMenu.classList.remove('show');
+    }
+}
+
+function hideDeleteConfirmation() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('active');
+}
+
+function confirmDeleteEstablishment() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    // Disable button to prevent double clicks
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    // Get CSRF token
+    const csrfToken = getCookie('csrftoken');
+
+    // Make the delete request
+    fetch('/owner/delete-establishment/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotification(data.message, 'success');
+
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 1500);
+        } else {
+            // Show error message
+            showNotification(data.error || 'Failed to delete establishment', 'error');
+
+            // Re-enable button
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+
+            // Hide modal
+            hideDeleteConfirmation();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An unexpected error occurred. Please try again.', 'error');
+
+        // Re-enable button
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+
+        // Hide modal
+        hideDeleteConfirmation();
+    });
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                hideDeleteConfirmation();
+            }
+        });
+    }
+});

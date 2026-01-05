@@ -100,6 +100,7 @@ urlpatterns = [
                   # 8. Owner Authentication & Dashboard
                   path('owner/login/', views.owner_login, name='owner_login'),
                   path('owner/logout/', views.owner_logout, name='logout_owner'),
+                  path('owner/delete-establishment/', views.delete_establishment, name='delete_establishment'),
                   path('api/verify-and-register/', views.verify_and_register, name='verify_and_register'),
                   path('owner/register/location/', views.owner_register_step1_location, name='owner_register_step1'),
                   path('owner/register/details/', views.owner_register_step2_details, name='owner_register_step2'),

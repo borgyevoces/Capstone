@@ -1299,6 +1299,194 @@
                 font-size: 13px;
             }
         }
+
+        /* Delete Establishment Link */
+        .delete-establishment-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #dc2626;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .delete-establishment-link:hover {
+            background: #fee2e2;
+            transform: translateX(4px);
+        }
+
+        .delete-establishment-link i {
+            font-size: 18px;
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .delete-modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .delete-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .delete-modal-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+        }
+
+        .delete-modal-title {
+            flex: 1;
+        }
+
+        .delete-modal-title h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .delete-modal-title p {
+            margin: 4px 0 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .delete-modal-body {
+            margin-bottom: 24px;
+        }
+
+        .delete-warning {
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .delete-warning p {
+            margin: 0;
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .delete-consequences {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .delete-consequences h4 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .delete-consequences ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .delete-consequences li {
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .delete-modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-cancel,
+        .btn-delete {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-delete:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -1326,6 +1514,10 @@
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="navbar-menu" id="navMenu">
+                    <a href="#" onclick="showDeleteConfirmation(event)" class="delete-establishment-link">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Delete Establishment</span>
+                    </a>
                     <a href="{% url 'logout_owner' %}" class="logout-link">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
@@ -1335,6 +1527,45 @@
         </div>
     </div>
 </nav>
+
+<!-- Delete Establishment Confirmation Modal -->
+<div class="delete-modal-overlay" id="deleteModal">
+    <div class="delete-modal">
+        <div class="delete-modal-header">
+            <div class="delete-modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="delete-modal-title">
+                <h3>Delete Establishment?</h3>
+                <p>This action cannot be undone</p>
+            </div>
+        </div>
+        <div class="delete-modal-body">
+            <div class="delete-warning">
+                <p><i class="fas fa-info-circle"></i> You are about to permanently delete your establishment</p>
+            </div>
+            <div class="delete-consequences">
+                <h4>This will permanently remove:</h4>
+                <ul>
+                    <li><i class="fas fa-check"></i> Your establishment profile</li>
+                    <li><i class="fas fa-check"></i> All menu items and categories</li>
+                    <li><i class="fas fa-check"></i> Order history and customer data</li>
+                    <li><i class="fas fa-check"></i> Reviews and ratings</li>
+                    <li><i class="fas fa-check"></i> Chat conversations</li>
+                </ul>
+            </div>
+        </div>
+        <div class="delete-modal-actions">
+            <button class="btn-cancel" onclick="hideDeleteConfirmation()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn-delete" onclick="confirmDeleteEstablishment()" id="confirmDeleteBtn">
+                <i class="fas fa-trash-alt"></i> Yes, Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="notification-panel" id="notificationPanel">
     <div class="notification-panel-header">
         <h3><i class="fas fa-bell"></i> Notifications</h3>
@@ -2779,7 +3010,7 @@
                 <i class="fas fa-utensils"></i>
                 KabsuEats
             </h3>
-            <p>Your trusted food delivery platform connecting you with the best local restaurants and food
+            <p>Your trusted food shops platform connecting you with the best local restaurants and food
                 establishments.</p>
             <div class="footer-social">
                 <a href="#" class="social-icon" aria-label="Facebook">
