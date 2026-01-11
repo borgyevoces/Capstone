@@ -22,6 +22,77 @@
     {% block extra_css %}{% endblock %}
 
     <style>
+        /* ✅ FIX: Ensure header stays on top */
+        .search-and-filters-wrapper {
+            z-index: 10000 !important;
+        }
+
+        /* ✅ FIX: Map and its controls stay below header */
+        #mapSection {
+            position: relative;
+            z-index: 1 !important;
+        }
+
+        #establishmentsMap {
+            z-index: 1 !important;
+        }
+
+        /* ✅ FIX: Leaflet controls proper z-index */
+        .leaflet-top,
+        .leaflet-bottom,
+        .leaflet-control {
+            z-index: 500 !important;
+        }
+
+        .leaflet-control-zoom,
+        .leaflet-control-layers {
+            z-index: 500 !important;
+        }
+
+        /* ✅ FIX: Route instructions container - VISIBLE and properly positioned */
+        .leaflet-routing-container {
+            z-index: 600 !important;
+            background: white !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+            max-width: 320px !important;
+        }
+
+        .leaflet-routing-container.leaflet-control {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .leaflet-routing-alt {
+            padding: 10px !important;
+            background: white !important;
+        }
+
+        /* ✅ Route instructions styling */
+        .leaflet-routing-alt h2 {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            margin-bottom: 8px !important;
+            color: #333 !important;
+        }
+
+        .leaflet-routing-alt h3 {
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            margin: 5px 0 !important;
+            color: #555 !important;
+        }
+
+        .leaflet-routing-alt table {
+            width: 100% !important;
+            font-size: 12px !important;
+        }
+
+        .leaflet-routing-alt td {
+            padding: 4px !important;
+        }
+
         /* CSS for Cart Badge */
         .cart-link {
             position: relative;
@@ -90,27 +161,7 @@
             transform: translateY(-3px) scale(1.05);
         }
 
-        @media (max-width: 768px) {
-            .scroll-to-top {
-                bottom: 20px;
-                right: 20px;
-                width: 45px;
-                height: 45px;
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .scroll-to-top {
-                bottom: 15px;
-                right: 15px;
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-            }
-        }
-
-        /* ✅ NEW: Location Route Button - positioned on the map */
+        /* ✅ Location Route Button */
         .location-route-btn {
             position: absolute;
             top: 90px;
@@ -121,14 +172,14 @@
             border: 2px solid rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 18px;
             color: #333;
             box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
             transition: all 0.3s ease;
-            z-index: 1000;
+            z-index: 700;
         }
 
         .location-route-btn:hover {
@@ -144,10 +195,33 @@
         }
 
         @media (max-width: 768px) {
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
             .location-route-btn {
                 top: 80px;
                 width: 36px;
                 height: 36px;
+                font-size: 16px;
+            }
+
+            .leaflet-routing-container {
+                max-width: 280px !important;
+                font-size: 11px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .scroll-to-top {
+                bottom: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
                 font-size: 16px;
             }
         }
@@ -298,8 +372,8 @@
             <button id="toggleMapBtn">🗺️ View Map</button>
             <div id="mapSection">
                 <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <!-- ✅ NEW: Location Route Button inside the map -->
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment" style="display: none;">
+                <!-- ✅ Location Route Button -->
+                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
                     <i class="fas fa-route"></i>
                 </button>
             </div>
@@ -468,11 +542,9 @@
         // Message Notification Auto-Dismiss and Manual Close
         document.addEventListener('DOMContentLoaded', function() {
             if (IS_USER_AUTHENTICATED) {
-                // Initial load of cart count from Django view
                 updateCartBadge({{ cart_count|default:0 }});
             }
 
-            // Auto-dismiss messages after 5 seconds
             const messagesContainer = document.getElementById('messagesContainer');
             if (messagesContainer) {
                 setTimeout(function() {
@@ -489,11 +561,10 @@
                 }, 5000);
             }
 
-            // ✅ Initialize location route button functionality
+            // ✅ Initialize location route button
             initLocationRouteButton();
         });
 
-        // Manual close button function
         function dismissMessage(button) {
             const message = button.closest('.message-alert');
             const container = document.getElementById('messagesContainer');
@@ -507,7 +578,7 @@
             }, 300);
         }
 
-        // ✅ NEW: Location Route Button Functionality
+        // ✅ COMPLETE Location Route Button with Instructions Panel
         function initLocationRouteButton() {
             const routeBtn = document.getElementById('locationRouteBtn');
             const mapSection = document.getElementById('mapSection');
@@ -530,34 +601,32 @@
             observer.observe(mapSection, { attributes: true });
 
             routeBtn.addEventListener('click', function() {
-                // Check if map exists (from kabsueats_map.js)
                 if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
-                    alert('Map is not initialized. Please wait a moment.');
+                    alert('Map is not initialized. Please wait.');
                     return;
                 }
 
-                // Check if user location is available
                 if (typeof userMarker === 'undefined' || !userMarker) {
-                    alert('Please enable your location first by clicking "Show My Location" button on the map.');
+                    alert('Please click "Show My Location" button on the map first to enable your location.');
                     return;
                 }
 
                 if (isRouteActive && routingControl) {
-                    // Remove route
+                    // Remove route and instructions
                     establishmentsMap.removeControl(routingControl);
                     routingControl = null;
                     isRouteActive = false;
                     routeBtn.classList.remove('active');
                     routeBtn.title = 'Show Route to Establishment';
                 } else {
-                    // Get all visible establishments
+                    // Get visible establishments
                     const establishments = document.querySelectorAll('.food-establishment-item');
                     if (establishments.length === 0) {
                         alert('No establishments available.');
                         return;
                     }
 
-                    // Find the first visible establishment
+                    // Find first visible establishment
                     let targetEstablishment = null;
                     for (let est of establishments) {
                         if (est.style.display !== 'none') {
@@ -580,10 +649,9 @@
                         return;
                     }
 
-                    // Get user location from marker
                     const userLatLng = userMarker.getLatLng();
 
-                    // Create routing control
+                    // ✅ Create routing control WITH visible instructions
                     routingControl = L.Routing.control({
                         waypoints: [
                             L.latLng(userLatLng.lat, userLatLng.lng),
@@ -594,24 +662,67 @@
                         draggableWaypoints: false,
                         fitSelectedRoutes: true,
                         showAlternatives: false,
+                        show: true, // ✅ IMPORTANT: Show instructions panel
                         lineOptions: {
-                            styles: [{color: '#E9A420', opacity: 0.8, weight: 5}]
+                            styles: [{
+                                color: '#E9A420',
+                                opacity: 0.8,
+                                weight: 6
+                            }]
                         },
-                        createMarker: function() { return null; }, // Don't create extra markers
+                        createMarker: function(i, waypoint, n) {
+                            // Create custom markers
+                            let marker;
+                            if (i === 0) {
+                                // Start marker (user location)
+                                marker = L.marker(waypoint.latLng, {
+                                    icon: L.divIcon({
+                                        className: 'route-marker-start',
+                                        html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
+                                        iconSize: [30, 30],
+                                        iconAnchor: [15, 15]
+                                    })
+                                });
+                            } else if (i === n - 1) {
+                                // End marker (establishment)
+                                marker = L.marker(waypoint.latLng, {
+                                    icon: L.divIcon({
+                                        className: 'route-marker-end',
+                                        html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
+                                        iconSize: [30, 30],
+                                        iconAnchor: [15, 15]
+                                    })
+                                });
+                            }
+                            return marker;
+                        },
                         router: L.Routing.osrmv1({
                             serviceUrl: 'https://router.project-osrm.org/route/v1'
                         })
                     }).addTo(establishmentsMap);
 
+                    // ✅ Customize route instructions after creation
+                    setTimeout(() => {
+                        const container = document.querySelector('.leaflet-routing-container');
+                        if (container) {
+                            container.style.zIndex = '600';
+                            container.style.display = 'block';
+                            container.style.visibility = 'visible';
+                        }
+                    }, 100);
+
                     isRouteActive = true;
                     routeBtn.classList.add('active');
                     routeBtn.title = 'Hide Route';
 
-                    // Pan to show the route
+                    // Fit bounds to show complete route
                     establishmentsMap.fitBounds([
                         [userLatLng.lat, userLatLng.lng],
                         [destLat, destLng]
-                    ], { padding: [50, 50] });
+                    ], {
+                        padding: [80, 80],
+                        maxZoom: 15
+                    });
                 }
             });
         }

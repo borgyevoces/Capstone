@@ -1062,8 +1062,46 @@
     /* Old styles removed - using new footer classes above */
 }
 /* ========================================= */
-/* ✅ LOCATION ROUTE BUTTON FIX (MOBILE)    */
+/* ✅ MOBILE Z-INDEX AND ROUTE FIX          */
 /* ========================================= */
+
+/* Header stays on top on mobile */
+.search-and-filters-wrapper {
+    z-index: 10000 !important;
+}
+
+/* Map stays below header on mobile */
+#mapSection {
+    position: relative;
+    z-index: 1 !important;
+}
+
+#establishmentsMap {
+    z-index: 1 !important;
+}
+
+/* Leaflet controls proper z-index on mobile */
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+    z-index: 500 !important;
+}
+
+/* Route instructions for mobile */
+.leaflet-routing-container {
+    z-index: 600 !important;
+    background: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    max-width: 280px !important;
+    font-size: 11px !important;
+}
+
+.leaflet-routing-alt {
+    padding: 8px !important;
+}
+
+/* Location route button for mobile */
 .location-route-btn {
     position: absolute;
     top: 80px;
@@ -1074,14 +1112,14 @@
     border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     cursor: pointer;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     font-size: 16px;
     color: #333;
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
     transition: all 0.3s ease;
-    z-index: 1000;
+    z-index: 700;
 }
 
 .location-route-btn:hover {
