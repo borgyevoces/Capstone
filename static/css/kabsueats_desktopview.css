@@ -159,7 +159,7 @@
         height: 80px;
         top: 0;
         left: 0;
-        z-index: 1000;
+        z-index: 10000;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         align-items: center;
@@ -1192,4 +1192,56 @@
         font-size: 16px;
         font-weight: 500;
     }
+}
+/* ✅ FIX: Ensure map doesn't overlap header */
+#map {
+    position: relative;
+    z-index: 1 !important;
+}
+
+/* ✅ FIX: Map controls stay below header */
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+    z-index: 500 !important;
+}
+
+/* ✅ FIX: Leaflet layers control positioning */
+.leaflet-control-layers {
+    z-index: 999 !important;
+    margin-top: 10px !important;
+    margin-right: 10px !important;
+}
+
+/* ✅ NEW: Location Route Button */
+.location-route-btn {
+    position: absolute;
+    top: 140px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #333;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.location-route-btn:hover {
+    background: #f4f4f4;
+    border-color: #E9A420;
+    color: #E9A420;
+}
+
+.location-route-btn.active {
+    background: #E9A420;
+    color: white;
+    border-color: #E9A420;
 }
