@@ -1061,30 +1061,12 @@
 .social-link {
     /* Old styles removed - using new footer classes above */
 }
-/* ✅ FIX: Ensure map doesn't overlap header on mobile */
-#map {
-    position: relative;
-    z-index: 1 !important;
-}
-
-/* ✅ FIX: Map controls stay below header on mobile */
-.leaflet-top,
-.leaflet-bottom,
-.leaflet-control {
-    z-index: 500 !important;
-}
-
-/* ✅ FIX: Leaflet layers control positioning on mobile */
-.leaflet-control-layers {
-    z-index: 999 !important;
-    margin-top: 10px !important;
-    margin-right: 10px !important;
-}
-
-/* ✅ NEW: Location Route Button for Mobile */
+/* ========================================= */
+/* ✅ LOCATION ROUTE BUTTON FIX (MOBILE)    */
+/* ========================================= */
 .location-route-btn {
     position: absolute;
-    top: 100px;
+    top: 80px;
     right: 10px;
     width: 36px;
     height: 36px;
@@ -1097,9 +1079,9 @@
     justify-content: center;
     font-size: 16px;
     color: #333;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
     transition: all 0.3s ease;
-    z-index: 999;
+    z-index: 1000;
 }
 
 .location-route-btn:hover {
