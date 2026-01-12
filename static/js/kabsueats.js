@@ -26,10 +26,13 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleSearchButton();
     }
 
-    // âœ… Update statuses on page load
+    // Update statuses on page load
     if (typeof updateEstablishmentStatuses === 'function') {
         updateEstablishmentStatuses();
     }
+
+    // ✅ Initialize location route button
+    initLocationRouteButton();
 });
 
 function on() { document.getElementById("overlay").style.display = "block"; }
@@ -62,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ============================================
-// âœ… FIXED AND IMPROVED applyFilters() FUNCTION
+// ✅ FIXED AND IMPROVED applyFilters() FUNCTION
 // ============================================
 function applyFilters() {
     const searchInput = document.getElementById('searchInput');
@@ -108,7 +111,7 @@ function applyFilters() {
             isVisible = false;
         }
 
-        // âœ… CRITICAL FIX: Status filter now works correctly
+        // Status filter
         if (selectedStatus && itemStatus !== selectedStatus) {
             isVisible = false;
         }
@@ -194,7 +197,7 @@ function applyFilters() {
 }
 
 // ============================================
-// âœ… REAL-TIME STATUS UPDATE FUNCTION
+// ✅ REAL-TIME STATUS UPDATE FUNCTION
 // ============================================
 function updateEstablishmentStatuses() {
     const establishments = document.querySelectorAll('.food-establishment-item');
@@ -259,7 +262,7 @@ function updateStatusDisplay(statusIndicator, status) {
     }
 }
 
-// âœ… Update statuses every minute
+// Update statuses every minute
 setInterval(updateEstablishmentStatuses, 60000);
 
 // Logout Modal Logic
@@ -724,7 +727,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        errorMessage = "📍 Location access denied.\n\nPlease enable location in your browser:\n1. Click the 🔒 lock icon in address bar\n2. Allow location access\n3. Refresh the page";
+                        errorMessage = "🔒 Location access denied.\n\nPlease enable location in your browser:\n1. Click the 🔒 lock icon in address bar\n2. Allow location access\n3. Refresh the page";
                         break;
                     case error.POSITION_UNAVAILABLE:
                         errorMessage = "📍 Location unavailable.\n\nTry:\n• Moving to an area with better signal\n• Enabling GPS on your device\n• Checking device location settings";
@@ -1189,3 +1192,197 @@ function getCookie(name) {
         init();
     }
 })();
+
+// ==========================================
+// ✅ LOCATION ROUTE BUTTON WITH CLOSE FUNCTIONALITY
+// ==========================================
+
+function initLocationRouteButton() {
+    const routeBtn = document.getElementById('locationRouteBtn');
+    const mapSection = document.getElementById('mapSection');
+
+    if (!routeBtn) {
+        console.log('Route button not found');
+        return;
+    }
+
+    let routingControl = null;
+    let isRouteActive = false;
+
+    // Show/hide button when map is toggled
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'style') {
+                const isMapVisible = mapSection.style.display !== 'none';
+                routeBtn.style.display = isMapVisible ? 'flex' : 'none';
+            }
+        });
+    });
+
+    observer.observe(mapSection, { attributes: true });
+
+    // Function to remove route and cleanup
+    function removeRoute() {
+        if (routingControl && typeof establishmentsMap !== 'undefined') {
+            establishmentsMap.removeControl(routingControl);
+            routingControl = null;
+        }
+        isRouteActive = false;
+        routeBtn.classList.remove('active');
+        routeBtn.title = 'Show Route to Establishment';
+    }
+
+    routeBtn.addEventListener('click', function() {
+        if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
+            alert('Map is not initialized. Please wait.');
+            return;
+        }
+
+        if (typeof userMarker === 'undefined' || !userMarker) {
+            alert('Please click "Show My Location" button on the map first to enable your location.');
+            return;
+        }
+
+        if (isRouteActive && routingControl) {
+            removeRoute();
+        } else {
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            if (establishments.length === 0) {
+                alert('No establishments available.');
+                return;
+            }
+
+            let targetEstablishment = null;
+            for (let est of establishments) {
+                if (est.style.display !== 'none') {
+                    targetEstablishment = est;
+                    break;
+                }
+            }
+
+            if (!targetEstablishment) {
+                alert('No establishment found. Please adjust your filters.');
+                return;
+            }
+
+            const destLat = parseFloat(targetEstablishment.dataset.lat);
+            const destLng = parseFloat(targetEstablishment.dataset.lng);
+
+            if (!destLat || !destLng) {
+                alert('Invalid establishment location.');
+                return;
+            }
+
+            const userLatLng = userMarker.getLatLng();
+
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userLatLng.lat, userLatLng.lng),
+                    L.latLng(destLat, destLng)
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                showAlternatives: false,
+                show: true,
+                lineOptions: {
+                    styles: [{
+                        color: '#E9A420',
+                        opacity: 0.8,
+                        weight: 6
+                    }]
+                },
+                createMarker: function(i, waypoint, n) {
+                    let marker;
+                    if (i === 0) {
+                        marker = L.marker(waypoint.latLng, {
+                            icon: L.divIcon({
+                                className: 'route-marker-start',
+                                html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        });
+                    } else if (i === n - 1) {
+                        marker = L.marker(waypoint.latLng, {
+                            icon: L.divIcon({
+                                className: 'route-marker-end',
+                                html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        });
+                    }
+                    return marker;
+                },
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                })
+            }).addTo(establishmentsMap);
+
+            // ✅ Add close button after creation
+            setTimeout(() => {
+                const container = document.querySelector('.leaflet-routing-container');
+                if (container && !container.querySelector('.leaflet-routing-close')) {
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'leaflet-routing-close';
+                    closeBtn.innerHTML = '×';
+                    closeBtn.title = 'Close directions';
+                    closeBtn.style.cssText = `
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        width: 24px;
+                        height: 24px;
+                        background: #ef4444;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 18px;
+                        font-weight: bold;
+                        line-height: 1;
+                        transition: all 0.2s ease;
+                        z-index: 10;
+                        padding: 0;
+                    `;
+
+                    closeBtn.addEventListener('mouseenter', function() {
+                        this.style.background = '#dc2626';
+                        this.style.transform = 'scale(1.1)';
+                    });
+
+                    closeBtn.addEventListener('mouseleave', function() {
+                        this.style.background = '#ef4444';
+                        this.style.transform = 'scale(1)';
+                    });
+
+                    closeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        removeRoute();
+                    });
+
+                    container.insertBefore(closeBtn, container.firstChild);
+                }
+            }, 200);
+
+            isRouteActive = true;
+            routeBtn.classList.add('active');
+            routeBtn.title = 'Hide Route';
+
+            establishmentsMap.fitBounds([
+                [userLatLng.lat, userLatLng.lng],
+                [destLat, destLng]
+            ], {
+                padding: [80, 80],
+                maxZoom: 15
+            });
+        }
+    });
+
+    console.log('✅ Location route button initialized with close functionality');
+}
