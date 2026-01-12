@@ -159,7 +159,7 @@
         height: 80px;
         top: 0;
         left: 0;
-        z-index: 10000;
+        z-index: 1000;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         align-items: center;
@@ -354,8 +354,9 @@
         color: #333;
         cursor: pointer;
         font-size: 16px;
-        font-weight: 500;
+        font-weight: 600;
         transition: color 0.2s ease;
+        white-space: nowrap;
     }
 
     .auth_link:hover {
@@ -366,81 +367,69 @@
         background-color: #111827;
         color: #FFFFFF;
         border: none;
-        padding: 8px 18px;
+        padding: 10px 20px;
         border-radius: 8px;
         cursor: pointer;
         font-size: 15px;
         font-weight: 600;
+        transition: background-color 0.2s ease;
         text-decoration: none;
         display: inline-block;
-        transition: background-color 0.2s ease, transform 0.1s ease;
+        white-space: nowrap;
     }
 
     .login_button:hover {
         background-color: #374151;
-        transform: translateY(-1px);
     }
 
-    /* Profile Dropdown */
+    /* Profile Image - Comes Last */
     .profile-container {
         position: relative;
-        z-index: 1004;
+        display: inline-block;
+        z-index: 1005;
+        order: 3;
+        right: 25px;
     }
 
     .profile-image {
-        width: 45px;
-        height: 45px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         object-fit: cover;
         cursor: pointer;
-        border: 2px solid #e5e7eb;
-        transition: border-color 0.2s ease;
+        transition: all 0.2s ease;
     }
 
     .profile-image:hover {
-        border-color: #E9A420;
+        opacity: 0.8;
     }
 
+    /* Profile Dropdown */
     .dropdown-menu {
         position: absolute;
-        top: 110%;
+        top: 100%;
         right: 0;
-        margin-top: 8px;
+        margin-top: 10px;
         background-color: white;
-        min-width: 200px;
-        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
-        z-index: 100000;
-        border-radius: 8px;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+        z-index: 1006;
+        border-radius: 5px;
         overflow: hidden;
         display: none;
-        border: 1px solid #e5e7eb;
     }
 
     .dropdown-menu a {
-        color: #333;
-        padding: 14px 18px;
+        color: black;
+        padding: 12px 16px;
         text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 15px;
-        font-weight: 500;
-        transition: background-color 0.15s ease;
-    }
-
-    .dropdown-menu a i {
-        width: 18px;
-        text-align: center;
-        color: #6b7280;
+        display: block;
+        font-size: 14px;
+        transition: background-color 0.15s;
     }
 
     .dropdown-menu a:hover {
-        background-color: #f9fafb;
-        color: #E9A420;
-    }
-
-    .dropdown-menu a:hover i {
-        color: #E9A420;
+        background-color: #f1f1f1;
     }
 
     .show {
@@ -451,19 +440,16 @@
     /* HERO SECTION                              */
     /* ========================================= */
     .welcome-hero-section {
-        padding: 40px 40px 30px 40px;
+        padding: 25px 20px;
         width: 100%;
-        box-sizing: border-box;
-        max-width: 1400px;
-        margin: 0 auto;
+        text-align: center;
     }
 
     .hero-title {
-        font-size: 42px;
+        font-size: 38px;
         font-weight: 700;
         color: #111827;
-        margin: 0 0 15px 0;
-        line-height: 1.2;
+        margin: 0 0 8px 0;
     }
 
     .highlight-food {
@@ -471,288 +457,329 @@
     }
 
     .hero-subtitle {
-        font-size: 18px;
+        font-size: 16px;
         color: #6b7280;
-        max-width: 600px;
-        margin: 0 auto 30px auto;
-        line-height: 1.6;
+        max-width: 650px;
+        margin: 0 auto 20px auto;
+        font-weight: 400;
     }
 
     /* ========================================= */
-    /* FILTERS & MAP BUTTON                      */
+    /* FILTERS + MAP BUTTON                      */
     /* ========================================= */
     .filter_container {
         display: flex;
-        gap: 12px;
-        align-items: center;
         justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 25px;
         flex-wrap: wrap;
-        padding: 0 40px;
-        margin-bottom: 30px;
-        max-width: 1400px;
-        margin-left: auto;
-        margin-right: auto;
+        padding: 0 20px;
     }
 
     .select_wrapper {
         position: relative;
-        flex: 0 0 auto;
+        flex-shrink: 0;
     }
 
-    #statusFilter,
-    #alphabetFilter,
-    #distanceFilter,
+    .select_wrapper::after {
+        content: '▼';
+        font-size: 9px;
+        color: #999;
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
     #ratingsFilter,
+    #distanceFilter,
+    #alphabetFilter,
+    #statusFilter,
     #categoryFilter {
+        padding-left: 8px;
+    }
+
+    select {
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
         background-color: #ffffff;
         border: 1px solid #d1d5db;
         border-radius: 8px;
-        padding: 10px 35px 10px 14px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 13px;
+        height: 34px;
+        width: 140px;
         font-weight: 500;
         color: #374151;
         outline: none;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22292.4%22 height%3D%22292.4%22%3E%3Cpath fill%3D%22%236b7280%22 d%3D%22M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.6-3.6 5.4-7.8 5.4-12.8 0-5-1.8-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E');
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 10px;
-        min-width: 140px;
     }
 
-    #statusFilter:hover,
-    #alphabetFilter:hover,
-    #distanceFilter:hover,
-    #ratingsFilter:hover,
-    #categoryFilter:hover {
+    select:hover {
         border-color: #9ca3af;
     }
 
-    #statusFilter:focus,
-    #alphabetFilter:focus,
-    #distanceFilter:focus,
-    #ratingsFilter:focus,
-    #categoryFilter:focus {
+    select:focus {
         border-color: #E9A420;
         box-shadow: 0 0 0 2px rgba(233, 164, 32, 0.2);
     }
 
     #toggleMapBtn {
-        padding: 10px 20px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
         background-color: #ffffff;
         border: 1px solid #d1d5db;
         border-radius: 8px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        outline: none;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+        padding: 8px 14px;
+        height: 34px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        position: absolute;
+        top: 41%;
+        left: 6.7%;
     }
 
     #toggleMapBtn:hover {
-        background-color: #f3f4f6;
+        background: #f3f4f6;
         border-color: #9ca3af;
     }
 
     #toggleMapBtn:active {
-        background-color: #e5e7eb;
+        background: #e5e7eb;
     }
 
-    /* ========================================= */
-    /* MAP SECTION                               */
-    /* ========================================= */
     #mapSection {
         display: none;
-        height: 600px;
-        width: calc(100% - 80px);
-        max-width: 1400px;
-        margin: 0 auto 40px auto;
-        border-radius: 16px;
+        height: 500px;
+        width: 100%;
+        max-width: 1320px;
+        transition: all 0.5s ease-in-out;
+        margin: 0 auto 30px auto;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         border: 1px solid #e5e7eb;
         position: relative;
-        z-index: 1;
     }
 
     #mapSection.active {
         display: block;
     }
 
+    /* Desktop map controls positioning */
     #establishmentsMap {
-        height: 100%;
-        width: 100%;
-        z-index: 1;
+        position: relative;
+    }
+
+    /* UPDATED: Inilipat ang Zoom control sa pinakataas */
+    #establishmentsMap .leaflet-top.leaflet-left {
+        top: 10px !important;
+        left: 10px !important;
+    }
+
+    /* UPDATED: Inilipat ang Layer control (map settings) sa pinakataas */
+    #establishmentsMap .leaflet-top.leaflet-right {
+        top: 10px !important;
+        right: 10px !important;
     }
 
     /* ========================================= */
-    /* ESTABLISHMENT CARDS                       */
+    /* PAGE CONTENT & ESTABLISHMENTS             */
     /* ========================================= */
     .pagecontent {
         display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 100%;
     }
 
     .pagecontent#Home {
-        display: block;
+        display: flex;
     }
 
     .nearest_container {
-        padding: 0 40px 60px 40px;
-        max-width: 1400px;
+        max-width: 1360px;
+        width: 100%;
+        padding: 1px 20px;
+        box-sizing: border-box;
         margin: 0 auto;
     }
 
     .nearest_slidescontainer {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 28px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 30px;
+        padding: 0;
+        align-items: stretch;
     }
 
     .nearest_box {
+        color: #444;
         background-color: #FFFFFF;
-        border-radius: 16px;
+        border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         display: flex;
         flex-direction: column;
         position: relative;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
+        height: 100%;
     }
 
     .nearest_box:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .nearest_box a {
+        text-decoration: none;
+        color: inherit;
     }
 
     .food-image {
         width: 100%;
-        height: 240px;
+        height: 180px;
         object-fit: cover;
+        border-bottom: 1px solid #000000;
+        flex-shrink: 0;
     }
 
     .food-name {
-        padding: 18px 20px;
+        padding: 8px 12px;
+        font-weight: 400;
+        text-align: left;
+        flex-grow: 1;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        flex-grow: 1;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+    #profileImagePreview{
+        margin-left: 190px;
     }
 
+    /* === UPDATED: Left aligned name and new font === */
     .mb-0 {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Poppins', sans-serif; /* Updated Font */
         font-size: 22px;
-        font-weight: 600;
-        color: #111827;
-        margin: 0 0 4px 0;
-        line-height: 1.3;
+        text-align: left; /* Changed to left */
+        width: 100%;
+        line-height: 1.1;
+        margin-top: 12px;
     }
+    /* ======================= */
 
+    /* ===== START NG FIX ===== */
     .star-rating-display {
         display: flex;
         align-items: center;
-        gap: 3px;
-        font-size: 14px;
+        gap: 2px;
+        font-size: 11px;
         color: #f59e0b;
-        margin: 0;
-        min-height: 20px;
+        margin: 0 0 1px 0;
+        min-height: 16px; /* NAKA-FIX: Tinitiyak ang espasyo para sa alignment */
     }
+    /* ===== END NG FIX ===== */
 
     .star-rating-display .rating-value {
-        margin-left: 6px;
+        margin-left: 5px;
         color: #374151;
         font-weight: 600;
-        font-size: 15px;
     }
 
+    /* ===== START NG FIX ===== */
     .review-count {
-        font-size: 13px;
+        font-size: 10px;
         color: #6b7280;
-        margin: 0;
-        min-height: 18px;
+        margin: 0 0 2px 0;
+        min-height: 15px; /* NAKA-FIX: Tinitiyak ang espasyo para sa alignment */
     }
+    /* ===== END NG FIX ===== */
 
+    /* === UPDATED: New font for amenities === */
     .amenities-inline {
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
+        font-family: 'Poppins', sans-serif; /* Updated Font */
+        font-size: 13px;
         color: #4b5563;
-        line-height: 1.6;
-        margin: 12px 0 0 0;
+        top: 10px;
+        position: relative;
+        margin: 15px 0 0 0;
     }
+    /* ======================= */
 
     .distance-info {
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: #16a34a;
-        padding: 10px 20px;
-        background-color: #f0fdf4;
-        border-top: 1px solid #dcfce7;
+        padding: 6px 12px;
+        text-align: left;
         margin: 0;
         margin-top: auto;
     }
 
     .payment-methods {
         font-size: 13px;
-        padding: 10px 20px;
+        padding: 6px 12px;
         background-color: #f9fafb;
         border-top: 1px solid #e5e7eb;
-        color: #6b7280;
+        text-align: left;
         margin: 0;
     }
 
-    /* ========================================= */
-    /* STATUS & CATEGORY INDICATORS              */
-    /* ========================================= */
     .status-indicator {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 80px;
-        height: 28px;
+        width: 65px;
+        height: 20px;
         padding: 0;
-        border-radius: 14px;
-        font-size: 0.75rem;
+        border-radius: 12px;
+        font-size: 0.65rem;
         font-weight: bold;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
         text-transform: uppercase;
-        background-color: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        background-color: rgba(255, 255, 255, 0.9);
+        border: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         position: absolute;
         z-index: 2;
-        top: 12px;
-        left: 12px;
+        top: 8px;
+        left: 8px;
+        right: auto;
         color: #333;
-        border: 2px solid;
     }
 
     .status-indicator .dot {
-        height: 8px;
-        width: 8px;
+        height: 7px;
+        width: 7px;
         border-radius: 50%;
-        margin-right: 5px;
+        margin-right: 4px;
         transition: background-color 0.3s ease;
     }
 
     .status-indicator.open {
-        background-color: rgba(232, 245, 233, 0.95);
+        background-color: rgba(232, 245, 233, 0.9);
         border-color: #4CAF50;
         color: #1B5E20;
     }
 
     .status-indicator.open .dot {
         background-color: #4CAF50;
-        animation: pulse 1.5s infinite;
+        animation: pulse 1s infinite;
     }
 
     .status-indicator.closed {
-        background-color: rgba(255, 235, 238, 0.95);
+        background-color: rgba(255, 235, 238, 0.9);
         border-color: #D32F2F;
         color: #B71C1C;
     }
@@ -766,64 +793,57 @@
         align-items: center;
         justify-content: center;
         width: auto;
-        padding: 4px 12px;
-        height: 28px;
-        border-radius: 14px;
-        font-size: 0.75rem;
+        padding: 2px 8px;
+        height: 22px;
+        border-radius: 12px;
+        font-size: 0.65rem;
         font-weight: bold;
         position: absolute;
         z-index: 2;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        top: 12px;
-        right: 12px;
-        background: linear-gradient(135deg, #f9c233 0%, #e69500 100%);
-        color: #000;
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        top: 8px;
+        right: 8px;
+        background: linear-gradient(to bottom, #f9c233, #e69500);
+        color: #000; /* NAKA-FIX: Pinalitan ng itim ang kulay ng text */
     }
 
     .update-indicator {
         position: absolute;
-        top: 48px;
-        left: 12px;
-        background-color: rgba(59, 130, 246, 0.95);
+        top: 35px;
+        left: 8px;
+        background-color: rgba(59, 130, 246, 0.9);
         color: white;
-        padding: 6px 12px;
+        padding: 4px 8px;
         border-radius: 50px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         z-index: 2;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     @keyframes pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-        }
-        70% {
-            box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-        }
+        0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
     }
 
-/* ==========================================
+    /* ==========================================
    UPDATED FOOTER STYLES FOR DESKTOP
+   REPLACE LINES 830-866 in kabsueats_desktopview.css
    ========================================== */
 
 .footer {
     background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     color: white;
-    padding: 48px 40px 24px;
-    margin-top: 60px;
-    border-top: 4px solid #B71C1C;
+    padding: 48px 24px 24px;
+    margin-top: 80px;
+    border-top: 3px solid #B71C1C;
 }
 
 .footer-container {
     max-width: 1400px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 40px;
     margin-bottom: 32px;
 }
@@ -835,19 +855,18 @@
     color: white;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .footer-section h3 i {
     color: #B71C1C;
-    font-size: 20px;
 }
 
 .footer-section p {
     color: rgba(255, 255, 255, 0.7);
-    line-height: 1.8;
+    line-height: 1.6;
     font-size: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .footer-links {
@@ -867,12 +886,12 @@
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .footer-links a:hover {
     color: white;
-    padding-left: 10px;
+    padding-left: 8px;
 }
 
 .footer-links a i {
@@ -908,7 +927,7 @@
 
 .footer-bottom {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 20px;
+    padding-top: 24px;
     text-align: center;
 }
 
@@ -916,7 +935,6 @@
     color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
     margin: 0;
-    line-height: 1.6;
 }
 
 .footer-bottom a {
@@ -1045,7 +1063,7 @@
 
     .cart-badge {
         position: absolute;
-        top: 0px;
+        top: 0px;          /* ✅ CHANGED: from -5px */
         right: 0px;
         background-color: #f87171;
         color: white;
@@ -1056,7 +1074,7 @@
         line-height: 1;
         min-width: 20px;
         text-align: center;
-        transform: translate(50%, -50%);
+        transform: translate(50%, -50%); /* ✅ ADDED */
     }
 
     .cart-badge.updated-flash {
@@ -1064,16 +1082,9 @@
     }
 
     @keyframes flash-grow {
-        0% {
-            transform: translate(50%, -50%) scale(1);
-        }
-        50% {
-            transform: translate(50%, -50%) scale(1.3);
-            background-color: darkred;
-        }
-        100% {
-            transform: translate(50%, -50%) scale(1);
-        }
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); background-color: darkred; }
+        100% { transform: scale(1); }
     }
 
     .menu-item .item-actions {
@@ -1181,156 +1192,4 @@
         font-size: 16px;
         font-weight: 500;
     }
-
-    /* ========================================= */
-    /* ✅ DESKTOP ROUTE INSTRUCTIONS PANEL FIX  */
-    /* ========================================= */
-
-    /* Route instructions panel - positioned below search bar on right side */
-    .leaflet-routing-container {
-        position: absolute !important;
-        top: 90px !important;  /* Below the search bar (80px header + 10px gap) */
-        right: 20px !important;  /* Right side of map */
-        left: auto !important;
-        bottom: auto !important;
-        z-index: 600 !important;
-        background: white !important;
-        border-radius: 10px !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-        max-width: 340px !important;
-        max-height: 450px !important;
-        overflow-y: auto !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        border: 1px solid #e5e7eb !important;
-    }
-
-    /* Close button for route instructions */
-    .leaflet-routing-container .leaflet-routing-close {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 28px;
-        height: 28px;
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: bold;
-        line-height: 1;
-        transition: all 0.2s ease;
-        z-index: 10;
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-    }
-
-    .leaflet-routing-container .leaflet-routing-close:hover {
-        background: #dc2626;
-        transform: scale(1.05);
-    }
-
-    .leaflet-routing-alt {
-        padding: 12px !important;
-        background: white !important;
-    }
-
-    .leaflet-routing-alt h2 {
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        margin-bottom: 10px !important;
-        color: #111827 !important;
-        padding-right: 35px; /* Space for close button */
-    }
-
-    .leaflet-routing-alt h3 {
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        margin: 6px 0 !important;
-        color: #374151 !important;
-    }
-
-    .leaflet-routing-alt table {
-        width: 100% !important;
-        font-size: 13px !important;
-    }
-
-    .leaflet-routing-alt td {
-        padding: 5px !important;
-    }
-
-    /* Location route button */
-    .location-route-btn {
-        position: absolute;
-        top: 100px;
-        right: 20px;
-        width: 44px;
-        height: 44px;
-        background: white;
-        border: 2px solid rgba(0, 0, 0, 0.2);
-        border-radius: 6px;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: #333;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-        z-index: 700;
-    }
-
-    .location-route-btn:hover {
-        background: #f9fafb;
-        border-color: #E9A420;
-        color: #E9A420;
-        box-shadow: 0 4px 12px rgba(233, 164, 32, 0.2);
-    }
-
-    .location-route-btn.active {
-        background: #E9A420;
-        color: white;
-        border-color: #E9A420;
-    }
-
-    /* Route markers custom styling */
-    .route-marker-start,
-    .route-marker-end {
-        z-index: 650 !important;
-    }
-}
-
-/* ========================================= */
-/* ✅ Z-INDEX AND ROUTE INSTRUCTIONS FIX    */
-/* ========================================= */
-
-/* Header stays on top */
-.search-and-filters-wrapper {
-    z-index: 10000 !important;
-}
-
-/* Map stays below header */
-#mapSection {
-    position: relative;
-    z-index: 1 !important;
-}
-
-#establishmentsMap {
-    z-index: 1 !important;
-}
-
-/* Leaflet controls proper z-index */
-.leaflet-top,
-.leaflet-bottom,
-.leaflet-control {
-    z-index: 500 !important;
-}
-
-.leaflet-control-zoom,
-.leaflet-control-layers {
-    z-index: 500 !important;
 }
