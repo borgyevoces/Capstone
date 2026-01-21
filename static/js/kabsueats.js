@@ -1188,4 +1188,395 @@ function getCookie(name) {
     } else {
         init();
     }
-})();
+})();/* ==========================================
+   ADD THIS TO YOUR kabsueats.js FILE
+   Best Sellers Section JavaScript
+   ========================================== */
+
+// Best Sellers Management
+const BestSellers = {
+    items: [],
+    isLoading: false,
+    scrollContainer: null,
+    scrollPosition: 0,
+
+    init() {
+        console.log('Initializing Best Sellers...');
+        this.scrollContainer = document.getElementById('bestSellersScroll');
+
+        if (!this.scrollContainer) {
+            console.error('Best Sellers scroll container not found');
+            return;
+        }
+
+        this.setupScrollButtons();
+        this.loadBestSellers();
+
+        // Auto-refresh every 5 minutes
+        setInterval(() => this.loadBestSellers(), 300000);
+    },
+
+    setupScrollButtons() {
+        const leftBtn = document.getElementById('scrollLeftBtn');
+        const rightBtn = document.getElementById('scrollRightBtn');
+
+        if (!leftBtn || !rightBtn) {
+            console.error('Scroll buttons not found');
+            return;
+        }
+
+        // Scroll left
+        leftBtn.addEventListener('click', () => {
+            this.scrollContainer.scrollBy({
+                left: -300,
+                behavior: 'smooth'
+            });
+        });
+
+        // Scroll right
+        rightBtn.addEventListener('click', () => {
+            this.scrollContainer.scrollBy({
+                left: 300,
+                behavior: 'smooth'
+            });
+        });
+
+        // Update button states on scroll
+        this.scrollContainer.addEventListener('scroll', () => {
+            this.updateScrollButtons();
+        });
+
+        // Initial button state
+        this.updateScrollButtons();
+    },
+
+    updateScrollButtons() {
+        const leftBtn = document.getElementById('scrollLeftBtn');
+        const rightBtn = document.getElementById('scrollRightBtn');
+
+        if (!leftBtn || !rightBtn || !this.scrollContainer) return;
+
+        const scrollLeft = this.scrollContainer.scrollLeft;
+        const maxScroll = this.scrollContainer.scrollWidth - this.scrollContainer.clientWidth;
+
+        // Disable left button at start
+        leftBtn.disabled = scrollLeft <= 0;
+
+        // Disable right button at end
+        rightBtn.disabled = scrollLeft >= maxScroll - 1;
+    },
+
+    async loadBestSellers() {
+        if (this.isLoading) return;
+
+        this.isLoading = true;
+        this.showLoading();
+
+        try {
+            const response = await fetch('/api/best-sellers/');
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.items && data.items.length > 0) {
+                this.items = data.items;
+                this.renderBestSellers();
+            } else {
+                this.showEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading best sellers:', error);
+            this.showError();
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    showLoading() {
+        if (!this.scrollContainer) return;
+
+        this.scrollContainer.innerHTML = `
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading best sellers...</p>
+            </div>
+        `;
+    },
+
+    showEmptyState() {
+        if (!this.scrollContainer) return;
+
+        this.scrollContainer.innerHTML = `
+            <div class="no-best-sellers">
+                <i class="fas fa-box-open"></i>
+                <h3>No Best Sellers Yet</h3>
+                <p>Check back soon for popular items!</p>
+            </div>
+        `;
+    },
+
+    showError() {
+        if (!this.scrollContainer) return;
+
+        this.scrollContainer.innerHTML = `
+            <div class="no-best-sellers">
+                <i class="fas fa-exclamation-circle"></i>
+                <h3>Unable to Load Best Sellers</h3>
+                <p>Please try again later</p>
+            </div>
+        `;
+    },
+
+    renderBestSellers() {
+        if (!this.scrollContainer || !this.items.length) return;
+
+        this.scrollContainer.innerHTML = this.items.map(item => this.createItemCard(item)).join('');
+
+        // Add event listeners to cards
+        this.attachEventListeners();
+
+        // Update scroll buttons
+        setTimeout(() => this.updateScrollButtons(), 100);
+    },
+
+    createItemCard(item) {
+        const establishment = item.establishment;
+        const isAvailable = item.is_available && establishment.status === 'Open';
+        const statusClass = establishment.status.toLowerCase();
+
+        return `
+            <div class="best-seller-card" data-item-id="${item.id}" data-establishment-id="${establishment.id}">
+                ${item.is_top_seller ? `
+                    <div class="best-seller-badge">
+                        <i class="fas fa-star"></i>
+                        Best Seller
+                    </div>
+                ` : ''}
+
+                <div class="availability-badge ${isAvailable ? 'available' : 'out-of-stock'}">
+                    ${isAvailable ? 'Available' : 'Closed'}
+                </div>
+
+                <img
+                    src="${item.image_url || '/static/images/placeholder-food.jpg'}"
+                    alt="${this.escapeHtml(item.name)}"
+                    class="best-seller-image"
+                    onerror="this.src='/static/images/placeholder-food.jpg'"
+                />
+
+                <div class="best-seller-content">
+                    <h3 class="best-seller-name">${this.escapeHtml(item.name)}</h3>
+                    <div class="best-seller-price">₱${item.price.toFixed(2)}</div>
+
+                    <div class="best-seller-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-shopping-bag"></i>
+                            <strong>${item.total_orders}</strong> orders
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-box"></i>
+                            <strong>${item.quantity}</strong> left
+                        </div>
+                    </div>
+
+                    <div class="best-seller-establishment">
+                        <img
+                            src="${establishment.image_url || '/static/images/placeholder-store.jpg'}"
+                            alt="${this.escapeHtml(establishment.name)}"
+                            class="establishment-logo"
+                            onerror="this.src='/static/images/placeholder-store.jpg'"
+                        />
+                        <div class="establishment-info">
+                            <div class="establishment-name">${this.escapeHtml(establishment.name)}</div>
+                            <div class="establishment-category">
+                                ${this.escapeHtml(establishment.category)} •
+                                <span class="establishment-status ${statusClass}">
+                                    ${establishment.status}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="best-seller-actions">
+                        <button class="view-item-btn" data-action="view">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </button>
+                        ${isAvailable ? `
+                            <button class="add-to-cart-btn" data-action="add-to-cart">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    attachEventListeners() {
+        // View details buttons
+        document.querySelectorAll('.best-seller-card .view-item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const card = e.target.closest('.best-seller-card');
+                const establishmentId = card.dataset.establishmentId;
+                this.viewEstablishment(establishmentId);
+            });
+        });
+
+        // Add to cart buttons
+        document.querySelectorAll('.best-seller-card .add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const card = e.target.closest('.best-seller-card');
+                const itemId = card.dataset.itemId;
+                const establishmentId = card.dataset.establishmentId;
+                this.addToCart(itemId, establishmentId);
+            });
+        });
+
+        // Card click - view establishment
+        document.querySelectorAll('.best-seller-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return; // Ignore if button clicked
+                const establishmentId = card.dataset.establishmentId;
+                this.viewEstablishment(establishmentId);
+            });
+        });
+    },
+
+    viewEstablishment(establishmentId) {
+        if (!establishmentId) return;
+        window.location.href = `/food_establishment/${establishmentId}/`;
+    },
+
+    async addToCart(itemId, establishmentId) {
+        if (!itemId || !establishmentId) return;
+
+        try {
+            const response = await fetch('/cart/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify({
+                    menu_item_id: itemId,
+                    establishment_id: establishmentId,
+                    quantity: 1
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Show success message
+                this.showToast('Item added to cart!', 'success');
+
+                // Update cart count if function exists
+                if (typeof updateCartCount === 'function') {
+                    updateCartCount();
+                }
+            } else {
+                this.showToast(data.message || 'Failed to add item to cart', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            this.showToast('Error adding item to cart', 'error');
+        }
+    },
+
+    showToast(message, type = 'info') {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#48bb78' : '#f56565'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    },
+
+    getCsrfToken() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        return cookieValue || '';
+    },
+
+    escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+};
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing Best Sellers...');
+
+    // Small delay to ensure everything is loaded
+    setTimeout(() => {
+        BestSellers.init();
+    }, 500);
+});
+
+// Also try to initialize on window load as backup
+window.addEventListener('load', function() {
+    if (!BestSellers.scrollContainer) {
+        console.log('Retrying Best Sellers initialization...');
+        BestSellers.init();
+    }
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);

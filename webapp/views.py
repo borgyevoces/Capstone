@@ -4504,3 +4504,74 @@ def create_test_notification(request):
             'error': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
+
+
+from django.db.models import Count, Sum, Q
+from django.utils import timezone
+from datetime import timedelta
+
+
+@require_http_methods(["GET"])
+def get_best_sellers(request):
+    """
+    API endpoint to fetch real-time best sellers across all establishments.
+    Returns top-selling menu items based on order frequency and quantity.
+    """
+    try:
+        # Get time range for "recent" orders (last 30 days)
+        time_threshold = timezone.now() - timedelta(days=30)
+
+        # Query to get best-selling items with establishment info
+        best_sellers = MenuItem.objects.filter(
+            Q(is_top_seller=True) |
+            Q(orderitem__order__status__in=['PAID', 'PREPARING', 'READY', 'COMPLETED']) &
+            Q(orderitem__order__created_at__gte=time_threshold)
+        ).annotate(
+            total_orders=Count('orderitem__order', distinct=True),
+            total_quantity_sold=Sum('orderitem__quantity')
+        ).filter(
+            quantity__gt=0,  # Only available items
+            total_orders__gt=0  # Only items with sales
+        ).select_related(
+            'food_establishment',
+            'food_establishment__category'
+        ).order_by('-total_orders', '-total_quantity_sold')[:20]  # Top 20 best sellers
+
+        # Format response data
+        items_data = []
+        for item in best_sellers:
+            establishment = item.food_establishment
+
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description,
+                'price': float(item.price),
+                'image_url': item.image.url if item.image else None,
+                'is_available': item.quantity > 0,
+                'quantity': item.quantity,
+                'total_orders': item.total_orders or 0,
+                'total_sold': item.total_quantity_sold or 0,
+                'is_top_seller': item.is_top_seller,
+                'establishment': {
+                    'id': establishment.id,
+                    'name': establishment.name,
+                    'category': establishment.category.name if establishment.category else 'Other',
+                    'address': establishment.address,
+                    'status': establishment.status,
+                    'image_url': establishment.image.url if establishment.image else None,
+                    'rating': establishment.average_rating() if hasattr(establishment, 'average_rating') else 0,
+                }
+            })
+
+        return JsonResponse({
+            'success': True,
+            'count': len(items_data),
+            'items': items_data
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
