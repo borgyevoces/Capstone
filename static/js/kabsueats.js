@@ -1189,11 +1189,10 @@ function getCookie(name) {
         init();
     }
 })();/* ==========================================
-   BEST SELLERS JAVASCRIPT - UPDATED
-   Real-time status + No closed badge
+   BEST SELLERS JAVASCRIPT - FINAL VERSION
+   With login redirect for unauthenticated users
    ========================================== */
 
-// Best Sellers Management
 const BestSellers = {
     items: [],
     isLoading: false,
@@ -1212,10 +1211,7 @@ const BestSellers = {
         this.setupScrollButtons();
         this.loadBestSellers();
 
-        // Auto-refresh every 5 minutes
         setInterval(() => this.loadBestSellers(), 300000);
-
-        // Update status every minute
         setInterval(() => this.updateAllStatuses(), 60000);
     },
 
@@ -1229,17 +1225,11 @@ const BestSellers = {
         }
 
         leftBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({
-                left: -300,
-                behavior: 'smooth'
-            });
+            this.scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
         });
 
         rightBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({
-                left: 300,
-                behavior: 'smooth'
-            });
+            this.scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
         });
 
         this.scrollContainer.addEventListener('scroll', () => {
@@ -1262,7 +1252,6 @@ const BestSellers = {
         rightBtn.disabled = scrollLeft >= maxScroll - 1;
     },
 
-    // ✅ Check if establishment is open NOW
     isEstablishmentOpen(openingTime, closingTime) {
         if (!openingTime || !closingTime) return false;
 
@@ -1276,15 +1265,12 @@ const BestSellers = {
         const closingMinutes = closeHour * 60 + closeMin;
 
         if (openingMinutes <= closingMinutes) {
-            // Normal hours (e.g., 8:00 AM - 10:00 PM)
             return currentTime >= openingMinutes && currentTime <= closingMinutes;
         } else {
-            // Overnight hours (e.g., 10:00 PM - 2:00 AM)
             return currentTime >= openingMinutes || currentTime <= closingMinutes;
         }
     },
 
-    // ✅ Update all status badges in real-time
     updateAllStatuses() {
         document.querySelectorAll('.best-seller-card').forEach(card => {
             const statusBadge = card.querySelector('.establishment-status');
@@ -1377,11 +1363,9 @@ const BestSellers = {
     createItemCard(item) {
         const establishment = item.establishment;
 
-        // ✅ Get opening/closing times from establishment
         const openingTime = establishment.opening_time || '';
         const closingTime = establishment.closing_time || '';
 
-        // ✅ Calculate REAL-TIME status
         const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
         const isAvailable = item.is_available && isOpen;
 
@@ -1442,7 +1426,7 @@ const BestSellers = {
                             View Details
                         </button>
                         ${isAvailable ? `
-                            <button class="add-to-cart-btn" data-action="add-to-cart">
+                            <button class="add-to-cart-btn" data-action="add-to-cart" title="Add to Cart">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
                         ` : ''}
@@ -1462,9 +1446,24 @@ const BestSellers = {
             });
         });
 
+        // ✅ ADD TO CART WITH LOGIN CHECK
         document.querySelectorAll('.best-seller-card .add-to-cart-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+
+                // ✅ CHECK IF USER IS AUTHENTICATED
+                const isAuthenticated = typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED;
+
+                if (!isAuthenticated) {
+                    // ✅ NOT LOGGED IN - REDIRECT TO LOGIN
+                    this.showToast('Please login to add items to cart', 'info');
+                    setTimeout(() => {
+                        window.location.href = '/accounts/login_register/';
+                    }, 1000);
+                    return;
+                }
+
+                // ✅ LOGGED IN - ADD TO CART
                 const card = e.target.closest('.best-seller-card');
                 const itemId = card.dataset.itemId;
                 const establishmentId = card.dataset.establishmentId;
@@ -1523,17 +1522,21 @@ const BestSellers = {
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
+
+        const bgColor = type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1';
+
         toast.style.cssText = `
             position: fixed;
             bottom: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: ${type === 'success' ? '#48bb78' : '#f56565'};
+            background: ${bgColor};
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 10000;
             animation: slideIn 0.3s ease;
+            font-weight: 600;
         `;
         toast.textContent = message;
 
@@ -1565,16 +1568,12 @@ const BestSellers = {
     }
 };
 
-// Initialize when DOM is ready
+// Initialize
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing Best Sellers...');
-
-    setTimeout(() => {
-        BestSellers.init();
-    }, 500);
+    setTimeout(() => BestSellers.init(), 500);
 });
 
-// Backup initialization
 window.addEventListener('load', function() {
     if (!BestSellers.scrollContainer) {
         console.log('Retrying Best Sellers initialization...');
@@ -1582,29 +1581,16 @@ window.addEventListener('load', function() {
     }
 });
 
-// Add CSS animations
+// Animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
 `;
 document.head.appendChild(style);

@@ -1193,7 +1193,8 @@
         font-weight: 500;
     }
 }/* ==========================================
-   BEST SELLERS SECTION STYLES - UPDATED
+   BEST SELLERS SECTION STYLES - FINAL VERSION
+   Smaller height + compact design
    ========================================== */
 
 .best-sellers-section {
@@ -1318,9 +1319,9 @@
     background: #8c1616;
 }
 
-/* Individual best seller card - SMALLER SIZE */
+/* Individual best seller card - REDUCED HEIGHT */
 .best-seller-card {
-    flex: 0 0 220px;  /* Reduced from 280px */
+    flex: 0 0 220px;
     background: white;
     border-radius: 14px;
     overflow: hidden;
@@ -1337,26 +1338,27 @@
     border-color: #B71C1C;
 }
 
-/* Best seller badge - ONLY THIS ONE */
+/* Best seller badge */
 .best-seller-badge {
     position: absolute;
     top: 10px;
     left: 10px;
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
     color: white;
-    padding: 5px 10px;
+    padding: 4px 9px;
     border-radius: 18px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     z-index: 5;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .best-seller-badge i {
     animation: rotate 2s linear infinite;
+    font-size: 9px;
 }
 
 @keyframes rotate {
@@ -1368,46 +1370,46 @@
     }
 }
 
-/* Item image - SMALLER */
+/* Item image - SMALLER HEIGHT */
 .best-seller-image {
     width: 100%;
-    height: 160px;  /* Reduced from 200px */
+    height: 140px;  /* Reduced from 160px */
     object-fit: cover;
     background: #f7fafc;
 }
 
-/* Card content - COMPACT */
+/* Card content - MORE COMPACT */
 .best-seller-content {
-    padding: 12px;  /* Reduced from 16px */
+    padding: 10px;  /* Reduced from 12px */
 }
 
 .best-seller-name {
-    font-size: 16px;  /* Reduced from 18px */
+    font-size: 15px;  /* Reduced from 16px */
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;  /* Changed from 2 to 1 line */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 38px;
-    line-height: 1.2;
+    min-height: 20px;  /* Reduced from 38px */
+    line-height: 1.3;
 }
 
 .best-seller-price {
-    font-size: 20px;  /* Reduced from 22px */
+    font-size: 18px;  /* Reduced from 20px */
     font-weight: 800;
     color: #B71C1C;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 /* Stats row - COMPACT */
 .best-seller-stats {
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -1415,13 +1417,13 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    font-size: 12px;  /* Reduced from 13px */
+    font-size: 11px;  /* Reduced from 12px */
     color: #718096;
 }
 
 .stat-item i {
     color: #B71C1C;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .stat-item strong {
@@ -1433,17 +1435,17 @@
 .best-seller-establishment {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
+    gap: 7px;
+    padding: 7px;
     background: #f7fafc;
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .establishment-logo {
-    width: 36px;  /* Reduced from 40px */
-    height: 36px;
-    border-radius: 7px;
+    width: 32px;  /* Reduced from 36px */
+    height: 32px;
+    border-radius: 6px;
     object-fit: cover;
     background: white;
     border: 2px solid #e2e8f0;
@@ -1455,7 +1457,7 @@
 }
 
 .establishment-name {
-    font-size: 13px;  /* Reduced from 14px */
+    font-size: 12px;  /* Reduced from 13px */
     font-weight: 600;
     color: #2d3748;
     white-space: nowrap;
@@ -1465,7 +1467,7 @@
 }
 
 .establishment-category {
-    font-size: 11px;  /* Reduced from 12px */
+    font-size: 10px;  /* Reduced from 11px */
     color: #718096;
     display: flex;
     align-items: center;
@@ -1474,20 +1476,20 @@
 
 /* REAL-TIME STATUS BADGE */
 .establishment-status {
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 12px;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 10px;
     font-weight: 700;
     text-transform: uppercase;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .establishment-status::before {
     content: '';
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     display: inline-block;
 }
@@ -1523,24 +1525,24 @@
 /* Action buttons - COMPACT */
 .best-seller-actions {
     display: flex;
-    gap: 6px;
+    gap: 5px;
 }
 
 .view-item-btn {
     flex: 1;
-    padding: 9px 14px;  /* Reduced padding */
+    padding: 8px 12px;  /* Reduced padding */
     background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
     color: white;
     border: none;
-    border-radius: 9px;
+    border-radius: 8px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .view-item-btn:hover {
@@ -1553,12 +1555,12 @@
 }
 
 .add-to-cart-btn {
-    padding: 9px;
+    padding: 8px;
     background: white;
     color: #B71C1C;
     border: 2px solid #B71C1C;
-    border-radius: 9px;
-    font-size: 15px;
+    border-radius: 8px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
