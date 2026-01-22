@@ -1189,8 +1189,8 @@ function getCookie(name) {
         init();
     }
 })();/* ==========================================
-   ADD THIS TO YOUR kabsueats.js FILE
-   Best Sellers Section JavaScript
+   BEST SELLERS JAVASCRIPT - UPDATED
+   Real-time status + No closed badge
    ========================================== */
 
 // Best Sellers Management
@@ -1214,6 +1214,9 @@ const BestSellers = {
 
         // Auto-refresh every 5 minutes
         setInterval(() => this.loadBestSellers(), 300000);
+
+        // Update status every minute
+        setInterval(() => this.updateAllStatuses(), 60000);
     },
 
     setupScrollButtons() {
@@ -1225,7 +1228,6 @@ const BestSellers = {
             return;
         }
 
-        // Scroll left
         leftBtn.addEventListener('click', () => {
             this.scrollContainer.scrollBy({
                 left: -300,
@@ -1233,7 +1235,6 @@ const BestSellers = {
             });
         });
 
-        // Scroll right
         rightBtn.addEventListener('click', () => {
             this.scrollContainer.scrollBy({
                 left: 300,
@@ -1241,12 +1242,10 @@ const BestSellers = {
             });
         });
 
-        // Update button states on scroll
         this.scrollContainer.addEventListener('scroll', () => {
             this.updateScrollButtons();
         });
 
-        // Initial button state
         this.updateScrollButtons();
     },
 
@@ -1259,11 +1258,46 @@ const BestSellers = {
         const scrollLeft = this.scrollContainer.scrollLeft;
         const maxScroll = this.scrollContainer.scrollWidth - this.scrollContainer.clientWidth;
 
-        // Disable left button at start
         leftBtn.disabled = scrollLeft <= 0;
-
-        // Disable right button at end
         rightBtn.disabled = scrollLeft >= maxScroll - 1;
+    },
+
+    // ✅ Check if establishment is open NOW
+    isEstablishmentOpen(openingTime, closingTime) {
+        if (!openingTime || !closingTime) return false;
+
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+
+        const [openHour, openMin] = openingTime.split(':').map(Number);
+        const [closeHour, closeMin] = closingTime.split(':').map(Number);
+
+        const openingMinutes = openHour * 60 + openMin;
+        const closingMinutes = closeHour * 60 + closeMin;
+
+        if (openingMinutes <= closingMinutes) {
+            // Normal hours (e.g., 8:00 AM - 10:00 PM)
+            return currentTime >= openingMinutes && currentTime <= closingMinutes;
+        } else {
+            // Overnight hours (e.g., 10:00 PM - 2:00 AM)
+            return currentTime >= openingMinutes || currentTime <= closingMinutes;
+        }
+    },
+
+    // ✅ Update all status badges in real-time
+    updateAllStatuses() {
+        document.querySelectorAll('.best-seller-card').forEach(card => {
+            const statusBadge = card.querySelector('.establishment-status');
+            if (!statusBadge) return;
+
+            const openingTime = statusBadge.dataset.openingTime;
+            const closingTime = statusBadge.dataset.closingTime;
+
+            const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
+
+            statusBadge.className = `establishment-status ${isOpen ? 'open' : 'closed'}`;
+            statusBadge.textContent = isOpen ? 'Open' : 'Closed';
+        });
     },
 
     async loadBestSellers() {
@@ -1335,17 +1369,21 @@ const BestSellers = {
 
         this.scrollContainer.innerHTML = this.items.map(item => this.createItemCard(item)).join('');
 
-        // Add event listeners to cards
         this.attachEventListeners();
 
-        // Update scroll buttons
         setTimeout(() => this.updateScrollButtons(), 100);
     },
 
     createItemCard(item) {
         const establishment = item.establishment;
-        const isAvailable = item.is_available && establishment.status === 'Open';
-        const statusClass = establishment.status.toLowerCase();
+
+        // ✅ Get opening/closing times from establishment
+        const openingTime = establishment.opening_time || '';
+        const closingTime = establishment.closing_time || '';
+
+        // ✅ Calculate REAL-TIME status
+        const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
+        const isAvailable = item.is_available && isOpen;
 
         return `
             <div class="best-seller-card" data-item-id="${item.id}" data-establishment-id="${establishment.id}">
@@ -1355,10 +1393,6 @@ const BestSellers = {
                         Best Seller
                     </div>
                 ` : ''}
-
-                <div class="availability-badge ${isAvailable ? 'available' : 'out-of-stock'}">
-                    ${isAvailable ? 'Available' : 'Closed'}
-                </div>
 
                 <img
                     src="${item.image_url || '/static/images/placeholder-food.jpg'}"
@@ -1393,8 +1427,10 @@ const BestSellers = {
                             <div class="establishment-name">${this.escapeHtml(establishment.name)}</div>
                             <div class="establishment-category">
                                 ${this.escapeHtml(establishment.category)} •
-                                <span class="establishment-status ${statusClass}">
-                                    ${establishment.status}
+                                <span class="establishment-status ${isOpen ? 'open' : 'closed'}"
+                                      data-opening-time="${openingTime}"
+                                      data-closing-time="${closingTime}">
+                                    ${isOpen ? 'Open' : 'Closed'}
                                 </span>
                             </div>
                         </div>
@@ -1417,7 +1453,6 @@ const BestSellers = {
     },
 
     attachEventListeners() {
-        // View details buttons
         document.querySelectorAll('.best-seller-card .view-item-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1427,7 +1462,6 @@ const BestSellers = {
             });
         });
 
-        // Add to cart buttons
         document.querySelectorAll('.best-seller-card .add-to-cart-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1438,10 +1472,9 @@ const BestSellers = {
             });
         });
 
-        // Card click - view establishment
         document.querySelectorAll('.best-seller-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return; // Ignore if button clicked
+                if (e.target.closest('button')) return;
                 const establishmentId = card.dataset.establishmentId;
                 this.viewEstablishment(establishmentId);
             });
@@ -1473,10 +1506,8 @@ const BestSellers = {
             const data = await response.json();
 
             if (data.success) {
-                // Show success message
                 this.showToast('Item added to cart!', 'success');
 
-                // Update cart count if function exists
                 if (typeof updateCartCount === 'function') {
                     updateCartCount();
                 }
@@ -1490,7 +1521,6 @@ const BestSellers = {
     },
 
     showToast(message, type = 'info') {
-        // Create toast notification
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.style.cssText = `
@@ -1509,7 +1539,6 @@ const BestSellers = {
 
         document.body.appendChild(toast);
 
-        // Remove after 3 seconds
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
@@ -1540,13 +1569,12 @@ const BestSellers = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing Best Sellers...');
 
-    // Small delay to ensure everything is loaded
     setTimeout(() => {
         BestSellers.init();
     }, 500);
 });
 
-// Also try to initialize on window load as backup
+// Backup initialization
 window.addEventListener('load', function() {
     if (!BestSellers.scrollContainer) {
         console.log('Retrying Best Sellers initialization...');

@@ -4506,6 +4506,10 @@ def create_test_notification(request):
         }, status=500)
 
 
+# ==========================================
+# ADD THIS TO YOUR views.py FILE - UPDATED VERSION
+# ==========================================
+
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -4516,6 +4520,7 @@ def get_best_sellers(request):
     """
     API endpoint to fetch real-time best sellers across all establishments.
     Returns top-selling menu items based on order frequency and quantity.
+    Includes opening/closing times for real-time status calculation.
     """
     try:
         # Get time range for "recent" orders (last 30 days)
@@ -4561,6 +4566,11 @@ def get_best_sellers(request):
                     'status': establishment.status,
                     'image_url': establishment.image.url if establishment.image else None,
                     'rating': establishment.average_rating() if hasattr(establishment, 'average_rating') else 0,
+                    # ✅ ADD THESE FOR REAL-TIME STATUS CALCULATION
+                    'opening_time': establishment.opening_time.strftime(
+                        '%H:%M') if establishment.opening_time else None,
+                    'closing_time': establishment.closing_time.strftime(
+                        '%H:%M') if establishment.closing_time else None,
                 }
             })
 

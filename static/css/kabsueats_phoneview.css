@@ -1061,11 +1061,7 @@
 .social-link {
     /* Old styles removed - using new footer classes above */
 }/* ==========================================
-   ADD THIS TO YOUR kabsueats_phoneview.css FILE
-   ========================================== */
-
-/* ==========================================
-   BEST SELLERS SECTION STYLES - MOBILE
+   BEST SELLERS SECTION STYLES - MOBILE UPDATED
    ========================================== */
 
 .best-sellers-section {
@@ -1165,16 +1161,16 @@
     scroll-behavior: smooth;
     padding: 8px 3px 15px 3px;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Hide scrollbar on Firefox mobile */
+    scrollbar-width: none;
 }
 
 .best-sellers-scroll::-webkit-scrollbar {
-    display: none; /* Hide scrollbar on mobile */
+    display: none;
 }
 
-/* Individual best seller card - Mobile */
+/* Individual best seller card - SMALLER MOBILE */
 .best-seller-card {
-    flex: 0 0 240px;
+    flex: 0 0 200px;  /* Reduced from 240px */
     background: white;
     border-radius: 12px;
     overflow: hidden;
@@ -1189,27 +1185,27 @@
     border-color: #B71C1C;
 }
 
-/* Best seller badge */
+/* Best seller badge - ONLY THIS ONE */
 .best-seller-badge {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 8px;
+    left: 8px;
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
     color: white;
-    padding: 5px 10px;
+    padding: 4px 9px;
     border-radius: 16px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     z-index: 5;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .best-seller-badge i {
     animation: rotate 2s linear infinite;
-    font-size: 10px;
+    font-size: 9px;
 }
 
 @keyframes rotate {
@@ -1221,46 +1217,46 @@
     }
 }
 
-/* Item image */
+/* Item image - SMALLER */
 .best-seller-image {
     width: 100%;
-    height: 160px;
+    height: 130px;  /* Reduced from 160px */
     object-fit: cover;
     background: #f7fafc;
 }
 
-/* Card content */
+/* Card content - COMPACT */
 .best-seller-content {
-    padding: 12px;
+    padding: 10px;  /* Reduced from 12px */
 }
 
 .best-seller-name {
-    font-size: 15px;
+    font-size: 14px;  /* Reduced from 15px */
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 38px;
-    line-height: 1.3;
+    min-height: 34px;
+    line-height: 1.2;
 }
 
 .best-seller-price {
-    font-size: 19px;
+    font-size: 17px;  /* Reduced from 19px */
     font-weight: 800;
     color: #B71C1C;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
-/* Stats row - Mobile */
+/* Stats row - COMPACT */
 .best-seller-stats {
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -1268,13 +1264,13 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    font-size: 11px;
+    font-size: 10px;  /* Reduced from 11px */
     color: #718096;
 }
 
 .stat-item i {
     color: #B71C1C;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .stat-item strong {
@@ -1282,20 +1278,20 @@
     font-weight: 600;
 }
 
-/* Establishment info - Mobile */
+/* Establishment info - COMPACT */
 .best-seller-establishment {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
+    gap: 7px;
+    padding: 7px;
     background: #f7fafc;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    border-radius: 7px;
+    margin-bottom: 8px;
 }
 
 .establishment-logo {
-    width: 35px;
-    height: 35px;
+    width: 32px;  /* Reduced from 35px */
+    height: 32px;
     border-radius: 6px;
     object-fit: cover;
     background: white;
@@ -1309,25 +1305,43 @@
 }
 
 .establishment-name {
-    font-size: 12px;
+    font-size: 11px;  /* Reduced from 12px */
     font-weight: 600;
     color: #2d3748;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 2px;
 }
 
 .establishment-category {
-    font-size: 11px;
+    font-size: 10px;
     color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
 }
 
+/* REAL-TIME STATUS BADGE */
 .establishment-status {
-    font-size: 10px;
-    padding: 2px 6px;
+    font-size: 9px;
+    padding: 2px 7px;
     border-radius: 10px;
-    font-weight: 600;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     white-space: nowrap;
+}
+
+.establishment-status::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display: inline-block;
 }
 
 .establishment-status.open {
@@ -1335,32 +1349,50 @@
     color: #22543d;
 }
 
+.establishment-status.open::before {
+    background: #22543d;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
 .establishment-status.closed {
     background: #fed7d7;
     color: #742a2a;
 }
 
-/* Action button - Mobile */
+.establishment-status.closed::before {
+    background: #742a2a;
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Action buttons - COMPACT */
 .best-seller-actions {
     display: flex;
-    gap: 6px;
+    gap: 5px;
 }
 
 .view-item-btn {
     flex: 1;
-    padding: 9px 12px;
+    padding: 8px 10px;  /* Reduced padding */
     background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 7px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1369,12 +1401,12 @@
 }
 
 .add-to-cart-btn {
-    padding: 9px;
+    padding: 8px;
     background: white;
     color: #B71C1C;
     border: 2px solid #B71C1C;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 7px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -1434,32 +1466,10 @@
     margin: 0;
 }
 
-/* Availability badge */
-.availability-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 5px 10px;
-    border-radius: 16px;
-    font-size: 10px;
-    font-weight: 700;
-    z-index: 5;
-}
-
-.availability-badge.available {
-    background: #c6f6d5;
-    color: #22543d;
-}
-
-.availability-badge.out-of-stock {
-    background: #fed7d7;
-    color: #742a2a;
-}
-
 /* Small phone optimization */
 @media (max-width: 380px) {
     .best-seller-card {
-        flex: 0 0 220px;
+        flex: 0 0 180px;  /* Even smaller for small phones */
     }
 
     .best-sellers-header h2 {
@@ -1473,6 +1483,6 @@
     }
 
     .best-seller-image {
-        height: 140px;
+        height: 120px;
     }
 }
