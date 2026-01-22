@@ -1061,8 +1061,8 @@
 .social-link {
     /* Old styles removed - using new footer classes above */
 }/* ==========================================
-   BEST SELLERS MOBILE - FINAL VERSION
-   Smaller height + compact design
+   BEST SELLERS MOBILE - SUPER FINAL
+   Even smaller dimensions
    ========================================== */
 
 .best-sellers-section {
@@ -1096,12 +1096,8 @@
 }
 
 @keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
 .best-sellers-header p {
@@ -1110,7 +1106,6 @@
     margin: 0;
 }
 
-/* Container with scroll buttons */
 .best-sellers-container {
     position: relative;
     display: flex;
@@ -1118,7 +1113,6 @@
     gap: 8px;
 }
 
-/* Scroll buttons */
 .scroll-btn {
     flex-shrink: 0;
     width: 40px;
@@ -1147,17 +1141,15 @@
     background: #cbd5e0;
 }
 
-/* Wrapper */
 .best-sellers-wrapper {
     flex: 1;
     overflow: hidden;
     position: relative;
 }
 
-/* Scrollable container */
 .best-sellers-scroll {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     overflow-x: auto;
     scroll-behavior: smooth;
     padding: 8px 3px 15px 3px;
@@ -1169,11 +1161,11 @@
     display: none;
 }
 
-/* Card - REDUCED HEIGHT */
+/* SUPER SMALL CARD */
 .best-seller-card {
-    flex: 0 0 180px;  /* Reduced from 200px */
+    flex: 0 0 170px;  /* Reduced from 180px */
     background: white;
-    border-radius: 12px;
+    border-radius: 11px;
     overflow: hidden;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease;
@@ -1186,27 +1178,26 @@
     border-color: #B71C1C;
 }
 
-/* Badge */
 .best-seller-badge {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 7px;
+    left: 7px;
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
     color: white;
-    padding: 3px 8px;
-    border-radius: 14px;
-    font-size: 9px;
+    padding: 3px 7px;
+    border-radius: 13px;
+    font-size: 8px;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     z-index: 5;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .best-seller-badge i {
     animation: rotate 2s linear infinite;
-    font-size: 8px;
+    font-size: 7px;
 }
 
 @keyframes rotate {
@@ -1214,46 +1205,44 @@
     to { transform: rotate(360deg); }
 }
 
-/* Image - SMALLER */
+/* SUPER SMALL IMAGE */
 .best-seller-image {
     width: 100%;
-    height: 110px;  /* Reduced from 130px */
+    height: 100px;  /* Reduced from 110px */
     object-fit: cover;
     background: #f7fafc;
 }
 
-/* Content - VERY COMPACT */
 .best-seller-content {
-    padding: 8px;  /* Reduced from 10px */
+    padding: 7px;  /* Reduced from 8px */
 }
 
 .best-seller-name {
-    font-size: 13px;  /* Reduced from 14px */
+    font-size: 12px;  /* Reduced from 13px */
     font-weight: 700;
     color: #2d3748;
     margin-bottom: 3px;
     display: -webkit-box;
-    -webkit-line-clamp: 1;  /* Only 1 line */
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 18px;
+    min-height: 16px;
     line-height: 1.3;
 }
 
 .best-seller-price {
-    font-size: 16px;  /* Reduced from 17px */
+    font-size: 15px;  /* Reduced from 16px */
     font-weight: 800;
     color: #B71C1C;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
-/* Stats - COMPACT */
 .best-seller-stats {
     display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-    padding-bottom: 6px;
+    gap: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -1261,13 +1250,13 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    font-size: 9px;  /* Reduced from 10px */
+    font-size: 8px;  /* Reduced from 9px */
     color: #718096;
 }
 
 .stat-item i {
     color: #B71C1C;
-    font-size: 10px;
+    font-size: 9px;
 }
 
 .stat-item strong {
@@ -1275,21 +1264,20 @@
     font-weight: 600;
 }
 
-/* Establishment - COMPACT */
 .best-seller-establishment {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px;
+    gap: 5px;
+    padding: 5px;
     background: #f7fafc;
-    border-radius: 6px;
-    margin-bottom: 6px;
+    border-radius: 5px;
+    margin-bottom: 5px;
 }
 
 .establishment-logo {
-    width: 28px;  /* Reduced from 32px */
-    height: 28px;
-    border-radius: 5px;
+    width: 26px;  /* Reduced from 28px */
+    height: 26px;
+    border-radius: 4px;
     object-fit: cover;
     background: white;
     border: 2px solid #e2e8f0;
@@ -1302,7 +1290,7 @@
 }
 
 .establishment-name {
-    font-size: 10px;  /* Reduced from 11px */
+    font-size: 9px;  /* Reduced from 10px */
     font-weight: 600;
     color: #2d3748;
     white-space: nowrap;
@@ -1312,19 +1300,18 @@
 }
 
 .establishment-category {
-    font-size: 9px;
+    font-size: 8px;
     color: #718096;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     flex-wrap: wrap;
 }
 
-/* Status */
 .establishment-status {
-    font-size: 8px;
-    padding: 2px 6px;
-    border-radius: 8px;
+    font-size: 7px;
+    padding: 2px 5px;
+    border-radius: 7px;
     font-weight: 700;
     text-transform: uppercase;
     display: inline-flex;
@@ -1365,7 +1352,6 @@
     50% { opacity: 0.5; }
 }
 
-/* Buttons - COMPACT */
 .best-seller-actions {
     display: flex;
     gap: 4px;
@@ -1373,19 +1359,19 @@
 
 .view-item-btn {
     flex: 1;
-    padding: 7px 9px;  /* Reduced */
+    padding: 6px 8px;  /* Reduced */
     background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
     color: white;
     border: none;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1394,12 +1380,12 @@
 }
 
 .add-to-cart-btn {
-    padding: 7px;
+    padding: 6px;
     background: white;
     color: #B71C1C;
     border: 2px solid #B71C1C;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -1414,7 +1400,6 @@
     transform: scale(0.9);
 }
 
-/* Loading */
 .loading-spinner {
     display: flex;
     flex-direction: column;
@@ -1435,7 +1420,6 @@
     margin: 0;
 }
 
-/* Empty state */
 .no-best-sellers {
     text-align: center;
     padding: 40px 15px;
@@ -1459,13 +1443,12 @@
     margin: 0;
 }
 
-/* Small phones */
 @media (max-width: 380px) {
     .best-seller-card {
-        flex: 0 0 170px;
+        flex: 0 0 160px;
     }
 
     .best-seller-image {
-        height: 100px;
+        height: 90px;
     }
 }
