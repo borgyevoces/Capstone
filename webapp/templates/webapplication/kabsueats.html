@@ -226,120 +226,51 @@
             }
         }
 
-        /* ✅ NEW: Dropdown Toggle Button Styles */
-        .view-toggle-dropdown {
+        /* ✅ NEW: View Map Dropdown Styles - SAME AS FILTER DROPDOWNS */
+        .view-map-dropdown-wrapper {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-map-dropdown {
             position: relative;
             display: inline-block;
-            margin: 20px 0;
         }
 
-        .view-toggle-btn {
-            background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .view-toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(183, 28, 28, 0.4);
-        }
-
-        .view-toggle-btn i.fa-chevron-down {
-            transition: transform 0.3s ease;
-        }
-
-        .view-toggle-btn.active i.fa-chevron-down {
-            transform: rotate(180deg);
-        }
-
-        .view-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
+        .view-map-select {
+            appearance: none;
             background: white;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            min-width: 280px;
-            overflow: hidden;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .view-dropdown-menu.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .view-dropdown-item {
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f0f0f0;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .view-dropdown-item:last-child {
-            border-bottom: none;
-        }
-
-        .view-dropdown-item:hover {
-            background: #f8f8f8;
-            padding-left: 24px;
-        }
-
-        .view-dropdown-item i {
-            font-size: 18px;
-            color: #B71C1C;
-            width: 24px;
-            text-align: center;
-        }
-
-        .view-dropdown-item-content {
-            flex: 1;
-        }
-
-        .view-dropdown-item-title {
-            font-weight: 600;
+            padding: 10px 35px 10px 15px;
             font-size: 14px;
             color: #333;
-            margin-bottom: 2px;
+            cursor: pointer;
+            min-width: 180px;
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
         }
 
-        .view-dropdown-item-desc {
-            font-size: 12px;
-            color: #666;
+        .view-map-select:hover {
+            border-color: #B71C1C;
+            box-shadow: 0 2px 8px rgba(183, 28, 28, 0.15);
+        }
+
+        .view-map-select:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
         }
 
         @media (max-width: 768px) {
-            .view-toggle-btn {
-                font-size: 14px;
-                padding: 10px 20px;
-            }
-
-            .view-dropdown-menu {
-                min-width: 260px;
-            }
-
-            .view-dropdown-item {
-                padding: 12px 16px;
+            .view-map-select {
+                min-width: 150px;
+                font-size: 13px;
+                padding: 8px 30px 8px 12px;
             }
         }
     </style>
@@ -443,71 +374,24 @@
                 {% endif %}
             </div>
 
-            {% block filters %}
-            <div class="filter_container">
-                <div class="select_wrapper">
-                    <select id="statusFilter" onchange="applyFilters()">
-                        <option value="">Status</option>
-                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
-                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="alphabetFilter" onchange="applyFilters()">
-                        <option value="">Alphabetical</option>
-                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="distanceFilter" onchange="applyFilters()">
-                        <option value="">Distance</option>
-                        <option value="nearest">Nearest to Farthest</option>
-                        <option value="farthest">Farthest to Nearest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="ratingsFilter" onchange="applyFilters()">
-                        <option value="">Ratings</option>
-                        <option value="highest">Highest to Lowest</option>
-                        <option value="lowest">Lowest to Lowest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="categoryFilter" onchange="applyFilters()">
-                        <option value="">Categories</option>
-                        {% for cat in all_categories %}
-                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
-                        {% endfor %}
+            <!-- ✅ NEW: View Map Dropdown (Top - Left Side) -->
+            <div class="view-map-dropdown-wrapper">
+                <div class="view-map-dropdown">
+                    <select id="viewMapSelect" class="view-map-select">
+                        <option value="establishments">📍 View Establishments</option>
+                        <option value="map">🗺️ View Map</option>
+                        <option value="bestsellers">🔥 Best Sellers</option>
                     </select>
                 </div>
             </div>
-            {% endblock %}
 
-            <!-- ✅ NEW: Dropdown for View Map and Best Sellers -->
-            <div class="view-toggle-dropdown">
-                <button class="view-toggle-btn" id="viewToggleBtn">
-                    <i class="fas fa-eye"></i>
-                    <span id="viewToggleText">View Options</span>
-                    <i class="fas fa-chevron-down"></i>
+            <!-- Map Section (Hidden by default) -->
+            <div id="mapSection" style="display: none;">
+                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
+                <!-- ✅ Location Route Button -->
+                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
+                    <i class="fas fa-route"></i>
                 </button>
-                <div class="view-dropdown-menu" id="viewDropdownMenu">
-                    <div class="view-dropdown-item" data-view="map">
-                        <i class="fas fa-map-marked-alt"></i>
-                        <div class="view-dropdown-item-content">
-                            <div class="view-dropdown-item-title">View Map</div>
-                            <div class="view-dropdown-item-desc">See all establishments on an interactive map</div>
-                        </div>
-                    </div>
-                    <div class="view-dropdown-item" data-view="bestsellers">
-                        <i class="fas fa-fire"></i>
-                        <div class="view-dropdown-item-content">
-                            <div class="view-dropdown-item-title">Best Sellers</div>
-                            <div class="view-dropdown-item-desc">Top-rated items across KabsuEats</div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- ==========================================
@@ -554,16 +438,51 @@
                 </div>
             </div>
 
-            <!-- Map Section (Hidden by default) -->
-            <div id="mapSection" style="display: none;">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <!-- ✅ Location Route Button -->
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
-                    <i class="fas fa-route"></i>
-                </button>
+            <!-- ✅ Filter Dropdowns - NOW BELOW (Above Establishments) -->
+            {% block filters %}
+            <div class="filter_container">
+                <div class="select_wrapper">
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">Status</option>
+                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
+                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="alphabetFilter" onchange="applyFilters()">
+                        <option value="">Alphabetical</option>
+                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="distanceFilter" onchange="applyFilters()">
+                        <option value="">Distance</option>
+                        <option value="nearest">Nearest to Farthest</option>
+                        <option value="farthest">Farthest to Nearest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="ratingsFilter" onchange="applyFilters()">
+                        <option value="">Ratings</option>
+                        <option value="highest">Highest to Lowest</option>
+                        <option value="lowest">Lowest to Lowest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="categoryFilter" onchange="applyFilters()">
+                        <option value="">Categories</option>
+                        {% for cat in all_categories %}
+                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
+            {% endblock %}
 
-            <div class="nearest_container">
+            <!-- Establishments Container (Now shows by default) -->
+            <div class="nearest_container" id="establishmentsContainer">
                 <div class="nearest_slidescontainer">
                     <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
                     {% if food_establishments %}
@@ -749,64 +668,45 @@
             // ✅ Initialize location route button
             initLocationRouteButton();
 
-            // ✅ NEW: Initialize dropdown toggle for View Map and Best Sellers
-            initViewToggleDropdown();
+            // ✅ Initialize view switcher dropdown
+            initViewSwitcher();
         });
 
-        // ✅ NEW: Dropdown Toggle Functionality
-        function initViewToggleDropdown() {
-            const viewToggleBtn = document.getElementById('viewToggleBtn');
-            const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+        // ✅ View Switcher Function (Map, Best Sellers, Establishments)
+        function initViewSwitcher() {
+            const viewMapSelect = document.getElementById('viewMapSelect');
             const mapSection = document.getElementById('mapSection');
             const bestSellersSection = document.getElementById('bestSellersSection');
-            const viewDropdownItems = document.querySelectorAll('.view-dropdown-item');
+            const establishmentsContainer = document.getElementById('establishmentsContainer');
+            const filterContainer = document.querySelector('.filter_container');
 
-            if (!viewToggleBtn || !viewDropdownMenu) return;
+            if (!viewMapSelect) return;
 
-            // Toggle dropdown
-            viewToggleBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                viewToggleBtn.classList.toggle('active');
-                viewDropdownMenu.classList.toggle('show');
-            });
+            viewMapSelect.addEventListener('change', function() {
+                const selectedView = this.value;
 
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!viewToggleBtn.contains(e.target) && !viewDropdownMenu.contains(e.target)) {
-                    viewToggleBtn.classList.remove('active');
-                    viewDropdownMenu.classList.remove('show');
-                }
-            });
+                // Hide all sections first
+                mapSection.style.display = 'none';
+                bestSellersSection.style.display = 'none';
+                establishmentsContainer.style.display = 'none';
+                if (filterContainer) filterContainer.style.display = 'none';
 
-            // Handle dropdown item clicks
-            viewDropdownItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const viewType = this.dataset.view;
+                // Show selected section
+                if (selectedView === 'map') {
+                    mapSection.style.display = 'block';
 
-                    // Hide both sections first
-                    mapSection.style.display = 'none';
-                    bestSellersSection.style.display = 'none';
-
-                    // Show selected section
-                    if (viewType === 'map') {
-                        mapSection.style.display = 'block';
-                        document.getElementById('viewToggleText').innerHTML = 'View Map';
-
-                        // Initialize map if not already initialized
-                        if (typeof establishmentsMap !== 'undefined' && establishmentsMap) {
-                            setTimeout(() => {
-                                establishmentsMap.invalidateSize();
-                            }, 100);
-                        }
-                    } else if (viewType === 'bestsellers') {
-                        bestSellersSection.style.display = 'block';
-                        document.getElementById('viewToggleText').innerHTML = 'Best Sellers';
+                    // Initialize map if not already initialized
+                    if (typeof establishmentsMap !== 'undefined' && establishmentsMap) {
+                        setTimeout(() => {
+                            establishmentsMap.invalidateSize();
+                        }, 100);
                     }
-
-                    // Close dropdown
-                    viewToggleBtn.classList.remove('active');
-                    viewDropdownMenu.classList.remove('show');
-                });
+                } else if (selectedView === 'bestsellers') {
+                    bestSellersSection.style.display = 'block';
+                } else if (selectedView === 'establishments') {
+                    establishmentsContainer.style.display = 'block';
+                    if (filterContainer) filterContainer.style.display = 'flex';
+                }
             });
         }
 
