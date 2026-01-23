@@ -369,6 +369,52 @@
             {% endblock %}
 
             <!-- ==========================================
+                 🔥 AUTOMATIC BEST SELLERS SYSTEM
+                 100% AUTOMATIC - NO MAINTENANCE NEEDED
+
+                 Features:
+                 ✅ Finds best-selling items from database automatically
+                 ✅ Ranks by order count and quantity sold
+                 ✅ Auto-updates every 5 minutes
+                 ✅ Real-time Open/Closed status (updates every 1 minute)
+                 ✅ Handles authentication automatically
+                 ✅ Fully responsive (desktop + mobile)
+                 ✅ Smooth scrolling with left/right buttons
+                 ✅ Login redirect for unauthenticated users
+                 ========================================== -->
+            <div class="best-sellers-section" id="bestSellersSection">
+                <div class="best-sellers-header">
+                    <h2>
+                        <i class="fas fa-fire"></i>
+                        Best Sellers Across KabsuEats
+                    </h2>
+                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
+                </div>
+
+                <div class="best-sellers-container">
+                    <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="best-sellers-wrapper" id="bestSellersWrapper">
+                        <div class="best-sellers-scroll" id="bestSellersScroll">
+                            <!-- 🔄 Loading state - will be replaced automatically -->
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading best sellers...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="scroll-btn scroll-btn-right" id="scrollRightBtn" aria-label="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- ========================================== -->
+
+
+            <!-- ==========================================
                  ✅ BEST SELLERS - COMPLETE VERSION
                  - Smaller height & width
                  - Login redirect on cart click

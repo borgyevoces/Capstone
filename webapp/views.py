@@ -4507,45 +4507,67 @@ def create_test_notification(request):
 
 
 # ==========================================
-# ADD THIS TO YOUR views.py FILE - UPDATED VERSION
+# ✅ ADD THIS TO YOUR views.py FILE
+# ADD AT THE BOTTOM, BEFORE THE LAST LINE
 # ==========================================
 
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F
 from django.utils import timezone
 from datetime import timedelta
+from django.views.decorators.http import require_http_methods
 
 
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    API endpoint to fetch real-time best sellers across all establishments.
-    Returns top-selling menu items based on order frequency and quantity.
-    Includes opening/closing times for real-time status calculation.
+    🔥 AUTOMATIC BEST SELLERS API - REAL-TIME
+
+    Automatically fetches best-selling items across ALL establishments based on:
+    1. Items marked as is_top_seller=True (manual selection by owners)
+    2. Items with most orders in last 30 days (automatic ranking)
+    3. Items with highest total quantity sold (popularity)
+
+    Returns real-time data with establishment info, opening/closing times,
+    availability status, and sales statistics.
     """
     try:
-        # Get time range for "recent" orders (last 30 days)
+        # ✅ Time threshold for "recent" orders (last 30 days)
         time_threshold = timezone.now() - timedelta(days=30)
 
-        # Query to get best-selling items with establishment info
+        # ✅ AUTOMATIC QUERY - Gets best sellers based on:
+        # - Manual selection (is_top_seller=True) OR
+        # - Automatic ranking (most orders in last 30 days)
         best_sellers = MenuItem.objects.filter(
-            Q(is_top_seller=True) |
-            Q(orderitem__order__status__in=['PAID', 'PREPARING', 'READY', 'COMPLETED']) &
-            Q(orderitem__order__created_at__gte=time_threshold)
+            Q(is_top_seller=True) |  # Manually marked by owners
+            Q(
+                orderitem__order__status__in=['PAID', 'PREPARING', 'READY', 'COMPLETED'],
+                orderitem__order__created_at__gte=time_threshold
+            )
         ).annotate(
+            # ✅ Calculate total orders for this item
             total_orders=Count('orderitem__order', distinct=True),
+            # ✅ Calculate total quantity sold
             total_quantity_sold=Sum('orderitem__quantity')
         ).filter(
-            quantity__gt=0,  # Only available items
-            total_orders__gt=0  # Only items with sales
+            quantity__gt=0,  # ✅ Only show items that are in stock
+            food_establishment__isnull=False  # ✅ Must belong to an establishment
         ).select_related(
             'food_establishment',
             'food_establishment__category'
-        ).order_by('-total_orders', '-total_quantity_sold')[:20]  # Top 20 best sellers
+        ).order_by(
+            '-total_orders',  # ✅ Sort by most orders first
+            '-total_quantity_sold',  # ✅ Then by most sold
+            '-is_top_seller'  # ✅ Then by manual selection
+        )[:20]  # ✅ Top 20 best sellers
 
-        # Format response data
+        # ✅ Format response data with complete info
         items_data = []
         for item in best_sellers:
             establishment = item.food_establishment
+
+            # ✅ Skip if establishment is disabled
+            if not establishment:
+                continue
 
             items_data.append({
                 'id': item.id,
@@ -4563,10 +4585,8 @@ def get_best_sellers(request):
                     'name': establishment.name,
                     'category': establishment.category.name if establishment.category else 'Other',
                     'address': establishment.address,
-                    'status': establishment.status,
                     'image_url': establishment.image.url if establishment.image else None,
-                    'rating': establishment.average_rating() if hasattr(establishment, 'average_rating') else 0,
-                    # ✅ ADD THESE FOR REAL-TIME STATUS CALCULATION
+                    # ✅ Opening/closing times for real-time status calculation
                     'opening_time': establishment.opening_time.strftime(
                         '%H:%M') if establishment.opening_time else None,
                     'closing_time': establishment.closing_time.strftime(
@@ -4577,11 +4597,14 @@ def get_best_sellers(request):
         return JsonResponse({
             'success': True,
             'count': len(items_data),
-            'items': items_data
+            'items': items_data,
+            'timestamp': timezone.now().isoformat()
         })
 
     except Exception as e:
+        import traceback
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'traceback': traceback.format_exc()
         }, status=500)
