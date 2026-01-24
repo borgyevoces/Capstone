@@ -226,11 +226,12 @@
             }
         }
 
-        /* ✅ RED DROPDOWN BUTTON - Left Side (Like Screenshot) */
+        /* ✅ RED DROPDOWN BUTTON - Left Side (NOT CENTER!) */
         .view-dropdown-container {
             margin: 25px 0;
             display: flex;
-            justify-content: flex-start; /* Left aligned */
+            justify-content: flex-start; /* LEFT aligned */
+            align-items: center;
         }
 
         .view-dropdown-wrapper {
@@ -273,12 +274,12 @@
             flex: 1;
         }
 
-        .view-dropdown-button i.fa-chevron-up {
+        .view-dropdown-button i.fa-chevron-down {
             font-size: 14px;
             transition: transform 0.3s ease;
         }
 
-        .view-dropdown-button.open i.fa-chevron-up {
+        .view-dropdown-button.open i.fa-chevron-down {
             transform: rotate(180deg);
         }
 
@@ -557,7 +558,7 @@
             </div>
             {% endblock %}
 
-            <!-- ✅ RED DROPDOWN BUTTON (Left Side) -->
+            <!-- ✅ RED DROPDOWN BUTTON (LEFT SIDE - NOT CENTER) -->
             <div class="view-dropdown-container">
                 <div class="view-dropdown-wrapper">
                     <button class="view-dropdown-button" id="viewDropdownBtn">
@@ -565,7 +566,7 @@
                             <i class="fas fa-eye"></i>
                             <span id="currentViewText">Best Sellers</span>
                         </span>
-                        <i class="fas fa-chevron-up"></i>
+                        <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="view-dropdown-menu" id="viewDropdownMenu">
                         <div class="view-dropdown-option" data-view="map">
@@ -584,6 +585,17 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
+            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
+
+            <!-- Map Section (Hidden by default) -->
+            <div id="mapSection" style="display: none;">
+                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
+                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
+                    <i class="fas fa-route"></i>
+                </button>
             </div>
 
             <!-- ==========================================
