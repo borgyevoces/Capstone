@@ -226,14 +226,7 @@
             }
         }
 
-        /* ✅ RED DROPDOWN BUTTON - Left Side (NOT CENTER!) */
-        .view-dropdown-container {
-            margin: 25px 0;
-            display: flex;
-            justify-content: flex-start; /* LEFT aligned */
-            align-items: center;
-        }
-
+        /* ✅ RED DROPDOWN BUTTON - Inline with Filters (LEFT SIDE) */
         .view-dropdown-wrapper {
             position: relative;
             display: inline-block;
@@ -517,7 +510,37 @@
             </div>
 
             {% block filters %}
-            <div class="filter_container">
+            <!-- ✅ RED DROPDOWN BUTTON + FILTERS (LEFT SIDE TOGETHER) -->
+            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap;">
+                <!-- Red Dropdown -->
+                <div class="view-dropdown-wrapper">
+                    <button class="view-dropdown-button" id="viewDropdownBtn">
+                        <span class="view-dropdown-button-text">
+                            <i class="fas fa-eye"></i>
+                            <span id="currentViewText">Best Sellers</span>
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="view-dropdown-menu" id="viewDropdownMenu">
+                        <div class="view-dropdown-option" data-view="map">
+                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">View Map</div>
+                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
+                            </div>
+                        </div>
+                        <div class="view-dropdown-option" data-view="bestsellers">
+                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">Best Sellers</div>
+                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Dropdowns -->
+                <div class="filter_container" style="margin: 0;">
                 <div class="select_wrapper">
                     <select id="statusFilter" onchange="applyFilters()">
                         <option value="">Status</option>
@@ -556,41 +579,13 @@
                     </select>
                 </div>
             </div>
-            {% endblock %}
-
-            <!-- ✅ RED DROPDOWN BUTTON (LEFT SIDE - NOT CENTER) -->
-            <div class="view-dropdown-container">
-                <div class="view-dropdown-wrapper">
-                    <button class="view-dropdown-button" id="viewDropdownBtn">
-                        <span class="view-dropdown-button-text">
-                            <i class="fas fa-eye"></i>
-                            <span id="currentViewText">Best Sellers</span>
-                        </span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="view-dropdown-menu" id="viewDropdownMenu">
-                        <div class="view-dropdown-option" data-view="map">
-                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">View Map</div>
-                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
-                            </div>
-                        </div>
-                        <div class="view-dropdown-option" data-view="bestsellers">
-                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">Best Sellers</div>
-                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+            {% endblock %}
 
             <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
             <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
-            <!-- Map Section (Hidden by default) -->
+            <!-- Map Section (Hidden by default, shows when "View Map" selected) -->
             <div id="mapSection" style="display: none;">
                 <div id="establishmentsMap" style="height:100%; width:100%;"></div>
                 <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
@@ -631,18 +626,7 @@
                 </div>
             </div>
 
-            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
-            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
-
-            <!-- Map Section (Hidden by default, triggered by dropdown) -->
-            <div id="mapSection" style="display: none;">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <!-- ✅ Location Route Button -->
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
-                    <i class="fas fa-route"></i>
-                </button>
-            </div>
-
+            <!-- Establishments List (Always visible) -->
             <div class="nearest_container">
                 <div class="nearest_slidescontainer">
                     <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
