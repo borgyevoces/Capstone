@@ -300,6 +300,48 @@
                 font-size: 13px;
             }
         }
+
+        /* ✅ Pulse animation for user location marker */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(33, 150, 243, 0.8), 0 0 60px rgba(33, 150, 243, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
+            }
+        }
+
+        /* ✅ Custom popup styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .leaflet-popup-tip {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ✅ Map container height */
+        #mapSection {
+            min-height: 500px;
+        }
+
+        #establishmentsMap {
+            height: 600px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            #establishmentsMap {
+                height: 450px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -715,11 +757,18 @@
                 scrollWheelZoom: true
             }).setView([14.2456, 120.8786], 15);
 
-            // Add OpenStreetMap tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
+            // Add Satellite/Imagery tile layer (Esri World Imagery)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
                 maxZoom: 19,
                 minZoom: 10
+            }).addTo(establishmentsMap);
+
+            // Add labels layer on top of satellite imagery
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                maxZoom: 19,
+                pane: 'shadowPane'
             }).addTo(establishmentsMap);
 
             // Add establishment markers from the page
@@ -733,15 +782,26 @@
 
                 if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
                     // Create custom marker based on status
-                    const markerColor = status === 'Open' ? '#4CAF50' : '#F44336';
+                    const markerColor = status === 'Open' ? '#FFB300' : '#FF6B6B';
                     const customIcon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div style="background-color: ${markerColor}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
-                                   <i class="fas fa-store" style="color: white; font-size: 14px;"></i>
+                        className: 'custom-establishment-marker',
+                        html: `<div style="position: relative;">
+                                   <div style="background-color: ${markerColor};
+                                        width: 40px;
+                                        height: 40px;
+                                        border-radius: 50% 50% 50% 0;
+                                        border: 3px solid white;
+                                        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        transform: rotate(-45deg);">
+                                       <i class="fas fa-store" style="color: white; font-size: 16px; transform: rotate(45deg);"></i>
+                                   </div>
                                </div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15],
-                        popupAnchor: [0, -15]
+                        iconSize: [40, 40],
+                        iconAnchor: [12, 40],
+                        popupAnchor: [8, -35]
                     });
 
                     // Create marker
@@ -749,40 +809,60 @@
 
                     // Add popup with establishment info
                     marker.bindPopup(`
-                        <div style="text-align: center; min-width: 150px;">
-                            <strong style="font-size: 14px; color: #333;">${name}</strong><br>
-                            <span style="color: ${markerColor}; font-weight: 600; font-size: 12px;">
+                        <div style="text-align: center; min-width: 160px; padding: 5px;">
+                            <strong style="font-size: 15px; color: #333; display: block; margin-bottom: 5px;">${name}</strong>
+                            <span style="color: ${markerColor}; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 5px;">
                                 <i class="fas fa-circle" style="font-size: 8px;"></i> ${status}
                             </span>
                         </div>
-                    `);
+                    `, {
+                        maxWidth: 200,
+                        className: 'custom-popup'
+                    });
                 }
             });
 
             // Add "Show My Location" button
             const customControl = L.Control.extend({
-                options: { position: 'topright' },
+                options: { position: 'bottomright' },
                 onAdd: function(map) {
-                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                    const button = L.DomUtil.create('a', '', container);
-                    button.innerHTML = '<i class="fas fa-location-arrow" style="font-size: 18px; line-height: 30px;"></i>';
-                    button.href = '#';
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    const button = L.DomUtil.create('button', 'location-btn', container);
+                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
                     button.title = 'Show My Location';
-                    button.style.width = '34px';
-                    button.style.height = '34px';
-                    button.style.lineHeight = '34px';
-                    button.style.textAlign = 'center';
-                    button.style.display = 'flex';
-                    button.style.alignItems = 'center';
-                    button.style.justifyContent = 'center';
-                    button.style.backgroundColor = 'white';
-                    button.style.color = '#333';
+                    button.style.cssText = `
+                        background: linear-gradient(135deg, #FFB300 0%, #FF8C00 100%);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
+                        box-shadow: 0 4px 12px rgba(255, 179, 0, 0.4);
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        transition: all 0.3s ease;
+                    `;
+
+                    button.onmouseover = function() {
+                        this.style.transform = 'translateY(-2px)';
+                        this.style.boxShadow = '0 6px 16px rgba(255, 179, 0, 0.5)';
+                    };
+
+                    button.onmouseout = function() {
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 4px 12px rgba(255, 179, 0, 0.4)';
+                    };
 
                     L.DomEvent.on(button, 'click', function(e) {
                         L.DomEvent.preventDefault(e);
+                        L.DomEvent.stopPropagation(e);
 
                         if (navigator.geolocation) {
-                            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+                            button.disabled = true;
 
                             navigator.geolocation.getCurrentPosition(
                                 function(position) {
@@ -797,22 +877,36 @@
                                     // Create user location marker
                                     const userIcon = L.divIcon({
                                         className: 'user-location-marker',
-                                        html: '<div style="background: #2196F3; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(33, 150, 243, 0.8);"></div>',
-                                        iconSize: [20, 20],
-                                        iconAnchor: [10, 10]
+                                        html: `<div style="position: relative;">
+                                                   <div style="background: #2196F3;
+                                                        width: 24px;
+                                                        height: 24px;
+                                                        border-radius: 50%;
+                                                        border: 4px solid white;
+                                                        box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
+                                                        animation: pulse 2s infinite;">
+                                                   </div>
+                                               </div>`,
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12]
                                     });
 
                                     userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(establishmentsMap);
-                                    userMarker.bindPopup('<strong>You are here</strong>').openPopup();
+                                    userMarker.bindPopup('<strong style="color: #2196F3;">📍 You are here</strong>').openPopup();
 
-                                    // Center map on user location
-                                    establishmentsMap.setView([userLat, userLng], 16);
+                                    // Center map on user location with smooth animation
+                                    establishmentsMap.flyTo([userLat, userLng], 17, {
+                                        duration: 1.5,
+                                        easeLinearity: 0.5
+                                    });
 
-                                    button.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+                                    button.disabled = false;
                                 },
                                 function(error) {
-                                    button.innerHTML = '<i class="fas fa-location-arrow"></i>';
-                                    alert('Unable to retrieve your location. Please enable location services.');
+                                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+                                    button.disabled = false;
+                                    alert('Unable to get your location. Please enable location services.');
                                     console.error('Geolocation error:', error);
                                 }
                             );
@@ -827,7 +921,7 @@
 
             establishmentsMap.addControl(new customControl());
 
-            console.log('Map initialized with', establishments.length, 'establishment markers');
+            console.log('✅ Map initialized with satellite imagery and', establishments.length, 'establishment markers');
         }
 
         // ✅ UPDATED: View Switcher Function (Map & Best Sellers Only)
