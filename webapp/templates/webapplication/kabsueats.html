@@ -226,111 +226,170 @@
             }
         }
 
-        /* ✅ ENHANCED: Beautiful View Selector Dropdown */
-        .view-map-dropdown-wrapper {
+        /* ✅ RED DROPDOWN BUTTON - Left Side (Like Screenshot) */
+        .view-dropdown-container {
             margin: 25px 0;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            justify-content: flex-start; /* Left aligned */
         }
 
-        .view-map-dropdown {
+        .view-dropdown-wrapper {
             position: relative;
             display: inline-block;
         }
 
-        .view-map-select {
-            appearance: none;
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 2px solid #e0e0e0;
+        .view-dropdown-button {
+            background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 700;
             border-radius: 12px;
-            padding: 14px 45px 14px 18px;
-            font-size: 15px;
-            font-weight: 600;
-            color: #2c3e50;
             cursor: pointer;
-            min-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23B71C1C' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
+            min-width: 220px;
+            justify-content: space-between;
         }
 
-        .view-map-select:hover {
-            border-color: #B71C1C;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2);
-            transform: translateY(-1px);
-            background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+        .view-dropdown-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
         }
 
-        .view-map-select:focus {
-            outline: none;
-            border-color: #B71C1C;
-            box-shadow: 0 0 0 4px rgba(183, 28, 28, 0.1);
+        .view-dropdown-button:active {
+            transform: translateY(0);
         }
 
-        .view-map-select option {
-            padding: 12px;
+        .view-dropdown-button-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .view-dropdown-button i.fa-chevron-up {
             font-size: 14px;
-            font-weight: 500;
-            background: white;
-            color: #2c3e50;
+            transition: transform 0.3s ease;
         }
 
-        .view-map-select option:hover {
+        .view-dropdown-button.open i.fa-chevron-up {
+            transform: rotate(180deg);
+        }
+
+        .view-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            min-width: 320px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .view-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .view-dropdown-option {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .view-dropdown-option:last-child {
+            border-bottom: none;
+        }
+
+        .view-dropdown-option:hover {
             background: #f8f9fa;
+            padding-left: 26px;
+        }
+
+        .view-dropdown-option-icon {
+            font-size: 20px;
+            width: 28px;
+            text-align: center;
+        }
+
+        .view-dropdown-option-icon.map {
+            color: #E91E63;
+        }
+
+        .view-dropdown-option-icon.bestsellers {
+            color: #FF6B35;
+        }
+
+        .view-dropdown-option-content {
+            flex: 1;
+        }
+
+        .view-dropdown-option-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+
+        .view-dropdown-option-desc {
+            font-size: 12px;
+            color: #7f8c8d;
+            line-height: 1.4;
         }
 
         @media (max-width: 768px) {
-            .view-map-select {
-                min-width: 240px;
+            .view-dropdown-button {
                 font-size: 14px;
-                padding: 12px 40px 12px 15px;
+                padding: 12px 20px;
+                min-width: 200px;
             }
 
-            .view-map-dropdown-wrapper {
-                margin: 20px 0;
+            .view-dropdown-menu {
+                min-width: 280px;
+            }
+
+            .view-dropdown-option {
+                padding: 14px 18px;
             }
         }
 
         @media (max-width: 480px) {
-            .view-map-select {
-                min-width: 100%;
+            .view-dropdown-button {
                 font-size: 13px;
+                padding: 10px 16px;
+                min-width: 180px;
+            }
+
+            .view-dropdown-menu {
+                min-width: 100%;
+                max-width: 300px;
             }
         }
 
-        /* ✅ Pulse animation for user location marker */
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 30px rgba(33, 150, 243, 0.8), 0 0 60px rgba(33, 150, 243, 0.6);
-            }
-            100% {
-                box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
-            }
-        }
-
-        /* ✅ Custom popup styling */
-        .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .leaflet-popup-tip {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* ✅ Map container height */
+        /* ✅ Map Section Styles */
         #mapSection {
             display: none;
-            min-height: 600px;
             width: 100%;
-            position: relative;
+            min-height: 600px;
             margin: 20px 0;
+            position: relative;
         }
 
         #mapSection.active {
@@ -345,7 +404,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        /* Toggle button (hidden, but needed for kabsueats.js) */
+        /* Hide toggle button (used by kabsueats.js internally) */
         #toggleMapBtn {
             display: none !important;
         }
@@ -456,69 +515,6 @@
                 {% endif %}
             </div>
 
-            <!-- ✅ View Map Dropdown -->
-            <div class="view-map-dropdown-wrapper">
-                <div class="view-map-dropdown">
-                    <select id="viewMapSelect" class="view-map-select">
-                        <option value="bestsellers" selected>🔥 Best Sellers Across KabsuEats</option>
-                        <option value="map">🗺️ Interactive Map View</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Map Toggle Button (Hidden - used by kabsueats.js) -->
-            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
-
-            <!-- Map Section (Works with original kabsueats.js) -->
-            <div id="mapSection">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-            </div>
-
-            <!-- ==========================================
-                 🔥 AUTOMATIC BEST SELLERS SYSTEM
-                 100% AUTOMATIC - NO MAINTENANCE NEEDED
-
-                 Features:
-                 ✅ Finds best-selling items from database automatically
-                 ✅ Ranks by order count and quantity sold
-                 ✅ Auto-updates every 5 minutes
-                 ✅ Real-time Open/Closed status (updates every 1 minute)
-                 ✅ Handles authentication automatically
-                 ✅ Fully responsive (desktop + mobile)
-                 ✅ Smooth scrolling with left/right buttons
-                 ✅ Login redirect for unauthenticated users
-                 ========================================== -->
-            <div class="best-sellers-section" id="bestSellersSection">
-                <div class="best-sellers-header">
-                    <h2>
-                        <i class="fas fa-fire"></i>
-                        Best Sellers Across KabsuEats
-                    </h2>
-                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
-                </div>
-
-                <div class="best-sellers-container">
-                    <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-
-                    <div class="best-sellers-wrapper" id="bestSellersWrapper">
-                        <div class="best-sellers-scroll" id="bestSellersScroll">
-                            <!-- 🔄 Loading state - will be replaced automatically -->
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <p>Loading best sellers...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="scroll-btn scroll-btn-right" id="scrollRightBtn" aria-label="Scroll Right">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ✅ Filter Dropdowns - NOW BELOW (Above Establishments) -->
             {% block filters %}
             <div class="filter_container">
                 <div class="select_wrapper">
@@ -561,8 +557,81 @@
             </div>
             {% endblock %}
 
-            <!-- Establishments Container (Now shows by default) -->
-            <div class="nearest_container" id="establishmentsContainer">
+            <!-- ✅ RED DROPDOWN BUTTON (Left Side) -->
+            <div class="view-dropdown-container">
+                <div class="view-dropdown-wrapper">
+                    <button class="view-dropdown-button" id="viewDropdownBtn">
+                        <span class="view-dropdown-button-text">
+                            <i class="fas fa-eye"></i>
+                            <span id="currentViewText">Best Sellers</span>
+                        </span>
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <div class="view-dropdown-menu" id="viewDropdownMenu">
+                        <div class="view-dropdown-option" data-view="map">
+                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">View Map</div>
+                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
+                            </div>
+                        </div>
+                        <div class="view-dropdown-option" data-view="bestsellers">
+                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">Best Sellers</div>
+                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 🔥 BEST SELLERS SECTION (Shows by default)
+                 ========================================== -->
+            <div class="best-sellers-section" id="bestSellersSection">
+                <div class="best-sellers-header">
+                    <h2>
+                        <i class="fas fa-fire"></i>
+                        Best Sellers Across KabsuEats
+                    </h2>
+                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
+                </div>
+
+                <div class="best-sellers-container">
+                    <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="best-sellers-wrapper" id="bestSellersWrapper">
+                        <div class="best-sellers-scroll" id="bestSellersScroll">
+                            <!-- 🔄 Loading state - will be replaced automatically -->
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading best sellers...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="scroll-btn scroll-btn-right" id="scrollRightBtn" aria-label="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
+            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
+
+            <!-- Map Section (Hidden by default, triggered by dropdown) -->
+            <div id="mapSection" style="display: none;">
+                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
+                <!-- ✅ Location Route Button -->
+                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
+                    <i class="fas fa-route"></i>
+                </button>
+            </div>
+
+            <div class="nearest_container">
                 <div class="nearest_slidescontainer">
                     <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
                     {% if food_establishments %}
@@ -748,45 +817,67 @@
             // ✅ Initialize location route button
             initLocationRouteButton();
 
-            // ✅ Initialize view switcher dropdown
-            initViewSwitcher();
+            // ✅ Initialize red dropdown button
+            initViewDropdown();
         });
 
-        // ✅ View Switcher - Integrates with original kabsueats.js map code
-        function initViewSwitcher() {
-            const viewMapSelect = document.getElementById('viewMapSelect');
+        // ✅ RED DROPDOWN TOGGLE & VIEW SWITCHER
+        function initViewDropdown() {
+            const dropdownBtn = document.getElementById('viewDropdownBtn');
+            const dropdownMenu = document.getElementById('viewDropdownMenu');
+            const currentViewText = document.getElementById('currentViewText');
+            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
+
             const mapSection = document.getElementById('mapSection');
             const bestSellersSection = document.getElementById('bestSellersSection');
             const toggleMapBtn = document.getElementById('toggleMapBtn');
 
-            if (!viewMapSelect) return;
+            if (!dropdownBtn || !dropdownMenu) return;
 
-            // Show Best Sellers by default
-            bestSellersSection.style.display = 'block';
-            mapSection.style.display = 'none';
+            // Toggle dropdown on button click
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownBtn.classList.toggle('open');
+                dropdownMenu.classList.toggle('show');
+            });
 
-            viewMapSelect.addEventListener('change', function() {
-                const selectedView = this.value;
-
-                if (selectedView === 'map') {
-                    // Show map
-                    bestSellersSection.style.display = 'none';
-                    mapSection.style.display = 'block';
-
-                    // Trigger original kabsueats.js map initialization if not already active
-                    if (toggleMapBtn && !mapSection.classList.contains('active')) {
-                        // Simulate click on toggle button to trigger original map code
-                        toggleMapBtn.click();
-                    } else if (mapSection.classList.contains('active')) {
-                        // Map already initialized, just show it
-                        mapSection.style.display = 'block';
-                    }
-
-                } else if (selectedView === 'bestsellers') {
-                    // Show best sellers
-                    bestSellersSection.style.display = 'block';
-                    mapSection.style.display = 'none';
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownBtn.classList.remove('open');
+                    dropdownMenu.classList.remove('show');
                 }
+            });
+
+            // Handle option selection
+            dropdownOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const viewType = this.dataset.view;
+                    const viewTitle = this.querySelector('.view-dropdown-option-title').textContent;
+
+                    // Update button text
+                    currentViewText.textContent = viewTitle;
+
+                    // Close dropdown
+                    dropdownBtn.classList.remove('open');
+                    dropdownMenu.classList.remove('show');
+
+                    // Switch views
+                    if (viewType === 'map') {
+                        // Show map, hide best sellers
+                        bestSellersSection.style.display = 'none';
+                        mapSection.style.display = 'block';
+
+                        // Trigger original kabsueats.js map initialization
+                        if (toggleMapBtn && !mapSection.classList.contains('active')) {
+                            toggleMapBtn.click();
+                        }
+                    } else if (viewType === 'bestsellers') {
+                        // Show best sellers, hide map
+                        mapSection.style.display = 'none';
+                        bestSellersSection.style.display = 'block';
+                    }
+                });
             });
         }
 
