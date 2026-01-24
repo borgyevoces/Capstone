@@ -696,7 +696,139 @@
 
             // ✅ Initialize view switcher dropdown
             initViewSwitcher();
+
+            // ✅ Initialize map (but keep it hidden)
+            initializeMap();
         });
+
+        // ✅ COMPLETE: Initialize Interactive Map with Establishment Markers
+        let establishmentsMap;
+        let userMarker;
+
+        function initializeMap() {
+            const mapContainer = document.getElementById('establishmentsMap');
+            if (!mapContainer) return;
+
+            // Initialize Leaflet map centered on CvSU-Bacoor
+            establishmentsMap = L.map('establishmentsMap', {
+                zoomControl: true,
+                scrollWheelZoom: true
+            }).setView([14.2456, 120.8786], 15);
+
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19,
+                minZoom: 10
+            }).addTo(establishmentsMap);
+
+            // Add establishment markers from the page
+            const establishments = document.querySelectorAll('.food-establishment-item');
+
+            establishments.forEach(function(item) {
+                const lat = parseFloat(item.dataset.lat);
+                const lng = parseFloat(item.dataset.lng);
+                const name = item.dataset.name;
+                const status = item.dataset.status;
+
+                if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    // Create custom marker based on status
+                    const markerColor = status === 'Open' ? '#4CAF50' : '#F44336';
+                    const customIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background-color: ${markerColor}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                                   <i class="fas fa-store" style="color: white; font-size: 14px;"></i>
+                               </div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                        popupAnchor: [0, -15]
+                    });
+
+                    // Create marker
+                    const marker = L.marker([lat, lng], { icon: customIcon }).addTo(establishmentsMap);
+
+                    // Add popup with establishment info
+                    marker.bindPopup(`
+                        <div style="text-align: center; min-width: 150px;">
+                            <strong style="font-size: 14px; color: #333;">${name}</strong><br>
+                            <span style="color: ${markerColor}; font-weight: 600; font-size: 12px;">
+                                <i class="fas fa-circle" style="font-size: 8px;"></i> ${status}
+                            </span>
+                        </div>
+                    `);
+                }
+            });
+
+            // Add "Show My Location" button
+            const customControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    const button = L.DomUtil.create('a', '', container);
+                    button.innerHTML = '<i class="fas fa-location-arrow" style="font-size: 18px; line-height: 30px;"></i>';
+                    button.href = '#';
+                    button.title = 'Show My Location';
+                    button.style.width = '34px';
+                    button.style.height = '34px';
+                    button.style.lineHeight = '34px';
+                    button.style.textAlign = 'center';
+                    button.style.display = 'flex';
+                    button.style.alignItems = 'center';
+                    button.style.justifyContent = 'center';
+                    button.style.backgroundColor = 'white';
+                    button.style.color = '#333';
+
+                    L.DomEvent.on(button, 'click', function(e) {
+                        L.DomEvent.preventDefault(e);
+
+                        if (navigator.geolocation) {
+                            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                            navigator.geolocation.getCurrentPosition(
+                                function(position) {
+                                    const userLat = position.coords.latitude;
+                                    const userLng = position.coords.longitude;
+
+                                    // Remove existing user marker if any
+                                    if (userMarker) {
+                                        establishmentsMap.removeLayer(userMarker);
+                                    }
+
+                                    // Create user location marker
+                                    const userIcon = L.divIcon({
+                                        className: 'user-location-marker',
+                                        html: '<div style="background: #2196F3; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(33, 150, 243, 0.8);"></div>',
+                                        iconSize: [20, 20],
+                                        iconAnchor: [10, 10]
+                                    });
+
+                                    userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(establishmentsMap);
+                                    userMarker.bindPopup('<strong>You are here</strong>').openPopup();
+
+                                    // Center map on user location
+                                    establishmentsMap.setView([userLat, userLng], 16);
+
+                                    button.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                                },
+                                function(error) {
+                                    button.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                                    alert('Unable to retrieve your location. Please enable location services.');
+                                    console.error('Geolocation error:', error);
+                                }
+                            );
+                        } else {
+                            alert('Geolocation is not supported by your browser.');
+                        }
+                    });
+
+                    return container;
+                }
+            });
+
+            establishmentsMap.addControl(new customControl());
+
+            console.log('Map initialized with', establishments.length, 'establishment markers');
+        }
 
         // ✅ UPDATED: View Switcher Function (Map & Best Sellers Only)
         // Establishments are ALWAYS visible by default
@@ -719,10 +851,12 @@
                     mapSection.style.display = 'block';
                     bestSellersSection.style.display = 'none';
 
-                    // Initialize map if not already initialized
+                    // Refresh map display and recalculate size
                     if (typeof establishmentsMap !== 'undefined' && establishmentsMap) {
                         setTimeout(() => {
                             establishmentsMap.invalidateSize();
+                            // Re-center on CvSU-Bacoor
+                            establishmentsMap.setView([14.2456, 120.8786], 15);
                         }, 100);
                     }
                 } else if (selectedView === 'bestsellers') {
