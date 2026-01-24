@@ -326,7 +326,15 @@
 
         /* ✅ Map container height */
         #mapSection {
-            min-height: 500px;
+            display: none;
+            min-height: 600px;
+            width: 100%;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        #mapSection.active {
+            display: block !important;
         }
 
         #establishmentsMap {
@@ -335,6 +343,11 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Toggle button (hidden, but needed for kabsueats.js) */
+        #toggleMapBtn {
+            display: none !important;
         }
 
         @media (max-width: 768px) {
@@ -443,7 +456,7 @@
                 {% endif %}
             </div>
 
-            <!-- ✅ UPDATED: View Selector Dropdown (Beautiful Design) -->
+            <!-- ✅ View Map Dropdown -->
             <div class="view-map-dropdown-wrapper">
                 <div class="view-map-dropdown">
                     <select id="viewMapSelect" class="view-map-select">
@@ -453,13 +466,12 @@
                 </div>
             </div>
 
-            <!-- Map Section (Hidden by default) -->
-            <div id="mapSection" style="display: none;">
+            <!-- Map Toggle Button (Hidden - used by kabsueats.js) -->
+            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
+
+            <!-- Map Section (Works with original kabsueats.js) -->
+            <div id="mapSection">
                 <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <!-- ✅ Location Route Button -->
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
-                    <i class="fas fa-route"></i>
-                </button>
             </div>
 
             <!-- ==========================================
@@ -738,222 +750,40 @@
 
             // ✅ Initialize view switcher dropdown
             initViewSwitcher();
-
-            // ✅ Initialize map (but keep it hidden)
-            initializeMap();
         });
 
-        // ✅ COMPLETE: Initialize Interactive Map with Establishment Markers
-        let establishmentsMap;
-        let userMarker;
-
-        function initializeMap() {
-            const mapContainer = document.getElementById('establishmentsMap');
-            if (!mapContainer) return;
-
-            // Initialize Leaflet map centered on CvSU-Bacoor
-            establishmentsMap = L.map('establishmentsMap', {
-                zoomControl: true,
-                scrollWheelZoom: true
-            }).setView([14.2456, 120.8786], 15);
-
-            // Add Satellite/Imagery tile layer (Esri World Imagery)
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                maxZoom: 19,
-                minZoom: 10
-            }).addTo(establishmentsMap);
-
-            // Add labels layer on top of satellite imagery
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                maxZoom: 19,
-                pane: 'shadowPane'
-            }).addTo(establishmentsMap);
-
-            // Add establishment markers from the page
-            const establishments = document.querySelectorAll('.food-establishment-item');
-
-            establishments.forEach(function(item) {
-                const lat = parseFloat(item.dataset.lat);
-                const lng = parseFloat(item.dataset.lng);
-                const name = item.dataset.name;
-                const status = item.dataset.status;
-
-                if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-                    // Create custom marker based on status
-                    const markerColor = status === 'Open' ? '#FFB300' : '#FF6B6B';
-                    const customIcon = L.divIcon({
-                        className: 'custom-establishment-marker',
-                        html: `<div style="position: relative;">
-                                   <div style="background-color: ${markerColor};
-                                        width: 40px;
-                                        height: 40px;
-                                        border-radius: 50% 50% 50% 0;
-                                        border: 3px solid white;
-                                        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: center;
-                                        transform: rotate(-45deg);">
-                                       <i class="fas fa-store" style="color: white; font-size: 16px; transform: rotate(45deg);"></i>
-                                   </div>
-                               </div>`,
-                        iconSize: [40, 40],
-                        iconAnchor: [12, 40],
-                        popupAnchor: [8, -35]
-                    });
-
-                    // Create marker
-                    const marker = L.marker([lat, lng], { icon: customIcon }).addTo(establishmentsMap);
-
-                    // Add popup with establishment info
-                    marker.bindPopup(`
-                        <div style="text-align: center; min-width: 160px; padding: 5px;">
-                            <strong style="font-size: 15px; color: #333; display: block; margin-bottom: 5px;">${name}</strong>
-                            <span style="color: ${markerColor}; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 5px;">
-                                <i class="fas fa-circle" style="font-size: 8px;"></i> ${status}
-                            </span>
-                        </div>
-                    `, {
-                        maxWidth: 200,
-                        className: 'custom-popup'
-                    });
-                }
-            });
-
-            // Add "Show My Location" button
-            const customControl = L.Control.extend({
-                options: { position: 'bottomright' },
-                onAdd: function(map) {
-                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-                    const button = L.DomUtil.create('button', 'location-btn', container);
-                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
-                    button.title = 'Show My Location';
-                    button.style.cssText = `
-                        background: linear-gradient(135deg, #FFB300 0%, #FF8C00 100%);
-                        color: white;
-                        border: none;
-                        padding: 12px 20px;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-size: 14px;
-                        font-weight: 600;
-                        box-shadow: 0 4px 12px rgba(255, 179, 0, 0.4);
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        transition: all 0.3s ease;
-                    `;
-
-                    button.onmouseover = function() {
-                        this.style.transform = 'translateY(-2px)';
-                        this.style.boxShadow = '0 6px 16px rgba(255, 179, 0, 0.5)';
-                    };
-
-                    button.onmouseout = function() {
-                        this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 4px 12px rgba(255, 179, 0, 0.4)';
-                    };
-
-                    L.DomEvent.on(button, 'click', function(e) {
-                        L.DomEvent.preventDefault(e);
-                        L.DomEvent.stopPropagation(e);
-
-                        if (navigator.geolocation) {
-                            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
-                            button.disabled = true;
-
-                            navigator.geolocation.getCurrentPosition(
-                                function(position) {
-                                    const userLat = position.coords.latitude;
-                                    const userLng = position.coords.longitude;
-
-                                    // Remove existing user marker if any
-                                    if (userMarker) {
-                                        establishmentsMap.removeLayer(userMarker);
-                                    }
-
-                                    // Create user location marker
-                                    const userIcon = L.divIcon({
-                                        className: 'user-location-marker',
-                                        html: `<div style="position: relative;">
-                                                   <div style="background: #2196F3;
-                                                        width: 24px;
-                                                        height: 24px;
-                                                        border-radius: 50%;
-                                                        border: 4px solid white;
-                                                        box-shadow: 0 0 20px rgba(33, 150, 243, 0.6), 0 0 40px rgba(33, 150, 243, 0.4);
-                                                        animation: pulse 2s infinite;">
-                                                   </div>
-                                               </div>`,
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    });
-
-                                    userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(establishmentsMap);
-                                    userMarker.bindPopup('<strong style="color: #2196F3;">📍 You are here</strong>').openPopup();
-
-                                    // Center map on user location with smooth animation
-                                    establishmentsMap.flyTo([userLat, userLng], 17, {
-                                        duration: 1.5,
-                                        easeLinearity: 0.5
-                                    });
-
-                                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
-                                    button.disabled = false;
-                                },
-                                function(error) {
-                                    button.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
-                                    button.disabled = false;
-                                    alert('Unable to get your location. Please enable location services.');
-                                    console.error('Geolocation error:', error);
-                                }
-                            );
-                        } else {
-                            alert('Geolocation is not supported by your browser.');
-                        }
-                    });
-
-                    return container;
-                }
-            });
-
-            establishmentsMap.addControl(new customControl());
-
-            console.log('✅ Map initialized with satellite imagery and', establishments.length, 'establishment markers');
-        }
-
-        // ✅ UPDATED: View Switcher Function (Map & Best Sellers Only)
-        // Establishments are ALWAYS visible by default
+        // ✅ View Switcher - Integrates with original kabsueats.js map code
         function initViewSwitcher() {
             const viewMapSelect = document.getElementById('viewMapSelect');
             const mapSection = document.getElementById('mapSection');
             const bestSellersSection = document.getElementById('bestSellersSection');
+            const toggleMapBtn = document.getElementById('toggleMapBtn');
 
             if (!viewMapSelect) return;
 
-            // Show Best Sellers by default on page load
+            // Show Best Sellers by default
             bestSellersSection.style.display = 'block';
             mapSection.style.display = 'none';
 
             viewMapSelect.addEventListener('change', function() {
                 const selectedView = this.value;
 
-                // Toggle between Map and Best Sellers
                 if (selectedView === 'map') {
-                    mapSection.style.display = 'block';
+                    // Show map
                     bestSellersSection.style.display = 'none';
+                    mapSection.style.display = 'block';
 
-                    // Refresh map display and recalculate size
-                    if (typeof establishmentsMap !== 'undefined' && establishmentsMap) {
-                        setTimeout(() => {
-                            establishmentsMap.invalidateSize();
-                            // Re-center on CvSU-Bacoor
-                            establishmentsMap.setView([14.2456, 120.8786], 15);
-                        }, 100);
+                    // Trigger original kabsueats.js map initialization if not already active
+                    if (toggleMapBtn && !mapSection.classList.contains('active')) {
+                        // Simulate click on toggle button to trigger original map code
+                        toggleMapBtn.click();
+                    } else if (mapSection.classList.contains('active')) {
+                        // Map already initialized, just show it
+                        mapSection.style.display = 'block';
                     }
+
                 } else if (selectedView === 'bestsellers') {
+                    // Show best sellers
                     bestSellersSection.style.display = 'block';
                     mapSection.style.display = 'none';
                 }
