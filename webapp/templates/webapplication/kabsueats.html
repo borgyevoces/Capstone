@@ -817,7 +817,7 @@
             initViewDropdown();
         });
 
-        // ✅ RED DROPDOWN TOGGLE & CONTINUOUS VIEW SWITCHER (Salitan)
+        // ✅ RED DROPDOWN TOGGLE & CONTINUOUS VIEW SWITCHER (Fixed!)
         function initViewDropdown() {
             const dropdownBtn = document.getElementById('viewDropdownBtn');
             const dropdownMenu = document.getElementById('viewDropdownMenu');
@@ -845,7 +845,7 @@
                 }
             });
 
-            // Handle option selection - SALITAN LAGI
+            // Handle option selection - CONTINUOUS SALITAN (FIXED!)
             dropdownOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     const viewType = this.dataset.view;
@@ -858,24 +858,36 @@
                     dropdownBtn.classList.remove('open');
                     dropdownMenu.classList.remove('show');
 
-                    // SALITAN - Always hide one, show the other
+                    // CRITICAL FIX: Always force hide/show properly
                     if (viewType === 'map') {
                         // Show ONLY Map, hide Best Sellers
-                        console.log('Showing Map, hiding Best Sellers');
-                        bestSellersSection.style.display = 'none';
-                        mapSection.style.display = 'block';
+                        console.log('✅ Showing Map, ❌ Hiding Best Sellers');
 
-                        // Trigger original kabsueats.js map initialization
-                        if (toggleMapBtn && !mapSection.classList.contains('active')) {
+                        // Force hide Best Sellers with !important
+                        bestSellersSection.style.setProperty('display', 'none', 'important');
+
+                        // Force show Map
+                        mapSection.style.setProperty('display', 'block', 'important');
+                        mapSection.classList.add('active');
+
+                        // Initialize map if needed
+                        if (toggleMapBtn && !toggleMapBtn.hasAttribute('data-map-initialized')) {
                             setTimeout(() => {
                                 toggleMapBtn.click();
+                                toggleMapBtn.setAttribute('data-map-initialized', 'true');
                             }, 100);
                         }
+
                     } else if (viewType === 'bestsellers') {
                         // Show ONLY Best Sellers, hide Map
-                        console.log('Showing Best Sellers, hiding Map');
-                        mapSection.style.display = 'none';
-                        bestSellersSection.style.display = 'block';
+                        console.log('✅ Showing Best Sellers, ❌ Hiding Map');
+
+                        // CRITICAL: Force hide Map (remove active class AND use !important!)
+                        mapSection.classList.remove('active');
+                        mapSection.style.setProperty('display', 'none', 'important');
+
+                        // Force show Best Sellers
+                        bestSellersSection.style.setProperty('display', 'block', 'important');
                     }
                 });
             });
