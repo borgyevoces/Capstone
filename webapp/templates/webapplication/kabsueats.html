@@ -257,6 +257,14 @@
             display: inline-block;
         }
 
+        /* Container for left-aligned dropdown above map */
+        .dropdown-container-left {
+            display: flex;
+            justify-content: flex-start;
+            margin: 20px 0 10px 0;
+            padding: 0 20px;
+        }
+
         .view-dropdown-button {
             background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
             color: white;
@@ -387,6 +395,11 @@
             .view-dropdown-option {
                 padding: 14px 18px;
             }
+
+            .dropdown-container-left {
+                padding: 0 15px;
+                margin: 15px 0 8px 0;
+            }
         }
 
         @media (max-width: 480px) {
@@ -399,6 +412,11 @@
             .view-dropdown-menu {
                 min-width: 100%;
                 max-width: 300px;
+            }
+
+            .dropdown-container-left {
+                padding: 0 10px;
+                margin: 10px 0 5px 0;
             }
         }
 
@@ -531,6 +549,35 @@
                 {% endif %}
             </div>
 
+            <!-- Red Dropdown Button - Positioned above map, left aligned -->
+            <div class="dropdown-container-left">
+                <div class="view-dropdown-wrapper">
+                    <button class="view-dropdown-button" id="viewDropdownBtn">
+                        <span class="view-dropdown-button-text">
+                            <i class="fas fa-eye"></i>
+                            <span id="currentViewText">Best Sellers</span>
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="view-dropdown-menu" id="viewDropdownMenu">
+                        <div class="view-dropdown-option" data-view="map">
+                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">View Map</div>
+                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
+                            </div>
+                        </div>
+                        <div class="view-dropdown-option" data-view="bestsellers">
+                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
+                            <div class="view-dropdown-option-content">
+                                <div class="view-dropdown-option-title">Best Sellers</div>
+                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
             <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
@@ -578,33 +625,6 @@
             {% block filters %}
             <!-- ✅ REPOSITIONED: Filters moved here, right above establishments -->
             <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
-                <!-- Red Dropdown -->
-                <div class="view-dropdown-wrapper">
-                    <button class="view-dropdown-button" id="viewDropdownBtn">
-                        <span class="view-dropdown-button-text">
-                            <i class="fas fa-eye"></i>
-                            <span id="currentViewText">Best Sellers</span>
-                        </span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="view-dropdown-menu" id="viewDropdownMenu">
-                        <div class="view-dropdown-option" data-view="map">
-                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">View Map</div>
-                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
-                            </div>
-                        </div>
-                        <div class="view-dropdown-option" data-view="bestsellers">
-                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">Best Sellers</div>
-                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Filter Dropdowns -->
                 <div class="filter_container" style="margin: 0;">
                 <div class="select_wrapper">
