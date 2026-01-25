@@ -868,14 +868,21 @@
 
                         // Force show Map
                         mapSection.style.setProperty('display', 'block', 'important');
-                        mapSection.classList.add('active');
 
-                        // Initialize map if needed
-                        if (toggleMapBtn && !toggleMapBtn.hasAttribute('data-map-initialized')) {
-                            setTimeout(() => {
-                                toggleMapBtn.click();
-                                toggleMapBtn.setAttribute('data-map-initialized', 'true');
-                            }, 100);
+                        // Trigger kabsueats.js map initialization
+                        // This will add .active class and initialize the map with:
+                        // - CvSU radius circle
+                        // - Establishment markers
+                        // - Show My Location button
+                        // - Search box
+                        // - Multiple map layers
+                        if (toggleMapBtn) {
+                            // Always click to ensure map is shown (kabsueats.js handles it)
+                            if (!mapSection.classList.contains('active')) {
+                                setTimeout(() => {
+                                    toggleMapBtn.click();
+                                }, 100);
+                            }
                         }
 
                     } else if (viewType === 'bestsellers') {
