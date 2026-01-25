@@ -7,27 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}KabsuEats{% endblock %}</title>
 
-    <!-- These links load your CSS files. -->
+    <!-- CSS Files -->
     <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}" media="screen and (max-width: 768px)" />
     <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}" media="screen and (min-width: 769px)" />
 
-    <!-- External libraries for icons and maps -->
+    <!-- External libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
-    <!-- Tailwind CSS for utility classes -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     {% block extra_css %}{% endblock %}
 
     <style>
-        /* ✅ FIX: Ensure header stays on top */
+        /* ✅ NEW: Establishments Section Title */
+        .establishments-section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 30px 0 20px 0;
+            text-align: center;
+        }
+
+        /* ✅ UPDATED: Filter container positioning */
+        .filter_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            padding: 0 20px;
+        }
+
+        /* Search and filters wrapper styles remain the same */
         .search-and-filters-wrapper {
             z-index: 10000 !important;
         }
 
-        /* ✅ FIX: Map and its controls stay below header */
         #mapSection {
             position: relative;
             z-index: 1 !important;
@@ -37,7 +56,6 @@
             z-index: 1 !important;
         }
 
-        /* ✅ FIX: Leaflet controls proper z-index */
         .leaflet-top,
         .leaflet-bottom,
         .leaflet-control {
@@ -49,7 +67,6 @@
             z-index: 500 !important;
         }
 
-        /* ✅ FIX: Route instructions container - VISIBLE and properly positioned */
         .leaflet-routing-container {
             z-index: 600 !important;
             background: white !important;
@@ -69,7 +86,6 @@
             background: white !important;
         }
 
-        /* ✅ Route instructions styling */
         .leaflet-routing-alt h2 {
             font-size: 14px !important;
             font-weight: 600 !important;
@@ -93,7 +109,7 @@
             padding: 4px !important;
         }
 
-        /* CSS for Cart Badge */
+        /* Cart Badge */
         .cart-link {
             position: relative;
             display: inline-flex;
@@ -161,7 +177,7 @@
             transform: translateY(-3px) scale(1.05);
         }
 
-        /* ✅ Location Route Button */
+        /* Location Route Button */
         .location-route-btn {
             position: absolute;
             top: 90px;
@@ -214,6 +230,11 @@
                 max-width: 280px !important;
                 font-size: 11px !important;
             }
+
+            .establishments-section-title {
+                font-size: 22px;
+                margin: 20px 0 15px 0;
+            }
         }
 
         @media (max-width: 480px) {
@@ -224,9 +245,13 @@
                 height: 40px;
                 font-size: 16px;
             }
+
+            .establishments-section-title {
+                font-size: 20px;
+            }
         }
 
-        /* ✅ RED DROPDOWN BUTTON - Inline with Filters (LEFT SIDE) */
+        /* Red Dropdown Button */
         .view-dropdown-wrapper {
             position: relative;
             display: inline-block;
@@ -377,7 +402,7 @@
             }
         }
 
-        /* ✅ Map Section Styles */
+        /* Map Section Styles */
         #mapSection {
             display: none;
             width: 100%;
@@ -398,7 +423,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        /* Hide toggle button (used by kabsueats.js internally) */
         #toggleMapBtn {
             display: none !important;
         }
@@ -445,7 +469,6 @@
         </div>
 
     {% block search_visibility_control %}
-        {# Search bar logic using show_search variable #}
         {% if show_search|default:True %}
         <div class="header-center">
             <div class="search_container">
@@ -461,7 +484,6 @@
 
         <div class="Home_buttons">
             <div class="auth_links_Home_About">
-                {# Block for extra buttons like chat #}
                 {% block extra_nav_buttons %}{% endblock %}
             </div>
         </div>
@@ -509,9 +531,53 @@
                 {% endif %}
             </div>
 
+            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
+            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
+
+            <!-- Map Section (Hidden by default) -->
+            <div id="mapSection" style="display: none;">
+                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
+                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
+                    <i class="fas fa-route"></i>
+                </button>
+            </div>
+
+            <!-- Best Sellers Section -->
+            <div class="best-sellers-section" id="bestSellersSection">
+                <div class="best-sellers-header">
+                    <h2>
+                        <i class="fas fa-fire"></i>
+                        Best Sellers Across KabsuEats
+                    </h2>
+                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
+                </div>
+
+                <div class="best-sellers-container">
+                    <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="best-sellers-wrapper" id="bestSellersWrapper">
+                        <div class="best-sellers-scroll" id="bestSellersScroll">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading best sellers...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="scroll-btn scroll-btn-right" id="scrollRightBtn" aria-label="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ✅ NEW: Establishments Section Title -->
+            <h2 class="establishments-section-title">Food Establishments</h2>
+
             {% block filters %}
-            <!-- ✅ RED DROPDOWN BUTTON + FILTERS (LEFT SIDE TOGETHER) -->
-            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap;">
+            <!-- ✅ REPOSITIONED: Filters moved here, right above establishments -->
+            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
                 <!-- Red Dropdown -->
                 <div class="view-dropdown-wrapper">
                     <button class="view-dropdown-button" id="viewDropdownBtn">
@@ -582,51 +648,7 @@
             </div>
             {% endblock %}
 
-            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
-            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
-
-            <!-- Map Section (Hidden by default, shows when "View Map" selected) -->
-            <div id="mapSection" style="display: none;">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
-                    <i class="fas fa-route"></i>
-                </button>
-            </div>
-
-            <!-- ==========================================
-                 🔥 BEST SELLERS SECTION (Shows by default)
-                 ========================================== -->
-            <div class="best-sellers-section" id="bestSellersSection">
-                <div class="best-sellers-header">
-                    <h2>
-                        <i class="fas fa-fire"></i>
-                        Best Sellers Across KabsuEats
-                    </h2>
-                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
-                </div>
-
-                <div class="best-sellers-container">
-                    <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-
-                    <div class="best-sellers-wrapper" id="bestSellersWrapper">
-                        <div class="best-sellers-scroll" id="bestSellersScroll">
-                            <!-- 🔄 Loading state - will be replaced automatically -->
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <p>Loading best sellers...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="scroll-btn scroll-btn-right" id="scrollRightBtn" aria-label="Scroll Right">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Establishments List (Always visible) -->
+            <!-- Establishments List -->
             <div class="nearest_container">
                 <div class="nearest_slidescontainer">
                     <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
@@ -762,7 +784,7 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
-    <!-- Your custom JavaScript files -->
+    <!-- Custom JavaScript -->
     <script src="{% static 'js/kabsueats_map.js' %}"></script>
     <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/status_updater.js' %}"></script>
@@ -775,7 +797,7 @@
         const VIEW_CART_URL = "{% url 'view_cart' %}";
         const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
 
-        // updateCartBadge function (defined here to be used globally)
+        // updateCartBadge function
         function updateCartBadge(count) {
             const badge = document.getElementById('cart-count-badge');
             if (badge) {
@@ -810,14 +832,14 @@
                 }, 5000);
             }
 
-            // ✅ Initialize location route button
+            // Initialize location route button
             initLocationRouteButton();
 
-            // ✅ Initialize red dropdown button
+            // Initialize red dropdown button
             initViewDropdown();
         });
 
-        // ✅ RED DROPDOWN TOGGLE & CONTINUOUS VIEW SWITCHER (Fixed!)
+        // Red Dropdown Toggle & View Switcher
         function initViewDropdown() {
             const dropdownBtn = document.getElementById('viewDropdownBtn');
             const dropdownMenu = document.getElementById('viewDropdownMenu');
@@ -845,7 +867,7 @@
                 }
             });
 
-            // Handle option selection - CONTINUOUS SALITAN (FIXED!)
+            // Handle option selection
             dropdownOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     const viewType = this.dataset.view;
@@ -858,26 +880,14 @@
                     dropdownBtn.classList.remove('open');
                     dropdownMenu.classList.remove('show');
 
-                    // CRITICAL FIX: Always force hide/show properly
                     if (viewType === 'map') {
                         // Show ONLY Map, hide Best Sellers
                         console.log('✅ Showing Map, ❌ Hiding Best Sellers');
 
-                        // Force hide Best Sellers with !important
                         bestSellersSection.style.setProperty('display', 'none', 'important');
-
-                        // Force show Map
                         mapSection.style.setProperty('display', 'block', 'important');
 
-                        // Trigger kabsueats.js map initialization
-                        // This will add .active class and initialize the map with:
-                        // - CvSU radius circle
-                        // - Establishment markers
-                        // - Show My Location button
-                        // - Search box
-                        // - Multiple map layers
                         if (toggleMapBtn) {
-                            // Always click to ensure map is shown (kabsueats.js handles it)
                             if (!mapSection.classList.contains('active')) {
                                 setTimeout(() => {
                                     toggleMapBtn.click();
@@ -889,11 +899,8 @@
                         // Show ONLY Best Sellers, hide Map
                         console.log('✅ Showing Best Sellers, ❌ Hiding Map');
 
-                        // CRITICAL: Force hide Map (remove active class AND use !important!)
                         mapSection.classList.remove('active');
                         mapSection.style.setProperty('display', 'none', 'important');
-
-                        // Force show Best Sellers
                         bestSellersSection.style.setProperty('display', 'block', 'important');
                     }
                 });
@@ -913,7 +920,7 @@
             }, 300);
         }
 
-        // ✅ COMPLETE Location Route Button with Instructions Panel
+        // Location Route Button
         function initLocationRouteButton() {
             const routeBtn = document.getElementById('locationRouteBtn');
             const mapSection = document.getElementById('mapSection');
@@ -923,7 +930,6 @@
             let routingControl = null;
             let isRouteActive = false;
 
-            // Show/hide button when map is toggled
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.attributeName === 'style') {
@@ -947,21 +953,18 @@
                 }
 
                 if (isRouteActive && routingControl) {
-                    // Remove route and instructions
                     establishmentsMap.removeControl(routingControl);
                     routingControl = null;
                     isRouteActive = false;
                     routeBtn.classList.remove('active');
                     routeBtn.title = 'Show Route to Establishment';
                 } else {
-                    // Get visible establishments
                     const establishments = document.querySelectorAll('.food-establishment-item');
                     if (establishments.length === 0) {
                         alert('No establishments available.');
                         return;
                     }
 
-                    // Find first visible establishment
                     let targetEstablishment = null;
                     for (let est of establishments) {
                         if (est.style.display !== 'none') {
@@ -986,7 +989,6 @@
 
                     const userLatLng = userMarker.getLatLng();
 
-                    // ✅ Create routing control WITH visible instructions
                     routingControl = L.Routing.control({
                         waypoints: [
                             L.latLng(userLatLng.lat, userLatLng.lng),
@@ -997,7 +999,7 @@
                         draggableWaypoints: false,
                         fitSelectedRoutes: true,
                         showAlternatives: false,
-                        show: true, // ✅ IMPORTANT: Show instructions panel
+                        show: true,
                         lineOptions: {
                             styles: [{
                                 color: '#E9A420',
@@ -1006,10 +1008,8 @@
                             }]
                         },
                         createMarker: function(i, waypoint, n) {
-                            // Create custom markers
                             let marker;
                             if (i === 0) {
-                                // Start marker (user location)
                                 marker = L.marker(waypoint.latLng, {
                                     icon: L.divIcon({
                                         className: 'route-marker-start',
@@ -1019,7 +1019,6 @@
                                     })
                                 });
                             } else if (i === n - 1) {
-                                // End marker (establishment)
                                 marker = L.marker(waypoint.latLng, {
                                     icon: L.divIcon({
                                         className: 'route-marker-end',
@@ -1036,7 +1035,6 @@
                         })
                     }).addTo(establishmentsMap);
 
-                    // ✅ Customize route instructions after creation
                     setTimeout(() => {
                         const container = document.querySelector('.leaflet-routing-container');
                         if (container) {
@@ -1050,7 +1048,6 @@
                     routeBtn.classList.add('active');
                     routeBtn.title = 'Hide Route';
 
-                    // Fit bounds to show complete route
                     establishmentsMap.fitBounds([
                         [userLatLng.lat, userLatLng.lng],
                         [destLat, destLng]
