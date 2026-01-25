@@ -817,7 +817,7 @@
             initViewDropdown();
         });
 
-        // ✅ RED DROPDOWN TOGGLE & VIEW SWITCHER
+        // ✅ RED DROPDOWN TOGGLE & CONTINUOUS VIEW SWITCHER (Salitan)
         function initViewDropdown() {
             const dropdownBtn = document.getElementById('viewDropdownBtn');
             const dropdownMenu = document.getElementById('viewDropdownMenu');
@@ -845,7 +845,7 @@
                 }
             });
 
-            // Handle option selection
+            // Handle option selection - SALITAN LAGI
             dropdownOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     const viewType = this.dataset.view;
@@ -858,18 +858,22 @@
                     dropdownBtn.classList.remove('open');
                     dropdownMenu.classList.remove('show');
 
-                    // Switch views
+                    // SALITAN - Always hide one, show the other
                     if (viewType === 'map') {
-                        // Show map, hide best sellers
+                        // Show ONLY Map, hide Best Sellers
+                        console.log('Showing Map, hiding Best Sellers');
                         bestSellersSection.style.display = 'none';
                         mapSection.style.display = 'block';
 
                         // Trigger original kabsueats.js map initialization
                         if (toggleMapBtn && !mapSection.classList.contains('active')) {
-                            toggleMapBtn.click();
+                            setTimeout(() => {
+                                toggleMapBtn.click();
+                            }, 100);
                         }
                     } else if (viewType === 'bestsellers') {
-                        // Show best sellers, hide map
+                        // Show ONLY Best Sellers, hide Map
+                        console.log('Showing Best Sellers, hiding Map');
                         mapSection.style.display = 'none';
                         bestSellersSection.style.display = 'block';
                     }
