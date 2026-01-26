@@ -3889,8 +3889,7 @@ To: {test_email}
 @login_required
 def get_notifications(request):
     """
-    ✅ FIXED: API endpoint to get notifications.
-    Calculates unread count BEFORE slicing for display.
+    ✅ FIXED: Calculates unread count BEFORE slicing the notifications list.
     """
     try:
         # 1. Get the establishment
@@ -3904,23 +3903,21 @@ def get_notifications(request):
                 'unread_count': 0
             })
 
-        # 2. Define the BASE QuerySet (Don't slice it yet!)
-        # Check your models.py: use the correct name (Notification or OrderNotification)
-        # Based on your models.py snippet, the class name is likely 'Notification'
-        base_queryset = Notification.objects.filter(establishment=establishment)
+        # 2. Get the Base QuerySet (Do NOT slice yet)
+        # Note: Your models.py shows the class is named 'Notification'
+        base_query = Notification.objects.filter(establishment=establishment)
 
-        # 3. Get the unread count from the FULL (unsliced) QuerySet
-        unread_count = base_queryset.filter(is_read=False).count()
+        # 3. Get unread count from the full queryset
+        unread_count = base_query.filter(is_read=False).count()
 
-        # 4. NOW apply the slice and optimization for the display list
-        notifications = base_queryset.select_related(
+        # 4. Get the display list and slice it LAST
+        notifications = base_query.select_related(
             'order__user',
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:50]  # Slice last!
+        ).order_by('-created_at')[:50] # Slicing happens here
 
-        # 5. Format notifications data
         notifications_data = []
         for notif in notifications:
             try:
@@ -3938,12 +3935,6 @@ def get_notifications(request):
                     'message': notif.message,
                     'is_new': not notif.is_read,
                     'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
-                    'time_ago': get_time_ago(notif.created_at) if 'get_time_ago' in globals() else "",
-                    'is_paid': order.status == 'PAID',
-                    'customer': {
-                        'name': order.user.username,
-                        'email': order.user.email
-                    },
                     'order': {
                         'id': order.id,
                         'status': order.status,
@@ -3951,7 +3942,8 @@ def get_notifications(request):
                         'items': order_items
                     }
                 })
-            except Exception as item_err:
+            except Exception as e:
+                print(f"Error formatting notif {notif.id}: {e}")
                 continue
 
         return JsonResponse({
@@ -3961,7 +3953,10 @@ def get_notifications(request):
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 def get_time_ago(timestamp):
     """
