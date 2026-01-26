@@ -1385,6 +1385,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+<<<<<<< HEAD
 });
 
 // ===== CUSTOMER RECORDS SYSTEM - REAL-TIME ORDER MANAGEMENT =====
@@ -2128,3 +2129,6 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(initializeDOMElements, 100);
 }
+=======
+});
+>>>>>>> parent of 142c52a (FOR ESTABLISHMENTS TRANSACTION HISTORY)

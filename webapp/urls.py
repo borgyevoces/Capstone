@@ -71,12 +71,6 @@ urlpatterns = [
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
                   path('api/best-sellers/', views.get_best_sellers, name='get_best_sellers'),
-                  path('api/orders/establishment/<int:establishment_id>/', views.get_establishment_orders, name='get_establishment_orders'),
-                  path('api/orders/<int:order_id>/mark-paid/', views.mark_order_as_paid, name='mark_order_as_paid'),
-                  path('api/orders/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
-                  path('api/transactions/establishment/<int:establishment_id>/', views.get_transactions_history, name='get_transactions_history'),
-                  path('api/customer/<int:customer_id>/', views.get_customer_details, name='get_customer_details'),
-                  path('api/statistics/establishment/<int:establishment_id>/', views.get_order_statistics, name='get_order_statistics'),
 
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
