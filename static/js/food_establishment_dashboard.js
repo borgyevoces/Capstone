@@ -1386,3 +1386,671 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ===== CUSTOMER RECORDS SYSTEM - REAL-TIME ORDER MANAGEMENT =====
+// Configuration
+const ESTABLISHMENT_ID = {{ establishment.id }};
+const REFRESH_INTERVAL = 5000;
+let currentPage = 1;
+let itemsPerPage = 10;
+let allOrders = [];
+let autoRefreshInterval = null;
+
+// DOM Elements
+const customerRecordsBtn = document.getElementById('customerRecordsBtn');
+const customerRecordsModal = document.getElementById('customerRecordsModal');
+const recordsCloseBtn = document.getElementById('recordsCloseBtn');
+const recordsTabs = document.querySelectorAll('.records-tab');
+const recordsTabContents = document.querySelectorAll('.records-tab-content');
+
+// Modal Functions
+function openCustomerRecordsModal() {
+    customerRecordsModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadAllOrders();
+    startAutoRefresh();
+}
+
+function closeCustomerRecordsModal() {
+    customerRecordsModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+    stopAutoRefresh();
+}
+
+function initializeCustomerRecords() {
+    customerRecordsBtn.addEventListener('click', openCustomerRecordsModal);
+    recordsCloseBtn.addEventListener('click', closeCustomerRecordsModal);
+
+    customerRecordsModal.addEventListener('click', function(event) {
+        if (event.target === customerRecordsModal) {
+            closeCustomerRecordsModal();
+        }
+    });
+
+    recordsTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+
+    document.getElementById('applyFiltersBtn')?.addEventListener('click', applyFilters);
+    document.getElementById('customerSearchInput')?.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            applyFilters();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && customerRecordsModal.classList.contains('active')) {
+            closeCustomerRecordsModal();
+        }
+    });
+}
+
+function switchTab(tabName) {
+    recordsTabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        }
+    });
+
+    recordsTabContents.forEach(content => {
+        content.classList.remove('active');
+    });
+
+    const activeContent = document.getElementById(tabName + 'Tab');
+    if (activeContent) {
+        activeContent.classList.add('active');
+
+        if (tabName === 'pending') {
+            loadPendingOrders();
+        } else if (tabName === 'paid') {
+            loadPaidOrders();
+        } else if (tabName === 'completed') {
+            loadCompletedOrders();
+        } else if (tabName === 'history') {
+            loadTransactionHistory();
+        }
+    }
+}
+
+// Load Orders Data
+function loadAllOrders() {
+    console.log('📥 Loading all orders...');
+
+    fetch(`/api/orders/establishment/${ESTABLISHMENT_ID}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Orders loaded:', data);
+        allOrders = data.orders || [];
+        updateRecordsBadge(data.pending_count || 0);
+        displayAllOrders();
+    })
+    .catch(error => {
+        console.error('❌ Error loading orders:', error);
+        showErrorState('ordersEmptyState', 'Failed to load orders. Please try again.');
+    });
+}
+
+function loadPendingOrders() {
+    console.log('⏳ Loading pending orders...');
+
+    fetch(`/api/orders/establishment/${ESTABLISHMENT_ID}/?status=PENDING`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Pending orders loaded:', data);
+        displayPendingOrders(data.orders || []);
+    })
+    .catch(error => {
+        console.error('❌ Error loading pending orders:', error);
+        showErrorState('pendingEmptyState', 'Failed to load pending orders.');
+    });
+}
+
+function loadPaidOrders() {
+    console.log('💳 Loading paid orders...');
+
+    fetch(`/api/orders/establishment/${ESTABLISHMENT_ID}/?status=PAID`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Paid orders loaded:', data);
+        displayPaidOrders(data.orders || []);
+    })
+    .catch(error => {
+        console.error('❌ Error loading paid orders:', error);
+        showErrorState('paidEmptyState', 'Failed to load paid orders.');
+    });
+}
+
+function loadCompletedOrders() {
+    console.log('⭐ Loading completed orders...');
+
+    fetch(`/api/orders/establishment/${ESTABLISHMENT_ID}/?status=COMPLETED`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Completed orders loaded:', data);
+        displayCompletedOrders(data.orders || []);
+    })
+    .catch(error => {
+        console.error('❌ Error loading completed orders:', error);
+        showErrorState('completedEmptyState', 'Failed to load completed orders.');
+    });
+}
+
+function loadTransactionHistory() {
+    console.log('📊 Loading transaction history...');
+
+    fetch(`/api/transactions/establishment/${ESTABLISHMENT_ID}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Transaction history loaded:', data);
+        displayTransactionHistory(data.transactions || []);
+    })
+    .catch(error => {
+        console.error('❌ Error loading transaction history:', error);
+        showErrorState('historyEmptyState', 'Failed to load transaction history.');
+    });
+}
+
+// Display Functions
+function displayAllOrders() {
+    const tbody = document.getElementById('ordersTableBody');
+    const emptyState = document.getElementById('ordersEmptyState');
+
+    if (allOrders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    const sortedOrders = allOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedOrders = sortedOrders.slice(startIndex, startIndex + itemsPerPage);
+
+    tbody.innerHTML = paginatedOrders.map(order => `
+        <tr data-order-id="${order.id}">
+            <td><strong>#${order.id}</strong></td>
+            <td>${escapeHtml(order.customer_name)}</td>
+            <td>${formatDate(order.created_at)}</td>
+            <td><strong style="color: #B71C1C;">₱${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+            <td>${getPaymentStatusBadge(order.status)}</td>
+            <td>${getOrderStatusBadge(order.order_status || order.status)}</td>
+            <td>
+                <button class="records-filter-btn" onclick="expandOrderDetails(${order.id})" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    updatePagination(sortedOrders.length);
+}
+
+function displayPendingOrders(orders) {
+    const tbody = document.getElementById('pendingTableBody');
+    const emptyState = document.getElementById('pendingEmptyState');
+
+    if (orders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    tbody.innerHTML = orders.map(order => `
+        <tr data-order-id="${order.id}">
+            <td><strong>#${order.id}</strong></td>
+            <td>${escapeHtml(order.customer_name)}</td>
+            <td>${formatDate(order.created_at)}</td>
+            <td><strong style="color: #B71C1C;">₱${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+            <td><span class="status-badge status-pending">${getTimePending(order.created_at)}</span></td>
+            <td>
+                <button class="records-filter-btn" onclick="markOrderAsPaid(${order.id})" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-check"></i> Mark Paid
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayPaidOrders(orders) {
+    const tbody = document.getElementById('paidTableBody');
+    const emptyState = document.getElementById('paidEmptyState');
+
+    if (orders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    tbody.innerHTML = orders.map(order => `
+        <tr data-order-id="${order.id}">
+            <td><strong>#${order.id}</strong></td>
+            <td>${escapeHtml(order.customer_name)}</td>
+            <td>${formatDate(order.payment_confirmed_at || order.updated_at)}</td>
+            <td><strong style="color: #10b981;">₱${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+            <td>${getOrderStatusBadge(order.order_status || order.status)}</td>
+            <td>
+                <button class="records-filter-btn" onclick="expandOrderDetails(${order.id})" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayCompletedOrders(orders) {
+    const tbody = document.getElementById('completedTableBody');
+    const emptyState = document.getElementById('completedEmptyState');
+
+    if (orders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    tbody.innerHTML = orders.map(order => `
+        <tr data-order-id="${order.id}">
+            <td><strong>#${order.id}</strong></td>
+            <td>${escapeHtml(order.customer_name)}</td>
+            <td>${formatDate(order.updated_at)}</td>
+            <td><strong style="color: #10b981;">₱${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+            <td>${getRatingDisplay(order.rating || 0)}</td>
+            <td>
+                <button class="records-filter-btn" onclick="expandOrderDetails(${order.id})" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayTransactionHistory(transactions) {
+    const timeline = document.getElementById('transactionTimeline');
+    const emptyState = document.getElementById('historyEmptyState');
+
+    if (transactions.length === 0) {
+        timeline.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    timeline.innerHTML = transactions.map(transaction => {
+        const isCompleted = transaction.status === 'COMPLETED' || transaction.status === 'PAID';
+        return `
+            <div class="transaction-item ${isCompleted ? 'completed' : 'pending'}">
+                <div class="transaction-date">${formatDate(transaction.created_at)}</div>
+                <div class="transaction-description">
+                    <strong>Order #${transaction.order_id}</strong> - ${transaction.description}
+                </div>
+                <div style="color: #6b7280; font-size: 13px; margin-top: 8px;">
+                    Customer: ${escapeHtml(transaction.customer_name)}
+                </div>
+                <div class="transaction-amount">₱${parseFloat(transaction.amount).toFixed(2)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function expandOrderDetails(orderId) {
+    const order = allOrders.find(o => o.id === orderId);
+    if (!order) {
+        alert('Order not found');
+        return;
+    }
+
+    const detailsContainer = document.getElementById('orderDetailsContainer');
+    const itemsHTML = order.items.map(item => `
+        <div class="order-item">
+            <div>
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="item-quantity">Qty: ${item.quantity}</div>
+            </div>
+            <div class="item-price">₱${parseFloat(item.price).toFixed(2)}</div>
+        </div>
+    `).join('');
+
+    const detailsHTML = `
+        <div class="order-details-card">
+            <div class="order-detail-item">
+                <div class="order-detail-label">Order ID</div>
+                <div class="order-detail-value">#${order.id}</div>
+            </div>
+            <div class="order-detail-item">
+                <div class="order-detail-label">Customer</div>
+                <div class="order-detail-value">${escapeHtml(order.customer_name)}</div>
+            </div>
+            <div class="order-detail-item">
+                <div class="order-detail-label">Date</div>
+                <div class="order-detail-value">${formatDate(order.created_at)}</div>
+            </div>
+            <div class="order-detail-item">
+                <div class="order-detail-label">Total Amount</div>
+                <div class="order-detail-value" style="color: #B71C1C; font-size: 18px;">
+                    ₱${parseFloat(order.total_amount).toFixed(2)}
+                </div>
+            </div>
+            <div class="order-detail-item">
+                <div class="order-detail-label">Payment Status</div>
+                <div class="order-detail-value">${getPaymentStatusBadge(order.status)}</div>
+            </div>
+            <div class="order-detail-item">
+                <div class="order-detail-label">Order Status</div>
+                <div class="order-detail-value">${getOrderStatusBadge(order.order_status || order.status)}</div>
+            </div>
+        </div>
+
+        <div class="order-items-section">
+            <div class="order-items-title">Order Items</div>
+            ${itemsHTML}
+        </div>
+
+        <div style="margin-top: 16px; padding: 16px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #0284c7; font-weight: 600; font-size: 12px;">
+                <span class="realtime-indicator">
+                    <span class="realtime-dot"></span>
+                    Real-time tracking enabled
+                </span>
+            </div>
+        </div>
+    `;
+
+    detailsContainer.innerHTML = detailsHTML;
+    detailsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Helper Functions
+function getPaymentStatusBadge(status) {
+    const badges = {
+        'PENDING': '<span class="status-badge status-pending">Pending Payment</span>',
+        'PAID': '<span class="status-badge status-paid">Paid ✓</span>',
+        'CANCELLED': '<span class="status-badge status-cancelled">Cancelled</span>',
+    };
+    return badges[status] || `<span class="status-badge">${status}</span>`;
+}
+
+function getOrderStatusBadge(status) {
+    const badges = {
+        'PENDING': '<span class="status-badge status-pending">Pending</span>',
+        'PAID': '<span class="status-badge status-paid">Paid</span>',
+        'PREPARING': '<span class="status-badge status-preparing">Preparing</span>',
+        'READY': '<span class="status-badge status-ready">Ready</span>',
+        'COMPLETED': '<span class="status-badge status-completed">Completed</span>',
+        'CANCELLED': '<span class="status-badge status-cancelled">Cancelled</span>',
+    };
+    return badges[status] || `<span class="status-badge">${status}</span>`;
+}
+
+function getRatingDisplay(rating) {
+    const stars = '⭐'.repeat(Math.floor(rating));
+    return rating > 0 ? `${stars} (${rating}/5)` : 'No rating';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function getTimePending(createdAt) {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMins = Math.floor((now - created) / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min`;
+    const hours = Math.floor(diffMins / 60);
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+}
+
+function escapeHtml(text) {
+    const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function updateRecordsBadge(count) {
+    const badge = document.getElementById('recordsBadge');
+    if (badge) {
+        badge.textContent = count;
+        if (count > 0) {
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function showErrorState(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'block';
+        const titleElement = element.querySelector('.records-empty-title');
+        if (titleElement) {
+            titleElement.textContent = 'Error Loading Data';
+        }
+    }
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('customerSearchInput')?.value.toLowerCase() || '';
+    const statusFilter = document.getElementById('statusFilterSelect')?.value || '';
+
+    let filtered = allOrders;
+
+    if (searchTerm) {
+        filtered = filtered.filter(order =>
+            order.customer_name.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    if (statusFilter) {
+        filtered = filtered.filter(order => order.status === statusFilter);
+    }
+
+    currentPage = 1;
+    const tbody = document.getElementById('ordersTableBody');
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No orders found matching your filters.</td></tr>';
+        return;
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedOrders = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+    tbody.innerHTML = paginatedOrders.map(order => `
+        <tr data-order-id="${order.id}">
+            <td><strong>#${order.id}</strong></td>
+            <td>${escapeHtml(order.customer_name)}</td>
+            <td>${formatDate(order.created_at)}</td>
+            <td><strong style="color: #B71C1C;">₱${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+            <td>${getPaymentStatusBadge(order.status)}</td>
+            <td>${getOrderStatusBadge(order.order_status || order.status)}</td>
+            <td>
+                <button class="records-filter-btn" onclick="expandOrderDetails(${order.id})" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-eye"></i> View
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    updatePagination(filtered.length);
+}
+
+function updatePagination(totalItems) {
+    const pagination = document.getElementById('ordersPagination');
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}"
+                onclick="goToPage(${currentPage - 1})"
+                ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+    `;
+
+    for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+        html += `
+            <button class="pagination-btn ${currentPage === i ? 'active' : ''}"
+                    onclick="goToPage(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    if (totalPages > 5) {
+        html += '<span style="padding: 8px;">...</span>';
+        html += `
+            <button class="pagination-btn" onclick="goToPage(${totalPages})">
+                ${totalPages}
+            </button>
+        `;
+    }
+
+    html += `
+        <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}"
+                onclick="goToPage(${currentPage + 1})"
+                ${currentPage === totalPages ? 'disabled' : ''}>
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+
+    pagination.innerHTML = html;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    displayAllOrders();
+}
+
+function markOrderAsPaid(orderId) {
+    if (!confirm('Mark this order as paid?')) return;
+
+    fetch(`/api/orders/${orderId}/mark-paid/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Order marked as paid');
+            loadPendingOrders();
+            loadAllOrders();
+        } else {
+            alert('❌ Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Error marking order as paid');
+    });
+}
+
+// Real-time Updates
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+
+    autoRefreshInterval = setInterval(() => {
+        const activeTab = document.querySelector('.records-tab.active');
+        if (activeTab) {
+            const tabName = activeTab.dataset.tab;
+
+            if (tabName === 'orders') {
+                loadAllOrders();
+            } else if (tabName === 'pending') {
+                loadPendingOrders();
+            } else if (tabName === 'paid') {
+                loadPaidOrders();
+            } else if (tabName === 'completed') {
+                loadCompletedOrders();
+            } else if (tabName === 'history') {
+                loadTransactionHistory();
+            }
+        }
+    }, REFRESH_INTERVAL);
+
+    console.log('🔄 Auto-refresh started');
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('⏹️ Auto-refresh stopped');
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing Customer Records System...');
+    initializeCustomerRecords();
+    console.log('✅ Customer Records System initialized');
+});
+
+if (document.readyState !== 'loading') {
+    initializeCustomerRecords();
+}

@@ -1487,7 +1487,550 @@
             }
         }
 
-    </style>
+
+        /* ===== CUSTOMER RECORDS STYLES ===== */
+        .customer-records-btn {
+            background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-right: 8px;
+        }
+
+        .customer-records-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.4);
+        }
+
+        .records-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        .customer-records-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .customer-records-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .customer-records-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .customer-records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 2px solid #f3f4f6;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+
+        .customer-records-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .customer-records-header h2 i {
+            color: #B71C1C;
+            font-size: 28px;
+        }
+
+        .records-close-btn {
+            background: #f3f4f6;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .records-close-btn:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .customer-records-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 0 24px;
+            background: white;
+        }
+
+        .records-tab {
+            background: none;
+            border: none;
+            padding: 16px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .records-tab:hover {
+            color: #111827;
+        }
+
+        .records-tab.active {
+            color: #B71C1C;
+            border-bottom-color: #B71C1C;
+        }
+
+        .records-tab i {
+            margin-right: 8px;
+        }
+
+        .customer-records-body {
+            padding: 24px;
+        }
+
+        .records-tab-content {
+            display: none;
+        }
+
+        .records-tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .records-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .records-filter-input,
+        .records-filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .records-filter-input:focus,
+        .records-filter-select:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
+        }
+
+        .records-filter-btn {
+            background: #B71C1C;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .records-filter-btn:hover {
+            background: #8B0000;
+        }
+
+        .customer-records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .customer-records-table thead {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .customer-records-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 14px;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .customer-records-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .customer-records-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-paid {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-preparing {
+            background: #dbeafe;
+            color: #0c4a6e;
+            border: 1px solid #93c5fd;
+        }
+
+        .status-ready {
+            background: #c7d2fe;
+            color: #312e81;
+            border: 1px solid #a5b4fc;
+        }
+
+        .status-completed {
+            background: #bbf7d0;
+            color: #064e3b;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-cancelled {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .order-details-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .order-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .order-detail-label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .order-detail-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 500;
+        }
+
+        .order-items-section {
+            margin-top: 16px;
+            padding: 16px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .order-items-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .item-quantity {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: #B71C1C;
+        }
+
+        .records-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .records-empty-icon {
+            font-size: 64px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .records-empty-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .records-empty-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .realtime-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .realtime-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .records-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .pagination-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover {
+            border-color: #B71C1C;
+            color: #B71C1C;
+        }
+
+        .pagination-btn.active {
+            background: #B71C1C;
+            color: white;
+            border-color: #B71C1C;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .transaction-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .transaction-item {
+            position: relative;
+            padding: 20px;
+            border-left: 3px solid #e5e7eb;
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .transaction-item.completed {
+            border-left-color: #10b981;
+        }
+
+        .transaction-item.pending {
+            border-left-color: #f59e0b;
+        }
+
+        .transaction-item::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 28px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #e5e7eb;
+        }
+
+        .transaction-item.completed::before {
+            border-color: #10b981;
+            background: #10b981;
+        }
+
+        .transaction-item.pending::before {
+            border-color: #f59e0b;
+            background: #f59e0b;
+        }
+
+        .transaction-date {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .transaction-description {
+            font-weight: 600;
+            font-size: 15px;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #B71C1C;
+        }
+
+        @media (max-width: 768px) {
+            .customer-records-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .customer-records-table {
+                font-size: 12px;
+            }
+
+            .customer-records-table th,
+            .customer-records-table td {
+                padding: 12px 8px;
+            }
+
+            .records-filters {
+                flex-direction: column;
+            }
+
+            .order-details-card {
+                grid-template-columns: 1fr;
+            }
+
+            .customer-records-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .records-close-btn {
+                margin-left: auto;
+            }
+        }
+
+        </style>
 </head>
 <body>
 <nav class="navbar">
@@ -1506,6 +2049,13 @@
                 <i class="fas fa-envelope"></i>
                 <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
             </button>
+
+
+            <button class="customer-records-btn" id="customerRecordsBtn" title="View Customer Orders">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="records-badge" id="recordsBadge">0</span>
+            </button>
+
 
             <div class="navbar-dropdown">
                 <button class="navbar-btn" onclick="toggleDropdown()" title="Menu">
@@ -1527,6 +2077,185 @@
         </div>
     </div>
 </nav>
+
+<!-- ✅ CUSTOMER RECORDS MODAL -->
+<div class="customer-records-modal" id="customerRecordsModal">
+    <div class="customer-records-content">
+        <!-- Header -->
+        <div class="customer-records-header">
+            <h2>
+                <i class="fas fa-user-group"></i>
+                Customer Orders & Records
+            </h2>
+            <button class="records-close-btn" id="recordsCloseBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="customer-records-tabs">
+            <button class="records-tab active" data-tab="orders">
+                <i class="fas fa-box-open"></i>
+                All Orders
+            </button>
+            <button class="records-tab" data-tab="pending">
+                <i class="fas fa-hourglass-start"></i>
+                Pending Payment
+            </button>
+            <button class="records-tab" data-tab="paid">
+                <i class="fas fa-check-circle"></i>
+                Paid Orders
+            </button>
+            <button class="records-tab" data-tab="completed">
+                <i class="fas fa-star"></i>
+                Completed
+            </button>
+            <button class="records-tab" data-tab="history">
+                <i class="fas fa-history"></i>
+                Transaction History
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="customer-records-body">
+
+            <!-- Orders Tab -->
+            <div class="records-tab-content active" id="ordersTab">
+                <div class="records-filters">
+                    <input type="text" class="records-filter-input" id="customerSearchInput" placeholder="Search by customer name...">
+                    <select class="records-filter-select" id="statusFilterSelect">
+                        <option value="">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="PAID">Paid</option>
+                        <option value="PREPARING">Preparing</option>
+                        <option value="READY">Ready</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+                    <button class="records-filter-btn" id="applyFiltersBtn">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+
+                <table class="customer-records-table" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Order Date</th>
+                            <th>Total Amount</th>
+                            <th>Payment Status</th>
+                            <th>Order Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+
+                <div id="orderDetailsContainer"></div>
+                <div class="records-pagination" id="ordersPagination"></div>
+
+                <div class="records-empty-state" id="ordersEmptyState" style="display: none;">
+                    <div class="records-empty-icon">📦</div>
+                    <div class="records-empty-title">No Orders Yet</div>
+                    <div class="records-empty-text">There are no customer orders to display.</div>
+                </div>
+            </div>
+
+            <!-- Pending Orders Tab -->
+            <div class="records-tab-content" id="pendingTab">
+                <table class="customer-records-table" id="pendingTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Order Date</th>
+                            <th>Total Amount</th>
+                            <th>Time Pending</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+
+                <div class="records-empty-state" id="pendingEmptyState" style="display: none;">
+                    <div class="records-empty-icon">✅</div>
+                    <div class="records-empty-title">No Pending Payments</div>
+                    <div class="records-empty-text">All orders have been paid!</div>
+                </div>
+            </div>
+
+            <!-- Paid Orders Tab -->
+            <div class="records-tab-content" id="paidTab">
+                <table class="customer-records-table" id="paidTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Paid Date</th>
+                            <th>Total Amount</th>
+                            <th>Current Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paidTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+
+                <div class="records-empty-state" id="paidEmptyState" style="display: none;">
+                    <div class="records-empty-icon">💳</div>
+                    <div class="records-empty-title">No Paid Orders Yet</div>
+                    <div class="records-empty-text">Paid orders will appear here.</div>
+                </div>
+            </div>
+
+            <!-- Completed Orders Tab -->
+            <div class="records-tab-content" id="completedTab">
+                <table class="customer-records-table" id="completedTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Completed Date</th>
+                            <th>Total Amount</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="completedTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+
+                <div class="records-empty-state" id="completedEmptyState" style="display: none;">
+                    <div class="records-empty-icon">⭐</div>
+                    <div class="records-empty-title">No Completed Orders</div>
+                    <div class="records-empty-text">Completed orders will appear here.</div>
+                </div>
+            </div>
+
+            <!-- Transaction History Tab -->
+            <div class="records-tab-content" id="historyTab">
+                <div class="transaction-timeline" id="transactionTimeline">
+                    <!-- Populated by JavaScript -->
+                </div>
+
+                <div class="records-empty-state" id="historyEmptyState" style="display: none;">
+                    <div class="records-empty-icon">📊</div>
+                    <div class="records-empty-title">No Transaction History</div>
+                    <div class="records-empty-text">Transactions will appear here as orders are placed.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 <!-- Delete Establishment Confirmation Modal -->
 <div class="delete-modal-overlay" id="deleteModal">
