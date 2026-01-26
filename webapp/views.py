@@ -3886,10 +3886,11 @@ To: {test_email}
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
-@login_required
+@require_http_methods(["GET"])
 def get_notifications(request):
     """
-    ✅ FIXED: Calculates unread count BEFORE slicing the notifications list.
+    ✅ FIXED: Changed Notification to OrderNotification
+    Calculates unread count BEFORE slicing the notifications list.
     """
     try:
         # 1. Get the establishment
@@ -3904,8 +3905,8 @@ def get_notifications(request):
             })
 
         # 2. Get the Base QuerySet (Do NOT slice yet)
-        # Note: Your models.py shows the class is named 'Notification'
-        base_query = Notification.objects.filter(establishment=establishment)
+        # ✅ FIXED: Changed from Notification to OrderNotification
+        base_query = OrderNotification.objects.filter(establishment=establishment)
 
         # 3. Get unread count from the full queryset
         unread_count = base_query.filter(is_read=False).count()
@@ -3915,7 +3916,7 @@ def get_notifications(request):
             'order__user',
             'order__establishment'
         ).prefetch_related(
-            'order__orderitem_set__menu_item'
+            'order__items__menu_item'  # ✅ Also fixed: orderitem_set -> items
         ).order_by('-created_at')[:50] # Slicing happens here
 
         notifications_data = []
@@ -3927,7 +3928,7 @@ def get_notifications(request):
                     'quantity': item.quantity,
                     'price': float(item.price_at_order),
                     'total': float(item.total_price)
-                } for item in order.orderitem_set.all()]
+                } for item in order.items.all()]  # ✅ Also fixed: orderitem_set -> items
 
                 notifications_data.append({
                     'id': notif.id,
@@ -3953,10 +3954,13 @@ def get_notifications(request):
         })
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
+        print(f"Error in get_notifications: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': str(e),
+            'notifications': [],
+            'unread_count': 0
+        }, status=500)
 
 def get_time_ago(timestamp):
     """
