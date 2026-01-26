@@ -1426,47 +1426,99 @@ function initializeDOMElements() {
 
 // Modal Functions
 function openCustomerRecordsModal() {
+    console.log('📂 Opening Customer Records modal...');
+    if (!customerRecordsModal) {
+        console.error('❌ Modal not found!');
+        return;
+    }
     customerRecordsModal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    console.log('✅ Modal opened');
     loadAllOrders();
     startAutoRefresh();
 }
 
 function closeCustomerRecordsModal() {
-    customerRecordsModal.classList.remove('active');
+    console.log('📂 Closing modal...');
+    if (customerRecordsModal) {
+        customerRecordsModal.classList.remove('active');
+    }
     document.body.style.overflow = 'auto';
     stopAutoRefresh();
+    console.log('✅ Modal closed');
 }
 
 function initializeCustomerRecords() {
-    customerRecordsBtn.addEventListener('click', openCustomerRecordsModal);
-    recordsCloseBtn.addEventListener('click', closeCustomerRecordsModal);
+    console.log('🔧 Setting up event listeners...');
 
-    customerRecordsModal.addEventListener('click', function(event) {
-        if (event.target === customerRecordsModal) {
-            closeCustomerRecordsModal();
-        }
-    });
-
-    recordsTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.dataset.tab;
-            switchTab(tabName);
+    // Button click
+    if (customerRecordsBtn) {
+        customerRecordsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🎯 Customer Records button clicked');
+            openCustomerRecordsModal();
         });
-    });
+        console.log('✅ Button click handler attached');
+    }
 
-    document.getElementById('applyFiltersBtn')?.addEventListener('click', applyFilters);
-    document.getElementById('customerSearchInput')?.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            applyFilters();
-        }
-    });
+    // Close button
+    if (recordsCloseBtn) {
+        recordsCloseBtn.addEventListener('click', closeCustomerRecordsModal);
+        console.log('✅ Close button handler attached');
+    }
 
+    // Modal background click
+    if (customerRecordsModal) {
+        customerRecordsModal.addEventListener('click', function(event) {
+            if (event.target === customerRecordsModal) {
+                closeCustomerRecordsModal();
+            }
+        });
+        console.log('✅ Modal background click handler attached');
+    }
+
+    // Tab clicks
+    if (recordsTabs && recordsTabs.length > 0) {
+        recordsTabs.forEach(function(tab, index) {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.dataset.tab;
+                console.log('📑 Tab clicked:', tabName);
+                switchTab(tabName);
+            });
+        });
+        console.log('✅ Tab click handlers attached (' + recordsTabs.length + ' tabs)');
+    } else {
+        console.warn('⚠️ No tabs found');
+    }
+
+    // Filter button
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', applyFilters);
+        console.log('✅ Filter button handler attached');
+    }
+
+    // Search input
+    const customerSearchInput = document.getElementById('customerSearchInput');
+    if (customerSearchInput) {
+        customerSearchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+        console.log('✅ Search input handler attached');
+    }
+
+    // Escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && customerRecordsModal.classList.contains('active')) {
+        if (e.key === 'Escape' && customerRecordsModal && customerRecordsModal.classList.contains('active')) {
             closeCustomerRecordsModal();
         }
     });
+
+    console.log('✅ All event listeners attached successfully');
 }
 
 function switchTab(tabName) {
