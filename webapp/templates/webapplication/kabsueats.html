@@ -251,35 +251,68 @@
             }
         }
 
-        /* Red Dropdown Button */
-        .view-dropdown-wrapper {
-            position: relative;
-            display: inline-block;
+        /* ✅ NEW: Best Sellers Section Layout */
+        .best-sellers-section {
+            margin: 40px 0;
+            padding: 0 20px;
         }
 
-        /* Container for left-aligned dropdown above map */
-        .dropdown-container-left {
+        .best-sellers-header {
+            margin-bottom: 25px;
+        }
+
+        .best-sellers-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
             display: flex;
-            justify-content: flex-start;
-            margin: 20px 0 10px 0;
-            padding: 0 20px;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .best-sellers-header i {
+            color: #FF6B35;
+            font-size: 32px;
+        }
+
+        .best-sellers-header p {
+            color: #6b7280;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        /* ✅ NEW: Controls Container (Dropdown + Settings) */
+        .best-sellers-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* ✅ NEW: Left side - View Dropdown */
+        .best-sellers-view-dropdown {
+            position: relative;
+            display: inline-block;
         }
 
         .view-dropdown-button {
             background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
             color: white;
             border: none;
-            padding: 14px 24px;
-            font-size: 16px;
+            padding: 12px 20px;
+            font-size: 15px;
             font-weight: 700;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 10px;
             box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
             transition: all 0.3s ease;
-            min-width: 220px;
+            min-width: 180px;
             justify-content: space-between;
         }
 
@@ -301,7 +334,7 @@
         }
 
         .view-dropdown-button i.fa-chevron-down {
-            font-size: 14px;
+            font-size: 12px;
             transition: transform 0.3s ease;
         }
 
@@ -314,9 +347,9 @@
             top: calc(100% + 8px);
             left: 0;
             background: white;
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            min-width: 320px;
+            min-width: 300px;
             overflow: hidden;
             opacity: 0;
             visibility: hidden;
@@ -332,10 +365,10 @@
         }
 
         .view-dropdown-option {
-            padding: 16px 20px;
+            padding: 14px 18px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
             border-bottom: 1px solid #f0f0f0;
@@ -347,12 +380,12 @@
 
         .view-dropdown-option:hover {
             background: #f8f9fa;
-            padding-left: 26px;
+            padding-left: 24px;
         }
 
         .view-dropdown-option-icon {
-            font-size: 20px;
-            width: 28px;
+            font-size: 18px;
+            width: 24px;
             text-align: center;
         }
 
@@ -370,7 +403,7 @@
 
         .view-dropdown-option-title {
             font-weight: 700;
-            font-size: 15px;
+            font-size: 14px;
             color: #2c3e50;
             margin-bottom: 2px;
         }
@@ -381,43 +414,348 @@
             line-height: 1.4;
         }
 
+        /* ✅ NEW: Right side - Sort/Settings Dropdown */
+        .best-sellers-sort-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .sort-dropdown-button {
+            background: white;
+            color: #333;
+            border: 2px solid #E9A420;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(233, 164, 32, 0.2);
+            transition: all 0.3s ease;
+            min-width: 130px;
+        }
+
+        .sort-dropdown-button:hover {
+            background: #E9A420;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 164, 32, 0.3);
+        }
+
+        .sort-dropdown-button:active {
+            transform: translateY(0);
+        }
+
+        .sort-dropdown-button i {
+            font-size: 16px;
+        }
+
+        .sort-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            min-width: 280px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sort-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .sort-dropdown-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sort-dropdown-option:last-child {
+            border-bottom: none;
+        }
+
+        .sort-dropdown-option:hover {
+            background: #FFF8E7;
+            padding-left: 20px;
+        }
+
+        .sort-dropdown-option.active {
+            background: #FFF8E7;
+            color: #E9A420;
+            font-weight: 600;
+        }
+
+        .sort-dropdown-option-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            color: #E9A420;
+        }
+
+        .sort-dropdown-option-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .sort-dropdown-option.active .sort-dropdown-option-text {
+            color: #E9A420;
+        }
+
+        /* Best Sellers Container */
+        .best-sellers-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .best-sellers-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .best-sellers-scroll {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 0;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .best-seller-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .best-seller-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .best-seller-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .best-seller-content {
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .best-seller-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .best-seller-establishment {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .best-seller-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #E9A420;
+            margin-bottom: 10px;
+        }
+
+        .best-seller-rating {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .best-seller-rating i {
+            color: #FFB800;
+        }
+
+        .best-seller-rating-text {
+            color: #6b7280;
+        }
+
+        .scroll-btn {
+            background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(183, 28, 28, 0.3);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .scroll-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
+        }
+
+        .scroll-btn:active {
+            transform: scale(0.95);
+        }
+
+        .scroll-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading-spinner i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #E9A420;
+        }
+
         @media (max-width: 768px) {
             .view-dropdown-button {
                 font-size: 14px;
-                padding: 12px 20px;
-                min-width: 200px;
+                padding: 10px 16px;
+                min-width: 160px;
             }
 
             .view-dropdown-menu {
-                min-width: 280px;
+                min-width: 260px;
             }
 
-            .view-dropdown-option {
-                padding: 14px 18px;
+            .sort-dropdown-button {
+                font-size: 13px;
+                padding: 9px 14px;
+                min-width: 120px;
             }
 
-            .dropdown-container-left {
-                padding: 0 15px;
-                margin: 15px 0 8px 0;
+            .best-sellers-controls {
+                gap: 10px;
+            }
+
+            .best-sellers-scroll {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 15px;
+            }
+
+            .best-seller-image {
+                height: 150px;
+            }
+
+            .best-seller-content {
+                padding: 12px;
+            }
+
+            .best-seller-name {
+                font-size: 14px;
+            }
+
+            .best-seller-price {
+                font-size: 16px;
+            }
+
+            .scroll-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
             }
         }
 
         @media (max-width: 480px) {
-            .view-dropdown-button {
-                font-size: 13px;
-                padding: 10px 16px;
-                min-width: 180px;
+            .best-sellers-controls {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .view-dropdown-menu {
+            .view-dropdown-button,
+            .sort-dropdown-button {
                 min-width: 100%;
-                max-width: 300px;
+                justify-content: center;
             }
 
-            .dropdown-container-left {
-                padding: 0 10px;
-                margin: 10px 0 5px 0;
+            .best-sellers-scroll {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 12px;
             }
+
+            .best-seller-image {
+                height: 120px;
+            }
+
+            .best-seller-name {
+                font-size: 13px;
+            }
+
+            .best-seller-price {
+                font-size: 14px;
+            }
+
+            .scroll-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+        }
+
+        /* Red Dropdown Button - OLD (Hidden) */
+        .dropdown-container-left {
+            display: none;
         }
 
         /* Map Section Styles */
@@ -549,35 +887,6 @@
                 {% endif %}
             </div>
 
-            <!-- Red Dropdown Button - Positioned above map, left aligned -->
-            <div class="dropdown-container-left">
-                <div class="view-dropdown-wrapper">
-                    <button class="view-dropdown-button" id="viewDropdownBtn">
-                        <span class="view-dropdown-button-text">
-                            <i class="fas fa-eye"></i>
-                            <span id="currentViewText">Best Sellers</span>
-                        </span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="view-dropdown-menu" id="viewDropdownMenu">
-                        <div class="view-dropdown-option" data-view="map">
-                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">View Map</div>
-                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
-                            </div>
-                        </div>
-                        <div class="view-dropdown-option" data-view="bestsellers">
-                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">Best Sellers</div>
-                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
             <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
@@ -589,7 +898,7 @@
                 </button>
             </div>
 
-            <!-- Best Sellers Section -->
+            <!-- ✅ NEW: Best Sellers Section with Updated Layout -->
             <div class="best-sellers-section" id="bestSellersSection">
                 <div class="best-sellers-header">
                     <h2>
@@ -599,6 +908,67 @@
                     <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
                 </div>
 
+                <!-- ✅ NEW: Controls - Dropdown on LEFT, Settings/Sort on RIGHT -->
+                <div class="best-sellers-controls">
+                    <!-- LEFT SIDE: View Dropdown -->
+                    <div class="best-sellers-view-dropdown">
+                        <button class="view-dropdown-button" id="viewDropdownBtn">
+                            <span class="view-dropdown-button-text">
+                                <i class="fas fa-eye"></i>
+                                <span id="currentViewText">Best Sellers</span>
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="view-dropdown-menu" id="viewDropdownMenu">
+                            <div class="view-dropdown-option" data-view="map">
+                                <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
+                                <div class="view-dropdown-option-content">
+                                    <div class="view-dropdown-option-title">View Map</div>
+                                    <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
+                                </div>
+                            </div>
+                            <div class="view-dropdown-option" data-view="bestsellers">
+                                <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
+                                <div class="view-dropdown-option-content">
+                                    <div class="view-dropdown-option-title">Best Sellers</div>
+                                    <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: Sort/Settings Dropdown -->
+                    <div class="best-sellers-sort-dropdown">
+                        <button class="sort-dropdown-button" id="sortDropdownBtn">
+                            <i class="fas fa-sliders-h"></i>
+                            Sort
+                        </button>
+                        <div class="sort-dropdown-menu" id="sortDropdownMenu">
+                            <div class="sort-dropdown-option active" data-sort="trending">
+                                <i class="fas fa-fire sort-dropdown-option-icon"></i>
+                                <span class="sort-dropdown-option-text">Trending Now</span>
+                            </div>
+                            <div class="sort-dropdown-option" data-sort="rating">
+                                <i class="fas fa-star sort-dropdown-option-icon"></i>
+                                <span class="sort-dropdown-option-text">Highest Rated</span>
+                            </div>
+                            <div class="sort-dropdown-option" data-sort="price-low">
+                                <i class="fas fa-arrow-up sort-dropdown-option-icon"></i>
+                                <span class="sort-dropdown-option-text">Price: Low to High</span>
+                            </div>
+                            <div class="sort-dropdown-option" data-sort="price-high">
+                                <i class="fas fa-arrow-down sort-dropdown-option-icon"></i>
+                                <span class="sort-dropdown-option-text">Price: High to Low</span>
+                            </div>
+                            <div class="sort-dropdown-option" data-sort="newest">
+                                <i class="fas fa-clock sort-dropdown-option-icon"></i>
+                                <span class="sort-dropdown-option-text">Newest First</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Best Sellers Grid -->
                 <div class="best-sellers-container">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
@@ -619,7 +989,7 @@
                 </div>
             </div>
 
-            <!-- ✅ NEW: Establishments Section Title -->
+            <!-- ✅ REPOSITIONED: Establishments Section Title -->
             <h2 class="establishments-section-title">Food Establishments</h2>
 
             {% block filters %}
@@ -749,17 +1119,11 @@
                                             <small>Distance: Not available</small>
                                         {% endif %}
                                     </div>
-
-                                    {% if establishment.payment_methods %}
-                                        <div class="payment-methods">
-                                            <small>Payment Methods : {{ establishment.payment_methods }}</small>
-                                        </div>
-                                    {% endif %}
                                 </div>
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        <p id="noInitialEstablishments" class="no-establishments-found">No food establishments found.</p>
+                        <p class="no-results-message">No food establishments found.</p>
                     {% endif %}
                 </div>
             </div>
@@ -767,322 +1131,113 @@
         {% endblock %}
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
-            <div class="Title_h2"><h2>Update Profile</h2></div>
-
-            <form id="profileUpdateForm" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <div class="profile-form-group" style="text-align: center;">
-                    <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    <img id="profileImagePreview"
-                        src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                        alt="Current Profile">
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
-                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
-                </div>
-
-                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-
-                <button type="submit" class="profile-form-submit">Save Changes</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- JavaScript Libraries -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-
-    <!-- Custom JavaScript -->
-    <script src="{% static 'js/kabsueats_map.js' %}"></script>
-    <script src="{% static 'js/kabsueats.js' %}"></script>
-    <script src="{% static 'js/status_updater.js' %}"></script>
-
-    {% block extra_js %}
     <script>
-        // JavaScript constants for Cart and Auth
-        const UPDATE_PROFILE_URL = "{% url 'update_profile' %}";
-        const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
-        const VIEW_CART_URL = "{% url 'view_cart' %}";
-        const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
+        // ✅ NEW: View Dropdown Toggle (Map / Best Sellers)
+        const viewDropdownBtn = document.getElementById('viewDropdownBtn');
+        const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+        const viewOptions = document.querySelectorAll('.view-dropdown-option');
+        const currentViewText = document.getElementById('currentViewText');
+        const mapSection = document.getElementById('mapSection');
+        const bestSellersSection = document.getElementById('bestSellersSection');
 
-        // updateCartBadge function
-        function updateCartBadge(count) {
-            const badge = document.getElementById('cart-count-badge');
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.style.display = 'block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
-
-        // Message Notification Auto-Dismiss and Manual Close
-        document.addEventListener('DOMContentLoaded', function() {
-            if (IS_USER_AUTHENTICATED) {
-                updateCartBadge({{ cart_count|default:0 }});
-            }
-
-            const messagesContainer = document.getElementById('messagesContainer');
-            if (messagesContainer) {
-                setTimeout(function() {
-                    const messages = messagesContainer.querySelectorAll('.message-alert');
-                    messages.forEach(function(message) {
-                        message.classList.add('fade-out');
-                        setTimeout(function() {
-                            message.remove();
-                            if (messagesContainer.querySelectorAll('.message-alert').length === 0) {
-                                messagesContainer.remove();
-                            }
-                        }, 300);
-                    });
-                }, 5000);
-            }
-
-            // Initialize location route button
-            initLocationRouteButton();
-
-            // Initialize red dropdown button
-            initViewDropdown();
+        viewDropdownBtn.addEventListener('click', function() {
+            viewDropdownMenu.classList.toggle('show');
+            viewDropdownBtn.classList.toggle('open');
         });
 
-        // Red Dropdown Toggle & View Switcher
-        function initViewDropdown() {
-            const dropdownBtn = document.getElementById('viewDropdownBtn');
-            const dropdownMenu = document.getElementById('viewDropdownMenu');
-            const currentViewText = document.getElementById('currentViewText');
-            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
+        viewOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const view = this.dataset.view;
+                const title = this.querySelector('.view-dropdown-option-title').textContent;
 
-            const mapSection = document.getElementById('mapSection');
-            const bestSellersSection = document.getElementById('bestSellersSection');
-            const toggleMapBtn = document.getElementById('toggleMapBtn');
+                currentViewText.textContent = title;
+                viewDropdownMenu.classList.remove('show');
+                viewDropdownBtn.classList.remove('open');
 
-            if (!dropdownBtn || !dropdownMenu) return;
-
-            // Toggle dropdown on button click
-            dropdownBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                dropdownBtn.classList.toggle('open');
-                dropdownMenu.classList.toggle('show');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
-                }
-            });
-
-            // Handle option selection
-            dropdownOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const viewType = this.dataset.view;
-                    const viewTitle = this.querySelector('.view-dropdown-option-title').textContent;
-
-                    // Update button text
-                    currentViewText.textContent = viewTitle;
-
-                    // Close dropdown
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
-
-                    if (viewType === 'map') {
-                        // Show ONLY Map, hide Best Sellers
-                        console.log('✅ Showing Map, ❌ Hiding Best Sellers');
-
-                        bestSellersSection.style.setProperty('display', 'none', 'important');
-                        mapSection.style.setProperty('display', 'block', 'important');
-
-                        if (toggleMapBtn) {
-                            if (!mapSection.classList.contains('active')) {
-                                setTimeout(() => {
-                                    toggleMapBtn.click();
-                                }, 100);
-                            }
-                        }
-
-                    } else if (viewType === 'bestsellers') {
-                        // Show ONLY Best Sellers, hide Map
-                        console.log('✅ Showing Best Sellers, ❌ Hiding Map');
-
-                        mapSection.classList.remove('active');
-                        mapSection.style.setProperty('display', 'none', 'important');
-                        bestSellersSection.style.setProperty('display', 'block', 'important');
-                    }
-                });
-            });
-        }
-
-        function dismissMessage(button) {
-            const message = button.closest('.message-alert');
-            const container = document.getElementById('messagesContainer');
-
-            message.classList.add('fade-out');
-            setTimeout(function() {
-                message.remove();
-                if (container && container.querySelectorAll('.message-alert').length === 0) {
-                    container.remove();
-                }
-            }, 300);
-        }
-
-        // Location Route Button
-        function initLocationRouteButton() {
-            const routeBtn = document.getElementById('locationRouteBtn');
-            const mapSection = document.getElementById('mapSection');
-
-            if (!routeBtn) return;
-
-            let routingControl = null;
-            let isRouteActive = false;
-
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.attributeName === 'style') {
-                        const isMapVisible = mapSection.style.display !== 'none';
-                        routeBtn.style.display = isMapVisible ? 'flex' : 'none';
-                    }
-                });
-            });
-
-            observer.observe(mapSection, { attributes: true });
-
-            routeBtn.addEventListener('click', function() {
-                if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
-                    alert('Map is not initialized. Please wait.');
-                    return;
-                }
-
-                if (typeof userMarker === 'undefined' || !userMarker) {
-                    alert('Please click "Show My Location" button on the map first to enable your location.');
-                    return;
-                }
-
-                if (isRouteActive && routingControl) {
-                    establishmentsMap.removeControl(routingControl);
-                    routingControl = null;
-                    isRouteActive = false;
-                    routeBtn.classList.remove('active');
-                    routeBtn.title = 'Show Route to Establishment';
-                } else {
-                    const establishments = document.querySelectorAll('.food-establishment-item');
-                    if (establishments.length === 0) {
-                        alert('No establishments available.');
-                        return;
-                    }
-
-                    let targetEstablishment = null;
-                    for (let est of establishments) {
-                        if (est.style.display !== 'none') {
-                            targetEstablishment = est;
-                            break;
-                        }
-                    }
-
-                    if (!targetEstablishment) {
-                        alert('No establishment found. Please adjust your filters.');
-                        return;
-                    }
-
-                    const destLat = parseFloat(targetEstablishment.dataset.lat);
-                    const destLng = parseFloat(targetEstablishment.dataset.lng);
-                    const estName = targetEstablishment.dataset.name;
-
-                    if (!destLat || !destLng) {
-                        alert('Invalid establishment location.');
-                        return;
-                    }
-
-                    const userLatLng = userMarker.getLatLng();
-
-                    routingControl = L.Routing.control({
-                        waypoints: [
-                            L.latLng(userLatLng.lat, userLatLng.lng),
-                            L.latLng(destLat, destLng)
-                        ],
-                        routeWhileDragging: false,
-                        addWaypoints: false,
-                        draggableWaypoints: false,
-                        fitSelectedRoutes: true,
-                        showAlternatives: false,
-                        show: true,
-                        lineOptions: {
-                            styles: [{
-                                color: '#E9A420',
-                                opacity: 0.8,
-                                weight: 6
-                            }]
-                        },
-                        createMarker: function(i, waypoint, n) {
-                            let marker;
-                            if (i === 0) {
-                                marker = L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'route-marker-start',
-                                        html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
-                                        iconSize: [30, 30],
-                                        iconAnchor: [15, 15]
-                                    })
-                                });
-                            } else if (i === n - 1) {
-                                marker = L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'route-marker-end',
-                                        html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
-                                        iconSize: [30, 30],
-                                        iconAnchor: [15, 15]
-                                    })
-                                });
-                            }
-                            return marker;
-                        },
-                        router: L.Routing.osrmv1({
-                            serviceUrl: 'https://router.project-osrm.org/route/v1'
-                        })
-                    }).addTo(establishmentsMap);
-
+                if (view === 'map') {
+                    mapSection.classList.add('active');
+                    bestSellersSection.style.display = 'none';
                     setTimeout(() => {
-                        const container = document.querySelector('.leaflet-routing-container');
-                        if (container) {
-                            container.style.zIndex = '600';
-                            container.style.display = 'block';
-                            container.style.visibility = 'visible';
+                        if (typeof initializeMap === 'function') {
+                            initializeMap();
                         }
                     }, 100);
-
-                    isRouteActive = true;
-                    routeBtn.classList.add('active');
-                    routeBtn.title = 'Hide Route';
-
-                    establishmentsMap.fitBounds([
-                        [userLatLng.lat, userLatLng.lng],
-                        [destLat, destLng]
-                    ], {
-                        padding: [80, 80],
-                        maxZoom: 15
-                    });
+                } else if (view === 'bestsellers') {
+                    mapSection.classList.remove('active');
+                    bestSellersSection.style.display = 'block';
                 }
             });
-        }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.best-sellers-view-dropdown')) {
+                viewDropdownMenu.classList.remove('show');
+                viewDropdownBtn.classList.remove('open');
+            }
+        });
+
+        // ✅ NEW: Sort Dropdown Toggle
+        const sortDropdownBtn = document.getElementById('sortDropdownBtn');
+        const sortDropdownMenu = document.getElementById('sortDropdownMenu');
+        const sortOptions = document.querySelectorAll('.sort-dropdown-option');
+
+        sortDropdownBtn.addEventListener('click', function() {
+            sortDropdownMenu.classList.toggle('show');
+        });
+
+        sortOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const sortType = this.dataset.sort;
+
+                // Remove active class from all options
+                sortOptions.forEach(opt => opt.classList.remove('active'));
+                // Add active class to clicked option
+                this.classList.add('active');
+
+                // Close the dropdown
+                sortDropdownMenu.classList.remove('show');
+
+                // Here you would call your sort function
+                console.log('Sorting by:', sortType);
+                // sortBestSellersByType(sortType);
+            });
+        });
+
+        // Close sort dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.best-sellers-sort-dropdown')) {
+                sortDropdownMenu.classList.remove('show');
+            }
+        });
+
+        // ✅ NEW: Scroll buttons functionality
+        const scrollLeftBtn = document.getElementById('scrollLeftBtn');
+        const scrollRightBtn = document.getElementById('scrollRightBtn');
+        const bestSellersScroll = document.getElementById('bestSellersScroll');
+
+        scrollLeftBtn.addEventListener('click', function() {
+            bestSellersScroll.scrollBy({
+                left: -300,
+                behavior: 'smooth'
+            });
+        });
+
+        scrollRightBtn.addEventListener('click', function() {
+            bestSellersScroll.scrollBy({
+                left: 300,
+                behavior: 'smooth'
+            });
+        });
     </script>
 
     <!-- Additional JS libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Leaflet Libraries -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
     <!-- Other custom JS files -->
     <script src="{% static 'js/kabsueats.js' %}"></script>
