@@ -4608,6 +4608,7 @@ def get_best_sellers(request):
             'error': str(e),
             'traceback': traceback.format_exc()
 <<<<<<< HEAD
+<<<<<<< HEAD
         }, status=500)
 
 # ✅ ADD THIS TO YOUR views.py FILE - CUSTOMER RECORDS API ENDPOINTS
@@ -4931,6 +4932,9 @@ def get_order_statistics(request, establishment_id):
     except Exception as e:
         logger.error(f"Error fetching statistics: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+=======
+        }, status=500)
+>>>>>>> parent of 142c52a (FOR ESTABLISHMENTS TRANSACTION HISTORY)
 =======
         }, status=500)
 >>>>>>> parent of 142c52a (FOR ESTABLISHMENTS TRANSACTION HISTORY)
