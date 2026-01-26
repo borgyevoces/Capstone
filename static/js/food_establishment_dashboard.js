@@ -1396,12 +1396,33 @@ let itemsPerPage = 10;
 let allOrders = [];
 let autoRefreshInterval = null;
 
-// DOM Elements
-const customerRecordsBtn = document.getElementById('customerRecordsBtn');
-const customerRecordsModal = document.getElementById('customerRecordsModal');
-const recordsCloseBtn = document.getElementById('recordsCloseBtn');
-const recordsTabs = document.querySelectorAll('.records-tab');
-const recordsTabContents = document.querySelectorAll('.records-tab-content');
+// DOM Elements (will be initialized on DOMContentLoaded)
+let customerRecordsBtn = null;
+let customerRecordsModal = null;
+let recordsCloseBtn = null;
+let recordsTabs = null;
+let recordsTabContents = null;
+
+function initializeDOMElements() {
+    customerRecordsBtn = document.getElementById('customerRecordsBtn');
+    customerRecordsModal = document.getElementById('customerRecordsModal');
+    recordsCloseBtn = document.getElementById('recordsCloseBtn');
+    recordsTabs = document.querySelectorAll('.records-tab');
+    recordsTabContents = document.querySelectorAll('.records-tab-content');
+
+    console.log('✅ Customer Records DOM Elements Initialized');
+    console.log('   Button:', customerRecordsBtn);
+    console.log('   Modal:', customerRecordsModal);
+
+    if (customerRecordsBtn && customerRecordsModal) {
+        initializeCustomerRecords();
+        console.log('✅ Customer Records System Started');
+    } else {
+        console.error('❌ Customer Records DOM elements not found');
+        if (!customerRecordsBtn) console.error('   - Button with ID "customerRecordsBtn" not found');
+        if (!customerRecordsModal) console.error('   - Modal with ID "customerRecordsModal" not found');
+    }
+}
 
 // Modal Functions
 function openCustomerRecordsModal() {
@@ -2047,10 +2068,11 @@ function stopAutoRefresh() {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing Customer Records System...');
-    initializeCustomerRecords();
-    console.log('✅ Customer Records System initialized');
+    initializeDOMElements();
 });
 
-if (document.readyState !== 'loading') {
-    initializeCustomerRecords();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDOMElements);
+} else {
+    setTimeout(initializeDOMElements, 100);
 }
