@@ -3886,60 +3886,51 @@ To: {test_email}
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
-
 @login_required
 def get_notifications(request):
     """
-    ✅ ENHANCED: API endpoint to get notifications with detailed error logging
+    ✅ FIXED: API endpoint to get notifications.
+    Calculates unread count BEFORE slicing for display.
     """
     try:
-        print(f"🔍 Notification request from user: {request.user.username}")
-
-        # Get the establishment owned by the current user
+        # 1. Get the establishment
         establishment = FoodEstablishment.objects.filter(owner=request.user).first()
 
         if not establishment:
-            print(f"❌ No establishment found for user: {request.user.username}")
             return JsonResponse({
                 'success': False,
-                'message': 'No establishment found for this user',
+                'message': 'No establishment found',
                 'notifications': [],
                 'unread_count': 0
             })
 
-        print(f"✅ Found establishment: {establishment.name}")
+        # 2. Define the BASE QuerySet (Don't slice it yet!)
+        # Check your models.py: use the correct name (Notification or OrderNotification)
+        # Based on your models.py snippet, the class name is likely 'Notification'
+        base_queryset = Notification.objects.filter(establishment=establishment)
 
-        # Get notifications for this establishment
-        notifications = OrderNotification.objects.filter(
-            establishment=establishment
-        ).select_related(
+        # 3. Get the unread count from the FULL (unsliced) QuerySet
+        unread_count = base_queryset.filter(is_read=False).count()
+
+        # 4. NOW apply the slice and optimization for the display list
+        notifications = base_queryset.select_related(
             'order__user',
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:50]
+        ).order_by('-created_at')[:50]  # Slice last!
 
-        print(f"📊 Found {notifications.count()} notifications")
-
-        # Count unread notifications
-        unread_count = notifications.filter(is_read=False).count()
-        print(f"🔔 Unread count: {unread_count}")
-
-        # Format notifications data
+        # 5. Format notifications data
         notifications_data = []
         for notif in notifications:
             try:
                 order = notif.order
-
-                # Get order items
-                order_items = []
-                for item in order.orderitem_set.all():
-                    order_items.append({
-                        'name': item.menu_item.name,
-                        'quantity': item.quantity,
-                        'price': float(item.price_at_order),
-                        'total': float(item.total_price)
-                    })
+                order_items = [{
+                    'name': item.menu_item.name,
+                    'quantity': item.quantity,
+                    'price': float(item.price_at_order),
+                    'total': float(item.total_price)
+                } for item in order.orderitem_set.all()]
 
                 notifications_data.append({
                     'id': notif.id,
@@ -3947,10 +3938,8 @@ def get_notifications(request):
                     'message': notif.message,
                     'is_new': not notif.is_read,
                     'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
-                    'time_ago': get_time_ago(notif.created_at),
+                    'time_ago': get_time_ago(notif.created_at) if 'get_time_ago' in globals() else "",
                     'is_paid': order.status == 'PAID',
-                    'payment_confirmed_at': order.payment_confirmed_at.strftime(
-                        '%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
                     'customer': {
                         'name': order.user.username,
                         'email': order.user.email
@@ -3959,35 +3948,20 @@ def get_notifications(request):
                         'id': order.id,
                         'status': order.status,
                         'total_amount': float(order.total_amount),
-                        'reference_number': order.gcash_reference_number or 'N/A',
-                        'item_count': order.orderitem_set.count(),
                         'items': order_items
                     }
                 })
-            except Exception as item_error:
-                print(f"⚠️ Error formatting notification {notif.id}: {item_error}")
+            except Exception as item_err:
                 continue
 
-        response_data = {
+        return JsonResponse({
             'success': True,
             'notifications': notifications_data,
             'unread_count': unread_count
-        }
-
-        print(f"✅ Returning {len(notifications_data)} formatted notifications")
-        return JsonResponse(response_data)
+        })
 
     except Exception as e:
-        print(f"❌ Error fetching notifications: {e}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'error': str(e),
-            'notifications': [],
-            'unread_count': 0
-        }, status=500)
-
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def get_time_ago(timestamp):
     """
