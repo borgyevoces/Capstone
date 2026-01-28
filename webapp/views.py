@@ -3922,15 +3922,12 @@ def get_notifications(request):
 
 =======
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')
+        ).order_by('-created_at')[:50]
 
-        # Count unread notifications BEFORE slicing
+        print(f"📊 Found {notifications.count()} notifications")
+
+        # Count unread notifications
         unread_count = notifications.filter(is_read=False).count()
-
-        # Now slice to get the latest 50
-        notifications = notifications[:50]
-
-        print(f"📊 Found {len(notifications)} notifications")
         print(f"🔔 Unread count: {unread_count}")
 
         # Format notifications data
