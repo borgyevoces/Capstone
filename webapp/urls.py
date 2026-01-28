@@ -71,17 +71,7 @@ urlpatterns = [
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
                   path('api/best-sellers/', views.get_best_sellers, name='get_best_sellers'),
-#Order Management System APIs
-path('api/order-records/', views.get_order_records, name='get_order_records'),
-path('api/order/<int:order_id>/detail/', views.get_order_detail, name='get_order_detail'),
-path('api/order/update-status/', views.update_order_status, name='update_order_status'),
-path('api/transaction-history/', views.get_transaction_history, name='get_transaction_history'),
-path('api/order-stats/', views.get_order_stats, name='get_order_stats'),
-path('api/order/add-note/', views.add_order_note, name='add_order_note'),
 
-# Order Management Dashboard Pages
-path('owner/orders/', views.order_management_dashboard, name='order_management_dashboard'),
-path('owner/transactions/', views.transaction_history_page, name='transaction_history_page'),
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 
