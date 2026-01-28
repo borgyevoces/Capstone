@@ -3916,9 +3916,22 @@ def get_notifications(request):
             'order__user',
             'order__establishment'
         ).prefetch_related(
+<<<<<<< HEAD
             'order__items__menu_item'  # ✅ Also fixed: orderitem_set -> items
         ).order_by('-created_at')[:50] # Slicing happens here
 
+=======
+            'order__orderitem_set__menu_item'
+        ).order_by('-created_at')[:50]
+
+        print(f"📊 Found {notifications.count()} notifications")
+
+        # Count unread notifications
+        unread_count = notifications.filter(is_read=False).count()
+        print(f"🔔 Unread count: {unread_count}")
+
+        # Format notifications data
+>>>>>>> parent of e3c1e29 (MAP BEST)
         notifications_data = []
         for notif in notifications:
             try:
