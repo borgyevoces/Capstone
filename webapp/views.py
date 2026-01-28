@@ -4626,7 +4626,7 @@ def order_management_dashboard(request):
             'establishment': establishment,
             'today_orders_count': today_orders.count(),
             'today_revenue': today_orders.filter(payment_status='paid').aggregate(
-                total=Sum('total')
+                total=Sum('total_amount')
             )['total'] or 0,
         }
 
