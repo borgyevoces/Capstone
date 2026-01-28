@@ -71,6 +71,7 @@ urlpatterns = [
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
                   path('api/best-sellers/', views.get_best_sellers, name='get_best_sellers'),
+<<<<<<< HEAD
 
 # Order Management System APIs
 path('api/order-records/', views.get_order_records, name='get_order_records'),
@@ -83,6 +84,8 @@ path('api/order/add-note/', views.add_order_note, name='add_order_note'),
 # Order Management Dashboard Pages
 path('owner/orders/', views.order_management_dashboard, name='order_management_dashboard'),
 path('owner/transactions/', views.transaction_history_page, name='transaction_history_page'),
+=======
+>>>>>>> parent of 8527ef7 (new map)
 
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),

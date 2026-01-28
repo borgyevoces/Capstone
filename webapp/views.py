@@ -4593,6 +4593,7 @@ def get_best_sellers(request):
             'success': False,
             'error': str(e),
             'traceback': traceback.format_exc()
+<<<<<<< HEAD
         }, status=500)
 
 
@@ -5060,3 +5061,6 @@ def transaction_history_page(request):
         return redirect('owner_login')
 
 
+=======
+        }, status=500)
+>>>>>>> parent of 8527ef7 (new map)
