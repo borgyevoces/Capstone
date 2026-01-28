@@ -3916,22 +3916,9 @@ def get_notifications(request):
             'order__user',
             'order__establishment'
         ).prefetch_related(
-<<<<<<< HEAD
             'order__items__menu_item'  # ✅ Also fixed: orderitem_set -> items
         ).order_by('-created_at')[:50] # Slicing happens here
 
-=======
-            'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:50]
-
-        print(f"📊 Found {notifications.count()} notifications")
-
-        # Count unread notifications
-        unread_count = notifications.filter(is_read=False).count()
-        print(f"🔔 Unread count: {unread_count}")
-
-        # Format notifications data
->>>>>>> parent of e3c1e29 (MAP BEST)
         notifications_data = []
         for notif in notifications:
             try:
@@ -4593,7 +4580,6 @@ def get_best_sellers(request):
             'success': False,
             'error': str(e),
             'traceback': traceback.format_exc()
-<<<<<<< HEAD
         }, status=500)
 
 
@@ -4611,6 +4597,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Order, OrderItem, FoodEstablishment
 from datetime import datetime, timedelta
 import json
+
 
 # ==========================================
 # ORDER MANAGEMENT API ENDPOINTS
@@ -5059,8 +5046,3 @@ def transaction_history_page(request):
         return render(request, 'webapplication/order_management_dashboard.html', context)
     except FoodEstablishment.DoesNotExist:
         return redirect('owner_login')
-
-
-=======
-        }, status=500)
->>>>>>> parent of 8527ef7 (new map)
