@@ -1,19 +1,11 @@
-# webapplication/consumers.py
-"""
-WebSocket Consumers for Chat and Order Management
-This file combines your existing ChatConsumer with new OrderConsumer
-"""
-
+# webapp/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
-from .models import ChatRoom, Message, FoodEstablishment, Order
+from .models import ChatRoom, Message, FoodEstablishment
 
 
-# ==========================================
-# EXISTING CHAT CONSUMER (YOUR CODE)
-# ==========================================
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Called when WebSocket connects"""
@@ -87,9 +79,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        # ✅ NEW: Unsend Message Handler
         elif message_type == 'unsend_message':
             message_id = data.get('message_id')
-            unsend_type = data.get('unsend_type')
+            unsend_type = data.get('unsend_type')  # 'everyone' or 'you'
             sender_id = data.get('sender_id')
 
             result = await self.unsend_message(message_id, unsend_type, sender_id)
@@ -125,6 +118,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'is_typing': event['is_typing']
         }))
 
+    # ✅ NEW: Message Unsent Handler
     async def message_unsent(self, event):
         """Broadcast message unsend"""
         await self.send(text_data=json.dumps({
@@ -186,6 +180,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Message.DoesNotExist:
             pass
 
+    # ✅ NEW: Unsend Message Function
     @database_sync_to_async
     def unsend_message(self, message_id, unsend_type, sender_id):
         """Handle message unsend"""
@@ -200,7 +195,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 # Delete from database
                 message.delete()
             elif unsend_type == 'you':
-                # Mark as hidden for sender
+                # Mark as hidden for sender (add is_hidden_for_sender field if needed)
+                # For now, we'll just return success without deletion
                 pass
 
             return {'success': True}
@@ -210,223 +206,3 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(f"Error unsending message: {e}")
             return {'success': False, 'error': str(e)}
-
-
-# ==========================================
-# NEW: ORDER MANAGEMENT CONSUMER
-# ==========================================
-class OrderConsumer(AsyncWebsocketConsumer):
-    """
-    WebSocket consumer for real-time order updates
-    Handles connections from food establishment owners
-    """
-
-    async def connect(self):
-        """Called when WebSocket connection is opened"""
-        self.user = self.scope['user']
-        self.establishment_id = self.scope['url_route']['kwargs']['establishment_id']
-        self.room_group_name = f'orders_{self.establishment_id}'
-
-        # Verify user owns this establishment
-        is_owner = await self.verify_establishment_owner()
-
-        if not is_owner:
-            await self.close()
-            return
-
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
-
-        # Send connection confirmation
-        await self.send(text_data=json.dumps({
-            'type': 'connection_established',
-            'message': 'Connected to order updates'
-        }))
-
-    async def disconnect(self, close_code):
-        """Called when WebSocket connection is closed"""
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-
-    async def receive(self, text_data):
-        """Called when message is received from WebSocket"""
-        try:
-            data = json.loads(text_data)
-            message_type = data.get('type')
-
-            if message_type == 'ping':
-                # Respond to ping with pong
-                await self.send(text_data=json.dumps({
-                    'type': 'pong',
-                    'timestamp': data.get('timestamp')
-                }))
-
-            elif message_type == 'request_stats':
-                # Send current statistics
-                stats = await self.get_establishment_stats()
-                await self.send(text_data=json.dumps({
-                    'type': 'stats_update',
-                    'stats': stats
-                }))
-
-        except json.JSONDecodeError:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': 'Invalid JSON'
-            }))
-
-    # Group message handlers
-    async def new_order(self, event):
-        """Called when a new order is created"""
-        await self.send(text_data=json.dumps({
-            'type': 'new_order',
-            'order': event['order']
-        }))
-
-    async def order_status_update(self, event):
-        """Called when order status is updated"""
-        await self.send(text_data=json.dumps({
-            'type': 'order_status_changed',
-            'order_id': event['order_id'],
-            'payment_status': event['payment_status'],
-            'fulfillment_status': event['fulfillment_status']
-        }))
-
-    async def order_payment_update(self, event):
-        """Called when order payment is updated"""
-        await self.send(text_data=json.dumps({
-            'type': 'order_payment_updated',
-            'order_id': event['order_id'],
-            'payment_status': event['payment_status']
-        }))
-
-    # Database queries
-    @database_sync_to_async
-    def verify_establishment_owner(self):
-        """Verify that the connected user owns the establishment"""
-        try:
-            establishment = FoodEstablishment.objects.get(id=self.establishment_id)
-            return establishment.owner == self.user
-        except FoodEstablishment.DoesNotExist:
-            return False
-
-    @database_sync_to_async
-    def get_establishment_stats(self):
-        """Get current statistics for the establishment"""
-        try:
-            from django.utils import timezone
-            from django.db.models import Sum
-
-            establishment = FoodEstablishment.objects.get(id=self.establishment_id)
-            today = timezone.now().date()
-
-            stats = {
-                'pending': Order.objects.filter(
-                    establishment=establishment,
-                    fulfillment_status='pending'
-                ).count(),
-                'completed': Order.objects.filter(
-                    establishment=establishment,
-                    fulfillment_status='claimed'
-                ).count(),
-                'unpaid': Order.objects.filter(
-                    establishment=establishment,
-                    payment_status='unpaid'
-                ).count(),
-                'today_orders': Order.objects.filter(
-                    establishment=establishment,
-                    created_at__date=today
-                ).count(),
-            }
-
-            return stats
-
-        except FoodEstablishment.DoesNotExist:
-            return {}
-
-
-# ==========================================
-# NEW: CUSTOMER ORDER CONSUMER
-# ==========================================
-class CustomerOrderConsumer(AsyncWebsocketConsumer):
-    """
-    WebSocket consumer for customer order updates
-    Allows customers to receive real-time updates about their orders
-    """
-
-    async def connect(self):
-        """Called when WebSocket connection is opened"""
-        self.user = self.scope['user']
-
-        if not self.user.is_authenticated:
-            await self.close()
-            return
-
-        self.room_group_name = f'customer_{self.user.id}'
-
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
-
-        # Send connection confirmation
-        await self.send(text_data=json.dumps({
-            'type': 'connection_established',
-            'message': 'Connected to order updates'
-        }))
-
-    async def disconnect(self, close_code):
-        """Called when WebSocket connection is closed"""
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-
-    async def receive(self, text_data):
-        """Called when message is received from WebSocket"""
-        try:
-            data = json.loads(text_data)
-            message_type = data.get('type')
-
-            if message_type == 'ping':
-                await self.send(text_data=json.dumps({
-                    'type': 'pong',
-                    'timestamp': data.get('timestamp')
-                }))
-
-        except json.JSONDecodeError:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': 'Invalid JSON'
-            }))
-
-    # Group message handlers
-    async def order_status_update(self, event):
-        """Called when order status is updated"""
-        await self.send(text_data=json.dumps({
-            'type': 'order_status_update',
-            'order_id': event['order_id'],
-            'establishment_name': event['establishment_name'],
-            'payment_status': event['payment_status'],
-            'fulfillment_status': event['fulfillment_status']
-        }))
-
-    async def order_ready(self, event):
-        """Called when order is ready for pickup"""
-        await self.send(text_data=json.dumps({
-            'type': 'order_ready',
-            'order_id': event['order_id'],
-            'establishment_name': event['establishment_name'],
-            'message': event['message']
-        }))

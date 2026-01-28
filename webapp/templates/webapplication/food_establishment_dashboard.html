@@ -1487,96 +1487,6 @@
             }
         }
 
-
-        /* ==========================================
-           ORDER MANAGEMENT BUTTON STYLES
-           ========================================== */
-        .order-mgmt-btn {
-            position: relative;
-            background: linear-gradient(135deg, #B71C1C 0%, #7F0A0A 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
-            text-decoration: none;
-            margin-right: 10px;
-        }
-
-        .order-mgmt-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.4);
-        }
-
-        .order-mgmt-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #EF4444;
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 800;
-            animation: pulse-badge 2s infinite;
-            border: 2px solid white;
-        }
-
-        @keyframes pulse-badge {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 18px 24px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            min-width: 350px;
-            animation: slideInRight 0.4s ease;
-            border-left: 4px solid #10B981;
-        }
-
-        .toast-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            background: #D1FAE5;
-            color: #10B981;
-        }
-
-        .toast-content { flex: 1; }
-        .toast-title { font-weight: 800; font-size: 15px; color: #111827; }
-        .toast-message { font-size: 13px; color: #6B7280; }
-
-        @keyframes slideInRight {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-
     </style>
 </head>
 <body>
@@ -1586,13 +1496,6 @@
             KabsuEats
         </a>
         <div class="navbar-actions">
-            <!-- ORDER MANAGEMENT BUTTON -->
-            <a href="{% url 'order_management_dashboard' %}" class="order-mgmt-btn" title="Order Management">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Orders</span>
-                <span class="order-mgmt-badge" id="orderMgmtBadge" style="display: none;">0</span>
-            </a>
-
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
                     title="Notifications">
                 <i class="fas fa-bell"></i>
@@ -3098,85 +3001,6 @@
 <button id="scrollToTopBtn" class="scroll-to-top" style="z-index: 10000;">
     <i class="fas fa-arrow-up"></i>
 </button>
-
-<!-- Order Management Real-time Script -->
-<script>
-    window.establishmentId = {{ establishment.id }};
-
-    let dashboardSocket = null;
-    let reconnectAttempts = 0;
-
-    function updateOrderManagementBadge() {
-        fetch('/api/order-stats/')
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const badge = document.getElementById('orderMgmtBadge');
-                    const count = data.stats.pending || 0;
-                    badge.textContent = count;
-                    badge.style.display = count > 0 ? 'flex' : 'none';
-                }
-            });
-    }
-
-    function showToast(title, message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = `
-            <div class="toast-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                <div class="toast-message">${message}</div>
-            </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 5000);
-    }
-
-    function connectDashboardWebSocket() {
-        const ws = window.location.protocol === "https:" ? "wss" : "ws";
-        dashboardSocket = new WebSocket(`${ws}://${window.location.host}/ws/orders/${window.establishmentId}/`);
-
-        dashboardSocket.onopen = () => {
-            console.log('✅ Order WebSocket Connected');
-            reconnectAttempts = 0;
-        };
-
-        dashboardSocket.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            if (data.type === 'new_order') {
-                updateOrderManagementBadge();
-                showToast('🎉 New Order!', `Order #${data.order.id} - ₱${data.order.total.toFixed(2)}`);
-                try {
-                    new Audio("{% static 'sounds/notification.mp3' %}").play();
-                } catch(e) {}
-                if (Notification.permission === "granted") {
-                    new Notification("New Order!", { body: `Order #${data.order.id}` });
-                }
-            }
-            if (data.type === 'order_status_changed') {
-                updateOrderManagementBadge();
-            }
-        };
-
-        dashboardSocket.onclose = () => {
-            if (reconnectAttempts < 5) {
-                reconnectAttempts++;
-                setTimeout(connectDashboardWebSocket, 3000);
-            }
-        };
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        updateOrderManagementBadge();
-        setInterval(updateOrderManagementBadge, 30000);
-        connectDashboardWebSocket();
-        if (Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-    });
-</script>
-
 </body>
 <!-- FOOTER SECTION - ADD THIS BEFORE THE CLOSING </body> TAG -->
 <footer class="footer">

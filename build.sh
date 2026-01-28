@@ -28,5 +28,3 @@ echo "👤 Creating superuser..."
 python manage.py create_superuser
 
 echo "✅ Build process complete!"
-
-pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --no-input
