@@ -3853,6 +3853,7 @@ To: {test_email}
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
+
 @login_required
 def get_notifications(request):
     """
@@ -4519,6 +4520,7 @@ def create_test_notification(request):
             'error': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
+
 
 
 
