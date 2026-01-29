@@ -43,6 +43,9 @@ window.updateCartBadge = function(count) {
         if (count > 0) {
             badge.textContent = count;
             badge.style.display = 'block';
+            // Add animation effect
+            badge.classList.add('badge-pulse');
+            setTimeout(() => badge.classList.remove('badge-pulse'), 600);
         } else {
             badge.style.display = 'none';
         }
@@ -50,20 +53,166 @@ window.updateCartBadge = function(count) {
 };
 
 // =======================================================
-// SHOW MESSAGE/NOTIFICATION
+// SHOW MESSAGE/NOTIFICATION WITH ACTION BUTTON
 // =======================================================
-function showMessage(message, type = 'info') {
+function showMessage(message, type = 'info', actionButton = null) {
     if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
+        window.showToast(message, type, actionButton);
     } else if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type);
+        window.showNotification(message, type, actionButton);
     } else {
-        alert(message);
+        // Fallback: Create custom notification
+        showCustomNotification(message, type, actionButton);
     }
 }
 
 // =======================================================
-// HANDLE MODAL ADD TO CART - THIS IS THE KEY FUNCTION
+// CUSTOM NOTIFICATION (Fallback)
+// =======================================================
+function showCustomNotification(message, type = 'success', actionButton = null) {
+    // Remove existing notification
+    const existing = document.querySelector('.custom-cart-notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = `custom-cart-notification notification-${type}`;
+
+    const icon = {
+        'success': 'fa-check-circle',
+        'error': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    }[type] || 'fa-info-circle';
+
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${icon}"></i>
+            <span class="notification-message">${message}</span>
+            ${actionButton ? `<button class="notification-action-btn">${actionButton.text}</button>` : ''}
+            <button class="notification-close">&times;</button>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Add styles if not present
+    if (!document.getElementById('custom-notification-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'custom-notification-styles';
+        styles.textContent = `
+            .custom-cart-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 400px;
+                border-left: 4px solid #28a745;
+            }
+            .custom-cart-notification.notification-error {
+                border-left-color: #dc3545;
+            }
+            .custom-cart-notification.notification-warning {
+                border-left-color: #ffc107;
+            }
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .notification-content i {
+                font-size: 20px;
+                color: #28a745;
+            }
+            .notification-error .notification-content i {
+                color: #dc3545;
+            }
+            .notification-warning .notification-content i {
+                color: #ffc107;
+            }
+            .notification-message {
+                flex: 1;
+                font-size: 14px;
+                color: #333;
+            }
+            .notification-action-btn {
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+            .notification-action-btn:hover {
+                background: #0056b3;
+                transform: translateY(-1px);
+            }
+            .notification-close {
+                background: none;
+                border: none;
+                font-size: 20px;
+                color: #999;
+                cursor: pointer;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+            }
+            .notification-close:hover {
+                color: #333;
+            }
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .badge-pulse {
+                animation: pulse 0.6s ease-in-out;
+            }
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+
+    // Handle close button
+    notification.querySelector('.notification-close').addEventListener('click', () => {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+    });
+
+    // Handle action button
+    if (actionButton && actionButton.onClick) {
+        notification.querySelector('.notification-action-btn').addEventListener('click', () => {
+            actionButton.onClick();
+            notification.remove();
+        });
+    }
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+// =======================================================
+// HANDLE MODAL ADD TO CART - ✅ ENHANCED WITH CART PREVIEW
 // =======================================================
 window.handleModalAddToCart = function(button) {
     console.log('🛒 Add to Cart button clicked');
@@ -129,9 +278,19 @@ window.handleModalAddToCart = function(button) {
         console.log('✅ Response data:', data);
 
         if (data.success) {
-            showMessage(data.message || `${quantity}x ${itemName} added to cart!`, 'success');
+            // ✅ Show success notification with "View Cart" button
+            showMessage(
+                data.message || `${quantity}x ${itemName} added to cart!`,
+                'success',
+                {
+                    text: '🛒 View Cart',
+                    onClick: () => {
+                        window.location.href = CART_URL || '/cart/';
+                    }
+                }
+            );
 
-            // Update cart badge
+            // Update cart badge with animation
             if (typeof updateCartBadge === 'function') {
                 updateCartBadge(data.cart_count);
             }
@@ -141,7 +300,11 @@ window.handleModalAddToCart = function(button) {
                 itemQuantityInput.value = 1;
             }
 
-            closeItemDetailModal();
+            // Close modal after short delay
+            setTimeout(() => {
+                closeItemDetailModal();
+            }, 500);
+
         } else {
             showMessage(data.message || 'Failed to add item to cart.', 'error');
         }
@@ -211,75 +374,55 @@ window.handleBuyNowGCash = function(buttonElement) {
         console.error('Buy Now Error:', error);
         showMessage('Error: ' + error.message, 'error');
         buttonElement.disabled = false;
-        buttonElement.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+        buttonElement.innerHTML = '<i class="fas fa-money-bill"></i> Buy Now';
     });
 };
 
 // =======================================================
-// REVIEW FUNCTIONALITY
+// REVIEW MODAL FUNCTIONS
 // =======================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Establishment Details JS Loading...');
-
     const reviewModal = document.getElementById('reviewModal');
     const reviewForm = document.getElementById('reviewForm');
-    const modalTitle = document.getElementById('reviewModalTitle');
     const modalStars = document.getElementById('modalStars');
     const ratingInput = document.getElementById('ratingInput');
     const commentInput = document.getElementById('commentInput');
-    const addReviewBtn = document.getElementById('addReviewBtn');
-    const filterButtons = document.querySelectorAll('.review-filter-btn');
+    const modalTitle = document.getElementById('reviewModalTitle');
+    const addReviewBtn = document.getElementById('openReviewModalBtn');
 
-    const itemDetailModal = document.getElementById('itemDetailModal');
-    const modalItemId = document.getElementById('modalItemId');
-    const modalItemTitle = document.getElementById('itemDetailModalTitle');
-    const modalItemImage = document.getElementById('modalItemImage');
-    const modalItemPrice = document.getElementById('modalItemPrice');
-    const modalItemDescription = document.getElementById('modalItemDescription');
-    const itemQuantityInput = document.getElementById('itemQuantity');
+    window.applyReviewFilter = function(filter) {
+        const reviews = document.querySelectorAll('.review');
+        const buttons = document.querySelectorAll('.btn-filter-review');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-rating="${filter}"]`).classList.add('active');
+
+        reviews.forEach(review => {
+            const rating = parseInt(review.dataset.rating);
+            if (filter === 'all' || rating === parseInt(filter)) {
+                review.style.display = 'block';
+            } else {
+                review.style.display = 'none';
+            }
+        });
+    };
 
     function updateStarRating(rating) {
         if (!modalStars) return;
         const stars = modalStars.querySelectorAll('i');
         stars.forEach((star, index) => {
-            star.className = index < rating ? 'fas fa-star' : 'far fa-star';
-        });
-    }
-
-    function applyReviewFilter(filterValue) {
-        const reviews = document.querySelectorAll('.review-item');
-        reviews.forEach(review => {
-            if (filterValue === 'all') {
-                review.style.display = 'block';
-            } else if (filterValue === 'good') {
-                const rating = parseInt(review.dataset.rating);
-                review.style.display = rating >= 4 ? 'block' : 'none';
-            } else if (filterValue === 'bad') {
-                const rating = parseInt(review.dataset.rating);
-                review.style.display = rating <= 3 ? 'block' : 'none';
+            if (index < rating) {
+                star.classList.remove('far');
+                star.classList.add('fas');
+            } else {
+                star.classList.remove('fas');
+                star.classList.add('far');
             }
         });
     }
 
-    if (filterButtons) {
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                const filter = this.dataset.filter;
-                applyReviewFilter(filter);
-            });
-        });
-    }
-
-    window.openReviewModal = function(isEdit = false, reviewData = {}) {
-        if (!IS_USER_AUTHENTICATED) {
-            showMessage('⚠️ Please log in to write a review', 'warning');
-            window.location.href = '/accounts/login/';
-            return;
-        }
-
-        if (isEdit) {
+    window.openReviewModal = function(isEdit = false, reviewData = null) {
+        if (isEdit && reviewData) {
             modalTitle.textContent = 'Edit Your Review';
             reviewForm.action = BASE_URL_ROOT + 'edit_review/' + reviewData.id + '/';
             commentInput.value = reviewData.comment;
@@ -421,6 +564,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('Item details:', { itemId, itemName, itemPrice, itemQuantity });
 
+        const modalItemId = document.getElementById('modalItemId');
+        const modalItemTitle = document.getElementById('itemDetailModalTitle');
+        const modalItemImage = document.getElementById('modalItemImage');
+        const modalItemPrice = document.getElementById('modalItemPrice');
+        const modalItemDescription = document.getElementById('modalItemDescription');
+        const itemQuantityInput = document.getElementById('itemQuantity');
+
         if (modalItemId) modalItemId.value = itemId;
         if (modalItemTitle) modalItemTitle.textContent = itemName;
         if (modalItemImage) modalItemImage.src = itemImageUrl;
@@ -462,6 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        const itemDetailModal = document.getElementById('itemDetailModal');
         if (itemDetailModal) {
             itemDetailModal.style.display = 'block';
             console.log('✅ Modal opened');
@@ -469,6 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.closeItemDetailModal = function() {
+        const itemDetailModal = document.getElementById('itemDetailModal');
         if (itemDetailModal) {
             itemDetailModal.style.display = 'none';
             console.log('✅ Modal closed');
@@ -476,6 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.updateModalQuantity = function(change) {
+        const itemQuantityInput = document.getElementById('itemQuantity');
         if (!itemQuantityInput) return;
         let currentQuantity = parseInt(itemQuantityInput.value);
         let newQuantity = currentQuantity + change;
@@ -485,6 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.onclick = function(event) {
         if (reviewModal && event.target == reviewModal) closeReviewModal();
+        const itemDetailModal = document.getElementById('itemDetailModal');
         if (itemDetailModal && event.target == itemDetailModal) closeItemDetailModal();
     };
 
