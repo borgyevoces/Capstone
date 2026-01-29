@@ -3050,12 +3050,12 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
-@require_POST
 @login_required
+@require_POST
 def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
-    ✅ FIXED: Uses defer() to exclude payment_status field that doesn't exist in DB
+    ✅ FIXED: Removed defer() - fields now exist in database
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
@@ -3082,23 +3082,25 @@ def add_to_cart(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # ✅ CRITICAL FIX: Use defer() to exclude payment_status field
+        # ✅ FIXED: No more defer() - payment_status and fulfillment_status now exist
         with transaction.atomic():
             try:
-                # Exclude payment_status from query
-                order = Order.objects.defer('payment_status').get(
+                # Get existing PENDING order for this establishment
+                order = Order.objects.get(
                     user=request.user,
                     establishment=establishment,
                     status='PENDING'
                 )
                 created = False
             except Order.DoesNotExist:
-                # Create new order
+                # Create new order with proper defaults
                 order = Order.objects.create(
                     user=request.user,
                     establishment=establishment,
                     status='PENDING',
-                    total_amount=0
+                    total_amount=0,
+                    payment_status='unpaid',       # ✅ NEW: Set default payment status
+                    fulfillment_status='pending'   # ✅ NEW: Set default fulfillment status
                 )
                 created = True
 
@@ -3123,11 +3125,13 @@ def add_to_cart(request):
                 order_item.quantity = new_quantity
                 order_item.save()
 
-            # Update order total
-            order.total_amount = sum(
+            # Update order total and subtotal
+            order_total = sum(
                 item.quantity * item.price_at_order
-                for item in order.items.all()
+                for item in order.order_items.all()  # ✅ FIXED: Use correct related_name
             )
+            order.total_amount = order_total
+            order.subtotal = order_total  # ✅ NEW: Update subtotal
             order.save()
 
         # Calculate total cart count across ALL establishments
@@ -3150,7 +3154,7 @@ def add_to_cart(request):
             'success': False,
             'message': 'An error occurred while adding to cart.'
         }, status=500)
-
+    
 @login_required
 @require_POST
 def paymongo_checkout(request):
