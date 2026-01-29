@@ -1,5 +1,5 @@
 // =======================================================
-// COMPLETE ESTABLISHMENT DETAILS JS - ALL FUNCTIONALITY
+// COMPLETE ESTABLISHMENT DETAILS JS - FULLY WORKING
 // =======================================================
 
 // Global helper to get CSRF token
@@ -63,11 +63,27 @@ function showMessage(message, type = 'info') {
 }
 
 // =======================================================
-// HANDLE MODAL ADD TO CART
+// HANDLE MODAL ADD TO CART - THIS IS THE KEY FUNCTION
 // =======================================================
 window.handleModalAddToCart = function(button) {
+    console.log('🛒 Add to Cart button clicked');
+
+    // Get values from modal
     const modalItemId = document.getElementById('modalItemId');
-    const itemId = modalItemId ? modalItemId.value : null;
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const modalItemTitle = document.getElementById('itemDetailModalTitle');
+
+    if (!modalItemId || !itemQuantityInput) {
+        console.error('❌ Modal elements not found');
+        showMessage('Error: Unable to add item to cart', 'error');
+        return;
+    }
+
+    const itemId = modalItemId.value;
+    const quantity = parseInt(itemQuantityInput.value) || 1;
+    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+
+    console.log('📦 Item ID:', itemId, 'Quantity:', quantity);
 
     if (!itemId) {
         showMessage('Error: Item not found', 'error');
@@ -80,51 +96,49 @@ window.handleModalAddToCart = function(button) {
         return;
     }
 
-    addToCart(itemId, button);
-};
-
-// =======================================================
-// ADD TO CART - MAIN FUNCTION
-// =======================================================
-window.addToCart = function(menuItemId, button) {
-    const quantityInput = document.querySelector('#itemQuantity');
-    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
-    if (quantity < 1) {
-        showMessage('Please select at least 1 item', 'warning');
-        return;
-    }
-
+    // Store original button state
     const originalHTML = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
 
+    // Prepare form data
     const csrfToken = getCookie('csrftoken');
     const formData = new FormData();
-    formData.append('menu_item_id', menuItemId);
+    formData.append('menu_item_id', itemId);
     formData.append('quantity', quantity);
 
-    fetch('/cart/add/', {
+    console.log('📡 Sending request to:', ADD_TO_CART_URL);
+
+    // Send request
+    fetch(ADD_TO_CART_URL, {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(response => {
+        console.log('📥 Response status:', response.status);
         if (!response.ok) {
             throw new Error('Server error: ' + response.statusText);
         }
         return response.json();
     })
     .then(data => {
-        if (data.success) {
-            showMessage(data.message || 'Item added to cart!', 'success');
+        console.log('✅ Response data:', data);
 
+        if (data.success) {
+            showMessage(data.message || `${quantity}x ${itemName} added to cart!`, 'success');
+
+            // Update cart badge
             if (typeof updateCartBadge === 'function') {
                 updateCartBadge(data.cart_count);
             }
 
-            if (quantityInput) {
-                quantityInput.value = 1;
+            // Reset quantity and close modal
+            if (itemQuantityInput) {
+                itemQuantityInput.value = 1;
             }
 
             closeItemDetailModal();
@@ -133,8 +147,8 @@ window.addToCart = function(menuItemId, button) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred while adding to cart.', 'error');
+        console.error('❌ Error:', error);
+        showMessage('An error occurred while adding to cart: ' + error.message, 'error');
     })
     .finally(() => {
         button.disabled = false;
@@ -146,6 +160,8 @@ window.addToCart = function(menuItemId, button) {
 // BUY NOW WITH PAYMONGO GCASH
 // =======================================================
 window.handleBuyNowGCash = function(buttonElement) {
+    console.log('💳 Buy Now button clicked');
+
     const itemDetailModal = document.getElementById('itemDetailModal');
     const modalItemId = itemDetailModal.querySelector('#modalItemId');
     const quantityInput = itemDetailModal.querySelector('#itemQuantity');
@@ -203,6 +219,8 @@ window.handleBuyNowGCash = function(buttonElement) {
 // REVIEW FUNCTIONALITY
 // =======================================================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Establishment Details JS Loading...');
+
     const reviewModal = document.getElementById('reviewModal');
     const reviewForm = document.getElementById('reviewForm');
     const modalTitle = document.getElementById('reviewModalTitle');
@@ -221,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemQuantityInput = document.getElementById('itemQuantity');
 
     function updateStarRating(rating) {
+        if (!modalStars) return;
         const stars = modalStars.querySelectorAll('i');
         stars.forEach((star, index) => {
             star.className = index < rating ? 'fas fa-star' : 'far fa-star';
@@ -271,13 +290,13 @@ document.addEventListener('DOMContentLoaded', function() {
             commentInput.value = '';
             updateStarRating(0);
         }
-        reviewModal.style.display = 'block';
+        if (reviewModal) reviewModal.style.display = 'block';
     };
 
     window.closeReviewModal = function() {
-        reviewModal.style.display = 'none';
+        if (reviewModal) reviewModal.style.display = 'none';
         updateStarRating(0);
-        reviewForm.reset();
+        if (reviewForm) reviewForm.reset();
     };
 
     if (modalStars) {
@@ -291,13 +310,13 @@ document.addEventListener('DOMContentLoaded', function() {
         modalStars.addEventListener('click', e => {
             if (e.target.tagName === 'I') {
                 const newRating = parseInt(e.target.dataset.rating);
-                ratingInput.value = newRating;
+                if (ratingInput) ratingInput.value = newRating;
                 updateStarRating(newRating);
             }
         });
 
         modalStars.addEventListener('mouseout', () => {
-            updateStarRating(parseInt(ratingInput.value));
+            if (ratingInput) updateStarRating(parseInt(ratingInput.value));
         });
     }
 
@@ -320,8 +339,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const reviewId = e.target.dataset.reviewId;
             if (confirm('⚠️ Are you sure you want to delete your review?')) {
                 const deleteForm = document.getElementById('delete-review-form');
-                deleteForm.action = BASE_URL_ROOT + 'delete_review/' + reviewId + '/';
-                deleteForm.submit();
+                if (deleteForm) {
+                    deleteForm.action = BASE_URL_ROOT + 'delete_review/' + reviewId + '/';
+                    deleteForm.submit();
+                }
             }
         }
     });
@@ -345,8 +366,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemsToShow = [];
 
         allMenuItems.forEach(item => {
-            const itemName = item.querySelector('.menu-name').textContent.toLowerCase();
-            const itemDescription = item.querySelector('.menu-description').textContent.toLowerCase();
+            const itemName = item.querySelector('.menu-name') ? item.querySelector('.menu-name').textContent.toLowerCase() : '';
+            const itemDescription = item.querySelector('.menu-description') ? item.querySelector('.menu-description').textContent.toLowerCase() : '';
             const isTopSeller = item.dataset.isTopSeller === 'true';
 
             const matchesSearch = itemName.includes(searchText) || itemDescription.includes(searchText);
@@ -389,12 +410,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // ITEM DETAIL MODAL
     // =======================================================
     window.openItemDetailModal = function(menuItemElement) {
+        console.log('🔍 Opening item detail modal');
+
         const itemId = menuItemElement.dataset.itemId;
         const itemName = menuItemElement.dataset.itemName;
         const itemPrice = menuItemElement.dataset.price;
         const itemDescription = menuItemElement.dataset.itemDescription;
         const itemImageUrl = menuItemElement.dataset.itemImageUrl;
         const itemQuantity = parseInt(menuItemElement.dataset.itemQuantity) || 0;
+
+        console.log('Item details:', { itemId, itemName, itemPrice, itemQuantity });
 
         if (modalItemId) modalItemId.value = itemId;
         if (modalItemTitle) modalItemTitle.textContent = itemName;
@@ -437,11 +462,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (itemDetailModal) itemDetailModal.style.display = 'block';
+        if (itemDetailModal) {
+            itemDetailModal.style.display = 'block';
+            console.log('✅ Modal opened');
+        }
     };
 
     window.closeItemDetailModal = function() {
-        if (itemDetailModal) itemDetailModal.style.display = 'none';
+        if (itemDetailModal) {
+            itemDetailModal.style.display = 'none';
+            console.log('✅ Modal closed');
+        }
     };
 
     window.updateModalQuantity = function(change) {
@@ -458,6 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     applyReviewFilter('all');
-});
 
-console.log('✅ Establishment details JS loaded successfully');
+    console.log('✅ Establishment details JS loaded successfully');
+});

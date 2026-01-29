@@ -3050,10 +3050,8 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
-
-@require_POST
 @login_required
-@transaction.atomic
+@require_POST
 def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
@@ -3113,10 +3111,11 @@ def add_to_cart(request):
             order_item.quantity = new_quantity
             order_item.save()
 
+        # ✅ FIXED: Use 'items' instead of 'orderitem_set'
         # Update order total
         order.total_amount = sum(
             item.quantity * item.price_at_order
-            for item in order.orderitem_set.all()
+            for item in order.items.all()  # Changed from order.orderitem_set.all()
         )
         order.save()
 
@@ -3133,55 +3132,14 @@ def add_to_cart(request):
         })
 
     except Exception as e:
+        import traceback
         print(f"Error in add_to_cart: {e}")
+        print(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'message': 'Error adding item to cart.'
         }, status=500)
 
-
-@login_required
-def view_cart(request):
-    """
-    Display all carts grouped by establishment.
-    Each establishment shows its own items and order summary.
-    """
-    try:
-        # Get ALL pending orders (one per establishment)
-        all_carts = Order.objects.filter(
-            user=request.user,
-            status='PENDING'
-        ).select_related('establishment').prefetch_related(
-            'orderitem_set__menu_item'
-        ).order_by('establishment__name')
-
-        # Prepare cart data for each establishment
-        carts_data = []
-        total_cart_count = 0
-
-        for order in all_carts:
-            cart_items = order.orderitem_set.all().order_by('menu_item__name')
-            item_count = cart_items.aggregate(Sum('quantity'))['quantity__sum'] or 0
-            total_cart_count += item_count
-
-            carts_data.append({
-                'order': order,
-                'establishment': order.establishment,
-                'items': cart_items,
-                'item_count': item_count,
-                'subtotal': order.total_amount
-            })
-
-    except Exception as e:
-        print(f"Error loading cart: {e}")
-        carts_data = []
-        total_cart_count = 0
-
-    context = {
-        'carts_data': carts_data,
-        'total_cart_count': total_cart_count,
-    }
-    return render(request, 'webapplication/cart.html', context)
 
 
 @login_required
@@ -4173,6 +4131,52 @@ def gcash_payment_success(request):
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
 
+@login_required
+def view_cart(request):
+    """
+    Display all carts grouped by establishment.
+    Each establishment shows its own items and order summary.
+    """
+    try:
+        # Get ALL pending orders (one per establishment)
+        # ✅ FIXED: Use 'items__menu_item' instead of 'orderitem_set__menu_item'
+        all_carts = Order.objects.filter(
+            user=request.user,
+            status='PENDING'
+        ).select_related('establishment').prefetch_related(
+            'items__menu_item'  # Changed from 'orderitem_set__menu_item'
+        ).order_by('establishment__name')
+
+        # Prepare cart data for each establishment
+        carts_data = []
+        total_cart_count = 0
+
+        for order in all_carts:
+            # ✅ FIXED: Use 'items' instead of 'orderitem_set'
+            cart_items = order.items.all().order_by('menu_item__name')  # Changed
+            item_count = cart_items.aggregate(Sum('quantity'))['quantity__sum'] or 0
+            total_cart_count += item_count
+
+            carts_data.append({
+                'order': order,
+                'establishment': order.establishment,
+                'items': cart_items,
+                'item_count': item_count,
+                'subtotal': order.total_amount
+            })
+
+    except Exception as e:
+        import traceback
+        print(f"Error loading cart: {e}")
+        print(traceback.format_exc())
+        carts_data = []
+        total_cart_count = 0
+
+    context = {
+        'carts_data': carts_data,
+        'total_cart_count': total_cart_count,
+    }
+    return render(request, 'webapplication/cart.html', context)
 
 @csrf_exempt
 @require_POST
