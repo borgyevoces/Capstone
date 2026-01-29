@@ -3050,13 +3050,13 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
-@login_required
 @require_POST
+@login_required
 def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
     Each establishment has its own separate cart.
-    MIGRATION-SAFE: Works even if payment_status column doesn't exist yet.
+    FIXED: Removed payment_status field references that don't exist in database.
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
@@ -3083,52 +3083,54 @@ def add_to_cart(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # ✅ MIGRATION-SAFE: Get or create cart for THIS establishment
-        # Only query the fields that definitely exist
-        try:
-            order = Order.objects.get(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING'
+        # ✅ FIXED: Only query fields that exist in the database
+        # Get or create cart for THIS establishment
+        with transaction.atomic():
+            try:
+                # Only use fields that definitely exist: user, establishment, status
+                order = Order.objects.get(
+                    user=request.user,
+                    establishment=establishment,
+                    status='PENDING'
+                )
+                created = False
+            except Order.DoesNotExist:
+                # Create new order with only existing fields
+                order = Order.objects.create(
+                    user=request.user,
+                    establishment=establishment,
+                    status='PENDING',
+                    total_amount=0
+                )
+                created = True
+
+            # Add or update OrderItem
+            order_item, item_created = OrderItem.objects.get_or_create(
+                order=order,
+                menu_item=menu_item,
+                defaults={
+                    'quantity': quantity,
+                    'price_at_order': menu_item.price,
+                }
             )
-            created = False
-        except Order.DoesNotExist:
-            order = Order.objects.create(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING',
-                total_amount=0
+
+            if not item_created:
+                # Check if adding would exceed stock
+                new_quantity = order_item.quantity + quantity
+                if new_quantity > menu_item.quantity:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Cannot add {quantity} more. Only {menu_item.quantity - order_item.quantity} items available.'
+                    }, status=400)
+                order_item.quantity = new_quantity
+                order_item.save()
+
+            # Update order total
+            order.total_amount = sum(
+                item.quantity * item.price_at_order
+                for item in order.items.all()
             )
-            created = True
-
-        # Add or update OrderItem
-        order_item, item_created = OrderItem.objects.get_or_create(
-            order=order,
-            menu_item=menu_item,
-            defaults={
-                'quantity': quantity,
-                'price_at_order': menu_item.price,
-            }
-        )
-
-        if not item_created:
-            # Check if adding would exceed stock
-            new_quantity = order_item.quantity + quantity
-            if new_quantity > menu_item.quantity:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Cannot add {quantity} more. Only {menu_item.quantity - order_item.quantity} items available.'
-                }, status=400)
-            order_item.quantity = new_quantity
-            order_item.save()
-
-        # ✅ FIXED: Use 'items' instead of 'orderitem_set' (matches your model's related_name)
-        # Update order total
-        order.total_amount = sum(
-            item.quantity * item.price_at_order
-            for item in order.items.all()  # Changed from order.orderitem_set.all()
-        )
-        order.save()
+            order.save()
 
         # Calculate total cart count across ALL establishments
         total_cart_count = OrderItem.objects.filter(
@@ -3148,9 +3150,8 @@ def add_to_cart(request):
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
-            'message': 'Error adding item to cart.'
+            'message': 'An error occurred while adding to cart.'
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -3858,7 +3859,7 @@ To: {test_email}
 @login_required
 def get_notifications(request):
     """
-    ✅ ENHANCED: API endpoint to get notifications with detailed error logging
+    ✅ FIXED: API endpoint to get notifications with proper queryset ordering
     """
     try:
         print(f"🔍 Notification request from user: {request.user.username}")
@@ -3877,21 +3878,23 @@ def get_notifications(request):
 
         print(f"✅ Found establishment: {establishment.name}")
 
-        # Get notifications for this establishment
-        notifications = OrderNotification.objects.filter(
+        # ✅ FIXED: Get base queryset WITHOUT slicing first
+        notifications_base = OrderNotification.objects.filter(
             establishment=establishment
         ).select_related(
             'order__user',
             'order__establishment'
         ).prefetch_related(
             'order__orderitem_set__menu_item'
-        ).order_by('-created_at')[:50]
+        ).order_by('-created_at')
 
-        print(f"📊 Found {notifications.count()} notifications")
-
-        # Count unread notifications
-        unread_count = notifications.filter(is_read=False).count()
+        # ✅ CRITICAL FIX: Count unread BEFORE slicing
+        unread_count = notifications_base.filter(is_read=False).count()
         print(f"🔔 Unread count: {unread_count}")
+
+        # ✅ NOW slice to get only the first 50 notifications
+        notifications = notifications_base[:50]
+        print(f"📊 Found {len(notifications)} notifications")
 
         # Format notifications data
         notifications_data = []
@@ -3918,7 +3921,7 @@ def get_notifications(request):
                     'time_ago': get_time_ago(notif.created_at),
                     'is_paid': order.status == 'PAID',
                     'payment_confirmed_at': order.payment_confirmed_at.strftime(
-                        '%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
+                        '%b %d, %Y %I:%M %p') if hasattr(order, 'payment_confirmed_at') and order.payment_confirmed_at else None,
                     'customer': {
                         'name': order.user.username,
                         'email': order.user.email
@@ -3927,35 +3930,32 @@ def get_notifications(request):
                         'id': order.id,
                         'status': order.status,
                         'total_amount': float(order.total_amount),
-                        'reference_number': order.gcash_reference_number or 'N/A',
-                        'item_count': order.orderitem_set.count(),
+                        'reference_number': getattr(order, 'gcash_reference_number', None) or 'N/A',
                         'items': order_items
                     }
                 })
+
             except Exception as item_error:
-                print(f"⚠️ Error formatting notification {notif.id}: {item_error}")
+                print(f"⚠️ Error processing notification {notif.id}: {item_error}")
                 continue
 
-        response_data = {
+        print(f"✅ Successfully formatted {len(notifications_data)} notifications")
+
+        return JsonResponse({
             'success': True,
             'notifications': notifications_data,
             'unread_count': unread_count
-        }
-
-        print(f"✅ Returning {len(notifications_data)} formatted notifications")
-        return JsonResponse(response_data)
+        })
 
     except Exception as e:
-        print(f"❌ Error fetching notifications: {e}")
         import traceback
+        print(f"❌ Error in get_notifications: {e}")
         traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'error': str(e),
-            'notifications': [],
-            'unread_count': 0
+            'message': 'An error occurred while fetching notifications.',
+            'error': str(e)
         }, status=500)
-
 
 def get_time_ago(timestamp):
     """
