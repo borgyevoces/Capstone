@@ -1,5 +1,5 @@
 // =======================================================
-// MULTI-ESTABLISHMENT CART SYSTEM - REAL-TIME UPDATES
+// COMPLETE MULTI-ESTABLISHMENT CART SYSTEM
 // =======================================================
 
 // =======================================================
@@ -38,12 +38,10 @@ function addToCart(menuItemId, button) {
         if (data.success) {
             showMessage(data.message || 'Item added to cart!', 'success');
 
-            // Update cart badge with total count across all establishments
             if (typeof updateCartBadge === 'function') {
                 updateCartBadge(data.cart_count);
             }
 
-            // Reset quantity input
             if (quantityInput) {
                 quantityInput.value = 1;
             }
@@ -89,7 +87,6 @@ async function removeItemFromCart(orderItemId) {
         if (data.success) {
             showMessage(data.message || 'Item removed from cart', 'success');
 
-            // Remove item row with animation
             const itemRow = document.querySelector(`#cart-item-${orderItemId}`);
             if (itemRow) {
                 itemRow.style.opacity = '0';
@@ -101,29 +98,23 @@ async function removeItemFromCart(orderItemId) {
 
                     itemRow.remove();
 
-                    // Check if establishment cart is now empty
                     const remainingItems = cartBox.querySelectorAll('.cart-item');
 
                     if (remainingItems.length === 0 || data.order_deleted) {
-                        // Remove entire establishment box
                         cartBox.remove();
 
-                        // Select next available establishment
                         const nextCart = document.querySelector('.establishment-cart-box');
                         if (nextCart) {
                             selectEstablishment(nextCart.dataset.establishmentId);
                         }
                     } else {
-                        // Update summary for this establishment
                         updateOrderSummary(cartBox);
                     }
 
-                    // Update cart badge
                     if (typeof updateCartBadge === 'function') {
                         updateCartBadge(data.cart_count);
                     }
 
-                    // Reload if no items left at all
                     if (data.cart_count === 0) {
                         window.location.reload();
                     }
@@ -152,23 +143,19 @@ function updateQuantityRealTime(itemId, newQuantity) {
     const unitPrice = parseFloat(unitPriceEl.dataset.unitPrice);
     const maxStock = parseInt(cartItem.dataset.maxStock);
 
-    // ✅ INSTANT UI UPDATE (Optimistic)
     quantityEl.textContent = newQuantity;
     const newSubtotal = (unitPrice * newQuantity).toFixed(2);
     subtotalEl.textContent = `₱${newSubtotal}`;
 
-    // Update button states
     const decreaseBtn = cartItem.querySelector('.btn-decrease');
     const increaseBtn = cartItem.querySelector('.btn-increase');
 
     decreaseBtn.disabled = newQuantity <= 1;
     increaseBtn.disabled = newQuantity >= maxStock;
 
-    // Update establishment summary
     const cartBox = cartItem.closest('.establishment-cart-box');
     updateOrderSummary(cartBox);
 
-    // ✅ SEND TO SERVER (Background)
     updateCartItemQuantity(itemId, newQuantity);
 }
 window.updateQuantityRealTime = updateQuantityRealTime;
@@ -178,7 +165,7 @@ window.updateQuantityRealTime = updateQuantityRealTime;
 // =======================================================
 function updateCartItemQuantity(orderItemId, newQuantity) {
     if (newQuantity < 1) {
-        return; // Already handled in UI
+        return;
     }
 
     const csrfToken = getCookie('csrftoken');
@@ -194,31 +181,29 @@ function updateCartItemQuantity(orderItemId, newQuantity) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update cart badge
             if (typeof updateCartBadge === 'function' && data.cart_count !== undefined) {
                 updateCartBadge(data.cart_count);
             }
         } else {
-            // Rollback on error
             showMessage('Error: ' + data.message, 'error');
             window.location.reload();
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        // Don't show error to user unless critical
+        console.error('Update Quantity Error:', error);
+        showMessage('An error occurred while updating quantity', 'error');
+        window.location.reload();
     });
 }
-window.updateCartItemQuantity = updateCartItemQuantity;
 
 // =======================================================
-// CLEAR ENTIRE ESTABLISHMENT CART
+// CLEAR ESTABLISHMENT CART
 // =======================================================
 async function clearEstablishmentCart(establishmentId) {
     const confirmed = await showConfirmModal(
         'Clear Cart',
-        'Are you sure you want to remove all items from this establishment?',
-        'Yes, Clear',
+        'Remove all items from this establishment?',
+        'Yes, Clear All',
         'Cancel'
     );
 
@@ -231,36 +216,29 @@ async function clearEstablishmentCart(establishmentId) {
     fetch('/cart/clear-establishment/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
-        credentials: 'same-origin'
+        headers: { 'X-CSRFToken': csrfToken }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showMessage('Cart cleared', 'success');
+            showMessage('Cart cleared successfully', 'success');
 
-            // Remove establishment box
-            const box = document.querySelector(`[data-establishment-id="${establishmentId}"]`);
-            if (box) {
-                box.style.opacity = '0';
-                box.style.transform = 'scale(0.95)';
-
+            const cartBox = document.querySelector(`[data-establishment-id="${establishmentId}"]`);
+            if (cartBox) {
+                cartBox.style.opacity = '0';
                 setTimeout(() => {
-                    box.remove();
+                    cartBox.remove();
 
-                    // Update cart badge
                     if (typeof updateCartBadge === 'function') {
                         updateCartBadge(data.cart_count);
                     }
 
-                    // Reload if no carts left
                     if (data.cart_count === 0) {
                         window.location.reload();
                     } else {
-                        // Select next available establishment
-                        const nextCart = document.querySelector('.establishment-cart-box');
-                        if (nextCart) {
-                            selectEstablishment(nextCart.dataset.establishmentId);
+                        const firstCart = document.querySelector('.establishment-cart-box');
+                        if (firstCart) {
+                            selectEstablishment(firstCart.dataset.establishmentId);
                         }
                     }
                 }, 300);
@@ -270,33 +248,31 @@ async function clearEstablishmentCart(establishmentId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred while clearing the cart.', 'error');
+        console.error('Clear Cart Error:', error);
+        showMessage('An error occurred', 'error');
     });
 }
 window.clearEstablishmentCart = clearEstablishmentCart;
 
 // =======================================================
-// SELECT ESTABLISHMENT (for checkout)
+// SELECT ESTABLISHMENT
 // =======================================================
 function selectEstablishment(establishmentId) {
-    // Remove previous selection
     document.querySelectorAll('.establishment-cart-box').forEach(box => {
-        box.classList.remove('active-cart');
+        box.classList.remove('selected');
     });
 
-    // Mark as active
     const selectedBox = document.querySelector(`[data-establishment-id="${establishmentId}"]`);
     if (!selectedBox) return;
 
-    selectedBox.classList.add('active-cart');
-    window.activeEstablishmentId = establishmentId;
+    selectedBox.classList.add('selected');
 
-    // Get order ID from first item
     const firstItem = selectedBox.querySelector('.cart-item');
-    window.activeOrderId = firstItem ? firstItem.dataset.orderId : null;
+    if (!firstItem) return;
 
-    // Update summary
+    const orderId = firstItem.dataset.orderId;
+    window.activeOrderId = orderId;
+
     updateOrderSummary(selectedBox);
 }
 window.selectEstablishment = selectEstablishment;
@@ -320,7 +296,6 @@ function updateOrderSummary(cartBox) {
         itemCount += quantity;
     });
 
-    // Update summary display
     const summaryContainer = document.querySelector('#active-order-summary');
     const nameEl = summaryContainer.querySelector('.summary-establishment-name');
     const countEl = summaryContainer.querySelector('.summary-item-count');
@@ -332,7 +307,6 @@ function updateOrderSummary(cartBox) {
     if (subtotalEl) subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
     if (totalEl) totalEl.textContent = `₱${subtotal.toFixed(2)}`;
 
-    // Show summary content
     const instruction = summaryContainer.querySelector('.summary-instruction');
     const content = summaryContainer.querySelector('.summary-content');
 
@@ -342,7 +316,7 @@ function updateOrderSummary(cartBox) {
 window.updateOrderSummary = updateOrderSummary;
 
 // =======================================================
-// PROCEED TO CHECKOUT (PAYMONGO GCASH)
+// PROCEED TO CHECKOUT
 // =======================================================
 function proceedToCheckout(button) {
     if (!window.activeOrderId) {
@@ -364,7 +338,6 @@ function proceedToCheckout(button) {
         credentials: 'same-origin'
     })
     .then(async response => {
-        // Try to parse JSON body even on non-OK so we can surface upstream details
         let bodyText = '';
         try {
             const cloned = response.clone();
@@ -374,7 +347,6 @@ function proceedToCheckout(button) {
         }
 
         if (!response.ok) {
-            // Attempt to extract message from JSON body
             try {
                 const errData = JSON.parse(bodyText || '{}');
                 const upstreamStatus = errData.upstream_status || response.status;
@@ -408,7 +380,7 @@ function proceedToCheckout(button) {
 window.proceedToCheckout = proceedToCheckout;
 
 // =======================================================
-// HELPER FUNCTION: Get CSRF Token
+// HELPER FUNCTIONS
 // =======================================================
 function getCookie(name) {
     let cookieValue = null;
@@ -425,9 +397,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// =======================================================
-// HELPER FUNCTION: Show Confirm Modal
-// =======================================================
 async function showConfirmModal(title, message, confirmText, cancelText) {
     return new Promise((resolve) => {
         if (typeof window.customConfirm === 'function') {
@@ -438,9 +407,6 @@ async function showConfirmModal(title, message, confirmText, cancelText) {
     });
 }
 
-// =======================================================
-// HELPER FUNCTION: Show Message
-// =======================================================
 function showMessage(message, type = 'info') {
     if (typeof window.showToast === 'function') {
         window.showToast(message, type);
@@ -452,20 +418,17 @@ function showMessage(message, type = 'info') {
 }
 
 // =======================================================
-// PAGE LOAD INITIALIZATION - REAL-TIME QUANTITY CONTROLS
+// PAGE LOAD INITIALIZATION
 // =======================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-select first establishment on page load
     const firstCart = document.querySelector('.establishment-cart-box');
     if (firstCart) {
         const establishmentId = firstCart.dataset.establishmentId;
         selectEstablishment(establishmentId);
     }
 
-    // Make establishment boxes clickable
     document.querySelectorAll('.establishment-cart-box').forEach(box => {
         box.addEventListener('click', function(e) {
-            // Don't trigger if clicking buttons or controls
             if (e.target.closest('.quantity-btn, .remove-item-btn, .clear-establishment-btn')) {
                 return;
             }
@@ -475,9 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // ✅ REAL-TIME QUANTITY CONTROLS - Event Delegation
     document.addEventListener('click', function(e) {
-        // Handle DECREASE button
         if (e.target.closest('.btn-decrease')) {
             const button = e.target.closest('.btn-decrease');
             const itemId = button.dataset.itemId;
@@ -490,7 +451,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Handle INCREASE button
         if (e.target.closest('.btn-increase')) {
             const button = e.target.closest('.btn-increase');
             const itemId = button.dataset.itemId;

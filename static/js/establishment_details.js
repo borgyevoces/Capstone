@@ -1,5 +1,5 @@
 // =======================================================
-// FIXED ESTABLISHMENT DETAILS JS - PAYMENT INTEGRATION
+// COMPLETE ESTABLISHMENT DETAILS JS - ALL FUNCTIONALITY
 // =======================================================
 
 // Global helper to get CSRF token
@@ -27,21 +27,12 @@ window.dismissMessage = function(button) {
     messageAlert.classList.add('hiding');
     setTimeout(() => {
         messageAlert.remove();
-
-        // Remove container if no messages left
         const container = document.getElementById('messagesContainer');
         if (container && container.children.length === 0) {
             container.remove();
         }
     }, 300);
 };
-
-// ❌ REMOVED: Auto-dismiss messages functionality
-// Messages will now persist until manually closed by the user
-document.addEventListener('DOMContentLoaded', function() {
-    // No auto-dismiss code here anymore
-    console.log('✅ Messages will persist until manually closed');
-});
 
 // =======================================================
 // CART BADGE UPDATE
@@ -59,120 +50,100 @@ window.updateCartBadge = function(count) {
 };
 
 // =======================================================
-// CLEAR CART AND RE-ADD (Cross-establishment handling)
+// SHOW MESSAGE/NOTIFICATION
 // =======================================================
-window.clearCartAndReadd = function(itemId, csrfToken, button, quantity) {
-    return fetch(CLEAR_CART_URL, {
+function showMessage(message, type = 'info') {
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+    } else if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+
+// =======================================================
+// HANDLE MODAL ADD TO CART
+// =======================================================
+window.handleModalAddToCart = function(button) {
+    const modalItemId = document.getElementById('modalItemId');
+    const itemId = modalItemId ? modalItemId.value : null;
+
+    if (!itemId) {
+        showMessage('Error: Item not found', 'error');
+        return;
+    }
+
+    if (!IS_USER_AUTHENTICATED) {
+        showMessage('Please log in to add items to cart', 'warning');
+        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+        return;
+    }
+
+    addToCart(itemId, button);
+};
+
+// =======================================================
+// ADD TO CART - MAIN FUNCTION
+// =======================================================
+window.addToCart = function(menuItemId, button) {
+    const quantityInput = document.querySelector('#itemQuantity');
+    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+
+    if (quantity < 1) {
+        showMessage('Please select at least 1 item', 'warning');
+        return;
+    }
+
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+    const csrfToken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('menu_item_id', menuItemId);
+    formData.append('quantity', quantity);
+
+    fetch('/cart/add/', {
         method: 'POST',
-        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server error: ' + response.statusText);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            console.log('✅ Old cart cleared');
-            return window.addToCart(itemId, quantity, csrfToken, button, 'Item', 'add');
+            showMessage(data.message || 'Item added to cart!', 'success');
+
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+
+            if (quantityInput) {
+                quantityInput.value = 1;
+            }
+
+            closeItemDetailModal();
         } else {
-            throw new Error(data.message || 'Failed to clear cart');
+            showMessage(data.message || 'Failed to add item to cart.', 'error');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('An error occurred while adding to cart.', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
     });
 };
 
 // =======================================================
-// ADD TO CART (FIXED)
-// =======================================================
-window.addToCart = function(itemId, quantity, csrfToken, buttonElement, itemName, action) {
-    return new Promise((resolve, reject) => {
-        if (!ADD_TO_CART_URL || !VIEW_CART_URL || !CLEAR_CART_URL) {
-            alert('Configuration Error: Missing required URLs');
-            reject(new Error('Missing URL variables'));
-            return;
-        }
-
-        // Disable button
-        if (buttonElement) {
-            buttonElement.dataset.originalText = buttonElement.innerHTML;
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${action === 'buy-now' ? 'Processing...' : 'Adding...'}`;
-        }
-
-        const formData = new FormData();
-        formData.append('menu_item_id', itemId);
-        formData.append('quantity', quantity);
-
-        fetch(ADD_TO_CART_URL, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': csrfToken },
-        })
-        .then(response => {
-            if (response.status === 409) {
-                return response.json().then(error => {
-                    error.status = 409;
-                    throw error;
-                });
-            }
-            if (!response.ok) {
-                return response.json().then(error => {
-                    throw error;
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                if (typeof window.updateCartBadge === 'function') {
-                    window.updateCartBadge(data.cart_count);
-                }
-
-                alert(`✅ Successfully added ${quantity}x ${itemName} to cart`);
-
-                if (action === 'buy-now') {
-                    window.location.href = VIEW_CART_URL;
-                }
-                resolve();
-            } else {
-                throw new Error(data.message || 'Error adding item');
-            }
-        })
-        .catch(error => {
-            console.error('❌ Add to Cart Error:', error);
-
-            if (error.status === 409) {
-                const confirmClear = confirm(
-                    `${error.message}\n\nCurrent Cart: ${error.current_establishment}\nNew Item From: ${error.new_establishment}\n\nClear cart and add this item?`
-                );
-
-                if (confirmClear) {
-                    return window.clearCartAndReadd(itemId, csrfToken, buttonElement, quantity)
-                        .then(() => {
-                            if (action === 'buy-now') {
-                                window.location.href = VIEW_CART_URL;
-                            }
-                            resolve();
-                        })
-                        .catch(readdError => {
-                            alert('Error during cart operation: ' + readdError.message);
-                            reject(readdError);
-                        });
-                } else {
-                    reject(new Error('Cart operation cancelled by user'));
-                }
-            } else {
-                alert(`❌ Error: ${error.message || 'An error occurred'}`);
-                reject(error);
-            }
-        })
-        .finally(() => {
-            if (buttonElement && !window.location.href.includes(VIEW_CART_URL)) {
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = buttonElement.dataset.originalText || '<i class="fas fa-cart-plus"></i> Add to Cart';
-            }
-        });
-    });
-};
-
-// =======================================================
-// BUY NOW WITH PAYMONGO GCASH (FIXED)
+// BUY NOW WITH PAYMONGO GCASH
 // =======================================================
 window.handleBuyNowGCash = function(buttonElement) {
     const itemDetailModal = document.getElementById('itemDetailModal');
@@ -185,143 +156,61 @@ window.handleBuyNowGCash = function(buttonElement) {
     const itemName = itemNameDisplay ? itemNameDisplay.textContent : 'Item';
 
     if (!itemId || isNaN(quantity) || quantity < 1) {
-        alert('Error: Invalid item selection or quantity.');
+        showMessage('Error: Invalid item selection or quantity.', 'error');
         return;
     }
 
     if (!IS_USER_AUTHENTICATED) {
-        alert('Please log in to purchase items.');
-        window.location.href = LOGIN_REGISTER_URL;
+        showMessage('Please log in to purchase items.', 'warning');
+        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
         return;
     }
 
-    // Disable button and show loading
     buttonElement.disabled = true;
     buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Payment Link...';
 
-    const csrfToken = window.getCookie('csrftoken');
+    const csrfToken = getCookie('csrftoken');
     const formData = new FormData();
     formData.append('menu_item_id', itemId);
     formData.append('quantity', quantity);
 
-    // ✅ Call the Buy Now specific endpoint
     fetch('/payment/create-buynow-link/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            // Show confirmation modal before redirecting
-            const confirmModal = confirm(
-                `You will be redirected to PayMongo to complete your ₱${(data.total_amount || 0).toFixed(2)} payment via GCash.\n\n` +
-                `Order Reference: ${data.reference_number}\n\n` +
-                `Click OK to proceed to payment.`
-            );
-
-            if (confirmModal) {
-                // ✅ Redirect to PayMongo checkout page
+        if (data.success && data.checkout_url) {
+            showMessage('Redirecting to payment...', 'info');
+            setTimeout(() => {
                 window.location.href = data.checkout_url;
-            } else {
-                // Re-enable button if user cancels
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = '<i class="fas fa-money-bill"></i> Buy Now (GCash)';
-            }
+            }, 1000);
         } else {
-            alert('Error: ' + data.message);
-            buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-money-bill"></i> Buy Now (GCash)';
+            throw new Error(data.message || 'Failed to create payment link');
         }
     })
     .catch(error => {
-        console.error('Payment Error:', error);
-        alert('An error occurred while creating the payment. Please try again.');
+        console.error('Buy Now Error:', error);
+        showMessage('Error: ' + error.message, 'error');
         buttonElement.disabled = false;
-        buttonElement.innerHTML = '<i class="fas fa-money-bill"></i> Buy Now (GCash)';
+        buttonElement.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
     });
 };
 
-
 // =======================================================
-// QUICK ADD TO CART (From menu card)
-// =======================================================
-function handleQuickAddToCart(buttonElement, event) {
-    if (event) event.stopPropagation();
-
-    const cardElement = buttonElement.closest('.menu-item');
-    const itemId = cardElement ? cardElement.dataset.itemId : null;
-    const itemName = cardElement ? cardElement.dataset.itemName : 'Item';
-
-    if (!itemId) {
-        alert('❌ Error: Item ID not found');
-        return;
-    }
-
-    const quantity = 1;
-    const csrfToken = window.getCookie('csrftoken');
-
-    if (!csrfToken) {
-        alert('❌ Security Error: CSRF token not found. Please reload the page.');
-        return;
-    }
-
-    window.addToCart(itemId, quantity, csrfToken, buttonElement, itemName, 'add');
-}
-window.handleQuickAddToCart = handleQuickAddToCart;
-
-// =======================================================
-// MODAL ADD TO CART
-// =======================================================
-function handleModalAddToCart(buttonElement) {
-    const itemDetailModal = document.getElementById('itemDetailModal');
-    const modalItemId = itemDetailModal.querySelector('#modalItemId');
-    const quantityInput = itemDetailModal.querySelector('#itemQuantity');
-    const itemNameDisplay = itemDetailModal.querySelector('#itemDetailModalTitle');
-
-    const itemId = modalItemId ? modalItemId.value : null;
-    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-    const itemName = itemNameDisplay ? itemNameDisplay.textContent : 'Item';
-    const action = buttonElement.dataset.action || 'add';
-
-    if (!itemId || isNaN(quantity) || quantity < 1) {
-        alert('❌ Error: Invalid item selection or quantity');
-        return;
-    }
-
-    const csrfToken = window.getCookie('csrftoken');
-    if (!csrfToken) {
-        alert('❌ Security Error: CSRF token not found. Please reload.');
-        return;
-    }
-
-    window.addToCart(itemId, quantity, csrfToken, buttonElement, itemName, action)
-        .then(() => {
-            if (action === 'add') window.closeItemDetailModal();
-        })
-        .catch(error => {
-            const cancelled = error.message === 'Cart operation cancelled by user';
-            if (action === 'add' && !cancelled) window.closeItemDetailModal();
-        });
-}
-window.handleModalAddToCart = handleModalAddToCart;
-
-// =======================================================
-// REVIEW MODAL FUNCTIONS
+// REVIEW FUNCTIONALITY
 // =======================================================
 document.addEventListener('DOMContentLoaded', function() {
     const reviewModal = document.getElementById('reviewModal');
-    const addReviewBtn = document.getElementById('addReviewBtn');
+    const reviewForm = document.getElementById('reviewForm');
+    const modalTitle = document.getElementById('reviewModalTitle');
     const modalStars = document.getElementById('modalStars');
     const ratingInput = document.getElementById('ratingInput');
-    const reviewForm = document.getElementById('reviewForm');
-    const commentInput = document.getElementById('comment');
-    const allReviewsList = document.getElementById('allReviewsList');
-    const modalTitle = document.getElementById('modalTitle');
-    const filterButtons = document.querySelectorAll('.btn-review-filter');
-    const noFilteredReviewsMessage = document.getElementById('noFilteredReviews');
-    const noReviewsMessage = document.getElementById('noReviewsMessage');
-    const allReviews = allReviewsList ? Array.from(allReviewsList.querySelectorAll('.review-item')) : [];
+    const commentInput = document.getElementById('commentInput');
+    const addReviewBtn = document.getElementById('addReviewBtn');
+    const filterButtons = document.querySelectorAll('.review-filter-btn');
 
     const itemDetailModal = document.getElementById('itemDetailModal');
     const modalItemId = document.getElementById('modalItemId');
@@ -332,52 +221,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemQuantityInput = document.getElementById('itemQuantity');
 
     function updateStarRating(rating) {
-        ratingInput.value = rating;
-        Array.from(modalStars.children).forEach(star => {
-            if (parseInt(star.dataset.rating) <= rating) {
-                star.classList.remove('far');
-                star.classList.add('fas', 'filled');
-            } else {
-                star.classList.remove('fas', 'filled');
-                star.classList.add('far');
+        const stars = modalStars.querySelectorAll('i');
+        stars.forEach((star, index) => {
+            star.className = index < rating ? 'fas fa-star' : 'far fa-star';
+        });
+    }
+
+    function applyReviewFilter(filterValue) {
+        const reviews = document.querySelectorAll('.review-item');
+        reviews.forEach(review => {
+            if (filterValue === 'all') {
+                review.style.display = 'block';
+            } else if (filterValue === 'good') {
+                const rating = parseInt(review.dataset.rating);
+                review.style.display = rating >= 4 ? 'block' : 'none';
+            } else if (filterValue === 'bad') {
+                const rating = parseInt(review.dataset.rating);
+                review.style.display = rating <= 3 ? 'block' : 'none';
             }
         });
     }
 
-    function applyReviewFilter(filterType) {
-        let visibleCount = 0;
-        if (noReviewsMessage) noReviewsMessage.style.display = 'none';
-
-        allReviews.forEach(review => {
-            const rating = parseInt(review.dataset.rating);
-            let show = false;
-
-            if (filterType === 'all') show = true;
-            else if (filterType === 'good' && rating >= 4) show = true;
-            else if (filterType === 'bad' && rating <= 3) show = true;
-
-            if (show) {
-                review.style.display = 'flex';
-                visibleCount++;
-            } else {
-                review.style.display = 'none';
-            }
+    if (filterButtons) {
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.dataset.filter;
+                applyReviewFilter(filter);
+            });
         });
-
-        noFilteredReviewsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
     }
-
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            applyReviewFilter(this.dataset.filter);
-        });
-    });
 
     window.openReviewModal = function(isEdit = false, reviewData = {}) {
         if (!IS_USER_AUTHENTICATED) {
-            alert('⚠️ Please log in to write a review');
+            showMessage('⚠️ Please log in to write a review', 'warning');
             window.location.href = '/accounts/login/';
             return;
         }
@@ -448,14 +326,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // =======================================================
     // MENU FILTERING
+    // =======================================================
     const menuList = document.getElementById('menuList');
-    const allMenuItems = Array.from(document.querySelectorAll('.menu-item'));
+    const allMenuItems = menuList ? Array.from(document.querySelectorAll('.menu-item')) : [];
 
     window.filterMenuItems = function() {
-        const searchText = document.getElementById('menuSearchInput').value.toLowerCase();
-        const priceFilter = document.getElementById('priceFilter').value;
-        const isBestSellerFilterActive = document.getElementById('bestSellerFilter').classList.contains('active');
+        const searchInput = document.getElementById('menuSearchInput');
+        const priceFilter = document.getElementById('priceFilter');
+        const bestSellerFilter = document.getElementById('bestSellerFilter');
+
+        if (!searchInput || !priceFilter || !bestSellerFilter) return;
+
+        const searchText = searchInput.value.toLowerCase();
+        const priceValue = priceFilter.value;
+        const isBestSellerFilterActive = bestSellerFilter.classList.contains('active');
         const itemsToShow = [];
 
         allMenuItems.forEach(item => {
@@ -471,29 +357,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        if (priceFilter === 'highest') {
+        if (priceValue === 'highest') {
             itemsToShow.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-        } else if (priceFilter === 'lowest') {
+        } else if (priceValue === 'lowest') {
             itemsToShow.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
         }
 
-        menuList.innerHTML = '';
-        if (itemsToShow.length > 0) {
-            itemsToShow.forEach(item => menuList.appendChild(item));
-            document.getElementById('noMenuItemsFound').style.display = 'none';
-        } else {
-            document.getElementById('noMenuItemsFound').style.display = 'block';
+        if (menuList) {
+            menuList.innerHTML = '';
+            if (itemsToShow.length > 0) {
+                itemsToShow.forEach(item => menuList.appendChild(item));
+                const noItemsMsg = document.getElementById('noMenuItemsFound');
+                if (noItemsMsg) noItemsMsg.style.display = 'none';
+            } else {
+                const noItemsMsg = document.getElementById('noMenuItemsFound');
+                if (noItemsMsg) noItemsMsg.style.display = 'block';
+            }
         }
     };
 
     window.toggleBestSellerFilter = function() {
         const button = document.getElementById('bestSellerFilter');
-        button.classList.toggle('active');
-        button.setAttribute('aria-pressed', button.classList.contains('active'));
-        filterMenuItems();
+        if (button) {
+            button.classList.toggle('active');
+            button.setAttribute('aria-pressed', button.classList.contains('active'));
+            filterMenuItems();
+        }
     };
 
+    // =======================================================
     // ITEM DETAIL MODAL
+    // =======================================================
     window.openItemDetailModal = function(menuItemElement) {
         const itemId = menuItemElement.dataset.itemId;
         const itemName = menuItemElement.dataset.itemName;
@@ -502,28 +396,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemImageUrl = menuItemElement.dataset.itemImageUrl;
         const itemQuantity = parseInt(menuItemElement.dataset.itemQuantity) || 0;
 
-        modalItemId.value = itemId;
-        modalItemTitle.textContent = itemName;
-        modalItemImage.src = itemImageUrl;
-        modalItemPrice.textContent = '₱ ' + parseFloat(itemPrice).toFixed(2);
-        modalItemDescription.textContent = itemDescription;
-        itemQuantityInput.value = 1;
+        if (modalItemId) modalItemId.value = itemId;
+        if (modalItemTitle) modalItemTitle.textContent = itemName;
+        if (modalItemImage) modalItemImage.src = itemImageUrl;
+        if (modalItemPrice) modalItemPrice.textContent = '₱ ' + parseFloat(itemPrice).toFixed(2);
+        if (modalItemDescription) modalItemDescription.textContent = itemDescription;
+        if (itemQuantityInput) itemQuantityInput.value = 1;
 
-        // Update Stock Display (Number only or Out of Stock)
-    const stockDisplay = document.getElementById('modalItemStock'); // Siguraduhin na tama ang ID na ito sa HTML mo
-
-    if (stockDisplay) {
-        if (itemQuantity > 0) {
-            // Dito tinanggal natin ang word na "In Stock", bilang nalang
-            stockDisplay.innerText = itemQuantity + (itemQuantity === 1 ? ' Item' : ' Items');
-            stockDisplay.style.color = '#28a745'; // Green color for available
-        } else {
-            stockDisplay.innerText = 'Out of Stock';
-            stockDisplay.style.color = '#dc3545'; // Red color for out of stock
+        const stockDisplay = document.getElementById('modalItemStock');
+        if (stockDisplay) {
+            if (itemQuantity > 0) {
+                stockDisplay.innerText = itemQuantity + (itemQuantity === 1 ? ' Item' : ' Items');
+                stockDisplay.style.color = '#28a745';
+            } else {
+                stockDisplay.innerText = 'Out of Stock';
+                stockDisplay.style.color = '#dc3545';
+            }
         }
-    }
 
-        // Disable buttons if out of stock
         const addToCartBtn = document.getElementById('modalAddToCartBtn');
         const buyNowBtn = document.getElementById('modalBuyNowBtn');
 
@@ -547,14 +437,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        itemDetailModal.style.display = 'block';
+        if (itemDetailModal) itemDetailModal.style.display = 'block';
     };
 
     window.closeItemDetailModal = function() {
-        itemDetailModal.style.display = 'none';
+        if (itemDetailModal) itemDetailModal.style.display = 'none';
     };
 
     window.updateModalQuantity = function(change) {
+        if (!itemQuantityInput) return;
         let currentQuantity = parseInt(itemQuantityInput.value);
         let newQuantity = currentQuantity + change;
         if (newQuantity < 1) newQuantity = 1;
@@ -562,8 +453,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.onclick = function(event) {
-        if (event.target == reviewModal) closeReviewModal();
-        if (event.target == itemDetailModal) closeItemDetailModal();
+        if (reviewModal && event.target == reviewModal) closeReviewModal();
+        if (itemDetailModal && event.target == itemDetailModal) closeItemDetailModal();
     };
 
     applyReviewFilter('all');
