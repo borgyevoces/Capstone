@@ -3050,12 +3050,13 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
+
 @login_required
 @require_POST
 def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
-    ✅ FIXED: Removed defer() - fields now exist in database
+    ✅ FIXED: Added @login_required and proper error handling
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
@@ -3067,7 +3068,7 @@ def add_to_cart(request):
                 'message': 'Invalid item or quantity.'
             }, status=400)
 
-        # Fetch the menu item
+        # Fetch the menu item with establishment
         menu_item = get_object_or_404(
             MenuItem.objects.select_related('food_establishment'),
             pk=menu_item_id
@@ -3082,29 +3083,18 @@ def add_to_cart(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # ✅ FIXED: No more defer() - payment_status and fulfillment_status now exist
         with transaction.atomic():
-            try:
-                # Get existing PENDING order for this establishment
-                order = Order.objects.get(
-                    user=request.user,
-                    establishment=establishment,
-                    status='PENDING'
-                )
-                created = False
-            except Order.DoesNotExist:
-                # Create new order with proper defaults
-                order = Order.objects.create(
-                    user=request.user,
-                    establishment=establishment,
-                    status='PENDING',
-                    total_amount=0,
-                    payment_status='unpaid',       # ✅ NEW: Set default payment status
-                    fulfillment_status='pending'   # ✅ NEW: Set default fulfillment status
-                )
-                created = True
+            # Get or create PENDING order for this establishment
+            order, created = Order.objects.get_or_create(
+                user=request.user,
+                establishment=establishment,
+                status='PENDING',
+                defaults={
+                    'total_amount': 0,
+                }
+            )
 
-            # Add or update OrderItem
+            # Get or create OrderItem
             order_item, item_created = OrderItem.objects.get_or_create(
                 order=order,
                 menu_item=menu_item,
@@ -3115,23 +3105,25 @@ def add_to_cart(request):
             )
 
             if not item_created:
-                # Check if adding would exceed stock
+                # Update existing item quantity
                 new_quantity = order_item.quantity + quantity
+
+                # Check if adding would exceed stock
                 if new_quantity > menu_item.quantity:
                     return JsonResponse({
                         'success': False,
                         'message': f'Cannot add {quantity} more. Only {menu_item.quantity - order_item.quantity} items available.'
                     }, status=400)
+
                 order_item.quantity = new_quantity
                 order_item.save()
 
-            # Update order total and subtotal
+            # Update order total
             order_total = sum(
                 item.quantity * item.price_at_order
-                for item in order.order_items.all()  # ✅ FIXED: Use correct related_name
+                for item in order.orderitem_set.all()
             )
             order.total_amount = order_total
-            order.subtotal = order_total  # ✅ NEW: Update subtotal
             order.save()
 
         # Calculate total cart count across ALL establishments
@@ -3146,6 +3138,11 @@ def add_to_cart(request):
             'cart_count': total_cart_count
         })
 
+    except ValueError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid quantity value.'
+        }, status=400)
     except Exception as e:
         import traceback
         print(f"Error in add_to_cart: {e}")
@@ -3154,7 +3151,7 @@ def add_to_cart(request):
             'success': False,
             'message': 'An error occurred while adding to cart.'
         }, status=500)
-    
+
 @login_required
 @require_POST
 def paymongo_checkout(request):
@@ -3214,46 +3211,48 @@ def clear_cart(request):
 @require_POST
 def update_cart_item(request):
     """
-    Update cart item quantity with stock validation.
+    Update quantity of an item in cart
+    ✅ FIXED: Real-time quantity updates with stock checking
     """
     try:
         order_item_id = request.POST.get('order_item_id')
-        quantity = int(request.POST.get('quantity', 1))
+        new_quantity = int(request.POST.get('quantity', 1))
 
-        if quantity < 1:
+        if not order_item_id or new_quantity < 1:
             return JsonResponse({
                 'success': False,
-                'message': 'Quantity must be at least 1'
+                'message': 'Invalid quantity'
             }, status=400)
 
-        # Get order item
+        # Get the order item
         order_item = get_object_or_404(
             OrderItem.objects.select_related('order', 'menu_item'),
-            id=order_item_id,
-            order__user=request.user,
-            order__status='PENDING'
+            pk=order_item_id,
+            order__user=request.user
         )
 
         # Check stock availability
-        if order_item.menu_item.quantity < quantity:
+        if new_quantity > order_item.menu_item.quantity:
             return JsonResponse({
                 'success': False,
-                'message': f'Only {order_item.menu_item.quantity} items available in stock'
+                'message': f'Only {order_item.menu_item.quantity} items available'
             }, status=400)
 
-        # Update quantity
-        order_item.quantity = quantity
-        order_item.save()
+        with transaction.atomic():
+            # Update quantity
+            order_item.quantity = new_quantity
+            order_item.save()
 
-        # Update order total
-        order = order_item.order
-        order.total_amount = sum(
-            item.quantity * item.price_at_order
-            for item in order.orderitem_set.all()
-        )
-        order.save()
+            # Update order total
+            order = order_item.order
+            order_total = sum(
+                item.quantity * item.price_at_order
+                for item in order.orderitem_set.all()
+            )
+            order.total_amount = order_total
+            order.save()
 
-        # Calculate total cart count across ALL establishments
+        # Calculate total cart count
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
             order__status='PENDING'
@@ -3262,16 +3261,23 @@ def update_cart_item(request):
         return JsonResponse({
             'success': True,
             'message': 'Cart updated',
+            'cart_count': total_cart_count,
             'item_total': float(order_item.quantity * order_item.price_at_order),
-            'cart_total': float(order.total_amount),
-            'cart_count': total_cart_count
+            'order_total': float(order.total_amount)
         })
 
-    except Exception as e:
-        print(f"Error updating cart: {e}")
+    except ValueError:
         return JsonResponse({
             'success': False,
-            'message': 'Error updating cart'
+            'message': 'Invalid quantity value'
+        }, status=400)
+    except Exception as e:
+        print(f"Error updating cart: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while updating cart.'
         }, status=500)
 
 
@@ -3279,36 +3285,50 @@ def update_cart_item(request):
 @require_POST
 def remove_from_cart(request):
     """
-    Remove item from cart. Delete order if last item removed.
+    Remove an item from cart
+    ✅ FIXED: Proper deletion and cart count update
     """
     try:
         order_item_id = request.POST.get('order_item_id')
 
+        if not order_item_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid item ID'
+            }, status=400)
+
+        # Get the order item
         order_item = get_object_or_404(
-            OrderItem,
-            id=order_item_id,
-            order__user=request.user,
-            order__status='PENDING'
+            OrderItem.objects.select_related('order', 'menu_item'),
+            pk=order_item_id,
+            order__user=request.user
         )
 
         order = order_item.order
-        order_item.delete()
+        establishment_id = order.establishment_id
 
-        # Check if cart still has items
-        remaining_items = order.orderitem_set.all()
+        with transaction.atomic():
+            # Delete the item
+            order_item.delete()
 
-        if remaining_items.exists():
-            # Update total
-            order.total_amount = sum(
-                item.quantity * item.price_at_order
-                for item in remaining_items
-            )
-            order.save()
-        else:
-            # Delete order if no items left
-            order.delete()
+            # Check if order has any remaining items
+            remaining_items = order.orderitem_set.count()
 
-        # Calculate total cart count across ALL establishments
+            if remaining_items == 0:
+                # Delete the entire order if empty
+                order.delete()
+                order_deleted = True
+            else:
+                # Update order total
+                order_total = sum(
+                    item.quantity * item.price_at_order
+                    for item in order.orderitem_set.all()
+                )
+                order.total_amount = order_total
+                order.save()
+                order_deleted = False
+
+        # Calculate total cart count
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
             order__status='PENDING'
@@ -3318,57 +3338,64 @@ def remove_from_cart(request):
             'success': True,
             'message': 'Item removed from cart',
             'cart_count': total_cart_count,
-            'order_deleted': not remaining_items.exists()
+            'order_deleted': order_deleted,
+            'establishment_id': establishment_id
         })
 
     except Exception as e:
         print(f"Error removing from cart: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'message': 'Error removing item'
+            'message': 'An error occurred while removing item.'
         }, status=500)
 
-
 @login_required
+@require_POST
 def get_cart_count(request):
     """
-    Get current cart item count across ALL establishments.
+    Get current cart count for the user
     """
     try:
-        total_cart_count = OrderItem.objects.filter(
+        cart_count = OrderItem.objects.filter(
             order__user=request.user,
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         return JsonResponse({
             'success': True,
-            'cart_count': total_cart_count
+            'cart_count': cart_count
         })
+
     except Exception as e:
-        print(f"Error getting cart count: {e}")
         return JsonResponse({
             'success': False,
-            'cart_count': 0
-        })
+            'message': str(e)
+        }, status=500)
 
 
 @login_required
 @require_POST
 def clear_establishment_cart(request):
     """
-    Clear entire cart for a specific establishment.
+    Clear all items from a specific establishment's cart
     """
     try:
         establishment_id = request.POST.get('establishment_id')
 
-        order = get_object_or_404(
-            Order,
+        if not establishment_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid establishment ID'
+            }, status=400)
+
+        # Delete all pending orders for this establishment
+        deleted_count, _ = Order.objects.filter(
             user=request.user,
             establishment_id=establishment_id,
             status='PENDING'
-        )
-
-        order.delete()
+        ).delete()
 
         # Calculate remaining cart count
         total_cart_count = OrderItem.objects.filter(
@@ -3386,9 +3413,8 @@ def clear_establishment_cart(request):
         print(f"Error clearing cart: {e}")
         return JsonResponse({
             'success': False,
-            'message': 'Error clearing cart'
+            'message': 'An error occurred.'
         }, status=500)
-
 
 # =======ORIGINAL CODE==========
 
@@ -4147,24 +4173,25 @@ def gcash_payment_success(request):
 @login_required
 def view_cart(request):
     """
-    ✅ FIXED: Uses defer() to exclude payment_status when querying orders
+    Display all cart items grouped by establishment
+    ✅ FIXED: Proper queryset and error handling
     """
     try:
-        # ✅ CRITICAL FIX: Use defer() to exclude payment_status
-        all_carts = Order.objects.defer('payment_status').filter(
+        # Get all pending orders for current user
+        all_carts = Order.objects.filter(
             user=request.user,
             status='PENDING'
         ).select_related(
             'establishment'
         ).prefetch_related(
-            'items__menu_item'
+            'orderitem_set__menu_item'
         ).order_by('establishment__name')
 
         carts_data = []
         total_cart_count = 0
 
         for order in all_carts:
-            items = order.items.all()
+            items = order.orderitem_set.all()
             cart_item_count = sum(item.quantity for item in items)
             total_cart_count += cart_item_count
 

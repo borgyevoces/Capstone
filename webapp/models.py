@@ -5,9 +5,11 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import random
-from django.db.models import Sum
+from django.db.models import Sum, F
 import string
 from datetime import timedelta
+from decimal import Decimal
+
 
 # ================================
 # Helper Functions
@@ -16,9 +18,11 @@ def generate_uuid():
     """Generates a unique UUID string."""
     return str(uuid.uuid4())
 
+
 def generate_access_code():
     """Generates a random 6-character uppercase alphanumeric code."""
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
 
 # ================================
 # Categorization and Feature Models
@@ -30,12 +34,14 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Feature(models.Model):
     """Represents a special feature of a food establishment (e.g., 'Live Music')."""
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
+
 
 class Day(models.Model):
     """Represents a day of the week for business hours."""
@@ -44,12 +50,14 @@ class Day(models.Model):
     def __str__(self):
         return self.name
 
+
 class Amenity(models.Model):
     """Represents an amenity of a food establishment (e.g., 'Wi-Fi', 'Parking')."""
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
+
 
 # ================================
 # Main Models
@@ -87,8 +95,7 @@ class FoodEstablishment(models.Model):
     def __str__(self):
         return self.name
 
-    # ✅ FIXED: Automatic status calculation based on time
-    # ✅ KEEP THIS - Already correct in models.py (lines 58-72)
+    # ✅ Automatic status calculation based on time
     @property
     def status(self):
         """
@@ -105,6 +112,7 @@ class FoodEstablishment(models.Model):
             return "Open" if self.opening_time <= now <= self.closing_time else "Closed"
         else:
             return "Open" if now >= self.opening_time or now <= self.closing_time else "Closed"
+
 
 class OTP(models.Model):
     """OTP for email verification with expiration"""
@@ -135,6 +143,7 @@ class OTP(models.Model):
         """Block after 5 failed attempts"""
         return self.attempts >= 5
 
+
 class InvitationCode(models.Model):
     """
     Model for invitation codes used by new food establishments to register.
@@ -154,6 +163,7 @@ class InvitationCode(models.Model):
         if not self.code:
             self.code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
         super().save(*args, **kwargs)
+
 
 class MenuItem(models.Model):
     """Represents a single item on a food establishment's menu."""
@@ -204,6 +214,7 @@ class MenuItem(models.Model):
         self.quantity = max(self.quantity - amount, 0)
         self.save()
 
+
 class Review(models.Model):
     """Represents a user's review and rating for a food establishment."""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -221,6 +232,7 @@ class Review(models.Model):
     def __str__(self):
         return f"Review for {self.establishment.name} by {self.user.username}"
 
+
 class UserProfile(models.Model):
     """Extends the built-in Django User model with a profile picture."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
@@ -228,6 +240,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f'{self.user.username}\'s Profile'
+
 
 # ================================
 # Signals
@@ -238,6 +251,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
 
+
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Signal receiver to save the UserProfile whenever the User is saved."""
@@ -246,6 +260,7 @@ def save_user_profile(sender, instance, **kwargs):
     except UserProfile.DoesNotExist:
         # Create a new profile if it doesn't exist for some reason
         UserProfile.objects.create(user=instance)
+
 
 # ================================
 # Deprecated/Redundant Models (as noted in original code)
@@ -258,6 +273,7 @@ class PaymentMethod(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class FoodEstablishmentCode(models.Model):
     """
@@ -275,6 +291,7 @@ class FoodEstablishmentCode(models.Model):
             self.code = generate_access_code()
         super().save(*args, **kwargs)
 
+
 # ===============================
 # Shopping Cart & Order Models
 # ===============================
@@ -286,12 +303,13 @@ class Cart(models.Model):
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     establishment = models.ForeignKey('FoodEstablishment', on_delete=models.CASCADE)
-    is_active = models.BooleanField(default=True) # Para malaman kung cart pa o naging Order na
+    is_active = models.BooleanField(default=True)  # Para malaman kung cart pa o naging Order na
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Cart for {self.user.username} at {self.establishment.name} (Active: {self.is_active})"
+
 
 class CartItem(models.Model):
     """Isang item sa loob ng Cart."""
@@ -306,7 +324,12 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.quantity}x {self.menu_item.name} in Cart {self.cart.id}"
 
+
+# ✅✅✅ FIXED ORDER MODEL - CRITICAL CHANGES ✅✅✅
 class Order(models.Model):
+    """
+    ✅ FIXED: Proper Order model with correct relationships
+    """
     STATUS_CHOICES = [
         ('PENDING', 'Pending Payment'),
         ('PAID', 'Paid'),
@@ -319,29 +342,41 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     establishment = models.ForeignKey('FoodEstablishment', on_delete=models.CASCADE)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='PENDING')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    # GCash Fields
+    # GCash/PayMongo Fields
     gcash_reference_number = models.CharField(max_length=100, blank=True, null=True)
     gcash_payment_method = models.CharField(max_length=50, default='gcash')
     payment_confirmed_at = models.DateTimeField(null=True, blank=True)
-
-    # ✅ THIS FIELD MUST EXIST
     paymongo_checkout_id = models.CharField(max_length=100, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def update_total(self):
-        total = self.orderitem_set.aggregate(
-            sum_total=Sum('price_at_order', field='price_at_order * quantity')
-        )['sum_total'] or 0.00
-        self.total_amount = total
-        self.save(update_fields=['total_amount', 'updated_at'])
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Order #{self.id} - {self.establishment.name} ({self.status})"
 
+    # ✅ FIXED: Proper update_total method using F expressions
+    def update_total(self):
+        """Update total amount based on order items"""
+        total = self.orderitem_set.aggregate(
+            total=Sum(F('quantity') * F('price_at_order'))
+        )['total'] or Decimal('0.00')
+
+        self.total_amount = total
+        self.save(update_fields=['total_amount', 'updated_at'])
+
+    # ✅ NEW: Get total item count
+    def get_item_count(self):
+        """Get total number of items in this order"""
+        return self.orderitem_set.aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+
+    # ✅ KEEP: Notification creation method
     def create_notification(self, notification_type='new_order'):
         messages_map = {
             'new_order': f'New order #{self.id} from {self.user.username}',
@@ -356,26 +391,62 @@ class Order(models.Model):
             message=messages_map.get(notification_type, 'New order received')
         )
 
-class OrderItem(models.Model):
-    """Isang item sa loob ng isang Order."""
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    # Tiyakin na ang price_at_order ay DecimalField
-    price_at_order = models.DecimalField(max_digits=10, decimal_places=2)
 
-    @property
-    def total_price(self):
-        """Kino-compute ang subtotal ng OrderItem (Presyo * Quantity)."""
-        # Tiyakin na gumagamit tayo ng Decimal() para sa computation
-        from decimal import Decimal
-        return Decimal(self.price_at_order) * self.quantity
+# ✅✅✅ FIXED ORDERITEM MODEL - CRITICAL CHANGES ✅✅✅
+class OrderItem(models.Model):
+    """
+    ✅ FIXED: Proper OrderItem with correct related_name
+    Individual item within an order
+    """
+    # ✅ CRITICAL: Use related_name='orderitem_set' to match views.py expectations
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='orderitem_set'  # ✅ THIS IS THE KEY FIX!
+    )
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    price_at_order = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Price of the item at the time of order"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['id']
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name} in Order #{self.order.id}"
 
-from django.db import models
-from django.contrib.auth.models import User
+    @property
+    def total_price(self):
+        """Calculate subtotal for this item"""
+        return Decimal(self.price_at_order) * self.quantity
+
+    # ✅ NEW: Auto-update order total on save
+    def save(self, *args, **kwargs):
+        """Override save to update order total automatically"""
+        super().save(*args, **kwargs)
+        # Update parent order total
+        if self.order:
+            self.order.update_total()
+
+    # ✅ NEW: Auto-update order total on delete
+    def delete(self, *args, **kwargs):
+        """Override delete to update order total automatically"""
+        order = self.order
+        super().delete(*args, **kwargs)
+        # Update parent order total after deletion
+        if order:
+            order.update_total()
+
+
+# ================================
+# Chat Models
+# ================================
 
 class ChatRoom(models.Model):
     """
@@ -409,6 +480,7 @@ class ChatRoom(models.Model):
         """Generate unique room name for WebSocket"""
         return f"chat_{self.customer.id}_{self.establishment.id}"
 
+
 class Message(models.Model):
     """
     Individual message in a chat room.
@@ -423,7 +495,7 @@ class Message(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # ✅ NEW: For "Unsend for you" functionality
+    # For "Unsend for you" functionality
     is_hidden_for_sender = models.BooleanField(default=False)
 
     class Meta:
@@ -456,6 +528,10 @@ class Message(models.Model):
                 'owner_unread_count'
             ])
 
+
+# ================================
+# Notification Models
+# ================================
 
 class OrderNotification(models.Model):
     """

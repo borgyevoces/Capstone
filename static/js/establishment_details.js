@@ -1,5 +1,5 @@
 // =======================================================
-// COMPLETE ESTABLISHMENT DETAILS JS - FULLY WORKING
+// ESTABLISHMENT DETAILS JS - COMPLETE FIXED VERSION
 // =======================================================
 
 // Global helper to get CSRF token
@@ -18,21 +18,6 @@ function getCookie(name) {
     return cookieValue;
 }
 window.getCookie = getCookie;
-
-// =======================================================
-// MESSAGE DISMISS FUNCTIONALITY
-// =======================================================
-window.dismissMessage = function(button) {
-    const messageAlert = button.closest('.message-alert');
-    messageAlert.classList.add('hiding');
-    setTimeout(() => {
-        messageAlert.remove();
-        const container = document.getElementById('messagesContainer');
-        if (container && container.children.length === 0) {
-            container.remove();
-        }
-    }, 300);
-};
 
 // =======================================================
 // CART BADGE UPDATE
@@ -143,7 +128,7 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
                 background: #007bff;
                 color: white;
                 border: none;
-                padding: 6px 12px;
+                padding: 8px 16px;
                 border-radius: 6px;
                 cursor: pointer;
                 font-size: 13px;
@@ -212,7 +197,7 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 }
 
 // =======================================================
-// HANDLE MODAL ADD TO CART - ✅ ENHANCED WITH CART PREVIEW
+// ✅ MODAL ADD TO CART - FIXED VERSION
 // =======================================================
 window.handleModalAddToCart = function(button) {
     console.log('🛒 Add to Cart button clicked');
@@ -239,9 +224,12 @@ window.handleModalAddToCart = function(button) {
         return;
     }
 
-    if (!IS_USER_AUTHENTICATED) {
+    // ✅ Check if user is authenticated (from global variable)
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
         showMessage('Please log in to add items to cart', 'warning');
-        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+        setTimeout(() => {
+            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+        }, 1500);
         return;
     }
 
@@ -256,20 +244,24 @@ window.handleModalAddToCart = function(button) {
     formData.append('menu_item_id', itemId);
     formData.append('quantity', quantity);
 
-    console.log('📡 Sending request to:', ADD_TO_CART_URL);
+    console.log('📡 Sending request to /cart/add/');
 
     // Send request
-    fetch(ADD_TO_CART_URL, {
+    fetch('/cart/add/', {
         method: 'POST',
         body: formData,
         headers: {
             'X-CSRFToken': csrfToken,
             'X-Requested-With': 'XMLHttpRequest'
-        }
+        },
+        credentials: 'same-origin'
     })
     .then(response => {
         console.log('📥 Response status:', response.status);
         if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('Please log in to add items to cart');
+            }
             throw new Error('Server error: ' + response.statusText);
         }
         return response.json();
@@ -285,7 +277,7 @@ window.handleModalAddToCart = function(button) {
                 {
                     text: '🛒 View Cart',
                     onClick: () => {
-                        window.location.href = CART_URL || '/cart/';
+                        window.location.href = '/cart/';
                     }
                 }
             );
@@ -295,23 +287,30 @@ window.handleModalAddToCart = function(button) {
                 updateCartBadge(data.cart_count);
             }
 
-            // Reset quantity and close modal
+            // Close modal after successful add
+            setTimeout(() => {
+                closeItemDetailModal();
+            }, 1000);
+
+            // Reset quantity to 1
             if (itemQuantityInput) {
                 itemQuantityInput.value = 1;
             }
 
-            // Close modal after short delay
-            setTimeout(() => {
-                closeItemDetailModal();
-            }, 500);
-
         } else {
-            showMessage(data.message || 'Failed to add item to cart.', 'error');
+            showMessage(data.message || 'Failed to add item to cart', 'error');
         }
     })
     .catch(error => {
         console.error('❌ Error:', error);
-        showMessage('An error occurred while adding to cart: ' + error.message, 'error');
+        showMessage('Error: ' + error.message, 'error');
+
+        // Redirect to login if authentication error
+        if (error.message.includes('log in')) {
+            setTimeout(() => {
+                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+            }, 2000);
+        }
     })
     .finally(() => {
         button.disabled = false;
@@ -320,329 +319,200 @@ window.handleModalAddToCart = function(button) {
 };
 
 // =======================================================
-// BUY NOW WITH PAYMONGO GCASH
+// ✅ DIRECT ADD TO CART (from menu list)
 // =======================================================
-window.handleBuyNowGCash = function(buttonElement) {
-    console.log('💳 Buy Now button clicked');
+window.addToCartFromList = function(menuItemId, button) {
+    console.log('🛒 Direct add to cart:', menuItemId);
 
-    const itemDetailModal = document.getElementById('itemDetailModal');
-    const modalItemId = itemDetailModal.querySelector('#modalItemId');
-    const quantityInput = itemDetailModal.querySelector('#itemQuantity');
-    const itemNameDisplay = itemDetailModal.querySelector('#itemDetailModalTitle');
-
-    const itemId = modalItemId ? modalItemId.value : null;
-    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-    const itemName = itemNameDisplay ? itemNameDisplay.textContent : 'Item';
-
-    if (!itemId || isNaN(quantity) || quantity < 1) {
-        showMessage('Error: Invalid item selection or quantity.', 'error');
+    // Check authentication
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
+        showMessage('Please log in to add items to cart', 'warning');
+        setTimeout(() => {
+            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+        }, 1500);
         return;
     }
 
-    if (!IS_USER_AUTHENTICATED) {
-        showMessage('Please log in to purchase items.', 'warning');
-        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-        return;
-    }
-
-    buttonElement.disabled = true;
-    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Payment Link...';
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     const csrfToken = getCookie('csrftoken');
     const formData = new FormData();
-    formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
+    formData.append('menu_item_id', menuItemId);
+    formData.append('quantity', 1);
 
-    fetch('/payment/create-buynow-link/', {
+    fetch('/cart/add/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('Please log in to add items to cart');
+            }
+            throw new Error('Server error');
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.success && data.checkout_url) {
-            showMessage('Redirecting to payment...', 'info');
-            setTimeout(() => {
-                window.location.href = data.checkout_url;
-            }, 1000);
+        if (data.success) {
+            showMessage(
+                data.message || 'Item added to cart!',
+                'success',
+                {
+                    text: '🛒 View Cart',
+                    onClick: () => {
+                        window.location.href = '/cart/';
+                    }
+                }
+            );
+
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
         } else {
-            throw new Error(data.message || 'Failed to create payment link');
+            showMessage(data.message || 'Failed to add item', 'error');
         }
     })
     .catch(error => {
-        console.error('Buy Now Error:', error);
+        console.error('Error:', error);
         showMessage('Error: ' + error.message, 'error');
-        buttonElement.disabled = false;
-        buttonElement.innerHTML = '<i class="fas fa-money-bill"></i> Buy Now';
+
+        if (error.message.includes('log in')) {
+            setTimeout(() => {
+                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+            }, 2000);
+        }
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
     });
 };
 
 // =======================================================
-// REVIEW MODAL FUNCTIONS
+// ITEM DETAIL MODAL
+// =======================================================
+window.openItemDetailModal = function(menuItemElement) {
+    console.log('🔍 Opening item detail modal');
+
+    const itemId = menuItemElement.dataset.itemId;
+    const itemName = menuItemElement.dataset.itemName;
+    const itemPrice = menuItemElement.dataset.price;
+    const itemDescription = menuItemElement.dataset.itemDescription;
+    const itemImageUrl = menuItemElement.dataset.itemImageUrl;
+    const itemQuantity = parseInt(menuItemElement.dataset.itemQuantity) || 0;
+
+    console.log('Item details:', { itemId, itemName, itemPrice, itemQuantity });
+
+    const modalItemId = document.getElementById('modalItemId');
+    const modalItemTitle = document.getElementById('itemDetailModalTitle');
+    const modalItemImage = document.getElementById('modalItemImage');
+    const modalItemPrice = document.getElementById('modalItemPrice');
+    const modalItemDescription = document.getElementById('modalItemDescription');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+
+    if (modalItemId) modalItemId.value = itemId;
+    if (modalItemTitle) modalItemTitle.textContent = itemName;
+    if (modalItemImage) modalItemImage.src = itemImageUrl;
+    if (modalItemPrice) modalItemPrice.textContent = '₱ ' + parseFloat(itemPrice).toFixed(2);
+    if (modalItemDescription) modalItemDescription.textContent = itemDescription;
+    if (itemQuantityInput) itemQuantityInput.value = 1;
+
+    const stockDisplay = document.getElementById('modalItemStock');
+    if (stockDisplay) {
+        if (itemQuantity > 0) {
+            stockDisplay.innerText = itemQuantity + (itemQuantity === 1 ? ' Item' : ' Items');
+            stockDisplay.style.color = '#28a745';
+        } else {
+            stockDisplay.innerText = 'Out of Stock';
+            stockDisplay.style.color = '#dc3545';
+        }
+    }
+
+    const addToCartBtn = document.getElementById('modalAddToCartBtn');
+    const buyNowBtn = document.getElementById('modalBuyNowBtn');
+
+    if (itemQuantity <= 0) {
+        if (addToCartBtn) {
+            addToCartBtn.disabled = true;
+            addToCartBtn.style.opacity = '0.5';
+        }
+        if (buyNowBtn) {
+            buyNowBtn.disabled = true;
+            buyNowBtn.style.opacity = '0.5';
+        }
+    } else {
+        if (addToCartBtn) {
+            addToCartBtn.disabled = false;
+            addToCartBtn.style.opacity = '1';
+        }
+        if (buyNowBtn) {
+            buyNowBtn.disabled = false;
+            buyNowBtn.style.opacity = '1';
+        }
+    }
+
+    const itemDetailModal = document.getElementById('itemDetailModal');
+    if (itemDetailModal) {
+        itemDetailModal.style.display = 'block';
+        console.log('✅ Modal opened');
+    }
+};
+
+window.closeItemDetailModal = function() {
+    const itemDetailModal = document.getElementById('itemDetailModal');
+    if (itemDetailModal) {
+        itemDetailModal.style.display = 'none';
+        console.log('✅ Modal closed');
+    }
+};
+
+window.updateModalQuantity = function(change) {
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    if (!itemQuantityInput) return;
+    let currentQuantity = parseInt(itemQuantityInput.value);
+    let newQuantity = currentQuantity + change;
+    if (newQuantity < 1) newQuantity = 1;
+    itemQuantityInput.value = newQuantity;
+};
+
+// Close modal on outside click
+window.onclick = function(event) {
+    const itemDetailModal = document.getElementById('itemDetailModal');
+    if (itemDetailModal && event.target == itemDetailModal) {
+        closeItemDetailModal();
+    }
+};
+
+// =======================================================
+// INITIALIZE ON PAGE LOAD
 // =======================================================
 document.addEventListener('DOMContentLoaded', function() {
-    const reviewModal = document.getElementById('reviewModal');
-    const reviewForm = document.getElementById('reviewForm');
-    const modalStars = document.getElementById('modalStars');
-    const ratingInput = document.getElementById('ratingInput');
-    const commentInput = document.getElementById('commentInput');
-    const modalTitle = document.getElementById('reviewModalTitle');
-    const addReviewBtn = document.getElementById('openReviewModalBtn');
-
-    window.applyReviewFilter = function(filter) {
-        const reviews = document.querySelectorAll('.review');
-        const buttons = document.querySelectorAll('.btn-filter-review');
-
-        buttons.forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`[data-rating="${filter}"]`).classList.add('active');
-
-        reviews.forEach(review => {
-            const rating = parseInt(review.dataset.rating);
-            if (filter === 'all' || rating === parseInt(filter)) {
-                review.style.display = 'block';
-            } else {
-                review.style.display = 'none';
-            }
-        });
-    };
-
-    function updateStarRating(rating) {
-        if (!modalStars) return;
-        const stars = modalStars.querySelectorAll('i');
-        stars.forEach((star, index) => {
-            if (index < rating) {
-                star.classList.remove('far');
-                star.classList.add('fas');
-            } else {
-                star.classList.remove('fas');
-                star.classList.add('far');
-            }
-        });
-    }
-
-    window.openReviewModal = function(isEdit = false, reviewData = null) {
-        if (isEdit && reviewData) {
-            modalTitle.textContent = 'Edit Your Review';
-            reviewForm.action = BASE_URL_ROOT + 'edit_review/' + reviewData.id + '/';
-            commentInput.value = reviewData.comment;
-            updateStarRating(reviewData.rating);
-        } else {
-            modalTitle.textContent = 'Write a Review';
-            reviewForm.action = BASE_URL_ROOT + 'submit_review/';
-            commentInput.value = '';
-            updateStarRating(0);
-        }
-        if (reviewModal) reviewModal.style.display = 'block';
-    };
-
-    window.closeReviewModal = function() {
-        if (reviewModal) reviewModal.style.display = 'none';
-        updateStarRating(0);
-        if (reviewForm) reviewForm.reset();
-    };
-
-    if (modalStars) {
-        modalStars.addEventListener('mouseover', e => {
-            if (e.target.tagName === 'I') {
-                const hoverRating = parseInt(e.target.dataset.rating);
-                updateStarRating(hoverRating);
-            }
-        });
-
-        modalStars.addEventListener('click', e => {
-            if (e.target.tagName === 'I') {
-                const newRating = parseInt(e.target.dataset.rating);
-                if (ratingInput) ratingInput.value = newRating;
-                updateStarRating(newRating);
-            }
-        });
-
-        modalStars.addEventListener('mouseout', () => {
-            if (ratingInput) updateStarRating(parseInt(ratingInput.value));
-        });
-    }
-
-    if (addReviewBtn) {
-        addReviewBtn.addEventListener('click', () => openReviewModal(false));
-    }
-
-    document.body.addEventListener('click', e => {
-        if (e.target.classList.contains('edit-review')) {
-            const btn = e.target;
-            const reviewData = {
-                id: btn.dataset.reviewId,
-                rating: parseInt(btn.dataset.rating),
-                comment: btn.dataset.comment,
-            };
-            openReviewModal(true, reviewData);
-        }
-
-        if (e.target.classList.contains('delete-review')) {
-            const reviewId = e.target.dataset.reviewId;
-            if (confirm('⚠️ Are you sure you want to delete your review?')) {
-                const deleteForm = document.getElementById('delete-review-form');
-                if (deleteForm) {
-                    deleteForm.action = BASE_URL_ROOT + 'delete_review/' + reviewId + '/';
-                    deleteForm.submit();
-                }
-            }
-        }
-    });
-
-    // =======================================================
-    // MENU FILTERING
-    // =======================================================
-    const menuList = document.getElementById('menuList');
-    const allMenuItems = menuList ? Array.from(document.querySelectorAll('.menu-item')) : [];
-
-    window.filterMenuItems = function() {
-        const searchInput = document.getElementById('menuSearchInput');
-        const priceFilter = document.getElementById('priceFilter');
-        const bestSellerFilter = document.getElementById('bestSellerFilter');
-
-        if (!searchInput || !priceFilter || !bestSellerFilter) return;
-
-        const searchText = searchInput.value.toLowerCase();
-        const priceValue = priceFilter.value;
-        const isBestSellerFilterActive = bestSellerFilter.classList.contains('active');
-        const itemsToShow = [];
-
-        allMenuItems.forEach(item => {
-            const itemName = item.querySelector('.menu-name') ? item.querySelector('.menu-name').textContent.toLowerCase() : '';
-            const itemDescription = item.querySelector('.menu-description') ? item.querySelector('.menu-description').textContent.toLowerCase() : '';
-            const isTopSeller = item.dataset.isTopSeller === 'true';
-
-            const matchesSearch = itemName.includes(searchText) || itemDescription.includes(searchText);
-            const matchesBestSeller = !isBestSellerFilterActive || isTopSeller;
-
-            if (matchesSearch && matchesBestSeller) {
-                itemsToShow.push(item);
-            }
-        });
-
-        if (priceValue === 'highest') {
-            itemsToShow.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-        } else if (priceValue === 'lowest') {
-            itemsToShow.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
-        }
-
-        if (menuList) {
-            menuList.innerHTML = '';
-            if (itemsToShow.length > 0) {
-                itemsToShow.forEach(item => menuList.appendChild(item));
-                const noItemsMsg = document.getElementById('noMenuItemsFound');
-                if (noItemsMsg) noItemsMsg.style.display = 'none';
-            } else {
-                const noItemsMsg = document.getElementById('noMenuItemsFound');
-                if (noItemsMsg) noItemsMsg.style.display = 'block';
-            }
-        }
-    };
-
-    window.toggleBestSellerFilter = function() {
-        const button = document.getElementById('bestSellerFilter');
-        if (button) {
-            button.classList.toggle('active');
-            button.setAttribute('aria-pressed', button.classList.contains('active'));
-            filterMenuItems();
-        }
-    };
-
-    // =======================================================
-    // ITEM DETAIL MODAL
-    // =======================================================
-    window.openItemDetailModal = function(menuItemElement) {
-        console.log('🔍 Opening item detail modal');
-
-        const itemId = menuItemElement.dataset.itemId;
-        const itemName = menuItemElement.dataset.itemName;
-        const itemPrice = menuItemElement.dataset.price;
-        const itemDescription = menuItemElement.dataset.itemDescription;
-        const itemImageUrl = menuItemElement.dataset.itemImageUrl;
-        const itemQuantity = parseInt(menuItemElement.dataset.itemQuantity) || 0;
-
-        console.log('Item details:', { itemId, itemName, itemPrice, itemQuantity });
-
-        const modalItemId = document.getElementById('modalItemId');
-        const modalItemTitle = document.getElementById('itemDetailModalTitle');
-        const modalItemImage = document.getElementById('modalItemImage');
-        const modalItemPrice = document.getElementById('modalItemPrice');
-        const modalItemDescription = document.getElementById('modalItemDescription');
-        const itemQuantityInput = document.getElementById('itemQuantity');
-
-        if (modalItemId) modalItemId.value = itemId;
-        if (modalItemTitle) modalItemTitle.textContent = itemName;
-        if (modalItemImage) modalItemImage.src = itemImageUrl;
-        if (modalItemPrice) modalItemPrice.textContent = '₱ ' + parseFloat(itemPrice).toFixed(2);
-        if (modalItemDescription) modalItemDescription.textContent = itemDescription;
-        if (itemQuantityInput) itemQuantityInput.value = 1;
-
-        const stockDisplay = document.getElementById('modalItemStock');
-        if (stockDisplay) {
-            if (itemQuantity > 0) {
-                stockDisplay.innerText = itemQuantity + (itemQuantity === 1 ? ' Item' : ' Items');
-                stockDisplay.style.color = '#28a745';
-            } else {
-                stockDisplay.innerText = 'Out of Stock';
-                stockDisplay.style.color = '#dc3545';
-            }
-        }
-
-        const addToCartBtn = document.getElementById('modalAddToCartBtn');
-        const buyNowBtn = document.getElementById('modalBuyNowBtn');
-
-        if (itemQuantity <= 0) {
-            if (addToCartBtn) {
-                addToCartBtn.disabled = true;
-                addToCartBtn.style.opacity = '0.5';
-            }
-            if (buyNowBtn) {
-                buyNowBtn.disabled = true;
-                buyNowBtn.style.opacity = '0.5';
-            }
-        } else {
-            if (addToCartBtn) {
-                addToCartBtn.disabled = false;
-                addToCartBtn.style.opacity = '1';
-            }
-            if (buyNowBtn) {
-                buyNowBtn.disabled = false;
-                buyNowBtn.style.opacity = '1';
-            }
-        }
-
-        const itemDetailModal = document.getElementById('itemDetailModal');
-        if (itemDetailModal) {
-            itemDetailModal.style.display = 'block';
-            console.log('✅ Modal opened');
-        }
-    };
-
-    window.closeItemDetailModal = function() {
-        const itemDetailModal = document.getElementById('itemDetailModal');
-        if (itemDetailModal) {
-            itemDetailModal.style.display = 'none';
-            console.log('✅ Modal closed');
-        }
-    };
-
-    window.updateModalQuantity = function(change) {
-        const itemQuantityInput = document.getElementById('itemQuantity');
-        if (!itemQuantityInput) return;
-        let currentQuantity = parseInt(itemQuantityInput.value);
-        let newQuantity = currentQuantity + change;
-        if (newQuantity < 1) newQuantity = 1;
-        itemQuantityInput.value = newQuantity;
-    };
-
-    window.onclick = function(event) {
-        if (reviewModal && event.target == reviewModal) closeReviewModal();
-        const itemDetailModal = document.getElementById('itemDetailModal');
-        if (itemDetailModal && event.target == itemDetailModal) closeItemDetailModal();
-    };
-
-    applyReviewFilter('all');
-
     console.log('✅ Establishment details JS loaded successfully');
+
+    // Load cart count on page load
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
+        fetch('/cart/count/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
+        })
+        .catch(error => console.error('Error loading cart count:', error));
+    }
 });
