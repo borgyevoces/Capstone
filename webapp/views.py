@@ -322,7 +322,7 @@ def forgot_password(request):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
 
-            # Build reset URL
+            # build.sh reset URL
             protocol = 'https' if request.is_secure() else 'http'
             domain = request.get_host()
             reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
@@ -1838,7 +1838,7 @@ def create_gcash_payment_link(request):
             'Accept': 'application/json'
         }
 
-        # Build URLs
+        # build.sh URLs
         success_url = request.build_absolute_uri(
             reverse('gcash_payment_success')
         ) + f'?order_id={order.id}'
@@ -1847,7 +1847,7 @@ def create_gcash_payment_link(request):
             reverse('gcash_payment_cancel')
         ) + f'?order_id={order.id}'
 
-        # Build description
+        # build.sh description
         item_names = [item.menu_item.name for item in cart_items[:3]]
         description = f"Order from {order.establishment.name}: {', '.join(item_names)}"
         if cart_items.count() > 3:
@@ -2081,7 +2081,7 @@ def create_buynow_payment_link(request):
             'Accept': 'application/json'
         }
 
-        # Build URLs
+        # build.sh URLs
         success_url = request.build_absolute_uri(
             reverse('gcash_payment_success')
         ) + f'?order_id={order.id}'
