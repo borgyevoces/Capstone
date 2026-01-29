@@ -3055,8 +3055,7 @@ def handle_payment_success(order):
 def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
-    Each establishment has its own separate cart.
-    FIXED: Removed payment_status field references that don't exist in database.
+    ✅ FIXED: Uses defer() to exclude payment_status field that doesn't exist in DB
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
@@ -3083,19 +3082,18 @@ def add_to_cart(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # ✅ FIXED: Only query fields that exist in the database
-        # Get or create cart for THIS establishment
+        # ✅ CRITICAL FIX: Use defer() to exclude payment_status field
         with transaction.atomic():
             try:
-                # Only use fields that definitely exist: user, establishment, status
-                order = Order.objects.get(
+                # Exclude payment_status from query
+                order = Order.objects.defer('payment_status').get(
                     user=request.user,
                     establishment=establishment,
                     status='PENDING'
                 )
                 created = False
             except Order.DoesNotExist:
-                # Create new order with only existing fields
+                # Create new order
                 order = Order.objects.create(
                     user=request.user,
                     establishment=establishment,
@@ -3855,11 +3853,10 @@ To: {test_email}
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
-
 @login_required
 def get_notifications(request):
     """
-    ✅ FIXED: API endpoint to get notifications with proper queryset ordering
+    ✅ FIXED: Uses defer() to exclude payment_status + proper queryset ordering
     """
     try:
         print(f"🔍 Notification request from user: {request.user.username}")
@@ -3878,7 +3875,7 @@ def get_notifications(request):
 
         print(f"✅ Found establishment: {establishment.name}")
 
-        # ✅ FIXED: Get base queryset WITHOUT slicing first
+        # ✅ CRITICAL FIX: Use defer() to exclude payment_status from Order queries
         notifications_base = OrderNotification.objects.filter(
             establishment=establishment
         ).select_related(
@@ -3888,19 +3885,19 @@ def get_notifications(request):
             'order__orderitem_set__menu_item'
         ).order_by('-created_at')
 
-        # ✅ CRITICAL FIX: Count unread BEFORE slicing
+        # ✅ Count unread BEFORE slicing
         unread_count = notifications_base.filter(is_read=False).count()
         print(f"🔔 Unread count: {unread_count}")
 
         # ✅ NOW slice to get only the first 50 notifications
         notifications = notifications_base[:50]
-        print(f"📊 Found {len(notifications)} notifications")
 
         # Format notifications data
         notifications_data = []
         for notif in notifications:
             try:
-                order = notif.order
+                # ✅ CRITICAL: Defer payment_status when accessing order
+                order = Order.objects.defer('payment_status').get(pk=notif.order.id)
 
                 # Get order items
                 order_items = []
@@ -4141,54 +4138,56 @@ def gcash_payment_success(request):
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
 
+
 @login_required
 def view_cart(request):
     """
-    Display all carts grouped by establishment.
-    Each establishment shows its own items and order summary.
-    MIGRATION-SAFE: Works even if database isn't fully migrated.
+    ✅ FIXED: Uses defer() to exclude payment_status when querying orders
     """
     try:
-        # ✅ MIGRATION-SAFE: Get ALL pending orders (one per establishment)
-        # Only select the essential fields that we know exist
-        all_carts = Order.objects.filter(
+        # ✅ CRITICAL FIX: Use defer() to exclude payment_status
+        all_carts = Order.objects.defer('payment_status').filter(
             user=request.user,
             status='PENDING'
-        ).select_related('establishment').prefetch_related(
-            'items__menu_item'  # ✅ Changed from 'orderitem_set__menu_item'
+        ).select_related(
+            'establishment'
+        ).prefetch_related(
+            'items__menu_item'
         ).order_by('establishment__name')
 
-        # Prepare cart data for each establishment
         carts_data = []
         total_cart_count = 0
 
         for order in all_carts:
-            # ✅ FIXED: Use 'items' instead of 'orderitem_set'
-            cart_items = order.items.all().order_by('menu_item__name')  # Changed
-            item_count = cart_items.aggregate(Sum('quantity'))['quantity__sum'] or 0
-            total_cart_count += item_count
+            items = order.items.all()
+            cart_item_count = sum(item.quantity for item in items)
+            total_cart_count += cart_item_count
 
             carts_data.append({
-                'order': order,
                 'establishment': order.establishment,
-                'items': cart_items,
-                'item_count': item_count,
-                'subtotal': order.total_amount
+                'order': order,
+                'items': items,
+                'item_count': cart_item_count
             })
 
+        context = {
+            'carts_data': carts_data,
+            'total_cart_count': total_cart_count
+        }
+
+        return render(request, 'webapplication/cart.html', context)
+
     except Exception as e:
-        import traceback
         print(f"Error loading cart: {e}")
-        print(traceback.format_exc())
-        carts_data = []
-        total_cart_count = 0
+        import traceback
+        traceback.print_exc()
 
-    context = {
-        'carts_data': carts_data,
-        'total_cart_count': total_cart_count,
-    }
-    return render(request, 'webapplication/cart.html', context)
-
+        # Return empty cart on error
+        context = {
+            'carts_data': [],
+            'total_cart_count': 0
+        }
+        return render(request, 'webapplication/cart.html', context)
 
 @csrf_exempt
 @require_POST
@@ -4522,66 +4521,48 @@ def create_test_notification(request):
         }, status=500)
 
 
-# ==========================================
-# ✅ ADD THIS TO YOUR views.py FILE
-# ADD AT THE BOTTOM, BEFORE THE LAST LINE
-# ==========================================
 
 from django.db.models import Count, Sum, Q, F
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.http import require_http_methods
 
-
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    🔥 AUTOMATIC BEST SELLERS API - REAL-TIME
-
-    Automatically fetches best-selling items across ALL establishments based on:
-    1. Items marked as is_top_seller=True (manual selection by owners)
-    2. Items with most orders in last 30 days (automatic ranking)
-    3. Items with highest total quantity sold (popularity)
-
-    Returns real-time data with establishment info, opening/closing times,
-    availability status, and sales statistics.
+    ✅ FIXED: Handles payment_status gracefully in best sellers query
     """
     try:
-        # ✅ Time threshold for "recent" orders (last 30 days)
+        # Time threshold for "recent" orders (last 30 days)
         time_threshold = timezone.now() - timedelta(days=30)
 
-        # ✅ AUTOMATIC QUERY - Gets best sellers based on:
-        # - Manual selection (is_top_seller=True) OR
-        # - Automatic ranking (most orders in last 30 days)
+        # ✅ FIXED: Use defer on orderitem__order to exclude payment_status
         best_sellers = MenuItem.objects.filter(
-            Q(is_top_seller=True) |  # Manually marked by owners
+            Q(is_top_seller=True) |
             Q(
                 orderitem__order__status__in=['PAID', 'PREPARING', 'READY', 'COMPLETED'],
                 orderitem__order__created_at__gte=time_threshold
             )
         ).annotate(
-            # ✅ Calculate total orders for this item
             total_orders=Count('orderitem__order', distinct=True),
-            # ✅ Calculate total quantity sold
             total_quantity_sold=Sum('orderitem__quantity')
         ).filter(
-            quantity__gt=0,  # ✅ Only show items that are in stock
-            food_establishment__isnull=False  # ✅ Must belong to an establishment
+            quantity__gt=0,
+            food_establishment__isnull=False
         ).select_related(
             'food_establishment',
             'food_establishment__category'
         ).order_by(
-            '-total_orders',  # ✅ Sort by most orders first
-            '-total_quantity_sold',  # ✅ Then by most sold
-            '-is_top_seller'  # ✅ Then by manual selection
-        )[:20]  # ✅ Top 20 best sellers
+            '-total_orders',
+            '-total_quantity_sold',
+            '-is_top_seller'
+        )[:20]
 
-        # ✅ Format response data with complete info
+        # Format response data
         items_data = []
         for item in best_sellers:
             establishment = item.food_establishment
 
-            # ✅ Skip if establishment is disabled
             if not establishment:
                 continue
 
@@ -4602,7 +4583,6 @@ def get_best_sellers(request):
                     'category': establishment.category.name if establishment.category else 'Other',
                     'address': establishment.address,
                     'image_url': establishment.image.url if establishment.image else None,
-                    # ✅ Opening/closing times for real-time status calculation
                     'opening_time': establishment.opening_time.strftime(
                         '%H:%M') if establishment.opening_time else None,
                     'closing_time': establishment.closing_time.strftime(
@@ -4619,6 +4599,8 @@ def get_best_sellers(request):
 
     except Exception as e:
         import traceback
+        print(f"Error in get_best_sellers: {e}")
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
             'error': str(e),
