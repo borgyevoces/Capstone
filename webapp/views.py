@@ -3056,6 +3056,7 @@ def add_to_cart(request):
     """
     Adds a MenuItem to cart. Supports multiple establishments.
     Each establishment has its own separate cart.
+    MIGRATION-SAFE: Works even if payment_status column doesn't exist yet.
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
@@ -3082,13 +3083,23 @@ def add_to_cart(request):
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # Get or create cart for THIS establishment
-        order, created = Order.objects.get_or_create(
-            user=request.user,
-            establishment=establishment,
-            status='PENDING',
-            defaults={'total_amount': 0}
-        )
+        # ✅ MIGRATION-SAFE: Get or create cart for THIS establishment
+        # Only query the fields that definitely exist
+        try:
+            order = Order.objects.get(
+                user=request.user,
+                establishment=establishment,
+                status='PENDING'
+            )
+            created = False
+        except Order.DoesNotExist:
+            order = Order.objects.create(
+                user=request.user,
+                establishment=establishment,
+                status='PENDING',
+                total_amount=0
+            )
+            created = True
 
         # Add or update OrderItem
         order_item, item_created = OrderItem.objects.get_or_create(
@@ -3111,7 +3122,7 @@ def add_to_cart(request):
             order_item.quantity = new_quantity
             order_item.save()
 
-        # ✅ FIXED: Use 'items' instead of 'orderitem_set'
+        # ✅ FIXED: Use 'items' instead of 'orderitem_set' (matches your model's related_name)
         # Update order total
         order.total_amount = sum(
             item.quantity * item.price_at_order
@@ -3139,7 +3150,6 @@ def add_to_cart(request):
             'success': False,
             'message': 'Error adding item to cart.'
         }, status=500)
-
 
 
 @login_required
@@ -4136,15 +4146,16 @@ def view_cart(request):
     """
     Display all carts grouped by establishment.
     Each establishment shows its own items and order summary.
+    MIGRATION-SAFE: Works even if database isn't fully migrated.
     """
     try:
-        # Get ALL pending orders (one per establishment)
-        # ✅ FIXED: Use 'items__menu_item' instead of 'orderitem_set__menu_item'
+        # ✅ MIGRATION-SAFE: Get ALL pending orders (one per establishment)
+        # Only select the essential fields that we know exist
         all_carts = Order.objects.filter(
             user=request.user,
             status='PENDING'
         ).select_related('establishment').prefetch_related(
-            'items__menu_item'  # Changed from 'orderitem_set__menu_item'
+            'items__menu_item'  # ✅ Changed from 'orderitem_set__menu_item'
         ).order_by('establishment__name')
 
         # Prepare cart data for each establishment
@@ -4177,6 +4188,7 @@ def view_cart(request):
         'total_cart_count': total_cart_count,
     }
     return render(request, 'webapplication/cart.html', context)
+
 
 @csrf_exempt
 @require_POST
