@@ -72,7 +72,7 @@ import json
 import requests
 
 from django.core.cache import cache
-from datetime import datetime, time as dt_time, timedelta
+from datetime import datetime, time as dt_time
 
 
 # ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
@@ -3886,49 +3886,60 @@ To: {test_email}
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
-@require_http_methods(["GET"])
+
+@login_required
 def get_notifications(request):
     """
-    ✅ FIXED: Changed Notification to OrderNotification
-    Calculates unread count BEFORE slicing the notifications list.
+    ✅ ENHANCED: API endpoint to get notifications with detailed error logging
     """
     try:
-        # 1. Get the establishment
+        print(f"🔍 Notification request from user: {request.user.username}")
+
+        # Get the establishment owned by the current user
         establishment = FoodEstablishment.objects.filter(owner=request.user).first()
 
         if not establishment:
+            print(f"❌ No establishment found for user: {request.user.username}")
             return JsonResponse({
                 'success': False,
-                'message': 'No establishment found',
+                'message': 'No establishment found for this user',
                 'notifications': [],
                 'unread_count': 0
             })
 
-        # 2. Get the Base QuerySet (Do NOT slice yet)
-        # ✅ FIXED: Changed from Notification to OrderNotification
-        base_query = OrderNotification.objects.filter(establishment=establishment)
+        print(f"✅ Found establishment: {establishment.name}")
 
-        # 3. Get unread count from the full queryset
-        unread_count = base_query.filter(is_read=False).count()
-
-        # 4. Get the display list and slice it LAST
-        notifications = base_query.select_related(
+        # Get notifications for this establishment
+        notifications = OrderNotification.objects.filter(
+            establishment=establishment
+        ).select_related(
             'order__user',
             'order__establishment'
         ).prefetch_related(
-            'order__items__menu_item'  # ✅ Also fixed: orderitem_set -> items
-        ).order_by('-created_at')[:50] # Slicing happens here
+            'order__orderitem_set__menu_item'
+        ).order_by('-created_at')[:50]
 
+        print(f"📊 Found {notifications.count()} notifications")
+
+        # Count unread notifications
+        unread_count = notifications.filter(is_read=False).count()
+        print(f"🔔 Unread count: {unread_count}")
+
+        # Format notifications data
         notifications_data = []
         for notif in notifications:
             try:
                 order = notif.order
-                order_items = [{
-                    'name': item.menu_item.name,
-                    'quantity': item.quantity,
-                    'price': float(item.price_at_order),
-                    'total': float(item.total_price)
-                } for item in order.items.all()]  # ✅ Also fixed: orderitem_set -> items
+
+                # Get order items
+                order_items = []
+                for item in order.orderitem_set.all():
+                    order_items.append({
+                        'name': item.menu_item.name,
+                        'quantity': item.quantity,
+                        'price': float(item.price_at_order),
+                        'total': float(item.total_price)
+                    })
 
                 notifications_data.append({
                     'id': notif.id,
@@ -3936,31 +3947,47 @@ def get_notifications(request):
                     'message': notif.message,
                     'is_new': not notif.is_read,
                     'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
+                    'time_ago': get_time_ago(notif.created_at),
+                    'is_paid': order.status == 'PAID',
+                    'payment_confirmed_at': order.payment_confirmed_at.strftime(
+                        '%b %d, %Y %I:%M %p') if order.payment_confirmed_at else None,
+                    'customer': {
+                        'name': order.user.username,
+                        'email': order.user.email
+                    },
                     'order': {
                         'id': order.id,
                         'status': order.status,
                         'total_amount': float(order.total_amount),
+                        'reference_number': order.gcash_reference_number or 'N/A',
+                        'item_count': order.orderitem_set.count(),
                         'items': order_items
                     }
                 })
-            except Exception as e:
-                print(f"Error formatting notif {notif.id}: {e}")
+            except Exception as item_error:
+                print(f"⚠️ Error formatting notification {notif.id}: {item_error}")
                 continue
 
-        return JsonResponse({
+        response_data = {
             'success': True,
             'notifications': notifications_data,
             'unread_count': unread_count
-        })
+        }
+
+        print(f"✅ Returning {len(notifications_data)} formatted notifications")
+        return JsonResponse(response_data)
 
     except Exception as e:
-        print(f"Error in get_notifications: {e}")
+        print(f"❌ Error fetching notifications: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'message': str(e),
+            'error': str(e),
             'notifications': [],
             'unread_count': 0
         }, status=500)
+
 
 def get_time_ago(timestamp):
     """
@@ -4489,6 +4516,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.http import require_http_methods
 
+
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
@@ -4580,465 +4608,3 @@ def get_best_sellers(request):
             'error': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
-
-# ==========================================
-# ORDER MANAGEMENT SYSTEM - Views
-# Add these functions to your existing views.py
-# ==========================================
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods, require_POST
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from .models import Order, OrderItem, FoodEstablishment
-from datetime import datetime, timedelta
-import json
-
-
-# ==========================================
-# ORDER MANAGEMENT API ENDPOINTS
-# ==========================================
-
-@login_required
-@require_http_methods(["GET"])
-def get_order_records(request):
-    """
-    Fetch all orders for the current establishment with filters
-    Returns: JSON with order data for real-time dashboard
-    """
-    try:
-        # Get the establishment for the current owner
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-
-        # Get filter parameters from query string
-        status_filter = request.GET.get('status', 'all')  # all, pending, completed
-        payment_filter = request.GET.get('payment', 'all')  # all, paid, unpaid
-        date_filter = request.GET.get('date', 'today')  # today, week, month, all
-        search = request.GET.get('search', '')
-
-        # Base queryset
-        orders = Order.objects.filter(
-            establishment=establishment
-        ).select_related('customer').prefetch_related('items')
-
-        # Apply date filters
-        now = datetime.now()
-        if date_filter == 'today':
-            orders = orders.filter(created_at__date=now.date())
-        elif date_filter == 'week':
-            orders = orders.filter(created_at__gte=now - timedelta(days=7))
-        elif date_filter == 'month':
-            orders = orders.filter(created_at__gte=now - timedelta(days=30))
-
-        # Apply status filters
-        if status_filter == 'pending':
-            orders = orders.filter(fulfillment_status='pending')
-        elif status_filter == 'completed':
-            orders = orders.filter(fulfillment_status='claimed')
-
-        # Apply payment filters
-        if payment_filter == 'paid':
-            orders = orders.filter(payment_status='paid')
-        elif payment_filter == 'unpaid':
-            orders = orders.filter(payment_status='unpaid')
-
-        # Apply search filter
-        if search:
-            orders = orders.filter(
-                Q(customer__first_name__icontains=search) |
-                Q(customer__email__icontains=search) |
-                Q(id__icontains=search)
-            )
-
-        # Sort by most recent first
-        orders = orders.order_by('-created_at')
-
-        # Serialize orders
-        order_data = []
-        for order in orders:
-            items = [{
-                'id': item.id,
-                'name': item.menu_item.name,
-                'quantity': item.quantity,
-                'price': float(item.price),
-                'total': float(item.quantity * item.price)
-            } for item in order.items.all()]
-
-            order_dict = {
-                'id': order.id,
-                'order_number': f"#{order.id:05d}",
-                'customer': {
-                    'id': order.customer.id,
-                    'name': f"{order.customer.first_name} {order.customer.last_name}",
-                    'email': order.customer.email,
-                    'phone': getattr(order.customer.userprofile, 'phone_number', 'N/A'),
-                    'avatar': ord(order.customer.first_name[0].upper())
-                },
-                'items': items,
-                'subtotal': float(order.subtotal),
-                'delivery_fee': float(order.delivery_fee) if order.delivery_fee else 0,
-                'total': float(order.total),
-                'payment_status': order.payment_status,
-                'fulfillment_status': order.fulfillment_status,
-                'created_at': order.created_at.isoformat(),
-                'created_at_formatted': order.created_at.strftime('%b %d, %Y - %I:%M %p'),
-                'notes': order.notes or '',
-            }
-            order_data.append(order_dict)
-
-        return JsonResponse({
-            'success': True,
-            'orders': order_data,
-            'total_count': len(order_data),
-            'stats': {
-                'total_orders': Order.objects.filter(establishment=establishment).count(),
-                'pending': Order.objects.filter(
-                    establishment=establishment,
-                    fulfillment_status='pending'
-                ).count(),
-                'completed': Order.objects.filter(
-                    establishment=establishment,
-                    fulfillment_status='claimed'
-                ).count(),
-                'unpaid': Order.objects.filter(
-                    establishment=establishment,
-                    payment_status='unpaid'
-                ).count(),
-            }
-        })
-
-    except FoodEstablishment.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Establishment not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_POST
-def update_order_status(request):
-    """
-    Update payment or fulfillment status of an order
-    POST data: { order_id, status_type, new_status }
-    status_type: 'payment' or 'fulfillment'
-    """
-    try:
-        data = json.loads(request.body)
-        order_id = data.get('order_id')
-        status_type = data.get('status_type')  # 'payment' or 'fulfillment'
-        new_status = data.get('new_status')
-
-        # Get order and verify ownership
-        order = get_object_or_404(Order, id=order_id)
-        establishment = order.establishment
-
-        # Verify user owns this establishment
-        if establishment.owner != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': 'Unauthorized'
-            }, status=403)
-
-        # Update the appropriate status
-        if status_type == 'payment':
-            if new_status not in ['paid', 'unpaid']:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Invalid payment status'
-                }, status=400)
-            order.payment_status = new_status
-
-        elif status_type == 'fulfillment':
-            if new_status not in ['pending', 'claimed']:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Invalid fulfillment status'
-                }, status=400)
-            order.fulfillment_status = new_status
-
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': 'Invalid status type'
-            }, status=400)
-
-        order.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': f'Order status updated successfully',
-            'order': {
-                'id': order.id,
-                'payment_status': order.payment_status,
-                'fulfillment_status': order.fulfillment_status,
-            }
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'error': 'Invalid JSON'
-        }, status=400)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def get_order_detail(request, order_id):
-    """
-    Get detailed information about a specific order
-    """
-    try:
-        order = get_object_or_404(Order, id=order_id)
-        establishment = order.establishment
-
-        # Verify ownership
-        if establishment.owner != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': 'Unauthorized'
-            }, status=403)
-
-        items = [{
-            'id': item.id,
-            'name': item.menu_item.name,
-            'description': item.menu_item.description,
-            'quantity': item.quantity,
-            'unit_price': float(item.price),
-            'total': float(item.quantity * item.price)
-        } for item in order.items.all()]
-
-        customer_profile = order.customer.userprofile if hasattr(order.customer, 'userprofile') else None
-
-        order_detail = {
-            'id': order.id,
-            'order_number': f"#{order.id:05d}",
-            'customer': {
-                'id': order.customer.id,
-                'name': f"{order.customer.first_name} {order.customer.last_name}",
-                'email': order.customer.email,
-                'phone': customer_profile.phone_number if customer_profile else 'N/A',
-                'address': customer_profile.address if customer_profile else 'N/A',
-            },
-            'items': items,
-            'subtotal': float(order.subtotal),
-            'delivery_fee': float(order.delivery_fee) if order.delivery_fee else 0,
-            'discount': float(order.discount) if hasattr(order, 'discount') else 0,
-            'total': float(order.total),
-            'payment_status': order.payment_status,
-            'fulfillment_status': order.fulfillment_status,
-            'created_at': order.created_at.isoformat(),
-            'created_at_formatted': order.created_at.strftime('%b %d, %Y - %I:%M %p'),
-            'notes': order.notes or '',
-        }
-
-        return JsonResponse({
-            'success': True,
-            'order': order_detail
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def get_transaction_history(request):
-    """
-    Get transaction history with pagination and filters
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-
-        # Pagination
-        page = int(request.GET.get('page', 1))
-        per_page = int(request.GET.get('per_page', 20))
-        skip = (page - 1) * per_page
-
-        # Filters
-        payment_status = request.GET.get('payment_status', 'all')
-        fulfillment_status = request.GET.get('fulfillment_status', 'all')
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-
-        # Base queryset
-        orders = Order.objects.filter(
-            establishment=establishment
-        ).select_related('customer').prefetch_related('items')
-
-        # Apply filters
-        if payment_status != 'all':
-            orders = orders.filter(payment_status=payment_status)
-
-        if fulfillment_status != 'all':
-            orders = orders.filter(fulfillment_status=fulfillment_status)
-
-        if start_date:
-            start_datetime = datetime.fromisoformat(start_date)
-            orders = orders.filter(created_at__gte=start_datetime)
-
-        if end_date:
-            end_datetime = datetime.fromisoformat(end_date)
-            orders = orders.filter(created_at__lte=end_datetime)
-
-        # Sort by most recent
-        total_orders = orders.count()
-        orders = orders.order_by('-created_at')[skip:skip + per_page]
-
-        # Serialize
-        transactions = []
-        for order in orders:
-            transactions.append({
-                'id': order.id,
-                'order_number': f"#{order.id:05d}",
-                'customer_name': f"{order.customer.first_name} {order.customer.last_name}",
-                'customer_email': order.customer.email,
-                'total': float(order.total),
-                'payment_status': order.payment_status,
-                'fulfillment_status': order.fulfillment_status,
-                'created_at': order.created_at.isoformat(),
-                'created_at_formatted': order.created_at.strftime('%b %d, %Y - %I:%M %p'),
-                'item_count': order.items.count(),
-            })
-
-        return JsonResponse({
-            'success': True,
-            'transactions': transactions,
-            'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total': total_orders,
-                'total_pages': (total_orders + per_page - 1) // per_page,
-            }
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def get_order_stats(request):
-    """
-    Get order statistics for dashboard
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-
-        # Get date range
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-
-        orders = Order.objects.filter(establishment=establishment)
-
-        if start_date:
-            orders = orders.filter(created_at__gte=datetime.fromisoformat(start_date))
-        if end_date:
-            orders = orders.filter(created_at__lte=datetime.fromisoformat(end_date))
-
-        total_orders = orders.count()
-        pending_orders = orders.filter(fulfillment_status='pending').count()
-        completed_orders = orders.filter(fulfillment_status='claimed').count()
-        paid_orders = orders.filter(payment_status='paid').count()
-        unpaid_orders = orders.filter(payment_status='unpaid').count()
-
-        total_revenue = sum(float(order.total) for order in orders)
-
-        return JsonResponse({
-            'success': True,
-            'stats': {
-                'total_orders': total_orders,
-                'pending': pending_orders,
-                'completed': completed_orders,
-                'paid': paid_orders,
-                'unpaid': unpaid_orders,
-                'total_revenue': total_revenue,
-            }
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@login_required
-@require_POST
-def add_order_note(request):
-    """
-    Add internal notes to an order
-    """
-    try:
-        data = json.loads(request.body)
-        order_id = data.get('order_id')
-        note = data.get('note', '')
-
-        order = get_object_or_404(Order, id=order_id)
-
-        if order.establishment.owner != request.user:
-            return JsonResponse({
-                'success': False,
-                'error': 'Unauthorized'
-            }, status=403)
-
-        order.notes = note
-        order.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Note added successfully'
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-# ==========================================
-# ADDITIONAL VIEWS FOR ORDER MANAGEMENT
-# Add these functions to your existing views.py
-# ==========================================
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from .models import FoodEstablishment
-
-@login_required
-def order_management_dashboard(request):
-    """
-    Main order management dashboard view
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-        context = {
-            'establishment': establishment,
-        }
-        return render(request, 'webapplication/order_management_dashboard.html', context)
-    except FoodEstablishment.DoesNotExist:
-        return redirect('owner_login')
-
-@login_required
-def transaction_history_page(request):
-    """
-    Transaction history page view
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-        context = {
-            'establishment': establishment,
-        }
-        return render(request, 'webapplication/order_management_dashboard.html', context)
-    except FoodEstablishment.DoesNotExist:
-        return redirect('owner_login')

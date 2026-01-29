@@ -1,24 +1,3 @@
-// ==========================================
-// ✅ IMAGE PRELOADING HELPER - ADDED FOR OPTIMIZATION
-// ==========================================
-function preloadBestSellerImages(items) {
-    const imagePromises = items.map(item => {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-                console.log(`✅ Preloaded: ${item.name}`);
-                resolve(item.image_url);
-            };
-            img.onerror = () => {
-                console.log(`⚠️ Failed to load: ${item.name}, using placeholder`);
-                resolve('/static/images/placeholder-food.jpg');
-            };
-            img.src = item.image_url || '/static/images/placeholder-food.jpg';
-        });
-    });
-    return Promise.all(imagePromises);
-}
-
 function openPage(evt, pageName) {
     var i, pagecontent, pagelinks;
     pagecontent = document.getElementsByClassName("pagecontent");
@@ -1324,11 +1303,6 @@ const BestSellers = {
 
             if (data.success && data.items && data.items.length > 0) {
                 this.items = data.items;
-
-                // ✅ CRITICAL: Preload ALL images BEFORE rendering
-                console.log("🖼️ Preloading images...");
-                await preloadBestSellerImages(data.items);
-                console.log("✅ All images preloaded!");
                 this.renderBestSellers();
             } else {
                 this.showEmptyState();
@@ -1408,7 +1382,6 @@ const BestSellers = {
                     src="${item.image_url || '/static/images/placeholder-food.jpg'}"
                     alt="${this.escapeHtml(item.name)}"
                     class="best-seller-image"
-                    loading="eager"
                     onerror="this.src='/static/images/placeholder-food.jpg'"
                 />
 
@@ -1432,7 +1405,6 @@ const BestSellers = {
                             src="${establishment.image_url || '/static/images/placeholder-store.jpg'}"
                             alt="${this.escapeHtml(establishment.name)}"
                             class="establishment-logo"
-                            loading="eager"
                             onerror="this.src='/static/images/placeholder-store.jpg'"
                         />
                         <div class="establishment-info">
@@ -1756,11 +1728,6 @@ const AutomaticBestSellers = {
             if (data.success && data.items && data.items.length > 0) {
                 console.log(`✅ Loaded ${data.items.length} best sellers`);
                 this.items = data.items;
-
-                // ✅ CRITICAL: Preload ALL images BEFORE rendering
-                console.log("🖼️ Preloading images...");
-                await preloadBestSellerImages(data.items);
-                console.log("✅ All images preloaded!");
                 this.renderBestSellers();
             } else {
                 console.log('ℹ️ No best sellers found');
@@ -1846,7 +1813,6 @@ const AutomaticBestSellers = {
                     src="${item.image_url || '/static/images/placeholder-food.jpg'}"
                     alt="${this.escapeHtml(item.name)}"
                     class="best-seller-image"
-                    loading="eager"
                     onerror="this.src='/static/images/placeholder-food.jpg'"
                 />
 
@@ -1870,7 +1836,6 @@ const AutomaticBestSellers = {
                             src="${establishment.image_url || '/static/images/placeholder-store.jpg'}"
                             alt="${this.escapeHtml(establishment.name)}"
                             class="establishment-logo"
-                            loading="eager"
                             onerror="this.src='/static/images/placeholder-store.jpg'"
                         />
                         <div class="establishment-info">
