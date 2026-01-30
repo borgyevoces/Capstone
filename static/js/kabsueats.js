@@ -1929,9 +1929,15 @@ const AutomaticBestSellers = {
         window.location.href = `/food_establishment/${establishmentId}/`;
     },
 
-    // ✅ Add item to cart
+    // ✅ Add item to cart - FIXED WITH BETTER ERROR HANDLING
     async addToCart(itemId, establishmentId) {
-        if (!itemId || !establishmentId) return;
+        if (!itemId || !establishmentId) {
+            console.error('❌ Missing itemId or establishmentId');
+            this.showToast('Invalid item or quantity.', 'error');
+            return;
+        }
+
+        console.log('🛒 Adding to cart:', { itemId, establishmentId });
 
         try {
             const response = await fetch('/cart/add/', {
@@ -1948,19 +1954,28 @@ const AutomaticBestSellers = {
             });
 
             const data = await response.json();
+            console.log('✅ Cart response:', data);
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 this.showToast('Item added to cart!', 'success');
 
+                // Update cart count in navbar
                 if (typeof updateCartCount === 'function') {
                     updateCartCount();
+                } else if (data.cart_count !== undefined) {
+                    // Fallback: update cart badge directly
+                    const cartBadge = document.querySelector('.cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.classList.add('show');
+                    }
                 }
             } else {
                 this.showToast(data.message || 'Failed to add item to cart', 'error');
             }
         } catch (error) {
             console.error('❌ Error adding to cart:', error);
-            this.showToast('Error adding item to cart', 'error');
+            this.showToast('Error adding item to cart. Please try again.', 'error');
         }
     },
 

@@ -3124,17 +3124,25 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
-
 @login_required
 @require_POST
 def add_to_cart(request):
     """
+    ✅ FIXED: Now properly handles JSON requests from Best Sellers section
     Adds a MenuItem to cart. Supports multiple establishments.
-    ✅ FIXED: Added @login_required and proper error handling
     """
     try:
-        menu_item_id = request.POST.get('menu_item_id')
-        quantity = int(request.POST.get('quantity', 1))
+        # ✅ FIX: Parse JSON body instead of POST data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            menu_item_id = data.get('menu_item_id')
+            establishment_id = data.get('establishment_id')
+            quantity = int(data.get('quantity', 1))
+        else:
+            # Support form-encoded data too
+            menu_item_id = request.POST.get('menu_item_id')
+            establishment_id = request.POST.get('establishment_id')
+            quantity = int(request.POST.get('quantity', 1))
 
         if not menu_item_id or quantity <= 0:
             return JsonResponse({
@@ -3149,6 +3157,13 @@ def add_to_cart(request):
         )
 
         establishment = menu_item.food_establishment
+
+        # ✅ Verify establishment_id matches (if provided)
+        if establishment_id and str(establishment.id) != str(establishment_id):
+            return JsonResponse({
+                'success': False,
+                'message': 'Establishment mismatch error.'
+            }, status=400)
 
         # Check stock availability
         if menu_item.quantity < quantity:
@@ -3219,7 +3234,7 @@ def add_to_cart(request):
         }, status=400)
     except Exception as e:
         import traceback
-        print(f"Error in add_to_cart: {e}")
+        print(f"❌ Error in add_to_cart: {e}")
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
