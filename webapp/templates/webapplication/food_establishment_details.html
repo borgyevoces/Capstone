@@ -797,6 +797,31 @@
             padding: 18px;
         }
     }
+
+    /* ✅ QUANTITY WARNING MESSAGE STYLES */
+    .quantity-warning {
+        display: none;
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+        font-weight: 500;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .quantity-warning.show {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -1200,6 +1225,11 @@
                         <input type="number" id="itemQuantity" value="1" min="1" readonly>
                         <button type="button" class="btn-quantity-plus" onclick="updateModalQuantity(1)">+</button>
                     </div>
+                    </div>
+                    <!-- ✅ QUANTITY WARNING MESSAGE -->
+                    <div id="quantityWarning" class="quantity-warning">
+                        Maximum quantity reached
+                    </div>
                 </div>
 
                 <div class="modal-actions">
@@ -1207,8 +1237,9 @@
                             data-action="add">
                         <i class="fas fa-cart-plus"></i> Add to Cart
                     </button>
-                    <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleBuyNowGCash(this)">
-                        <i class="fas fa-money-bill"></i> Buy Now
+                    <!-- ✅ FIXED BUY NOW BUTTON - REDIRECTS TO PAYMONGO -->
+                    <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleModalBuyNow(this)">
+                        <i class="fas fa-bolt"></i> Buy Now
                     </button>
                 </div>
                 {% else %}
@@ -1220,7 +1251,9 @@
                 </div>
                 {% endif %}
             </div>
+            <!-- ✅ HIDDEN FIELDS FOR VALIDATION -->
             <input type="hidden" id="modalItemId" value="">
+            <input type="hidden" id="modalMaxQuantity" value="0">
         </div>
     </div>
 

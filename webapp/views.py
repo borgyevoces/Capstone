@@ -2026,12 +2026,14 @@ def order_confirmation_view(request, order_id):
 @require_POST
 def create_buynow_payment_link(request):
     """
-    Create PayMongo payment link for immediate Buy Now (single item) - NO DELIVERY FEE
+    Create PayMongo payment link for immediate Buy Now (single item)
+    ✅ This handles the Buy Now button click and redirects to PayMongo
     """
     try:
         menu_item_id = request.POST.get('menu_item_id')
         quantity = int(request.POST.get('quantity', 1))
 
+        # Validation
         if not menu_item_id or quantity < 1:
             return JsonResponse({
                 'success': False,
@@ -2042,36 +2044,37 @@ def create_buynow_payment_link(request):
         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
         establishment = menu_item.food_establishment
 
-        # Check stock availability
+        # ✅ CHECK STOCK AVAILABILITY
         if menu_item.quantity < quantity:
             return JsonResponse({
                 'success': False,
                 'message': f'Only {menu_item.quantity} items available in stock'
             }, status=400)
 
-        # ✅ REMOVED DELIVERY FEE - Calculate item total only
+        # Calculate total
         item_total = Decimal(str(menu_item.price)) * quantity
-        grand_total = item_total  # No delivery fee
+        grand_total = item_total
         amount_in_centavos = int(grand_total * 100)
 
-        # Create order WITHOUT delivery fee
-        order = Order.objects.create(
-            user=request.user,
-            establishment=establishment,
-            status='PENDING',
-            total_amount=grand_total,
-            gcash_payment_method='gcash'
-        )
+        # ✅ CREATE ORDER WITH PENDING STATUS
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user,
+                establishment=establishment,
+                status='PENDING',
+                total_amount=grand_total,
+                gcash_payment_method='gcash'
+            )
 
-        # Create order item
-        OrderItem.objects.create(
-            order=order,
-            menu_item=menu_item,
-            quantity=quantity,
-            price_at_order=menu_item.price
-        )
+            # Create order item
+            OrderItem.objects.create(
+                order=order,
+                menu_item=menu_item,
+                quantity=quantity,
+                price_at_order=menu_item.price
+            )
 
-        # PayMongo API setup
+        # ✅ PAYMONGO API SETUP
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
         auth_base64 = base64.b64encode(auth_string.encode()).decode()
 
@@ -2081,24 +2084,19 @@ def create_buynow_payment_link(request):
             'Accept': 'application/json'
         }
 
-        # build.sh URLs
+        # Build success and cancel URLs
         success_url = request.build_absolute_uri(
             reverse('gcash_payment_success')
-        ) + f'?order_id={order.id}'
+        ) + f'?order_id={order.id}&return_to=buynow'
 
         cancel_url = request.build_absolute_uri(
             reverse('gcash_payment_cancel')
-        ) + f'?order_id={order.id}'
+        ) + f'?order_id={order.id}&return_to=buynow'
 
-        # Description
+        # Description for PayMongo
         description = f"Buy Now: {menu_item.name} x{quantity} from {establishment.name}"
 
-        # Payment link payload
-        # For Buy Now flow, indicate return_to=buynow so success handler
-        # can redirect to the order confirmation / store page.
-        success_url = success_url + '&return_to=buynow'
-        cancel_url = cancel_url + '&return_to=buynow'
-
+        # ✅ PAYMENT LINK PAYLOAD
         payload = {
             "data": {
                 "attributes": {
@@ -2112,9 +2110,9 @@ def create_buynow_payment_link(request):
             }
         }
 
-        # Call PayMongo API
+        # ✅ CALL PAYMONGO API
         api_url = f"{settings.PAYMONGO_API_URL}/links"
-        response = requests.post(api_url, headers=headers, json=payload)
+        response = requests.post(api_url, headers=headers, json=payload, timeout=30)
 
         if response.status_code in [200, 201]:
             response_data = response.json()
@@ -2122,15 +2120,12 @@ def create_buynow_payment_link(request):
             reference_number = response_data['data']['id']
 
             # Save reference number
-            try:
-                order.gcash_reference_number = reference_number
-                order.save(update_fields=['gcash_reference_number'])
-            except Exception as e:
-                print(f"⚠️ Warning: Could not save reference number: {e}")
+            order.gcash_reference_number = reference_number
+            order.save(update_fields=['gcash_reference_number'])
 
             return JsonResponse({
                 'success': True,
-                'checkout_url': checkout_url,
+                'checkout_url': checkout_url,  # ✅ This is where user gets redirected
                 'order_id': order.id,
                 'reference_number': reference_number,
                 'total_amount': float(grand_total)
@@ -2146,6 +2141,16 @@ def create_buynow_payment_link(request):
                 'message': error_message
             }, status=500)
 
+    except MenuItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Item not found'
+        }, status=404)
+    except ValueError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid quantity value'
+        }, status=400)
     except Exception as e:
         print(f"❌ Error creating Buy Now payment: {e}")
         import traceback
@@ -2155,8 +2160,6 @@ def create_buynow_payment_link(request):
             'success': False,
             'message': f'An error occurred: {str(e)}'
         }, status=500)
-
-
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
 # ===================================================================================================================
