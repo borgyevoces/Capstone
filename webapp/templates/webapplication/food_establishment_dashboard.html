@@ -2056,6 +2056,18 @@
             KabsuEats
         </a>
         <div class="navbar-actions">
+            <!-- Orders Button -->
+            <button class="nav-icon-btn" onclick="scrollToOrders()" title="Orders">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="nav-btn-label">Orders</span>
+            </button>
+
+            <!-- Transaction History Button -->
+            <button class="nav-icon-btn" onclick="scrollToTransactions()" title="Transaction History">
+                <i class="fas fa-history"></i>
+                <span class="nav-btn-label">Transactions</span>
+            </button>
+
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
                     title="Notifications">
                 <i class="fas fa-bell"></i>
@@ -3568,7 +3580,7 @@
 <!-- ========================================== -->
 <!-- ORDERS TABLE SECTION (FOR FOOD SHOPS) -->
 <!-- ========================================== -->
-<div class="orders-table-section">
+<div class="orders-table-section orders-section">
     <div class="orders-table-header">
         <h2 class="orders-table-title">
             <i class="fas fa-receipt"></i>
@@ -3628,7 +3640,7 @@
 <!-- ========================================== -->
 <!-- TRANSACTION HISTORY SECTION (FOR USERS) -->
 <!-- ========================================== -->
-<div class="transaction-history-section" style="display: none;">
+<div class="transaction-history-section transaction-section" style="display: none;">
     <div class="orders-table-header">
         <h2 class="orders-table-title">
             <i class="fas fa-history"></i>

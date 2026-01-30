@@ -1411,6 +1411,8 @@ function loadOrders(page = 1) {
     if (prevBtn) prevBtn.disabled = (page <= 1);
     if (nextBtn) nextBtn.disabled = (page >= totalPages);
 
+    console.log('Loading orders, page:', page);
+
     fetch(`/api/food-establishment/orders/?page=${page}`, {
         method: 'GET',
         headers: {
@@ -1418,18 +1420,42 @@ function loadOrders(page = 1) {
             'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Orders data received:', data);
         if (data.success) {
             displayOrders(data.orders);
             updatePagination(data.current_page, data.total_pages);
         } else {
+            console.error('API returned error:', data.message);
+            displayOrders([]); // Show empty state instead of loading
             showNotification(data.message || 'Failed to load orders', 'error');
         }
     })
     .catch(error => {
         console.error('Error loading orders:', error);
-        showNotification('Failed to load orders', 'error');
+        displayOrders([]); // Show empty state instead of loading
+        const tbody = document.getElementById('ordersTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ef4444; margin-bottom: 16px;"></i>
+                        <p style="color: #6b7280; font-size: 16px;">Failed to load orders</p>
+                        <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">${error.message}</p>
+                        <button onclick="loadOrders(1)" style="margin-top: 16px; padding: 8px 16px; background: #f02849; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
     });
 }
 
@@ -1817,3 +1843,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// ==========================================
+// NAVIGATION SCROLL FUNCTIONS
+// ==========================================
+function scrollToOrders() {
+    const ordersSection = document.querySelector('.orders-section');
+    if (ordersSection) {
+        ordersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Optionally highlight the section briefly
+        ordersSection.style.transition = 'background-color 0.5s';
+        ordersSection.style.backgroundColor = '#fff3cd';
+        setTimeout(() => {
+            ordersSection.style.backgroundColor = '';
+        }, 1000);
+    }
+}
+
+function scrollToTransactions() {
+    const transactionSection = document.querySelector('.transaction-section');
+    if (transactionSection) {
+        transactionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Optionally highlight the section briefly
+        transactionSection.style.transition = 'background-color 0.5s';
+        transactionSection.style.backgroundColor = '#fff3cd';
+        setTimeout(() => {
+            transactionSection.style.backgroundColor = '';
+        }, 1000);
+    }
+}
