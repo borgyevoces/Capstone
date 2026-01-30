@@ -75,6 +75,14 @@ urlpatterns = [
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 
+                  # Orders API
+        path('api/food-establishment/orders/', views.get_food_establishment_orders, name='get_establishment_orders'),
+                  path('api/food-establishment/orders/export/', views.export_orders_csv, name='export_orders_csv'),
+                  path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
+                  path('api/food-establishment/sales-report/', views.get_sales_report, name='sales_report'),
+                  path('api/food-establishment/sales-report/pdf/', views.export_sales_report_pdf,name='export_sales_pdf'),
+        path('api/food-establishment/sales-report/excel/', views.export_sales_report_excel, name='export_sales_excel'),
+
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,
                        name='submit_review'),

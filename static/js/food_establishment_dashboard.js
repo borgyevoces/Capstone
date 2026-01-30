@@ -1386,3 +1386,434 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
+// ==========================================
+// NEW FEATURES - ORDERS TABLE, TRANSACTION HISTORY, SALES REPORT
+// ==========================================
+
+// Global variables for new features
+let currentPage = 1;
+let totalPages = 1;
+let salesChart = null;
+
+// ==========================================
+// LOAD ORDERS TABLE (FOR FOOD SHOPS)
+// ==========================================
+function loadOrders(page = 1) {
+    if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+
+    currentPage = page;
+
+    // Update button states
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    if (prevBtn) prevBtn.disabled = (page <= 1);
+    if (nextBtn) nextBtn.disabled = (page >= totalPages);
+
+    fetch(`/api/food-establishment/orders/?page=${page}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayOrders(data.orders);
+            updatePagination(data.current_page, data.total_pages);
+        } else {
+            showNotification(data.message || 'Failed to load orders', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading orders:', error);
+        showNotification('Failed to load orders', 'error');
+    });
+}
+
+function displayOrders(orders) {
+    const tbody = document.getElementById('ordersTableBody');
+
+    if (!tbody) return;
+
+    if (!orders || orders.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-inbox" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                    <p style="color: #6b7280; font-size: 16px;">No orders found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = orders.map(order => `
+        <tr>
+            <td class="order-id-cell">#${order.id}</td>
+            <td>
+                <div class="order-customer-cell">
+                    <div class="customer-avatar-small">
+                        ${order.customer_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #1a1a1a;">${escapeHtml(order.customer_name)}</div>
+                        <div style="font-size: 12px; color: #6b7280;">${escapeHtml(order.customer_email)}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${order.total_items} items</td>
+            <td class="order-amount-cell">₱${parseFloat(order.total_amount).toFixed(2)}</td>
+            <td>
+                <span class="order-status-badge status-${order.status.toLowerCase()}">
+                    <i class="fas fa-circle" style="font-size: 6px;"></i>
+                    ${order.status}
+                </span>
+            </td>
+            <td>${formatDate(order.created_at)}</td>
+            <td>
+                <div class="order-actions">
+                    <button class="action-btn view-btn" onclick="viewOrderDetails(${order.id})">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updatePagination(current, total) {
+    totalPages = total;
+    const info = document.getElementById('paginationInfo');
+    if (info) {
+        info.textContent = `Page ${current} of ${total}`;
+    }
+
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    if (prevBtn) prevBtn.disabled = (current <= 1);
+    if (nextBtn) nextBtn.disabled = (current >= total);
+}
+
+function viewOrderDetails(orderId) {
+    window.location.href = `/food-establishment/order/${orderId}/`;
+}
+
+function toggleOrderFilters() {
+    showNotification('Filter feature coming soon!', 'info');
+}
+
+function exportOrdersToCSV() {
+    fetch('/api/food-establishment/orders/export/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showNotification('Orders exported successfully!', 'success');
+    })
+    .catch(error => {
+        console.error('Export failed:', error);
+        showNotification('Failed to export orders', 'error');
+    });
+}
+
+// ==========================================
+// TRANSACTION HISTORY (FOR USERS)
+// ==========================================
+function loadTransactionHistory() {
+    fetch('/api/user/transactions/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayTransactions(data.transactions);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading transactions:', error);
+        showNotification('Failed to load transaction history', 'error');
+    });
+}
+
+function displayTransactions(transactions) {
+    const container = document.getElementById('transactionHistoryList');
+
+    if (!container) return;
+
+    if (!transactions || transactions.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;">
+                <i class="fas fa-receipt" style="font-size: 64px; color: #d1d5db; margin-bottom: 16px;"></i>
+                <p style="color: #6b7280; font-size: 16px;">No transactions yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = transactions.map(transaction => `
+        <div class="transaction-item">
+            <div style="display: flex; align-items: center; flex: 1;">
+                <div class="transaction-icon ${transaction.type}">
+                    <i class="fas fa-${transaction.type === 'payment' ? 'shopping-cart' : 'undo'}"></i>
+                </div>
+                <div class="transaction-details">
+                    <div class="transaction-title">${escapeHtml(transaction.title)}</div>
+                    <div class="transaction-date">${formatDate(transaction.date)}</div>
+                    ${transaction.reference ? `<div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">Ref: ${escapeHtml(transaction.reference)}</div>` : ''}
+                </div>
+            </div>
+            <div class="transaction-amount ${transaction.type === 'payment' ? 'negative' : 'positive'}">
+                ${transaction.type === 'payment' ? '-' : '+'}₱${parseFloat(transaction.amount).toFixed(2)}
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterTransactions() {
+    showNotification('Filter feature coming soon!', 'info');
+}
+
+// ==========================================
+// SALES REPORT MODAL
+// ==========================================
+function openSalesReportModal() {
+    const modal = document.getElementById('salesReportModal');
+    if (modal) {
+        modal.classList.add('active');
+        loadSalesReport();
+    }
+}
+
+function closeSalesReportModal() {
+    const modal = document.getElementById('salesReportModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function loadSalesReport() {
+    const period = document.getElementById('reportPeriod')?.value || 'week';
+    let url = `/api/food-establishment/sales-report/?period=${period}`;
+
+    if (period === 'custom') {
+        const startDate = document.getElementById('reportStartDate')?.value;
+        const endDate = document.getElementById('reportEndDate')?.value;
+        if (startDate && endDate) {
+            url += `&start_date=${startDate}&end_date=${endDate}`;
+        }
+    }
+
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSalesReportUI(data.report);
+        } else {
+            showNotification(data.message || 'Failed to load sales report', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading sales report:', error);
+        showNotification('Failed to load sales report', 'error');
+    });
+}
+
+function updateSalesReportUI(report) {
+    // Update summary cards
+    const revenueEl = document.getElementById('totalRevenue');
+    const ordersEl = document.getElementById('totalOrders');
+    const averageEl = document.getElementById('averageOrder');
+    const itemsEl = document.getElementById('itemsSold');
+
+    if (revenueEl) revenueEl.textContent = `₱${parseFloat(report.total_revenue).toFixed(2)}`;
+    if (ordersEl) ordersEl.textContent = report.total_orders;
+    if (averageEl) averageEl.textContent = `₱${parseFloat(report.average_order).toFixed(2)}`;
+    if (itemsEl) itemsEl.textContent = report.items_sold;
+
+    // Update chart
+    if (report.daily_sales) {
+        updateSalesChart(report.daily_sales);
+    }
+
+    // Update top selling items
+    if (report.top_items) {
+        updateTopSellingItems(report.top_items);
+    }
+}
+
+function updateSalesChart(dailySales) {
+    const canvas = document.getElementById('salesChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // Destroy existing chart if it exists
+    if (salesChart) {
+        salesChart.destroy();
+    }
+
+    salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailySales.map(d => d.date),
+            datasets: [{
+                label: 'Sales (₱)',
+                data: dailySales.map(d => d.amount),
+                borderColor: '#f02849',
+                backgroundColor: 'rgba(240, 40, 73, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₱' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateTopSellingItems(items) {
+    const container = document.getElementById('topSellingItems');
+
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No items sold in this period</p>';
+        return;
+    }
+
+    container.innerHTML = items.map((item, index) => `
+        <div style="display: flex; align-items: center; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px;">
+            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f02849 0%, #c62828 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 12px;">
+                ${index + 1}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #1a1a1a;">${escapeHtml(item.name)}</div>
+                <div style="font-size: 12px; color: #6b7280;">${item.quantity} sold</div>
+            </div>
+            <div style="font-weight: 800; color: #B71C1C; font-size: 16px;">
+                ₱${parseFloat(item.total_revenue).toFixed(2)}
+            </div>
+        </div>
+    `).join('');
+}
+
+function applyReportFilters() {
+    loadSalesReport();
+}
+
+function updateSalesReport() {
+    const period = document.getElementById('reportPeriod')?.value;
+    const customRangeGroup = document.getElementById('customDateRangeGroup');
+    const customRangeGroup2 = document.getElementById('customDateRangeGroup2');
+
+    if (period === 'custom') {
+        if (customRangeGroup) customRangeGroup.style.display = 'flex';
+        if (customRangeGroup2) customRangeGroup2.style.display = 'flex';
+    } else {
+        if (customRangeGroup) customRangeGroup.style.display = 'none';
+        if (customRangeGroup2) customRangeGroup2.style.display = 'none';
+        loadSalesReport();
+    }
+}
+
+function exportSalesReportPDF() {
+    const period = document.getElementById('reportPeriod')?.value || 'week';
+    window.open(`/api/food-establishment/sales-report/pdf/?period=${period}`, '_blank');
+    showNotification('Generating PDF report...', 'info');
+}
+
+function exportSalesReportExcel() {
+    const period = document.getElementById('reportPeriod')?.value || 'week';
+    window.location.href = `/api/food-establishment/sales-report/excel/?period=${period}`;
+    showNotification('Downloading Excel report...', 'success');
+}
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ==========================================
+// INITIALIZATION FOR NEW FEATURES
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're on the owner dashboard
+    if (document.getElementById('ordersTableBody')) {
+        loadOrders(1);
+    }
+
+    // Check if we're on the user page
+    if (document.getElementById('transactionHistoryList')) {
+        const section = document.querySelector('.transaction-history-section');
+        if (section) section.style.display = 'block';
+        loadTransactionHistory();
+    }
+
+    // Close modal when clicking outside
+    const salesModal = document.getElementById('salesReportModal');
+    if (salesModal) {
+        salesModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSalesReportModal();
+            }
+        });
+    }
+});
