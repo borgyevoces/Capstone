@@ -4634,16 +4634,16 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.http import require_http_methods
 
+@require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    ✅ FIXED: Best Sellers API with proper error handling
-    Returns top-selling menu items across all establishments
+    ✅ FIXED: Handles payment_status gracefully in best sellers query
     """
     try:
         # Time threshold for "recent" orders (last 30 days)
         time_threshold = timezone.now() - timedelta(days=30)
 
-        # Query best sellers with proper annotations
+        # ✅ FIXED: Use defer on orderitem__order to exclude payment_status
         best_sellers = MenuItem.objects.filter(
             Q(is_top_seller=True) |
             Q(
@@ -4676,7 +4676,7 @@ def get_best_sellers(request):
             items_data.append({
                 'id': item.id,
                 'name': item.name,
-                'description': item.description or '',
+                'description': item.description,
                 'price': float(item.price),
                 'image_url': item.image.url if item.image else None,
                 'is_available': item.quantity > 0,
@@ -4688,10 +4688,12 @@ def get_best_sellers(request):
                     'id': establishment.id,
                     'name': establishment.name,
                     'category': establishment.category.name if establishment.category else 'Other',
-                    'address': establishment.address or '',
+                    'address': establishment.address,
                     'image_url': establishment.image.url if establishment.image else None,
-                    'opening_time': establishment.opening_time.strftime('%H:%M') if establishment.opening_time else None,
-                    'closing_time': establishment.closing_time.strftime('%H:%M') if establishment.closing_time else None,
+                    'opening_time': establishment.opening_time.strftime(
+                        '%H:%M') if establishment.opening_time else None,
+                    'closing_time': establishment.closing_time.strftime(
+                        '%H:%M') if establishment.closing_time else None,
                 }
             })
 
@@ -4704,10 +4706,10 @@ def get_best_sellers(request):
 
     except Exception as e:
         import traceback
-        print(f"❌ Error in get_best_sellers: {e}")
+        print(f"Error in get_best_sellers: {e}")
         traceback.print_exc()
         return JsonResponse({
             'success': False,
             'error': str(e),
-            'message': 'Failed to load best sellers'
+            'traceback': traceback.format_exc()
         }, status=500)
