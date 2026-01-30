@@ -1034,16 +1034,21 @@ window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, i
             return reject(new Error("Configuration error."));
         }
 
+        // ✅ FIXED: Use FormData for Django POST compatibility
+        const formData = new FormData();
+        formData.append('menu_item_id', itemId);
+        formData.append('quantity', quantity);
+        if (action) {
+            formData.append('action', action);
+        }
+
         fetch(ADD_TO_CART_URL, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({
-                'menu_item_id': itemId,
-                'quantity': quantity
-            })
+            body: formData
         })
         .then(response => {
             if (response.status === 409) {
@@ -1072,9 +1077,15 @@ window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, i
                 if (typeof updateCartBadge === 'function') {
                     updateCartBadge(data.cart_count);
                 }
-                alert(data.message);
 
-                if (buttonElement && buttonElement.dataset.action === 'buy_now') {
+                // ✅ IMPROVED: Show success message with option to view cart
+                if (confirm(data.message + "\n\nGo to cart now?")) {
+                    if(typeof VIEW_CART_URL !== 'undefined') {
+                        window.location.href = VIEW_CART_URL;
+                    } else {
+                        alert('Added to cart successfully!');
+                    }
+                } else if (buttonElement && buttonElement.dataset.action === 'buy_now') {
                      if(typeof VIEW_CART_URL !== 'undefined') {
                         window.location.href = VIEW_CART_URL;
                      } else {
