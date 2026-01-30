@@ -304,6 +304,11 @@ if DEBUG:
 # ============================================================================
 # PAYMONGO
 # ============================================================================
+PAYMONGO_SECRET_KEY = os.environ.get('PAYMONGO_SECRET_KEY', '')
+PAYMONGO_PUBLIC_KEY = os.environ.get('PAYMONGO_PUBLIC_KEY', '')
+PAYMONGO_API_URL = 'https://api.paymongo.com/v1'
+
+
 PAYMONGO_SECRET_KEY = os.getenv('PAYMONGO_SECRET_KEY', '')
 PAYMONGO_PUBLIC_KEY = os.getenv('PAYMONGO_PUBLIC_KEY', '')
 PAYMONGO_API_URL = os.getenv('PAYMONGO_API_URL', 'https://api.paymongo.com/v1')

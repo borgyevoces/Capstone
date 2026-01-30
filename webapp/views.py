@@ -12,6 +12,15 @@ import random
 import hashlib
 import requests
 import logging
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from decimal import Decimal
+from django.urls import reverse
+import base64
+import requests
 from math import radians, sin, cos, sqrt, atan2
 from decimal import Decimal
 from urllib.parse import urlencode
@@ -2030,8 +2039,13 @@ def create_buynow_payment_link(request):
     ✅ This handles the Buy Now button click and redirects to PayMongo
     """
     try:
+        # Log the request for debugging
+        print(f"🛒 Buy Now request from user: {request.user.username}")
+
         menu_item_id = request.POST.get('menu_item_id')
         quantity = int(request.POST.get('quantity', 1))
+
+        print(f"📦 Item ID: {menu_item_id}, Quantity: {quantity}")
 
         # Validation
         if not menu_item_id or quantity < 1:
@@ -2044,8 +2058,11 @@ def create_buynow_payment_link(request):
         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
         establishment = menu_item.food_establishment
 
+        print(f"✅ Found item: {menu_item.name} from {establishment.name}")
+
         # ✅ CHECK STOCK AVAILABILITY
         if menu_item.quantity < quantity:
+            print(f"❌ Insufficient stock: {menu_item.quantity} < {quantity}")
             return JsonResponse({
                 'success': False,
                 'message': f'Only {menu_item.quantity} items available in stock'
@@ -2055,6 +2072,8 @@ def create_buynow_payment_link(request):
         item_total = Decimal(str(menu_item.price)) * quantity
         grand_total = item_total
         amount_in_centavos = int(grand_total * 100)
+
+        print(f"💰 Total: ₱{grand_total} ({amount_in_centavos} centavos)")
 
         # ✅ CREATE ORDER WITH PENDING STATUS
         with transaction.atomic():
@@ -2073,6 +2092,25 @@ def create_buynow_payment_link(request):
                 quantity=quantity,
                 price_at_order=menu_item.price
             )
+
+        print(f"✅ Created Order #{order.id}")
+
+        # ✅ CHECK IF PAYMONGO IS CONFIGURED
+        if not hasattr(settings, 'PAYMONGO_SECRET_KEY') or not settings.PAYMONGO_SECRET_KEY:
+            print("❌ PAYMONGO_SECRET_KEY not configured")
+            order.delete()
+            return JsonResponse({
+                'success': False,
+                'message': 'Payment service not configured. Please contact support.'
+            }, status=500)
+
+        if not hasattr(settings, 'PAYMONGO_API_URL') or not settings.PAYMONGO_API_URL:
+            print("❌ PAYMONGO_API_URL not configured")
+            order.delete()
+            return JsonResponse({
+                'success': False,
+                'message': 'Payment service not configured. Please contact support.'
+            }, status=500)
 
         # ✅ PAYMONGO API SETUP
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
@@ -2093,6 +2131,9 @@ def create_buynow_payment_link(request):
             reverse('gcash_payment_cancel')
         ) + f'?order_id={order.id}&return_to=buynow'
 
+        print(f"🔗 Success URL: {success_url}")
+        print(f"🔗 Cancel URL: {cancel_url}")
+
         # Description for PayMongo
         description = f"Buy Now: {menu_item.name} x{quantity} from {establishment.name}"
 
@@ -2101,7 +2142,7 @@ def create_buynow_payment_link(request):
             "data": {
                 "attributes": {
                     "amount": amount_in_centavos,
-                    "description": description,
+                    "description": description[:255],  # PayMongo limit
                     "remarks": f"Order #{order.id} - KabsuEats Buy Now",
                     "payment_method_allowed": ["gcash"],
                     "success_url": success_url,
@@ -2110,14 +2151,37 @@ def create_buynow_payment_link(request):
             }
         }
 
+        print(f"📤 Sending payload to PayMongo...")
+
         # ✅ CALL PAYMONGO API
         api_url = f"{settings.PAYMONGO_API_URL}/links"
-        response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+
+        try:
+            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+            print(f"📥 PayMongo response status: {response.status_code}")
+
+        except requests.exceptions.Timeout:
+            print("❌ PayMongo API timeout")
+            order.delete()
+            return JsonResponse({
+                'success': False,
+                'message': 'Payment service timeout. Please try again.'
+            }, status=500)
+        except requests.exceptions.RequestException as e:
+            print(f"❌ PayMongo API error: {e}")
+            order.delete()
+            return JsonResponse({
+                'success': False,
+                'message': 'Payment service error. Please try again.'
+            }, status=500)
 
         if response.status_code in [200, 201]:
             response_data = response.json()
             checkout_url = response_data['data']['attributes']['checkout_url']
             reference_number = response_data['data']['id']
+
+            print(f"✅ Payment link created: {checkout_url}")
+            print(f"🔑 Reference: {reference_number}")
 
             # Save reference number
             order.gcash_reference_number = reference_number
@@ -2132,9 +2196,14 @@ def create_buynow_payment_link(request):
             })
         else:
             # Payment link creation failed - delete order
+            print(f"❌ PayMongo error response: {response.text}")
             order.delete()
-            error_data = response.json() if response.content else {}
-            error_message = error_data.get('errors', [{}])[0].get('detail', 'Payment service error')
+
+            try:
+                error_data = response.json()
+                error_message = error_data.get('errors', [{}])[0].get('detail', 'Payment service error')
+            except:
+                error_message = 'Payment service error'
 
             return JsonResponse({
                 'success': False,
@@ -2142,23 +2211,25 @@ def create_buynow_payment_link(request):
             }, status=500)
 
     except MenuItem.DoesNotExist:
+        print("❌ MenuItem not found")
         return JsonResponse({
             'success': False,
             'message': 'Item not found'
         }, status=404)
-    except ValueError:
+    except ValueError as e:
+        print(f"❌ ValueError: {e}")
         return JsonResponse({
             'success': False,
             'message': 'Invalid quantity value'
         }, status=400)
     except Exception as e:
-        print(f"❌ Error creating Buy Now payment: {e}")
+        print(f"❌ Unexpected error in Buy Now payment: {e}")
         import traceback
         traceback.print_exc()
 
         return JsonResponse({
             'success': False,
-            'message': f'An error occurred: {str(e)}'
+            'message': f'Server error: {str(e)}'
         }, status=500)
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
