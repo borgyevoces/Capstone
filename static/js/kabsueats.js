@@ -1467,7 +1467,7 @@ const BestSellers = {
                 const card = e.target.closest('.best-seller-card');
                 const itemId = card.dataset.itemId;
                 const establishmentId = card.dataset.establishmentId;
-                this.addToCart(itemId, establishmentId);
+                this.addToCart(itemId, establishmentId, btn);
             });
         });
 
@@ -1485,16 +1485,83 @@ const BestSellers = {
         window.location.href = `/food_establishment/${establishmentId}/`;
     },
 
-    async addToCart(itemId, establishmentId) {
-        if (!itemId || !establishmentId) return;
+    async addToCart(itemId, establishmentId, button) {
+        if (!itemId || !establishmentId) {
+            console.error('❌ Missing itemId or establishmentId');
+            return;
+        }
+
+        console.log(`🛒 Adding to cart: Item ${itemId} from Establishment ${establishmentId}`);
+
+        // Show loading state on the button
+        const originalHTML = button ? button.innerHTML : null;
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
 
         try {
+            // ✅ USE FORMDATA INSTEAD OF JSON - THIS IS THE KEY FIX!
+            const formData = new FormData();
+            formData.append('menu_item_id', itemId);
+            formData.append('quantity', 1);
+
             const response = await fetch('/cart/add/', {
                 method: 'POST',
+                body: formData,  // ✅ Send FormData, not JSON
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCsrfToken()
+                    'X-CSRFToken': this.getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('✅ Item added to cart successfully');
+
+                // Success notification with View Cart button
+                this.showToast('Item added to cart!', 'success', {
+                    text: '🛒 View Cart',
+                    onClick: () => {
+                        window.location.href = '/cart/';
+                    }
+                });
+
+                // Update cart count badge
+                if (typeof updateCartBadge === 'function') {
+                    updateCartBadge(data.cart_count);
+                } else if (typeof updateCartCount === 'function') {
+                    updateCartCount();
+                }
+
+                // Animate success
+                if (button) {
+                    button.classList.add('success-bounce');
+                    setTimeout(() => {
+                        button.classList.remove('success-bounce');
+                    }, 600);
+                }
+            } else {
+                throw new Error(data.message || 'Failed to add item to cart');
+            }
+        } catch (error) {
+            console.error('❌ Error adding to cart:', error);
+            this.showToast('Error: ' + error.message, 'error');
+        } finally {
+            // Restore button
+            if (button && originalHTML) {
+                button.disabled = false;
+                button.innerHTML = originalHTML;
+            }
+        }
+    },
+
                 body: JSON.stringify({
                     menu_item_id: itemId,
                     establishment_id: establishmentId,
@@ -1519,7 +1586,7 @@ const BestSellers = {
         }
     },
 
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', actionButton = null) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
 
@@ -1537,16 +1604,55 @@ const BestSellers = {
             z-index: 10000;
             animation: slideIn 0.3s ease;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 400px;
         `;
-        toast.textContent = message;
+
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        messageSpan.style.flex = '1';
+        toast.appendChild(messageSpan);
+
+        // Add action button if provided
+        if (actionButton) {
+            const button = document.createElement('button');
+            button.textContent = actionButton.text;
+            button.style.cssText = `
+                background: rgba(255,255,255,0.3);
+                border: 1px solid rgba(255,255,255,0.5);
+                color: white;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                transition: all 0.2s;
+            `;
+            button.onmouseover = () => {
+                button.style.background = 'rgba(255,255,255,0.4)';
+            };
+            button.onmouseout = () => {
+                button.style.background = 'rgba(255,255,255,0.3)';
+            };
+            button.onclick = () => {
+                if (actionButton.onClick) {
+                    actionButton.onClick();
+                }
+                toast.remove();
+            };
+            toast.appendChild(button);
+        }
 
         document.body.appendChild(toast);
 
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, actionButton ? 5000 : 3000);
     },
+
 
     getCsrfToken() {
         const cookieValue = document.cookie
@@ -1898,7 +2004,7 @@ const AutomaticBestSellers = {
                 const card = e.target.closest('.best-seller-card');
                 const itemId = card.dataset.itemId;
                 const establishmentId = card.dataset.establishmentId;
-                this.addToCart(itemId, establishmentId);
+                this.addToCart(itemId, establishmentId, btn);
             });
         });
 
@@ -1919,16 +2025,83 @@ const AutomaticBestSellers = {
     },
 
     // ✅ Add item to cart
-    async addToCart(itemId, establishmentId) {
-        if (!itemId || !establishmentId) return;
+    async addToCart(itemId, establishmentId, button) {
+        if (!itemId || !establishmentId) {
+            console.error('❌ Missing itemId or establishmentId');
+            return;
+        }
+
+        console.log(`🛒 Adding to cart: Item ${itemId} from Establishment ${establishmentId}`);
+
+        // Show loading state on the button
+        const originalHTML = button ? button.innerHTML : null;
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
 
         try {
+            // ✅ USE FORMDATA INSTEAD OF JSON - THIS IS THE KEY FIX!
+            const formData = new FormData();
+            formData.append('menu_item_id', itemId);
+            formData.append('quantity', 1);
+
             const response = await fetch('/cart/add/', {
                 method: 'POST',
+                body: formData,  // ✅ Send FormData, not JSON
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCsrfToken()
+                    'X-CSRFToken': this.getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('✅ Item added to cart successfully');
+
+                // Success notification with View Cart button
+                this.showToast('Item added to cart!', 'success', {
+                    text: '🛒 View Cart',
+                    onClick: () => {
+                        window.location.href = '/cart/';
+                    }
+                });
+
+                // Update cart count badge
+                if (typeof updateCartBadge === 'function') {
+                    updateCartBadge(data.cart_count);
+                } else if (typeof updateCartCount === 'function') {
+                    updateCartCount();
+                }
+
+                // Animate success
+                if (button) {
+                    button.classList.add('success-bounce');
+                    setTimeout(() => {
+                        button.classList.remove('success-bounce');
+                    }, 600);
+                }
+            } else {
+                throw new Error(data.message || 'Failed to add item to cart');
+            }
+        } catch (error) {
+            console.error('❌ Error adding to cart:', error);
+            this.showToast('Error: ' + error.message, 'error');
+        } finally {
+            // Restore button
+            if (button && originalHTML) {
+                button.disabled = false;
+                button.innerHTML = originalHTML;
+            }
+        }
+    },
+
                 body: JSON.stringify({
                     menu_item_id: itemId,
                     establishment_id: establishmentId,
@@ -1954,7 +2127,7 @@ const AutomaticBestSellers = {
     },
 
     // ✅ Show toast notification
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', actionButton = null) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
 
@@ -1972,16 +2145,55 @@ const AutomaticBestSellers = {
             z-index: 10000;
             animation: slideIn 0.3s ease;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 400px;
         `;
-        toast.textContent = message;
+
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        messageSpan.style.flex = '1';
+        toast.appendChild(messageSpan);
+
+        // Add action button if provided
+        if (actionButton) {
+            const button = document.createElement('button');
+            button.textContent = actionButton.text;
+            button.style.cssText = `
+                background: rgba(255,255,255,0.3);
+                border: 1px solid rgba(255,255,255,0.5);
+                color: white;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                transition: all 0.2s;
+            `;
+            button.onmouseover = () => {
+                button.style.background = 'rgba(255,255,255,0.4)';
+            };
+            button.onmouseout = () => {
+                button.style.background = 'rgba(255,255,255,0.3)';
+            };
+            button.onclick = () => {
+                if (actionButton.onClick) {
+                    actionButton.onClick();
+                }
+                toast.remove();
+            };
+            toast.appendChild(button);
+        }
 
         document.body.appendChild(toast);
 
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, actionButton ? 5000 : 3000);
     },
+
 
     // ✅ Get CSRF token
     getCsrfToken() {
@@ -2047,3 +2259,19 @@ bestSellersStyle.textContent = `
     }
 `;
 document.head.appendChild(bestSellersStyle);
+// ✅ Add success bounce animation for Add to Cart button
+const successBounceStyle = document.createElement('style');
+successBounceStyle.textContent = `
+    @keyframes successBounce {
+        0%, 100% { transform: scale(1); }
+        25% { transform: scale(1.2) rotate(5deg); }
+        50% { transform: scale(0.9) rotate(-5deg); }
+        75% { transform: scale(1.1); }
+    }
+    .success-bounce {
+        animation: successBounce 0.6s ease !important;
+    }
+`;
+document.head.appendChild(successBounceStyle);
+
+console.log('✅ Best Sellers JavaScript with fixes loaded successfully!');
