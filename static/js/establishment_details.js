@@ -1,5 +1,5 @@
 // =======================================================
-// ESTABLISHMENT DETAILS JS - FIXED WITH BUY NOW PAYMONGO
+// ESTABLISHMENT DETAILS JS - COMPLETE WITH BUY NOW PAYMONGO
 // =======================================================
 
 // Global helper to get CSRF token
@@ -187,6 +187,100 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 }
 
 // =======================================================
+// ✅ MODAL BUY NOW - PAYMONGO REDIRECT
+// =======================================================
+window.handleModalBuyNow = function(button) {
+    console.log('⚡ Buy Now button clicked');
+
+    // Check authentication
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
+        showMessage('Please log in to make a purchase', 'warning');
+        setTimeout(() => {
+            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
+        }, 1500);
+        return;
+    }
+
+    const modalItemId = document.getElementById('modalItemId');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const modalItemTitle = document.getElementById('itemDetailModalTitle');
+    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+
+    if (!modalItemId || !itemQuantityInput) {
+        console.error('❌ Modal elements not found');
+        showMessage('Error: Unable to process purchase', 'error');
+        return;
+    }
+
+    const itemId = modalItemId.value;
+    const quantity = parseInt(itemQuantityInput.value) || 1;
+    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+
+    // ✅ VALIDATE QUANTITY AGAINST STOCK
+    if (quantity > maxQuantity) {
+        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
+        return;
+    }
+
+    if (quantity < 1) {
+        showMessage('Please select a valid quantity', 'error');
+        return;
+    }
+
+    console.log(`📦 Processing Buy Now: Item ${itemId}, Quantity ${quantity}`);
+
+    // Show loading state
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    const csrfToken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('menu_item_id', itemId);
+    formData.append('quantity', quantity);
+
+    // ✅ CALL BACKEND TO CREATE PAYMONGO PAYMENT LINK
+    fetch('/create-buynow-payment/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Payment service error');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.checkout_url) {
+            console.log('✅ Payment link created:', data.checkout_url);
+
+            // Show redirect message
+            showMessage('Redirecting to PayMongo for payment...', 'info');
+
+            // ✅ REDIRECT TO PAYMONGO CHECKOUT
+            setTimeout(() => {
+                window.location.href = data.checkout_url;
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to create payment link');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Buy Now error:', error);
+        showMessage('Error: ' + error.message, 'error');
+
+        // Restore button
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    });
+};
+
+// =======================================================
 // ✅ MODAL ADD TO CART - WITH QUANTITY VALIDATION
 // =======================================================
 window.handleModalAddToCart = function(button) {
@@ -223,20 +317,15 @@ window.handleModalAddToCart = function(button) {
     }
 
     if (quantity < 1) {
-        showMessage('Quantity must be at least 1', 'error');
+        showMessage('Please select a valid quantity', 'error');
         return;
     }
 
-    console.log('📦 Item ID:', itemId, 'Quantity:', quantity, 'Max:', maxQuantity);
-
-    if (!itemId) {
-        showMessage('Error: Item not found', 'error');
-        return;
-    }
+    console.log(`🛒 Adding to cart: Item ${itemId}, Quantity ${quantity}`);
 
     const originalHTML = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     const csrfToken = getCookie('csrftoken');
     const formData = new FormData();
@@ -278,16 +367,16 @@ window.handleModalAddToCart = function(button) {
                 updateCartBadge(data.cart_count);
             }
 
-            if (itemQuantityInput) {
-                itemQuantityInput.value = 1;
-            }
-
+            // Close modal after successful add
+            setTimeout(() => {
+                closeItemDetailModal();
+            }, 1500);
         } else {
-            showMessage(data.message || 'Failed to add item to cart', 'error');
+            showMessage(data.message || 'Failed to add item', 'error');
         }
     })
     .catch(error => {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
         showMessage('Error: ' + error.message, 'error');
 
         if (error.message.includes('log in')) {
@@ -303,120 +392,29 @@ window.handleModalAddToCart = function(button) {
 };
 
 // =======================================================
-// ✅ BUY NOW - PAYMONGO REDIRECT
+// ✅ QUICK ADD TO CART (FROM MENU LIST)
 // =======================================================
-window.handleModalBuyNow = function(button) {
-    console.log('⚡ Buy Now button clicked');
-
-    // Check authentication
-    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
-        showMessage('Please log in to purchase items', 'warning');
-        setTimeout(() => {
-            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-        }, 1500);
-        return;
+window.handleQuickAddToCart = function(button, event) {
+    if (event) {
+        event.stopPropagation();
     }
 
-    const modalItemId = document.getElementById('modalItemId');
-    const itemQuantityInput = document.getElementById('itemQuantity');
-    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
-
-    if (!modalItemId || !itemQuantityInput) {
-        console.error('❌ Modal elements not found');
-        showMessage('Error: Unable to process purchase', 'error');
-        return;
-    }
-
-    const itemId = modalItemId.value;
-    const quantity = parseInt(itemQuantityInput.value) || 1;
-
-    // ✅ VALIDATE QUANTITY AGAINST STOCK
-    if (quantity > maxQuantity) {
-        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
-        return;
-    }
-
-    if (quantity < 1) {
-        showMessage('Quantity must be at least 1', 'error');
-        return;
-    }
-
-    console.log('💳 Processing Buy Now - Item ID:', itemId, 'Quantity:', quantity);
-
-    if (!itemId) {
-        showMessage('Error: Item not found', 'error');
-        return;
-    }
-
-    const originalHTML = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
-
-    // ✅ CALL BUY NOW PAYMENT ENDPOINT
-    fetch('/create-buynow-payment/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error('Please log in to complete purchase');
-            }
-            throw new Error('Payment service error');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success && data.checkout_url) {
-            console.log('✅ Payment link created:', data.checkout_url);
-            showMessage('Redirecting to PayMongo for payment...', 'info');
-
-            // ✅ REDIRECT TO PAYMONGO CHECKOUT
-            setTimeout(() => {
-                window.location.href = data.checkout_url;
-            }, 1000);
-        } else {
-            showMessage(data.message || 'Failed to create payment link', 'error');
-            button.disabled = false;
-            button.innerHTML = originalHTML;
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-
-        if (error.message.includes('log in')) {
-            setTimeout(() => {
-                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-            }, 2000);
-        }
-
-        button.disabled = false;
-        button.innerHTML = originalHTML;
-    });
-};
-
-// =======================================================
-// ✅ DIRECT ADD TO CART (from menu list)
-// =======================================================
-window.addToCartFromList = function(menuItemId, button) {
-    console.log('🛒 Direct add to cart:', menuItemId);
+    console.log('🛒 Quick Add to Cart clicked');
 
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
         showMessage('Please log in to add items to cart', 'warning');
         setTimeout(() => {
             window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
         }, 1500);
+        return;
+    }
+
+    const menuItemId = button.dataset.itemId;
+    const menuItemName = button.dataset.itemName;
+
+    if (!menuItemId) {
+        console.error('❌ No item ID found');
+        showMessage('Error: Item not found', 'error');
         return;
     }
 
