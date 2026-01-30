@@ -72,3 +72,7 @@ channels-redis>=4.0.0
 daphne>=4.0.0
 reportlab
 reportlab>=4.0.0
+xlsxwriter
+sendgrid>=6.0.0
+requests>=2.31.0
+Django>=4.2.0
