@@ -63,7 +63,7 @@ urlpatterns = [
                   path('payment/webhook/', views.paymongo_webhook, name='paymongo_webhook'),
                   path('paymongo_checkout/', views.paymongo_checkout, name='paymongo_checkout'),
                   path('payment-status/<str:status>/', views.payment_status, name='payment_status'),
-                  path('payment/create-buynow-link/', views.create_buynow_payment_link, name='create_buynow_payment_link'),
+                  path('create-buynow-payment/', views.create_buynow_payment_link, name='create_buynow_payment'),
 
                   # ✅ FIXED: Notification API Endpoints (removed duplicates)
                   path('api/notifications/', views.get_notifications, name='get_notifications'),
