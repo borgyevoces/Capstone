@@ -251,7 +251,14 @@
             }
         }
 
-        /* Red Dropdown Button */
+        /* View Selector Button - Improved Design */
+        .view-selector-container {
+            display: flex;
+            justify-content: flex-start;
+            margin: 20px 0 15px 0;
+            padding: 0;
+        }
+
         .view-dropdown-wrapper {
             position: relative;
             display: inline-block;
@@ -266,26 +273,26 @@
         }
 
         .view-dropdown-button {
-            background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+            background: linear-gradient(135deg, #B71C1C 0%, #9c1919 100%);
             color: white;
             border: none;
-            padding: 14px 24px;
-            font-size: 16px;
-            font-weight: 700;
-            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 15px rgba(183, 28, 28, 0.4);
+            box-shadow: 0 2px 8px rgba(183, 28, 28, 0.25);
             transition: all 0.3s ease;
-            min-width: 220px;
+            min-width: 180px;
             justify-content: space-between;
         }
 
         .view-dropdown-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.35);
             background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
         }
 
@@ -301,7 +308,7 @@
         }
 
         .view-dropdown-button i.fa-chevron-down {
-            font-size: 14px;
+            font-size: 12px;
             transition: transform 0.3s ease;
         }
 
@@ -314,9 +321,9 @@
             top: calc(100% + 8px);
             left: 0;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            min-width: 320px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            min-width: 280px;
             overflow: hidden;
             opacity: 0;
             visibility: hidden;
@@ -332,10 +339,10 @@
         }
 
         .view-dropdown-option {
-            padding: 16px 20px;
+            padding: 14px 18px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
             border-bottom: 1px solid #f0f0f0;
@@ -347,12 +354,12 @@
 
         .view-dropdown-option:hover {
             background: #f8f9fa;
-            padding-left: 26px;
+            padding-left: 22px;
         }
 
         .view-dropdown-option-icon {
-            font-size: 20px;
-            width: 28px;
+            font-size: 18px;
+            width: 24px;
             text-align: center;
         }
 
@@ -369,8 +376,8 @@
         }
 
         .view-dropdown-option-title {
-            font-weight: 700;
-            font-size: 15px;
+            font-weight: 600;
+            font-size: 14px;
             color: #2c3e50;
             margin-bottom: 2px;
         }
@@ -378,45 +385,53 @@
         .view-dropdown-option-desc {
             font-size: 12px;
             color: #7f8c8d;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         @media (max-width: 768px) {
             .view-dropdown-button {
                 font-size: 14px;
-                padding: 12px 20px;
-                min-width: 200px;
+                padding: 10px 16px;
+                min-width: 160px;
             }
 
             .view-dropdown-menu {
-                min-width: 280px;
+                min-width: 260px;
             }
 
             .view-dropdown-option {
-                padding: 14px 18px;
+                padding: 12px 16px;
             }
 
             .dropdown-container-left {
                 padding: 0 15px;
                 margin: 15px 0 8px 0;
             }
+
+            .view-selector-container {
+                margin: 15px 0 10px 0;
+            }
         }
 
         @media (max-width: 480px) {
             .view-dropdown-button {
                 font-size: 13px;
-                padding: 10px 16px;
-                min-width: 180px;
+                padding: 9px 14px;
+                min-width: 150px;
             }
 
             .view-dropdown-menu {
                 min-width: 100%;
-                max-width: 300px;
+                max-width: 280px;
             }
 
             .dropdown-container-left {
                 padding: 0 10px;
                 margin: 10px 0 5px 0;
+            }
+
+            .view-selector-container {
+                margin: 10px 0 8px 0;
             }
         }
 
@@ -549,35 +564,6 @@
                 {% endif %}
             </div>
 
-            <!-- Red Dropdown Button - Positioned above map, left aligned -->
-            <div class="dropdown-container-left">
-                <div class="view-dropdown-wrapper">
-                    <button class="view-dropdown-button" id="viewDropdownBtn">
-                        <span class="view-dropdown-button-text">
-                            <i class="fas fa-eye"></i>
-                            <span id="currentViewText">Best Sellers</span>
-                        </span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="view-dropdown-menu" id="viewDropdownMenu">
-                        <div class="view-dropdown-option" data-view="map">
-                            <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">View Map</div>
-                                <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
-                            </div>
-                        </div>
-                        <div class="view-dropdown-option" data-view="bestsellers">
-                            <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
-                            <div class="view-dropdown-option-content">
-                                <div class="view-dropdown-option-title">Best Sellers</div>
-                                <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
             <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
@@ -599,6 +585,44 @@
                     <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
                 </div>
 
+            <!-- Best Sellers Section -->
+            <div class="best-sellers-section" id="bestSellersSection">
+                <div class="best-sellers-header">
+                    <h2>
+                        <i class="fas fa-fire"></i>
+                        Best Sellers Across KabsuEats
+                    </h2>
+                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
+                </div>
+
+                <!-- View Selector Button - Positioned below header, left aligned -->
+                <div class="view-selector-container">
+                    <div class="view-dropdown-wrapper">
+                        <button class="view-dropdown-button" id="viewDropdownBtn">
+                            <span class="view-dropdown-button-text">
+                                <i class="fas fa-eye"></i>
+                                <span id="currentViewText">Best Sellers</span>
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="view-dropdown-menu" id="viewDropdownMenu">
+                            <div class="view-dropdown-option" data-view="map">
+                                <i class="fas fa-map-marked-alt view-dropdown-option-icon map"></i>
+                                <div class="view-dropdown-option-content">
+                                    <div class="view-dropdown-option-title">View Map</div>
+                                    <div class="view-dropdown-option-desc">See all establishments on an interactive map</div>
+                                </div>
+                            </div>
+                            <div class="view-dropdown-option" data-view="bestsellers">
+                                <i class="fas fa-fire view-dropdown-option-icon bestsellers"></i>
+                                <div class="view-dropdown-option-content">
+                                    <div class="view-dropdown-option-title">Best Sellers</div>
+                                    <div class="view-dropdown-option-desc">Top-rated items across KabsuEats</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="best-sellers-container">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
