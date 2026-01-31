@@ -1,0 +1,576 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
+    <title>Orders List - {{ establishment.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-subtitle {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .orders-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .orders-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .orders-table-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .orders-table-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn, .export-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .export-btn:hover {
+            border-color: #B71C1C;
+            color: #B71C1C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.15);
+        }
+
+        .orders-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1a1a1a;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #B71C1C;
+        }
+
+        .order-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+
+        .order-card:hover {
+            border-color: #B71C1C;
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .order-id {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .order-date {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .order-status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .order-status.paid {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .order-status.pending {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .order-status.completed {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .customer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .customer-details {
+            flex: 1;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1a1a1a;
+        }
+
+        .customer-email {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .order-items {
+            margin: 16px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .item-quantity {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .item-price {
+            font-weight: 700;
+            color: #B71C1C;
+            font-size: 15px;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 2px solid #e5e7eb;
+            margin-top: 16px;
+        }
+
+        .order-total {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a1a;
+        }
+
+        .order-total span {
+            color: #B71C1C;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-state i {
+            font-size: 48px;
+            color: #B71C1C;
+            margin-bottom: 16px;
+        }
+
+        .loading-state p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 16px;
+            }
+
+            .page-header {
+                padding: 20px;
+            }
+
+            .orders-content {
+                padding: 20px;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .orders-table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{% url 'kabsueats_home' %}" class="navbar-logo">
+                KabsuEats
+            </a>
+            <div class="navbar-actions">
+                <a href="{% url 'food_establishment_dashboard' %}" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <form method="POST" action="{% url 'logout_owner' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: transparent; border: none; color: #1a1a1a; cursor: pointer; font-weight: 600; font-size: 14px; padding: 8px 16px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="page-container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-clipboard-list"></i>
+                Orders Management
+            </h1>
+            <p class="page-subtitle">View and manage all your incoming orders</p>
+        </div>
+
+        <div class="orders-content">
+            <div class="orders-table-header">
+                <h2 class="orders-table-title">
+                    <i class="fas fa-shopping-cart"></i>
+                    Order List
+                </h2>
+                <div class="orders-table-actions">
+                    <button class="filter-btn" onclick="toggleFilters()">
+                        <i class="fas fa-filter"></i>
+                        Filter
+                    </button>
+                    <button class="export-btn" onclick="exportOrders()">
+                        <i class="fas fa-download"></i>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="orders-filters" id="ordersFilters" style="display: none;">
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="all">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date From</label>
+                    <input type="date" id="dateFromFilter" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>Date To</label>
+                    <input type="date" id="dateToFilter" onchange="applyFilters()">
+                </div>
+                <div class="filter-group" style="justify-content: flex-end;">
+                    <label>&nbsp;</label>
+                    <button class="filter-btn" onclick="clearFilters()" style="background: #fee2e2; color: #dc2626; border-color: #fecaca;">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div id="ordersListContainer">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading orders...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allOrders = [];
+
+        // Load orders on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrders();
+        });
+
+        function loadOrders() {
+            fetch('/api/food-establishment/orders/')
+                .then(response => response.json())
+                .then(data => {
+                    allOrders = data.orders || [];
+                    displayOrders(allOrders);
+                })
+                .catch(error => {
+                    console.error('Error loading orders:', error);
+                    document.getElementById('ordersListContainer').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h3>Error Loading Orders</h3>
+                            <p>There was a problem loading your orders. Please try again.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayOrders(orders) {
+            const container = document.getElementById('ordersListContainer');
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Orders Yet</h3>
+                        <p>Your orders will appear here once customers place them.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            orders.forEach(order => {
+                const statusClass = order.payment_status.toLowerCase();
+                const orderDate = new Date(order.created_at).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                html += `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-id">Order #${order.order_id}</div>
+                                <div class="order-date">${orderDate}</div>
+                            </div>
+                            <div class="order-status ${statusClass}">${order.payment_status}</div>
+                        </div>
+
+                        <div class="customer-info">
+                            <div class="customer-avatar">
+                                ${order.customer_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="customer-details">
+                                <div class="customer-name">${order.customer_name}</div>
+                                <div class="customer-email">${order.customer_email}</div>
+                            </div>
+                        </div>
+
+                        <div class="order-items">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    <div class="item-info">
+                                        <div class="item-name">${item.name}</div>
+                                        <div class="item-quantity">Quantity: ${item.quantity}</div>
+                                    </div>
+                                    <div class="item-price">₱${parseFloat(item.total_price).toFixed(2)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="order-footer">
+                            <div class="order-total">
+                                Total: <span>₱${parseFloat(order.total_amount).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleFilters() {
+            const filters = document.getElementById('ordersFilters');
+            filters.style.display = filters.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function applyFilters() {
+            const status = document.getElementById('statusFilter').value;
+            const dateFrom = document.getElementById('dateFromFilter').value;
+            const dateTo = document.getElementById('dateToFilter').value;
+
+            let filtered = [...allOrders];
+
+            if (status !== 'all') {
+                filtered = filtered.filter(order => order.payment_status.toLowerCase() === status);
+            }
+
+            if (dateFrom) {
+                filtered = filtered.filter(order => new Date(order.created_at) >= new Date(dateFrom));
+            }
+
+            if (dateTo) {
+                filtered = filtered.filter(order => new Date(order.created_at) <= new Date(dateTo + 'T23:59:59'));
+            }
+
+            displayOrders(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('dateFromFilter').value = '';
+            document.getElementById('dateToFilter').value = '';
+            displayOrders(allOrders);
+        }
+
+        function exportOrders() {
+            window.location.href = '/api/food-establishment/orders/export/';
+        }
+    </script>
+</body>
+</html>

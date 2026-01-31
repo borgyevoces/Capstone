@@ -2530,38 +2530,44 @@ body {
  * NAVIGATION ICON BUTTONS
  * ========================================== */
 .nav-icon-btn {
+    text-decoration: none;
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-    color: white;
+    background: transparent;
+    color: #1a1a1a;
     border: none;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(240, 40, 73, 0.2);
 }
 
 .nav-icon-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
-    background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
-}
+    background: #f3f4f6;
+    transform: translateY(-1px);
 
 .nav-icon-btn:active {
     transform: translateY(0);
 }
-
+    transform: translateY(0);
 .nav-icon-btn i {
+    background: #e5e7eb;
     font-size: 16px;
 }
 
+    color: #6b7280;
 .nav-btn-label {
     font-weight: 600;
+
+.nav-icon-btn:hover i {
+    color: #1a1a1a;
 }
+}
+    color: #1a1a1a;
 
 /* Responsive: Hide labels on smaller screens */
 @media (max-width: 768px) {

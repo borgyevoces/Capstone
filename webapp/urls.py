@@ -82,6 +82,8 @@ urlpatterns = [
                   path('api/food-establishment/sales-report/', views.get_sales_report, name='sales_report'),
                   path('api/food-establishment/sales-report/pdf/', views.export_sales_report_pdf,name='export_sales_pdf'),
         path('api/food-establishment/sales-report/excel/', views.export_sales_report_excel, name='export_sales_excel'),
+path('owner/orders/', views.orders_list_view, name='orders_list'),
+path('owner/transactions/', views.transaction_history_view, name='transaction_history'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,
