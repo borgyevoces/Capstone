@@ -307,18 +307,24 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="navbar-logo">
+            <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
                 KabsuEats
             </a>
             <div class="navbar-actions">
+                <!-- Dashboard Button -->
+                <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn" title="Dashboard" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-btn-label">Dashboard</span>
+                </a>
+
                 <!-- Orders Button -->
-                <a href="{% url 'orders_list' establishment.id %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
+                <a href="{% url 'orders_list' %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="nav-btn-label">Orders</span>
                 </a>
 
-                <!-- Transaction History Button -->
-                <a href="{% url 'transaction_history' establishment.id %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
+                <!-- Transaction History Button (Active) -->
+                <a href="{% url 'transaction_history' %}" class="nav-icon-btn active" title="Transaction History" style="text-decoration: none; color: inherit;">
                     <i class="fas fa-history"></i>
                     <span class="nav-btn-label">Transactions</span>
                 </a>

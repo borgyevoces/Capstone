@@ -2056,6 +2056,12 @@
             KabsuEats
         </a>
         <div class="navbar-actions">
+            <!-- Dashboard Button (Active) -->
+            <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn active" title="Dashboard" style="text-decoration: none; color: inherit;">
+                <i class="fas fa-chart-line"></i>
+                <span class="nav-btn-label">Dashboard</span>
+            </a>
+
             <!-- Orders Button -->
             <a href="{% url 'orders_list' %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-shopping-bag"></i>
