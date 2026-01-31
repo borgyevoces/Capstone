@@ -381,6 +381,43 @@
             line-height: 1.4;
         }
 
+        /* ✅ NEW: Best Sellers Toggle Button (Small, Light Red) */
+        .bestsellers-toggle-button {
+            background: linear-gradient(135deg, #E57373 0%, #EF5350 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 3px 10px rgba(229, 115, 115, 0.3);
+            transition: all 0.3s ease;
+            margin: 15px 0 20px 20px;
+        }
+
+        .bestsellers-toggle-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(229, 115, 115, 0.4);
+            background: linear-gradient(135deg, #EF5350 0%, #E57373 100%);
+        }
+
+        .bestsellers-toggle-button:active {
+            transform: translateY(0);
+        }
+
+        .bestsellers-toggle-button i.fa-chevron-up {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .bestsellers-toggle-button.collapsed i.fa-chevron-up {
+            transform: rotate(180deg);
+        }
+
         @media (max-width: 768px) {
             .view-dropdown-button {
                 font-size: 14px;
@@ -400,6 +437,12 @@
                 padding: 0 15px;
                 margin: 15px 0 8px 0;
             }
+
+            .bestsellers-toggle-button {
+                font-size: 13px;
+                padding: 9px 16px;
+                margin: 12px 0 15px 15px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -410,143 +453,152 @@
             }
 
             .view-dropdown-menu {
-                min-width: 100%;
-                max-width: 300px;
+                min-width: 260px;
             }
 
             .dropdown-container-left {
-                padding: 0 10px;
-                margin: 10px 0 5px 0;
+                margin: 12px 0 6px 0;
             }
-        }
 
-        /* Map Section Styles */
-        #mapSection {
-            display: none;
-            width: 100%;
-            min-height: 600px;
-            margin: 20px 0;
-            position: relative;
-        }
-
-        #mapSection.active {
-            display: block !important;
-        }
-
-        #establishmentsMap {
-            height: 600px;
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        #toggleMapBtn {
-            display: none !important;
-        }
-
-        @media (max-width: 768px) {
-            #establishmentsMap {
-                height: 450px;
+            .bestsellers-toggle-button {
+                font-size: 12px;
+                padding: 8px 14px;
+                margin: 10px 0 12px 10px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Messages Notification Section -->
-    {% if messages %}
-    <div class="messages-container" id="messagesContainer">
-        {% for message in messages %}
-        <div class="message-alert {{ message.tags|default:'info' }}">
-            <span class="message-icon">
-                {% if 'success' in message.tags %}
-                    <i class="fas fa-check-circle"></i>
-                {% elif 'error' in message.tags %}
-                    <i class="fas fa-exclamation-circle"></i>
-                {% elif 'warning' in message.tags %}
-                    <i class="fas fa-exclamation-triangle"></i>
-                {% else %}
-                    <i class="fas fa-info-circle"></i>
-                {% endif %}
-            </span>
-            <span class="message-text">{{ message }}</span>
-            <button class="message-close" onclick="dismissMessage(this)" aria-label="Close">
-                <i class="fas fa-times"></i>
+    {% block content %}
+
+    <nav class="navbar">
+        <div class="left-section">
+            <button class="icon_home">
+                <div>
+                    <i class="fas fa-home"></i>
+                </div>
+            </button>
+            <p class="navbar-location-text">
+                <i class="fas fa-map-marker-alt" style="color: #E91E63;"></i>
+                <span id="navbarLocation">Finding your location...</span>
+            </p>
+        </div>
+        <div class="right-section">
+            {% if user.is_authenticated %}
+            <a href="{% url 'orders' %}" class="cart-link" title="My Orders">
+                <i class="fas fa-receipt" style="font-size: 20px; color: white;"></i>
+            </a>
+            <a href="{% url 'cart_summary' %}" class="cart-link" title="My Cart">
+                <i class="fas fa-shopping-cart" style="font-size: 20px; color: white;"></i>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </a>
+            {% endif %}
+            <div class="profile_options">
+                <div class="icon_profile" onclick="on()">
+                    <i class="fa-solid fa-user" style="font-size: 24px;"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="overlay" onclick="off()">
+        <div class="overlay_contents">
+            {% if user.is_authenticated %}
+            <div class="overlay_item">
+                <i class="fa-solid fa-user"></i>
+                <a href="{% url 'profile' %}">Profile</a>
+            </div>
+            <div class="overlay_item">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="{% url 'logout' %}">Logout</a>
+            </div>
+            {% else %}
+            <div class="overlay_item">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <a href="{% url 'loginpage' %}">Log In</a>
+            </div>
+            <div class="overlay_item">
+                <i class="fa-solid fa-user-plus"></i>
+                <a href="{% url 'signuppage' %}">Sign Up</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="main_body">
+        <div class="pages">
+            <button id="defaultOpen" class="pagelinks active" onclick="openPage(event, 'homePage')">
+                <i class="fas fa-home"></i> Home
+            </button>
+            <button class="pagelinks" onclick="openPage(event, 'karenderyaPage')">
+                <i class="fas fa-utensils"></i> Karenderya
+            </button>
+            <button class="pagelinks" onclick="openPage(event, 'cafePage')">
+                <i class="fas fa-mug-hot"></i> Cafe
             </button>
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
-    <!-- Header Section -->
-    <header class="search-and-filters-wrapper">
-        <div class="header-left">
-            <div class="title_kabsueats">
-                <a href="{% url 'kabsueats_home' %}" class="nav_button"><h2>KabsuEats</h2></a>
+        <div id="homePage" class="pagecontent">
+            <div class="main_content">
+                <div class="left_content">
+                    <p class="slogan">
+                        <b>Discover and Satisfy Your Cravings!</b>
+                    </p>
+                    <p class="slogan_desc">
+                        Order from the best local establishments near you with KabsuEats
+                    </p>
+                </div>
+                <div class="right_content">
+                    <img src="{% static 'images/home-bg.jpg' %}" alt="Home Background" />
+                </div>
             </div>
-        </div>
 
-    {% block search_visibility_control %}
-        {% if show_search|default:True %}
-        <div class="header-center">
-            <div class="search_container">
-                <i class="fas fa-search search-icon"></i>
-                <form id="search-form" onsubmit="event.preventDefault();">
-                    <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
-                           value="{{ q|default_if_none:'' }}" oninput="applyFilters();" />
-                </form>
-            </div>
-        </div>
-        {% endif %}
-    {% endblock search_visibility_control %}
-
-        <div class="Home_buttons">
-            <div class="auth_links_Home_About">
-                {% block extra_nav_buttons %}{% endblock %}
-            </div>
-        </div>
-
-        <div class="header-right">
-            {% if user.is_authenticated %}
-            <div class="cart_client">
-                <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
-                    <i class="fas fa-shopping-cart"></i> Cart
-                    <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
-                </a>
-            </div>
-            {% endif %}
-
-            {% if user.is_authenticated %}
-                <div class="profile-container">
-                    <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
-                    <div id="userDropdown" class="dropdown-menu">
-                        <a href="#" onclick="openSettingsModal(event)"><i class="fas fa-cog"></i> Settings</a>
-                        <a href="{% url 'user_logout' %}"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+            <div class="search-and-filters-wrapper">
+                <div class="searchbar_container">
+                    <div class="searchbar">
+                        <input type="text" id="searchInput" placeholder="Search food establishments..." oninput="toggleSearchButton()" onkeydown="if(event.key === 'Enter' && !event.target.disabled) applyFilters()" />
+                        <button class="search_button" onclick="applyFilters()" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
-            {% else %}
-                <div class="auth_links">
-                    <a href="{% url 'user_login_register' %}" class="auth_link">Sign up</a>
-                    <a href="{% url 'user_login_register' %}" class="login_button">Log In</a>
+
+                <div class="filter_container">
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">All Status</option>
+                        <option value="Open">Open</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+
+                    <select id="alphabetFilter" onchange="applyFilters()">
+                        <option value="">Sort A-Z</option>
+                        {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                        <option value="{{ letter }}">{{ letter }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select id="distanceFilter" onchange="applyFilters()">
+                        <option value="">Sort by Distance</option>
+                        <option value="nearest">Nearest First</option>
+                        <option value="farthest">Farthest First</option>
+                    </select>
+
+                    <select id="ratingsFilter" onchange="applyFilters()">
+                        <option value="">Sort by Ratings</option>
+                        <option value="highest">Highest First</option>
+                        <option value="lowest">Lowest First</option>
+                    </select>
+
+                    <select id="categoryFilter" onchange="applyFilters()">
+                        <option value="">All Categories</option>
+                        <option value="karenderya">Karenderya</option>
+                        <option value="cafe">Cafe</option>
+                    </select>
+
+                    <button class="reset_button" onclick="location.reload()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
                 </div>
-            {% endif %}
-        </div>
-    </header>
-
-    <main class="main-content">
-        {% block content %}
-        <div class="pagecontent" id="Home">
-
-            <div class="welcome-hero-section">
-                {% if user.is_authenticated %}
-                    <h1 class="hero-title">Dashboard</h1>
-                    <h1 class="hero-title">Welcome to kabsuEats</h1>
-                    <p class="hero-subtitle">What delicious food are you craving today? Explore your favorite spots or try something new!</p>
-                {% else %}
-                    <h1 class="hero-title">Landing</h1>
-                    <h2 class="hero-title">Your one-stop <span class="highlight-food">food</span> guide</h2>
-                    <p class="hero-subtitle">Find the best restaurants, cafes, and food stalls near you.</p>
-                {% endif %}
             </div>
 
             <!-- Red Dropdown Button - Positioned above map, left aligned -->
@@ -599,7 +651,14 @@
                     <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
                 </div>
 
-                <div class="best-sellers-container">
+                <!-- ✅ NEW: Small Toggle Button Below Title -->
+                <button class="bestsellers-toggle-button" id="bestSellersToggleBtn">
+                    <i class="fas fa-eye"></i>
+                    Best Sellers
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+
+                <div class="best-sellers-container" id="bestSellersContainer">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
                     </button>
@@ -619,337 +678,404 @@
                 </div>
             </div>
 
-            <!-- ✅ NEW: Establishments Section Title -->
-            <h2 class="establishments-section-title">Food Establishments</h2>
+            <h2 class="establishments-section-title">Explore Food Establishments</h2>
+            <p style="text-align: center; color: #718096; font-size: 15px; margin: -10px 0 25px 0;">
+                <i class="fas fa-info-circle"></i> Click on any establishment card to view details
+            </p>
 
-            {% block filters %}
-            <!-- ✅ REPOSITIONED: Filters moved here, right above establishments -->
-            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
-                <!-- Filter Dropdowns -->
-                <div class="filter_container" style="margin: 0;">
-                <div class="select_wrapper">
-                    <select id="statusFilter" onchange="applyFilters()">
-                        <option value="">Status</option>
-                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
-                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="alphabetFilter" onchange="applyFilters()">
-                        <option value="">Alphabetical</option>
-                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="distanceFilter" onchange="applyFilters()">
-                        <option value="">Distance</option>
-                        <option value="nearest">Nearest to Farthest</option>
-                        <option value="farthest">Farthest to Nearest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="ratingsFilter" onchange="applyFilters()">
-                        <option value="">Ratings</option>
-                        <option value="highest">Highest to Lowest</option>
-                        <option value="lowest">Lowest to Lowest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="categoryFilter" onchange="applyFilters()">
-                        <option value="">Categories</option>
-                        {% for cat in all_categories %}
-                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            </div>
-            {% endblock %}
-
-            <!-- Establishments List -->
-            <div class="nearest_container">
-                <div class="nearest_slidescontainer">
-                    <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
-                    {% if food_establishments %}
-                        {% for establishment in food_establishments %}
-                            {% if establishment.status != 'Disabled' %}
-                                <div class="nearest_box food-establishment-item"
-                                     data-name="{{ establishment.name|lower }}"
-                                     data-lat="{{ establishment.latitude }}"
-                                     data-lng="{{ establishment.longitude }}"
-                                     data-status="{{ establishment.calculated_status }}"
-                                     data-category="{{ establishment.category.name|default_if_none:''|lower }}"
-                                     data-distance="{{ establishment.distance|floatformat:2 }}"
-                                     data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
-                                     data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                                     data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-
-                                    <a href="{% url 'food_establishment_details' establishment.id %}">
-                                        {% if establishment.image %}
-                                            <img class="food-image" src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
-                                        {% else %}
-                                            <img class="food-image" src="{% static 'images/menu.png' %}" alt="Default" />
-                                        {% endif %}
-                                    </a>
-
-                                    {% if establishment.last_updated|recently_updated %}
-                                        <div class="update-indicator">
-                                            Updated {{ establishment.last_updated|timesince }} ago
-                                        </div>
+            <div class="nearest_slidescontainer">
+                {% if establishments %}
+                {% for establishment in establishments %}
+                <div class="food-establishment-item"
+                     data-name="{{ establishment.name|lower }}"
+                     data-status="{{ establishment.current_status }}"
+                     data-category="{{ establishment.category|lower }}"
+                     data-rating="{{ establishment.average_rating|default:'0' }}"
+                     data-distance="{{ establishment.distance|default:'9999' }}"
+                     data-lat="{{ establishment.location.latitude }}"
+                     data-lng="{{ establishment.location.longitude }}">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
+                        <div class="foodplace_image_container">
+                            <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
+                            <div class="status-badge status-{{ establishment.current_status|lower }}">
+                                <i class="fas fa-circle"></i>
+                                {{ establishment.current_status }}
+                            </div>
+                        </div>
+                        <div class="foodplace_info">
+                            <p class="foodplace_name">{{ establishment.name }}</p>
+                            <div class="location_info">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="location-text">
+                                    {% if establishment.distance %}
+                                    {{ establishment.distance|floatformat:2 }} km away
+                                    {% else %}
+                                    Location unavailable
                                     {% endif %}
-
-                                   <span class="status-indicator {{ establishment.calculated_status|lower }}"
-                                         data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                                         data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-                                       <span class="dot"></span>
-                                       <span class="status-text">{{ establishment.calculated_status }}</span>
-                                   </span>
-
-                                    {% if establishment.category %}
-                                        <div class="category-display">{{ establishment.category.name }}</div>
+                                </span>
+                            </div>
+                            <div class="rating_info">
+                                <div class="stars">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star filled"></i>
+                                    {% elif forloop.counter|add:"-0.5" <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star-half-alt filled"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
                                     {% endif %}
-
-                                    <div class="food-name">
-                                        <div class="d-flex align-items-center justify-content-between w-100">
-                                            <div class="star-rating-display">
-                                                {% if establishment.average_rating > 0 %}
-                                                    {% for i in "12345" %}
-                                                        {% if forloop.counter <= establishment.average_rating %}
-                                                            <i class="fas fa-star"></i>
-                                                        {% else %}
-                                                            <i class="far fa-star"></i>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                    <span class="rating-value">{{ establishment.average_rating|floatformat:1 }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="review-count">
-                                            ({{ establishment.review_count }} Reviews)
-                                        </div>
-                                        <p class="mb-0">{{ establishment.name }}</p>
-                                        {% if establishment.amenities.all %}
-                                            <div class="amenities-inline">
-                                                <small>
-                                                    Amenity Offer:
-                                                    {% for amenity in establishment.amenities.all %}
-                                                        {{ amenity.name }}{% if not forloop.last %}, {% endif %}
-                                                    {% endfor %}
-                                                </small>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-
-                                    <div class="distance-info">
-                                        {% if establishment.distance_meters %}
-                                            <small>Distance from CvSU-Bacoor: {{ establishment.distance_meters|floatformat:0 }} meters</small>
-                                        {% else %}
-                                            <small>Distance: Not available</small>
-                                        {% endif %}
-                                    </div>
-
-                                    {% if establishment.payment_methods %}
-                                        <div class="payment-methods">
-                                            <small>Payment Methods : {{ establishment.payment_methods }}</small>
-                                        </div>
-                                    {% endif %}
+                                    {% endfor %}
                                 </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <p id="noInitialEstablishments" class="no-establishments-found">No food establishments found.</p>
-                    {% endif %}
+                                <span class="rating-text">
+                                    {{ establishment.average_rating|default:"No ratings" }}
+                                    {% if establishment.review_count %}
+                                    ({{ establishment.review_count }})
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                {% endfor %}
+                {% else %}
+                <div class="no-results-message" id="noResultsMessage">
+                    <i class="fas fa-search"></i>
+                    <h3>No establishments found</h3>
+                    <p>Try adjusting your filters or search criteria</p>
+                </div>
+                {% endif %}
             </div>
         </div>
-        {% endblock %}
-    </main>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
-            <div class="Title_h2"><h2>Update Profile</h2></div>
-
-            <form id="profileUpdateForm" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <div class="profile-form-group" style="text-align: center;">
-                    <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    <img id="profileImagePreview"
-                        src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                        alt="Current Profile">
+        <div id="karenderyaPage" class="pagecontent" style="display: none;">
+            <h2 class="establishments-section-title">Karenderya</h2>
+            <p style="text-align: center; color: #718096; font-size: 15px; margin: -10px 0 25px 0;">
+                Authentic Filipino food establishments
+            </p>
+            <div class="nearest_slidescontainer">
+                {% for establishment in establishments %}
+                {% if establishment.category == 'Karenderya' %}
+                <div class="food-establishment-item"
+                     data-name="{{ establishment.name|lower }}"
+                     data-status="{{ establishment.current_status }}"
+                     data-category="{{ establishment.category|lower }}"
+                     data-rating="{{ establishment.average_rating|default:'0' }}"
+                     data-distance="{{ establishment.distance|default:'9999' }}">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
+                        <div class="foodplace_image_container">
+                            <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
+                            <div class="status-badge status-{{ establishment.current_status|lower }}">
+                                <i class="fas fa-circle"></i>
+                                {{ establishment.current_status }}
+                            </div>
+                        </div>
+                        <div class="foodplace_info">
+                            <p class="foodplace_name">{{ establishment.name }}</p>
+                            <div class="location_info">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="location-text">
+                                    {% if establishment.distance %}
+                                    {{ establishment.distance|floatformat:2 }} km away
+                                    {% else %}
+                                    Location unavailable
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="rating_info">
+                                <div class="stars">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star filled"></i>
+                                    {% elif forloop.counter|add:"-0.5" <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star-half-alt filled"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-text">
+                                    {{ establishment.average_rating|default:"No ratings" }}
+                                    {% if establishment.review_count %}
+                                    ({{ establishment.review_count }})
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
 
-                <div class="profile-form-group">
-                    <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
-                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
+        <div id="cafePage" class="pagecontent" style="display: none;">
+            <h2 class="establishments-section-title">Cafe</h2>
+            <p style="text-align: center; color: #718096; font-size: 15px; margin: -10px 0 25px 0;">
+                Cozy cafes and coffee shops
+            </p>
+            <div class="nearest_slidescontainer">
+                {% for establishment in establishments %}
+                {% if establishment.category == 'Cafe' %}
+                <div class="food-establishment-item"
+                     data-name="{{ establishment.name|lower }}"
+                     data-status="{{ establishment.current_status }}"
+                     data-category="{{ establishment.category|lower }}"
+                     data-rating="{{ establishment.average_rating|default:'0' }}"
+                     data-distance="{{ establishment.distance|default:'9999' }}">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
+                        <div class="foodplace_image_container">
+                            <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
+                            <div class="status-badge status-{{ establishment.current_status|lower }}">
+                                <i class="fas fa-circle"></i>
+                                {{ establishment.current_status }}
+                            </div>
+                        </div>
+                        <div class="foodplace_info">
+                            <p class="foodplace_name">{{ establishment.name }}</p>
+                            <div class="location_info">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="location-text">
+                                    {% if establishment.distance %}
+                                    {{ establishment.distance|floatformat:2 }} km away
+                                    {% else %}
+                                    Location unavailable
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="rating_info">
+                                <div class="stars">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star filled"></i>
+                                    {% elif forloop.counter|add:"-0.5" <= establishment.average_rating|default:0 %}
+                                    <i class="fas fa-star-half-alt filled"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-text">
+                                    {{ establishment.average_rating|default:"No ratings" }}
+                                    {% if establishment.review_count %}
+                                    ({{ establishment.review_count }})
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="profile-form-group">
-                    <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
-                </div>
-
-                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-
-                <button type="submit" class="profile-form-submit">Save Changes</button>
-            </form>
+                {% endif %}
+                {% endfor %}
+            </div>
         </div>
     </div>
 
-    <!-- JavaScript Libraries -->
+    {% endblock %}
+
+    {% block extra_js %}
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
-    <!-- Custom JavaScript -->
-    <script src="{% static 'js/kabsueats_map.js' %}"></script>
-    <script src="{% static 'js/kabsueats.js' %}"></script>
-    <script src="{% static 'js/status_updater.js' %}"></script>
-
-    {% block extra_js %}
     <script>
-        // JavaScript constants for Cart and Auth
-        const UPDATE_PROFILE_URL = "{% url 'update_profile' %}";
-        const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
-        const VIEW_CART_URL = "{% url 'view_cart' %}";
-        const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
+        var establishmentsMap = null;
+        var userMarker = null;
+        var establishmentMarkers = [];
+        var routingControl = null;
+        var isRouteActive = false;
+        var mapInitialized = false;
 
-        // updateCartBadge function
-        function updateCartBadge(count) {
-            const badge = document.getElementById('cart-count-badge');
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.style.display = 'block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
+        var establishments = [
+            {% for establishment in establishments %}
+            {
+                id: {{ establishment.id }},
+                name: "{{ establishment.name|escapejs }}",
+                latitude: {{ establishment.location.latitude }},
+                longitude: {{ establishment.location.longitude }},
+                status: "{{ establishment.current_status }}",
+                image: "{{ establishment.image.url }}",
+                rating: {{ establishment.average_rating|default:'0' }},
+                distance: {{ establishment.distance|default:'9999' }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
 
-        // Message Notification Auto-Dismiss and Manual Close
         document.addEventListener('DOMContentLoaded', function() {
-            if (IS_USER_AUTHENTICATED) {
-                updateCartBadge({{ cart_count|default:0 }});
-            }
-
-            const messagesContainer = document.getElementById('messagesContainer');
-            if (messagesContainer) {
-                setTimeout(function() {
-                    const messages = messagesContainer.querySelectorAll('.message-alert');
-                    messages.forEach(function(message) {
-                        message.classList.add('fade-out');
-                        setTimeout(function() {
-                            message.remove();
-                            if (messagesContainer.querySelectorAll('.message-alert').length === 0) {
-                                messagesContainer.remove();
-                            }
-                        }, 300);
-                    });
-                }, 5000);
-            }
-
-            // Initialize location route button
-            initLocationRouteButton();
-
-            // Initialize red dropdown button
-            initViewDropdown();
-        });
-
-        // Red Dropdown Toggle & View Switcher
-        function initViewDropdown() {
-            const dropdownBtn = document.getElementById('viewDropdownBtn');
-            const dropdownMenu = document.getElementById('viewDropdownMenu');
-            const currentViewText = document.getElementById('currentViewText');
-            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
-
-            const mapSection = document.getElementById('mapSection');
-            const bestSellersSection = document.getElementById('bestSellersSection');
-            const toggleMapBtn = document.getElementById('toggleMapBtn');
-
-            if (!dropdownBtn || !dropdownMenu) return;
-
-            // Toggle dropdown on button click
-            dropdownBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                dropdownBtn.classList.toggle('open');
-                dropdownMenu.classList.toggle('show');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollToTopBtn.classList.add('show');
+                } else {
+                    scrollToTopBtn.classList.remove('show');
                 }
             });
 
-            // Handle option selection
-            dropdownOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const viewType = this.dataset.view;
-                    const viewTitle = this.querySelector('.view-dropdown-option-title').textContent;
-
-                    // Update button text
-                    currentViewText.textContent = viewTitle;
-
-                    // Close dropdown
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
-
-                    if (viewType === 'map') {
-                        // Show ONLY Map, hide Best Sellers
-                        console.log('✅ Showing Map, ❌ Hiding Best Sellers');
-
-                        bestSellersSection.style.setProperty('display', 'none', 'important');
-                        mapSection.style.setProperty('display', 'block', 'important');
-
-                        if (toggleMapBtn) {
-                            if (!mapSection.classList.contains('active')) {
-                                setTimeout(() => {
-                                    toggleMapBtn.click();
-                                }, 100);
-                            }
-                        }
-
-                    } else if (viewType === 'bestsellers') {
-                        // Show ONLY Best Sellers, hide Map
-                        console.log('✅ Showing Best Sellers, ❌ Hiding Map');
-
-                        mapSection.classList.remove('active');
-                        mapSection.style.setProperty('display', 'none', 'important');
-                        bestSellersSection.style.setProperty('display', 'block', 'important');
-                    }
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
                 });
             });
-        }
 
-        function dismissMessage(button) {
-            const message = button.closest('.message-alert');
-            const container = document.getElementById('messagesContainer');
-
-            message.classList.add('fade-out');
-            setTimeout(function() {
-                message.remove();
-                if (container && container.querySelectorAll('.message-alert').length === 0) {
-                    container.remove();
-                }
-            }, 300);
-        }
-
-        // Location Route Button
-        function initLocationRouteButton() {
-            const routeBtn = document.getElementById('locationRouteBtn');
+            const dropdownBtn = document.getElementById('viewDropdownBtn');
+            const dropdownMenu = document.getElementById('viewDropdownMenu');
+            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
+            const currentViewText = document.getElementById('currentViewText');
             const mapSection = document.getElementById('mapSection');
+            const bestSellersSection = document.getElementById('bestSellersSection');
 
-            if (!routeBtn) return;
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+                dropdownBtn.classList.toggle('open');
+            });
 
-            let routingControl = null;
-            let isRouteActive = false;
+            document.addEventListener('click', function(e) {
+                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.remove('show');
+                    dropdownBtn.classList.remove('open');
+                }
+            });
 
+            dropdownOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    const title = this.querySelector('.view-dropdown-option-title').textContent;
+                    currentViewText.textContent = title;
+
+                    if (view === 'map') {
+                        mapSection.style.display = 'block';
+                        bestSellersSection.style.display = 'none';
+                        console.log('✅ Showing Map, ❌ Hiding Best Sellers');
+
+                        if (!mapInitialized) {
+                            setTimeout(() => {
+                                initializeMap();
+                                mapInitialized = true;
+                            }, 100);
+                        } else if (establishmentsMap) {
+                            setTimeout(() => {
+                                establishmentsMap.invalidateSize();
+                            }, 100);
+                        }
+                    } else if (view === 'bestsellers') {
+                        mapSection.style.display = 'none';
+                        bestSellersSection.style.display = 'block';
+                        console.log('✅ Showing Best Sellers, ❌ Hiding Map');
+                    }
+
+                    dropdownMenu.classList.remove('show');
+                    dropdownBtn.classList.remove('open');
+                });
+            });
+
+            // ✅ NEW: Best Sellers Toggle Button Functionality
+            const bestSellersToggleBtn = document.getElementById('bestSellersToggleBtn');
+            const bestSellersContainer = document.getElementById('bestSellersContainer');
+
+            bestSellersToggleBtn.addEventListener('click', function() {
+                bestSellersContainer.style.display = bestSellersContainer.style.display === 'none' ? 'flex' : 'none';
+                bestSellersToggleBtn.classList.toggle('collapsed');
+            });
+        });
+
+        function initializeMap() {
+            if (establishmentsMap) {
+                return;
+            }
+
+            const mapContainer = document.getElementById('establishmentsMap');
+            if (!mapContainer) {
+                console.error('Map container not found!');
+                return;
+            }
+
+            establishmentsMap = L.map('establishmentsMap', {
+                center: [14.4663, 120.8903],
+                zoom: 15,
+                zoomControl: true
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(establishmentsMap);
+
+            const locationButton = L.control({position: 'topright'});
+            locationButton.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                div.innerHTML = '<button style="width:40px;height:40px;background:white;border:2px solid rgba(0,0,0,0.2);border-radius:4px;cursor:pointer;font-size:18px;color:#333;box-shadow:0 1px 5px rgba(0,0,0,0.65);transition:all 0.3s ease;" title="Show My Location"><i class="fas fa-location-arrow"></i></button>';
+                div.onclick = function() {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            const userLat = position.coords.latitude;
+                            const userLng = position.coords.longitude;
+
+                            if (userMarker) {
+                                establishmentsMap.removeLayer(userMarker);
+                            }
+
+                            userMarker = L.marker([userLat, userLng], {
+                                icon: L.divIcon({
+                                    className: 'user-location-marker',
+                                    html: '<div style="background:#4CAF50;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>',
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                })
+                            }).addTo(establishmentsMap);
+
+                            userMarker.bindPopup("<b>You are here</b>").openPopup();
+                            establishmentsMap.setView([userLat, userLng], 16);
+                        }, function(error) {
+                            alert('Unable to retrieve your location. Please enable location services.');
+                        });
+                    } else {
+                        alert('Geolocation is not supported by your browser.');
+                    }
+                };
+                return div;
+            };
+            locationButton.addTo(establishmentsMap);
+
+            establishments.forEach(function(est) {
+                const statusColor = est.status === 'Open' ? '#10b981' : '#ef4444';
+                const marker = L.marker([est.latitude, est.longitude], {
+                    icon: L.divIcon({
+                        className: 'establishment-marker',
+                        html: `<div style="background:${statusColor};width:30px;height:30px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="color:white;font-size:12px;"></i></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(establishmentsMap);
+
+                marker.bindPopup(`
+                    <div style="text-align:center;min-width:200px;">
+                        <img src="${est.image}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />
+                        <h3 style="margin:8px 0;font-size:16px;font-weight:700;color:#2d3748;">${est.name}</h3>
+                        <p style="margin:4px 0;font-size:13px;color:${statusColor};font-weight:600;">
+                            <i class="fas fa-circle" style="font-size:8px;"></i> ${est.status}
+                        </p>
+                        <p style="margin:4px 0;font-size:13px;">
+                            <i class="fas fa-star" style="color:#FFD700;"></i> ${est.rating} / 5.0
+                        </p>
+                        <a href="/kabsueats/establishment/${est.id}/" style="display:inline-block;margin-top:8px;padding:8px 16px;background:#B71C1C;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;transition:all 0.3s ease;" onmouseover="this.style.background='#D32F2F'" onmouseout="this.style.background='#B71C1C'">
+                            View Details
+                        </a>
+                    </div>
+                `);
+
+                establishmentMarkers.push(marker);
+            });
+
+            setTimeout(() => {
+                establishmentsMap.invalidateSize();
+            }, 200);
+
+            const routeBtn = document.getElementById('locationRouteBtn');
+            if (routeBtn) {
+                routeBtn.style.display = 'flex';
+            }
+
+            const mapSection = document.getElementById('mapSection');
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.attributeName === 'style') {

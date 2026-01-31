@@ -1847,3 +1847,47 @@
         height: 90px;
     }
 }
+/* ✅ NEW: Best Sellers Toggle Button (Small, Light Red) - Phone View */
+.bestsellers-toggle-button {
+    background: linear-gradient(135deg, #E57373 0%, #EF5350 100%);
+    color: white;
+    border: none;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 3px 10px rgba(229, 115, 115, 0.3);
+    transition: all 0.3s ease;
+    margin: 12px 0 15px 15px;
+}
+
+.bestsellers-toggle-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(229, 115, 115, 0.4);
+    background: linear-gradient(135deg, #EF5350 0%, #E57373 100%);
+}
+
+.bestsellers-toggle-button:active {
+    transform: translateY(0);
+}
+
+.bestsellers-toggle-button i.fa-chevron-up {
+    font-size: 11px;
+    transition: transform 0.3s ease;
+}
+
+.bestsellers-toggle-button.collapsed i.fa-chevron-up {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 480px) {
+    .bestsellers-toggle-button {
+        font-size: 12px;
+        padding: 8px 14px;
+        margin: 10px 0 12px 10px;
+    }
+}
