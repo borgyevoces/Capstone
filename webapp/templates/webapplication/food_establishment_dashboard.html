@@ -2054,24 +2054,24 @@
 <body>
 <nav class="navbar">
     <div class="navbar-container">
-        <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="navbar-logo">
+        <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
             KabsuEats
         </a>
         <div class="navbar-actions">
             <!-- Dashboard Button (Active) -->
-            <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}" title="Dashboard" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}" title="Dashboard" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-chart-line"></i>
                 <span class="nav-btn-label">Dashboard</span>
             </a>
 
             <!-- Orders Button -->
-            <a href="{% url 'orders_list' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}" title="Orders" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'orders_list' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}" title="Orders" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-shopping-bag"></i>
                 <span class="nav-btn-label">Orders</span>
             </a>
 
             <!-- Transaction History Button -->
-            <a href="{% url 'transaction_history' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'transaction_history' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-history"></i>
                 <span class="nav-btn-label">Transactions</span>
             </a>
@@ -2483,7 +2483,7 @@
         <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">×</button>
         <h2><i class="fas fa-edit"></i> Update Store Details</h2>
         <form method="POST" enctype="multipart/form-data" class="modal-form" id="updateStoreDetailsForm"
-              action="{% url 'update_establishment_details_ajax' establishment.id %}">
+              action="{% url 'update_establishment_details_ajax' %}">
             {% csrf_token %}
             <input type="hidden" name="update_status" value="1">
             <input type="hidden" name="update_token" id="update_token" value="{{ update_token }}">
@@ -3715,7 +3715,7 @@
     <p style="color: #6b7280; font-size: 16px; margin-bottom: 32px;">
         Your order has been confirmed. Thank you for your purchase!
     </p>
-    <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="back-to-dashboard-btn">
+    <a href="{% url 'food_establishment_dashboard' %}" class="back-to-dashboard-btn">
         <i class="fas fa-arrow-left"></i>
         Back to Dashboard
     </a>

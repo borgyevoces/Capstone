@@ -5180,43 +5180,31 @@ from .models import FoodEstablishment
 @login_required
 def orders_list_view(request):
     """
-    Display the orders list page for food establishment owners
+    Orders list view - extends the dashboard template
     """
     try:
-        # Get the food establishment owned by the logged-in user
         establishment = FoodEstablishment.objects.get(owner=request.user)
-
-        context = {
-            'establishment': establishment,
-        }
-
-        return render(request, 'webapplication/orders_list.html', context)
-
     except FoodEstablishment.DoesNotExist:
-        messages.error(request, "You don't have a food establishment.")
-        return redirect('kabsueats_home')
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('kabsueats_home')
+        return redirect('create_establishment')
+
+    context = {
+        'establishment': establishment,
+    }
+
+    return render(request, 'webapplication/orders_list.html', context)
 
 @login_required
 def transaction_history_view(request):
     """
-    Display the transaction history page for food establishment owners
-    """
+        Transaction history view - extends the dashboard template
+        """
     try:
-        # Get the food establishment owned by the logged-in user
         establishment = FoodEstablishment.objects.get(owner=request.user)
-
-        context = {
-            'establishment': establishment,
-        }
-
-        return render(request, 'webapplication/transaction_history.html', context)
-
     except FoodEstablishment.DoesNotExist:
-        messages.error(request, "You don't have a food establishment.")
-        return redirect('kabsueats_home')
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('kabsueats_home')
+        return redirect('create_establishment')
+
+    context = {
+        'establishment': establishment,
+    }
+
+    return render(request, 'webapplication/transaction_history.html', context)
