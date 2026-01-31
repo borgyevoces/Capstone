@@ -5189,6 +5189,7 @@ def orders_list_view(request):
 
     context = {
         'establishment': establishment,
+        'pk': establishment.pk,  # Add this line - needed for URL reverse
     }
 
     return render(request, 'webapplication/orders_list.html', context)
@@ -5196,8 +5197,8 @@ def orders_list_view(request):
 @login_required
 def transaction_history_view(request):
     """
-        Transaction history view - extends the dashboard template
-        """
+    Transaction history view - extends the dashboard template
+    """
     try:
         establishment = FoodEstablishment.objects.get(owner=request.user)
     except FoodEstablishment.DoesNotExist:
@@ -5205,6 +5206,7 @@ def transaction_history_view(request):
 
     context = {
         'establishment': establishment,
+        'pk': establishment.pk,  # Add this line - needed for URL reverse
     }
 
     return render(request, 'webapplication/transaction_history.html', context)
