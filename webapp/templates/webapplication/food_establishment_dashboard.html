@@ -2483,7 +2483,7 @@
         <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">×</button>
         <h2><i class="fas fa-edit"></i> Update Store Details</h2>
         <form method="POST" enctype="multipart/form-data" class="modal-form" id="updateStoreDetailsForm"
-              action="{% url 'update_establishment_details_ajax' %}">
+              action="{% url 'update_establishment_details_ajax' pk=pk %}">
             {% csrf_token %}
             <input type="hidden" name="update_status" value="1">
             <input type="hidden" name="update_token" id="update_token" value="{{ update_token }}">
