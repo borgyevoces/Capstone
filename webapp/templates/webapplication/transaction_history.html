@@ -1,6 +1,4 @@
 {% load static %}
-{% extends 'food_establishment_dashboard.html' %}
-{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,12 +14,15 @@
     <style>
         body {
             background: #f8f9fa;
+            margin: 0;
+            padding: 0;
         }
 
         .page-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 24px;
+            margin-top: 80px; /* Space for fixed navbar */
         }
 
         .page-header {
@@ -73,19 +74,6 @@
             font-size: 32px;
             font-weight: 800;
             color: #1a1a1a;
-        }
-
-        .stat-change {
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
-        .stat-change.positive {
-            color: #10b981;
-        }
-
-        .stat-change.negative {
-            color: #ef4444;
         }
 
         .transactions-content {
@@ -289,6 +277,7 @@
         @media (max-width: 768px) {
             .page-container {
                 padding: 16px;
+                margin-top: 70px;
             }
 
             .page-header {
@@ -318,18 +307,18 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
+            <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="navbar-logo">
                 KabsuEats
             </a>
             <div class="navbar-actions">
                 <!-- Orders Button -->
-                <a href="{% url 'orders_list' %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
+                <a href="{% url 'orders_list' establishment.id %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="nav-btn-label">Orders</span>
                 </a>
 
                 <!-- Transaction History Button -->
-                <a href="{% url 'transaction_history' %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
+                <a href="{% url 'transaction_history' establishment.id %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
                     <i class="fas fa-history"></i>
                     <span class="nav-btn-label">Transactions</span>
                 </a>
@@ -352,10 +341,6 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="navbar-menu" id="navMenu">
-                        <a href="#" onclick="showDeleteConfirmation(event)" class="delete-establishment-link">
-                            <i class="fas fa-trash-alt"></i>
-                            <span>Delete Establishment</span>
-                        </a>
                         <a href="{% url 'logout_owner' %}" class="logout-link">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Logout</span>
@@ -448,6 +433,29 @@
 
     <script>
         let allTransactions = [];
+
+        // Toggle dropdown
+        function toggleDropdown() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.navbar-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('navMenu').classList.remove('active');
+            }
+        });
+
+        // Placeholder functions for notifications and chat
+        function toggleNotificationPanel() {
+            alert('Notification feature - Please implement in main dashboard');
+        }
+
+        function toggleChatPanel() {
+            alert('Chat feature - Please implement in main dashboard');
+        }
 
         // Load transactions on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -591,4 +599,3 @@
     </script>
 </body>
 </html>
-{% endblock %}
