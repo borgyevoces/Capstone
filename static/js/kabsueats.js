@@ -2073,3 +2073,121 @@ bestSellersStyle.textContent = `
     }
 `;
 document.head.appendChild(bestSellersStyle);
+// ============================================
+// ✅ LAYOUT TOGGLE FUNCTIONALITY FOR BEST SELLERS
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for other initializations
+    setTimeout(function() {
+        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
+        const bestSellersContainer = document.getElementById('bestSellersContainer');
+        const bestSellersScroll = document.getElementById('bestSellersScroll');
+
+        if (!layoutSettingsBtn || !bestSellersContainer || !bestSellersScroll) {
+            console.log('⚠️ Layout toggle elements not found');
+            return;
+        }
+
+        // Get saved layout preference from localStorage
+        let isGridLayout = localStorage.getItem('bestSellersLayout') === 'grid';
+
+        // Apply initial layout
+        if (isGridLayout) {
+            applyGridLayout();
+        }
+
+        // Layout toggle button click handler
+        layoutSettingsBtn.addEventListener('click', function() {
+            isGridLayout = !isGridLayout;
+
+            if (isGridLayout) {
+                applyGridLayout();
+            } else {
+                applyScrollLayout();
+            }
+
+            // Save preference to localStorage
+            localStorage.setItem('bestSellersLayout', isGridLayout ? 'grid' : 'scroll');
+
+            console.log(`📐 Layout switched to: ${isGridLayout ? 'Grid (5 columns)' : 'Scroll'}`);
+        });
+
+        function applyGridLayout() {
+            // Add grid classes
+            bestSellersScroll.classList.add('grid-layout');
+            bestSellersContainer.classList.add('grid-mode');
+
+            // Update button text and icon
+            layoutSettingsBtn.innerHTML = '<i class="fas fa-grip-lines"></i><span>Scroll View</span>';
+            layoutSettingsBtn.title = 'Switch to Scroll View';
+
+            // Disable scroll buttons
+            const scrollButtons = bestSellersContainer.querySelectorAll('.scroll-btn');
+            scrollButtons.forEach(btn => {
+                btn.style.display = 'none';
+            });
+
+            console.log('✅ Grid layout (5 columns) applied');
+        }
+
+        function applyScrollLayout() {
+            // Remove grid classes
+            bestSellersScroll.classList.remove('grid-layout');
+            bestSellersContainer.classList.remove('grid-mode');
+
+            // Update button text and icon
+            layoutSettingsBtn.innerHTML = '<i class="fas fa-th"></i><span>Grid View</span>';
+            layoutSettingsBtn.title = 'Switch to Grid View';
+
+            // Enable scroll buttons
+            const scrollButtons = bestSellersContainer.querySelectorAll('.scroll-btn');
+            scrollButtons.forEach(btn => {
+                btn.style.display = 'flex';
+            });
+
+            console.log('✅ Scroll layout applied');
+        }
+
+        // Re-apply layout when best sellers are updated
+        const originalRender = window.AutomaticBestSellers?.renderBestSellers;
+        if (originalRender && typeof originalRender === 'function') {
+            window.AutomaticBestSellers.renderBestSellers = function() {
+                originalRender.call(window.AutomaticBestSellers);
+
+                // Reapply layout after rendering
+                setTimeout(() => {
+                    if (isGridLayout) {
+                        applyGridLayout();
+                    } else {
+                        applyScrollLayout();
+                    }
+                }, 150);
+            };
+        }
+
+        // Observer to maintain layout when content changes
+        const bestSellersObserver = new MutationObserver(function(mutations) {
+            const isGridMode = bestSellersContainer?.classList.contains('grid-mode');
+
+            if (isGridMode && bestSellersScroll && !bestSellersScroll.classList.contains('grid-layout')) {
+                bestSellersScroll.classList.add('grid-layout');
+                console.log('🔄 Reapplied grid layout after content change');
+            }
+        });
+
+        // Start observing
+        if (bestSellersScroll) {
+            bestSellersObserver.observe(bestSellersScroll, {
+                childList: true,
+                subtree: false
+            });
+        }
+
+        console.log('🎨 Layout toggle functionality initialized');
+
+        // Apply initial layout based on saved preference
+        if (isGridLayout) {
+            setTimeout(() => applyGridLayout(), 500);
+        }
+    }, 300);
+});
