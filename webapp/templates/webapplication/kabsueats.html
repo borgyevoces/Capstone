@@ -566,26 +566,6 @@
                 {% endif %}
             </div>
 
-            <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
-            <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
-
-            <!-- Map Section (Hidden by default) -->
-            <div id="mapSection" style="display: none;">
-                <div id="establishmentsMap" style="height:100%; width:100%;"></div>
-                <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
-                    <i class="fas fa-route"></i>
-                </button>
-            </div>
-
-            <!-- Best Sellers Section -->
-            <div class="best-sellers-section" id="bestSellersSection">
-                <div class="best-sellers-header">
-                    <h2>
-                        <i class="fas fa-fire"></i>
-                        Best Sellers Across KabsuEats
-                    </h2>
-                    <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
-                </div>
 
             <!-- Best Sellers Section -->
             <div class="best-sellers-section" id="bestSellersSection">
@@ -625,6 +605,19 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Map Section (Hidden by default) - NOW INSIDE BEST SELLERS SECTION -->
+                <div id="mapSection" style="display: none; margin: 20px 0;">
+                    <div id="establishmentsMap" style="height:600px; width:100%;"></div>
+                    <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
+                        <i class="fas fa-route"></i>
+                    </button>
+                </div>
+
+                <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
+                <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
+
+                <!-- Best Sellers Items Container -->
                 <div class="best-sellers-container">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
