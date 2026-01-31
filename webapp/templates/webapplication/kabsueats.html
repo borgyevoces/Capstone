@@ -485,7 +485,10 @@
         </div>
         <div class="right-section">
             {% if user.is_authenticated %}
-            <a href="{% url 'view_cart' %}" class="cart-link" title="My Cart">
+            <a href="{% url 'orders' %}" class="cart-link" title="My Orders">
+                <i class="fas fa-receipt" style="font-size: 20px; color: white;"></i>
+            </a>
+            <a href="{% url 'cart_summary' %}" class="cart-link" title="My Cart">
                 <i class="fas fa-shopping-cart" style="font-size: 20px; color: white;"></i>
                 <span class="cart-badge" id="cartBadge">0</span>
             </a>
@@ -502,17 +505,21 @@
         <div class="overlay_contents">
             {% if user.is_authenticated %}
             <div class="overlay_item">
+                <i class="fa-solid fa-user"></i>
+                <a href="{% url 'profile' %}">Profile</a>
+            </div>
+            <div class="overlay_item">
                 <i class="fa-solid fa-right-from-bracket"></i>
-                <a href="{% url 'user_logout' %}">Log Out</a>
+                <a href="{% url 'logout' %}">Logout</a>
             </div>
             {% else %}
             <div class="overlay_item">
                 <i class="fa-solid fa-right-to-bracket"></i>
-                <a href="{% url 'user_login_register' %}">Sign up</a>
+                <a href="{% url 'loginpage' %}">Log In</a>
             </div>
             <div class="overlay_item">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                <a href="{% url 'user_login_register' %}">Log In</a>
+                <i class="fa-solid fa-user-plus"></i>
+                <a href="{% url 'signuppage' %}">Sign Up</a>
             </div>
             {% endif %}
         </div>
@@ -687,7 +694,7 @@
                      data-distance="{{ establishment.distance|default:'9999' }}"
                      data-lat="{{ establishment.location.latitude }}"
                      data-lng="{{ establishment.location.longitude }}">
-                    <div class="foodplace_card" onclick="window.location.href='{% url 'food_establishment_details' establishment.id %}'">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
                         <div class="foodplace_image_container">
                             <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
                             <div class="status-badge status-{{ establishment.current_status|lower }}">
@@ -754,7 +761,7 @@
                      data-category="{{ establishment.category|lower }}"
                      data-rating="{{ establishment.average_rating|default:'0' }}"
                      data-distance="{{ establishment.distance|default:'9999' }}">
-                    <div class="foodplace_card" onclick="window.location.href='{% url 'food_establishment_details' establishment.id %}'">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
                         <div class="foodplace_image_container">
                             <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
                             <div class="status-badge status-{{ establishment.current_status|lower }}">
@@ -815,7 +822,7 @@
                      data-category="{{ establishment.category|lower }}"
                      data-rating="{{ establishment.average_rating|default:'0' }}"
                      data-distance="{{ establishment.distance|default:'9999' }}">
-                    <div class="foodplace_card" onclick="window.location.href='{% url 'food_establishment_details' establishment.id %}'">
+                    <div class="foodplace_card" onclick="window.location.href='{% url 'establishment_page' establishment.id %}'">
                         <div class="foodplace_image_container">
                             <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
                             <div class="status-badge status-{{ establishment.current_status|lower }}">
