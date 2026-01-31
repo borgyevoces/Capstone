@@ -2832,6 +2832,7 @@ def food_establishment_dashboard(request):
         'average_rating': average_rating,
         'update_token': str(uuid.uuid4()),
         'menu_add_token': str(uuid.uuid4()),
+        'pk': establishment.pk,
     }
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
