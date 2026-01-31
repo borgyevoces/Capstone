@@ -254,9 +254,10 @@
         /* View Selector Button - Smaller, Cleaner Design */
         .view-selector-container {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
+            align-items: center;
             margin: 15px 0 12px 0;
-            padding: 0;
+            padding: 0 20px;
         }
 
         .view-dropdown-wrapper {
@@ -273,27 +274,29 @@
         }
 
         .view-dropdown-button {
-            background: linear-gradient(135deg, #B71C1C 0%, #9c1919 100%);
-            color: white;
-            border: none;
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e5e7eb;
             padding: 10px 16px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 2px 6px rgba(183, 28, 28, 0.2);
+            box-shadow: none;
             transition: all 0.3s ease;
             min-width: 150px;
             justify-content: space-between;
+            font-family: 'Poppins', sans-serif;
         }
 
         .view-dropdown-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(183, 28, 28, 0.3);
-            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+            border-color: #cbd5e0;
+            background: #f7fafc;
+            transform: none;
+            box-shadow: none;
         }
 
         .view-dropdown-button:active {
@@ -471,9 +474,8 @@
         /* ✅ Layout Settings Button */
         .view-selector-container {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
             margin-bottom: 20px;
             padding: 0 20px;
         }
@@ -699,13 +701,13 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                    <!-- ✅ NEW: Layout Settings Button -->
+                    <!-- ✅ Grid View Button - Right aligned -->
                     <button class="layout-settings-btn" id="layoutSettingsBtn" title="Toggle Layout">
                         <i class="fas fa-th"></i>
                         <span>Grid View</span>
                     </button>
+                </div>
 
                 <!-- Map Section (Hidden by default) - NOW INSIDE BEST SELLERS SECTION -->
                 <div id="mapSection" style="display: none; margin: 20px 0;">
