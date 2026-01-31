@@ -1,645 +1,496 @@
+{% extends "webapplication/food_establishment_dashboard.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
-    <title>Orders List - {{ establishment.name }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-    <meta http-equiv="Pragma" content="no-cache"/>
-    <meta http-equiv="Expires" content="0"/>
-    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
-    <style>
-        body {
-            background: #f8f9fa;
-            margin: 0;
-            padding: 0;
-        }
 
+{% block page_title %}Orders - {{ establishment.name }}{% endblock %}
+
+{% block extra_head_links %}
+<!-- No leaflet needed for orders page -->
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #f8f9fa;
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+        margin-top: 80px;
+    }
+
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .page-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 16px;
+    }
+
+    .orders-content {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .orders-table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .orders-table-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .orders-table-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn, .export-btn, .sales-report-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #1a1a1a;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .filter-btn:hover, .export-btn:hover, .sales-report-btn:hover {
+        border-color: #B71C1C;
+        color: #B71C1C;
+        transform: translateY(-2px);
+    }
+
+    .sales-report-btn {
+        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+        color: white;
+        border: none;
+    }
+
+    .sales-report-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
+    }
+
+    .orders-filters {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-group label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        padding: 10px 14px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+        border-color: #B71C1C;
+    }
+
+    .loading-state, .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .loading-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: #B71C1C;
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: #e5e7eb;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .orders-table th {
+        background: #f9fafb;
+        padding: 16px;
+        text-align: left;
+        font-weight: 700;
+        color: #374151;
+        font-size: 14px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .orders-table td {
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
+        color: #1f2937;
+    }
+
+    .orders-table tr:hover {
+        background: #f9fafb;
+    }
+
+    .order-id {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        color: #B71C1C;
+    }
+
+    .order-status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .order-status-badge.pending {
+        background: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .order-status-badge.paid {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .order-status-badge.completed {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .order-status-badge.cancelled {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-view, .btn-action {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-view {
+        background: #f3f4f6;
+        color: #1a1a1a;
+    }
+
+    .btn-view:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-action {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    @media (max-width: 768px) {
         .page-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-            margin-top: 80px; /* Space for fixed navbar */
+            padding: 16px;
+            margin-top: 70px;
         }
 
-        .page-header {
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .page-title {
-            font-size: 32px;
-            font-weight: 800;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .page-subtitle {
-            color: #6b7280;
-            font-size: 16px;
-        }
-
+        .page-header,
         .orders-content {
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .orders-table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .orders-table-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1a1a1a;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .orders-table-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn, .export-btn {
-            background: white;
-            border: 2px solid #e5e7eb;
-            color: #1a1a1a;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover, .export-btn:hover {
-            border-color: #B71C1C;
-            color: #B71C1C;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.15);
-        }
-
-        .sales-report-btn {
-            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .sales-report-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
-        }
-
-        .orders-filters {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 10px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #1a1a1a;
-            background: white;
-            transition: all 0.2s;
-        }
-
-        .filter-group select:focus,
-        .filter-group input:focus {
-            outline: none;
-            border-color: #B71C1C;
-        }
-
-        .order-card {
-            background: #f9fafb;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
             padding: 20px;
-            margin-bottom: 16px;
-            transition: all 0.2s;
         }
 
-        .order-card:hover {
-            border-color: #B71C1C;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.1);
-            transform: translateY(-2px);
+        .orders-table {
+            display: block;
+            overflow-x: auto;
         }
+    }
+</style>
+{% endblock %}
 
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+{% block main_content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-clipboard-list"></i>
+            Orders Management
+        </h1>
+        <p class="page-subtitle">View and manage all your incoming orders</p>
+    </div>
 
-        .order-id {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
-
-        .order-date {
-            font-size: 13px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
-
-        .order-status {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .order-status.paid {
-            background: #d1fae5;
-            color: #10b981;
-        }
-
-        .order-status.pending {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .order-status.completed {
-            background: #dbeafe;
-            color: #3b82f6;
-        }
-
-        .customer-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-
-        .customer-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .customer-details {
-            flex: 1;
-        }
-
-        .customer-name {
-            font-weight: 700;
-            font-size: 15px;
-            color: #1a1a1a;
-        }
-
-        .customer-email {
-            font-size: 13px;
-            color: #6b7280;
-            margin-top: 2px;
-        }
-
-        .order-items {
-            margin: 16px 0;
-        }
-
-        .order-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .item-info {
-            flex: 1;
-        }
-
-        .item-name {
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 4px;
-        }
-
-        .item-quantity {
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-        .item-price {
-            font-weight: 700;
-            color: #B71C1C;
-            font-size: 15px;
-        }
-
-        .order-footer {
-            border-top: 2px solid #e5e7eb;
-            padding-top: 16px;
-            margin-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .order-total {
-            font-size: 16px;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .order-total span {
-            font-size: 24px;
-            font-weight: 800;
-            color: #B71C1C;
-            margin-left: 8px;
-        }
-
-        .loading-state, .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .loading-state i, .empty-state i {
-            font-size: 64px;
-            color: #d1d5db;
-            margin-bottom: 16px;
-        }
-
-        .loading-state p, .empty-state h3, .empty-state p {
-            color: #6b7280;
-            font-size: 16px;
-        }
-
-        .empty-state h3 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        @media (max-width: 768px) {
-            .page-container {
-                padding: 16px;
-                margin-top: 70px;
-            }
-
-            .page-header {
-                padding: 24px;
-            }
-
-            .orders-content {
-                padding: 20px;
-            }
-
-            .page-title {
-                font-size: 24px;
-            }
-
-            .orders-table-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
-                KabsuEats
-            </a>
-            <div class="navbar-actions">
-                <!-- Dashboard Button -->
-                <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn" title="Dashboard" style="text-decoration: none; color: inherit;">
+    <div class="orders-content">
+        <div class="orders-table-header">
+            <h2 class="orders-table-title">
+                <i class="fas fa-shopping-cart"></i>
+                Orders List
+            </h2>
+            <div class="orders-table-actions">
+                <button class="filter-btn" onclick="toggleFilters()">
+                    <i class="fas fa-filter"></i>
+                    Filter
+                </button>
+                <button class="export-btn" onclick="exportOrders()">
+                    <i class="fas fa-download"></i>
+                    Export CSV
+                </button>
+                <button class="sales-report-btn" onclick="window.location.href='{% url 'food_establishment_dashboard' establishment.id %}'">
                     <i class="fas fa-chart-line"></i>
-                    <span class="nav-btn-label">Dashboard</span>
-                </a>
-
-                <!-- Orders Button (Active) -->
-                <a href="{% url 'orders_list' %}" class="nav-icon-btn active" title="Orders" style="text-decoration: none; color: inherit;">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span class="nav-btn-label">Orders</span>
-                </a>
-
-                <!-- Transaction History Button -->
-                <a href="{% url 'transaction_history' %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
-                    <i class="fas fa-history"></i>
-                    <span class="nav-btn-label">Transactions</span>
-                </a>
-
-                <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
-                        title="Notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    View Dashboard
                 </button>
-
-                <button class="chat-toggle-btn" onclick="toggleChatPanel()" id="chatToggleBtn" title="Messages">
-                    <i class="fas fa-envelope"></i>
-                    <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
-                </button>
-
-                <div class="navbar-dropdown">
-                    <button class="navbar-btn" onclick="toggleDropdown()" title="Menu">
-                        <i class="fas fa-user-circle"></i>
-                        <span>{{ establishment.name }}</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="navbar-menu" id="navMenu">
-                        <a href="{% url 'logout_owner' %}" class="logout-link">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="page-container">
-        <div class="page-header">
-            <h1 class="page-title">
-                <i class="fas fa-clipboard-list"></i>
-                Orders Management
-            </h1>
-            <p class="page-subtitle">View and manage all your incoming orders</p>
+        <!-- Filters -->
+        <div class="orders-filters" id="ordersFilters" style="display: none;">
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" onchange="applyFilters()">
+                    <option value="all">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Date From</label>
+                <input type="date" id="dateFromFilter" onchange="applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>Date To</label>
+                <input type="date" id="dateToFilter" onchange="applyFilters()">
+            </div>
+            <div class="filter-group" style="justify-content: flex-end;">
+                <label>&nbsp;</label>
+                <button class="filter-btn" onclick="clearFilters()" style="background: #fee2e2; color: #dc2626; border-color: #fecaca;">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </button>
+            </div>
         </div>
 
-        <div class="orders-content">
-            <div class="orders-table-header">
-                <h2 class="orders-table-title">
-                    <i class="fas fa-shopping-cart"></i>
-                    Orders List
-                </h2>
-                <div class="orders-table-actions">
-                    <button class="filter-btn" onclick="toggleFilters()">
-                        <i class="fas fa-filter"></i>
-                        Filter
-                    </button>
-                    <button class="export-btn" onclick="exportOrders()">
-                        <i class="fas fa-download"></i>
-                        Export CSV
-                    </button>
-                    <button class="sales-report-btn" onclick="window.location.href='{% url 'food_establishment_dashboard' establishment.id %}'">
-                        <i class="fas fa-chart-line"></i>
-                        View Dashboard
-                    </button>
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="orders-filters" id="ordersFilters" style="display: none;">
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select id="statusFilter" onchange="applyFilters()">
-                        <option value="all">All Orders</option>
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Date From</label>
-                    <input type="date" id="dateFromFilter" onchange="applyFilters()">
-                </div>
-                <div class="filter-group">
-                    <label>Date To</label>
-                    <input type="date" id="dateToFilter" onchange="applyFilters()">
-                </div>
-                <div class="filter-group" style="justify-content: flex-end;">
-                    <label>&nbsp;</label>
-                    <button class="filter-btn" onclick="clearFilters()" style="background: #fee2e2; color: #dc2626; border-color: #fecaca;">
-                        <i class="fas fa-times"></i>
-                        Clear
-                    </button>
-                </div>
-            </div>
-
-            <!-- Orders List -->
-            <div id="ordersListContainer">
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading orders...</p>
-                </div>
+        <!-- Orders List -->
+        <div id="ordersListContainer">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading orders...</p>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        let allOrders = [];
+{% block page_javascript %}
+let allOrders = [];
 
-        // Toggle dropdown
-        function toggleDropdown() {
-            const menu = document.getElementById('navMenu');
-            menu.classList.toggle('active');
-        }
+// Load orders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrders();
+});
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const dropdown = document.querySelector('.navbar-dropdown');
-            if (dropdown && !dropdown.contains(e.target)) {
-                document.getElementById('navMenu').classList.remove('active');
-            }
-        });
-
-        // Placeholder functions for notifications and chat
-        function toggleNotificationPanel() {
-            alert('Notification feature - Please implement in main dashboard');
-        }
-
-        function toggleChatPanel() {
-            alert('Chat feature - Please implement in main dashboard');
-        }
-
-        // Load orders on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadOrders();
-        });
-
-        function loadOrders() {
-            fetch('/api/food-establishment/orders/')
-                .then(response => response.json())
-                .then(data => {
-                    allOrders = data.orders || [];
-                    displayOrders(allOrders);
-                })
-                .catch(error => {
-                    console.error('Error loading orders:', error);
-                    document.getElementById('ordersListContainer').innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <h3>Error Loading Orders</h3>
-                            <p>There was a problem loading your orders. Please try again.</p>
-                        </div>
-                    `;
-                });
-        }
-
-        function displayOrders(orders) {
-            const container = document.getElementById('ordersListContainer');
-
-            if (!orders || orders.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No Orders Yet</h3>
-                        <p>Your orders will appear here once customers place them.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '';
-            orders.forEach(order => {
-                const statusClass = order.payment_status.toLowerCase();
-                const orderDate = new Date(order.created_at).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                html += `
-                    <div class="order-card">
-                        <div class="order-header">
-                            <div>
-                                <div class="order-id">Order #${order.order_id}</div>
-                                <div class="order-date">${orderDate}</div>
-                            </div>
-                            <div class="order-status ${statusClass}">${order.payment_status}</div>
-                        </div>
-
-                        <div class="customer-info">
-                            <div class="customer-avatar">
-                                ${order.customer_name.charAt(0).toUpperCase()}
-                            </div>
-                            <div class="customer-details">
-                                <div class="customer-name">${order.customer_name}</div>
-                                <div class="customer-email">${order.customer_email}</div>
-                            </div>
-                        </div>
-
-                        <div class="order-items">
-                            ${order.items.map(item => `
-                                <div class="order-item">
-                                    <div class="item-info">
-                                        <div class="item-name">${item.name}</div>
-                                        <div class="item-quantity">Quantity: ${item.quantity}</div>
-                                    </div>
-                                    <div class="item-price">₱${parseFloat(item.total_price).toFixed(2)}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <div class="order-footer">
-                            <div class="order-total">
-                                Total: <span>₱${parseFloat(order.total_amount).toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function toggleFilters() {
-            const filters = document.getElementById('ordersFilters');
-            filters.style.display = filters.style.display === 'none' ? 'flex' : 'none';
-        }
-
-        function applyFilters() {
-            const status = document.getElementById('statusFilter').value;
-            const dateFrom = document.getElementById('dateFromFilter').value;
-            const dateTo = document.getElementById('dateToFilter').value;
-
-            let filtered = [...allOrders];
-
-            if (status !== 'all') {
-                filtered = filtered.filter(order => order.payment_status.toLowerCase() === status);
-            }
-
-            if (dateFrom) {
-                filtered = filtered.filter(order => new Date(order.created_at) >= new Date(dateFrom));
-            }
-
-            if (dateTo) {
-                filtered = filtered.filter(order => new Date(order.created_at) <= new Date(dateTo + 'T23:59:59'));
-            }
-
-            displayOrders(filtered);
-        }
-
-        function clearFilters() {
-            document.getElementById('statusFilter').value = 'all';
-            document.getElementById('dateFromFilter').value = '';
-            document.getElementById('dateToFilter').value = '';
+function loadOrders() {
+    fetch('/api/food-establishment/orders/')
+        .then(response => response.json())
+        .then(data => {
+            allOrders = data.orders || [];
             displayOrders(allOrders);
-        }
+        })
+        .catch(error => {
+            console.error('Error loading orders:', error);
+            document.getElementById('ordersListContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>Error Loading Orders</h3>
+                    <p>There was a problem loading your orders. Please try again.</p>
+                </div>
+            `;
+        });
+}
 
-        function exportOrders() {
-            window.location.href = '/api/food-establishment/orders/export/';
-        }
-    </script>
-</body>
-</html>
+function displayOrders(orders) {
+    const container = document.getElementById('ordersListContainer');
+
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No Orders Yet</h3>
+                <p>Your orders will appear here once customers place them.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    orders.forEach(order => {
+        html += `
+            <tr>
+                <td><span class="order-id">#${order.id}</span></td>
+                <td>${order.customer_name || 'Unknown'}</td>
+                <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                <td>${order.items_count || 0} items</td>
+                <td>₱${parseFloat(order.total || 0).toFixed(2)}</td>
+                <td><span class="order-status-badge ${order.status.toLowerCase()}">${order.status}</span></td>
+                <td>
+                    <div class="order-actions">
+                        <button class="btn-view" onclick="viewOrder(${order.id})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        ${order.status === 'pending' ? `
+                            <button class="btn-action" onclick="acceptOrder(${order.id})">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = html;
+}
+
+function toggleFilters() {
+    const filters = document.getElementById('ordersFilters');
+    filters.style.display = filters.style.display === 'none' ? 'grid' : 'none';
+}
+
+function applyFilters() {
+    const status = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+
+    let filtered = allOrders;
+
+    if (status !== 'all') {
+        filtered = filtered.filter(order => order.status.toLowerCase() === status);
+    }
+
+    if (dateFrom) {
+        filtered = filtered.filter(order => new Date(order.created_at) >= new Date(dateFrom));
+    }
+
+    if (dateTo) {
+        filtered = filtered.filter(order => new Date(order.created_at) <= new Date(dateTo));
+    }
+
+    displayOrders(filtered);
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    displayOrders(allOrders);
+}
+
+function exportOrders() {
+    console.log('Exporting orders to CSV...');
+    alert('CSV export feature - Coming soon!');
+}
+
+function viewOrder(orderId) {
+    console.log('Viewing order:', orderId);
+    alert('View order #' + orderId);
+}
+
+function acceptOrder(orderId) {
+    if (confirm('Accept this order?')) {
+        console.log('Accepting order:', orderId);
+        alert('Order #' + orderId + ' accepted!');
+    }
+}
+{% endblock %}

@@ -1,18 +1,19 @@
 {% load static %}
-{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
-    <title>{{ establishment.name }} - Dashboard</title>
+    <title>{% block page_title %}{{ establishment.name }} - Dashboard{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
     <meta http-equiv="Pragma" content="no-cache"/>
     <meta http-equiv="Expires" content="0"/>
+    {% block extra_head_links %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+    {% endblock %}
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
         .notification-item {
@@ -2048,28 +2049,29 @@
         }
 
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 <nav class="navbar">
     <div class="navbar-container">
-        <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
+        <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="navbar-logo">
             KabsuEats
         </a>
         <div class="navbar-actions">
             <!-- Dashboard Button (Active) -->
-            <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn active" title="Dashboard" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'food_establishment_dashboard' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}" title="Dashboard" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-chart-line"></i>
                 <span class="nav-btn-label">Dashboard</span>
             </a>
 
             <!-- Orders Button -->
-            <a href="{% url 'orders_list' %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'orders_list' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}" title="Orders" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-shopping-bag"></i>
                 <span class="nav-btn-label">Orders</span>
             </a>
 
             <!-- Transaction History Button -->
-            <a href="{% url 'transaction_history' %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'transaction_history' establishment.id %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-history"></i>
                 <span class="nav-btn-label">Transactions</span>
             </a>
@@ -2231,6 +2233,8 @@
     </div>
 </div>
 
+
+{% block main_content %}
 <main class="main-content">
     {% if is_suspended %}
     <div class="suspension-warning">
@@ -2420,6 +2424,8 @@
         </section>
     </div>
 </main>
+{% endblock %}
+
 
 <div class="modal" id="viewStoreDetailsModal">
     <div class="modal-content" style="max-width: 450px;">
@@ -2883,10 +2889,14 @@
     </div>
 </div>
 
+
+{% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
+{% endblock %}
+
 <script src="{% static 'js/status_updater.js' %}"></script>
 
 <script>
@@ -3576,6 +3586,11 @@
             }, 5000);
         }
     }
+
+
+    {% block page_javascript %}
+    // Page-specific JavaScript
+    {% endblock %}
 </script>
 <button id="scrollToTopBtn" class="scroll-to-top" style="z-index: 10000;">
     <i class="fas fa-arrow-up"></i>
@@ -3781,4 +3796,3 @@
     </div>
 </footer>
 </html>
-{% endblock %}
