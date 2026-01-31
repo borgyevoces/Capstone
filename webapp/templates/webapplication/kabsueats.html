@@ -927,10 +927,21 @@
                     dropdownMenu.classList.remove('show');
 
                     if (viewType === 'map') {
-                        // Show Map section AND keep establishments visible
-                        console.log('✅ Showing Map, Hiding Best Sellers, Keeping Establishments');
+                        // Show Map, hide ONLY best sellers items (not the header/button)
+                        console.log('✅ Showing Map, Keeping Button & Establishments');
 
-                        bestSellersSection.style.setProperty('display', 'none', 'important');
+                        // Hide only the best sellers container (items), keep header and button visible
+                        const bestSellersContainer = document.querySelector('.best-sellers-container');
+                        const bestSellersHeader = document.querySelector('.best-sellers-header');
+
+                        if (bestSellersContainer) {
+                            bestSellersContainer.style.setProperty('display', 'none', 'important');
+                        }
+
+                        // Keep the section and header visible (button is inside section)
+                        bestSellersSection.style.setProperty('display', 'block', 'important');
+
+                        // Show map
                         mapSection.style.setProperty('display', 'block', 'important');
 
                         if (toggleMapBtn) {
@@ -942,8 +953,14 @@
                         }
 
                     } else if (viewType === 'bestsellers') {
-                        // Show Best Sellers section, hide Map
-                        console.log('✅ Showing Best Sellers, Hiding Map');
+                        // Show Best Sellers items, hide Map
+                        console.log('✅ Showing Best Sellers');
+
+                        const bestSellersContainer = document.querySelector('.best-sellers-container');
+
+                        if (bestSellersContainer) {
+                            bestSellersContainer.style.setProperty('display', 'flex', 'important');
+                        }
 
                         mapSection.classList.remove('active');
                         mapSection.style.setProperty('display', 'none', 'important');
