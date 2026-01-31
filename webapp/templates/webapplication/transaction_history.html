@@ -1,4 +1,6 @@
 {% load static %}
+{% extends 'food_establishment_dashboard.html' %}
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,15 +235,13 @@
 
         .transaction-items {
             margin-top: 16px;
-            padding-top: 16px;
-            border-top: 2px solid #e5e7eb;
         }
 
         .transaction-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 10px;
             background: white;
             border-radius: 6px;
             margin-bottom: 8px;
@@ -250,7 +250,7 @@
         .item-name {
             font-weight: 600;
             color: #1a1a1a;
-            font-size: 14px;
+            margin-bottom: 4px;
         }
 
         .item-quantity {
@@ -261,46 +261,29 @@
         .item-price {
             font-weight: 700;
             color: #B71C1C;
-            font-size: 14px;
+            font-size: 15px;
         }
 
-        .empty-state {
+        .loading-state, .empty-state {
             text-align: center;
             padding: 60px 20px;
         }
 
-        .empty-state i {
+        .loading-state i, .empty-state i {
             font-size: 64px;
             color: #d1d5db;
             margin-bottom: 16px;
         }
 
+        .loading-state p, .empty-state h3, .empty-state p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
         .empty-state h3 {
             font-size: 24px;
             font-weight: 700;
-            color: #1a1a1a;
             margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: #6b7280;
-            font-size: 16px;
-        }
-
-        .loading-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .loading-state i {
-            font-size: 48px;
-            color: #B71C1C;
-            margin-bottom: 16px;
-        }
-
-        .loading-state p {
-            color: #6b7280;
-            font-size: 16px;
         }
 
         @media (max-width: 768px) {
@@ -309,7 +292,7 @@
             }
 
             .page-header {
-                padding: 20px;
+                padding: 24px;
             }
 
             .transactions-content {
@@ -320,13 +303,13 @@
                 font-size: 24px;
             }
 
-            .stat-value {
-                font-size: 24px;
-            }
-
             .transactions-header {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -335,19 +318,50 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="{% url 'kabsueats_home' %}" class="navbar-logo">
+            <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
                 KabsuEats
             </a>
             <div class="navbar-actions">
-                <a href="{% url 'food_establishment_dashboard' %}" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 14px;">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                <!-- Orders Button -->
+                <a href="{% url 'orders_list' %}" class="nav-icon-btn" title="Orders" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="nav-btn-label">Orders</span>
                 </a>
-                <form method="POST" action="{% url 'logout_owner' %}" style="margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit" style="background: transparent; border: none; color: #1a1a1a; cursor: pointer; font-weight: 600; font-size: 14px; padding: 8px 16px;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+
+                <!-- Transaction History Button -->
+                <a href="{% url 'transaction_history' %}" class="nav-icon-btn" title="Transaction History" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-history"></i>
+                    <span class="nav-btn-label">Transactions</span>
+                </a>
+
+                <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
+                        title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+
+                <button class="chat-toggle-btn" onclick="toggleChatPanel()" id="chatToggleBtn" title="Messages">
+                    <i class="fas fa-envelope"></i>
+                    <span class="chat-badge" id="chatBadge" style="display: none;">0</span>
+                </button>
+
+                <div class="navbar-dropdown">
+                    <button class="navbar-btn" onclick="toggleDropdown()" title="Menu">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ establishment.name }}</span>
+                        <i class="fas fa-chevron-down"></i>
                     </button>
-                </form>
+                    <div class="navbar-menu" id="navMenu">
+                        <a href="#" onclick="showDeleteConfirmation(event)" class="delete-establishment-link">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Delete Establishment</span>
+                        </a>
+                        <a href="{% url 'logout_owner' %}" class="logout-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -577,3 +591,4 @@
     </script>
 </body>
 </html>
+{% endblock %}
