@@ -210,7 +210,265 @@
             border-color: #E9A420;
         }
 
-        /* ✅ NEW: Layout Settings Button and Controls */
+        @media (max-width: 768px) {
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .location-route-btn {
+                top: 80px;
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .leaflet-routing-container {
+                max-width: 280px !important;
+                font-size: 11px !important;
+            }
+
+            .establishments-section-title {
+                font-size: 22px;
+                margin: 20px 0 15px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .scroll-to-top {
+                bottom: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .establishments-section-title {
+                font-size: 20px;
+            }
+        }
+
+        /* View Selector Button - Smaller, Cleaner Design */
+        .view-selector-container {
+            display: flex;
+            justify-content: flex-start;
+            margin: 15px 0 12px 0;
+            padding: 0;
+        }
+
+        .view-dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Container for left-aligned dropdown above map */
+        .dropdown-container-left {
+            display: flex;
+            justify-content: flex-start;
+            margin: 20px 0 10px 0;
+            padding: 0 20px;
+        }
+
+        .view-dropdown-button {
+            background: linear-gradient(135deg, #B71C1C 0%, #9c1919 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(183, 28, 28, 0.2);
+            transition: all 0.3s ease;
+            min-width: 150px;
+            justify-content: space-between;
+        }
+
+        .view-dropdown-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(183, 28, 28, 0.3);
+            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+        }
+
+        .view-dropdown-button:active {
+            transform: translateY(0);
+        }
+
+        .view-dropdown-button-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .view-dropdown-button i.fa-chevron-down {
+            font-size: 11px;
+            transition: transform 0.3s ease;
+        }
+
+        .view-dropdown-button.open i.fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        .view-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            min-width: 250px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: 1px solid #e5e7eb;
+        }
+
+        .view-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .view-dropdown-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+            background: transparent;
+        }
+
+        .view-dropdown-option:last-child {
+            border-bottom: none;
+        }
+
+        .view-dropdown-option:hover {
+            background: transparent;
+            padding-left: 20px;
+        }
+
+        .view-dropdown-option-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .view-dropdown-option-icon.map {
+            color: #6b7280;
+        }
+
+        .view-dropdown-option-icon.bestsellers {
+            color: #6b7280;
+        }
+
+        .view-dropdown-option-content {
+            flex: 1;
+        }
+
+        .view-dropdown-option-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+
+        .view-dropdown-option-desc {
+            font-size: 11px;
+            color: #9ca3af;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 768px) {
+            .view-dropdown-button {
+                font-size: 13px;
+                padding: 9px 14px;
+                min-width: 140px;
+            }
+
+            .view-dropdown-menu {
+                min-width: 240px;
+            }
+
+            .view-dropdown-option {
+                padding: 11px 14px;
+            }
+
+            .dropdown-container-left {
+                padding: 0 15px;
+                margin: 12px 0 8px 0;
+            }
+
+            .view-selector-container {
+                margin: 12px 0 8px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .view-dropdown-button {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-width: 130px;
+            }
+
+            .view-dropdown-menu {
+                min-width: 100%;
+                max-width: 250px;
+            }
+
+            .dropdown-container-left {
+                padding: 0 10px;
+                margin: 10px 0 5px 0;
+            }
+
+            .view-selector-container {
+                margin: 10px 0 6px 0;
+            }
+        }
+
+        /* Map Section Styles */
+        #mapSection {
+            display: none;
+            width: 100%;
+            min-height: 600px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        #mapSection.active {
+            display: block !important;
+        }
+
+        #establishmentsMap {
+            height: 600px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #toggleMapBtn {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            #establishmentsMap {
+                height: 450px;
+            }
+        }
+
+        /* ✅ Layout Settings Button */
         .view-selector-container {
             display: flex;
             justify-content: flex-start;
@@ -257,7 +515,7 @@
             background: #f7fafc !important;
         }
 
-        /* ✅ NEW: Grid Layout Styles */
+        /* ✅ Grid Layout Styles */
         .best-sellers-scroll.grid-layout {
             display: grid !important;
             grid-template-columns: repeat(5, 1fr);
@@ -306,128 +564,103 @@
         }
     </style>
 </head>
-
 <body>
-    {% block content %}
-    <div class="main-content">
-        <!-- FIXED HEADER -->
-        <div class="search-and-filters-wrapper">
-            <!-- LEFT: Logo -->
-            <div class="header-left">
-                <div class="title_kabsueats">
-                    <a href="{% url 'kabsueats_home' %}">
-                        <h2>
-                            <i class="fas fa-utensils" style="color: #B71C1C;"></i>
-                            KabsuEats
-                        </h2>
-                    </a>
-                </div>
-            </div>
+    <!-- Messages Notification Section -->
+    {% if messages %}
+    <div class="messages-container" id="messagesContainer">
+        {% for message in messages %}
+        <div class="message-alert {{ message.tags|default:'info' }}">
+            <span class="message-icon">
+                {% if 'success' in message.tags %}
+                    <i class="fas fa-check-circle"></i>
+                {% elif 'error' in message.tags %}
+                    <i class="fas fa-exclamation-circle"></i>
+                {% elif 'warning' in message.tags %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                    <i class="fas fa-info-circle"></i>
+                {% endif %}
+            </span>
+            <span class="message-text">{{ message }}</span>
+            <button class="message-close" onclick="dismissMessage(this)" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-            <!-- CENTER-LEFT: Search Bar -->
-            <div class="header-center">
-                <div class="search_container">
-                    <div class="search_wrapper">
-                        <input
-                            type="text"
-                            id="searchInput"
-                            placeholder="Search food establishments..."
-                            onkeyup="toggleSearchButton()"
-                            onkeydown="if(event.key === 'Enter') applyFilters()"
-                        />
-                        <button class="search_button" onclick="applyFilters()" disabled>
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT: Navigation Links -->
-            <div class="header-right">
-                <div class="nav_buttons">
-                    <button class="pagelinks icon_home active" onclick="openPage(event, 'Home')" id="defaultOpen">
-                        <i class="fas fa-home"></i>
-                        <span>Home</span>
-                    </button>
-
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'user_orders' %}" class="pagelinks">
-                            <i class="fas fa-receipt"></i>
-                            <span>Orders</span>
-                        </a>
-
-                        <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span>Cart</span>
-                            <span class="cart-badge" id="cartBadge">0</span>
-                        </a>
-
-                        <div class="user-dropdown">
-                            <button class="pagelinks user-button">
-                                {% if user.profile_picture %}
-                                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="user-avatar">
-                                {% else %}
-                                    <i class="fas fa-user-circle"></i>
-                                {% endif %}
-                                <span>{{ user.first_name|default:user.username }}</span>
-                                <i class="fas fa-chevron-down dropdown-arrow"></i>
-                            </button>
-                            <div class="user-dropdown-menu">
-                                <a href="{% url 'profile' %}" class="dropdown-item">
-                                    <i class="fas fa-user"></i>
-                                    <span>My Profile</span>
-                                </a>
-                                <a href="{% url 'logout' %}" class="dropdown-item logout">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    <span>Logout</span>
-                                </a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'user_login_register' %}" class="pagelinks">
-                            <i class="fas fa-sign-in-alt"></i>
-                            <span>Login</span>
-                        </a>
-                    {% endif %}
-                </div>
+    <!-- Header Section -->
+    <header class="search-and-filters-wrapper">
+        <div class="header-left">
+            <div class="title_kabsueats">
+                <a href="{% url 'kabsueats_home' %}" class="nav_button"><h2>KabsuEats</h2></a>
             </div>
         </div>
 
-        <!-- MAIN CONTENT AREA -->
-        <div id="Home" class="pagecontent">
-            <!-- Filter Container -->
-            <div class="filter_container">
-                <select id="statusFilter" class="filter_dropdown" onchange="applyFilters()">
-                    <option value="">All Status</option>
-                    <option value="Open">Open</option>
-                    <option value="Closed">Closed</option>
-                </select>
-
-                <select id="alphabetFilter" class="filter_dropdown" onchange="applyFilters()">
-                    <option value="">Sort A-Z</option>
-                    {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
-                        <option value="{{ letter|lower }}">{{ letter }}</option>
-                    {% endfor %}
-                </select>
-
-                <select id="distanceFilter" class="filter_dropdown" onchange="applyFilters()">
-                    <option value="">Sort by Distance</option>
-                    <option value="nearest">Nearest First</option>
-                    <option value="farthest">Farthest First</option>
-                </select>
-
-                <select id="ratingsFilter" class="filter_dropdown" onchange="applyFilters()">
-                    <option value="">Sort by Rating</option>
-                    <option value="highest">Highest First</option>
-                    <option value="lowest">Lowest First</option>
-                </select>
-
-                <select id="categoryFilter" class="filter_dropdown" onchange="applyFilters()">
-                    <option value="">All Categories</option>
-                    <option value="karenderya">Karenderya</option>
-                    <option value="cafe">Café</option>
-                </select>
+    {% block search_visibility_control %}
+        {% if show_search|default:True %}
+        <div class="header-center">
+            <div class="search_container">
+                <i class="fas fa-search search-icon"></i>
+                <form id="search-form" onsubmit="event.preventDefault();">
+                    <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
+                           value="{{ q|default_if_none:'' }}" oninput="applyFilters();" />
+                </form>
             </div>
+        </div>
+        {% endif %}
+    {% endblock search_visibility_control %}
+
+        <div class="Home_buttons">
+            <div class="auth_links_Home_About">
+                {% block extra_nav_buttons %}{% endblock %}
+            </div>
+        </div>
+
+        <div class="header-right">
+            {% if user.is_authenticated %}
+            <div class="cart_client">
+                <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
+                </a>
+            </div>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                <div class="profile-container">
+                    <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
+                    <div id="userDropdown" class="dropdown-menu">
+                        <a href="#" onclick="openSettingsModal(event)"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="{% url 'user_logout' %}"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="auth_links">
+                    <a href="{% url 'user_login_register' %}" class="auth_link">Sign up</a>
+                    <a href="{% url 'user_login_register' %}" class="login_button">Log In</a>
+                </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="main-content">
+        {% block content %}
+        <div class="pagecontent" id="Home">
+
+            <div class="welcome-hero-section">
+                {% if user.is_authenticated %}
+                    <h1 class="hero-title">Dashboard</h1>
+                    <h1 class="hero-title">Welcome to kabsuEats</h1>
+                    <p class="hero-subtitle">What delicious food are you craving today? Explore your favorite spots or try something new!</p>
+                {% else %}
+                    <h1 class="hero-title">Landing</h1>
+                    <h2 class="hero-title">Your one-stop <span class="highlight-food">food</span> guide</h2>
+                    <p class="hero-subtitle">Find the best restaurants, cafes, and food stalls near you.</p>
+                {% endif %}
+            </div>
+
 
             <!-- Best Sellers Section -->
             <div class="best-sellers-section" id="bestSellersSection">
@@ -439,7 +672,7 @@
                     <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
                 </div>
 
-                <!-- ✅ UPDATED: View Selector with Layout Settings Button -->
+                <!-- View Selector Button - Positioned below header, left aligned -->
                 <div class="view-selector-container">
                     <div class="view-dropdown-wrapper">
                         <button class="view-dropdown-button" id="viewDropdownBtn">
@@ -466,13 +699,13 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
                     <!-- ✅ NEW: Layout Settings Button -->
                     <button class="layout-settings-btn" id="layoutSettingsBtn" title="Toggle Layout">
                         <i class="fas fa-th"></i>
                         <span>Grid View</span>
                     </button>
-                </div>
 
                 <!-- Map Section (Hidden by default) - NOW INSIDE BEST SELLERS SECTION -->
                 <div id="mapSection" style="display: none; margin: 20px 0;">
@@ -485,7 +718,7 @@
                 <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
                 <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
-                <!-- ✅ UPDATED: Best Sellers Items Container with grid-mode class support -->
+                <!-- Best Sellers Items Container -->
                 <div class="best-sellers-container" id="bestSellersContainer">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
@@ -506,452 +739,482 @@
                 </div>
             </div>
 
-            <!-- FOOD ESTABLISHMENTS SECTION -->
-            <h1 class="establishments-section-title">Food Establishments</h1>
+            <!-- ✅ NEW: Establishments Section Title -->
+            <h2 class="establishments-section-title">Food Establishments</h2>
 
-            <div class="nearest_slidescontainer">
-                {% for establishment in establishments %}
-                <div class="food-establishment-item"
-                     data-name="{{ establishment.business_name|lower }}"
-                     data-status="{{ establishment.get_status }}"
-                     data-rating="{{ establishment.average_rating|default:0 }}"
-                     data-distance="{{ establishment.distance|default:'9999' }}"
-                     data-category="{{ establishment.food_category.name|lower }}"
-                     data-lat="{{ establishment.latitude }}"
-                     data-lng="{{ establishment.longitude }}">
-
-                    <div class="establishment-card">
-                        <div class="establishment-image-container">
-                            {% if establishment.profile_picture %}
-                                <img src="{{ establishment.profile_picture.url }}" alt="{{ establishment.business_name }}" class="establishment-image">
-                            {% else %}
-                                <img src="{% static 'images/default-establishment.jpg' %}" alt="{{ establishment.business_name }}" class="establishment-image">
-                            {% endif %}
-
-                            <div class="status-badge {% if establishment.get_status == 'Open' %}status-open{% else %}status-closed{% endif %}">
-                                <span class="status-indicator"
-                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                                      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-                                    {{ establishment.get_status }}
-                                </span>
-                            </div>
-
-                            {% if establishment.average_rating %}
-                            <div class="rating-badge">
-                                <i class="fas fa-star"></i>
-                                <span>{{ establishment.average_rating|floatformat:1 }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="establishment-content">
-                            <div class="establishment-header">
-                                <h3 class="establishment-name">{{ establishment.business_name }}</h3>
-                                <span class="establishment-category">
-                                    <i class="fas fa-utensils"></i>
-                                    {{ establishment.food_category.name }}
-                                </span>
-                            </div>
-
-                            <div class="establishment-details">
-                                <div class="detail-item">
-                                    <i class="fas fa-clock"></i>
-                                    <span>{{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}</span>
-                                </div>
-
-                                {% if establishment.distance %}
-                                <div class="detail-item">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span>{{ establishment.distance|floatformat:2 }} km away</span>
-                                </div>
-                                {% endif %}
-
-                                <div class="detail-item">
-                                    <i class="fas fa-comment-dots"></i>
-                                    <span>{{ establishment.review_count|default:0 }} review{{ establishment.review_count|pluralize }}</span>
-                                </div>
-                            </div>
-
-                            <a href="{% url 'food_establishment_details' establishment.id %}" class="view-menu-btn">
-                                <i class="fas fa-eye"></i>
-                                View Menu
-                            </a>
-                        </div>
-                    </div>
+            {% block filters %}
+            <!-- ✅ REPOSITIONED: Filters moved here, right above establishments -->
+            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
+                <!-- Filter Dropdowns -->
+                <div class="filter_container" style="margin: 0;">
+                <div class="select_wrapper">
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">Status</option>
+                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
+                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
+                    </select>
                 </div>
-                {% empty %}
-                <p>No food establishments available.</p>
-                {% endfor %}
+                <div class="select_wrapper">
+                    <select id="alphabetFilter" onchange="applyFilters()">
+                        <option value="">Alphabetical</option>
+                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="distanceFilter" onchange="applyFilters()">
+                        <option value="">Distance</option>
+                        <option value="nearest">Nearest to Farthest</option>
+                        <option value="farthest">Farthest to Nearest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="ratingsFilter" onchange="applyFilters()">
+                        <option value="">Ratings</option>
+                        <option value="highest">Highest to Lowest</option>
+                        <option value="lowest">Lowest to Lowest</option>
+                    </select>
+                </div>
+                <div class="select_wrapper">
+                    <select id="categoryFilter" onchange="applyFilters()">
+                        <option value="">Categories</option>
+                        {% for cat in all_categories %}
+                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
+            </div>
+            {% endblock %}
 
-            <!-- No Results Message -->
-            <div id="noResultsMessage" style="display: none; text-align: center; margin: 40px 0;">
-                <i class="fas fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 16px;"></i>
-                <h3 style="color: #4a5568; font-size: 20px; margin-bottom: 8px;">No establishments found</h3>
-                <p style="color: #718096;">Try adjusting your filters or search term</p>
+            <!-- Establishments List -->
+            <div class="nearest_container">
+                <div class="nearest_slidescontainer">
+                    <p id="noResultsMessage" class="no-results-message" style="display: none;">No food establishments found matching your criteria.</p>
+                    {% if food_establishments %}
+                        {% for establishment in food_establishments %}
+                            {% if establishment.status != 'Disabled' %}
+                                <div class="nearest_box food-establishment-item"
+                                     data-name="{{ establishment.name|lower }}"
+                                     data-lat="{{ establishment.latitude }}"
+                                     data-lng="{{ establishment.longitude }}"
+                                     data-status="{{ establishment.calculated_status }}"
+                                     data-category="{{ establishment.category.name|default_if_none:''|lower }}"
+                                     data-distance="{{ establishment.distance|floatformat:2 }}"
+                                     data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
+                                     data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                     data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+
+                                    <a href="{% url 'food_establishment_details' establishment.id %}">
+                                        {% if establishment.image %}
+                                            <img class="food-image" src="{{ establishment.image.url }}" alt="{{ establishment.name }}" />
+                                        {% else %}
+                                            <img class="food-image" src="{% static 'images/menu.png' %}" alt="Default" />
+                                        {% endif %}
+                                    </a>
+
+                                    {% if establishment.last_updated|recently_updated %}
+                                        <div class="update-indicator">
+                                            Updated {{ establishment.last_updated|timesince }} ago
+                                        </div>
+                                    {% endif %}
+
+                                   <span class="status-indicator {{ establishment.calculated_status|lower }}"
+                                         data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                         data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                       <span class="dot"></span>
+                                       <span class="status-text">{{ establishment.calculated_status }}</span>
+                                   </span>
+
+                                    {% if establishment.category %}
+                                        <div class="category-display">{{ establishment.category.name }}</div>
+                                    {% endif %}
+
+                                    <div class="food-name">
+                                        <div class="d-flex align-items-center justify-content-between w-100">
+                                            <div class="star-rating-display">
+                                                {% if establishment.average_rating > 0 %}
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= establishment.average_rating %}
+                                                            <i class="fas fa-star"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    <span class="rating-value">{{ establishment.average_rating|floatformat:1 }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="review-count">
+                                            ({{ establishment.review_count }} Reviews)
+                                        </div>
+                                        <p class="mb-0">{{ establishment.name }}</p>
+                                        {% if establishment.amenities.all %}
+                                            <div class="amenities-inline">
+                                                <small>
+                                                    Amenity Offer:
+                                                    {% for amenity in establishment.amenities.all %}
+                                                        {{ amenity.name }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="distance-info">
+                                        {% if establishment.distance_meters %}
+                                            <small>Distance from CvSU-Bacoor: {{ establishment.distance_meters|floatformat:0 }} meters</small>
+                                        {% else %}
+                                            <small>Distance: Not available</small>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if establishment.payment_methods %}
+                                        <div class="payment-methods">
+                                            <small>Payment Methods : {{ establishment.payment_methods }}</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p id="noInitialEstablishments" class="no-establishments-found">No food establishments found.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
-    {% endblock %}
+        {% endblock %}
+    </main>
 
-    {% block javascript %}
-    <!-- Leaflet and routing libraries -->
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
+            <div class="Title_h2"><h2>Update Profile</h2></div>
+
+            <form id="profileUpdateForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="profile-form-group" style="text-align: center;">
+                    <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
+                    <img id="profileImagePreview"
+                        src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                        alt="Current Profile">
+                </div>
+
+                <div class="profile-form-group">
+                    <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
+                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
+                </div>
+
+                <div class="profile-form-group">
+                    <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
+                    <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
+                </div>
+
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+                <button type="submit" class="profile-form-submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/kabsueats_map.js' %}"></script>
+    <script src="{% static 'js/kabsueats.js' %}"></script>
+    <script src="{% static 'js/status_updater.js' %}"></script>
+
+    {% block extra_js %}
     <script>
-        // ✅ Set user authentication status globally
-        const IS_USER_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+        // JavaScript constants for Cart and Auth
+        const UPDATE_PROFILE_URL = "{% url 'update_profile' %}";
+        const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
+        const VIEW_CART_URL = "{% url 'view_cart' %}";
+        const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
 
-        // ✅ Scroll to Top Button
-        const scrollToTopBtn = document.getElementById('scrollToTopBtn');
-
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 300) {
-                scrollToTopBtn.classList.add('show');
-            } else {
-                scrollToTopBtn.classList.remove('show');
-            }
-        });
-
-        scrollToTopBtn.addEventListener('click', function() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        });
-
-        // ✅ User Dropdown Toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const userDropdown = document.querySelector('.user-dropdown');
-            if (userDropdown) {
-                const userButton = userDropdown.querySelector('.user-button');
-                const dropdownMenu = userDropdown.querySelector('.user-dropdown-menu');
-
-                userButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('show');
-                });
-
-                document.addEventListener('click', function() {
-                    dropdownMenu.classList.remove('show');
-                });
-            }
-        });
-
-        // ✅ Update Cart Count
-        async function updateCartCount() {
-            try {
-                const response = await fetch('/cart/count/');
-                const data = await response.json();
-                const cartBadge = document.getElementById('cartBadge');
-                if (cartBadge && data.count !== undefined) {
-                    cartBadge.textContent = data.count;
-                    if (data.count > 0) {
-                        cartBadge.classList.add('show');
-                    } else {
-                        cartBadge.classList.remove('show');
-                    }
+        // updateCartBadge function
+        function updateCartBadge(count) {
+            const badge = document.getElementById('cart-count-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error updating cart count:', error);
             }
         }
 
-        // ✅ Initialize cart count on page load
-        if (IS_USER_AUTHENTICATED) {
-            updateCartCount();
-        }
+        // Message Notification Auto-Dismiss and Manual Close
+        document.addEventListener('DOMContentLoaded', function() {
+            if (IS_USER_AUTHENTICATED) {
+                updateCartBadge({{ cart_count|default:0 }});
+            }
 
-        // ========================================
-        // ✅ LEAFLET MAP INITIALIZATION
-        // ========================================
-        let establishmentsMap;
-        let userMarker;
-        let routingControl;
-        let isRouteActive = false;
+            const messagesContainer = document.getElementById('messagesContainer');
+            if (messagesContainer) {
+                setTimeout(function() {
+                    const messages = messagesContainer.querySelectorAll('.message-alert');
+                    messages.forEach(function(message) {
+                        message.classList.add('fade-out');
+                        setTimeout(function() {
+                            message.remove();
+                            if (messagesContainer.querySelectorAll('.message-alert').length === 0) {
+                                messagesContainer.remove();
+                            }
+                        }, 300);
+                    });
+                }, 5000);
+            }
 
-        function initializeMap() {
-            const mapElement = document.getElementById('establishmentsMap');
-            if (!mapElement || establishmentsMap) return;
+            // Initialize location route button
+            initLocationRouteButton();
 
-            establishmentsMap = L.map('establishmentsMap').setView([14.4791, 120.9899], 15);
+            // Initialize red dropdown button
+            initViewDropdown();
+        });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(establishmentsMap);
+        // Red Dropdown Toggle & View Switcher
+        function initViewDropdown() {
+            const dropdownBtn = document.getElementById('viewDropdownBtn');
+            const dropdownMenu = document.getElementById('viewDropdownMenu');
+            const currentViewText = document.getElementById('currentViewText');
+            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
 
-            const establishments = [
-                {% for est in establishments %}
-                {
-                    name: "{{ est.business_name|escapejs }}",
-                    lat: {{ est.latitude }},
-                    lng: {{ est.longitude }},
-                    category: "{{ est.food_category.name|escapejs }}",
-                    status: "{{ est.get_status }}",
-                    url: "{% url 'food_establishment_details' est.id %}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ];
+            const mapSection = document.getElementById('mapSection');
+            const bestSellersSection = document.getElementById('bestSellersSection');
+            const toggleMapBtn = document.getElementById('toggleMapBtn');
 
-            establishments.forEach(est => {
-                const markerColor = est.status === 'Open' ? '#10b981' : '#ef4444';
-                const marker = L.marker([est.lat, est.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div style="background-color: ${markerColor}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">${est.category.charAt(0).toUpperCase()}</div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(establishmentsMap);
+            if (!dropdownBtn || !dropdownMenu) return;
 
-                marker.bindPopup(`
-                    <div style="text-align: center; font-family: 'Poppins', sans-serif;">
-                        <h4 style="margin: 0 0 8px 0; color: #2d3748; font-size: 14px; font-weight: 600;">${est.name}</h4>
-                        <p style="margin: 0 0 6px 0; color: #718096; font-size: 12px;">${est.category}</p>
-                        <span style="display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; ${est.status === 'Open' ? 'background: #c6f6d5; color: #22543d;' : 'background: #fed7d7; color: #742a2a;'}">${est.status}</span>
-                        <br><br>
-                        <a href="${est.url}" style="display: inline-block; background: #B71C1C; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
-                    </div>
-                `);
+            // Toggle dropdown on button click
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownBtn.classList.toggle('open');
+                dropdownMenu.classList.toggle('show');
             });
 
-            setTimeout(() => {
-                establishmentsMap.invalidateSize();
-            }, 300);
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownBtn.classList.remove('open');
+                    dropdownMenu.classList.remove('show');
+                }
+            });
 
-            const myLocationBtn = L.control({position: 'topright'});
-            myLocationBtn.onAdd = function(map) {
-                const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
-                btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
-                btn.style.backgroundColor = 'white';
-                btn.style.width = '40px';
-                btn.style.height = '40px';
-                btn.style.border = '2px solid rgba(0,0,0,0.2)';
-                btn.style.borderRadius = '4px';
-                btn.style.cursor = 'pointer';
-                btn.style.fontSize = '18px';
-                btn.style.display = 'flex';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.title = 'Show My Location';
+            // Handle option selection
+            dropdownOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const viewType = this.dataset.view;
+                    const viewTitle = this.querySelector('.view-dropdown-option-title').textContent;
 
-                btn.onclick = function() {
-                    if (navigator.geolocation) {
-                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                        navigator.geolocation.getCurrentPosition(
-                            position => {
-                                const lat = position.coords.latitude;
-                                const lng = position.coords.longitude;
+                    // Update button text
+                    currentViewText.textContent = viewTitle;
 
-                                if (userMarker) {
-                                    establishmentsMap.removeLayer(userMarker);
-                                }
+                    // Close dropdown
+                    dropdownBtn.classList.remove('open');
+                    dropdownMenu.classList.remove('show');
 
-                                userMarker = L.marker([lat, lng], {
-                                    icon: L.divIcon({
-                                        className: 'user-marker',
-                                        html: '<div style="background: #4285F4; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
-                                        iconSize: [20, 20],
-                                        iconAnchor: [10, 10]
-                                    })
-                                }).addTo(establishmentsMap);
+                    if (viewType === 'map') {
+                        // Show Map, hide ONLY best sellers items (not the header/button)
+                        console.log('✅ Showing Map, Keeping Button & Establishments');
 
-                                userMarker.bindPopup('<strong>You are here</strong>').openPopup();
-                                establishmentsMap.setView([lat, lng], 15);
-                                btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
-                            },
-                            error => {
-                                alert('Unable to retrieve your location. Please enable location services.');
-                                btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
+                        // Hide only the best sellers container (items), keep header and button visible
+                        const bestSellersContainer = document.querySelector('.best-sellers-container');
+                        const bestSellersHeader = document.querySelector('.best-sellers-header');
+
+                        if (bestSellersContainer) {
+                            bestSellersContainer.style.setProperty('display', 'none', 'important');
+                        }
+
+                        // Keep the section and header visible (button is inside section)
+                        bestSellersSection.style.setProperty('display', 'block', 'important');
+
+                        // Show map
+                        mapSection.style.setProperty('display', 'block', 'important');
+
+                        if (toggleMapBtn) {
+                            if (!mapSection.classList.contains('active')) {
+                                setTimeout(() => {
+                                    toggleMapBtn.click();
+                                }, 100);
                             }
-                        );
-                    } else {
-                        alert('Geolocation is not supported by your browser.');
-                    }
-                };
+                        }
 
-                return btn;
-            };
-            myLocationBtn.addTo(establishmentsMap);
+                    } else if (viewType === 'bestsellers') {
+                        // Show Best Sellers items, hide Map
+                        console.log('✅ Showing Best Sellers');
+
+                        const bestSellersContainer = document.querySelector('.best-sellers-container');
+
+                        if (bestSellersContainer) {
+                            bestSellersContainer.style.setProperty('display', 'flex', 'important');
+                        }
+
+                        mapSection.classList.remove('active');
+                        mapSection.style.setProperty('display', 'none', 'important');
+                        bestSellersSection.style.setProperty('display', 'block', 'important');
+                    }
+                });
+            });
         }
 
-        // ✅ View Dropdown Toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const viewDropdownBtn = document.getElementById('viewDropdownBtn');
-            const viewDropdownMenu = document.getElementById('viewDropdownMenu');
-            const currentViewText = document.getElementById('currentViewText');
-            const mapSection = document.getElementById('mapSection');
-            const bestSellersContainer = document.querySelector('.best-sellers-container');
+        function dismissMessage(button) {
+            const message = button.closest('.message-alert');
+            const container = document.getElementById('messagesContainer');
 
-            if (viewDropdownBtn && viewDropdownMenu) {
-                viewDropdownBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    viewDropdownMenu.classList.toggle('show');
-                });
+            message.classList.add('fade-out');
+            setTimeout(function() {
+                message.remove();
+                if (container && container.querySelectorAll('.message-alert').length === 0) {
+                    container.remove();
+                }
+            }, 300);
+        }
 
-                document.addEventListener('click', function() {
-                    viewDropdownMenu.classList.remove('show');
-                });
-
-                const viewOptions = document.querySelectorAll('.view-dropdown-option');
-                viewOptions.forEach(option => {
-                    option.addEventListener('click', function() {
-                        const view = this.dataset.view;
-                        const title = this.querySelector('.view-dropdown-option-title').textContent;
-
-                        currentViewText.textContent = title;
-                        viewDropdownMenu.classList.remove('show');
-
-                        if (view === 'map') {
-                            mapSection.style.display = 'block';
-                            bestSellersContainer.style.display = 'none';
-                            if (!establishmentsMap) {
-                                initializeMap();
-                            } else {
-                                setTimeout(() => establishmentsMap.invalidateSize(), 100);
-                            }
-                        } else if (view === 'bestsellers') {
-                            mapSection.style.display = 'none';
-                            bestSellersContainer.style.display = 'flex';
-                        }
-                    });
-                });
-            }
-
-            // ✅ Location Route Button
+        // Location Route Button
+        function initLocationRouteButton() {
             const routeBtn = document.getElementById('locationRouteBtn');
-            if (routeBtn && mapSection) {
-                const observer = new MutationObserver(mutations => {
-                    mutations.forEach(mutation => {
-                        if (mutation.attributeName === 'style') {
-                            const isMapVisible = mapSection.style.display !== 'none';
-                            routeBtn.style.display = isMapVisible ? 'flex' : 'none';
+            const mapSection = document.getElementById('mapSection');
+
+            if (!routeBtn) return;
+
+            let routingControl = null;
+            let isRouteActive = false;
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'style') {
+                        const isMapVisible = mapSection.style.display !== 'none';
+                        routeBtn.style.display = isMapVisible ? 'flex' : 'none';
+                    }
+                });
+            });
+
+            observer.observe(mapSection, { attributes: true });
+
+            routeBtn.addEventListener('click', function() {
+                if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
+                    alert('Map is not initialized. Please wait.');
+                    return;
+                }
+
+                if (typeof userMarker === 'undefined' || !userMarker) {
+                    alert('Please click "Show My Location" button on the map first to enable your location.');
+                    return;
+                }
+
+                if (isRouteActive && routingControl) {
+                    establishmentsMap.removeControl(routingControl);
+                    routingControl = null;
+                    isRouteActive = false;
+                    routeBtn.classList.remove('active');
+                    routeBtn.title = 'Show Route to Establishment';
+                } else {
+                    const establishments = document.querySelectorAll('.food-establishment-item');
+                    if (establishments.length === 0) {
+                        alert('No establishments available.');
+                        return;
+                    }
+
+                    let targetEstablishment = null;
+                    for (let est of establishments) {
+                        if (est.style.display !== 'none') {
+                            targetEstablishment = est;
+                            break;
                         }
+                    }
+
+                    if (!targetEstablishment) {
+                        alert('No establishment found. Please adjust your filters.');
+                        return;
+                    }
+
+                    const destLat = parseFloat(targetEstablishment.dataset.lat);
+                    const destLng = parseFloat(targetEstablishment.dataset.lng);
+                    const estName = targetEstablishment.dataset.name;
+
+                    if (!destLat || !destLng) {
+                        alert('Invalid establishment location.');
+                        return;
+                    }
+
+                    const userLatLng = userMarker.getLatLng();
+
+                    routingControl = L.Routing.control({
+                        waypoints: [
+                            L.latLng(userLatLng.lat, userLatLng.lng),
+                            L.latLng(destLat, destLng)
+                        ],
+                        routeWhileDragging: false,
+                        addWaypoints: false,
+                        draggableWaypoints: false,
+                        fitSelectedRoutes: true,
+                        showAlternatives: false,
+                        show: true,
+                        lineOptions: {
+                            styles: [{
+                                color: '#E9A420',
+                                opacity: 0.8,
+                                weight: 6
+                            }]
+                        },
+                        createMarker: function(i, waypoint, n) {
+                            let marker;
+                            if (i === 0) {
+                                marker = L.marker(waypoint.latLng, {
+                                    icon: L.divIcon({
+                                        className: 'route-marker-start',
+                                        html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
+                                        iconSize: [30, 30],
+                                        iconAnchor: [15, 15]
+                                    })
+                                });
+                            } else if (i === n - 1) {
+                                marker = L.marker(waypoint.latLng, {
+                                    icon: L.divIcon({
+                                        className: 'route-marker-end',
+                                        html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
+                                        iconSize: [30, 30],
+                                        iconAnchor: [15, 15]
+                                    })
+                                });
+                            }
+                            return marker;
+                        },
+                        router: L.Routing.osrmv1({
+                            serviceUrl: 'https://router.project-osrm.org/route/v1'
+                        })
+                    }).addTo(establishmentsMap);
+
+                    setTimeout(() => {
+                        const container = document.querySelector('.leaflet-routing-container');
+                        if (container) {
+                            container.style.zIndex = '600';
+                            container.style.display = 'block';
+                            container.style.visibility = 'visible';
+                        }
+                    }, 100);
+
+                    isRouteActive = true;
+                    routeBtn.classList.add('active');
+                    routeBtn.title = 'Hide Route';
+
+                    establishmentsMap.fitBounds([
+                        [userLatLng.lat, userLatLng.lng],
+                        [destLat, destLng]
+                    ], {
+                        padding: [80, 80],
+                        maxZoom: 15
                     });
-                });
-
-                observer.observe(mapSection, { attributes: true });
-
-                routeBtn.addEventListener('click', function() {
-                    if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
-                        alert('Map is not initialized. Please wait.');
-                        return;
-                    }
-
-                    if (typeof userMarker === 'undefined' || !userMarker) {
-                        alert('Please click "Show My Location" button on the map first to enable your location.');
-                        return;
-                    }
-
-                    if (isRouteActive && routingControl) {
-                        establishmentsMap.removeControl(routingControl);
-                        routingControl = null;
-                        isRouteActive = false;
-                        routeBtn.classList.remove('active');
-                        routeBtn.title = 'Show Route to Establishment';
-                    } else {
-                        const establishments = document.querySelectorAll('.food-establishment-item');
-                        if (establishments.length === 0) {
-                            alert('No establishments available.');
-                            return;
-                        }
-
-                        let targetEstablishment = null;
-                        for (let est of establishments) {
-                            if (est.style.display !== 'none') {
-                                targetEstablishment = est;
-                                break;
-                            }
-                        }
-
-                        if (!targetEstablishment) {
-                            alert('No establishment found. Please adjust your filters.');
-                            return;
-                        }
-
-                        const destLat = parseFloat(targetEstablishment.dataset.lat);
-                        const destLng = parseFloat(targetEstablishment.dataset.lng);
-                        const estName = targetEstablishment.dataset.name;
-
-                        if (!destLat || !destLng) {
-                            alert('Invalid establishment location.');
-                            return;
-                        }
-
-                        const userLatLng = userMarker.getLatLng();
-
-                        routingControl = L.Routing.control({
-                            waypoints: [
-                                L.latLng(userLatLng.lat, userLatLng.lng),
-                                L.latLng(destLat, destLng)
-                            ],
-                            routeWhileDragging: false,
-                            addWaypoints: false,
-                            draggableWaypoints: false,
-                            fitSelectedRoutes: true,
-                            showAlternatives: false,
-                            show: true,
-                            lineOptions: {
-                                styles: [{
-                                    color: '#E9A420',
-                                    opacity: 0.8,
-                                    weight: 6
-                                }]
-                            },
-                            createMarker: function(i, waypoint, n) {
-                                let marker;
-                                if (i === 0) {
-                                    marker = L.marker(waypoint.latLng, {
-                                        icon: L.divIcon({
-                                            className: 'route-marker-start',
-                                            html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
-                                            iconSize: [30, 30],
-                                            iconAnchor: [15, 15]
-                                        })
-                                    });
-                                } else if (i === n - 1) {
-                                    marker = L.marker(waypoint.latLng, {
-                                        icon: L.divIcon({
-                                            className: 'route-marker-end',
-                                            html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
-                                            iconSize: [30, 30],
-                                            iconAnchor: [15, 15]
-                                        })
-                                    });
-                                }
-                                return marker;
-                            },
-                            router: L.Routing.osrmv1({
-                                serviceUrl: 'https://router.project-osrm.org/route/v1'
-                            })
-                        }).addTo(establishmentsMap);
-
-                        setTimeout(() => {
-                            const container = document.querySelector('.leaflet-routing-container');
-                            if (container) {
-                                container.style.zIndex = '600';
-                                container.style.display = 'block';
-                                container.style.visibility = 'visible';
-                            }
-                        }, 100);
-
-                        isRouteActive = true;
-                        routeBtn.classList.add('active');
-                        routeBtn.title = 'Hide Route';
-
-                        establishmentsMap.fitBounds([
-                            [userLatLng.lat, userLatLng.lng],
-                            [destLat, destLng]
-                        ], {
-                            padding: [80, 80],
-                            maxZoom: 15
-                        });
-                    }
-                });
-            }
-        });
+                }
+            });
+        }
     </script>
 
     <!-- Additional JS libraries -->
