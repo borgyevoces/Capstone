@@ -315,7 +315,7 @@
             <!-- LEFT: Logo -->
             <div class="header-left">
                 <div class="title_kabsueats">
-                    <a href="{% url 'main_app:kabsueats' %}">
+                    <a href="{% url 'kabsueats_home' %}">
                         <h2>
                             <i class="fas fa-utensils" style="color: #B71C1C;"></i>
                             KabsuEats
@@ -351,12 +351,12 @@
                     </button>
 
                     {% if user.is_authenticated %}
-                        <a href="{% url 'main_app:user_orders' %}" class="pagelinks">
+                        <a href="{% url 'user_orders' %}" class="pagelinks">
                             <i class="fas fa-receipt"></i>
                             <span>Orders</span>
                         </a>
 
-                        <a href="{% url 'main_app:cart_view' %}" class="pagelinks cart-link">
+                        <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
                             <i class="fas fa-shopping-cart"></i>
                             <span>Cart</span>
                             <span class="cart-badge" id="cartBadge">0</span>
@@ -373,18 +373,18 @@
                                 <i class="fas fa-chevron-down dropdown-arrow"></i>
                             </button>
                             <div class="user-dropdown-menu">
-                                <a href="{% url 'accounts:profile' %}" class="dropdown-item">
+                                <a href="{% url 'profile' %}" class="dropdown-item">
                                     <i class="fas fa-user"></i>
                                     <span>My Profile</span>
                                 </a>
-                                <a href="{% url 'accounts:logout' %}" class="dropdown-item logout">
+                                <a href="{% url 'logout' %}" class="dropdown-item logout">
                                     <i class="fas fa-sign-out-alt"></i>
                                     <span>Logout</span>
                                 </a>
                             </div>
                         </div>
                     {% else %}
-                        <a href="{% url 'accounts:login_register' %}" class="pagelinks">
+                        <a href="{% url 'user_login_register' %}" class="pagelinks">
                             <i class="fas fa-sign-in-alt"></i>
                             <span>Login</span>
                         </a>
@@ -572,7 +572,7 @@
                                 </div>
                             </div>
 
-                            <a href="{% url 'main_app:establishment_details' establishment.id %}" class="view-menu-btn">
+                            <a href="{% url 'food_establishment_details' establishment.id %}" class="view-menu-btn">
                                 <i class="fas fa-eye"></i>
                                 View Menu
                             </a>
@@ -690,7 +690,7 @@
                     lng: {{ est.longitude }},
                     category: "{{ est.food_category.name|escapejs }}",
                     status: "{{ est.get_status }}",
-                    url: "{% url 'main_app:establishment_details' est.id %}"
+                    url: "{% url 'food_establishment_details' est.id %}"
                 }{% if not forloop.last %},{% endif %}
                 {% endfor %}
             ];
