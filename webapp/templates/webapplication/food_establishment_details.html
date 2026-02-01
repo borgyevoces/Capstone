@@ -1073,13 +1073,18 @@
                     <div class="menu-search-bar">
                         <i class="fas fa-search"></i>
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
-                               onkeyup="filterMenuItems()">
+                               oninput="filterMenuItems()">
                     </div>
                     <div class="menu-filters-group">
                         <select id="priceFilter" onchange="filterMenuItems()">
                             <option value="default">Sort by Price</option>
                             <option value="highest">Highest to Lowest</option>
                             <option value="lowest">Lowest to Highest</option>
+                        </select>
+                        <select id="stockFilter" onchange="filterMenuItems()">
+                            <option value="all">Stock Status</option>
+                            <option value="available">Available</option>
+                            <option value="outofstock">Out of Stock</option>
                         </select>
                         <button id="bestSellerFilter" onclick="toggleBestSellerFilter()" type="button"
                                 aria-pressed="false">
@@ -2512,6 +2517,79 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<script>
+// =============================================
+// MENU FILTERS — search, price sort, stock status, best sellers
+// =============================================
+(function() {
+    let bestSellerActive = false;
+
+    // ---- Main filter/sort runner — called by every control ----
+    window.filterMenuItems = function() {
+        const searchVal  = document.getElementById('menuSearchInput').value.trim().toLowerCase();
+        const priceVal   = document.getElementById('priceFilter').value;
+        const stockVal   = document.getElementById('stockFilter').value;
+
+        const menuList   = document.getElementById('menuList');
+        const items      = Array.from(menuList.querySelectorAll('.menu-item'));
+        const noMsg      = document.getElementById('noMenuItemsFound');
+
+        // ---- 1. FILTER: hide items that don't match ----
+        let visibleItems = [];
+
+        items.forEach(function(item) {
+            const name        = (item.getAttribute('data-item-name') || '').toLowerCase();
+            const description = (item.getAttribute('data-item-description') || '').toLowerCase();
+            const quantity    = parseInt(item.getAttribute('data-item-quantity') || 0);
+            const isTopSeller = item.getAttribute('data-is-top-seller') === 'true';
+
+            let show = true;
+
+            // Search: match name OR description
+            if (searchVal && !name.includes(searchVal) && !description.includes(searchVal)) {
+                show = false;
+            }
+
+            // Stock filter
+            if (show && stockVal === 'available' && quantity <= 0)   show = false;
+            if (show && stockVal === 'outofstock' && quantity > 0)   show = false;
+
+            // Best seller toggle
+            if (show && bestSellerActive && !isTopSeller)            show = false;
+
+            item.style.display = show ? '' : 'none';
+            if (show) visibleItems.push(item);
+        });
+
+        // ---- 2. SORT: reorder visible items inside the grid ----
+        if (priceVal === 'highest' || priceVal === 'lowest') {
+            visibleItems.sort(function(a, b) {
+                const priceA = parseFloat(a.getAttribute('data-price') || 0);
+                const priceB = parseFloat(b.getAttribute('data-price') || 0);
+                return (priceVal === 'highest') ? (priceB - priceA) : (priceA - priceB);
+            });
+        }
+
+        // Re-append in sorted order (hidden items stay where they are, won't show)
+        visibleItems.forEach(function(item) {
+            menuList.appendChild(item);
+        });
+
+        // ---- 3. Show/hide "no items found" message ----
+        noMsg.style.display = (visibleItems.length === 0) ? 'block' : 'none';
+    };
+
+    // ---- Best Seller toggle button ----
+    window.toggleBestSellerFilter = function() {
+        const btn = document.getElementById('bestSellerFilter');
+        bestSellerActive = !bestSellerActive;
+        btn.classList.toggle('active', bestSellerActive);
+        btn.setAttribute('aria-pressed', bestSellerActive ? 'true' : 'false');
+        filterMenuItems(); // re-run combined filter
+    };
+})();
 </script>
 
 {% endblock %}
