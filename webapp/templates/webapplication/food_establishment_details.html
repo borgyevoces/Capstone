@@ -961,24 +961,25 @@
             <section class="section-card reviews-section">
                 <h2>Customer Reviews</h2>
 
-                <div class="review-filters">
-                    <button class="btn-review-filter active" data-filter="all">All Reviews</button>
-                    <button class="btn-review-filter" data-filter="good">Good (4-5 <i class="fas fa-star"></i>)</button>
-                    <button class="btn-review-filter" data-filter="bad">Bad (1-3 <i class="fas fa-star"></i>)</button>
-                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                    <div class="review-filters">
+                        <button class="btn-review-filter active" data-filter="all">All Reviews</button>
+                        <button class="btn-review-filter" data-filter="good">Good (4-5 <i class="fas fa-star"></i>)</button>
+                        <button class="btn-review-filter" data-filter="bad">Bad (1-3 <i class="fas fa-star"></i>)</button>
+                    </div>
 
-                {% if user.is_authenticated %}
-                {% if not user_review %}
-                <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
-                {% else %}
-                <p class="text-muted">Your review is highlighted below. Click the pencil icon to edit it.</p>
-                {% endif %}
-                {% else %}
-                <p class="text-muted review-login-prompt">
-                    <br>Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
-                </p>
-                <br>
-                {% endif %}
+                    {% if user.is_authenticated %}
+                    {% if not user_review %}
+                    <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
+                    {% else %}
+                    <p class="text-muted" style="margin: 0;">Your review is highlighted below. Click the pencil icon to edit it.</p>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted review-login-prompt" style="margin: 0;">
+                        Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
+                    </p>
+                    {% endif %}
+                </div>
 
                 <div class="all-reviews-list-wrapper">
                     <div class="all-reviews-list" id="allReviewsList">
