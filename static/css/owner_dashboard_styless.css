@@ -475,18 +475,18 @@ body {
 }
 
 .card-title-center {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
     color: var(--text-dark);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .card-title-center i {
     color: var(--primary);
-    font-size: 26px;
+    font-size: 20px;
 }
 
 /* ==========================================
@@ -1322,8 +1322,8 @@ body {
     /* ✅ Make stats display horizontal (left-right) on desktop */
     .store-stats-display {
         flex-direction: row;
-        max-width: 500px;
-        padding: 18px 24px;
+        max-width: 360px;
+        padding: 10px 16px;
     }
 
     .stat-card {
@@ -1454,20 +1454,20 @@ body {
 
     .card-title-center {
         background: transparent !important;
-        padding: 0 8px 16px !important;
+        padding: 0 8px 14px !important;
         margin: 0 auto !important;
         text-align: center !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 22px !important;
+        font-size: 18px !important;
         font-weight: 700 !important;
         color: var(--text-dark) !important;
     }
 
     .card-title-center i {
         color: var(--primary) !important;
-        font-size: 24px !important;
+        font-size: 20px !important;
     }
 
     /* ✅ MENU GRID - 2 COLUMNS */
@@ -1703,12 +1703,12 @@ body {
     }
 
     .card-title-center {
-        font-size: 20px !important;
-        padding-bottom: 14px !important;
+        font-size: 17px !important;
+        padding-bottom: 12px !important;
     }
 
     .card-title-center i {
-        font-size: 22px !important;
+        font-size: 19px !important;
     }
 
     .store-stats-display {
@@ -1877,12 +1877,12 @@ body {
     }
 
     .card-title-center {
-        font-size: 18px !important;
-        padding-bottom: 12px !important;
+        font-size: 16px !important;
+        padding-bottom: 10px !important;
     }
 
     .card-title-center i {
-        font-size: 20px !important;
+        font-size: 18px !important;
     }
 
     .store-stats-display {
