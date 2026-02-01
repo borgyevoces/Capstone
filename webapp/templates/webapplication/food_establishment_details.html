@@ -278,154 +278,170 @@
         justify-content: flex-start;
     }
 
+    /* Chat Bubble */
     .chat-bubble {
-        position: relative;
+        max-width: 75%;
         padding: 10px 14px;
         border-radius: 18px;
-        max-width: 70%;
         word-wrap: break-word;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: block;
+        position: relative;
     }
 
-    /* Customer's bubble (RIGHT) */
+    /* Customer's bubble - Purple gradient, right-aligned */
     .chat-message.sent .chat-bubble {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-bottom-right-radius: 4px;
-        margin-left: 5px;
+        text-align: left;
     }
 
-    /* Owner's bubble (LEFT) */
+    /* Owner's bubble - Gray, left-aligned */
     .chat-message.received .chat-bubble {
-        background: #fff;
-        color: #333;
-        border: 1px solid #e4e6eb;
+        background: #e4e6eb;
+        color: #050505;
         border-bottom-left-radius: 4px;
-        margin-right: 5px;
+        text-align: left;
     }
 
-    .chat-timestamp {
-        display: block;
-        font-size: 0.7rem;
-        margin-top: 4px;
-        opacity: 0.7;
-    }
-
-    /* Three dots button */
+    /* ✅ Three Dots Button - NAKADIKIT TALAGA SA BUBBLE */
     .message-options-btn {
-        background: none;
+        background: rgba(0, 0, 0, 0.5);
         border: none;
+        color: white;
+        font-size: 14px;
         cursor: pointer;
-        padding: 8px;
-        color: #999;
-        font-size: 1.1rem;
+        padding: 6px 8px;
+        border-radius: 50%;
         opacity: 0;
-        transition: opacity 0.2s, color 0.2s;
+        transition: all 0.2s ease;
+        z-index: 10;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
     }
 
-    .chat-message:hover .message-options-btn {
+    /* For sent messages - button sa KALIWA ng bubble */
+    .chat-message.sent .message-options-btn {
+        order: -1;
+        margin-right: 10px;
+    }
+
+    /* For received messages - button sa KANAN ng bubble */
+    .chat-message.received .message-options-btn {
+        order: 1;
+        margin-left: 10px;
+    }
+
+    /* Show on hover (Desktop) */
+    @media (hover: hover) {
+        .chat-message:hover .message-options-btn {
+            opacity: 1;
+        }
+
+        .message-options-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+    }
+
+    /* Always visible on touch devices when message is active */
+    .chat-message.active .message-options-btn {
         opacity: 1;
     }
 
-    .message-options-btn:hover {
-        color: #667eea;
+    /* Mobile: Show indicator when long-pressing */
+    .chat-message.long-pressing .chat-bubble {
+        transform: scale(0.98);
+        opacity: 0.9;
     }
 
-    /* Context menu */
-    .message-context-menu {
-        position: absolute;
-        background: white;
-        border: 1px solid #e4e6eb;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        padding: 8px 0;
-        z-index: 10000;
-        display: none;
-        min-width: 150px;
+    /* ✅ PINNED MESSAGE INDICATOR */
+    .chat-message.pinned .chat-bubble::before {
+        content: '📌 ';
+        margin-right: 4px;
     }
 
-    .message-context-menu.active {
+    /* Timestamp */
+    .chat-timestamp {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 4px;
         display: block;
     }
 
-    .context-menu-item {
-        padding: 10px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.9rem;
-        transition: background 0.2s;
-    }
-
-    .context-menu-item:hover {
-        background: #f0f2f5;
-    }
-
-    .context-menu-item i {
-        width: 16px;
-        text-align: center;
-    }
-
-    .context-menu-item.pin-item i {
-        color: #667eea;
-    }
-
-    .context-menu-item.unsend-item i {
-        color: #f02849;
-    }
-
-    /* Pinned message indicator */
-    .chat-message.pinned .chat-bubble::before {
-        content: "\f08d";
-        font-family: "Font Awesome 5 Free";
-        font-weight: 900;
-        position: absolute;
-        top: -10px;
-        right: 10px;
-        color: #667eea;
-        font-size: 0.9rem;
-    }
-
-    /* Deleted message style */
-    .chat-message.deleted .chat-bubble {
-        background: #f5f5f5 !important;
-        color: #999 !important;
+    /* Typing Indicator */
+    .chat-typing-indicator {
+        display: none;
+        padding: 8px 15px;
+        font-size: 0.85rem;
+        color: #65676b;
         font-style: italic;
-        border: 1px dashed #ccc !important;
     }
 
-    /* Chat Input Form */
-    .chat-popup-form {
+    .chat-typing-indicator.active {
+        display: block;
+    }
+
+    .chat-typing-indicator span {
+        animation: blink 1.4s infinite;
+    }
+
+    .chat-typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .chat-typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+        0%, 60%, 100% { opacity: 1; }
+        30% { opacity: 0.3; }
+    }
+
+    /* Input Container */
+    .chat-popup-input-container {
         padding: 12px 15px;
-        border-top: 1px solid #e4e6eb;
         background: white;
+        border-top: 1px solid #e4e6eb;
         border-radius: 0 0 12px 12px;
-        display: flex;
-        gap: 10px;
     }
 
-    .chat-popup-form input {
+    .chat-popup-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .chat-popup-input {
         flex: 1;
-        padding: 10px 15px;
+        padding: 10px 14px;
         border: 1px solid #e4e6eb;
         border-radius: 20px;
         font-size: 0.9rem;
         outline: none;
-        transition: border-color 0.2s;
+        background: #f0f2f5;
+        transition: background 0.2s;
     }
 
-    .chat-popup-form input:focus {
+    .chat-popup-input:focus {
+        background: white;
         border-color: #667eea;
     }
 
+    /* Send Button */
     .chat-send-btn {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
         border: none;
-        width: 40px;
-        height: 40px;
+        color: white;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
@@ -434,109 +450,175 @@
         transition: transform 0.2s;
     }
 
-    .chat-send-btn:hover {
+    .chat-send-btn:hover:not(:disabled) {
         transform: scale(1.1);
     }
 
-    .chat-send-btn:active {
-        transform: scale(0.95);
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
-    .chat-send-btn i {
+    /* Connection Status */
+    .chat-connection-status {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .chat-connection-status::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #31a24c;
+    }
+
+    .chat-connection-status.disconnected::before {
+        background: #f02849;
+    }
+
+    /* Notification Badge on Message Button */
+    .chat-notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #f02849;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+
+    .chat-notification-badge.active {
+        display: flex;
+    }
+
+    /* ========================================
+       CONTEXT MENU STYLES
+       ======================================== */
+
+    .message-context-menu {
+        position: fixed;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+        padding: 8px 0;
+        min-width: 180px;
+        z-index: 10000;
+        display: none;
+        animation: menuSlideIn 0.15s ease-out;
+    }
+
+    .message-context-menu.active {
+        display: block;
+    }
+
+    @keyframes menuSlideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .context-menu-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.9rem;
+        color: #333;
+        transition: background 0.2s;
+    }
+
+    .context-menu-item:hover {
+        background: #f5f5f5;
+    }
+
+    .context-menu-item i {
+        width: 18px;
         font-size: 1rem;
     }
 
-    /* ✅ MODALS */
-    .modal-overlay {
+    .context-menu-item.danger {
+        color: #f02849;
+    }
+
+    .context-menu-item.danger:hover {
+        background: #ffebee;
+    }
+
+    /* ========================================
+       UNSEND MODAL STYLES
+       ======================================== */
+
+    .unsend-modal {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 10000;
+        background: rgba(0,0,0,0.6);
         display: none;
         align-items: center;
         justify-content: center;
+        z-index: 10001;
+        animation: fadeIn 0.2s ease;
     }
 
-    .modal-overlay.active {
+    .unsend-modal.active {
         display: flex;
     }
 
-    .modal-content-custom {
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .unsend-modal-content {
         background: white;
-        border-radius: 12px;
-        padding: 25px;
+        border-radius: 16px;
+        padding: 24px;
         max-width: 400px;
         width: 90%;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-        animation: modalSlideIn 0.3s ease-out;
+        animation: modalSlideUp 0.3s ease-out;
     }
 
-    @keyframes modalSlideIn {
+    @keyframes modalSlideUp {
         from {
-            transform: scale(0.9);
             opacity: 0;
+            transform: translateY(30px);
         }
         to {
-            transform: scale(1);
             opacity: 1;
+            transform: translateY(0);
         }
     }
 
-    .modal-header-custom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #f0f2f5;
-    }
-
-    .modal-header-custom h3 {
-        margin: 0;
-        font-size: 1.3rem;
+    .unsend-modal h3 {
+        margin: 0 0 16px 0;
+        font-size: 1.2rem;
         font-weight: 600;
-        color: #333;
-    }
-
-    .modal-close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #999;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: color 0.2s;
-    }
-
-    .modal-close-btn:hover {
-        color: #f02849;
-    }
-
-    /* Unsend Modal Options */
-    .unsend-options {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 20px;
     }
 
     .unsend-option {
-        padding: 15px;
+        padding: 16px;
         border: 2px solid #e4e6eb;
-        border-radius: 10px;
+        border-radius: 12px;
+        margin-bottom: 12px;
         cursor: pointer;
         transition: all 0.2s;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
     }
 
     .unsend-option:hover {
@@ -546,409 +628,655 @@
 
     .unsend-option.selected {
         border-color: #667eea;
-        background: linear-gradient(135deg, #f8f9ff, #e8e9ff);
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
     }
 
     .unsend-option-title {
         font-weight: 600;
-        color: #333;
-        font-size: 1rem;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .unsend-option-desc {
         font-size: 0.85rem;
-        color: #666;
+        color: #65676b;
     }
 
-    .modal-actions-custom {
+    .unsend-modal-buttons {
         display: flex;
-        gap: 10px;
+        gap: 12px;
+        margin-top: 20px;
     }
 
-    .btn-cancel,
-    .btn-remove {
+    .unsend-modal-buttons button {
         flex: 1;
         padding: 12px;
         border: none;
         border-radius: 8px;
-        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .btn-cancel {
-        background: #f0f2f5;
+        background: #e4e6eb;
         color: #333;
     }
 
     .btn-cancel:hover {
-        background: #e4e6eb;
+        background: #d0d2d7;
     }
 
     .btn-remove {
-        background: linear-gradient(135deg, #f02849, #d32f2f);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
     .btn-remove:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(240, 40, 73, 0.4);
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
-    /* Pinned Messages Modal */
-    .pinned-messages-list-modal {
-        max-height: 300px;
+    .btn-remove:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* ========================================
+       MESSAGE STATES
+       ======================================== */
+
+    /* Message Deleted State */
+    .chat-message.deleted .chat-bubble {
+        background: #f5f5f5 !important;
+        color: #999 !important;
+        font-style: italic;
+        opacity: 0.7;
+    }
+
+    .chat-message.deleted .chat-bubble::before {
+        content: '🚫 ';
+    }
+
+    /* ✅ PINNED MESSAGES LIST MODAL */
+    .pinned-messages-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10002;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .pinned-messages-modal.active {
+        display: flex;
+    }
+
+    .pinned-messages-modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 70vh;
         overflow-y: auto;
-        margin-bottom: 15px;
+        animation: modalSlideUp 0.3s ease-out;
+    }
+
+    .pinned-messages-modal h3 {
+        margin: 0 0 16px 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .pinned-messages-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pinned-messages-list .pinned-message-item {
+        padding: 12px;
+        border: 1px solid #e4e6eb;
     }
 
     .pinned-messages-empty {
         text-align: center;
-        padding: 30px;
+        padding: 40px 20px;
         color: #999;
-        font-size: 0.95rem;
     }
 
     .pinned-messages-empty i {
-        font-size: 3rem;
-        margin-bottom: 10px;
-        opacity: 0.5;
+        font-size: 48px;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 12px;
     }
 
-    /* Typing Indicator */
-    .typing-indicator {
-        display: none;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        background: #fff;
-        border: 1px solid #e4e6eb;
-        border-radius: 18px;
-        width: fit-content;
-        margin-bottom: 10px;
-    }
+    /* ========================================
+       MOBILE RESPONSIVE
+       ======================================== */
 
-    .typing-indicator.active {
-        display: flex;
-    }
-
-    .typing-dot {
-        width: 8px;
-        height: 8px;
-        background: #999;
-        border-radius: 50%;
-        animation: typingBounce 1.4s infinite;
-    }
-
-    .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes typingBounce {
-        0%, 60%, 100% {
-            transform: translateY(0);
+    @media (max-width: 768px) {
+        .chat-popup-container {
+            width: calc(100% - 40px);
+            height: calc(100vh - 100px);
+            max-height: 600px;
         }
-        30% {
-            transform: translateY(-8px);
+
+        .message-options-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+            /* ✅ Make button easier to tap on mobile */
+            opacity: 0.7;
+        }
+
+        .chat-message.sent .message-options-btn {
+            margin-right: 12px;
+        }
+
+        .chat-message.received .message-options-btn {
+            margin-left: 12px;
+        }
+
+        /* ✅ Ensure menu items are tappable */
+        .context-menu-item {
+            padding: 16px 20px;
+            font-size: 1rem;
+        }
+
+        .unsend-option {
+            padding: 18px;
+        }
+    }
+
+    /* ✅ QUANTITY WARNING MESSAGE STYLES */
+    .quantity-warning {
+        display: none;
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+        font-weight: 500;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .quantity-warning.show {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 </style>
 {% endblock %}
 
+{% block extra_nav_buttons %}
+{% if user.is_authenticated %}
+<button onclick="toggleChatPopup()" class="nav_button" style="position: relative;">
+    <i class="fas fa-comments"></i>
+    <span>{{ establishment.name }}</span>
+    <span class="chat-notification-badge" id="chatNotificationBadge">1</span>
+</button>
+{% endif %}
+{% endblock extra_nav_buttons %}
+
 {% block content %}
 <div id="food-details-page">
 
+    {# MESSAGES - NEW DESIGN #}
     {% if messages %}
-    <ul class="messages">
+    <div class="messages-container" id="messagesContainer">
         {% for message in messages %}
-        <li class="alert alert-{{ message.tags }}">{{ message }}</li>
+        <div class="message-alert {{ message.tags|default:'info' }}">
+            <span class="message-icon">
+                {% if 'success' in message.tags %}
+                    <i class="fas fa-check-circle"></i>
+                {% elif 'error' in message.tags %}
+                    <i class="fas fa-exclamation-circle"></i>
+                {% elif 'warning' in message.tags %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                    <i class="fas fa-info-circle"></i>
+                {% endif %}
+            </span>
+            <span class="message-text">{{ message }}</span>
+            <button class="message-close" onclick="dismissMessage(this)" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
     {% endif %}
 
-    <!-- HERO SECTION -->
-    <div class="hero-wrapper">
-        <div class="establishment-hero" style="background-image: url('{{ establishment.background_pic.url }}');">
-            <div class="hero-overlay">
-                <div class="hero-content">
-                    <h1>{{ establishment.name }}</h1>
-                    <div class="average-rating-display">
-                        <span class="rating-number">{{ average_rating|floatformat:1 }}</span>
-                        <div class="star-rating-main">
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= average_rating|floatformat:0|add:0 %}
-                                    <i class="fas fa-star filled"></i>
-                                {% else %}
-                                    <i class="far fa-star"></i>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <span class="review-count-text">({{ review_count }} reviews)</span>
+    {# HERO HEADER #}
+    <header class="establishment-hero"
+            style="background-image: url('{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default-bg.jpg' %}{% endif %}');">
+        <div class="hero-overlay">
+            <div class="hero-content">
+                <h1>{{ establishment.name }}</h1>
+                <div class="average-rating-display" id="averageRatingDisplay">
+                    <span class="rating-number">{{ establishment.average_rating|floatformat:1|default:"0.0" }}</span>
+                    <div class="star-rating-main">
+                        {% for i in "12345" %}
+                        {% if forloop.counter <= establishment.average_rating|default:0 %}
+                        <i class="fas fa-star filled"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                        {% endfor %}
                     </div>
+                    <span class="review-count-text">({{ establishment.review_count|default:0 }} Reviews)</span>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- AMENITIES OVERLAY ON DESKTOP -->
-        <div class="amenities-overlay desktop-only">
-            <h2>Amenities</h2>
-            {% if establishment.amenities.exists %}
-            <ul class="amenities-list">
-                {% for amenity in establishment.amenities.all %}
-                <li>
-                    <i class="{{ amenity.icon }}"></i>
-                    {{ amenity.name }}
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted" style="margin: 0; font-size: 0.9rem;">No amenities listed.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- MAIN CONTENT CONTAINER -->
     <div class="details-container">
 
-        <!-- LEFT COLUMN -->
-        <div class="details-left">
+        {# TOP THREE COLUMN LAYOUT #}
+        <div class="top-info-grid">
+            {# COLUMN 1: Location & Contact #}
+            <section class="section-card contact-location">
+                <h2>Location & Contact</h2>
+                <div class="contact-grid">
+                    <p>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <strong>Address:</strong><br>
+                        {{ establishment.address|default:"Not Available" }}
+                    </p>
 
-            <!-- CONTACT & LOCATION SECTION -->
-            <div class="section-card">
-                <h2>Contact & Location</h2>
-                <div class="contact-location">
-                    <div class="contact-grid">
-                        <p>
-                            <i class="fas fa-map-marker-alt"></i>
-                            <strong>Location:</strong><br>{{ establishment.location|truncatewords:10 }}
-                        </p>
-                        <p>
-                            <i class="fas fa-phone"></i>
-                            <strong>Phone:</strong><br>{{ establishment.phone|default:"N/A" }}
-                        </p>
-                        <p style="grid-column: 1 / -1;">
-                            <i class="fas fa-clock"></i>
-                            <strong>Hours:</strong><br>{{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
-                            <span class="status-badge {% if is_open %}status-open{% else %}status-closed{% endif %}">
-                                {% if is_open %}Open Now{% else %}Closed{% endif %}
-                            </span>
-                        </p>
-                    </div>
+                    <p>
+                        <i class="fas fa-store"></i>
+                        <strong>Categories:</strong><br>
+                        {% if establishment.category %}
+                        {{ establishment.category.name }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </p>
+
+                    <p>
+                    <i class="fas fa-clock"></i>
+                    <strong>Hours:</strong><br>
+                    <strong class="status-badge status-{{ establishment.calculated_status|lower }}"
+                          id="detailStatusBadge"
+                          data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                          data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                        {% if establishment.calculated_status == 'Open' %}
+                            Open Now
+                        {% else %}
+                            Closed Now
+                        {% endif %}
+                    </strong>
+                    <br>
+                    {% if establishment.opening_time and establishment.closing_time %}
+                        <span>
+                            Opening time {{ establishment.opening_time|time:"g:i A" }} / Closing time {{ establishment.closing_time|time:"g:i A" }}
+                        </span>
+                    {% else %}
+                        <span>Hours not set</span>
+                    {% endif %}
+                </p>
+
+                    <p>
+                        <i class="fas fa-money-bill-wave"></i>
+                        <strong>Payment:</strong><br>
+                        {% if establishment.payment_methods %}
+                        {{ establishment.payment_methods }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </p>
                 </div>
-            </div>
+            </section>
 
-            <!-- AMENITIES SECTION - MOBILE/TABLET ONLY -->
-            <div class="section-card mobile-tablet-only">
-                <h2>Amenities</h2>
-                {% if establishment.amenities.exists %}
+            {# COLUMN 2: Amenities & Features #}
+            <section class="section-card amenities-section">
+                <h2>Amenities & Features</h2>
                 <ul class="amenities-list">
                     {% for amenity in establishment.amenities.all %}
-                    <li>
-                        <i class="{{ amenity.icon }}"></i>
-                        {{ amenity.name }}
-                    </li>
+                    <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
+                    {% empty %}
+                    <li>No amenities listed.</li>
                     {% endfor %}
                 </ul>
+            </section>
+
+            {# COLUMN 3: Customer Reviews #}
+            <section class="section-card reviews-section">
+                <h2>Customer Reviews</h2>
+
+                <div class="review-filters">
+                    <button class="btn-review-filter active" data-filter="all">All Reviews</button>
+                    <button class="btn-review-filter" data-filter="good">Good (4-5 <i class="fas fa-star"></i>)</button>
+                    <button class="btn-review-filter" data-filter="bad">Bad (1-3 <i class="fas fa-star"></i>)</button>
+                </div>
+
+                {% if user.is_authenticated %}
+                {% if not user_review %}
+                <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
                 {% else %}
-                <p class="text-muted">No amenities listed.</p>
+                <p class="text-muted">Your review is highlighted below. Click the pencil icon to edit it.</p>
                 {% endif %}
-            </div>
+                {% else %}
+                <p class="text-muted review-login-prompt">
+                    <br>Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
+                </p>
+                <br>
+                {% endif %}
 
-            <!-- MENU SECTION -->
-            <div class="section-card" id="menu-section">
-                <h2 style="font-size: 1.8em; color: #d84315; display: flex; align-items: center; gap: 10px;">
-                    <img src="https://img.icons8.com/fluency/48/hamburger.png" alt="burger-icon" style="width: 35px; height: 35px;"/>
-                    Your Menu
-                </h2>
+                <div class="all-reviews-list-wrapper">
+                    <div class="all-reviews-list" id="allReviewsList">
 
-                <!-- MENU CONTROLS -->
+                        {# NEW REVIEW LAYOUT: Render User's Review First #}
+                        {% if user_review %}
+                        {% with review=user_review review_type=user_review.rating|get_review_type %}
+                        <div class="review-item user-highlight {{ review_type }}" data-review-id="{{ review.id }}"
+                             data-is-user-review="true" data-rating="{{ review.rating }}">
+                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                 alt="{{ review.user.username }}" class="review-user-pic">
+
+                            <div class="review-main">
+                                <div class="review-main-top">
+                                    <div class="review-user-info">
+                                        <span class="review-username">{{ review.user.username }} <span
+                                                class="badge-user-review">(You)</span></span>
+                                        <div class="review-stars">
+                                            {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star filled"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="review-actions">
+                                <i class="fas fa-edit edit-review" data-review-id="{{ review.id }}"
+                                   data-rating="{{ review.rating }}"
+                                   data-comment="{{ review.comment|default:''|escapejs }}"></i>
+                                <i class="fas fa-trash-alt delete-review" data-review-id="{{ review.id }}"></i>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endif %}
+
+                        {# NEW REVIEW LAYOUT: Render Other Reviews #}
+                        {% for review in reviews %}
+                        {% with review_type=review.rating|get_review_type %}
+                        <div class="review-item {{ review_type }}" data-review-id="{{ review.id }}"
+                             data-rating="{{ review.rating }}">
+                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                 alt="{{ review.user.username }}" class="review-user-pic">
+
+                            <div class="review-main">
+                                <div class="review-main-top">
+                                    <div class="review-user-info">
+                                        <span class="review-username">{{ review.user.username }}</span>
+                                        <div class="review-stars">
+                                            {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star filled"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% empty %}
+                        {% if not user_review %}
+                        <p class="text-muted" id="noReviewsMessage">Be the first to leave a review!</p>
+                        {% endif %}
+                        {% endfor %}
+                        <p class="text-muted hidden-message" id="noFilteredReviews">No reviews found for this
+                            filter.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        {# FULL WIDTH MENU SECTION #}
+        <div class="quantity-control">
+            <section class="section-card" id="menu-section">
+                <h2>Menu</h2>
+
                 <div class="menu-controls">
                     <div class="menu-search-bar">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="menuSearchInput" placeholder="Search menu items..." />
+                        <input type="text" id="menuSearchInput" placeholder="Search menu items..."
+                               onkeyup="filterMenuItems()">
                     </div>
-
                     <div class="menu-filters-group">
-                        <select id="categoryFilter">
-                            <option value="">All Categories</option>
-                            {% for cat in menu_items|get_unique_categories %}
-                            <option value="{{ cat }}">{{ cat }}</option>
-                            {% endfor %}
+                        <select id="priceFilter" onchange="filterMenuItems()">
+                            <option value="default">Sort by Price</option>
+                            <option value="highest">Highest to Lowest</option>
+                            <option value="lowest">Lowest to Highest</option>
                         </select>
-
-                        <select id="sortFilter">
-                            <option value="">Sort By</option>
-                            <option value="price-asc">Price: Low to High</option>
-                            <option value="price-desc">Price: High to Low</option>
-                            <option value="name-asc">Name: A to Z</option>
-                            <option value="name-desc">Name: Z to A</option>
-                        </select>
-
-                        <button id="bestSellerFilter" class="btn-filter-toggle">
-                            <i class="fas fa-fire"></i> Best Sellers Only
-                        </button>
-
-                        <button id="availableOnlyFilter" class="btn-filter-toggle">
-                            <i class="fas fa-check-circle"></i> Available Only
+                        <button id="bestSellerFilter" onclick="toggleBestSellerFilter()" type="button"
+                                aria-pressed="false">
+                            <i class="fas fa-medal"></i> Best Sellers
                         </button>
                     </div>
                 </div>
 
-                <!-- MENU ITEMS LIST -->
-                <div class="menu-list" id="menuList">
-                    {% for item in menu_items %}
-                    <div class="menu-item"
-                         data-name="{{ item.name|lower }}"
-                         data-category="{{ item.category }}"
-                         data-price="{{ item.price }}"
-                         data-bestseller="{{ item.is_best_seller|yesno:'yes,no' }}"
-                         data-available="{{ item.is_available|yesno:'yes,no' }}">
+                <div class="menu-list-wrapper">
+                    <div class="menu-list" id="menuList">
+    {% for item in menu_items %}
+    <div class="menu-item"
+         data-price="{{ item.price|floatformat:2 }}"
+         data-is-top-seller="{% if item.is_top_seller %}true{% else %}false{% endif %}"
+         data-item-id="{{ item.id }}"
+         data-item-name="{{ item.name }}"
+         data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
+         data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+         data-item-quantity="{{ item.quantity|default:0 }}"
+         onclick="openItemDetailModal(this)">
 
-                        <div class="menu-item-image-wrapper">
-                            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="menu-item-image" />
+        <!-- Image Container with Badges -->
+        <div class="menu-item-image-wrapper">
+            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+                 alt="{{ item.name }}" class="menu-item-image">
 
-                            {% if item.is_best_seller %}
-                            <span class="badge-top-seller">
-                                <i class="fas fa-fire"></i> Best Seller
-                            </span>
-                            {% endif %}
+            <!-- Top Left: Best Seller Badge -->
+            {% if item.is_top_seller %}
+            <span class="badge-top-seller">
+                <i class="fas fa-medal"></i> Best Seller
+            </span>
+            {% endif %}
 
-                            <span class="badge-stock {% if item.is_available %}badge-available{% else %}badge-unavailable{% endif %}">
-                                <i class="fas fa-circle"></i>
-                                {% if item.is_available %}
-                                    Available: {{ item.quantity_available }}
-                                {% else %}
-                                    Out of Stock
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="menu-info">
-                            <h3>{{ item.name }}</h3>
-                            <p class="menu-description">{{ item.description|truncatewords:12 }}</p>
-                            <p class="menu-price">₱{{ item.price }}</p>
-
-                            <div class="item-action-buttons">
-                                {% if item.is_available %}
-                                    <button class="btn-add-to-cart"
-                                            onclick="addToCartQuick({{ item.id }}, '{{ item.name|escapejs }}', {{ item.price }}, '{{ item.image.url }}', {{ item.quantity_available }})">
-                                        <i class="fas fa-shopping-cart"></i> Add to Cart
-                                    </button>
-                                    <button class="btn-buy-now"
-                                            onclick="buyNow({{ item.id }})">
-                                        <i class="fas fa-bolt"></i> Buy Now
-                                    </button>
-                                {% else %}
-                                    <button class="btn-out-of-stock" disabled>
-                                        <i class="fas fa-ban"></i> Out of Stock
-                                    </button>
-                                {% endif %}
-                                <button class="btn-view-details" onclick="showItemDetails({{ item.id }})">
-                                    <i class="fas fa-info-circle"></i> Details
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="text-muted text-center">
-                        <i class="fas fa-utensils" style="font-size: 3em; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-                        No menu items available at the moment.
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
+            <!-- Top Right: Stock Badge -->
+            {% if item.quantity > 0 %}
+            <span class="badge-stock available">
+                <i class="fas fa-check-circle"></i> Available: {{ item.quantity }}
+            </span>
+            {% else %}
+            <span class="badge-stock out-of-stock">
+                <i class="fas fa-times-circle"></i> Out of Stock
+            </span>
+            {% endif %}
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <div class="details-right">
+        <!-- Menu Info Section -->
+        <div class="menu-info">
+            <div class="menu-header-info">
+                <h3 class="menu-name">{{ item.name }}</h3>
+            </div>
 
-            <!-- REVIEWS SECTION -->
-            <div class="section-card">
-                <h2>Customer Reviews ({{ review_count }})</h2>
-
-                <!-- REVIEW FILTERS -->
-                <div class="review-filters">
-                    <button class="btn-review-filter active" data-rating="all">All</button>
-                    {% for i in "54321" %}
-                    <button class="btn-review-filter" data-rating="{{ i }}">{{ i }} <i class="fas fa-star"></i></button>
-                    {% endfor %}
-                </div>
-
-                <!-- REVIEWS LIST -->
-                <div class="reviews-list">
-                    {% for review in reviews %}
-                    <div class="review-item" data-rating="{{ review.rating }}">
-                        <div class="review-header">
-                            <img src="{% if review.customer.profile_pic %}{{ review.customer.profile_pic.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" alt="user" class="review-user-pic" />
-                            <div class="review-user-info">
-                                <strong>{{ review.customer.user.first_name }} {{ review.customer.user.last_name }}</strong>
-                                <div class="review-stars">
-                                    {% for i in "12345" %}
-                                        {% if forloop.counter <= review.rating %}
-                                            <i class="fas fa-star"></i>
-                                        {% else %}
-                                            <i class="far fa-star"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                                <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
-                            </div>
-                        </div>
-                        <p class="review-text">{{ review.comment }}</p>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted" style="text-align: center; padding: 20px;">No reviews yet. Be the first to review!</p>
-                    {% endfor %}
-                </div>
-
-                <!-- LEAVE A REVIEW BUTTON -->
-                {% if user.is_authenticated %}
-                <button class="btn-submit-review" onclick="document.getElementById('reviewModal').style.display='block'">
-                    <i class="fas fa-pen"></i> Leave a Review
-                </button>
+            <p class="menu-description">
+                {% if item.description %}
+                {{ item.description }}
                 {% else %}
-                <p class="text-muted" style="text-align: center; margin-top: 15px;">
-                    <a href="{% url 'login' %}">Log in</a> to leave a review
-                </p>
+                No description provided.
+                {% endif %}
+                <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="item-actions">
+                {% if user.is_authenticated %}
+                {% if item.quantity > 0 %}
+                <div class="item-action-buttons">
+                    <button class="btn-add-to-cart quick-add-btn"
+                            data-item-id="{{ item.id }}"
+                            data-item-name="{{ item.name }}"
+                            data-item-price="{{ item.price|floatformat:2 }}"
+                            onclick="handleQuickAddToCart(this, event)">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button class="btn-buy-now quick-buy-btn"
+                            onclick="openItemDetailModal(this.closest('.menu-item'))">
+                        <i class="fas fa-money-bill"></i> Buy Now
+                    </button>
+                </div>
+                {% else %}
+                <button class="btn-add-to-cart disabled" disabled>
+                    <i class="fas fa-times-circle"></i> Out of Stock
+                </button>
+                {% endif %}
+                {% else %}
+                <a href="{% url 'user_login_register' %}" class="btn-add-to-cart login-prompt-btn">
+                    <i class="fas fa-sign-in-alt"></i> Log in to Order
+                </a>
                 {% endif %}
             </div>
-
         </div>
-
+    </div>
+    {% empty %}
+    <p class="text-muted">No menu items available yet.</p>
+    {% endfor %}
+    <p id="noMenuItemsFound" class="hidden-message">No menu items found.</p>
+</div>
+                </div>
+            </section>
+        </div>
     </div>
 
-    <!-- ✅ FLOATING CHAT BUTTON (MOBILE/TABLET) -->
+    {# DELETE REVIEW FORM #}
+    <form id="delete-review-form" method="post" style="display:none;">{% csrf_token %}</form>
+
+    {# REVIEW MODAL #}
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeReviewModal()">&times;</span>
+            <h2 id="modalTitle">Write a Review</h2>
+            <form id="reviewForm" method="post" action="">
+                {% csrf_token %}
+                <div class="form-group text-center">
+                    <label>Your Rating:</label>
+                    <div class="modal-stars-container" id="modalStars">
+                        {% for i in "12345" %}
+                        <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="rating" id="ratingInput" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="comment">Comment:</label>
+                    <textarea name="comment" id="comment" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn-submit-review">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+    {# ITEM DETAIL MODAL #}
+    <div id="itemDetailModal" class="modal">
+        <div class="modal-content item-detail-modal-content">
+            <span class="close-btn" onclick="closeItemDetailModal()">&times;</span>
+            <h2 id="itemDetailModalTitle" class="item-name-header">Menu Item Name</h2>
+            <div class="item-details-body">
+                <img id="modalItemImage" src="" alt="Menu Item Image" class="modal-item-image">
+                <p id="modalItemDescription" class="modal-item-description"></p>
+
+                {% if user.is_authenticated %}
+                <p id="modalItemPrice" class="modal-item-price">₱ 0.00</p>
+                <p id="modalItemStock" class="modal-item-stock"></p>
+
+                <div class="quantity-control">
+                    <label for="itemQuantity">Quantity:</label>
+                    <div class="quantity-input-group">
+                        <button type="button" class="btn-quantity-minus" onclick="updateModalQuantity(-1)">-</button>
+                        <input type="number" id="itemQuantity" value="1" min="1" readonly>
+                        <button type="button" class="btn-quantity-plus" onclick="updateModalQuantity(1)">+</button>
+                    </div>
+                    </div>
+                    <!-- ✅ QUANTITY WARNING MESSAGE -->
+                    <div id="quantityWarning" class="quantity-warning">
+                        Maximum quantity reached
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="modalAddToCartBtn" class="btn-add-to-cart-modal" onclick="handleModalAddToCart(this)"
+                            data-action="add">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <!-- ✅ FIXED BUY NOW BUTTON - REDIRECTS TO PAYMONGO -->
+                    <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleModalBuyNow(this)">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">Log in or Sign Up to order.</p>
+                <div class="modal-actions">
+                    <a href="{% url 'user_login_register' %}" class="btn-add-to-cart-modal btn-full-width">
+                        <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <!-- ✅ HIDDEN FIELDS FOR VALIDATION -->
+            <input type="hidden" id="modalItemId" value="">
+            <input type="hidden" id="modalMaxQuantity" value="0">
+        </div>
+    </div>
+
     {% if user.is_authenticated %}
-    <button class="floating-chat-button" onclick="toggleChatPopup()" aria-label="Open Chat">
+    <button onclick="toggleChatPopup()" class="floating-chat-button" id="floatingChatButton">
         <i class="fas fa-comments"></i>
-        <div class="chat-notification-badge" id="chatNotificationBadge">0</div>
+        <span class="chat-notification-badge" id="floatingChatBadge">1</span>
     </button>
     {% endif %}
 
-    <!-- ✅ CHAT POPUP -->
     {% if user.is_authenticated %}
-    <div class="chat-popup-container" id="chatPopup">
-        <!-- Chat Header -->
-        <div class="chat-popup-header">
-            {% if establishment.profile_pic %}
-            <img src="{{ establishment.profile_pic.url }}" alt="{{ establishment.name }}">
-            {% else %}
-            <img src="{% static 'images/default-establishment.png' %}" alt="{{ establishment.name }}">
-            {% endif %}
+    <div class="chat-popup-container" id="chatPopupContainer">
+        <div class="chat-popup-header" id="chatPopupHeader">
+            <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                 alt="{{ establishment.name }}">
             <div class="chat-popup-header-info">
                 <h4>{{ establishment.name }}</h4>
-                <p id="chatOnlineStatus">Online</p>
+                <p class="chat-connection-status" id="chatConnectionStatus">Connecting...</p>
             </div>
             <button class="chat-popup-close" onclick="closeChatPopup()">&times;</button>
         </div>
 
-        <!-- ✅ Pinned Messages Section -->
+        <!-- ✅ PINNED MESSAGES SECTION - Top of chat -->
         <div class="chat-pinned-section" id="chatPinnedSection">
             <div class="chat-pinned-section-header">
                 <span class="chat-pinned-section-title">📌 Pinned Messages</span>
@@ -956,540 +1284,438 @@
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
-            <div id="pinnedMessagesList"></div>
-        </div>
-
-        <!-- Chat Messages -->
-        <div class="chat-popup-messages" id="chatPopupMessages">
-            <!-- Typing Indicator -->
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+            <div id="pinnedMessagesList">
+                <!-- Pinned messages will appear here -->
             </div>
-            <!-- Messages will be loaded here -->
         </div>
 
-        <!-- ✅ See All Pins Link -->
+        <div class="chat-popup-messages" id="chatPopupMessages">
+            <!-- Messages will be loaded dynamically via JavaScript -->
+        </div>
+
+        <div class="chat-typing-indicator" id="chatTypingIndicator">
+            {{ establishment.name }} is typing<span>.</span><span>.</span><span>.</span>
+        </div>
+
+        <!-- ✅ SEE ALL PINS LINK - Bottom above input -->
         <div class="chat-see-pins-link" id="chatSeePinsLink" onclick="openPinnedMessagesModal()">
-            See All Pinned Messages
+            <i class="fas fa-thumbtack"></i> See All Pins
         </div>
 
-        <!-- Chat Input Form -->
-        <form class="chat-popup-form" id="chatPopupForm">
-            <input type="text" id="chatPopupInput" placeholder="Type a message..." autocomplete="off" required />
-            <button type="submit" class="chat-send-btn" id="chatSendBtn">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </form>
+        <div class="chat-popup-input-container">
+            <form class="chat-popup-form" id="chatPopupForm">
+                <input type="text"
+                       class="chat-popup-input"
+                       id="chatPopupInput"
+                       placeholder="Aa"
+                       autocomplete="off">
+                <button type="submit" class="chat-send-btn" id="chatSendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- ✅ MESSAGE CONTEXT MENU (Three Dots Menu) -->
+    <!-- Context Menu -->
     <div class="message-context-menu" id="messageContextMenu">
-        <div class="context-menu-item pin-item" onclick="pinMessage()">
+        <div class="context-menu-item" onclick="pinMessage()">
             <i class="fas fa-thumbtack"></i>
-            <span>Pin Message</span>
+            <span id="pinMenuText">Pin</span>
         </div>
-        <div class="context-menu-item unsend-item" onclick="openUnsendModal()">
+        <div class="context-menu-item danger" onclick="openUnsendModal()">
             <i class="fas fa-undo"></i>
             <span>Unsend</span>
         </div>
     </div>
 
-    <!-- ✅ PINNED MESSAGES MODAL -->
-    <div class="modal-overlay" id="pinnedMessagesModal">
-        <div class="modal-content-custom">
-            <div class="modal-header-custom">
-                <h3>📌 Pinned Messages</h3>
-                <button class="modal-close-btn" onclick="closePinnedMessagesModal()">&times;</button>
+    <!-- Unsend Modal -->
+    <div class="unsend-modal" id="unsendModal">
+        <div class="unsend-modal-content">
+            <h3>Who do you want to unsend this message for?</h3>
+
+            <div class="unsend-option selected" data-type="everyone" onclick="selectUnsendOption('everyone')">
+                <div class="unsend-option-title">
+                    <i class="fas fa-users"></i>
+                    Unsend for everyone
+                </div>
+                <div class="unsend-option-desc">
+                    This message will be unsent for everyone in the chat. Others may have already seen or forwarded it.
+                </div>
             </div>
-            <div class="pinned-messages-list-modal" id="pinnedMessagesListModal"></div>
-            <div class="pinned-messages-empty" id="pinnedMessagesEmpty">
-                <i class="fas fa-thumbtack"></i>
-                <p>No pinned messages yet</p>
+
+            <div class="unsend-option" data-type="you" onclick="selectUnsendOption('you')">
+                <div class="unsend-option-title">
+                    <i class="fas fa-user"></i>
+                    Unsend for you
+                </div>
+                <div class="unsend-option-desc">
+                    This will remove the message from your devices. Other chat members will still be able to see it.
+                </div>
+            </div>
+
+            <div class="unsend-modal-buttons">
+                <button class="btn-cancel" onclick="closeUnsendModal()">Cancel</button>
+                <button class="btn-remove" onclick="confirmUnsend()">Remove</button>
             </div>
         </div>
     </div>
 
-    <!-- ✅ UNSEND MODAL -->
-    <div class="modal-overlay" id="unsendModal">
-        <div class="modal-content-custom">
-            <div class="modal-header-custom">
-                <h3>Unsend Message</h3>
-                <button class="modal-close-btn" onclick="closeUnsendModal()">&times;</button>
+    <!-- ✅ PINNED MESSAGES LIST MODAL -->
+    <div class="pinned-messages-modal" id="pinnedMessagesModal">
+        <div class="pinned-messages-modal-content">
+            <h3><i class="fas fa-thumbtack"></i> Pinned Messages</h3>
+            <div class="pinned-messages-list" id="pinnedMessagesListModal">
+                <!-- Pinned messages will appear here -->
             </div>
-            <div class="unsend-options">
-                <div class="unsend-option selected" data-type="everyone" onclick="selectUnsendOption('everyone')">
-                    <div class="unsend-option-title">Unsend for everyone</div>
-                    <div class="unsend-option-desc">This message will be removed for everyone in the chat</div>
-                </div>
-                <div class="unsend-option" data-type="you" onclick="selectUnsendOption('you')">
-                    <div class="unsend-option-title">Unsend for you</div>
-                    <div class="unsend-option-desc">This message will only be removed for you</div>
-                </div>
+            <div class="pinned-messages-empty" id="pinnedMessagesEmpty" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <p>No pinned messages</p>
             </div>
-            <div class="modal-actions-custom">
-                <button class="btn-cancel" onclick="closeUnsendModal()">Cancel</button>
-                <button class="btn-remove" onclick="confirmUnsend()">Remove</button>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn-cancel" onclick="closePinnedMessagesModal()">Close</button>
             </div>
         </div>
     </div>
     {% endif %}
 
 </div>
+{% endblock %}
 
-<!-- ITEM DETAIL MODAL -->
-<div id="itemDetailModal" class="modal">
-    <div class="modal-content item-detail-modal-content">
-        <span class="close-btn" onclick="closeItemModal()">&times;</span>
-        <h2 class="item-name-header" id="modalItemName">Item Name</h2>
-        <img id="modalItemImage" src="" alt="Item" class="modal-item-image" />
-        <p class="modal-item-description" id="modalItemDescription">Description</p>
-        <p class="modal-item-price" id="modalItemPrice">₱0.00</p>
-        <p class="modal-item-stock" id="modalItemStock">In Stock: 0</p>
-
-        <div class="quantity-control">
-            <label>Quantity:</label>
-            <div class="quantity-input-group">
-                <button type="button" class="btn-quantity-minus" onclick="decreaseQuantity()">-</button>
-                <input type="number" id="itemQuantity" value="1" min="1" readonly />
-                <button type="button" class="btn-quantity-plus" onclick="increaseQuantity()">+</button>
-            </div>
-        </div>
-
-        <div class="modal-actions" id="modalActionsContainer">
-            <button class="btn-add-to-cart-modal" id="modalAddToCart">
-                <i class="fas fa-shopping-cart"></i> Add to Cart
-            </button>
-            <button class="btn-buy-now-modal" id="modalBuyNow">
-                <i class="fas fa-bolt"></i> Buy Now
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- REVIEW MODAL -->
-<div id="reviewModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="document.getElementById('reviewModal').style.display='none'">&times;</span>
-        <h2>Leave a Review</h2>
-        <form method="POST" action="{% url 'customer:submit_review' establishment.id %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label>Rating:</label>
-                <div class="star-rating-input" id="starRatingInput">
-                    <i class="far fa-star" data-value="1"></i>
-                    <i class="far fa-star" data-value="2"></i>
-                    <i class="far fa-star" data-value="3"></i>
-                    <i class="far fa-star" data-value="4"></i>
-                    <i class="far fa-star" data-value="5"></i>
-                </div>
-                <input type="hidden" name="rating" id="ratingValue" required />
-            </div>
-            <div class="form-group">
-                <label>Your Review:</label>
-                <textarea name="comment" rows="5" placeholder="Share your experience..." required></textarea>
-            </div>
-            <button type="submit" class="btn-submit-review">
-                <i class="fas fa-paper-plane"></i> Submit Review
-            </button>
-        </form>
-    </div>
-</div>
+{% block extra_js %}
+<script>
+    const UPDATE_PROFILE_URL = "{% url 'update_profile' %}";
+    const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
+    const VIEW_CART_URL = "{% url 'view_cart' %}";
+    const CLEAR_CART_URL = "{% url 'clear_cart' %}";
+    const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
+    const LOGIN_REGISTER_URL = "{% url 'user_login_register' %}";
+    const ESTABLISHMENT_ID = {{ establishment.id|default:'null' }};
+    const BASE_URL_ROOT = "{% url 'food_establishment_details' establishment.id %}";
+    const CUSTOMER_ID = {{ request.user.id|default:'null' }};
+</script>
+<script src="{% static 'js/establishment_details.js' %}"></script>
+<script src="{% static 'js/status_updater.js' %}"></script>
 
 <script>
-    // ITEM DETAILS MODAL
-    const itemsData = {
-        {% for item in menu_items %}
-        {{ item.id }}: {
-            name: "{{ item.name|escapejs }}",
-            description: "{{ item.description|escapejs }}",
-            price: {{ item.price }},
-            image: "{{ item.image.url }}",
-            available: {{ item.is_available|yesno:"true,false" }},
-            stock: {{ item.quantity_available }}
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    };
-
-    function showItemDetails(itemId) {
-        const item = itemsData[itemId];
-        if (!item) return;
-
-        document.getElementById('modalItemName').textContent = item.name;
-        document.getElementById('modalItemDescription').textContent = item.description;
-        document.getElementById('modalItemPrice').textContent = `₱${item.price}`;
-        document.getElementById('modalItemStock').textContent = item.available ? `In Stock: ${item.stock}` : 'Out of Stock';
-        document.getElementById('modalItemImage').src = item.image;
-        document.getElementById('itemQuantity').value = 1;
-        document.getElementById('itemQuantity').max = item.stock;
-
-        const actionsContainer = document.getElementById('modalActionsContainer');
-        if (item.available) {
-            actionsContainer.innerHTML = `
-                <button class="btn-add-to-cart-modal" onclick="addToCartFromModal(${itemId})">
-                    <i class="fas fa-shopping-cart"></i> Add to Cart
-                </button>
-                <button class="btn-buy-now-modal" onclick="buyNowFromModal(${itemId})">
-                    <i class="fas fa-bolt"></i> Buy Now
-                </button>
-            `;
-        } else {
-            actionsContainer.innerHTML = `<button class="btn-full-width" disabled><i class="fas fa-ban"></i> Out of Stock</button>`;
-        }
-
-        document.getElementById('itemDetailModal').style.display = 'block';
-    }
-
-    function closeItemModal() {
-        document.getElementById('itemDetailModal').style.display = 'none';
-    }
-
-    function increaseQuantity() {
-        const input = document.getElementById('itemQuantity');
-        const max = parseInt(input.max);
-        if (parseInt(input.value) < max) {
-            input.value = parseInt(input.value) + 1;
-        }
-    }
-
-    function decreaseQuantity() {
-        const input = document.getElementById('itemQuantity');
-        if (parseInt(input.value) > 1) {
-            input.value = parseInt(input.value) - 1;
-        }
-    }
-
-    function addToCartFromModal(itemId) {
-        const quantity = parseInt(document.getElementById('itemQuantity').value);
-        const item = itemsData[itemId];
-
-        fetch("{% url 'customer:add_to_cart' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                menu_item_id: itemId,
-                quantity: quantity
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateCartCount(data.cart_count);
-                alert(`${item.name} (x${quantity}) added to cart!`);
-                closeItemModal();
-            } else {
-                alert(data.message || "Failed to add to cart");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("An error occurred. Please try again.");
-        });
-    }
-
-    function buyNowFromModal(itemId) {
-        const quantity = parseInt(document.getElementById('itemQuantity').value);
-        window.location.href = `{% url 'customer:buy_now' 0 %}`.replace('0', itemId) + `?quantity=${quantity}`;
-    }
-
-    function addToCartQuick(itemId, itemName, itemPrice, itemImage, maxStock) {
-        fetch("{% url 'customer:add_to_cart' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                menu_item_id: itemId,
-                quantity: 1
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateCartCount(data.cart_count);
-                alert(`${itemName} added to cart!`);
-            } else {
-                alert(data.message || "Failed to add to cart");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("An error occurred. Please try again.");
-        });
-    }
-
-    function buyNow(itemId) {
-        window.location.href = `{% url 'customer:buy_now' 0 %}`.replace('0', itemId) + `?quantity=1`;
-    }
-
-    function updateCartCount(count) {
-        const cartBadge = document.querySelector('.cart-badge');
-        if (cartBadge) {
-            cartBadge.textContent = count;
-            cartBadge.style.display = count > 0 ? 'flex' : 'none';
-            cartBadge.classList.add('updated-flash');
-            setTimeout(() => cartBadge.classList.remove('updated-flash'), 300);
-        }
-    }
-
-    // MENU FILTERING & SEARCH
-    document.getElementById('menuSearchInput').addEventListener('input', filterMenu);
-    document.getElementById('categoryFilter').addEventListener('change', filterMenu);
-    document.getElementById('sortFilter').addEventListener('change', filterMenu);
-    document.getElementById('bestSellerFilter').addEventListener('click', function() {
-        this.classList.toggle('active');
-        filterMenu();
-    });
-    document.getElementById('availableOnlyFilter').addEventListener('click', function() {
-        this.classList.toggle('active');
-        filterMenu();
-    });
-
-    function filterMenu() {
-        const searchTerm = document.getElementById('menuSearchInput').value.toLowerCase();
-        const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
-        const sortFilter = document.getElementById('sortFilter').value;
-        const bestSellerOnly = document.getElementById('bestSellerFilter').classList.contains('active');
-        const availableOnly = document.getElementById('availableOnlyFilter').classList.contains('active');
-
-        let items = Array.from(document.querySelectorAll('.menu-item'));
-
-        items.forEach(item => {
-            const name = item.dataset.name;
-            const category = item.dataset.category.toLowerCase();
-            const isBestSeller = item.dataset.bestseller === 'yes';
-            const isAvailable = item.dataset.available === 'yes';
-
-            let show = true;
-
-            if (searchTerm && !name.includes(searchTerm)) show = false;
-            if (categoryFilter && category !== categoryFilter) show = false;
-            if (bestSellerOnly && !isBestSeller) show = false;
-            if (availableOnly && !isAvailable) show = false;
-
-            item.style.display = show ? 'block' : 'none';
-        });
-
-        // SORTING
-        if (sortFilter) {
-            items = items.filter(item => item.style.display !== 'none');
-            const menuList = document.getElementById('menuList');
-
-            items.sort((a, b) => {
-                if (sortFilter === 'price-asc') {
-                    return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
-                } else if (sortFilter === 'price-desc') {
-                    return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
-                } else if (sortFilter === 'name-asc') {
-                    return a.dataset.name.localeCompare(b.dataset.name);
-                } else if (sortFilter === 'name-desc') {
-                    return b.dataset.name.localeCompare(a.dataset.name);
-                }
-                return 0;
-            });
-
-            items.forEach(item => menuList.appendChild(item));
-        }
-    }
-
-    // REVIEW FILTERS
-    document.querySelectorAll('.btn-review-filter').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.btn-review-filter').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            const rating = this.dataset.rating;
-            document.querySelectorAll('.review-item').forEach(review => {
-                if (rating === 'all' || review.dataset.rating === rating) {
-                    review.style.display = 'block';
-                } else {
-                    review.style.display = 'none';
-                }
-            });
-        });
-    });
-
-    // STAR RATING INPUT
-    const stars = document.querySelectorAll('#starRatingInput i');
-    const ratingInput = document.getElementById('ratingValue');
-
-    stars.forEach(star => {
-        star.addEventListener('click', function() {
-            const value = this.dataset.value;
-            ratingInput.value = value;
-
-            stars.forEach(s => {
-                if (parseInt(s.dataset.value) <= parseInt(value)) {
-                    s.classList.remove('far');
-                    s.classList.add('fas');
-                } else {
-                    s.classList.remove('fas');
-                    s.classList.add('far');
-                }
-            });
-        });
-    });
-
-    // MODAL CLOSE ON OUTSIDE CLICK
-    window.onclick = function(event) {
-        const itemModal = document.getElementById('itemDetailModal');
-        const reviewModal = document.getElementById('reviewModal');
-
-        if (event.target === itemModal) {
-            itemModal.style.display = 'none';
-        }
-        if (event.target === reviewModal) {
-            reviewModal.style.display = 'none';
-        }
-    }
-
-    // ==========================================
-    // ✅ CHAT FUNCTIONALITY
-    // ==========================================
-
-    const CUSTOMER_ID = {{ user.customer.id|default:0 }};
-    const ESTABLISHMENT_ID = {{ establishment.id }};
-    const IS_USER_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
-
     let chatSocket = null;
+    let chatPopupOpen = false;
     let chatMessagesCache = [];
     let contextMenuMessageId = null;
     let selectedUnsendType = 'everyone';
-
-    // Pinned messages (localStorage)
     let pinnedMessages = new Set();
 
-    function loadPinnedMessages() {
-        const stored = localStorage.getItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`);
-        if (stored) {
-            pinnedMessages = new Set(JSON.parse(stored));
-        }
-    }
+    // Long press detection variables
+    let longPressTimer = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_DURATION = 500;
 
-    function savePinnedMessages() {
-        localStorage.setItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`, JSON.stringify(Array.from(pinnedMessages)));
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
     function toggleChatPopup() {
-        const popup = document.getElementById('chatPopup');
-        popup.classList.toggle('active');
+        const chatPopup = document.getElementById('chatPopupContainer');
+        chatPopupOpen = !chatPopupOpen;
 
-        if (popup.classList.contains('active')) {
-            document.getElementById('chatNotificationBadge').classList.remove('active');
-            document.getElementById('chatNotificationBadge').textContent = '0';
+        if (chatPopupOpen) {
+            chatPopup.classList.add('active');
+            initializeChatWebSocket();
+            loadChatMessages();
+            clearChatNotificationBadge();
+        } else {
+            chatPopup.classList.remove('active');
         }
     }
 
     function closeChatPopup() {
-        document.getElementById('chatPopup').classList.remove('active');
+        chatPopupOpen = false;
+        const chatPopup = document.getElementById('chatPopupContainer');
+        chatPopup.classList.remove('active');
+    }
+
+    function loadChatMessages() {
+        const messagesContainer = document.getElementById('chatPopupMessages');
+        if (!messagesContainer) return;
+
+        chatMessagesCache = [];
+        messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Loading messages...</div>';
+
+        fetch(`/chat/messages/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages) {
+                messagesContainer.innerHTML = '';
+                chatMessagesCache = [];
+
+                data.messages.forEach((msg) => {
+                    const msgData = {
+                        type: 'chat_message',
+                        sender_id: msg.sender_id,
+                        message: msg.content,
+                        timestamp: msg.timestamp,
+                        message_id: msg.id
+                    };
+                    chatMessagesCache.push(msgData);
+                    addMessageToChatPopup(msgData, false);
+                });
+
+                scrollChatToBottom();
+                updatePinnedSection();
+            } else {
+                messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No messages yet. Say hi! 👋</div>';
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading chat messages:', error);
+            messagesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">Failed to load messages</div>';
+        });
     }
 
     function initializeChatWebSocket() {
-        if (!IS_USER_AUTHENTICATED || !CUSTOMER_ID || !ESTABLISHMENT_ID) {
-            console.error('User not authenticated or missing IDs');
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
             return;
         }
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${ESTABLISHMENT_ID}/${CUSTOMER_ID}/`;
+        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${CUSTOMER_ID}/${ESTABLISHMENT_ID}/`;
 
         chatSocket = new WebSocket(wsUrl);
 
-        chatSocket.onopen = function() {
-            console.log('Chat WebSocket connected');
-            document.getElementById('chatOnlineStatus').textContent = 'Online';
+        chatSocket.onopen = function(e) {
+            console.log('✅ Chat WebSocket connected');
+            updateConnectionStatus('online');
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log('❌ Chat WebSocket disconnected');
+            updateConnectionStatus('disconnected');
+        };
+
+        chatSocket.onerror = function(e) {
+            console.error('⚠️ WebSocket error:', e);
+            updateConnectionStatus('error');
         };
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
-            console.log('Received:', data);
 
-            if (data.type === 'chat_message') {
-                addMessageToChatPopup(data, false);
-                chatMessagesCache.push(data);
-
-                if (!document.getElementById('chatPopup').classList.contains('active')) {
-                    incrementNotificationBadge();
+            if (data.type === 'connection_established') {
+                console.log('✅ Connection confirmed');
+            }
+            else if (data.type === 'chat_message') {
+                if (parseInt(data.sender_id) === parseInt(CUSTOMER_ID)) {
+                    return;
                 }
-            } else if (data.type === 'message_history') {
-                chatMessagesCache = data.messages;
-                data.messages.forEach(msg => addMessageToChatPopup(msg, false));
-            } else if (data.type === 'typing') {
-                handleTypingIndicator(data);
-            } else if (data.type === 'unsend_message') {
+                addMessageToChatPopup(data, true);
+                if (!chatPopupOpen) {
+                    showChatNotificationBadge();
+                }
+            }
+            else if (data.type === 'typing_indicator') {
+                if (parseInt(data.sender_id) !== parseInt(CUSTOMER_ID)) {
+                    showTypingIndicator(data.is_typing);
+                }
+            }
+            else if (data.type === 'message_unsent') {
                 handleMessageUnsent(data);
             }
         };
-
-        chatSocket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-            document.getElementById('chatOnlineStatus').textContent = 'Connection Error';
-        };
-
-        chatSocket.onclose = function() {
-            console.log('Chat WebSocket closed');
-            document.getElementById('chatOnlineStatus').textContent = 'Offline';
-        };
     }
 
-    function addMessageToChatPopup(data, isTemp) {
+    function updateConnectionStatus(status) {
+        const statusElement = document.getElementById('chatConnectionStatus');
+        if (!statusElement) return;
+
+        if (status === 'online') {
+            statusElement.textContent = 'Active now';
+            statusElement.classList.remove('disconnected');
+        } else if (status === 'disconnected') {
+            statusElement.textContent = 'Offline';
+            statusElement.classList.add('disconnected');
+        } else if (status === 'error') {
+            statusElement.textContent = 'Connection Error';
+            statusElement.classList.add('disconnected');
+        }
+    }
+
+    function addMessageToChatPopup(data, addToCache = true) {
         const messagesContainer = document.getElementById('chatPopupMessages');
-        const isSent = parseInt(data.sender_id) === CUSTOMER_ID;
+        if (!messagesContainer) return;
+
+        if (addToCache) {
+            chatMessagesCache.push(data);
+        }
 
         const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${isSent ? 'sent' : 'received'}`;
+        const senderId = parseInt(data.sender_id);
+        const customerId = parseInt(CUSTOMER_ID);
+        const isMyMessage = senderId === customerId;
+
+        messageDiv.className = `chat-message ${isMyMessage ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = data.message_id;
 
+        // Check if message is pinned
         if (pinnedMessages.has(data.message_id)) {
             messageDiv.classList.add('pinned');
         }
 
-        const bubbleDiv = document.createElement('div');
-        bubbleDiv.className = 'chat-bubble';
-        bubbleDiv.innerHTML = `
-            <div>${escapeHtml(data.message)}</div>
-            <span class="chat-timestamp">${data.timestamp}</span>
+        const optionsButton = isMyMessage ? `
+            <button class="message-options-btn" onclick="showContextMenu(event, ${data.message_id})">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        ` : '';
+
+        messageDiv.innerHTML = `
+            ${optionsButton}
+            <div class="chat-bubble">
+                <div>${escapeHtml(data.message)}</div>
+                <span class="chat-timestamp">${data.timestamp}</span>
+            </div>
         `;
 
-        if (isSent) {
-            const optionsBtn = document.createElement('button');
-            optionsBtn.className = 'message-options-btn';
-            optionsBtn.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
-            optionsBtn.onclick = function(e) {
+        if (isMyMessage) {
+            attachLongPressHandlers(messageDiv, data.message_id);
+        }
+
+        messagesContainer.appendChild(messageDiv);
+        scrollChatToBottom();
+    }
+
+    // ==========================================
+    // ✅ LONG PRESS DETECTION (MOBILE)
+    // ==========================================
+
+    function attachLongPressHandlers(messageElement, messageId) {
+        // Touch events
+        messageElement.addEventListener('touchstart', function(e) {
+            longPressTriggered = false;
+            messageElement.classList.add('long-pressing');
+
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                messageElement.classList.remove('long-pressing');
+
+                const touch = e.touches[0];
+                showContextMenuAtPosition(touch.clientX, touch.clientY, messageId);
+
+                e.preventDefault();
+            }, LONG_PRESS_DURATION);
+        }, { passive: false });
+
+        messageElement.addEventListener('touchend', function(e) {
+            clearTimeout(longPressTimer);
+            messageElement.classList.remove('long-pressing');
+
+            if (longPressTriggered) {
+                e.preventDefault();
                 e.stopPropagation();
-                showContextMenu(data.message_id, e.currentTarget);
-            };
+            }
+        });
 
-            messageDiv.appendChild(bubbleDiv);
-            messageDiv.appendChild(optionsBtn);
-        } else {
-            messageDiv.appendChild(bubbleDiv);
-        }
+        messageElement.addEventListener('touchmove', function(e) {
+            clearTimeout(longPressTimer);
+            messageElement.classList.remove('long-pressing');
+        });
 
-        messagesContainer.insertBefore(messageDiv, document.getElementById('typingIndicator'));
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // Mouse events (for desktop)
+        messageElement.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+
+            longPressTriggered = false;
+
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                showContextMenuAtPosition(e.clientX, e.clientY, messageId);
+            }, LONG_PRESS_DURATION);
+        });
+
+        messageElement.addEventListener('mouseup', function(e) {
+            clearTimeout(longPressTimer);
+        });
+
+        messageElement.addEventListener('mouseleave', function(e) {
+            clearTimeout(longPressTimer);
+        });
     }
 
-    function handleTypingIndicator(data) {
-        const typingIndicator = document.getElementById('typingIndicator');
-        if (data.is_typing && parseInt(data.sender_id) !== CUSTOMER_ID) {
-            typingIndicator.classList.add('active');
-        } else {
-            typingIndicator.classList.remove('active');
-        }
+    // ==========================================
+    // ✅ CONTEXT MENU (DESKTOP & MOBILE)
+    // ==========================================
+
+    function showContextMenu(event, messageId) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = event.target.closest('button').getBoundingClientRect();
+        showContextMenuAtPosition(rect.left, rect.bottom + 5, messageId);
     }
 
-    function incrementNotificationBadge() {
-        const badge = document.getElementById('chatNotificationBadge');
-        let count = parseInt(badge.textContent) || 0;
-        count++;
-        badge.textContent = count;
-        badge.classList.add('active');
+    function showContextMenuAtPosition(x, y, messageId) {
+        const contextMenu = document.getElementById('messageContextMenu');
+        contextMenuMessageId = messageId;
+
+        // Update pin/unpin text
+        const isPinned = pinnedMessages.has(messageId);
+        document.getElementById('pinMenuText').textContent = isPinned ? 'Unpin' : 'Pin';
+
+        // Position the menu
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+
+        // Adjust if menu goes off-screen
+        setTimeout(() => {
+            const menuRect = contextMenu.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            if (menuRect.right > windowWidth) {
+                contextMenu.style.left = (x - menuRect.width) + 'px';
+            }
+
+            if (menuRect.bottom > windowHeight) {
+                contextMenu.style.top = (y - menuRect.height - 10) + 'px';
+            }
+        }, 10);
+
+        contextMenu.classList.add('active');
+
+        setTimeout(() => {
+            document.addEventListener('click', hideContextMenu);
+            document.addEventListener('touchstart', hideContextMenu);
+        }, 100);
+    }
+
+    function hideContextMenu() {
+        const contextMenu = document.getElementById('messageContextMenu');
+        contextMenu.classList.remove('active');
+        document.removeEventListener('click', hideContextMenu);
+        document.removeEventListener('touchstart', hideContextMenu);
+    }
+
+    function scrollChatToBottom() {
+        const messagesContainer = document.getElementById('chatPopupMessages');
+        if (messagesContainer) {
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
     }
 
     function escapeHtml(text) {
@@ -1498,54 +1724,91 @@
         return div.innerHTML;
     }
 
-    // ==========================================
-    // ✅ CONTEXT MENU (Three Dots)
-    // ==========================================
-
-    function showContextMenu(messageId, buttonElement) {
-        contextMenuMessageId = messageId;
-        const menu = document.getElementById('messageContextMenu');
-
-        const rect = buttonElement.getBoundingClientRect();
-        menu.style.top = `${rect.bottom + 5}px`;
-        menu.style.left = `${rect.left - 100}px`;
-        menu.classList.add('active');
+    function showTypingIndicator(isTyping) {
+        const typingIndicator = document.getElementById('chatTypingIndicator');
+        if (typingIndicator) {
+            if (isTyping) {
+                typingIndicator.classList.add('active');
+                scrollChatToBottom();
+            } else {
+                typingIndicator.classList.remove('active');
+            }
+        }
     }
 
-    function hideContextMenu() {
-        document.getElementById('messageContextMenu').classList.remove('active');
-        contextMenuMessageId = null;
+    function showChatNotificationBadge() {
+        const headerBadge = document.getElementById('chatNotificationBadge');
+        const floatingBadge = document.getElementById('floatingChatBadge');
+
+        if (headerBadge) {
+            headerBadge.classList.add('active');
+        }
+        if (floatingBadge) {
+            floatingBadge.classList.add('active');
+        }
+    }
+
+    function clearChatNotificationBadge() {
+        const headerBadge = document.getElementById('chatNotificationBadge');
+        const floatingBadge = document.getElementById('floatingChatBadge');
+
+        if (headerBadge) {
+            headerBadge.classList.remove('active');
+        }
+        if (floatingBadge) {
+            floatingBadge.classList.remove('active');
+        }
     }
 
     // ==========================================
-    // ✅ PIN/UNPIN FUNCTIONALITY (PERSISTENT)
+    // ✅ PIN FUNCTIONALITY (PERSISTENT)
     // ==========================================
+
+    function loadPinnedMessages() {
+        const stored = localStorage.getItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                pinnedMessages = new Set(parsed);
+            } catch (e) {
+                pinnedMessages = new Set();
+            }
+        }
+    }
+
+    function savePinnedMessages() {
+        const arr = Array.from(pinnedMessages);
+        localStorage.setItem(`pinned_${CUSTOMER_ID}_${ESTABLISHMENT_ID}`, JSON.stringify(arr));
+    }
 
     function pinMessage() {
+        hideContextMenu();
+
         if (!contextMenuMessageId) return;
 
         const messageEl = document.querySelector(`.chat-message[data-message-id="${contextMenuMessageId}"]`);
         if (!messageEl) return;
 
-        if (pinnedMessages.has(contextMenuMessageId)) {
+        const isPinned = pinnedMessages.has(contextMenuMessageId);
+
+        if (isPinned) {
+            // Unpin
             pinnedMessages.delete(contextMenuMessageId);
             messageEl.classList.remove('pinned');
         } else {
+            // Pin
             pinnedMessages.add(contextMenuMessageId);
             messageEl.classList.add('pinned');
         }
 
         savePinnedMessages();
         updatePinnedSection();
-        hideContextMenu();
     }
 
     function updatePinnedSection() {
         const pinnedSection = document.getElementById('chatPinnedSection');
         const pinnedList = document.getElementById('pinnedMessagesList');
         const seePinsLink = document.getElementById('chatSeePinsLink');
-
-        pinnedList.innerHTML = '';
 
         if (pinnedMessages.size === 0) {
             pinnedSection.classList.remove('active');
@@ -1554,9 +1817,13 @@
         }
 
         pinnedSection.classList.add('active');
+        seePinsLink.classList.add('active');
 
-        const visiblePins = Array.from(pinnedMessages).slice(0, 2);
-        visiblePins.forEach(msgId => {
+        // Show max 3 pinned messages in section
+        pinnedList.innerHTML = '';
+        const pinnedArray = Array.from(pinnedMessages).slice(-3);
+
+        pinnedArray.forEach(msgId => {
             const msg = chatMessagesCache.find(m => m.message_id === msgId);
             if (msg) {
                 const item = document.createElement('div');
@@ -1571,12 +1838,6 @@
                 pinnedList.appendChild(item);
             }
         });
-
-        if (pinnedMessages.size > 2) {
-            seePinsLink.classList.add('active');
-        } else {
-            seePinsLink.classList.remove('active');
-        }
     }
 
     function unpinMessage(messageId, event) {
