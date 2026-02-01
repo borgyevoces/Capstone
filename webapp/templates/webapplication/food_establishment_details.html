@@ -961,7 +961,7 @@
             <section class="section-card reviews-section">
                 <h2>Customer Reviews</h2>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
                     <div class="review-filters">
                         <select class="review-filter-dropdown" id="reviewFilterDropdown">
                             <option value="all">All Reviews</option>
@@ -972,12 +972,12 @@
 
                     {% if user.is_authenticated %}
                     {% if not user_review %}
-                    <button class="btn-review" id="addReviewBtn"><i class="fas fa-star"></i> Write a Review</button>
+                    <button class="btn-review" id="addReviewBtn" onclick="openReviewModal()"><i class="fas fa-star"></i> Write a Review</button>
                     {% else %}
-                    <p class="text-muted" style="margin: 0;">Your review is highlighted below. Click the pencil icon to edit it.</p>
+                    <p class="text-muted" style="margin: 0; font-size: 0.82em;">Your review is highlighted below. Click the pencil icon to edit it.</p>
                     {% endif %}
                     {% else %}
-                    <p class="text-muted review-login-prompt" style="margin: 0;">
+                    <p class="text-muted review-login-prompt" style="margin: 0; font-size: 0.82em;">
                         Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
                     </p>
                     {% endif %}
@@ -2111,6 +2111,143 @@
     window.togglePinnedSection = togglePinnedSection;
     window.openPinnedMessagesModal = openPinnedMessagesModal;
     window.closePinnedMessagesModal = closePinnedMessagesModal;
+</script>
+
+<script>
+// =============================================
+// REVIEW MODAL - Open / Close / Star Rating
+// =============================================
+(function() {
+    let currentEditReviewId = null;
+
+    window.openReviewModal = function(reviewId, existingRating, existingComment) {
+        const modal = document.getElementById('reviewModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const ratingInput = document.getElementById('ratingInput');
+        const commentField = document.getElementById('comment');
+        const reviewForm = document.getElementById('reviewForm');
+
+        if (reviewId) {
+            // EDIT mode
+            currentEditReviewId = reviewId;
+            modalTitle.textContent = 'Edit Your Review';
+            ratingInput.value = existingRating || 0;
+            commentField.value = existingComment || '';
+            reviewForm.action = '';  // Will be set via JS on submit
+        } else {
+            // NEW review mode
+            currentEditReviewId = null;
+            modalTitle.textContent = 'Write a Review';
+            ratingInput.value = 0;
+            commentField.value = '';
+            reviewForm.action = '';
+        }
+
+        // Sync star visuals
+        syncStarVisuals(parseInt(ratingInput.value));
+
+        modal.style.display = 'block';
+    };
+
+    window.closeReviewModal = function() {
+        const modal = document.getElementById('reviewModal');
+        modal.style.display = 'none';
+        currentEditReviewId = null;
+    };
+
+    // Close modal on backdrop click
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('reviewModal');
+        if (modal && e.target === modal) {
+            closeReviewModal();
+        }
+    });
+
+    function syncStarVisuals(rating) {
+        const stars = document.querySelectorAll('#modalStars i');
+        stars.forEach(function(star, idx) {
+            if (idx < rating) {
+                star.classList.remove('far');
+                star.classList.add('fas', 'filled');
+            } else {
+                star.classList.remove('fas', 'filled');
+                star.classList.add('far');
+            }
+        });
+    }
+
+    // Star click handler
+    document.addEventListener('DOMContentLoaded', function() {
+        const starsContainer = document.getElementById('modalStars');
+        if (!starsContainer) return;
+
+        const stars = starsContainer.querySelectorAll('i');
+        const ratingInput = document.getElementById('ratingInput');
+
+        stars.forEach(function(star) {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                ratingInput.value = rating;
+                syncStarVisuals(rating);
+            });
+
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                syncStarVisuals(rating);
+            });
+        });
+
+        starsContainer.addEventListener('mouseleave', function() {
+            syncStarVisuals(parseInt(ratingInput.value));
+        });
+
+        // Review form submit handler
+        const reviewForm = document.getElementById('reviewForm');
+        if (reviewForm) {
+            reviewForm.addEventListener('submit', function(e) {
+                const rating = parseInt(ratingInput.value);
+                if (rating === 0) {
+                    e.preventDefault();
+                    alert('Please select a star rating before submitting.');
+                    return;
+                }
+                // If editing, set the form action to include the review ID
+                if (currentEditReviewId) {
+                    reviewForm.action = '/review/edit/' + currentEditReviewId + '/';
+                } else {
+                    reviewForm.action = '';
+                }
+                // Let the form submit normally (POST)
+            });
+        }
+
+        // Edit review button listener
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-review');
+            if (editBtn) {
+                const reviewId = editBtn.getAttribute('data-review-id');
+                const rating = parseInt(editBtn.getAttribute('data-rating')) || 0;
+                const comment = editBtn.getAttribute('data-comment') || '';
+                openReviewModal(reviewId, rating, comment);
+            }
+        });
+
+        // Delete review button listener
+        document.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.delete-review');
+            if (deleteBtn) {
+                const reviewId = deleteBtn.getAttribute('data-review-id');
+                if (reviewId && confirm('Are you sure you want to delete your review?')) {
+                    const deleteForm = document.getElementById('delete-review-form');
+                    if (deleteForm) {
+                        deleteForm.action = '/review/delete/' + reviewId + '/';
+                        deleteForm.submit();
+                    }
+                }
+            }
+        });
+    });
+})();
 </script>
 
 <script>

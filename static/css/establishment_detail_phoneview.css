@@ -629,62 +629,73 @@
     }
 
     .btn-review {
-        width: 100%;
-        max-width: 130px;
-        margin: 14px auto;
-        padding-top: 4px;
-        padding-bottom: 4px;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 6px 14px;
         font-size: 0.70em;
         background-color: transparent;
-        color: #000000;
-        border: none;
+        color: #333;
+        border: 1px solid #ccc;
         border-radius: 5px;
-        font-weight: 100;
-        box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+        font-weight: 600;
+        box-shadow: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .btn-review:active {
         transform: scale(0.98);
-        background-color: #333333;
-        color: white;
+        background-color: #f0f0f0;
+        color: #333;
     }
 
-    /* COMPACT 3-COLUMN FILTER BUTTONS - GRID LAYOUT */
+    .btn-review i {
+        color: #333;
+    }
+
+    /* DROPDOWN FILTER - matches desktop select style */
     .review-filters {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin: 1px 0;
-        padding: 0 2px;
+        display: inline-flex;
+        gap: 0;
+        flex: 0 0 auto;
+        margin: 0;
+        padding: 0;
+    }
+
+    .review-filter-dropdown {
+        padding: 6px 12px;
+        height: 34px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: white;
+        font-size: 0.78em;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        min-width: 140px;
+        font-weight: 600;
+        color: #333;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%20117.8L146.2%20258.6L5.4%20117.8z%22%2F%3E%3C%2Fsvg%3E');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 9px;
+        padding-right: 30px;
+    }
+
+    .review-filter-dropdown:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 4px rgba(102, 126, 234, 0.3);
     }
 
     .btn-review-filter {
-        font-size: 0.7em;
-        padding: 4px 3px;
-        border-radius: 7px;
-        background-color: white;
-        border: 1px solid #e0e0e0;
-        color: #666;
-        font-weight: 200;
-        transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
-        text-align: center;
-        white-space: nowrap;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .btn-review-filter.active {
-        background-color: #495051;
-        color: white;
-        border-color: #000000;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-review-filter:active {
-        background-color: #666;
-        transform: scale(0.98);
+        display: none;
     }
 
     .all-reviews-list-wrapper {
@@ -694,20 +705,29 @@
         overflow-y: auto;
     }
 
-    /* IMPROVED REVIEW LAYOUT - NO TEXT OVERFLOW */
+    /* IMPROVED REVIEW LAYOUT - FLUSH NO CARD BORDERS */
     .review-item {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        padding: 3px;
-        margin-bottom: 10px;
+        padding: 10px 0;
+        margin-bottom: 0;
         position: relative;
+        border-bottom: 1px solid #eeeeee;
+        background-color: transparent;
+    }
+
+    .review-item:last-child {
+        border-bottom: none;
     }
 
     .review-item.user-highlight {
-        border: 2px solid #2196f3;
-        background-color: #e3f2fd;
-        box-shadow: 0 2px 10px rgba(33, 150, 243, 0.15);
+        border-bottom: 1px solid #c8dff7;
+        background-color: #eef5ff;
+        box-shadow: none;
+        padding-left: 8px;
+        padding-right: 8px;
+        border-radius: 6px;
     }
 
     .review-user-pic {
@@ -1154,15 +1174,11 @@
     }
 
     .review-filters {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        max-width: 600px;
-        margin: 15px auto;
+        display: inline-flex;
     }
 
     .btn-review-filter {
-        font-size: 0.8em;
-        padding: 8px 10px;
+        display: none;
     }
 
     .modal-content {
@@ -1184,17 +1200,7 @@
         border-color: #000000;
     }
 
-    .btn-review-filter.active {
-        background-color: #000000;
-        border-color: #000000;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-review-filter:active:not(.active) {
-        background-color: #e0e0e0;
-        border-color: #ccc;
-        transform: scale(0.98);
-    }
+    /* btn-review-filter hidden — using select dropdown now */
 
     .review-user-pic {
         border: 2px solid #000000;
