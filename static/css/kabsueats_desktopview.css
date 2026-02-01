@@ -464,6 +464,17 @@
         font-weight: 400;
     }
 
+    /* ✅ NEW: Add line after hero section */
+    .welcome-hero-section::after {
+        content: '';
+        display: block;
+        width: 80%;
+        max-width: 800px;
+        height: 2px;
+        background: linear-gradient(to right, transparent 0%, #e5e7eb 50%, transparent 100%);
+        margin: 30px auto 0;
+    }
+
     /* ========================================= */
     /* FILTERS + MAP BUTTON                      */
     /* ========================================= */

@@ -341,6 +341,16 @@
         line-height: 1.4;
     }
 
+    /* ✅ NEW: Add line after hero section */
+    .welcome-hero-section::after {
+        content: '';
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, transparent 0%, #e5e7eb 50%, transparent 100%);
+        margin-top: 20px;
+    }
+
     /* =====================================
     =    FILTERS (3 COLUMN GRID WITH MAP)=
     =====================================*/
