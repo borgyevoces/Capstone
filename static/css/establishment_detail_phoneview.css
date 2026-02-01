@@ -425,80 +425,76 @@
     /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
     /* ============================================ */
     /* ============================================ */
-/* ✅ BEST SELLER BADGE - Top Left (Orange)     */
+/* ============================================ */
+/* ✅ BEST SELLER BADGE - Exact match to image */
 /* ============================================ */
 .badge-top-seller {
     position: absolute;
-    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    left: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
+    top: 8px;
+    left: 8px;
     z-index: 10;
 
-    /* Orange/Gold color like reference */
-    background: linear-gradient(135deg, #ff9800, #ff6f00);
+    /* Orange like in the image */
+    background: #ff6633;
     color: white;
 
-    font-size: 0.45em;
+    font-size: 0.5em;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
 
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
 
-    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     white-space: nowrap;
-    max-width: calc(50% - 4px);
 }
 
 .badge-top-seller i {
-    font-size: 0.9em;
+    font-size: 1em;
     color: #fff;
 }
 
 /* ============================================ */
-/* ✅ STOCK BADGE - Top Right (Green/Red)       */
+/* ✅ AVAILABLE BADGE - Exact match to image    */
 /* ============================================ */
 .badge-stock {
     position: absolute;
-    top: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
-    right: 8px;  /* 👈 CHANGED: Increased from 6px to 8px */
+    top: 8px;
+    right: 8px;
     z-index: 10;
 
-    font-size: 0.45em;
+    font-size: 0.5em;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
 
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
 
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
     white-space: nowrap;
-    max-width: calc(50% - 4px);
 }
 
-    /* Available - Green */
+    /* Available - Green like in the image */
     .badge-stock.available {
-    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    background: #22a844;
     color: white;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
     /* Out of Stock - Red */
     .badge-stock.out-of-stock {
-    background: linear-gradient(135deg, #f44336, #c62828);
+    background: #dc3545;
     color: white;
-    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
     .badge-stock i {
-    font-size: 0.9em;  /* 👈 CHANGED: Reduced from 1em */
+    font-size: 1em;
 }
+
 
     /* ✅ REMOVE OLD STOCK STATUS & INDICATORS */
     .stock-indicator,
