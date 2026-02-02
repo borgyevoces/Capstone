@@ -85,6 +85,9 @@ path('api/food-establishment/sales-report/pdf/', views.export_sales_report_pdf,n
 path('api/food-establishment/sales-report/excel/', views.export_sales_report_excel, name='export_sales_excel'),
 path('owner/orders/', views.orders_list_view, name='orders_list'),
 path('owner/transactions/', views.transaction_history_view, name='transaction_history'),
+path('api/food-establishment/orders/<int:order_id>/update-status/',
+     views.update_order_status,
+     name='update_order_status'),
 path('api/food-establishment/transactions/', views.get_food_establishment_transactions, name='get_transactions'),
 
 
