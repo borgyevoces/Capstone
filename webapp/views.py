@@ -4885,6 +4885,139 @@ def export_orders_csv(request):
 
 
 # ==========================================
+# TRANSACTION HISTORY API ENDPOINT
+# ==========================================
+@login_required
+@require_http_methods(["GET"])
+def get_food_establishment_transactions(request):
+    """
+    API endpoint to get all transactions for a food establishment
+    Returns PayMongo/online payment transactions with detailed information
+    URL: /api/food-establishment/transactions/
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+
+        if not establishment:
+            return JsonResponse({
+                'success': False,
+                'message': 'No establishment found for this user'
+            }, status=404)
+
+        # Get all orders that used PayMongo (online payment)
+        # Filter for orders with paymongo_checkout_id (indicates PayMongo payment)
+        orders = Order.objects.filter(
+            establishment=establishment,
+            paymongo_checkout_id__isnull=False  # Only orders with PayMongo checkout
+        ).select_related('user').prefetch_related('orderitem_set__menu_item').order_by('-created_at')
+
+        # Build transactions list
+        transactions = []
+        for order in orders:
+            # Get order items
+            items = []
+            for item in order.orderitem_set.all():
+                items.append({
+                    'name': item.menu_item.name,
+                    'quantity': item.quantity,
+                    'price': str(item.price_at_order),
+                    'total': str(item.total_price)
+                })
+
+            # Determine payment method from order
+            payment_method = 'gcash'  # Default
+            payment_method_display = 'GCash'
+
+            # You can enhance this by storing payment method in Order model
+            # For now, we'll use gcash_payment_method field
+            if order.gcash_payment_method:
+                method = order.gcash_payment_method.lower()
+                if 'paymaya' in method:
+                    payment_method = 'paymaya'
+                    payment_method_display = 'PayMaya'
+                elif 'card' in method:
+                    payment_method = 'card'
+                    payment_method_display = 'Credit/Debit Card'
+                elif 'bank' in method or 'online' in method:
+                    payment_method = 'online_banking'
+                    payment_method_display = 'Online Banking'
+
+            # Determine status
+            status = 'Pending'
+            if order.payment_status == 'paid':
+                status = 'Paid'
+            elif order.payment_status == 'failed':
+                status = 'Failed'
+            elif order.payment_status == 'expired':
+                status = 'Expired'
+
+            # Build transaction object
+            transaction = {
+                'order_id': order.id,
+                'created_at': order.created_at.isoformat(),
+                'payment_method': payment_method,
+                'payment_method_display': payment_method_display,
+                'customer_name': order.user.get_full_name() or order.user.username if order.user else 'Guest',
+                'customer_email': order.user.email if order.user else '',
+                'amount': str(order.total_amount),
+                'status': status,
+                'reference_number': order.gcash_reference_number or order.paymongo_checkout_id or '',
+                'items': items,
+                'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None
+            }
+
+            transactions.append(transaction)
+
+        # Calculate statistics
+        total_revenue = Decimal('0.00')
+        paid_count = 0
+
+        # Get current month start
+        now = timezone.now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        monthly_revenue = Decimal('0.00')
+
+        for transaction in transactions:
+            amount = Decimal(transaction['amount'])
+
+            # Total revenue (only paid)
+            if transaction['status'] == 'Paid':
+                total_revenue += amount
+                paid_count += 1
+
+                # Monthly revenue
+                created_at = datetime.fromisoformat(transaction['created_at'].replace('Z', '+00:00'))
+                if created_at >= month_start:
+                    monthly_revenue += amount
+
+        # Calculate success rate
+        total_count = len(transactions)
+        success_rate = round((paid_count / total_count * 100) if total_count > 0 else 0, 1)
+
+        statistics = {
+            'total_revenue': str(total_revenue),
+            'total_transactions': total_count,
+            'monthly_revenue': str(monthly_revenue),
+            'success_rate': success_rate,
+            'paid_transactions': paid_count
+        }
+
+        return JsonResponse({
+            'success': True,
+            'transactions': transactions,
+            'statistics': statistics
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+
+# ==========================================
 # 3. GET USER TRANSACTION HISTORY
 # ==========================================
 @login_required

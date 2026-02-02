@@ -102,7 +102,7 @@
         flex-wrap: wrap;
     }
 
-    .filter-btn, .export-btn, .dashboard-btn {
+    .filter-btn, .export-btn, .dashboard-btn, .refresh-btn {
         background: white;
         border: 2px solid #e5e7eb;
         color: #1a1a1a;
@@ -117,7 +117,7 @@
         transition: all 0.2s;
     }
 
-    .filter-btn:hover, .export-btn:hover, .dashboard-btn:hover {
+    .filter-btn:hover, .export-btn:hover, .dashboard-btn:hover, .refresh-btn:hover {
         border-color: #B71C1C;
         color: #B71C1C;
         transform: translateY(-2px);
@@ -132,6 +132,17 @@
     .dashboard-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
+    }
+
+    .refresh-btn {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+    }
+
+    .refresh-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
     .transactions-filters {
@@ -228,7 +239,7 @@
         color: #B71C1C;
     }
 
-    .transaction-type-badge {
+    .payment-method-badge {
         display: inline-block;
         padding: 6px 12px;
         border-radius: 12px;
@@ -237,32 +248,30 @@
         text-transform: uppercase;
     }
 
-    .transaction-type-badge.payment {
+    .payment-method-badge.gcash {
         background: #d1fae5;
         color: #059669;
     }
 
-    .transaction-type-badge.refund {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .transaction-type-badge.withdrawal {
+    .payment-method-badge.paymaya {
         background: #dbeafe;
         color: #1e40af;
+    }
+
+    .payment-method-badge.card {
+        background: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .payment-method-badge.online_banking {
+        background: #e0e7ff;
+        color: #4f46e5;
     }
 
     .transaction-amount {
         font-weight: 700;
         font-size: 16px;
-    }
-
-    .transaction-amount.positive {
         color: #059669;
-    }
-
-    .transaction-amount.negative {
-        color: #dc2626;
     }
 
     .transaction-status-badge {
@@ -274,7 +283,7 @@
         text-transform: uppercase;
     }
 
-    .transaction-status-badge.completed {
+    .transaction-status-badge.paid {
         background: #d1fae5;
         color: #059669;
     }
@@ -289,20 +298,139 @@
         color: #dc2626;
     }
 
-    .btn-view {
+    .transaction-status-badge.expired {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .btn-view, .btn-details {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #1a1a1a;
         padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         transition: all 0.2s;
-        background: #f3f4f6;
-        color: #1a1a1a;
     }
 
-    .btn-view:hover {
+    .btn-view:hover, .btn-details:hover {
         background: #e5e7eb;
+        transform: translateY(-2px);
+    }
+
+    /* Transaction Details Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        overflow: auto;
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+        color: white;
+        padding: 24px 32px;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .close {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        cursor: pointer;
+        line-height: 1;
+        transition: all 0.2s;
+    }
+
+    .close:hover {
+        transform: scale(1.1);
+    }
+
+    .modal-body {
+        padding: 32px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #1a1a1a;
+        text-align: right;
+    }
+
+    .order-items-section {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 2px solid #e5e7eb;
+    }
+
+    .order-items-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 16px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        color: #374151;
     }
 
     @media (max-width: 768px) {
@@ -321,6 +449,15 @@
             display: block;
             overflow-x: auto;
         }
+
+        .modal-content {
+            width: 95%;
+            margin: 10% auto;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
     }
 </style>
 {% endblock %}
@@ -332,7 +469,7 @@
             <i class="fas fa-receipt"></i>
             Transaction History
         </h1>
-        <p class="page-subtitle">Track all your financial transactions and sales</p>
+        <p class="page-subtitle">Track all your PayMongo online payments and transactions</p>
     </div>
 
     <!-- Statistics Cards -->
@@ -350,8 +487,8 @@
             <div class="stat-value" id="monthlyRevenue">₱0.00</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Average Order</div>
-            <div class="stat-value" id="averageOrder">₱0.00</div>
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value" id="successRate">0%</div>
         </div>
     </div>
 
@@ -360,9 +497,13 @@
         <div class="transactions-header">
             <h2 class="transactions-title">
                 <i class="fas fa-list"></i>
-                All Transactions
+                Online Payment Transactions
             </h2>
             <div class="transactions-actions">
+                <button class="refresh-btn" onclick="loadTransactions()">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
                 <button class="filter-btn" onclick="toggleFilters()">
                     <i class="fas fa-filter"></i>
                     Filter
@@ -373,7 +514,7 @@
                 </button>
                 <button class="dashboard-btn" onclick="window.location.href='{% url 'food_establishment_dashboard' %}'">
                     <i class="fas fa-chart-line"></i>
-                    View Dashboard
+                    Dashboard
                 </button>
             </div>
         </div>
@@ -381,21 +522,23 @@
         <!-- Filters -->
         <div class="transactions-filters" id="transactionsFilters" style="display: none;">
             <div class="filter-group">
-                <label>Type</label>
-                <select id="typeFilter" onchange="applyFilters()">
-                    <option value="all">All Types</option>
-                    <option value="payment">Payment</option>
-                    <option value="refund">Refund</option>
-                    <option value="withdrawal">Withdrawal</option>
+                <label>Payment Method</label>
+                <select id="paymentMethodFilter" onchange="applyFilters()">
+                    <option value="all">All Methods</option>
+                    <option value="gcash">GCash</option>
+                    <option value="paymaya">PayMaya</option>
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="online_banking">Online Banking</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label>Status</label>
                 <select id="statusFilter" onchange="applyFilters()">
                     <option value="all">All Status</option>
-                    <option value="completed">Completed</option>
+                    <option value="paid">Paid</option>
                     <option value="pending">Pending</option>
                     <option value="failed">Failed</option>
+                    <option value="expired">Expired</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -424,6 +567,19 @@
         </div>
     </div>
 </div>
+
+<!-- Transaction Details Modal -->
+<div id="transactionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-file-invoice"></i> Transaction Details</h2>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Details will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block page_javascript %}
@@ -435,12 +591,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadTransactions() {
+    // Show loading state
+    document.getElementById('transactionsListContainer').innerHTML = `
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading transactions...</p>
+        </div>
+    `;
+
     fetch('/api/food-establishment/transactions/')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
-            allTransactions = data.transactions || [];
-            updateStatistics(data.statistics || {});
-            displayTransactions(allTransactions);
+            if (data.success) {
+                allTransactions = data.transactions || [];
+                updateStatistics(data.statistics || {});
+                displayTransactions(allTransactions);
+            } else {
+                throw new Error(data.message || 'Failed to load transactions');
+            }
         })
         .catch(error => {
             console.error('Error loading transactions:', error);
@@ -448,17 +621,21 @@ function loadTransactions() {
                 <div class="empty-state">
                     <i class="fas fa-exclamation-circle"></i>
                     <h3>Error Loading Transactions</h3>
-                    <p>There was a problem loading your transactions. Please try again.</p>
+                    <p>${error.message || 'There was a problem loading your transactions. Please try again.'}</p>
+                    <button class="refresh-btn" onclick="loadTransactions()" style="margin-top: 20px;">
+                        <i class="fas fa-sync-alt"></i>
+                        Retry
+                    </button>
                 </div>
             `;
         });
 }
 
 function updateStatistics(stats) {
-    document.getElementById('totalRevenue').textContent = '₱' + parseFloat(stats.total_revenue || 0).toFixed(2);
+    document.getElementById('totalRevenue').textContent = '₱' + parseFloat(stats.total_revenue || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('totalTransactions').textContent = stats.total_transactions || 0;
-    document.getElementById('monthlyRevenue').textContent = '₱' + parseFloat(stats.monthly_revenue || 0).toFixed(2);
-    document.getElementById('averageOrder').textContent = '₱' + parseFloat(stats.average_order || 0).toFixed(2);
+    document.getElementById('monthlyRevenue').textContent = '₱' + parseFloat(stats.monthly_revenue || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('successRate').textContent = (stats.success_rate || 0) + '%';
 }
 
 function displayTransactions(transactions) {
@@ -469,7 +646,7 @@ function displayTransactions(transactions) {
             <div class="empty-state">
                 <i class="fas fa-receipt"></i>
                 <h3>No Transactions Yet</h3>
-                <p>Your transaction history will appear here.</p>
+                <p>Your online payment transactions will appear here once customers make orders.</p>
             </div>
         `;
         return;
@@ -479,9 +656,9 @@ function displayTransactions(transactions) {
         <table class="transactions-table">
             <thead>
                 <tr>
-                    <th>Transaction ID</th>
-                    <th>Date</th>
-                    <th>Type</th>
+                    <th>Order ID</th>
+                    <th>Date & Time</th>
+                    <th>Payment Method</th>
                     <th>Customer</th>
                     <th>Amount</th>
                     <th>Status</th>
@@ -492,20 +669,24 @@ function displayTransactions(transactions) {
     `;
 
     transactions.forEach(transaction => {
-        const amountClass = transaction.amount >= 0 ? 'positive' : 'negative';
-        const amountPrefix = transaction.amount >= 0 ? '+' : '';
+        const date = new Date(transaction.created_at);
+        const formattedDate = date.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const formattedTime = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
 
         html += `
             <tr>
-                <td><span class="transaction-id">#${transaction.id}</span></td>
-                <td>${new Date(transaction.created_at).toLocaleDateString()} ${new Date(transaction.created_at).toLocaleTimeString()}</td>
-                <td><span class="transaction-type-badge ${transaction.type.toLowerCase()}">${transaction.type}</span></td>
-                <td>${transaction.customer_name || 'N/A'}</td>
-                <td><span class="transaction-amount ${amountClass}">${amountPrefix}₱${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)}</span></td>
+                <td><span class="transaction-id">#${transaction.order_id}</span></td>
+                <td>
+                    <div>${formattedDate}</div>
+                    <div style="font-size: 12px; color: #6b7280;">${formattedTime}</div>
+                </td>
+                <td><span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">${transaction.payment_method_display}</span></td>
+                <td>${transaction.customer_name || 'Guest'}</td>
+                <td><span class="transaction-amount">₱${parseFloat(transaction.amount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></td>
                 <td><span class="transaction-status-badge ${transaction.status.toLowerCase()}">${transaction.status}</span></td>
                 <td>
-                    <button class="btn-view" onclick="viewTransaction(${transaction.id})">
-                        <i class="fas fa-eye"></i> View
+                    <button class="btn-details" onclick='viewTransaction(${JSON.stringify(transaction).replace(/'/g, "&#39;")})'>
+                        <i class="fas fa-eye"></i> Details
                     </button>
                 </td>
             </tr>
@@ -526,15 +707,15 @@ function toggleFilters() {
 }
 
 function applyFilters() {
-    const type = document.getElementById('typeFilter').value;
+    const paymentMethod = document.getElementById('paymentMethodFilter').value;
     const status = document.getElementById('statusFilter').value;
     const dateFrom = document.getElementById('dateFromFilter').value;
     const dateTo = document.getElementById('dateToFilter').value;
 
     let filtered = allTransactions;
 
-    if (type !== 'all') {
-        filtered = filtered.filter(t => t.type.toLowerCase() === type);
+    if (paymentMethod !== 'all') {
+        filtered = filtered.filter(t => t.payment_method.toLowerCase() === paymentMethod);
     }
 
     if (status !== 'all') {
@@ -546,14 +727,16 @@ function applyFilters() {
     }
 
     if (dateTo) {
-        filtered = filtered.filter(t => new Date(t.created_at) <= new Date(dateTo));
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filtered = filtered.filter(t => new Date(t.created_at) <= endDate);
     }
 
     displayTransactions(filtered);
 }
 
 function clearFilters() {
-    document.getElementById('typeFilter').value = 'all';
+    document.getElementById('paymentMethodFilter').value = 'all';
     document.getElementById('statusFilter').value = 'all';
     document.getElementById('dateFromFilter').value = '';
     document.getElementById('dateToFilter').value = '';
@@ -561,12 +744,114 @@ function clearFilters() {
 }
 
 function exportTransactions() {
-    console.log('Exporting transactions to CSV...');
-    alert('CSV export feature - Coming soon!');
+    if (allTransactions.length === 0) {
+        alert('No transactions to export');
+        return;
+    }
+
+    // Create CSV content
+    let csv = 'Order ID,Date,Time,Payment Method,Customer,Amount,Status,Reference\n';
+
+    allTransactions.forEach(t => {
+        const date = new Date(t.created_at);
+        const formattedDate = date.toLocaleDateString('en-PH');
+        const formattedTime = date.toLocaleTimeString('en-PH');
+
+        csv += `${t.order_id},"${formattedDate}","${formattedTime}","${t.payment_method_display}","${t.customer_name || 'Guest'}",${t.amount},"${t.status}","${t.reference_number || 'N/A'}"\n`;
+    });
+
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
 }
 
-function viewTransaction(transactionId) {
-    console.log('Viewing transaction:', transactionId);
-    alert('View transaction #' + transactionId);
+function viewTransaction(transaction) {
+    const modal = document.getElementById('transactionModal');
+    const modalBody = document.getElementById('modalBody');
+
+    const date = new Date(transaction.created_at);
+    const formattedDateTime = date.toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    let itemsHtml = '';
+    if (transaction.items && transaction.items.length > 0) {
+        itemsHtml = `
+            <div class="order-items-section">
+                <div class="order-items-title">Order Items</div>
+        `;
+        transaction.items.forEach(item => {
+            itemsHtml += `
+                <div class="order-item">
+                    <span>${item.quantity}x ${item.name}</span>
+                    <span>₱${parseFloat(item.total).toLocaleString('en-PH', {minimumFractionDigits: 2})}</span>
+                </div>
+            `;
+        });
+        itemsHtml += '</div>';
+    }
+
+    modalBody.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Order ID</span>
+            <span class="detail-value">#${transaction.order_id}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Date & Time</span>
+            <span class="detail-value">${formattedDateTime}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Customer</span>
+            <span class="detail-value">${transaction.customer_name || 'Guest'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Payment Method</span>
+            <span class="detail-value">
+                <span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">${transaction.payment_method_display}</span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Reference Number</span>
+            <span class="detail-value" style="font-family: 'Courier New', monospace;">${transaction.reference_number || 'N/A'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">
+                <span class="transaction-status-badge ${transaction.status.toLowerCase()}">${transaction.status}</span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value" style="color: #059669; font-size: 20px; font-weight: 800;">
+                ₱${parseFloat(transaction.amount).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+            </span>
+        </div>
+        ${itemsHtml}
+    `;
+
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('transactionModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('transactionModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
 }
 {% endblock %}
