@@ -21,6 +21,149 @@
 
     {% block extra_css %}{% endblock %}
 
+        /* ============================================ */
+        /* ✅ REALTIME SEARCH DROPDOWN STYLES */
+        /* ============================================ */
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            display: none;
+        }
+
+        .search-dropdown.active {
+            display: block;
+        }
+
+        .search-dropdown-section {
+            padding: 12px 16px;
+        }
+
+        .search-dropdown-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-dropdown-item:hover {
+            background: #f9fafb;
+        }
+
+        .search-dropdown-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .search-dropdown-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-dropdown-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .search-dropdown-item-meta {
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-dropdown-item-establishment {
+            font-size: 11px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .search-dropdown-empty {
+            padding: 32px 16px;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .search-dropdown-empty i {
+            font-size: 48px;
+            color: #d1d5db;
+            margin-bottom: 12px;
+        }
+
+        .search-dropdown-empty p {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .search-match {
+            background: #fef3c7;
+            font-weight: 600;
+            padding: 0 2px;
+        }
+
+        .search_container {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .search-dropdown {
+                max-height: 300px;
+            }
+            .search-dropdown-item {
+                padding: 10px 12px;
+            }
+            .search-dropdown-item-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            .search-dropdown-item-name {
+                font-size: 13px;
+            }
+            .search-dropdown-item-meta {
+                font-size: 11px;
+            }
+        }
+
     <style>
         /* ✅ NEW: Establishments Section Title */
         .establishments-section-title {
@@ -697,7 +840,11 @@
                 <i class="fas fa-search search-icon"></i>
                 <form id="search-form" onsubmit="event.preventDefault();">
                     <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
-                           value="{{ q|default_if_none:'' }}" oninput="applyFilters();" />
+                           value="{{ q|default_if_none:'' }}" autocomplete="off" />
+                    <!-- ✅ NEW: Realtime Search Dropdown -->
+                    <div class="search-dropdown" id="searchDropdown">
+                        <div id="searchDropdownContent"></div>
+                    </div>
                 </form>
             </div>
         </div>

@@ -1,3 +1,230 @@
+// ============================================
+// ✅ REALTIME SEARCH DROPDOWN FUNCTIONALITY
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    initializeRealtimeSearch();
+});
+
+function initializeRealtimeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchDropdown = document.getElementById('searchDropdown');
+    const searchDropdownContent = document.getElementById('searchDropdownContent');
+
+    if (!searchInput || !searchDropdown || !searchDropdownContent) {
+        return;
+    }
+
+    let searchTimeout;
+    let allEstablishments = [];
+    let allMenuItems = [];
+
+    // ✅ Gather all establishments data
+    function gatherEstablishmentsData() {
+        const establishments = document.querySelectorAll('.food-establishment-item');
+        allEstablishments = [];
+
+        establishments.forEach(est => {
+            const name = est.dataset.name || '';
+            const id = est.dataset.id || '';
+            const category = est.dataset.category || '';
+            const status = est.dataset.status || '';
+            const rating = est.dataset.rating || '0';
+
+            if (name) {
+                allEstablishments.push({
+                    id: id,
+                    name: name,
+                    category: category,
+                    status: status,
+                    rating: parseFloat(rating),
+                    element: est
+                });
+            }
+        });
+    }
+
+    // ✅ Gather menu items from page (if available)
+    function gatherMenuItemsData() {
+        allMenuItems = [];
+
+        // Check if menu items data is available globally
+        if (typeof window.menuItemsData !== 'undefined') {
+            allMenuItems = window.menuItemsData;
+        }
+    }
+
+    // ✅ Perform realtime search
+    function performRealtimeSearch(query) {
+        if (!query || query.length < 1) {
+            searchDropdown.classList.remove('active');
+            return;
+        }
+
+        const lowerQuery = query.toLowerCase().trim();
+
+        // Search establishments
+        const matchedEstablishments = allEstablishments.filter(est =>
+            est.name.includes(lowerQuery) ||
+            est.category.includes(lowerQuery)
+        ).slice(0, 5);
+
+        // Search menu items (if available)
+        const matchedMenuItems = allMenuItems.filter(item =>
+            item.name.toLowerCase().includes(lowerQuery) ||
+            (item.description && item.description.toLowerCase().includes(lowerQuery))
+        ).slice(0, 5);
+
+        renderSearchResults(matchedEstablishments, matchedMenuItems, lowerQuery);
+    }
+
+    // ✅ Highlight matching text
+    function highlightMatch(text, query) {
+        const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+        return text.replace(regex, '<span class="search-match">$1</span>');
+    }
+
+    // ✅ Escape special characters for regex
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // ✅ Render search results
+    function renderSearchResults(establishments, menuItems, query) {
+        let html = '';
+
+        if (establishments.length > 0) {
+            html += `
+                <div class="search-dropdown-section">
+                    <div class="search-dropdown-title">
+                        <i class="fas fa-store"></i>
+                        Establishments
+                    </div>
+            `;
+
+            establishments.forEach(est => {
+                const statusColor = est.status.toLowerCase() === 'open' ? '#10b981' : '#ef4444';
+                const statusIcon = est.status.toLowerCase() === 'open' ? 'check-circle' : 'times-circle';
+
+                html += `
+                    <div class="search-dropdown-item" onclick="goToEstablishment('${est.id}')">
+                        <div class="search-dropdown-item-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="search-dropdown-item-content">
+                            <div class="search-dropdown-item-name">${highlightMatch(est.name, query)}</div>
+                            <div class="search-dropdown-item-meta">
+                                <span style="color: ${statusColor};">
+                                    <i class="fas fa-${statusIcon}"></i>
+                                    ${est.status}
+                                </span>
+                                <span>•</span>
+                                <span>${est.category}</span>
+                                <span>•</span>
+                                <span>
+                                    <i class="fas fa-star" style="color: #fbbf24;"></i>
+                                    ${est.rating.toFixed(1)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+        }
+
+        if (menuItems.length > 0) {
+            html += `
+                <div class="search-dropdown-section">
+                    <div class="search-dropdown-title">
+                        <i class="fas fa-hamburger"></i>
+                        Menu Items
+                    </div>
+            `;
+
+            menuItems.forEach(item => {
+                const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
+
+                html += `
+                    <div class="search-dropdown-item" onclick="goToMenuItem('${item.establishment_id}', '${item.id}')">
+                        <div class="search-dropdown-item-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="search-dropdown-item-content">
+                            <div class="search-dropdown-item-name">${highlightMatch(item.name, query)}</div>
+                            <div class="search-dropdown-item-meta">
+                                <span>${price}</span>
+                                ${item.establishment_name ? `
+                                    <span>•</span>
+                                    <span class="search-dropdown-item-establishment">
+                                        at ${item.establishment_name}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+        }
+
+        if (establishments.length === 0 && menuItems.length === 0) {
+            html = `
+                <div class="search-dropdown-empty">
+                    <i class="fas fa-search"></i>
+                    <p>No results found for "${query}"</p>
+                </div>
+            `;
+        }
+
+        searchDropdownContent.innerHTML = html;
+        searchDropdown.classList.add('active');
+    }
+
+    gatherEstablishmentsData();
+    gatherMenuItemsData();
+
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value;
+
+        searchTimeout = setTimeout(() => {
+            performRealtimeSearch(query);
+        }, 200);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            searchDropdown.classList.remove('active');
+        }
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+            performRealtimeSearch(this.value);
+        }
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstItem = document.querySelector('.search-dropdown-item');
+            if (firstItem) {
+                firstItem.click();
+            }
+        }
+    });
+}
+
+window.goToEstablishment = function(establishmentId) {
+    window.location.href = `/establishment/${establishmentId}/`;
+};
+
+window.goToMenuItem = function(establishmentId, menuItemId) {
+    window.location.href = `/establishment/${establishmentId}/?item=${menuItemId}`;
+};
+
 function openPage(evt, pageName) {
     var i, pagecontent, pagelinks;
     pagecontent = document.getElementsByClassName("pagecontent");
