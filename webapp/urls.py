@@ -75,7 +75,6 @@ urlpatterns = [
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 
-
                   # Owner Side
                   path('api/food-establishment/orders/', views.get_food_establishment_orders, name='get_establishment_orders'),
                   path('api/food-establishment/orders/export/', views.export_orders_csv, name='export_orders_csv'),

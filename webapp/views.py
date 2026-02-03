@@ -5305,8 +5305,7 @@ def transaction_history_view(request):
     return render(request, 'webapplication/transaction_history.html', context)
 
 # ==========================================
-# ORDER HISTORY VIEWS - COMPLETE CODE           FOR CLIENT SIDE
-# Add these to your views.py
+# ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE
 # ==========================================
 
 @login_required
@@ -5342,11 +5341,20 @@ def get_user_transaction_history(request):
             # Get order items
             items = []
             for order_item in order.orderitem_set.all():
+                # Calculate item price and total
+                # Try to get price from order_item first, then fall back to menu_item
+                if hasattr(order_item, 'price') and order_item.price:
+                    item_price = order_item.price
+                else:
+                    item_price = order_item.menu_item.price
+
+                item_total = order_item.quantity * item_price
+
                 items.append({
                     'name': order_item.menu_item.name,
                     'quantity': order_item.quantity,
-                    'price': str(order_item.price),
-                    'total_price': str(order_item.quantity * order_item.price),
+                    'price': str(item_price),
+                    'total_price': str(item_total),
                     'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
                 })
 
@@ -5397,24 +5405,22 @@ def reorder_items(request, order_id):
         }, status=405)
 
     try:
+        from .models import Cart, CartItem
+        from django.db import transaction
+
         # Get the order and verify it belongs to the user
         order = Order.objects.get(id=order_id, user=request.user)
 
-        # Get or create cart for this establishment
+        # Get or create cart for the establishment
         cart, created = Cart.objects.get_or_create(
             user=request.user,
-            establishment=order.establishment,
-            is_active=True
+            establishment=order.establishment
         )
 
-        # Add all items from the order to the cart
-        items_added = 0
-        unavailable_items = []
-
-        for order_item in order.orderitem_set.all():
-            # Check if item is still available
-            if order_item.menu_item.is_available:
-                # Check if item already in cart
+        # Add each item from the order to the cart
+        with transaction.atomic():
+            for order_item in order.orderitem_set.all():
+                # Check if item already exists in cart
                 cart_item, created = CartItem.objects.get_or_create(
                     cart=cart,
                     menu_item=order_item.menu_item,
@@ -5422,36 +5428,20 @@ def reorder_items(request, order_id):
                 )
 
                 if not created:
-                    # If item exists, update quantity
+                    # If item exists, increase quantity
                     cart_item.quantity += order_item.quantity
                     cart_item.save()
 
-                items_added += 1
-            else:
-                unavailable_items.append(order_item.menu_item.name)
-
-        if items_added > 0:
-            message = f'{items_added} item(s) added to cart'
-            if unavailable_items:
-                message += f'. Note: {len(unavailable_items)} item(s) are no longer available.'
-
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'cart_count': cart.cartitem_set.count(),
-                'items_added': items_added,
-                'unavailable_items': unavailable_items
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'No items available to reorder. All items are currently unavailable.'
-            })
+        return JsonResponse({
+            'success': True,
+            'message': 'Items added to cart successfully',
+            'cart_count': CartItem.objects.filter(cart__user=request.user).count()
+        })
 
     except Order.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'message': 'Order not found'
+            'message': 'Order not found or does not belong to you'
         }, status=404)
     except Exception as e:
         import traceback
@@ -5459,7 +5449,7 @@ def reorder_items(request, order_id):
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
-            'message': f'An error occurred: {str(e)}'
+            'message': str(e)
         }, status=500)
 
 @login_required
@@ -5467,12 +5457,13 @@ def get_order_details(request, order_id):
     """
     API endpoint to get detailed information about a specific order
 
-    Optional endpoint for viewing full order details
+    Used by: Order details page
     Endpoint: /api/order/<order_id>/
+    Method: GET
     """
     try:
         order = Order.objects.select_related(
-            'establishment'
+            'establishment', 'user'
         ).prefetch_related(
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
         ).get(id=order_id, user=request.user)
@@ -5480,12 +5471,19 @@ def get_order_details(request, order_id):
         # Get order items
         items = []
         for order_item in order.orderitem_set.all():
+            # Calculate item price and total
+            if hasattr(order_item, 'price') and order_item.price:
+                item_price = order_item.price
+            else:
+                item_price = order_item.menu_item.price
+
+            item_total = order_item.quantity * item_price
+
             items.append({
-                'id': order_item.id,
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
-                'price': str(order_item.price),
-                'total_price': str(order_item.quantity * order_item.price),
+                'price': str(item_price),
+                'total_price': str(item_total),
                 'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
             })
 
@@ -5516,6 +5514,9 @@ def get_order_details(request, order_id):
             'message': 'Order not found'
         }, status=404)
     except Exception as e:
+        import traceback
+        print(f"Error in get_order_details: {str(e)}")
+        print(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'message': str(e)
