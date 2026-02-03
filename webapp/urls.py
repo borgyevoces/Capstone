@@ -76,17 +76,22 @@ urlpatterns = [
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 
 
-                  # Orders API
-path('api/food-establishment/orders/', views.get_food_establishment_orders, name='get_establishment_orders'),
-path('api/food-establishment/orders/export/', views.export_orders_csv, name='export_orders_csv'),
-path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
-path('api/food-establishment/sales-report/', views.get_sales_report, name='sales_report'),
-path('api/food-establishment/sales-report/pdf/', views.export_sales_report_pdf,name='export_sales_pdf'),
-path('api/food-establishment/sales-report/excel/', views.export_sales_report_excel, name='export_sales_excel'),
-path('owner/orders/', views.orders_list_view, name='orders_list'),
-path('owner/transactions/', views.transaction_history_view, name='transaction_history'),
-path('api/food-establishment/transactions/', views.get_food_establishment_transactions, name='get_transactions'),
+                  # Owner Side
+                  path('api/food-establishment/orders/', views.get_food_establishment_orders, name='get_establishment_orders'),
+                  path('api/food-establishment/orders/export/', views.export_orders_csv, name='export_orders_csv'),
+                  path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
+                  path('api/food-establishment/sales-report/', views.get_sales_report, name='sales_report'),
+                  path('api/food-establishment/sales-report/pdf/', views.export_sales_report_pdf,name='export_sales_pdf'),
+                  path('api/food-establishment/sales-report/excel/', views.export_sales_report_excel, name='export_sales_excel'),
+                  path('owner/orders/', views.orders_list_view, name='orders_list'),
+                  path('owner/transactions/', views.transaction_history_view, name='transaction_history'),
+                  path('api/food-establishment/transactions/', views.get_food_establishment_transactions, name='get_transactions'),
 
+                  #Client Side
+                  path('my-purchases/', views.order_history_view, name='order_history'),
+                  path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
+                  path('api/reorder/<int:order_id>/', views.reorder_items, name='reorder_items'),
+                  path('api/order/<int:order_id>/', views.get_order_details, name='get_order_details'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,

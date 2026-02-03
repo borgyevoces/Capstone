@@ -7,9 +7,32 @@ import json
 import time
 import uuid
 import base64
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.db.models import Prefetch
+from .models import Order, OrderItem, FoodEstablishment, MenuItem, Cart, CartItem
 import string
+from django.db.models import Count, Sum, Q, F
+from django.utils import timezone
+from datetime import timedelta
+from django.views.decorators.http import require_http_methods
 import random
 import hashlib
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, Count, Avg, F
+from datetime import datetime, timedelta
+from decimal import Decimal
+import csv
+import io
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+import xlsxwriter
 import requests
 import logging
 from django.shortcuts import get_object_or_404
@@ -2837,7 +2860,6 @@ def food_establishment_dashboard(request):
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
 
-
 def toggle_item_availability(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(MenuItem, id=item_id, establishment=request.user.food_establishment)
@@ -2845,7 +2867,6 @@ def toggle_item_availability(request, item_id):
         item.save()
         return redirect('food_establishment_dashboard')
     return HttpResponseBadRequest()
-
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -2905,7 +2926,6 @@ def delete_menu_item(request, item_id):
         messages.error(request, f'An error occurred while deleting the menu item: {str(e)}')
         return redirect('food_establishment_dashboard')
 
-
 @login_required(login_url='owner_login')
 def store_reviews_view(request):
     """
@@ -2924,7 +2944,6 @@ def store_reviews_view(request):
         'reviews': reviews,
     }
     return render(request, 'webapplication/store_reviews.html', context)
-
 
 @login_required(login_url='owner_login')
 @require_POST
@@ -2979,7 +2998,6 @@ def edit_menu_item(request, item_id):
                 messages.error(request, f"Error in '{form.fields[field].label}': {error}")
         return redirect("food_establishment_dashboard")
 
-
 @csrf_exempt
 @require_http_methods(["PATCH"])
 def toggle_establishment_status(request, establishment_id):
@@ -3001,7 +3019,6 @@ def toggle_establishment_status(request, establishment_id):
         return JsonResponse({'message': message, 'status': establishment.status})
     except FoodEstablishment.DoesNotExist:
         return HttpResponseBadRequest("Food establishment not found.")
-
 
 @require_POST
 def toggle_top_seller(request, item_id):
@@ -4398,10 +4415,6 @@ def paymongo_webhook(request):
         traceback.print_exc()
         return HttpResponse(status=400)
 
-
-# ==========================================
-# HELPER: Send Order Confirmation Email
-# ==========================================
 def send_order_confirmation_email(order):
     """Send confirmation emails to customer and store owner"""
     try:
@@ -4470,7 +4483,6 @@ Items to Prepare:
         print(f"❌ Email error: {e}")
         import traceback
         traceback.print_exc()
-
 
 @login_required
 def get_owner_notifications(request):
@@ -4569,7 +4581,6 @@ def get_owner_notifications(request):
             'error': str(e)
         }, status=500)
 
-
 @login_required
 def create_test_notification(request):
     """
@@ -4641,14 +4652,6 @@ def create_test_notification(request):
             'error': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
-
-
-
-
-from django.db.models import Count, Sum, Q, F
-from django.utils import timezone
-from datetime import timedelta
-from django.views.decorators.http import require_http_methods
 
 @require_http_methods(["GET"])
 def get_best_sellers(request):
@@ -4731,26 +4734,11 @@ def get_best_sellers(request):
         }, status=500)
 
 
-
-
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Count, Avg, F
-from datetime import datetime, timedelta
-from decimal import Decimal
-import csv
-import io
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-import xlsxwriter
+# ==========================================
+# ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR CLIENT SIDE
 
 # ==========================================
-# 1. GET ORDERS LIST FOR FOOD ESTABLISHMENT
-# ==========================================
+
 @login_required
 @require_http_methods(["GET"])
 def get_food_establishment_orders(request):
@@ -4826,9 +4814,6 @@ def get_food_establishment_orders(request):
             'message': str(e)
         }, status=500)
 
-# ==========================================
-# 2. EXPORT ORDERS TO CSV
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def export_orders_csv(request):
@@ -4883,10 +4868,6 @@ def export_orders_csv(request):
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
 
-
-# ==========================================
-# TRANSACTION HISTORY API ENDPOINT
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def get_food_establishment_transactions(request):
@@ -5016,10 +4997,6 @@ def get_food_establishment_transactions(request):
             'message': str(e)
         }, status=500)
 
-
-# ==========================================
-# 3. GET USER TRANSACTION HISTORY
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def get_user_transaction_history(request):
@@ -5058,10 +5035,6 @@ def get_user_transaction_history(request):
             'message': str(e)
         }, status=500)
 
-
-# ==========================================
-# 4. GET SALES REPORT DATA
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def get_sales_report(request):
@@ -5169,10 +5142,6 @@ def get_sales_report(request):
             'message': str(e)
         }, status=500)
 
-
-# ==========================================
-# 5. EXPORT SALES REPORT TO PDF
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def export_sales_report_pdf(request):
@@ -5243,10 +5212,6 @@ def export_sales_report_pdf(request):
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
 
-
-# ==========================================
-# 6. EXPORT SALES REPORT TO EXCEL
-# ==========================================
 @login_required
 @require_http_methods(["GET"])
 def export_sales_report_excel(request):
@@ -5305,12 +5270,6 @@ def export_sales_report_excel(request):
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
 
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import FoodEstablishment
-
 @login_required
 def orders_list_view(request):
     """
@@ -5344,3 +5303,220 @@ def transaction_history_view(request):
     }
 
     return render(request, 'webapplication/transaction_history.html', context)
+
+# ==========================================
+# ORDER HISTORY VIEWS - COMPLETE CODE           FOR CLIENT SIDE
+# Add these to your views.py
+# ==========================================
+
+@login_required
+def order_history_view(request):
+    """
+    Display the order history page for the logged-in user
+    Template: Client_order_history.html
+    """
+    return render(request, 'webapplication/Client_order_history.html')
+
+@login_required
+def get_user_transaction_history(request):
+    """
+    API endpoint to get all orders for the logged-in user
+    Returns JSON with order details including items
+
+    Used by: Client_order_history.html
+    Endpoint: /api/user/transactions/
+    """
+    try:
+        # Get all orders for the user, ordered by most recent first
+        orders = Order.objects.filter(
+            user=request.user
+        ).select_related(
+            'establishment'
+        ).prefetch_related(
+            Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
+        ).order_by('-created_at')
+
+        # Build the response data
+        orders_data = []
+        for order in orders:
+            # Get order items
+            items = []
+            for order_item in order.orderitem_set.all():
+                items.append({
+                    'name': order_item.menu_item.name,
+                    'quantity': order_item.quantity,
+                    'price': str(order_item.price),
+                    'total_price': str(order_item.quantity * order_item.price),
+                    'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
+                })
+
+            # Build order data
+            order_data = {
+                'id': order.id,
+                'order_number': order.gcash_reference_number or f"ORD-{order.id}",
+                'status': order.status,
+                'total_amount': str(order.total_amount),
+                'created_at': order.created_at.isoformat(),
+                'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
+                'establishment_id': order.establishment.id,
+                'establishment_name': order.establishment.name,
+                'establishment_address': order.establishment.address,
+                'establishment_image': order.establishment.image.url if order.establishment.image else None,
+                'items': items,
+            }
+            orders_data.append(order_data)
+
+        return JsonResponse({
+            'success': True,
+            'orders': orders_data,
+            'total_orders': len(orders_data)
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"Error in get_user_transaction_history: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+@login_required
+def reorder_items(request, order_id):
+    """
+    API endpoint to add all items from a previous order to the cart
+
+    Used by: Client_order_history.html (Reorder button)
+    Endpoint: /api/reorder/<order_id>/
+    Method: POST
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method'
+        }, status=405)
+
+    try:
+        # Get the order and verify it belongs to the user
+        order = Order.objects.get(id=order_id, user=request.user)
+
+        # Get or create cart for this establishment
+        cart, created = Cart.objects.get_or_create(
+            user=request.user,
+            establishment=order.establishment,
+            is_active=True
+        )
+
+        # Add all items from the order to the cart
+        items_added = 0
+        unavailable_items = []
+
+        for order_item in order.orderitem_set.all():
+            # Check if item is still available
+            if order_item.menu_item.is_available:
+                # Check if item already in cart
+                cart_item, created = CartItem.objects.get_or_create(
+                    cart=cart,
+                    menu_item=order_item.menu_item,
+                    defaults={'quantity': order_item.quantity}
+                )
+
+                if not created:
+                    # If item exists, update quantity
+                    cart_item.quantity += order_item.quantity
+                    cart_item.save()
+
+                items_added += 1
+            else:
+                unavailable_items.append(order_item.menu_item.name)
+
+        if items_added > 0:
+            message = f'{items_added} item(s) added to cart'
+            if unavailable_items:
+                message += f'. Note: {len(unavailable_items)} item(s) are no longer available.'
+
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'cart_count': cart.cartitem_set.count(),
+                'items_added': items_added,
+                'unavailable_items': unavailable_items
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'No items available to reorder. All items are currently unavailable.'
+            })
+
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found'
+        }, status=404)
+    except Exception as e:
+        import traceback
+        print(f"Error in reorder_items: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=500)
+
+@login_required
+def get_order_details(request, order_id):
+    """
+    API endpoint to get detailed information about a specific order
+
+    Optional endpoint for viewing full order details
+    Endpoint: /api/order/<order_id>/
+    """
+    try:
+        order = Order.objects.select_related(
+            'establishment'
+        ).prefetch_related(
+            Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
+        ).get(id=order_id, user=request.user)
+
+        # Get order items
+        items = []
+        for order_item in order.orderitem_set.all():
+            items.append({
+                'id': order_item.id,
+                'name': order_item.menu_item.name,
+                'quantity': order_item.quantity,
+                'price': str(order_item.price),
+                'total_price': str(order_item.quantity * order_item.price),
+                'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
+            })
+
+        order_data = {
+            'id': order.id,
+            'order_number': order.gcash_reference_number or f"ORD-{order.id}",
+            'status': order.status,
+            'total_amount': str(order.total_amount),
+            'created_at': order.created_at.isoformat(),
+            'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
+            'establishment': {
+                'id': order.establishment.id,
+                'name': order.establishment.name,
+                'address': order.establishment.address,
+                'image': order.establishment.image.url if order.establishment.image else None,
+            },
+            'items': items,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'order': order_data
+        })
+
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)

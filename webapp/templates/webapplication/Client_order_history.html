@@ -1,0 +1,918 @@
+{% extends 'webapplication/kabsueats.html' %}
+{% load static %}
+
+{% block title %}My Purchases - Order History - KabsuEats{% endblock %}
+
+{% block search_visibility_control %}
+    <!-- Hide search bar on order history page -->
+{% endblock search_visibility_control %}
+
+{% block extra_css %}
+<style>
+    /* ========================================== */
+    /* ORDER HISTORY PAGE COMPLETE STYLES */
+    /* ========================================== */
+
+    .order-history-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        min-height: calc(100vh - 200px);
+    }
+
+    .order-history-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-top: 20px;
+    }
+
+    .order-history-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .order-history-header h1 i {
+        color: #B71C1C;
+    }
+
+    .order-history-header p {
+        font-size: 16px;
+        color: #6b7280;
+    }
+
+    /* Order Status Tabs */
+    .order-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 10px;
+    }
+
+    .order-tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6b7280;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        position: relative;
+    }
+
+    .order-tab:hover {
+        color: #B71C1C;
+        background: rgba(183, 28, 28, 0.05);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .order-tab.active {
+        color: #B71C1C;
+        border-bottom-color: #B71C1C;
+    }
+
+    .order-tab i {
+        font-size: 16px;
+    }
+
+    .order-tab-count {
+        background: #B71C1C;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        min-width: 22px;
+        text-align: center;
+    }
+
+    .order-tab.active .order-tab-count {
+        background: white;
+        color: #B71C1C;
+        border: 1px solid #B71C1C;
+    }
+
+    /* Orders List */
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .order-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+    .order-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .order-card-header {
+        background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .order-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .order-number {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .order-date {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .order-status-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-paid {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-preparing {
+        background: #fce7f3;
+        color: #831843;
+    }
+
+    .status-ready {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-completed {
+        background: #dcfce7;
+        color: #14532d;
+    }
+
+    .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .order-card-body {
+        padding: 20px;
+    }
+
+    .order-establishment {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .establishment-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid #e5e7eb;
+    }
+
+    .establishment-info h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 5px 0;
+    }
+
+    .establishment-info p {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .establishment-info p i {
+        color: #B71C1C;
+    }
+
+    .order-items {
+        margin-bottom: 20px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .order-item:last-child {
+        border-bottom: none;
+    }
+
+    .order-item-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .order-item-image {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        object-fit: cover;
+        border: 1px solid #e5e7eb;
+    }
+
+    .order-item-details h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 4px 0;
+    }
+
+    .order-item-quantity {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .order-item-price {
+        font-size: 15px;
+        font-weight: 600;
+        color: #B71C1C;
+    }
+
+    .order-card-footer {
+        background: #f9fafb;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .order-total {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .order-total-label {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .order-total-amount {
+        font-size: 22px;
+        font-weight: 700;
+        color: #B71C1C;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .order-action-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-reorder {
+        background: #B71C1C;
+        color: white;
+    }
+
+    .btn-reorder:hover {
+        background: #8c1616;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.3);
+    }
+
+    .btn-view-details {
+        background: white;
+        color: #B71C1C;
+        border: 2px solid #B71C1C;
+    }
+
+    .btn-view-details:hover {
+        background: #B71C1C;
+        color: white;
+    }
+
+    .btn-rate {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-rate:hover {
+        background: #d97706;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-track {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-track:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-pay {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-pay:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state i {
+        font-size: 80px;
+        color: #d1d5db;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #6b7280;
+        margin-bottom: 30px;
+    }
+
+    .empty-state-btn {
+        padding: 12px 30px;
+        background: #B71C1C;
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .empty-state-btn:hover {
+        background: #8c1616;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+        text-align: center;
+        padding: 40px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-spinner i {
+        font-size: 40px;
+        color: #B71C1C;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner p {
+        margin-top: 15px;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .order-history-container {
+            padding: 20px 10px;
+        }
+
+        .order-history-header h1 {
+            font-size: 24px;
+        }
+
+        .order-tabs {
+            gap: 5px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .order-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .order-tab {
+            padding: 10px 16px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .order-tab i {
+            font-size: 14px;
+        }
+
+        .order-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-card-header-left {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .order-establishment {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-card-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .order-action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .order-item-info {
+            flex-wrap: wrap;
+        }
+
+        .order-total-amount {
+            font-size: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .order-history-header h1 {
+            font-size: 20px;
+        }
+
+        .order-card-body {
+            padding: 15px;
+        }
+
+        .order-card-footer {
+            padding: 12px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="order-history-container">
+    <!-- Header -->
+    <div class="order-history-header">
+        <h1><i class="fas fa-receipt"></i> My Purchases</h1>
+        <p>Track and manage all your orders from KabsuEats</p>
+    </div>
+
+    <!-- Order Status Tabs -->
+    <div class="order-tabs">
+        <button class="order-tab active" data-status="all">
+            <i class="fas fa-list"></i>
+            All Orders
+            <span class="order-tab-count" id="count-all">0</span>
+        </button>
+        <button class="order-tab" data-status="PENDING">
+            <i class="fas fa-clock"></i>
+            To Pay
+            <span class="order-tab-count" id="count-pending">0</span>
+        </button>
+        <button class="order-tab" data-status="PREPARING">
+            <i class="fas fa-utensils"></i>
+            Preparing
+            <span class="order-tab-count" id="count-preparing">0</span>
+        </button>
+        <button class="order-tab" data-status="READY">
+            <i class="fas fa-box"></i>
+            To Receive
+            <span class="order-tab-count" id="count-ready">0</span>
+        </button>
+        <button class="order-tab" data-status="COMPLETED">
+            <i class="fas fa-check-circle"></i>
+            Completed
+            <span class="order-tab-count" id="count-completed">0</span>
+        </button>
+        <button class="order-tab" data-status="CANCELLED">
+            <i class="fas fa-times-circle"></i>
+            Cancelled
+            <span class="order-tab-count" id="count-cancelled">0</span>
+        </button>
+    </div>
+
+    <!-- Orders List -->
+    <div class="orders-list" id="ordersList">
+        <!-- Orders will be loaded here dynamically -->
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading your orders...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ========================================
+    // ORDER HISTORY JAVASCRIPT - COMPLETE
+    // ========================================
+
+    let allOrders = [];
+    let currentStatus = 'all';
+
+    // Load orders on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Order History page loaded');
+        loadOrders();
+        setupTabListeners();
+    });
+
+    // Setup tab click listeners
+    function setupTabListeners() {
+        const tabs = document.querySelectorAll('.order-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter orders
+                currentStatus = this.dataset.status;
+                filterOrders(currentStatus);
+            });
+        });
+    }
+
+    // Load orders from API
+    function loadOrders() {
+        console.log('Fetching orders from API...');
+        fetch('/api/user/transactions/')
+            .then(response => {
+                console.log('API Response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Orders data:', data);
+                if (data.success) {
+                    allOrders = data.orders;
+                    console.log(`Loaded ${allOrders.length} orders`);
+                    updateOrderCounts();
+                    filterOrders(currentStatus);
+                } else {
+                    console.error('API returned error:', data.message);
+                    showError(data.message || 'Failed to load orders');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading orders:', error);
+                showError('An error occurred while loading orders');
+            });
+    }
+
+    // Update order counts in tabs
+    function updateOrderCounts() {
+        const counts = {
+            all: allOrders.length,
+            PENDING: allOrders.filter(o => o.status === 'PENDING').length,
+            PREPARING: allOrders.filter(o => o.status === 'PREPARING').length,
+            READY: allOrders.filter(o => o.status === 'READY').length,
+            COMPLETED: allOrders.filter(o => o.status === 'COMPLETED').length,
+            CANCELLED: allOrders.filter(o => o.status === 'CANCELLED').length
+        };
+
+        console.log('Order counts:', counts);
+
+        document.getElementById('count-all').textContent = counts.all;
+        document.getElementById('count-pending').textContent = counts.PENDING;
+        document.getElementById('count-preparing').textContent = counts.PREPARING;
+        document.getElementById('count-ready').textContent = counts.READY;
+        document.getElementById('count-completed').textContent = counts.COMPLETED;
+        document.getElementById('count-cancelled').textContent = counts.CANCELLED;
+    }
+
+    // Filter orders by status
+    function filterOrders(status) {
+        console.log('Filtering orders by status:', status);
+        let filteredOrders = status === 'all'
+            ? allOrders
+            : allOrders.filter(order => order.status === status);
+
+        console.log(`Filtered ${filteredOrders.length} orders`);
+        renderOrders(filteredOrders);
+    }
+
+    // Render orders to the page
+    function renderOrders(orders) {
+        const ordersList = document.getElementById('ordersList');
+
+        if (orders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-shopping-bag"></i>
+                    <h3>No orders found</h3>
+                    <p>You haven't placed any orders yet. Start exploring delicious food!</p>
+                    <a href="{% url 'kabsueats_home' %}" class="empty-state-btn">
+                        <i class="fas fa-utensils"></i>
+                        Browse Establishments
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        ordersList.innerHTML = orders.map(order => `
+            <div class="order-card">
+                <div class="order-card-header">
+                    <div class="order-card-header-left">
+                        <span class="order-number">Order #${order.order_number || order.id}</span>
+                        <span class="order-date">${formatDate(order.created_at)}</span>
+                    </div>
+                    <span class="order-status-badge status-${order.status.toLowerCase()}">
+                        ${getStatusText(order.status)}
+                    </span>
+                </div>
+
+                <div class="order-card-body">
+                    <div class="order-establishment">
+                        <img src="${order.establishment_image || '/static/images/menu.png'}"
+                             alt="${order.establishment_name}"
+                             class="establishment-image"
+                             onerror="this.src='/static/images/menu.png'">
+                        <div class="establishment-info">
+                            <h3>${order.establishment_name}</h3>
+                            <p><i class="fas fa-map-marker-alt"></i> ${order.establishment_address || 'No address provided'}</p>
+                        </div>
+                    </div>
+
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="order-item">
+                                <div class="order-item-info">
+                                    <img src="${item.image || '/static/images/menu.png'}"
+                                         alt="${item.name}"
+                                         class="order-item-image"
+                                         onerror="this.src='/static/images/menu.png'">
+                                    <div class="order-item-details">
+                                        <h4>${item.name}</h4>
+                                        <span class="order-item-quantity">Qty: ${item.quantity}</span>
+                                    </div>
+                                </div>
+                                <span class="order-item-price">₱${parseFloat(item.total_price).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="order-card-footer">
+                    <div class="order-total">
+                        <span class="order-total-label">Total Amount</span>
+                        <span class="order-total-amount">₱${parseFloat(order.total_amount).toFixed(2)}</span>
+                    </div>
+                    <div class="order-actions">
+                        ${getOrderActions(order)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Get appropriate action buttons based on order status
+    function getOrderActions(order) {
+        let actions = '';
+
+        // View Details button (always available)
+        actions += `
+            <button class="order-action-btn btn-view-details" onclick="viewOrderDetails(${order.id})">
+                <i class="fas fa-eye"></i> View Details
+            </button>
+        `;
+
+        // Status-specific actions
+        if (order.status === 'PENDING') {
+            actions += `
+                <button class="order-action-btn btn-pay" onclick="payOrder(${order.id})">
+                    <i class="fas fa-credit-card"></i> Pay Now
+                </button>
+            `;
+        }
+
+        if (order.status === 'PREPARING' || order.status === 'READY') {
+            actions += `
+                <button class="order-action-btn btn-track" onclick="trackOrder(${order.id})">
+                    <i class="fas fa-map-marker-alt"></i> Track Order
+                </button>
+            `;
+        }
+
+        if (order.status === 'COMPLETED') {
+            actions += `
+                <button class="order-action-btn btn-rate" onclick="rateOrder(${order.establishment_id})">
+                    <i class="fas fa-star"></i> Rate
+                </button>
+                <button class="order-action-btn btn-reorder" onclick="reorder(${order.id})">
+                    <i class="fas fa-redo"></i> Reorder
+                </button>
+            `;
+        }
+
+        return actions;
+    }
+
+    // Get human-readable status text
+    function getStatusText(status) {
+        const statusMap = {
+            'PENDING': 'To Pay',
+            'PAID': 'Paid',
+            'PREPARING': 'Preparing',
+            'READY': 'To Receive',
+            'COMPLETED': 'Completed',
+            'CANCELLED': 'Cancelled'
+        };
+        return statusMap[status] || status;
+    }
+
+    // Format date
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    // ========================================
+    // ORDER ACTION FUNCTIONS
+    // ========================================
+
+    function viewOrderDetails(orderId) {
+        console.log('Viewing order details:', orderId);
+        window.location.href = `/order/confirmation/${orderId}/`;
+    }
+
+    function payOrder(orderId) {
+        console.log('Paying for order:', orderId);
+        window.location.href = `/paymongo_checkout/?order_id=${orderId}`;
+    }
+
+    function trackOrder(orderId) {
+        console.log('Tracking order:', orderId);
+        alert('Track order feature coming soon!');
+        // Future: Implement real-time order tracking
+    }
+
+    function rateOrder(establishmentId) {
+        console.log('Rating establishment:', establishmentId);
+        window.location.href = `/food_establishment/${establishmentId}/#reviews`;
+    }
+
+    function reorder(orderId) {
+        console.log('Reordering items from order:', orderId);
+        if (confirm('Add all items from this order to your cart?')) {
+            fetch(`/api/reorder/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Reorder response:', data);
+                if (data.success) {
+                    alert('Items added to cart!');
+                    window.location.href = '/cart/';
+                } else {
+                    alert(data.message || 'Failed to reorder');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while reordering');
+            });
+        }
+    }
+
+    // Show error message
+    function showError(message) {
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                <h3>Error Loading Orders</h3>
+                <p>${message}</p>
+                <button onclick="loadOrders()" class="empty-state-btn">
+                    <i class="fas fa-redo"></i>
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
