@@ -4755,7 +4755,7 @@ import xlsxwriter
 @require_http_methods(["GET"])
 def get_food_establishment_orders(request):
     """
-    API endpoint to get orders for food establishment owner with complete details
+    API endpoint to get paginated orders for food establishment owner
     URL: /api/food-establishment/orders/
     """
     try:
@@ -4775,22 +4775,12 @@ def get_food_establishment_orders(request):
         # Get all orders for this establishment
         orders = Order.objects.filter(
             establishment=establishment
-        ).select_related('user').prefetch_related('orderitem_set__menu_item').order_by('-created_at')
+        ).select_related('user').prefetch_related('items').order_by('-created_at')
 
         # Apply filters if provided
         status_filter = request.GET.get('status')
-        if status_filter and status_filter != 'all':
-            # Map frontend status to database status
-            status_map = {
-                'pending': 'PENDING',
-                'payment_confirmed': 'PAID',
-                'preparing': 'PREPARING',
-                'ready': 'READY',
-                'completed': 'COMPLETED',
-                'cancelled': 'CANCELLED'
-            }
-            db_status = status_map.get(status_filter, status_filter.upper())
-            orders = orders.filter(status=db_status)
+        if status_filter:
+            orders = orders.filter(status=status_filter)
 
         date_from = request.GET.get('date_from')
         if date_from:
@@ -4800,53 +4790,26 @@ def get_food_establishment_orders(request):
         if date_to:
             orders = orders.filter(created_at__lte=date_to)
 
-        # Calculate statistics
-        total_orders = orders.count()
-        pending_count = Order.objects.filter(establishment=establishment, status='PENDING').count()
-        preparing_count = Order.objects.filter(establishment=establishment, status__in=['PAID', 'PREPARING']).count()
-        completed_count = Order.objects.filter(establishment=establishment, status='COMPLETED').count()
-
         # Pagination
+        total_orders = orders.count()
         total_pages = (total_orders + per_page - 1) // per_page
         start = (page - 1) * per_page
         end = start + per_page
 
         orders_page = orders[start:end]
 
-        # Format orders data with complete information
+        # Format orders data
         orders_data = []
         for order in orders_page:
-            # Get order items
-            items = []
-            for order_item in order.orderitem_set.all():
-                items.append({
-                    'name': order_item.menu_item.name,
-                    'quantity': order_item.quantity,
-                    'price': str(order_item.price_at_order),
-                    'subtotal': str(order_item.quantity * order_item.price_at_order)
-                })
-
-            # Map database status to frontend status
-            status_map = {
-                'PENDING': 'pending',
-                'PAID': 'payment_confirmed',
-                'PREPARING': 'preparing',
-                'READY': 'ready',
-                'COMPLETED': 'completed',
-                'CANCELLED': 'cancelled'
-            }
-            frontend_status = status_map.get(order.status, order.status.lower())
-
             orders_data.append({
                 'id': order.id,
                 'customer_name': order.user.get_full_name() or order.user.username,
                 'customer_email': order.user.email,
-                'total_items': order.orderitem_set.count(),
+                'total_items': order.items.count(),
                 'total_amount': str(order.total_amount),
-                'status': frontend_status,
+                'status': order.status,
                 'created_at': order.created_at.isoformat(),
-                'gcash_reference_number': order.gcash_reference_number,
-                'items': items
+                'reference_number': order.reference_number if hasattr(order, 'reference_number') else None
             })
 
         return JsonResponse({
@@ -4854,12 +4817,7 @@ def get_food_establishment_orders(request):
             'orders': orders_data,
             'current_page': page,
             'total_pages': total_pages,
-            'total_orders': total_orders,
-            'statistics': {
-                'pending': pending_count,
-                'preparing': preparing_count,
-                'completed': completed_count
-            }
+            'total_orders': total_orders
         })
 
     except Exception as e:
@@ -4867,6 +4825,7 @@ def get_food_establishment_orders(request):
             'success': False,
             'message': str(e)
         }, status=500)
+
 # ==========================================
 # 2. EXPORT ORDERS TO CSV
 # ==========================================
@@ -4886,88 +4845,44 @@ def export_orders_csv(request):
         # Get all orders
         orders = Order.objects.filter(
             establishment=establishment
-        ).select_related('user').prefetch_related('orderitem_set__menu_item').order_by('-created_at')
+        ).select_related('user').prefetch_related('items').order_by('-created_at')
 
         # Create CSV
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="orders_{establishment.name}.csv"'
+        output = io.StringIO()
+        writer = csv.writer(output)
 
-        writer = csv.writer(response)
-        writer.writerow(['Order ID', 'Customer Name', 'Customer Email', 'Items', 'Total Amount', 'Status', 'Reference Number', 'Date'])
+        # Write header
+        writer.writerow([
+            'Order ID',
+            'Customer Name',
+            'Customer Email',
+            'Total Items',
+            'Total Amount',
+            'Status',
+            'Date'
+        ])
 
+        # Write data
         for order in orders:
-            items_text = '; '.join([f"{item.menu_item.name} x{item.quantity}" for item in order.orderitem_set.all()])
             writer.writerow([
                 order.id,
                 order.user.get_full_name() or order.user.username,
                 order.user.email,
-                items_text,
-                f"₱{order.total_amount}",
+                order.items.count(),
+                order.total_amount,
                 order.status,
-                order.gcash_reference_number or 'N/A',
                 order.created_at.strftime('%Y-%m-%d %H:%M:%S')
             ])
+
+        # Create response
+        response = HttpResponse(output.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="orders_{datetime.now().strftime("%Y%m%d")}.csv"'
 
         return response
 
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
 
-@login_required
-@require_http_methods(["POST"])
-def update_order_status(request, order_id):
-    """
-    Update order status
-    URL: /api/food-establishment/orders/<order_id>/update-status/
-    """
-    try:
-        import json
-
-        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
-        if not establishment:
-            return JsonResponse({
-                'success': False,
-                'message': 'No establishment found'
-            }, status=404)
-
-        order = Order.objects.filter(id=order_id, establishment=establishment).first()
-        if not order:
-            return JsonResponse({
-                'success': False,
-                'message': 'Order not found'
-            }, status=404)
-
-        # Get new status from request
-        data = json.loads(request.body)
-        new_status = data.get('status')
-
-        # Map frontend status to database status
-        status_map = {
-            'pending': 'PENDING',
-            'payment_confirmed': 'PAID',
-            'preparing': 'PREPARING',
-            'ready': 'READY',
-            'completed': 'COMPLETED',
-            'cancelled': 'CANCELLED'
-        }
-
-        db_status = status_map.get(new_status, new_status.upper())
-
-        # Update order status
-        order.status = db_status
-        order.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Order status updated successfully',
-            'new_status': new_status
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
 
 # ==========================================
 # TRANSACTION HISTORY API ENDPOINT
@@ -5404,11 +5319,11 @@ def orders_list_view(request):
     try:
         establishment = FoodEstablishment.objects.get(owner=request.user)
     except FoodEstablishment.DoesNotExist:
-        return redirect('owner_dashboard')
+        return redirect('create_establishment')
 
     context = {
         'establishment': establishment,
-        'pk': establishment.pk,
+        'pk': establishment.pk,  # Add this line - needed for URL reverse
     }
 
     return render(request, 'webapplication/orders_list.html', context)
