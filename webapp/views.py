@@ -478,7 +478,7 @@ def kabsueats_main_view(request):
     # Fetch all categories for the dropdown filter
     all_categories = Category.objects.all().order_by('name')
 
-    food_establishments_queryset = FoodEstablishment.objects.all()
+    # food_establishments_queryset = FoodEstablishment.objects.filter(isActive=True)
     current_category = None
 
     # Category filter
@@ -4735,146 +4735,26 @@ def get_best_sellers(request):
 
 
 # ==========================================
-# ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR CLIENT SIDE
+# ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR OWNER SIDE
 
 # ==========================================
 
-@login_required
-@require_http_methods(["GET"])
-def get_food_establishment_orders(request):
-    """
-    API endpoint to get paginated orders for food establishment owner
-    URL: /api/food-establishment/orders/
-    """
-    try:
-        # Get the food establishment owned by current user
-        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
-
-        if not establishment:
-            return JsonResponse({
-                'success': False,
-                'message': 'No food establishment found for this user'
-            }, status=404)
-
-        # Get page number from query params
-        page = int(request.GET.get('page', 1))
-        per_page = 20
-
-        # Get all orders for this establishment
-        orders = Order.objects.filter(
-            establishment=establishment
-        ).select_related('user').prefetch_related('items').order_by('-created_at')
-
-        # Apply filters if provided
-        status_filter = request.GET.get('status')
-        if status_filter:
-            orders = orders.filter(status=status_filter)
-
-        date_from = request.GET.get('date_from')
-        if date_from:
-            orders = orders.filter(created_at__gte=date_from)
-
-        date_to = request.GET.get('date_to')
-        if date_to:
-            orders = orders.filter(created_at__lte=date_to)
-
-        # Pagination
-        total_orders = orders.count()
-        total_pages = (total_orders + per_page - 1) // per_page
-        start = (page - 1) * per_page
-        end = start + per_page
-
-        orders_page = orders[start:end]
-
-        # Format orders data
-        orders_data = []
-        for order in orders_page:
-            orders_data.append({
-                'id': order.id,
-                'customer_name': order.user.get_full_name() or order.user.username,
-                'customer_email': order.user.email,
-                'total_items': order.items.count(),
-                'total_amount': str(order.total_amount),
-                'status': order.status,
-                'created_at': order.created_at.isoformat(),
-                'reference_number': order.reference_number if hasattr(order, 'reference_number') else None
-            })
-
-        return JsonResponse({
-            'success': True,
-            'orders': orders_data,
-            'current_page': page,
-            'total_pages': total_pages,
-            'total_orders': total_orders
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.db.models import Prefetch, Count, Sum
+from .models import Order, OrderItem, FoodEstablishment
+import json
 
 @login_required
 @require_http_methods(["GET"])
-def export_orders_csv(request):
+def get_establishment_orders(request):
     """
-    Export orders to CSV file
-    URL: /api/food-establishment/orders/export/
-    """
-    try:
-        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+    API endpoint to get all orders for the food establishment owner
+    Returns orders grouped by status with detailed information
 
-        if not establishment:
-            return HttpResponse('No establishment found', status=404)
-
-        # Get all orders
-        orders = Order.objects.filter(
-            establishment=establishment
-        ).select_related('user').prefetch_related('items').order_by('-created_at')
-
-        # Create CSV
-        output = io.StringIO()
-        writer = csv.writer(output)
-
-        # Write header
-        writer.writerow([
-            'Order ID',
-            'Customer Name',
-            'Customer Email',
-            'Total Items',
-            'Total Amount',
-            'Status',
-            'Date'
-        ])
-
-        # Write data
-        for order in orders:
-            writer.writerow([
-                order.id,
-                order.user.get_full_name() or order.user.username,
-                order.user.email,
-                order.items.count(),
-                order.total_amount,
-                order.status,
-                order.created_at.strftime('%Y-%m-%d %H:%M:%S')
-            ])
-
-        # Create response
-        response = HttpResponse(output.getvalue(), content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="orders_{datetime.now().strftime("%Y%m%d")}.csv"'
-
-        return response
-
-    except Exception as e:
-        return HttpResponse(f'Error: {str(e)}', status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def get_food_establishment_transactions(request):
-    """
-    API endpoint to get all transactions for a food establishment
-    Returns PayMongo/online payment transactions with detailed information
-    URL: /api/food-establishment/transactions/
+    Endpoint: /api/food-establishment/orders/
+    Method: GET
     """
     try:
         # Get the establishment owned by the current user
@@ -4886,257 +4766,150 @@ def get_food_establishment_transactions(request):
                 'message': 'No establishment found for this user'
             }, status=404)
 
-        # Get all orders that used PayMongo (online payment)
-        # Filter for orders with paymongo_checkout_id (indicates PayMongo payment)
+        # Get all orders for this establishment
         orders = Order.objects.filter(
-            establishment=establishment,
-            paymongo_checkout_id__isnull=False  # Only orders with PayMongo checkout
-        ).select_related('user').prefetch_related('orderitem_set__menu_item').order_by('-created_at')
+            establishment=establishment
+        ).select_related(
+            'user', 'establishment'
+        ).prefetch_related(
+            Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
+        ).order_by('-created_at')
 
-        # Build transactions list
-        transactions = []
+        # Build the response data
+        orders_data = []
         for order in orders:
-            # Get order items
+            # Get order items info
             items = []
-            for item in order.orderitem_set.all():
+            items_preview = []
+            for order_item in order.orderitem_set.all():
                 items.append({
-                    'name': item.menu_item.name,
-                    'quantity': item.quantity,
-                    'price': str(item.price_at_order),
-                    'total': str(item.total_price)
+                    'name': order_item.menu_item.name,
+                    'quantity': order_item.quantity,
+                    'price': str(order_item.price_at_order),
                 })
+                items_preview.append(f"{order_item.quantity}x {order_item.menu_item.name}")
 
-            # Determine payment method from order
-            payment_method = 'gcash'  # Default
-            payment_method_display = 'GCash'
+            # Limit preview to first 2 items
+            preview_text = ', '.join(items_preview[:2])
+            if len(items_preview) > 2:
+                preview_text += f' +{len(items_preview) - 2} more'
 
-            # You can enhance this by storing payment method in Order model
-            # For now, we'll use gcash_payment_method field
-            if order.gcash_payment_method:
-                method = order.gcash_payment_method.lower()
-                if 'paymaya' in method:
-                    payment_method = 'paymaya'
-                    payment_method_display = 'PayMaya'
-                elif 'card' in method:
-                    payment_method = 'card'
-                    payment_method_display = 'Credit/Debit Card'
-                elif 'bank' in method or 'online' in method:
-                    payment_method = 'online_banking'
-                    payment_method_display = 'Online Banking'
-
-            # Determine status
-            status = 'Pending'
-            if order.payment_status == 'paid':
-                status = 'Paid'
-            elif order.payment_status == 'failed':
-                status = 'Failed'
-            elif order.payment_status == 'expired':
-                status = 'Expired'
-
-            # Build transaction object
-            transaction = {
-                'order_id': order.id,
-                'created_at': order.created_at.isoformat(),
-                'payment_method': payment_method,
-                'payment_method_display': payment_method_display,
-                'customer_name': order.user.get_full_name() or order.user.username if order.user else 'Guest',
-                'customer_email': order.user.email if order.user else '',
-                'amount': str(order.total_amount),
-                'status': status,
-                'reference_number': order.gcash_reference_number or order.paymongo_checkout_id or '',
-                'items': items,
-                'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None
-            }
-
-            transactions.append(transaction)
-
-        # Calculate statistics
-        total_revenue = Decimal('0.00')
-        paid_count = 0
-
-        # Get current month start
-        now = timezone.now()
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-        monthly_revenue = Decimal('0.00')
-
-        for transaction in transactions:
-            amount = Decimal(transaction['amount'])
-
-            # Total revenue (only paid)
-            if transaction['status'] == 'Paid':
-                total_revenue += amount
-                paid_count += 1
-
-                # Monthly revenue
-                created_at = datetime.fromisoformat(transaction['created_at'].replace('Z', '+00:00'))
-                if created_at >= month_start:
-                    monthly_revenue += amount
-
-        # Calculate success rate
-        total_count = len(transactions)
-        success_rate = round((paid_count / total_count * 100) if total_count > 0 else 0, 1)
-
-        statistics = {
-            'total_revenue': str(total_revenue),
-            'total_transactions': total_count,
-            'monthly_revenue': str(monthly_revenue),
-            'success_rate': success_rate,
-            'paid_transactions': paid_count
-        }
-
-        return JsonResponse({
-            'success': True,
-            'transactions': transactions,
-            'statistics': statistics
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def get_user_transaction_history(request):
-    """
-    Get transaction history for current user
-    URL: /api/user/transactions/
-    """
-    try:
-        # Get user's orders
-        orders = Order.objects.filter(
-            user=request.user
-        ).select_related('establishment').order_by('-created_at')
-
-        transactions = []
-        for order in orders:
-            transaction_type = 'payment' if order.status in ['paid', 'completed'] else 'pending'
-
-            transactions.append({
+            order_data = {
                 'id': order.id,
-                'title': f'Order from {order.establishment.name}',
-                'type': transaction_type,
-                'amount': str(order.total_amount),
-                'date': order.created_at.isoformat(),
-                'reference': order.reference_number if hasattr(order, 'reference_number') else f'ORD-{order.id}',
-                'status': order.status
-            })
+                'customer_name': order.user.username if order.user else 'Unknown',
+                'customer_email': order.user.email if order.user else '',
+                'status': order.status.lower(),  # Ensure lowercase for consistency
+                'total_amount': str(order.total_amount),
+                'items_count': order.get_item_count(),
+                'items_preview': preview_text,
+                'items': items,
+                'created_at': order.created_at.isoformat(),
+                'updated_at': order.updated_at.isoformat(),
+                'gcash_reference': order.gcash_reference_number or '',
+            }
+            orders_data.append(order_data)
 
         return JsonResponse({
             'success': True,
-            'transactions': transactions
+            'orders': orders_data,
+            'total_orders': len(orders_data)
         })
 
     except Exception as e:
+        import traceback
+        print(f"Error in get_establishment_orders: {str(e)}")
+        print(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'message': str(e)
         }, status=500)
 
 @login_required
-@require_http_methods(["GET"])
-def get_sales_report(request):
+@require_http_methods(["POST"])
+def update_order_status(request, order_id):
     """
-    Generate sales report for food establishment
-    URL: /api/food-establishment/sales-report/
+    API endpoint to update the status of a specific order
+
+    Endpoint: /api/food-establishment/orders/<order_id>/update-status/
+    Method: POST
+    Body: { "status": "preparing" | "to_claim" | "completed" }
     """
     try:
+        # Get the establishment owned by the current user
         establishment = FoodEstablishment.objects.filter(owner=request.user).first()
 
         if not establishment:
             return JsonResponse({
                 'success': False,
-                'message': 'No establishment found'
+                'message': 'No establishment found for this user'
             }, status=404)
 
-        # Get period from query params
-        period = request.GET.get('period', 'week')
-
-        # Calculate date range
-        end_date = datetime.now()
-        if period == 'today':
-            start_date = datetime.now().replace(hour=0, minute=0, second=0)
-        elif period == 'week':
-            start_date = end_date - timedelta(days=7)
-        elif period == 'month':
-            start_date = end_date - timedelta(days=30)
-        elif period == 'year':
-            start_date = end_date - timedelta(days=365)
-        elif period == 'custom':
-            start_date = datetime.fromisoformat(request.GET.get('start_date'))
-            end_date = datetime.fromisoformat(request.GET.get('end_date'))
-        else:
-            start_date = end_date - timedelta(days=7)
-
-        # Get orders in date range
-        orders = Order.objects.filter(
-            establishment=establishment,
-            created_at__gte=start_date,
-            created_at__lte=end_date,
-            status__in=['paid', 'completed']
+        # Get the order and verify it belongs to this establishment
+        order = Order.objects.select_related('establishment').get(
+            id=order_id,
+            establishment=establishment
         )
 
-        # Calculate summary statistics
-        total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
-        total_orders = orders.count()
-        average_order = total_revenue / total_orders if total_orders > 0 else Decimal('0')
+        # Parse the request body
+        data = json.loads(request.body)
+        new_status = data.get('status', '').lower()
 
-        # Get total items sold
-        items_sold = OrderItem.objects.filter(
-            order__in=orders
-        ).aggregate(total=Sum('quantity'))['total'] or 0
+        # Validate status
+        valid_statuses = ['order_received', 'preparing', 'to_claim', 'completed']
+        if new_status not in valid_statuses:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+            }, status=400)
 
-        # Get daily sales for chart
-        daily_sales = []
-        current_date = start_date
-        while current_date <= end_date:
-            day_orders = orders.filter(
-                created_at__date=current_date.date()
-            )
-            day_total = day_orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        # Update the order status
+        order.status = new_status
+        order.save(update_fields=['status', 'updated_at'])
 
-            daily_sales.append({
-                'date': current_date.strftime('%Y-%m-%d'),
-                'amount': float(day_total)
-            })
-            current_date += timedelta(days=1)
+        # Create notification for status change if needed
+        notification_types = {
+            'preparing': 'order_preparing',
+            'to_claim': 'order_ready',
+            'completed': 'order_completed'
+        }
 
-        # Get top selling items
-        top_items = OrderItem.objects.filter(
-            order__in=orders
-        ).values(
-            'menu_item__name'
-        ).annotate(
-            quantity=Sum('quantity'),
-            total_revenue=Sum(F('quantity') * F('price'))
-        ).order_by('-quantity')[:10]
-
-        top_items_list = []
-        for item in top_items:
-            top_items_list.append({
-                'name': item['menu_item__name'],
-                'quantity': item['quantity'],
-                'total_revenue': str(item['total_revenue'])
-            })
+        if new_status in notification_types:
+            try:
+                from .models import OrderNotification
+                OrderNotification.objects.create(
+                    establishment=establishment,
+                    order=order,
+                    notification_type=notification_types.get(new_status, 'order_update'),
+                    message=f'Order #{order.id} status updated to {new_status.replace("_", " ").title()}'
+                )
+            except Exception as notif_error:
+                # Don't fail the request if notification creation fails
+                print(f"Error creating notification: {notif_error}")
 
         return JsonResponse({
             'success': True,
-            'report': {
-                'total_revenue': str(total_revenue),
-                'total_orders': total_orders,
-                'average_order': str(average_order),
-                'items_sold': items_sold,
-                'daily_sales': daily_sales,
-                'top_items': top_items_list,
-                'period': period,
-                'start_date': start_date.strftime('%Y-%m-%d'),
-                'end_date': end_date.strftime('%Y-%m-%d')
+            'message': f'Order status updated to {new_status}',
+            'order': {
+                'id': order.id,
+                'status': order.status,
+                'updated_at': order.updated_at.isoformat()
             }
         })
 
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found or does not belong to your establishment'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON in request body'
+        }, status=400)
     except Exception as e:
+        import traceback
+        print(f"Error in update_order_status: {str(e)}")
+        print(traceback.format_exc())
         return JsonResponse({
             'success': False,
             'message': str(e)
@@ -5144,165 +4917,76 @@ def get_sales_report(request):
 
 @login_required
 @require_http_methods(["GET"])
-def export_sales_report_pdf(request):
+def get_order_details_establishment(request, order_id):
     """
-    Export sales report to PDF
-    URL: /api/food-establishment/sales-report/pdf/
-    """
-    try:
-        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
-        period = request.GET.get('period', 'week')
+    API endpoint to get detailed information about a specific order for establishment owner
 
-        # Create PDF
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
-        elements = []
-        styles = getSampleStyleSheet()
-
-        # Title
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#B71C1C'),
-            spaceAfter=30,
-            alignment=1  # Center
-        )
-
-        elements.append(Paragraph(f"Sales Report - {establishment.name}", title_style))
-        elements.append(Spacer(1, 12))
-
-        # Get report data (reuse logic from get_sales_report)
-        # ... (calculate same data as above)
-
-        # Add summary table
-        summary_data = [
-            ['Metric', 'Value'],
-            ['Period', period.capitalize()],
-            ['Total Revenue', f'₱{total_revenue:.2f}'],
-            ['Total Orders', str(total_orders)],
-            ['Average Order', f'₱{average_order:.2f}'],
-            ['Items Sold', str(items_sold)]
-        ]
-
-        summary_table = Table(summary_data, colWidths=[3 * inch, 3 * inch])
-        summary_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#B71C1C')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 14),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
-
-        elements.append(summary_table)
-
-        # Build PDF
-        doc.build(elements)
-
-        # Return PDF
-        buffer.seek(0)
-        response = HttpResponse(buffer.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="sales_report_{datetime.now().strftime("%Y%m%d")}.pdf"'
-
-        return response
-
-    except Exception as e:
-        return HttpResponse(f'Error: {str(e)}', status=500)
-
-@login_required
-@require_http_methods(["GET"])
-def export_sales_report_excel(request):
-    """
-    Export sales report to Excel
-    URL: /api/food-establishment/sales-report/excel/
+    Endpoint: /api/food-establishment/orders/<order_id>/details/
+    Method: GET
     """
     try:
+        # Get the establishment owned by the current user
         establishment = FoodEstablishment.objects.filter(owner=request.user).first()
 
-        # Create Excel file
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet('Sales Report')
+        if not establishment:
+            return JsonResponse({
+                'success': False,
+                'message': 'No establishment found for this user'
+            }, status=404)
 
-        # Define formats
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#B71C1C',
-            'font_color': 'white',
-            'align': 'center',
-            'valign': 'vcenter'
+        # Get the order and verify it belongs to this establishment
+        order = Order.objects.select_related(
+            'user', 'establishment'
+        ).prefetch_related(
+            Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
+        ).get(id=order_id, establishment=establishment)
+
+        # Get order items
+        items = []
+        for order_item in order.orderitem_set.all():
+            items.append({
+                'id': order_item.id,
+                'name': order_item.menu_item.name,
+                'quantity': order_item.quantity,
+                'price': str(order_item.price_at_order),
+                'total': str(order_item.total_price),
+                'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
+            })
+
+        order_data = {
+            'id': order.id,
+            'customer': {
+                'name': order.user.username if order.user else 'Unknown',
+                'email': order.user.email if order.user else '',
+            },
+            'status': order.status.lower(),
+            'total_amount': str(order.total_amount),
+            'items': items,
+            'items_count': order.get_item_count(),
+            'created_at': order.created_at.isoformat(),
+            'updated_at': order.updated_at.isoformat(),
+            'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
+            'gcash_reference': order.gcash_reference_number or '',
+        }
+
+        return JsonResponse({
+            'success': True,
+            'order': order_data
         })
 
-        # Write headers
-        headers = ['Order ID', 'Customer', 'Items', 'Amount', 'Status', 'Date']
-        for col, header in enumerate(headers):
-            worksheet.write(0, col, header, header_format)
-
-        # Get orders and write data
-        orders = Order.objects.filter(
-            establishment=establishment
-        ).select_related('user').order_by('-created_at')
-
-        for row, order in enumerate(orders, start=1):
-            worksheet.write(row, 0, order.id)
-            worksheet.write(row, 1, order.user.get_full_name() or order.user.username)
-            worksheet.write(row, 2, order.items.count())
-            worksheet.write(row, 3, float(order.total_amount))
-            worksheet.write(row, 4, order.status)
-            worksheet.write(row, 5, order.created_at.strftime('%Y-%m-%d %H:%M'))
-
-        workbook.close()
-
-        # Return Excel file
-        output.seek(0)
-        response = HttpResponse(
-            output.read(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response[
-            'Content-Disposition'] = f'attachment; filename="sales_report_{datetime.now().strftime("%Y%m%d")}.xlsx"'
-
-        return response
-
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found or does not belong to your establishment'
+        }, status=404)
     except Exception as e:
-        return HttpResponse(f'Error: {str(e)}', status=500)
-
-@login_required
-def orders_list_view(request):
-    """
-    Orders list view - extends the dashboard template
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-    except FoodEstablishment.DoesNotExist:
-        return redirect('create_establishment')
-
-    context = {
-        'establishment': establishment,
-        'pk': establishment.pk,  # Add this line - needed for URL reverse
-    }
-
-    return render(request, 'webapplication/orders_list.html', context)
-
-@login_required
-def transaction_history_view(request):
-    """
-    Transaction history view - extends the dashboard template
-    """
-    try:
-        establishment = FoodEstablishment.objects.get(owner=request.user)
-    except FoodEstablishment.DoesNotExist:
-        return redirect('create_establishment')
-
-    context = {
-        'establishment': establishment,
-        'pk': establishment.pk,  # Add this line - needed for URL reverse
-    }
-
-    return render(request, 'webapplication/transaction_history.html', context)
+        import traceback
+        print(f"Error in get_order_details_establishment: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 
 # ==========================================
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE

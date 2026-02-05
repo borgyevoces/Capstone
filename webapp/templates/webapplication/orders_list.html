@@ -14,7 +14,7 @@
     }
 
     .page-container {
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
         padding: 24px;
         margin-top: 80px;
@@ -46,39 +46,131 @@
     .orders-content {
         background: white;
         border-radius: 16px;
-        padding: 32px;
+        padding: 0;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
     }
 
-    .orders-table-header {
+    /* Status Navigation Tabs */
+    .status-tabs {
+        display: flex;
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        overflow-x: auto;
+    }
+
+    .status-tab {
+        flex: 1;
+        min-width: 200px;
+        padding: 20px 24px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-tab:hover {
+        background: #f3f4f6;
+    }
+
+    .status-tab.active {
+        background: white;
+        border-bottom-color: #B71C1C;
+    }
+
+    .status-tab-icon {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+
+    .status-tab-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #374151;
+    }
+
+    .status-tab.active .status-tab-title {
+        color: #B71C1C;
+    }
+
+    .status-tab-count {
+        background: #e5e7eb;
+        color: #374151;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .status-tab.active .status-tab-count {
+        background: #B71C1C;
+        color: white;
+    }
+
+    /* Tab Icons Colors */
+    .status-tab[data-status="order_received"] .status-tab-icon {
+        color: #f59e0b;
+    }
+
+    .status-tab[data-status="preparing"] .status-tab-icon {
+        color: #3b82f6;
+    }
+
+    .status-tab[data-status="to_claim"] .status-tab-icon {
+        color: #8b5cf6;
+    }
+
+    .status-tab[data-status="completed"] .status-tab-icon {
+        color: #10b981;
+    }
+
+    /* Orders Table Container */
+    .orders-table-container {
+        padding: 24px 32px 32px;
+    }
+
+    /* Bulk Actions Bar */
+    .bulk-actions-bar {
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
         flex-wrap: wrap;
         gap: 16px;
     }
 
-    .orders-table-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1a1a1a;
+    .bulk-actions-left {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 16px;
     }
 
-    .orders-table-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+    .select-all-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
     }
 
-    .filter-btn, .export-btn, .sales-report-btn {
-        background: white;
-        border: 2px solid #e5e7eb;
-        color: #1a1a1a;
-        padding: 10px 20px;
+    .selected-count {
+        font-size: 15px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .bulk-action-btn {
+        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+        color: white;
+        border: none;
+        padding: 10px 24px;
         border-radius: 8px;
         font-size: 14px;
         font-weight: 600;
@@ -89,60 +181,18 @@
         transition: all 0.2s;
     }
 
-    .filter-btn:hover, .export-btn:hover, .sales-report-btn:hover {
-        border-color: #B71C1C;
-        color: #B71C1C;
-        transform: translateY(-2px);
-    }
-
-    .sales-report-btn {
-        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
-        color: white;
-        border: none;
-    }
-
-    .sales-report-btn:hover {
+    .bulk-action-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
     }
 
-    .orders-filters {
-        background: #f9fafb;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 24px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
+    .bulk-action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
     }
 
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .filter-group label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
-    }
-
-    .filter-group select,
-    .filter-group input {
-        padding: 10px 14px;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.2s;
-    }
-
-    .filter-group select:focus,
-    .filter-group input:focus {
-        border-color: #B71C1C;
-    }
-
+    /* Loading and Empty States */
     .loading-state, .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -168,6 +218,7 @@
         margin-bottom: 12px;
     }
 
+    /* Orders Table */
     .orders-table {
         width: 100%;
         border-collapse: collapse;
@@ -184,6 +235,11 @@
         border-bottom: 2px solid #e5e7eb;
     }
 
+    .orders-table th:first-child {
+        width: 50px;
+        text-align: center;
+    }
+
     .orders-table td {
         padding: 16px;
         border-bottom: 1px solid #f3f4f6;
@@ -194,12 +250,78 @@
         background: #f9fafb;
     }
 
+    .order-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
     .order-id {
         font-family: 'Courier New', monospace;
         font-weight: 600;
         color: #B71C1C;
     }
 
+    .order-items-preview {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .order-items-preview strong {
+        color: #1f2937;
+    }
+
+    .order-time {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .order-time strong {
+        color: #1f2937;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    /* Action Button */
+    .btn-next-step {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-next-step:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-view-details {
+        background: #f3f4f6;
+        color: #1a1a1a;
+        border: 2px solid #e5e7eb;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-right: 8px;
+    }
+
+    .btn-view-details:hover {
+        background: #e5e7eb;
+    }
+
+    /* Status Badge for Completed Tab */
     .order-status-badge {
         display: inline-block;
         padding: 6px 12px;
@@ -207,60 +329,8 @@
         font-size: 12px;
         font-weight: 700;
         text-transform: uppercase;
-    }
-
-    .order-status-badge.pending {
-        background: #fef3c7;
-        color: #f59e0b;
-    }
-
-    .order-status-badge.paid {
         background: #d1fae5;
         color: #059669;
-    }
-
-    .order-status-badge.completed {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .order-status-badge.cancelled {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .order-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .btn-view, .btn-action {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-view {
-        background: #f3f4f6;
-        color: #1a1a1a;
-    }
-
-    .btn-view:hover {
-        background: #e5e7eb;
-    }
-
-    .btn-action {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-    }
-
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -269,14 +339,31 @@
             margin-top: 70px;
         }
 
-        .page-header,
-        .orders-content {
+        .page-header {
             padding: 20px;
+        }
+
+        .status-tabs {
+            overflow-x: scroll;
+        }
+
+        .status-tab {
+            min-width: 150px;
+            padding: 16px;
+        }
+
+        .orders-table-container {
+            padding: 16px;
         }
 
         .orders-table {
             display: block;
             overflow-x: auto;
+        }
+
+        .bulk-actions-bar {
+            flex-direction: column;
+            align-items: stretch;
         }
     }
 </style>
@@ -289,64 +376,62 @@
             <i class="fas fa-clipboard-list"></i>
             Orders Management
         </h1>
-        <p class="page-subtitle">View and manage all your incoming orders</p>
+        <p class="page-subtitle">Manage your orders by status - move items through each stage</p>
     </div>
 
     <div class="orders-content">
-        <div class="orders-table-header">
-            <h2 class="orders-table-title">
-                <i class="fas fa-shopping-cart"></i>
-                Orders List
-            </h2>
-            <div class="orders-table-actions">
-                <button class="filter-btn" onclick="toggleFilters()">
-                    <i class="fas fa-filter"></i>
-                    Filter
-                </button>
-                <button class="export-btn" onclick="exportOrders()">
-                    <i class="fas fa-download"></i>
-                    Export CSV
-                </button>
-                <button class="sales-report-btn" onclick="window.location.href='{% url 'food_establishment_dashboard' %}'">
-                    <i class="fas fa-chart-line"></i>
-                    View Dashboard
-                </button>
-            </div>
+        <!-- Status Navigation Tabs -->
+        <div class="status-tabs">
+            <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="status-tab-title">Order Received</div>
+                <div class="status-tab-count" id="count-order_received">0</div>
+            </button>
+            <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <div class="status-tab-title">Preparing</div>
+                <div class="status-tab-count" id="count-preparing">0</div>
+            </button>
+            <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-hand-holding"></i>
+                </div>
+                <div class="status-tab-title">To Claim</div>
+                <div class="status-tab-count" id="count-to_claim">0</div>
+            </button>
+            <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="status-tab-title">Completed</div>
+                <div class="status-tab-count" id="count-completed">0</div>
+            </button>
         </div>
 
-        <!-- Filters -->
-        <div class="orders-filters" id="ordersFilters" style="display: none;">
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="statusFilter" onchange="applyFilters()">
-                    <option value="all">All Orders</option>
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                    <option value="completed">Completed</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Date From</label>
-                <input type="date" id="dateFromFilter" onchange="applyFilters()">
-            </div>
-            <div class="filter-group">
-                <label>Date To</label>
-                <input type="date" id="dateToFilter" onchange="applyFilters()">
-            </div>
-            <div class="filter-group" style="justify-content: flex-end;">
-                <label>&nbsp;</label>
-                <button class="filter-btn" onclick="clearFilters()" style="background: #fee2e2; color: #dc2626; border-color: #fecaca;">
-                    <i class="fas fa-times"></i>
-                    Clear
+        <!-- Orders Table Container -->
+        <div class="orders-table-container">
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                <div class="bulk-actions-left">
+                    <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                </div>
+                <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="bulkActionText">Move to Next Step</span>
                 </button>
             </div>
-        </div>
 
-        <!-- Orders List -->
-        <div id="ordersListContainer">
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading orders...</p>
+            <!-- Orders List -->
+            <div id="ordersListContainer">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading orders...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -355,18 +440,40 @@
 
 {% block page_javascript %}
 let allOrders = [];
+let currentStatus = 'order_received';
+let selectedOrders = new Set();
+
+// Status workflow mapping
+const statusWorkflow = {
+    'order_received': 'preparing',
+    'preparing': 'to_claim',
+    'to_claim': 'completed',
+    'completed': null
+};
+
+const statusLabels = {
+    'order_received': 'Order Received',
+    'preparing': 'Preparing',
+    'to_claim': 'To Claim',
+    'completed': 'Completed'
+};
 
 // Load orders on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadOrders();
+    // Refresh orders every 30 seconds
+    setInterval(loadOrders, 30000);
 });
 
 function loadOrders() {
     fetch('/api/food-establishment/orders/')
         .then(response => response.json())
         .then(data => {
-            allOrders = data.orders || [];
-            displayOrders(allOrders);
+            if (data.success) {
+                allOrders = data.orders || [];
+                updateStatusCounts();
+                displayOrdersForCurrentTab();
+            }
         })
         .catch(error => {
             console.error('Error loading orders:', error);
@@ -380,30 +487,76 @@ function loadOrders() {
         });
 }
 
-function displayOrders(orders) {
-    const container = document.getElementById('ordersListContainer');
+function updateStatusCounts() {
+    const counts = {
+        'order_received': 0,
+        'preparing': 0,
+        'to_claim': 0,
+        'completed': 0
+    };
 
-    if (!orders || orders.length === 0) {
+    allOrders.forEach(order => {
+        const status = order.status.toLowerCase();
+        if (counts.hasOwnProperty(status)) {
+            counts[status]++;
+        }
+    });
+
+    // Update count badges
+    Object.keys(counts).forEach(status => {
+        const countElement = document.getElementById(`count-${status}`);
+        if (countElement) {
+            countElement.textContent = counts[status];
+        }
+    });
+}
+
+function switchTab(status) {
+    currentStatus = status;
+    selectedOrders.clear();
+
+    // Update active tab
+    document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`.status-tab[data-status="${status}"]`).classList.add('active');
+
+    // Display orders for new tab
+    displayOrdersForCurrentTab();
+
+    // Hide bulk actions bar
+    updateBulkActionsBar();
+}
+
+function displayOrdersForCurrentTab() {
+    const container = document.getElementById('ordersListContainer');
+    const orders = allOrders.filter(order => order.status.toLowerCase() === currentStatus);
+
+    if (orders.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
-                <h3>No Orders Yet</h3>
-                <p>Your orders will appear here once customers place them.</p>
+                <h3>No ${statusLabels[currentStatus]} Orders</h3>
+                <p>Orders in this status will appear here.</p>
             </div>
         `;
+        document.getElementById('bulkActionsBar').style.display = 'none';
         return;
     }
+
+    // Show bulk actions bar
+    document.getElementById('bulkActionsBar').style.display = 'flex';
 
     let html = `
         <table class="orders-table">
             <thead>
                 <tr>
+                    <th><input type="checkbox" class="select-all-checkbox" onchange="toggleSelectAll()"></th>
                     <th>Order ID</th>
                     <th>Customer</th>
-                    <th>Date</th>
                     <th>Items</th>
                     <th>Total</th>
-                    <th>Status</th>
+                    <th>Time</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -411,25 +564,45 @@ function displayOrders(orders) {
     `;
 
     orders.forEach(order => {
+        const isSelected = selectedOrders.has(order.id);
+        const nextStatus = statusWorkflow[currentStatus];
+        const nextStepLabel = nextStatus ? statusLabels[nextStatus] : 'Completed';
+
         html += `
             <tr>
+                <td style="text-align: center;">
+                    <input type="checkbox"
+                           class="order-checkbox"
+                           data-order-id="${order.id}"
+                           ${isSelected ? 'checked' : ''}
+                           onchange="toggleOrderSelection(${order.id})">
+                </td>
                 <td><span class="order-id">#${order.id}</span></td>
                 <td>${order.customer_name || 'Unknown'}</td>
-                <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                <td>${order.items_count || 0} items</td>
-                <td>₱${parseFloat(order.total || 0).toFixed(2)}</td>
-                <td><span class="order-status-badge ${order.status.toLowerCase()}">${order.status}</span></td>
                 <td>
-                    <div class="order-actions">
-                        <button class="btn-view" onclick="viewOrder(${order.id})">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        ${order.status === 'pending' ? `
-                            <button class="btn-action" onclick="acceptOrder(${order.id})">
-                                <i class="fas fa-check"></i> Accept
-                            </button>
-                        ` : ''}
+                    <div class="order-items-preview">
+                        <strong>${order.items_count || 0} items</strong>
+                        <div style="font-size: 12px; margin-top: 4px;">${order.items_preview || ''}</div>
                     </div>
+                </td>
+                <td><strong>₱${parseFloat(order.total_amount || 0).toFixed(2)}</strong></td>
+                <td>
+                    <div class="order-time">
+                        <strong>${formatTime(order.created_at)}</strong>
+                        ${formatDate(order.created_at)}
+                    </div>
+                </td>
+                <td>
+                    ${nextStatus ? `
+                        <button class="btn-next-step" onclick="moveOrderToNextStep(${order.id})">
+                            <i class="fas fa-arrow-right"></i>
+                            Move to ${nextStepLabel}
+                        </button>
+                    ` : `
+                        <span class="order-status-badge">
+                            <i class="fas fa-check"></i> Completed
+                        </span>
+                    `}
                 </td>
             </tr>
         `;
@@ -441,56 +614,195 @@ function displayOrders(orders) {
     `;
 
     container.innerHTML = html;
+    updateBulkActionsBar();
 }
 
-function toggleFilters() {
-    const filters = document.getElementById('ordersFilters');
-    filters.style.display = filters.style.display === 'none' ? 'grid' : 'none';
+function toggleOrderSelection(orderId) {
+    if (selectedOrders.has(orderId)) {
+        selectedOrders.delete(orderId);
+    } else {
+        selectedOrders.add(orderId);
+    }
+    updateBulkActionsBar();
 }
 
-function applyFilters() {
-    const status = document.getElementById('statusFilter').value;
-    const dateFrom = document.getElementById('dateFromFilter').value;
-    const dateTo = document.getElementById('dateToFilter').value;
+function toggleSelectAll() {
+    const checkboxes = document.querySelectorAll('.order-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
 
-    let filtered = allOrders;
-
-    if (status !== 'all') {
-        filtered = filtered.filter(order => order.status.toLowerCase() === status);
+    if (selectAllCheckbox.checked) {
+        checkboxes.forEach(checkbox => {
+            const orderId = parseInt(checkbox.dataset.orderId);
+            selectedOrders.add(orderId);
+            checkbox.checked = true;
+        });
+    } else {
+        selectedOrders.clear();
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
 
-    if (dateFrom) {
-        filtered = filtered.filter(order => new Date(order.created_at) >= new Date(dateFrom));
-    }
-
-    if (dateTo) {
-        filtered = filtered.filter(order => new Date(order.created_at) <= new Date(dateTo));
-    }
-
-    displayOrders(filtered);
+    updateBulkActionsBar();
 }
 
-function clearFilters() {
-    document.getElementById('statusFilter').value = 'all';
-    document.getElementById('dateFromFilter').value = '';
-    document.getElementById('dateToFilter').value = '';
-    displayOrders(allOrders);
-}
+function updateBulkActionsBar() {
+    const selectedCount = selectedOrders.size;
+    const selectedCountElement = document.getElementById('selectedCount');
+    const bulkMoveBtn = document.getElementById('bulkMoveBtn');
+    const bulkActionText = document.getElementById('bulkActionText');
+    const nextStatus = statusWorkflow[currentStatus];
 
-function exportOrders() {
-    console.log('Exporting orders to CSV...');
-    alert('CSV export feature - Coming soon!');
-}
+    selectedCountElement.textContent = `${selectedCount} selected`;
 
-function viewOrder(orderId) {
-    console.log('Viewing order:', orderId);
-    alert('View order #' + orderId);
-}
-
-function acceptOrder(orderId) {
-    if (confirm('Accept this order?')) {
-        console.log('Accepting order:', orderId);
-        alert('Order #' + orderId + ' accepted!');
+    if (selectedCount > 0 && nextStatus) {
+        bulkMoveBtn.disabled = false;
+        bulkActionText.textContent = `Move ${selectedCount} to ${statusLabels[nextStatus]}`;
+    } else {
+        bulkMoveBtn.disabled = true;
+        bulkActionText.textContent = 'Move to Next Step';
     }
 }
+
+function moveOrderToNextStep(orderId) {
+    const nextStatus = statusWorkflow[currentStatus];
+    if (!nextStatus) return;
+
+    if (confirm(`Move order #${orderId} to ${statusLabels[nextStatus]}?`)) {
+        updateOrderStatus(orderId, nextStatus);
+    }
+}
+
+function bulkMoveToNextStep() {
+    const nextStatus = statusWorkflow[currentStatus];
+    if (!nextStatus || selectedOrders.size === 0) return;
+
+    const orderIds = Array.from(selectedOrders);
+    if (confirm(`Move ${orderIds.length} orders to ${statusLabels[nextStatus]}?`)) {
+        // Update each order
+        const promises = orderIds.map(orderId =>
+            fetch(`/api/food-establishment/orders/${orderId}/update-status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ status: nextStatus })
+            })
+        );
+
+        Promise.all(promises)
+            .then(() => {
+                selectedOrders.clear();
+                loadOrders();
+                showNotification(`Successfully moved ${orderIds.length} orders to ${statusLabels[nextStatus]}!`, 'success');
+            })
+            .catch(error => {
+                console.error('Error updating orders:', error);
+                showNotification('Error updating some orders. Please try again.', 'error');
+            });
+    }
+}
+
+function updateOrderStatus(orderId, newStatus) {
+    fetch(`/api/food-establishment/orders/${orderId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadOrders();
+            showNotification(`Order #${orderId} moved to ${statusLabels[newStatus]}!`, 'success');
+        } else {
+            showNotification('Error updating order status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error updating order status', 'error');
+    });
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function showNotification(message, type = 'success') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 {% endblock %}

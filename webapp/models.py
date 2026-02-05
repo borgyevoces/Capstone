@@ -87,6 +87,7 @@ class FoodEstablishment(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     payment_methods = models.CharField(max_length=255, blank=True, null=True)
+    isActive = models.BooleanField(default=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -120,7 +121,7 @@ class OTP(models.Model):
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     attempts = models.IntegerField(default=0)
-    is_verified = models.BooleanField(default=False)
+    # is_verified = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "OTP"
