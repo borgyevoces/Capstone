@@ -87,7 +87,6 @@ class FoodEstablishment(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     payment_methods = models.CharField(max_length=255, blank=True, null=True)
-    is_active = models.BooleanField(default=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
