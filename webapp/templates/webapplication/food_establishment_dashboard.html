@@ -16,6 +16,35 @@
     {% endblock %}
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
+        /* ==========================================
+           NAVIGATION BUTTON FIXES
+           ========================================== */
+        .nav-icon-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            text-decoration: none !important;
+            color: inherit !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 100 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .nav-icon-btn:hover {
+            opacity: 0.85 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .nav-icon-btn:active {
+            transform: translateY(0) !important;
+        }
+
+        /* Ensure links are clickable */
+        a.nav-icon-btn {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .notification-item {
             background: white;
             border-radius: 12px;
@@ -2059,19 +2088,25 @@
         </a>
         <div class="navbar-actions">
             <!-- Dashboard Button (Active) -->
-            <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}" title="Dashboard" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'food_establishment_dashboard' %}"
+               class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}"
+               title="Dashboard">
                 <i class="fas fa-chart-line"></i>
                 <span class="nav-btn-label">Dashboard</span>
             </a>
 
             <!-- Orders Button -->
-            <a href="{% url 'orders_list' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}" title="Orders" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'orders_list' %}"
+               class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}"
+               title="Orders">
                 <i class="fas fa-shopping-bag"></i>
                 <span class="nav-btn-label">Orders</span>
             </a>
 
             <!-- Transaction History Button -->
-            <a href="{% url 'user_transactions' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'user_transactions' %}"
+               class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}"
+               title="Transaction History">
                 <i class="fas fa-history"></i>
                 <span class="nav-btn-label">Transactions</span>
             </a>
