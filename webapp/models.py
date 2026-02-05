@@ -360,6 +360,23 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.establishment.name} ({self.status})"
 
+    def get_item_count(self):
+        """Return the total number of items (sum of quantities) in this order"""
+        from django.db.models import Sum
+        result = self.orderitem_set.aggregate(total=Sum('quantity'))
+        return result['total'] or 0
+
+    def update_total(self):
+        """Update the total amount based on order items"""
+        from django.db.models import Sum, F
+        from decimal import Decimal
+        total = self.orderitem_set.aggregate(
+            total=Sum(F('price_at_order') * F('quantity'))
+        )['total'] or Decimal('0.00')
+        self.total_amount = total
+        self.save(update_fields=['total_amount'])
+
+
 # ✅✅✅ FIXED ORDERITEM MODEL - CRITICAL CHANGES ✅✅✅
 class OrderItem(models.Model):
     """
