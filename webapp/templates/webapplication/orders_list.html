@@ -27,6 +27,13 @@
         margin-bottom: 16px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         border: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-header-left {
+        flex: 1;
     }
 
     .page-title {
@@ -48,6 +55,138 @@
         color: #718096;
         font-size: 14px;
         font-weight: 500;
+    }
+
+    /* ✅ NEW: Auto-refresh indicator */
+    .auto-refresh-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #86efac;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .auto-refresh-indicator.refreshing {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-color: #fbbf24;
+    }
+
+    .refresh-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #15803d;
+    }
+
+    .auto-refresh-indicator.refreshing .refresh-status {
+        color: #92400e;
+    }
+
+    .refresh-status i {
+        font-size: 14px;
+    }
+
+    .refreshing .refresh-status i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .refresh-timer {
+        font-size: 12px;
+        color: #16a34a;
+        font-weight: 500;
+    }
+
+    .auto-refresh-indicator.refreshing .refresh-timer {
+        color: #a16207;
+    }
+
+    .btn-manual-refresh {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-manual-refresh:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-manual-refresh:active {
+        transform: translateY(0);
+    }
+
+    /* ✅ NEW: New order notification */
+    .new-order-notification {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+        z-index: 10000;
+        display: none;
+        animation: slideInRight 0.3s ease-out;
+        max-width: 350px;
+    }
+
+    .new-order-notification.show {
+        display: block;
+    }
+
+    .notification-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .notification-header i {
+        font-size: 20px;
+        animation: bounce 0.5s ease-in-out 3;
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    .notification-body {
+        font-size: 13px;
+        line-height: 1.5;
+        opacity: 0.95;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
 
     .orders-content {
@@ -121,11 +260,27 @@
         font-weight: 700;
         min-width: 24px;
         text-align: center;
+        transition: all 0.3s ease;
     }
 
     .status-tab.active .status-tab-count {
         background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
+    }
+
+    /* ✅ NEW: Pulse animation for new orders */
+    .status-tab-count.has-new {
+        animation: pulse-count 1s ease-in-out 3;
+    }
+
+    @keyframes pulse-count {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(183, 28, 28, 0.5);
+        }
     }
 
     /* Tab Icons Colors - More vibrant */
@@ -277,20 +432,34 @@
     }
 
     .orders-table td {
-        padding: 12px 14px;
-        border-bottom: 1px solid #f0f4f8;
+        padding: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
         color: #2d3748;
-        font-size: 14px;
-        vertical-align: middle;
     }
 
     .orders-table tbody tr {
-        transition: all 0.15s ease;
+        transition: background-color 0.2s;
     }
 
     .orders-table tbody tr:hover {
-        background: #fafbfc;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        background-color: #fafbfc;
+    }
+
+    /* ✅ NEW: Highlight new orders */
+    .orders-table tbody tr.new-order {
+        animation: highlight-row 2s ease-out;
+    }
+
+    @keyframes highlight-row {
+        0% {
+            background-color: #fef3c7;
+            transform: scale(1.01);
+        }
+        100% {
+            background-color: transparent;
+            transform: scale(1);
+        }
     }
 
     .order-checkbox {
@@ -301,276 +470,223 @@
     }
 
     .order-id {
-        font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-        font-weight: 600;
+        font-weight: 700;
         color: #B71C1C;
-        font-size: 13px;
-        background: rgba(183, 28, 28, 0.06);
-        padding: 4px 8px;
-        border-radius: 6px;
-        display: inline-block;
-    }
-
-    .customer-name {
-        font-weight: 500;
-        color: #2d3748;
         font-size: 14px;
     }
 
+    .customer-name {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
     .order-items-preview {
-        font-size: 12px;
-        color: #718096;
+        max-width: 250px;
     }
 
     .order-items-preview strong {
-        color: #4a5568;
-        font-weight: 600;
         display: block;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
+        color: #4a5568;
     }
 
     .order-items-list {
-        margin-top: 3px;
-        font-size: 11px;
-        color: #a0aec0;
-        line-height: 1.4;
+        color: #718096;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .order-total {
         font-weight: 700;
-        color: #B71C1C;
-        font-size: 15px;
+        color: #059669;
+        font-size: 14px;
     }
 
     .order-time {
         font-size: 12px;
-        color: #718096;
     }
 
     .order-time strong {
-        color: #2d3748;
         display: block;
+        color: #2d3748;
         margin-bottom: 2px;
         font-weight: 600;
-        font-size: 13px;
     }
 
-    /* Action Buttons - Refined */
     .btn-next-step {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
         border: none;
-        padding: 8px 14px;
-        border-radius: 7px;
+        padding: 8px 16px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 6px;
         transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        box-shadow: 0 2px 4px rgba(183, 28, 28, 0.2);
         white-space: nowrap;
     }
 
     .btn-next-step:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.3);
     }
 
-    .btn-next-step i {
-        font-size: 11px;
+    .btn-next-step:active {
+        transform: translateY(0);
     }
 
     .order-status-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 6px 12px;
-        border-radius: 7px;
-        font-size: 12px;
-        font-weight: 600;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
     }
 
     /* Responsive Design */
-    @media (max-width: 1200px) {
+    @media (max-width: 968px) {
         .page-container {
-            max-width: 100%;
             padding: 12px;
         }
 
-        .status-tab {
-            min-width: 120px;
-            padding: 12px;
-        }
-
-        .status-tab-title {
-            font-size: 12px;
-        }
-
-        .status-tab-icon {
-            font-size: 18px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-title {
-            font-size: 20px;
+        .status-tabs {
+            justify-content: flex-start;
         }
 
         .orders-table {
-            font-size: 12px;
+            display: block;
+            overflow-x: auto;
         }
-
-        .orders-table th,
-        .orders-table td {
-            padding: 10px 8px;
-        }
-
-        .btn-next-step {
-            padding: 6px 10px;
-            font-size: 11px;
-        }
-
-        .bulk-actions-bar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .bulk-actions-left {
-            justify-content: space-between;
-        }
-    }
-
-    /* Smooth animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .orders-table tbody tr {
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    /* Custom scrollbar */
-    .orders-table-container {
-        overflow-x: auto;
-    }
-
-    .orders-table-container::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .orders-table-container::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 10px;
-    }
-
-    .orders-table-container::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 10px;
-    }
-
-    .orders-table-container::-webkit-scrollbar-thumb:hover {
-        background: #a0aec0;
     }
 </style>
 {% endblock %}
 
-{% block main_content %}
-<main class="main-content">
-    <div class="page-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="page-title">
+{% block dashboard_content %}
+<div class="page-container">
+    <!-- Page Header with Auto-Refresh Indicator -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">
                 <i class="fas fa-clipboard-list"></i>
                 Orders Management
-            </div>
-            <div class="page-subtitle">Manage and track your establishment's orders</div>
+            </h1>
+            <p class="page-subtitle">Manage and track your establishment's orders</p>
         </div>
 
-        <!-- Orders Content -->
-        <div class="orders-content">
-            <!-- Status Tabs -->
-            <div class="status-tabs">
-                <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
-                    <div class="status-tab-icon">
-                        <i class="fas fa-bell"></i>
-                    </div>
-                    <div class="status-tab-title">New Orders</div>
-                    <div class="status-tab-count" id="count-order_received">0</div>
-                </button>
+        <!-- ✅ NEW: Auto-Refresh Indicator -->
+        <div class="auto-refresh-indicator" id="autoRefreshIndicator">
+            <div class="refresh-status">
+                <i class="fas fa-sync-alt"></i>
+                <span id="refreshStatusText">Auto-refresh</span>
+            </div>
+            <div class="refresh-timer" id="refreshTimer">Next refresh in 10s</div>
+            <button class="btn-manual-refresh" onclick="manualRefresh()">
+                <i class="fas fa-redo"></i>
+                Refresh Now
+            </button>
+        </div>
+    </div>
 
-                <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
-                    <div class="status-tab-icon">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <div class="status-tab-title">Preparing</div>
-                    <div class="status-tab-count" id="count-preparing">0</div>
-                </button>
+    <!-- ✅ NEW: New Order Notification -->
+    <div class="new-order-notification" id="newOrderNotification">
+        <div class="notification-header">
+            <i class="fas fa-bell"></i>
+            <span>New Order Received!</span>
+        </div>
+        <div class="notification-body" id="notificationBody">
+            You have a new order waiting to be processed.
+        </div>
+    </div>
 
-                <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
-                    <div class="status-tab-icon">
-                        <i class="fas fa-box"></i>
-                    </div>
-                    <div class="status-tab-title">Ready</div>
-                    <div class="status-tab-count" id="count-to_claim">0</div>
-                </button>
+    <!-- Orders Content -->
+    <div class="orders-content">
+        <!-- Status Tabs -->
+        <div class="status-tabs">
+            <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="status-tab-title">New Orders</div>
+                <div class="status-tab-count" id="count-order_received">0</div>
+            </button>
 
-                <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
-                    <div class="status-tab-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="status-tab-title">Completed</div>
-                    <div class="status-tab-count" id="count-completed">0</div>
+            <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="status-tab-title">Preparing</div>
+                <div class="status-tab-count" id="count-preparing">0</div>
+            </button>
+
+            <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="status-tab-title">Ready</div>
+                <div class="status-tab-count" id="count-to_claim">0</div>
+            </button>
+
+            <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
+                <div class="status-tab-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="status-tab-title">Completed</div>
+                <div class="status-tab-count" id="count-completed">0</div>
+            </button>
+        </div>
+
+        <!-- Orders Table Container -->
+        <div class="orders-table-container">
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                <div class="bulk-actions-left">
+                    <input type="checkbox" class="select-all-checkbox" onchange="toggleSelectAll()">
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                </div>
+                <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="bulkActionText">Move to Next Step</span>
                 </button>
             </div>
 
-            <!-- Orders Table Container -->
-            <div class="orders-table-container">
-                <!-- Bulk Actions Bar -->
-                <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
-                    <div class="bulk-actions-left">
-                        <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
-                               onchange="toggleSelectAll()">
-                        <span class="selected-count" id="selectedCount">0 selected</span>
-                    </div>
-                    <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
-                        <i class="fas fa-forward"></i>
-                        <span id="bulkActionText">Move to Next Step</span>
-                    </button>
-                </div>
-
-                <!-- Orders List (Dynamically loaded) -->
-                <div id="ordersListContainer">
-                    <div class="loading-state">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Loading orders...</p>
-                    </div>
+            <!-- Orders List -->
+            <div id="ordersContainer">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading orders...</p>
                 </div>
             </div>
         </div>
     </div>
-</main>
-{% endblock %}
+</div>
 
-{% block page_javascript %}
 <script>
-// Global variables
-let allOrders = [];
+// ✅ ENHANCED: Global variables with auto-refresh
 let currentStatus = 'order_received';
+let allOrders = [];
 let selectedOrders = new Set();
+let previousOrderCounts = {
+    order_received: 0,
+    preparing: 0,
+    to_claim: 0,
+    completed: 0
+};
+let lastKnownOrderIds = new Set(); // Track order IDs to detect new orders
+let autoRefreshInterval = null;
+let refreshCountdown = null;
+let secondsUntilRefresh = 10;
+const REFRESH_INTERVAL = 10000; // 10 seconds
 
-// Status workflow
 const statusWorkflow = {
     'order_received': 'preparing',
     'preparing': 'to_claim',
@@ -578,89 +694,226 @@ const statusWorkflow = {
     'completed': null
 };
 
-// Status labels
 const statusLabels = {
     'order_received': 'Preparing',
-    'preparing': 'Ready to Claim',
+    'preparing': 'Ready',
     'to_claim': 'Completed',
-    'completed': 'Completed'
+    'completed': 'Done'
 };
 
-// Load orders on page load
-document.addEventListener('DOMContentLoaded', function () {
+// ✅ NEW: Initialize auto-refresh on page load
+window.addEventListener('DOMContentLoaded', function() {
     loadOrders();
-    // Auto-refresh every 30 seconds
-    setInterval(loadOrders, 30000);
+    startAutoRefresh();
 });
 
-function loadOrders() {
+// ✅ NEW: Start auto-refresh system
+function startAutoRefresh() {
+    // Clear any existing intervals
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    if (refreshCountdown) clearInterval(refreshCountdown);
+
+    // Start refresh interval
+    autoRefreshInterval = setInterval(() => {
+        loadOrders(true); // true = silent refresh
+        secondsUntilRefresh = REFRESH_INTERVAL / 1000;
+    }, REFRESH_INTERVAL);
+
+    // Start countdown timer
+    secondsUntilRefresh = REFRESH_INTERVAL / 1000;
+    refreshCountdown = setInterval(() => {
+        secondsUntilRefresh--;
+        if (secondsUntilRefresh <= 0) {
+            secondsUntilRefresh = REFRESH_INTERVAL / 1000;
+        }
+        updateRefreshTimer();
+    }, 1000);
+}
+
+// ✅ NEW: Update refresh timer display
+function updateRefreshTimer() {
+    const timerElement = document.getElementById('refreshTimer');
+    if (timerElement) {
+        timerElement.textContent = `Next refresh in ${secondsUntilRefresh}s`;
+    }
+}
+
+// ✅ NEW: Manual refresh function
+function manualRefresh() {
+    secondsUntilRefresh = REFRESH_INTERVAL / 1000;
+    loadOrders(false); // false = show loading indicator
+    showNotification('Orders refreshed!', 'success');
+}
+
+// ✅ NEW: Stop auto-refresh (when user navigates away)
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    if (refreshCountdown) clearInterval(refreshCountdown);
+});
+
+function switchTab(status) {
+    currentStatus = status;
+
+    // Update tab active states
+    document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-status="${status}"]`).classList.add('active');
+
+    // Clear selections
+    selectedOrders.clear();
+
+    // Render orders for current status
+    renderOrders();
+}
+
+// ✅ ENHANCED: Load orders with optional silent mode
+function loadOrders(silent = false) {
+    const indicator = document.getElementById('autoRefreshIndicator');
+    const statusText = document.getElementById('refreshStatusText');
+
+    // Show refreshing state
+    if (!silent) {
+        indicator.classList.add('refreshing');
+        statusText.textContent = 'Refreshing...';
+    }
+
     fetch('/api/food-establishment/orders/')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // ✅ NEW: Check for new orders
+                const newOrderIds = new Set(data.orders.map(o => o.id));
+                const hasNewOrders = data.orders.some(o =>
+                    o.status === 'order_received' && !lastKnownOrderIds.has(o.id)
+                );
+
+                // Show notification for new orders
+                if (hasNewOrders && lastKnownOrderIds.size > 0) {
+                    const newOrders = data.orders.filter(o =>
+                        o.status === 'order_received' && !lastKnownOrderIds.has(o.id)
+                    );
+                    showNewOrderNotification(newOrders);
+                }
+
+                // Update last known order IDs
+                lastKnownOrderIds = newOrderIds;
+
                 allOrders = data.orders;
-                updateOrderCounts();
-                displayOrdersForCurrentTab();
-            } else {
-                showNotification('Error loading orders', 'error');
+                updateStatusCounts(data.orders);
+                renderOrders();
             }
         })
         .catch(error => {
             console.error('Error loading orders:', error);
-            showNotification('Failed to load orders', 'error');
+            if (!silent) {
+                showNotification('Error loading orders. Please try again.', 'error');
+            }
+        })
+        .finally(() => {
+            // Remove refreshing state
+            indicator.classList.remove('refreshing');
+            statusText.textContent = 'Auto-refresh';
         });
 }
 
-function updateOrderCounts() {
+// ✅ NEW: Show new order notification
+function showNewOrderNotification(newOrders) {
+    const notification = document.getElementById('newOrderNotification');
+    const body = document.getElementById('notificationBody');
+
+    if (newOrders.length === 1) {
+        body.textContent = `Order #${newOrders[0].id} from ${newOrders[0].customer_name} (₱${parseFloat(newOrders[0].total_amount).toFixed(2)})`;
+    } else {
+        body.textContent = `${newOrders.length} new orders received! Check the New Orders tab.`;
+    }
+
+    notification.classList.add('show');
+
+    // Play notification sound (optional)
+    playNotificationSound();
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
+// ✅ NEW: Play notification sound
+function playNotificationSound() {
+    // Create a simple beep sound using Web Audio API
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (e) {
+        // Silently fail if audio is not supported
+        console.log('Audio notification not supported');
+    }
+}
+
+// ✅ ENHANCED: Update status counts with pulse animation for new orders
+function updateStatusCounts(orders) {
     const counts = {
-        'order_received': 0,
-        'preparing': 0,
-        'to_claim': 0,
-        'completed': 0
+        order_received: 0,
+        preparing: 0,
+        to_claim: 0,
+        completed: 0
     };
 
-    allOrders.forEach(order => {
+    orders.forEach(order => {
         const status = order.status.toLowerCase();
         if (counts.hasOwnProperty(status)) {
             counts[status]++;
         }
     });
 
-    // Update count badges
+    // Update count badges with pulse animation if count increased
     Object.keys(counts).forEach(status => {
         const countElement = document.getElementById(`count-${status}`);
         if (countElement) {
-            countElement.textContent = counts[status];
+            const oldCount = previousOrderCounts[status];
+            const newCount = counts[status];
+
+            countElement.textContent = newCount;
+
+            // Add pulse animation if count increased
+            if (newCount > oldCount && status === 'order_received') {
+                countElement.classList.remove('has-new');
+                void countElement.offsetWidth; // Trigger reflow
+                countElement.classList.add('has-new');
+
+                setTimeout(() => {
+                    countElement.classList.remove('has-new');
+                }, 3000);
+            }
+
+            previousOrderCounts[status] = newCount;
         }
     });
 }
 
-function switchTab(status) {
-    currentStatus = status;
-    selectedOrders.clear();
-
-    // Update active tab
-    document.querySelectorAll('.status-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`.status-tab[data-status="${status}"]`).classList.add('active');
-
-    // Display orders for new tab
-    displayOrdersForCurrentTab();
-
-    // Hide bulk actions bar
-    updateBulkActionsBar();
-}
-
-function displayOrdersForCurrentTab() {
-    const container = document.getElementById('ordersListContainer');
+function renderOrders() {
+    const container = document.getElementById('ordersContainer');
     const orders = allOrders.filter(order => order.status.toLowerCase() === currentStatus);
 
     if (orders.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
-                <h3>No ${statusLabels[currentStatus] || currentStatus.replace('_', ' ')} Orders</h3>
+                <h3>No orders found</h3>
                 <p>Orders in this status will appear here.</p>
             </div>
         `;
@@ -692,8 +945,11 @@ function displayOrdersForCurrentTab() {
         const nextStatus = statusWorkflow[currentStatus];
         const nextStepLabel = nextStatus ? statusLabels[nextStatus] : 'Completed';
 
+        // ✅ Check if this is a new order (added in last refresh)
+        const isNewOrder = !previousOrderCounts.hasOwnProperty('initialized');
+
         html += `
-            <tr>
+            <tr class="${isNewOrder ? 'new-order' : ''}">
                 <td style="text-align: center;">
                     <input type="checkbox"
                            class="order-checkbox"
@@ -739,6 +995,7 @@ function displayOrdersForCurrentTab() {
 
     container.innerHTML = html;
     updateBulkActionsBar();
+    previousOrderCounts.initialized = true;
 }
 
 function toggleOrderSelection(orderId) {
