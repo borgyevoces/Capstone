@@ -486,79 +486,81 @@
 </style>
 {% endblock %}
 
-{% block dashboard_content %}
-<div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="page-title">
-            <i class="fas fa-clipboard-list"></i>
-            Orders Management
-        </div>
-        <div class="page-subtitle">Manage and track your establishment's orders</div>
-    </div>
-
-    <!-- Orders Content -->
-    <div class="orders-content">
-        <!-- Status Tabs -->
-        <div class="status-tabs">
-            <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
-                <div class="status-tab-icon">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div class="status-tab-title">New Orders</div>
-                <div class="status-tab-count" id="count-order_received">0</div>
-            </button>
-
-            <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
-                <div class="status-tab-icon">
-                    <i class="fas fa-fire"></i>
-                </div>
-                <div class="status-tab-title">Preparing</div>
-                <div class="status-tab-count" id="count-preparing">0</div>
-            </button>
-
-            <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
-                <div class="status-tab-icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div class="status-tab-title">Ready</div>
-                <div class="status-tab-count" id="count-to_claim">0</div>
-            </button>
-
-            <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
-                <div class="status-tab-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="status-tab-title">Completed</div>
-                <div class="status-tab-count" id="count-completed">0</div>
-            </button>
+{% block main_content %}
+<main class="main-content">
+    <div class="page-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-clipboard-list"></i>
+                Orders Management
+            </div>
+            <div class="page-subtitle">Manage and track your establishment's orders</div>
         </div>
 
-        <!-- Orders Table Container -->
-        <div class="orders-table-container">
-            <!-- Bulk Actions Bar -->
-            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
-                <div class="bulk-actions-left">
-                    <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
-                           onchange="toggleSelectAll()">
-                    <span class="selected-count" id="selectedCount">0 selected</span>
-                </div>
-                <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
-                    <i class="fas fa-forward"></i>
-                    <span id="bulkActionText">Move to Next Step</span>
+        <!-- Orders Content -->
+        <div class="orders-content">
+            <!-- Status Tabs -->
+            <div class="status-tabs">
+                <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="status-tab-title">New Orders</div>
+                    <div class="status-tab-count" id="count-order_received">0</div>
+                </button>
+
+                <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="status-tab-title">Preparing</div>
+                    <div class="status-tab-count" id="count-preparing">0</div>
+                </button>
+
+                <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="status-tab-title">Ready</div>
+                    <div class="status-tab-count" id="count-to_claim">0</div>
+                </button>
+
+                <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="status-tab-title">Completed</div>
+                    <div class="status-tab-count" id="count-completed">0</div>
                 </button>
             </div>
 
-            <!-- Orders List (Dynamically loaded) -->
-            <div id="ordersListContainer">
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading orders...</p>
+            <!-- Orders Table Container -->
+            <div class="orders-table-container">
+                <!-- Bulk Actions Bar -->
+                <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                    <div class="bulk-actions-left">
+                        <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
+                               onchange="toggleSelectAll()">
+                        <span class="selected-count" id="selectedCount">0 selected</span>
+                    </div>
+                    <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
+                        <i class="fas fa-forward"></i>
+                        <span id="bulkActionText">Move to Next Step</span>
+                    </button>
+                </div>
+
+                <!-- Orders List (Dynamically loaded) -->
+                <div id="ordersListContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading orders...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 {% endblock %}
 
 {% block page_javascript %}
