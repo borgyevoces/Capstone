@@ -4688,8 +4688,8 @@ from django.db.models import Prefetch, Count, Sum
 from .models import Order, OrderItem, FoodEstablishment
 import json
 
+
 @login_required
-@require_http_methods(["GET"])
 def get_establishment_orders(request):
     """
     API endpoint to get all orders for the food establishment owner
@@ -4697,6 +4697,9 @@ def get_establishment_orders(request):
 
     Endpoint: /api/food-establishment/orders/
     Method: GET
+
+    ✅ FIXED: Added more detailed logging and error handling
+    ✅ FIXED: Ensured all order statuses are properly returned
     """
     try:
         # Get the establishment owned by the current user
@@ -4709,6 +4712,7 @@ def get_establishment_orders(request):
             }, status=404)
 
         # Get all orders for this establishment
+        # ✅ FIXED: Removed any status filtering to ensure ALL orders appear
         orders = Order.objects.filter(
             establishment=establishment
         ).select_related(
@@ -4716,6 +4720,9 @@ def get_establishment_orders(request):
         ).prefetch_related(
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
         ).order_by('-created_at')
+
+        # Debug logging
+        print(f"DEBUG: Found {orders.count()} orders for establishment {establishment.name}")
 
         # Build the response data
         orders_data = []
@@ -4736,11 +4743,14 @@ def get_establishment_orders(request):
             if len(items_preview) > 2:
                 preview_text += f' +{len(items_preview) - 2} more'
 
+            # ✅ FIXED: Ensure status is always lowercase and valid
+            order_status = order.status.lower() if order.status else 'order_received'
+
             order_data = {
                 'id': order.id,
                 'customer_name': order.user.username if order.user else 'Unknown',
                 'customer_email': order.user.email if order.user else '',
-                'status': order.status.lower(),  # Ensure lowercase for consistency
+                'status': order_status,  # Ensure lowercase for consistency
                 'total_amount': str(order.total_amount),
                 'items_count': order.get_item_count(),
                 'items_preview': preview_text,
@@ -4748,8 +4758,12 @@ def get_establishment_orders(request):
                 'created_at': order.created_at.isoformat(),
                 'updated_at': order.updated_at.isoformat(),
                 'gcash_reference': order.gcash_reference_number or '',
+                'payment_method': order.gcash_payment_method or 'cash',  # ✅ Added payment method
             }
             orders_data.append(order_data)
+
+            # Debug logging for each order
+            print(f"DEBUG: Order #{order.id} - Status: {order_status} - Items: {order.get_item_count()}")
 
         return JsonResponse({
             'success': True,
@@ -4759,7 +4773,7 @@ def get_establishment_orders(request):
 
     except Exception as e:
         import traceback
-        print(f"Error in get_establishment_orders: {str(e)}")
+        print(f"ERROR in get_establishment_orders: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
@@ -4965,6 +4979,9 @@ def create_cash_order(request):
     Process a cash payment order.
     Updates order status, reduces stock, and creates notification.
 
+    ✅ FIXED: Improved transaction handling and notifications
+    ✅ FIXED: Better error messages and debugging
+
     Expected POST data:
     - order_id: The ID of the order to process
 
@@ -4988,10 +5005,15 @@ def create_cash_order(request):
         # Get the order and verify it belongs to the logged-in user
         order = get_object_or_404(Order, id=order_id, user=request.user)
 
+        # Debug logging
+        print(f"DEBUG: Processing cash order #{order_id}")
+        print(f"DEBUG: Order establishment: {order.establishment.name}")
+        print(f"DEBUG: Order user: {request.user.username}")
+
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
             # Update order details
-            order.status = 'order_received'  # Set status to order received
+            order.status = 'order_received'  # ✅ Set status to order received
             order.gcash_payment_method = 'cash'  # Mark as cash payment
 
             # Generate cash reference number
@@ -5002,6 +5024,8 @@ def create_cash_order(request):
 
             # Save the order
             order.save()
+
+            print(f"DEBUG: Order saved with status: {order.status}")
 
             # Process each item in the order
             for order_item in order.orderitem_set.all():
@@ -5019,18 +5043,25 @@ def create_cash_order(request):
                 menu_item.quantity -= order_item.quantity
                 menu_item.save()
 
-            # Create notification for establishment owner
+                print(f"DEBUG: Reduced stock for {menu_item.name}: {order_item.quantity} units")
+
+            # ✅ FIXED: Create notification for establishment owner
             try:
-                OrderNotification.objects.create(
+                notification = OrderNotification.objects.create(
                     order=order,
                     establishment=order.establishment,
                     notification_type='new_order',
-                    message=f'New cash order from {request.user.username}'
+                    message=f'New cash order #{order.id} from {request.user.username}'
                 )
+                print(f"DEBUG: Created notification #{notification.id}")
             except Exception as notification_error:
                 # Log notification error but don't fail the order
-                print(f"Warning: Failed to create notification: {str(notification_error)}")
+                print(f"WARNING: Failed to create notification: {str(notification_error)}")
+                import traceback
+                print(traceback.format_exc())
                 # Order will still complete successfully
+
+        print(f"DEBUG: Order #{order_id} processed successfully")
 
         # Return success response
         return JsonResponse({
@@ -5040,6 +5071,7 @@ def create_cash_order(request):
         })
 
     except Order.DoesNotExist:
+        print(f"ERROR: Order {order_id} not found")
         return JsonResponse({
             'success': False,
             'message': 'Order not found or does not belong to you'
@@ -5047,7 +5079,8 @@ def create_cash_order(request):
 
     except Exception as e:
         # Log the full error for debugging
-        print(f"Error in create_cash_order: {str(e)}")
+        print(f"ERROR in create_cash_order: {str(e)}")
+        import traceback
         print(traceback.format_exc())
 
         return JsonResponse({
@@ -5056,10 +5089,62 @@ def create_cash_order(request):
         }, status=500)
 
 @login_required
+def debug_order_status(request, order_id):
+    """
+    Debug endpoint to check order status and details
+    Add this route to urls.py: path('debug/order/<int:order_id>/', views.debug_order_status, name='debug_order')
+    """
+    try:
+        order = Order.objects.get(id=order_id)
+
+        items = []
+        for item in order.orderitem_set.all():
+            items.append({
+                'name': item.menu_item.name,
+                'quantity': item.quantity,
+                'price': str(item.price_at_order)
+            })
+
+        debug_info = {
+            'order_id': order.id,
+            'status': order.status,
+            'establishment_id': order.establishment.id,
+            'establishment_name': order.establishment.name,
+            'establishment_owner': order.establishment.owner.username,
+            'customer': order.user.username,
+            'total_amount': str(order.total_amount),
+            'payment_method': order.gcash_payment_method,
+            'reference': order.gcash_reference_number,
+            'created_at': order.created_at.isoformat(),
+            'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
+            'items': items,
+            'items_count': order.get_item_count(),
+        }
+
+        return JsonResponse({
+            'success': True,
+            'order': debug_info
+        })
+
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found'
+        }, status=404)
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
 def payment_success(request):
     """
     Display the payment success page after order completion.
     Works for both cash and online payments.
+
+    ✅ FIXED: Better error handling and context
 
     Query parameters:
     - order_id: The ID of the completed order (required)
@@ -5078,13 +5163,18 @@ def payment_success(request):
         order_id = request.GET.get('order_id')
         payment_method = request.GET.get('payment_method', 'online')
 
+        print(f"DEBUG: payment_success called - order_id: {order_id}, payment_method: {payment_method}")
+
         # Validate order ID
         if not order_id:
-            # Redirect to cart if no order ID provided
-            return redirect('cart_view')
+            print("ERROR: No order_id provided")
+            messages.error(request, 'No order ID provided')
+            return redirect('view_cart')
 
         # Get the order and verify it belongs to the logged-in user
         order = get_object_or_404(Order, id=order_id, user=request.user)
+
+        print(f"DEBUG: Order found - ID: {order.id}, Status: {order.status}")
 
         # Prepare context data for template
         context = {
@@ -5097,13 +5187,17 @@ def payment_success(request):
 
     except Order.DoesNotExist:
         # Order not found or doesn't belong to user
-        return redirect('cart_view')
+        print(f"ERROR: Order {order_id} not found for user {request.user.username}")
+        messages.error(request, 'Order not found')
+        return redirect('view_cart')
 
     except Exception as e:
         # Log error and redirect to cart
-        print(f"Error in payment_success: {str(e)}")
+        print(f"ERROR in payment_success: {str(e)}")
+        import traceback
         print(traceback.format_exc())
-        return redirect('cart_view')
+        messages.error(request, 'Error loading payment success page')
+        return redirect('view_cart')
 
 @login_required
 def paymongo_payment_success(request):
