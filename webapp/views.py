@@ -478,7 +478,7 @@ def kabsueats_main_view(request):
     # Fetch all categories for the dropdown filter
     all_categories = Category.objects.all().order_by('name')
 
-    food_establishments_queryset = FoodEstablishment.objects.filter(isActive=True)
+    food_establishments_queryset = FoodEstablishment.objects.all()
 
     current_category = None
 
