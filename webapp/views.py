@@ -4988,6 +4988,33 @@ def get_order_details_establishment(request, order_id):
             'message': str(e)
         }, status=500)
 
+@login_required
+def food_establishment_orders_view(request):
+    """
+    Main view for the orders management page
+    Renders the orders list template
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+
+        if not establishment:
+            messages.error(request, 'No establishment found for your account.')
+            return redirect('food_establishment_dashboard')
+
+        context = {
+            'establishment': establishment,
+        }
+
+        return render(request, 'webapplication/orders_list.html', context)
+
+    except Exception as e:
+        import traceback
+        print(f"Error in food_establishment_orders_view: {str(e)}")
+        print(traceback.format_exc())
+        messages.error(request, 'Error loading orders page.')
+        return redirect('food_establishment_dashboard')
+
 # ==========================================
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE
 # ==========================================

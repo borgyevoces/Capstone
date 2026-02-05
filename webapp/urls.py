@@ -79,6 +79,7 @@ urlpatterns = [
                   path('api/food-establishment/orders/',views.get_establishment_orders,name='api_establishment_orders'),
                   path('api/food-establishment/orders/<int:order_id>/update-status/', views.update_order_status, name='api_update_order_status'),
                   path('api/food-establishment/orders/<int:order_id>/details/', views.get_order_details_establishment, name='api_order_details_establishment'),
+                  path('owner/orders/', views.food_establishment_orders_view, name='food_establishment_orders'),
 
                   #Client Side
                   path('my-purchases/', views.order_history_view, name='order_history'),
