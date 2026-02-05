@@ -439,6 +439,7 @@
 {% endblock %}
 
 {% block page_javascript %}
+<script>
 let allOrders = [];
 let currentStatus = 'order_received';
 let selectedOrders = new Set();
@@ -805,4 +806,5 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+</script>
 {% endblock %}
