@@ -87,7 +87,7 @@ class FoodEstablishment(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     payment_methods = models.CharField(max_length=255, blank=True, null=True)
-    isActive = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -331,17 +331,19 @@ class Order(models.Model):
     ✅ FIXED: Proper Order model with correct relationships
     """
     STATUS_CHOICES = [
+        ('order_received', 'Order Received'),
+        ('preparing', 'Preparing'),
+        ('to_claim', 'To Claim'),
+        ('completed', 'Completed'),
+        # Legacy statuses (for backward compatibility)
         ('PENDING', 'Pending Payment'),
         ('PAID', 'Paid'),
         ('CANCELLED', 'Cancelled'),
-        ('PREPARING', 'Preparing'),
-        ('READY', 'Ready for Pick-up/Delivery'),
-        ('COMPLETED', 'Completed'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     establishment = models.ForeignKey('FoodEstablishment', on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='order_received')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     # GCash/PayMongo Fields
@@ -358,39 +360,6 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.establishment.name} ({self.status})"
-
-    # ✅ FIXED: Proper update_total method using F expressions
-    def update_total(self):
-        """Update total amount based on order items"""
-        total = self.orderitem_set.aggregate(
-            total=Sum(F('quantity') * F('price_at_order'))
-        )['total'] or Decimal('0.00')
-
-        self.total_amount = total
-        self.save(update_fields=['total_amount', 'updated_at'])
-
-    # ✅ NEW: Get total item count
-    def get_item_count(self):
-        """Get total number of items in this order"""
-        return self.orderitem_set.aggregate(
-            total=Sum('quantity')
-        )['total'] or 0
-
-    # ✅ KEEP: Notification creation method
-    def create_notification(self, notification_type='new_order'):
-        messages_map = {
-            'new_order': f'New order #{self.id} from {self.user.username}',
-            'payment_confirmed': f'Payment confirmed for order #{self.id}',
-            'order_cancelled': f'Order #{self.id} was cancelled',
-        }
-
-        OrderNotification.objects.create(
-            establishment=self.establishment,
-            order=self,
-            notification_type=notification_type,
-            message=messages_map.get(notification_type, 'New order received')
-        )
-
 
 # ✅✅✅ FIXED ORDERITEM MODEL - CRITICAL CHANGES ✅✅✅
 class OrderItem(models.Model):
