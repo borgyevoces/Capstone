@@ -5005,6 +5005,7 @@ def food_establishment_orders_view(request):
 
         context = {
             'establishment': establishment,
+            'pk': establishment.pk,
         }
 
         return render(request, 'webapplication/orders_list.html', context)
