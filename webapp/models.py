@@ -121,7 +121,6 @@ class OTP(models.Model):
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     attempts = models.IntegerField(default=0)
-    # is_verified = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "OTP"
