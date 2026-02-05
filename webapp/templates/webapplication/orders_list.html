@@ -10,72 +10,85 @@
 {% block extra_css %}
 <style>
     body {
-        background: #f8f9fa;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
     }
 
     .page-container {
-        max-width: 1600px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 24px;
-        margin-top: 80px;
+        padding: 16px;
+        margin-top: 75px;
     }
 
     .page-header {
-        background: white;
-        border-radius: 16px;
-        padding: 32px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .page-title {
-        font-size: 32px;
-        font-weight: 800;
-        color: #1a1a1a;
-        margin-bottom: 8px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 4px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+    }
+
+    .page-title i {
+        color: #B71C1C;
+        font-size: 22px;
     }
 
     .page-subtitle {
-        color: #6b7280;
-        font-size: 16px;
+        color: #718096;
+        font-size: 14px;
+        font-weight: 500;
     }
 
     .orders-content {
         background: white;
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    /* Status Navigation Tabs */
+    /* Status Navigation Tabs - Compact & Modern */
     .status-tabs {
         display: flex;
-        background: #f9fafb;
-        border-bottom: 2px solid #e5e7eb;
+        background: #fafbfc;
+        border-bottom: 1px solid #e2e8f0;
         overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .status-tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .status-tab {
         flex: 1;
-        min-width: 200px;
-        padding: 20px 24px;
+        min-width: 140px;
+        padding: 14px 16px;
         background: transparent;
         border: none;
-        border-bottom: 3px solid transparent;
+        border-bottom: 2px solid transparent;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s ease;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
 
     .status-tab:hover {
-        background: #f3f4f6;
+        background: rgba(183, 28, 28, 0.03);
     }
 
     .status-tab.active {
@@ -84,14 +97,15 @@
     }
 
     .status-tab-icon {
-        font-size: 28px;
-        margin-bottom: 4px;
+        font-size: 20px;
+        margin-bottom: 2px;
     }
 
     .status-tab-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #374151;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+        letter-spacing: -0.2px;
     }
 
     .status-tab.active .status-tab-title {
@@ -99,20 +113,22 @@
     }
 
     .status-tab-count {
-        background: #e5e7eb;
-        color: #374151;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 13px;
+        background: #e2e8f0;
+        color: #4a5568;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
         font-weight: 700;
+        min-width: 24px;
+        text-align: center;
     }
 
     .status-tab.active .status-tab-count {
-        background: #B71C1C;
+        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
     }
 
-    /* Tab Icons Colors */
+    /* Tab Icons Colors - More vibrant */
     .status-tab[data-status="order_received"] .status-tab-icon {
         color: #f59e0b;
     }
@@ -131,59 +147,65 @@
 
     /* Orders Table Container */
     .orders-table-container {
-        padding: 24px 32px 32px;
+        padding: 16px 20px 20px;
     }
 
-    /* Bulk Actions Bar */
+    /* Bulk Actions Bar - Sleeker */
     .bulk-actions-bar {
-        background: #f9fafb;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 24px;
+        background: linear-gradient(135deg, #fafbfc 0%, #f7f9fb 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
     }
 
     .bulk-actions-left {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
     }
 
     .select-all-checkbox {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
         cursor: pointer;
+        accent-color: #B71C1C;
     }
 
     .selected-count {
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 600;
-        color: #374151;
+        color: #4a5568;
     }
 
     .bulk-action-btn {
-        background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
         border: none;
-        padding: 10px 24px;
+        padding: 8px 18px;
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(183, 28, 28, 0.2);
     }
 
-    .bulk-action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(240, 40, 73, 0.3);
+    .bulk-action-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.3);
+    }
+
+    .bulk-action-btn:active:not(:disabled) {
+        transform: translateY(0);
     }
 
     .bulk-action-btn:disabled {
@@ -195,214 +217,314 @@
     /* Loading and Empty States */
     .loading-state, .empty-state {
         text-align: center;
-        padding: 60px 20px;
-        color: #6b7280;
+        padding: 48px 20px;
+        color: #718096;
     }
 
     .loading-state i {
-        font-size: 48px;
-        margin-bottom: 16px;
+        font-size: 36px;
+        margin-bottom: 12px;
         color: #B71C1C;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
     }
 
     .empty-state i {
-        font-size: 64px;
-        color: #e5e7eb;
-        margin-bottom: 20px;
+        font-size: 48px;
+        color: #cbd5e0;
+        margin-bottom: 16px;
     }
 
     .empty-state h3 {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
     }
 
-    /* Orders Table */
+    .empty-state p {
+        font-size: 14px;
+        color: #a0aec0;
+    }
+
+    /* Orders Table - Compact & Clean */
     .orders-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     .orders-table th {
-        background: #f9fafb;
-        padding: 16px;
+        background: #fafbfc;
+        padding: 12px 14px;
         text-align: left;
-        font-weight: 700;
-        color: #374151;
-        font-size: 14px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 12px;
         text-transform: uppercase;
-        border-bottom: 2px solid #e5e7eb;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
     }
 
     .orders-table th:first-child {
-        width: 50px;
+        width: 40px;
         text-align: center;
+        border-radius: 0;
     }
 
     .orders-table td {
-        padding: 16px;
-        border-bottom: 1px solid #f3f4f6;
-        color: #1f2937;
+        padding: 12px 14px;
+        border-bottom: 1px solid #f0f4f8;
+        color: #2d3748;
+        font-size: 14px;
+        vertical-align: middle;
     }
 
-    .orders-table tr:hover {
-        background: #f9fafb;
+    .orders-table tbody tr {
+        transition: all 0.15s ease;
+    }
+
+    .orders-table tbody tr:hover {
+        background: #fafbfc;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .order-checkbox {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         cursor: pointer;
+        accent-color: #B71C1C;
     }
 
     .order-id {
-        font-family: 'Courier New', monospace;
+        font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
         font-weight: 600;
         color: #B71C1C;
+        font-size: 13px;
+        background: rgba(183, 28, 28, 0.06);
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .customer-name {
+        font-weight: 500;
+        color: #2d3748;
+        font-size: 14px;
     }
 
     .order-items-preview {
-        font-size: 13px;
-        color: #6b7280;
+        font-size: 12px;
+        color: #718096;
     }
 
     .order-items-preview strong {
-        color: #1f2937;
+        color: #4a5568;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .order-items-list {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #a0aec0;
+        line-height: 1.4;
+    }
+
+    .order-total {
+        font-weight: 700;
+        color: #B71C1C;
+        font-size: 15px;
     }
 
     .order-time {
-        font-size: 13px;
-        color: #6b7280;
+        font-size: 12px;
+        color: #718096;
     }
 
     .order-time strong {
-        color: #1f2937;
+        color: #2d3748;
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
+        font-weight: 600;
+        font-size: 13px;
     }
 
-    /* Action Button */
+    /* Action Buttons - Refined */
     .btn-next-step {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 14px;
+        padding: 8px 14px;
+        border-radius: 7px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
         white-space: nowrap;
     }
 
     .btn-next-step:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
     }
 
-    .btn-view-details {
-        background: #f3f4f6;
-        color: #1a1a1a;
-        border: 2px solid #e5e7eb;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-right: 8px;
+    .btn-next-step i {
+        font-size: 11px;
     }
 
-    .btn-view-details:hover {
-        background: #e5e7eb;
-    }
-
-    /* Status Badge for Completed Tab */
     .order-status-badge {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         padding: 6px 12px;
-        border-radius: 12px;
+        border-radius: 7px;
         font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        background: #d1fae5;
-        color: #059669;
+        font-weight: 600;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
     }
 
-    @media (max-width: 768px) {
+    /* Responsive Design */
+    @media (max-width: 1200px) {
         .page-container {
-            padding: 16px;
-            margin-top: 70px;
-        }
-
-        .page-header {
-            padding: 20px;
-        }
-
-        .status-tabs {
-            overflow-x: scroll;
+            max-width: 100%;
+            padding: 12px;
         }
 
         .status-tab {
-            min-width: 150px;
-            padding: 16px;
+            min-width: 120px;
+            padding: 12px;
         }
 
-        .orders-table-container {
-            padding: 16px;
+        .status-tab-title {
+            font-size: 12px;
+        }
+
+        .status-tab-icon {
+            font-size: 18px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 20px;
         }
 
         .orders-table {
-            display: block;
-            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .orders-table th,
+        .orders-table td {
+            padding: 10px 8px;
+        }
+
+        .btn-next-step {
+            padding: 6px 10px;
+            font-size: 11px;
         }
 
         .bulk-actions-bar {
             flex-direction: column;
             align-items: stretch;
         }
+
+        .bulk-actions-left {
+            justify-content: space-between;
+        }
+    }
+
+    /* Smooth animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .orders-table tbody tr {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Custom scrollbar */
+    .orders-table-container {
+        overflow-x: auto;
+    }
+
+    .orders-table-container::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 10px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
     }
 </style>
 {% endblock %}
 
-{% block main_content %}
+{% block dashboard_content %}
 <div class="page-container">
+    <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">
+        <div class="page-title">
             <i class="fas fa-clipboard-list"></i>
             Orders Management
-        </h1>
-        <p class="page-subtitle">Manage your orders by status - move items through each stage</p>
+        </div>
+        <div class="page-subtitle">Manage and track your establishment's orders</div>
     </div>
 
+    <!-- Orders Content -->
     <div class="orders-content">
-        <!-- Status Navigation Tabs -->
+        <!-- Status Tabs -->
         <div class="status-tabs">
             <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
                 <div class="status-tab-icon">
                     <i class="fas fa-bell"></i>
                 </div>
-                <div class="status-tab-title">Order Received</div>
+                <div class="status-tab-title">New Orders</div>
                 <div class="status-tab-count" id="count-order_received">0</div>
             </button>
+
             <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
                 <div class="status-tab-icon">
-                    <i class="fas fa-utensils"></i>
+                    <i class="fas fa-fire"></i>
                 </div>
                 <div class="status-tab-title">Preparing</div>
                 <div class="status-tab-count" id="count-preparing">0</div>
             </button>
+
             <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
                 <div class="status-tab-icon">
-                    <i class="fas fa-hand-holding"></i>
+                    <i class="fas fa-box"></i>
                 </div>
-                <div class="status-tab-title">To Claim</div>
+                <div class="status-tab-title">Ready</div>
                 <div class="status-tab-count" id="count-to_claim">0</div>
             </button>
+
             <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
                 <div class="status-tab-icon">
                     <i class="fas fa-check-circle"></i>
@@ -417,16 +539,17 @@
             <!-- Bulk Actions Bar -->
             <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
                 <div class="bulk-actions-left">
-                    <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                    <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
+                           onchange="toggleSelectAll()">
                     <span class="selected-count" id="selectedCount">0 selected</span>
                 </div>
                 <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
-                    <i class="fas fa-arrow-right"></i>
+                    <i class="fas fa-forward"></i>
                     <span id="bulkActionText">Move to Next Step</span>
                 </button>
             </div>
 
-            <!-- Orders List -->
+            <!-- Orders List (Dynamically loaded) -->
             <div id="ordersListContainer">
                 <div class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
@@ -440,11 +563,12 @@
 
 {% block page_javascript %}
 <script>
+// Global variables
 let allOrders = [];
 let currentStatus = 'order_received';
 let selectedOrders = new Set();
 
-// Status workflow mapping
+// Status workflow
 const statusWorkflow = {
     'order_received': 'preparing',
     'preparing': 'to_claim',
@@ -452,17 +576,18 @@ const statusWorkflow = {
     'completed': null
 };
 
+// Status labels
 const statusLabels = {
-    'order_received': 'Order Received',
-    'preparing': 'Preparing',
-    'to_claim': 'To Claim',
+    'order_received': 'Preparing',
+    'preparing': 'Ready to Claim',
+    'to_claim': 'Completed',
     'completed': 'Completed'
 };
 
 // Load orders on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadOrders();
-    // Refresh orders every 30 seconds
+    // Auto-refresh every 30 seconds
     setInterval(loadOrders, 30000);
 });
 
@@ -471,24 +596,20 @@ function loadOrders() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                allOrders = data.orders || [];
-                updateStatusCounts();
+                allOrders = data.orders;
+                updateOrderCounts();
                 displayOrdersForCurrentTab();
+            } else {
+                showNotification('Error loading orders', 'error');
             }
         })
         .catch(error => {
             console.error('Error loading orders:', error);
-            document.getElementById('ordersListContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <h3>Error Loading Orders</h3>
-                    <p>There was a problem loading your orders. Please try again.</p>
-                </div>
-            `;
+            showNotification('Failed to load orders', 'error');
         });
 }
 
-function updateStatusCounts() {
+function updateOrderCounts() {
     const counts = {
         'order_received': 0,
         'preparing': 0,
@@ -537,7 +658,7 @@ function displayOrdersForCurrentTab() {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
-                <h3>No ${statusLabels[currentStatus]} Orders</h3>
+                <h3>No ${statusLabels[currentStatus] || currentStatus.replace('_', ' ')} Orders</h3>
                 <p>Orders in this status will appear here.</p>
             </div>
         `;
@@ -579,14 +700,14 @@ function displayOrdersForCurrentTab() {
                            onchange="toggleOrderSelection(${order.id})">
                 </td>
                 <td><span class="order-id">#${order.id}</span></td>
-                <td>${order.customer_name || 'Unknown'}</td>
+                <td><span class="customer-name">${order.customer_name || 'Unknown'}</span></td>
                 <td>
                     <div class="order-items-preview">
                         <strong>${order.items_count || 0} items</strong>
-                        <div style="font-size: 12px; margin-top: 4px;">${order.items_preview || ''}</div>
+                        <div class="order-items-list">${order.items_preview || ''}</div>
                     </div>
                 </td>
-                <td><strong>₱${parseFloat(order.total_amount || 0).toFixed(2)}</strong></td>
+                <td><span class="order-total">₱${parseFloat(order.total_amount || 0).toFixed(2)}</span></td>
                 <td>
                     <div class="order-time">
                         <strong>${formatTime(order.created_at)}</strong>
@@ -597,11 +718,11 @@ function displayOrdersForCurrentTab() {
                     ${nextStatus ? `
                         <button class="btn-next-step" onclick="moveOrderToNextStep(${order.id})">
                             <i class="fas fa-arrow-right"></i>
-                            Move to ${nextStepLabel}
+                            ${nextStepLabel}
                         </button>
                     ` : `
                         <span class="order-status-badge">
-                            <i class="fas fa-check"></i> Completed
+                            <i class="fas fa-check"></i> Done
                         </span>
                     `}
                 </td>
@@ -629,9 +750,9 @@ function toggleOrderSelection(orderId) {
 
 function toggleSelectAll() {
     const checkboxes = document.querySelectorAll('.order-checkbox');
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectAllCheckbox = document.querySelector('.bulk-actions-bar .select-all-checkbox');
 
-    if (selectAllCheckbox.checked) {
+    if (selectAllCheckbox && selectAllCheckbox.checked) {
         checkboxes.forEach(checkbox => {
             const orderId = parseInt(checkbox.dataset.orderId);
             selectedOrders.add(orderId);
@@ -688,7 +809,7 @@ function bulkMoveToNextStep() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ status: nextStatus })
+                body: JSON.stringify({status: nextStatus})
             })
         );
 
@@ -712,50 +833,56 @@ function updateOrderStatus(orderId, newStatus) {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({status: newStatus})
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadOrders();
-            showNotification(`Order #${orderId} moved to ${statusLabels[newStatus]}!`, 'success');
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadOrders();
+                showNotification(`Order #${orderId} moved to ${statusLabels[newStatus]}!`, 'success');
+            } else {
+                showNotification('Error updating order status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
             showNotification('Error updating order status', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error updating order status', 'error');
-    });
+        });
 }
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
 }
 
 function formatTime(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
 }
 
 function showNotification(message, type = 'success') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
         color: white;
-        padding: 16px 24px;
-        border-radius: 8px;
+        padding: 14px 20px;
+        border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         z-index: 10000;
         font-weight: 600;
+        font-size: 14px;
         animation: slideIn 0.3s ease-out;
+        max-width: 350px;
     `;
-    notification.textContent = message;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
 
     document.body.appendChild(notification);
 
