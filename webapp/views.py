@@ -4194,9 +4194,14 @@ def gcash_payment_success(request):
         # Decide where to redirect
         return_to = request.GET.get('return_to')
 
+        # ============================================================
+        # 🔥 ITO LANG ANG BINAGO! (Lines 4197-4200)
+        # ============================================================
         if request.user.is_authenticated and request.user == order.user:
             messages.success(request, 'Payment successful! Your order has been confirmed.')
-            return redirect('order_confirmation', order_id=order.id)
+            # ✅ FIXED: Redirect to unified payment_success view with payment_method=online
+            return redirect(f'/payment/success/?order_id={order.id}&payment_method=online')
+        # ============================================================
 
         if return_to == 'cart':
             return redirect('view_cart')
