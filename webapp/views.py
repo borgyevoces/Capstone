@@ -122,10 +122,8 @@ def get_current_status(opening_time, closing_time):
         # Overnight hours (e.g., 10 PM - 2 AM)
         return "Open" if now >= opening_time or now <= closing_time else "Closed"
 
-
 def about_page(request):
     return render(request, 'webapplication/about.html')
-
 
 # ===================================================================================================================
 # ===================================================CLIENT=========================================================
@@ -140,7 +138,6 @@ def haversine(lat1, lon1, lat2, lon2):
     a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
-
 
 def user_login_register(request):
     User = get_user_model()
@@ -209,7 +206,6 @@ def user_login_register(request):
 
     return render(request, "webapplication/login.html", {'show_done_modal': show_done_modal, 'active_tab': active_tab})
 
-
 @login_required
 def user_logout(request):
     """
@@ -218,7 +214,6 @@ def user_logout(request):
     logout(request)
     messages.success(request, "Successfully logged out.")
     return redirect(reverse_lazy('kabsueats_home'))
-
 
 def google_login(request):
     params = {
@@ -230,7 +225,6 @@ def google_login(request):
     }
     google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
     return redirect(google_auth_url)
-
 
 def google_callback(request):
     User = get_user_model()
@@ -337,7 +331,6 @@ def google_callback(request):
     except Exception as e:
         messages.error(request, f'An error occurred while retrieving user data: {e}')
         return redirect('user_login_register')
-
 
 def forgot_password(request):
     """
@@ -449,19 +442,16 @@ The KabsuEats Team
 
     return redirect('user_login_register')
 
-
 def password_reset_done_redirect(request):
     """Redirect to login with success message"""
     messages.info(request,
                   "We've emailed you instructions for setting your password. Please check your inbox and spam folder.")
     return redirect(reverse('user_login_register') + '?reset_done=true')
 
-
 def password_reset_complete_redirect(request):
     """Custom redirect after password reset"""
     messages.success(request, 'Your password has been reset successfully! You can now log in.')
     return redirect('user_login_register')
-
 
 def kabsueats_main_view(request):
     """
@@ -573,7 +563,6 @@ def kabsueats_main_view(request):
     }
     return render(request, 'webapplication/kabsueats.html', context)
 
-
 @login_required(login_url='user_login_register')
 def search_food_establishments(request):
     query = request.GET.get('q', '')
@@ -586,7 +575,6 @@ def search_food_establishments(request):
         'food_establishments': food_establishments,
         'q': query
     })
-
 
 @login_required
 @require_http_methods(["POST"])
@@ -625,7 +613,6 @@ def update_profile(request):
         # I-extract ang errors para i-display
         errors = '; '.join([f"{k}: {v[0]}" for k, v in form.errors.items()])
         return JsonResponse({'success': False, 'errors': errors}, status=400)
-
 
 def category_establishments_view(request, category_name):
     try:
@@ -671,7 +658,6 @@ def category_establishments_view(request, category_name):
     }
     return render(request, 'home.html', context)
 
-
 @require_POST
 @login_required
 @require_http_methods(['POST'])
@@ -706,7 +692,6 @@ def submit_review(request, establishment_id):
             return redirect('food_establishment_details', establishment_id=establishment_id)
 
     return redirect('food_establishment_details', establishment_id=establishment_id)
-
 
 @login_required
 def edit_review(request, establishment_id, review_id):
@@ -744,7 +729,6 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
-
 @login_required
 @require_POST
 def delete_review(request, establishment_id, review_id):
@@ -758,7 +742,6 @@ def delete_review(request, establishment_id, review_id):
     cache.delete(f'establishment_{establishment_id}_reviews')
     messages.success(request, 'Review deleted successfully!')
     return redirect('food_establishment_details', establishment_id=establishment_id)
-
 
 def food_establishment_details(request, establishment_id):
     establishment = get_object_or_404(
@@ -826,7 +809,6 @@ def food_establishment_details(request, establishment_id):
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
-
 @require_POST
 @login_required
 @require_http_methods(['POST'])
@@ -852,7 +834,6 @@ def submit_review(request, establishment_id):
                     messages.error(request, f"Error in {field}: {error}")
             return redirect('food_establishment_details', establishment_id=establishment_id)
     return redirect('food_establishment_details', establishment_id=establishment_id)
-
 
 @login_required
 def edit_review(request, establishment_id, review_id):
@@ -888,7 +869,6 @@ def edit_review(request, establishment_id, review_id):
             return render(request, 'webapplication/food_establishment_details.html', context)
     return redirect('food_establishment_details', establishment_id=establishment_id)
 
-
 @login_required(login_url='user_login_register')
 def view_directions(request, establishment_id):
     establishment = get_object_or_404(FoodEstablishment, id=establishment_id)
@@ -906,7 +886,6 @@ def view_directions(request, establishment_id):
         'longitude': longitude,
     }
     return render(request, 'webapplication/view_directions.html', context)
-
 
 @login_required(login_url='user_login_register')
 def toggle_item_availability(request, item_id):
@@ -930,7 +909,6 @@ def toggle_item_availability(request, item_id):
 
     messages.error(request, "Invalid request method.")
     return redirect(reverse_lazy('food_establishment_dashboard'))
-
 
 @csrf_exempt
 def send_registration_otp(request):
@@ -1081,7 +1059,6 @@ def send_registration_otp(request):
             'warning': 'Email sending failed',
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
-
 
 @csrf_exempt
 def verify_otp_and_register(request):
@@ -1262,7 +1239,6 @@ def verify_otp_and_register(request):
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
 
-
 @csrf_exempt
 def verify_otp_only(request):
     """
@@ -1324,7 +1300,6 @@ def verify_otp_only(request):
             return JsonResponse({
                 'error': 'Invalid OTP. Please check your code.'
             }, status=400)
-
 
 @csrf_exempt
 def resend_otp(request):
@@ -1429,7 +1404,6 @@ def resend_otp(request):
             'debug_otp': otp_code  # REMOVE IN PRODUCTION
         })
 
-
 import base64
 import json
 import requests
@@ -1442,11 +1416,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from decimal import Decimal
 
-
 def get_csrf_token(request):
     """Helper to get CSRF token from cookies"""
     return request.COOKIES.get('csrftoken', '')
-
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
@@ -1571,7 +1543,6 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
 
     return 0
 
-
 @login_required
 @require_POST
 def gcash_payment_request(request):
@@ -1664,7 +1635,6 @@ def gcash_payment_request(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
 
-
 @login_required
 @require_POST
 def confirm_gcash_payment(request):
@@ -1745,7 +1715,6 @@ def confirm_gcash_payment(request):
             'message': f'Error confirming payment: {str(e)}'
         }, status=500)
 
-
 @login_required
 def view_order_confirmation(request, order_id):
     """
@@ -1762,7 +1731,6 @@ def view_order_confirmation(request, order_id):
     }
 
     return render(request, 'webapplication/order_confirmation.html', context)
-
 
 @login_required
 @require_POST
@@ -1963,7 +1931,6 @@ def create_gcash_payment_link(request):
             'message': 'Internal server error while creating payment link'
         }, status=500)
 
-
 @login_required
 def debug_create_gcash_payload(request, order_id):
     """
@@ -2025,7 +1992,6 @@ def debug_create_gcash_payload(request, order_id):
         traceback.print_exc()
         return JsonResponse({'success': False, 'message': 'Error building payload'}, status=500)
 
-
 @login_required
 def gcash_payment_cancel(request):
     """Handle cancelled payment"""
@@ -2041,7 +2007,6 @@ def gcash_payment_cancel(request):
 
     return redirect('view_cart')
 
-
 @login_required
 def order_confirmation_view(request, order_id):
     """Display order confirmation"""
@@ -2053,7 +2018,6 @@ def order_confirmation_view(request, order_id):
         'order_items': order_items,
     }
     return render(request, 'webapplication/order_confirmation.html', context)
-
 
 @login_required
 @require_POST
@@ -2264,7 +2228,6 @@ def create_buynow_payment_link(request):
 # ===================================================================================================================
 User = get_user_model()
 
-
 def owner_login(request):
     """
     Owner login: accepts email & password, authenticates, sets session 'food_establishment_id'
@@ -2297,7 +2260,6 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
-
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2305,7 +2267,6 @@ def owner_logout(request):
     logout(request)
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
-
 
 @login_required
 @require_POST
@@ -2347,14 +2308,12 @@ def delete_establishment(request):
             'error': f'An error occurred: {str(e)}'
         }, status=500)
 
-
 def owner_register_step1_location(request):
     """Nagre-render ng Page 1: Location Pinning."""
     return render(request, 'webapplication/register_step1_location.html', {
         'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
         'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE')
     })
-
 
 def owner_register_step2_details(request):
     payment_methods = ["Cash", "GCash"]
@@ -2365,10 +2324,8 @@ def owner_register_step2_details(request):
     }
     return render(request, 'webapplication/register_step2_details.html', context)
 
-
 def owner_register_step3_credentials(request):
     return render(request, 'webapplication/register_step3_credentials.html')
-
 
 @csrf_exempt
 def send_otp(request):
@@ -2571,7 +2528,6 @@ The KabsuEats Team
             'error': f'Server error: {str(outer_error)}'
         }, status=500)
 
-
 @csrf_exempt
 @transaction.atomic
 def verify_and_register(request):
@@ -2694,7 +2650,6 @@ def verify_and_register(request):
     request.session.pop('otp_email', None)
 
     return JsonResponse({'success': True, 'redirect_url': '/food_establishment/dashboard/'})
-
 
 @login_required(login_url='owner_login')
 def food_establishment_dashboard(request):
@@ -3052,7 +3007,6 @@ def toggle_top_seller(request, item_id):
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
     return redirect('food_establishment_dashboard')
 
-
 @login_required
 @require_POST
 def update_establishment_details_ajax(request, pk):
@@ -3124,17 +3078,14 @@ def update_establishment_details_ajax(request, pk):
             'errors': errors
         }, status=400)
 
-
 # ===================================================================================================================
 # ================================================END OWNER ========================================================
 # ===================================================================================================================
-
 # =======================================================================
 # CART MANAGEMENT
 # =======================================================================
 from django.db import transaction
 from .models import MenuItem, OrderItem
-
 
 @transaction.atomic
 def handle_payment_success(order):
@@ -3274,7 +3225,6 @@ def paymongo_checkout(request):
             'message': 'Checkout failed'
         }, status=500)
 
-
 def payment_status(request, status):
     """payment status page"""
     if status == 'success':
@@ -3295,7 +3245,6 @@ def payment_status(request, status):
     }
     return render(request, 'webapplication/payment_status.html', context)
 
-
 @login_required
 @require_POST
 def clear_cart(request):
@@ -3313,7 +3262,6 @@ def clear_cart(request):
             'success': False,
             'message': 'Error clearing cart'
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -3387,7 +3335,6 @@ def update_cart_item(request):
             'success': False,
             'message': 'An error occurred while updating cart.'
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -3482,7 +3429,6 @@ def get_cart_count(request):
             'message': str(e)
         }, status=500)
 
-
 @login_required
 @require_POST
 def clear_establishment_cart(request):
@@ -3524,6 +3470,8 @@ def clear_establishment_cart(request):
             'message': 'An error occurred.'
         }, status=500)
 
+
+
 # =======ORIGINAL CODE==========
 
 from django.shortcuts import render, get_object_or_404
@@ -3535,7 +3483,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .models import ChatRoom, Message, FoodEstablishment
-
 
 @login_required
 def customer_chat_view(request, establishment_id):
@@ -3571,7 +3518,6 @@ def customer_chat_view(request, establishment_id):
     }
 
     return render(request, 'webapplication/customer_chat.html', context)
-
 
 @login_required
 def owner_chat_view(request, customer_id):
@@ -3615,7 +3561,6 @@ def owner_chat_view(request, customer_id):
 
     return render(request, 'webapplication/owner_chat.html', context)
 
-
 @login_required
 def owner_inbox_view(request):
     """
@@ -3642,7 +3587,6 @@ def owner_inbox_view(request):
     }
 
     return render(request, 'webapplication/owner_inbox.html', context)
-
 
 @login_required
 def get_chat_messages(request, customer_id, establishment_id):
@@ -3701,7 +3645,6 @@ def get_chat_messages(request, customer_id, establishment_id):
             'error': str(e)
         }, status=400)
 
-
 @login_required
 def get_owner_conversations(request, establishment_id):
     """
@@ -3745,7 +3688,6 @@ def get_owner_conversations(request, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
-
 
 @login_required
 def get_chat_messages_api(request, customer_id, establishment_id):
@@ -3794,7 +3736,6 @@ def get_chat_messages_api(request, customer_id, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
-
 
 @csrf_exempt
 def test_email_config(request):
@@ -3987,7 +3928,6 @@ To: {test_email}
             'traceback': traceback.format_exc()
         }, status=500)  # ==========================================
 
-
 # ==========================================
 # NOTIFICATION API ENDPOINTS
 # ==========================================
@@ -4127,7 +4067,6 @@ def get_time_ago(timestamp):
 
     return "Just now"
 
-
 @login_required
 @require_POST
 def mark_notification_read(request, notification_id):
@@ -4157,7 +4096,6 @@ def mark_notification_read(request, notification_id):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -4192,7 +4130,6 @@ def mark_all_notifications_read(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 def gcash_payment_success(request):
     """
@@ -4276,7 +4213,6 @@ def gcash_payment_success(request):
         print(f"❌ Error in payment success handler: {e}")
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
-
 
 @login_required
 def view_cart(request):
@@ -5016,6 +4952,219 @@ def food_establishment_orders_view(request):
         print(traceback.format_exc())
         messages.error(request, 'Error loading orders page.')
         return redirect('food_establishment_dashboard')
+
+@login_required
+@require_POST
+def create_cash_order(request):
+    """
+    Process a cash payment order.
+    Updates order status, reduces stock, and creates notification.
+
+    Expected POST data:
+    - order_id: The ID of the order to process
+
+    Returns:
+    - JSON response with success status
+
+    Endpoint: /payment/create-cash-order/
+    Called from: cart.js -> proceedToCashPayment()
+    """
+    try:
+        # Get order ID from POST data
+        order_id = request.POST.get('order_id')
+
+        # Validate order ID
+        if not order_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Order ID is required'
+            }, status=400)
+
+        # Get the order and verify it belongs to the logged-in user
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+
+        # Start atomic transaction to ensure data consistency
+        with transaction.atomic():
+            # Update order details
+            order.status = 'order_received'  # Set status to order received
+            order.gcash_payment_method = 'cash'  # Mark as cash payment
+
+            # Generate cash reference number
+            order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
+
+            # Set payment confirmed timestamp
+            order.payment_confirmed_at = timezone.now()
+
+            # Save the order
+            order.save()
+
+            # Process each item in the order
+            for order_item in order.orderitem_set.all():
+                menu_item = order_item.menu_item
+
+                # Validate stock availability
+                if menu_item.quantity < order_item.quantity:
+                    # Rollback will happen automatically due to transaction.atomic()
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Not enough stock for {menu_item.name}. Available: {menu_item.quantity}, Requested: {order_item.quantity}'
+                    }, status=400)
+
+                # Reduce stock quantity
+                menu_item.quantity -= order_item.quantity
+                menu_item.save()
+
+            # Create notification for establishment owner
+            try:
+                OrderNotification.objects.create(
+                    order=order,
+                    establishment=order.establishment,
+                    notification_type='new_order',
+                    message=f'New cash order from {request.user.username}'
+                )
+            except Exception as notification_error:
+                # Log notification error but don't fail the order
+                print(f"Warning: Failed to create notification: {str(notification_error)}")
+                # Order will still complete successfully
+
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'message': 'Order placed successfully',
+            'order_id': order.id
+        })
+
+    except Order.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order not found or does not belong to you'
+        }, status=404)
+
+    except Exception as e:
+        # Log the full error for debugging
+        print(f"Error in create_cash_order: {str(e)}")
+        print(traceback.format_exc())
+
+        return JsonResponse({
+            'success': False,
+            'message': f'An error occurred while processing your order: {str(e)}'
+        }, status=500)
+
+@login_required
+def payment_success(request):
+    """
+    Display the payment success page after order completion.
+    Works for both cash and online payments.
+
+    Query parameters:
+    - order_id: The ID of the completed order (required)
+    - payment_method: 'cash' or 'online' (optional, defaults to 'online')
+
+    Returns:
+    - Rendered payment_success.html template with order details
+
+    Endpoint: /payment/success/
+    Accessed from:
+    - Cash payment: cart.js after create_cash_order success
+    - Online payment: PayMongo callback redirect
+    """
+    try:
+        # Get query parameters
+        order_id = request.GET.get('order_id')
+        payment_method = request.GET.get('payment_method', 'online')
+
+        # Validate order ID
+        if not order_id:
+            # Redirect to cart if no order ID provided
+            return redirect('cart_view')
+
+        # Get the order and verify it belongs to the logged-in user
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+
+        # Prepare context data for template
+        context = {
+            'order': order,
+            'payment_method': payment_method,  # 'cash' or 'online'
+        }
+
+        # Render the success page
+        return render(request, 'webapplication/payment_success.html', context)
+
+    except Order.DoesNotExist:
+        # Order not found or doesn't belong to user
+        return redirect('cart_view')
+
+    except Exception as e:
+        # Log error and redirect to cart
+        print(f"Error in payment_success: {str(e)}")
+        print(traceback.format_exc())
+        return redirect('cart_view')
+
+@login_required
+def paymongo_payment_success(request):
+    """
+    Handler for PayMongo payment success callback.
+    This redirects to the unified payment_success view.
+
+    Query parameters from PayMongo:
+    - checkout_id: The PayMongo checkout session ID
+
+    Returns:
+    - Redirect to payment_success view with order details
+
+    Endpoint: /payment/paymongo/success/
+    Called from: PayMongo redirect after successful payment
+    """
+    try:
+        # Get checkout session ID from PayMongo callback
+        checkout_id = request.GET.get('checkout_id')
+
+        if not checkout_id:
+            return redirect('cart_view')
+
+        # Find the order associated with this PayMongo checkout session
+        order = Order.objects.filter(
+            paymongo_checkout_id=checkout_id,
+            user=request.user
+        ).first()
+
+        if not order:
+            return redirect('cart_view')
+
+        # Optional: Verify payment status with PayMongo API here
+        # ... your existing PayMongo verification code ...
+
+        # Update order if needed (if not already updated by webhook)
+        if order.status == 'PENDING':
+            with transaction.atomic():
+                order.status = 'order_received'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
+
+                # Reduce stock
+                for order_item in order.orderitem_set.all():
+                    menu_item = order_item.menu_item
+                    menu_item.quantity -= order_item.quantity
+                    menu_item.save()
+
+                # Create notification
+                try:
+                    OrderNotification.objects.create(
+                        order=order,
+                        establishment=order.establishment,
+                        notification_type='new_order',
+                        message=f'New online order from {request.user.username}'
+                    )
+                except Exception as e:
+                    print(f"Warning: Failed to create notification: {str(e)}")
+
+        # Redirect to the unified success page
+        return redirect(f'/payment/success/?order_id={order.id}&payment_method=online')
+
+    except Exception as e:
+        print(f"Error in paymongo_payment_success: {str(e)}")
+        print(traceback.format_exc())
+        return redirect('cart_view')
 
 # ==========================================
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE

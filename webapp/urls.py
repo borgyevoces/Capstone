@@ -80,7 +80,11 @@ urlpatterns = [
                   path('api/food-establishment/orders/<int:order_id>/update-status/', views.update_order_status, name='api_update_order_status'),
                   path('api/food-establishment/orders/<int:order_id>/details/', views.get_order_details_establishment, name='api_order_details_establishment'),
                   path('owner/orders/', views.food_establishment_orders_view, name='orders_list'),
-    
+
+                  path('payment/create-cash-order/', views.create_cash_order, name='create_cash_order'),
+                  path('payment/success/',views.payment_success, name='payment_success'),
+                  path('payment/paymongo/success/', views.paymongo_payment_success, name='paymongo_payment_success'),
+
                   #Client Side
                   path('my-purchases/', views.order_history_view, name='order_history'),
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),

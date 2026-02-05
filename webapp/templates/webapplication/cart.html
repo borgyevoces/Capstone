@@ -138,9 +138,36 @@
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
+                        <!-- ✅ NEW: Payment Method Selection (Hidden Initially) -->
+                        <div class="payment-method-section" id="payment-method-section" style="display: none;">
+                            <h3 class="payment-method-title">Choose Payment Method</h3>
+
+                            <button type="button"
+                                    class="btn-payment-method btn-paymongo"
+                                    onclick="proceedToPayMongoCheckout(this)">
+                                <i class="fas fa-credit-card"></i>
+                                <div class="payment-method-info">
+                                    <span class="payment-method-name">Online Payment</span>
+                                    <span class="payment-method-desc">Pay via GCash/Card</span>
+                                </div>
+                            </button>
+
+                            <button type="button"
+                                    class="btn-payment-method btn-cash"
+                                    onclick="proceedToCashPayment(this)">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <div class="payment-method-info">
+                                    <span class="payment-method-name">Cash Payment</span>
+                                    <span class="payment-method-desc">Pay when you claim</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- ✅ MODIFIED: Initial Checkout Button (Shows Payment Options) -->
                         <button type="button"
                                 class="btn-checkout-gcash"
-                                onclick="proceedToCheckout(this)">
+                                id="initial-checkout-btn"
+                                onclick="showPaymentMethodSelection()">
                             <i class="fas fa-lock"></i>
                             Proceed to Checkout
                         </button>

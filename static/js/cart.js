@@ -206,10 +206,9 @@ function updateCartItemQuantity(orderItemId, newQuantity) {
     })
     .catch(error => {
         console.error('Error:', error);
-        // Don't show error to user unless critical
+        showMessage('An error occurred while updating quantity', 'error');
     });
 }
-window.updateCartItemQuantity = updateCartItemQuantity;
 
 // =======================================================
 // CLEAR ENTIRE ESTABLISHMENT CART
@@ -218,7 +217,7 @@ async function clearEstablishmentCart(establishmentId) {
     const confirmed = await showConfirmModal(
         'Clear Cart',
         'Are you sure you want to remove all items from this establishment?',
-        'Yes, Clear',
+        'Yes, Clear All',
         'Cancel'
     );
 
@@ -231,39 +230,33 @@ async function clearEstablishmentCart(establishmentId) {
     fetch('/cart/clear-establishment/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
-        credentials: 'same-origin'
+        headers: { 'X-CSRFToken': csrfToken }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showMessage('Cart cleared', 'success');
+            showMessage(data.message || 'Cart cleared successfully', 'success');
 
-            // Remove establishment box
-            const box = document.querySelector(`[data-establishment-id="${establishmentId}"]`);
-            if (box) {
-                box.style.opacity = '0';
-                box.style.transform = 'scale(0.95)';
+            // Remove the entire establishment box
+            const cartBox = document.querySelector(`.establishment-cart-box[data-establishment-id="${establishmentId}"]`);
+            if (cartBox) {
+                cartBox.remove();
+            }
 
-                setTimeout(() => {
-                    box.remove();
+            // Update cart badge
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(data.cart_count);
+            }
 
-                    // Update cart badge
-                    if (typeof updateCartBadge === 'function') {
-                        updateCartBadge(data.cart_count);
-                    }
-
-                    // Reload if no carts left
-                    if (data.cart_count === 0) {
-                        window.location.reload();
-                    } else {
-                        // Select next available establishment
-                        const nextCart = document.querySelector('.establishment-cart-box');
-                        if (nextCart) {
-                            selectEstablishment(nextCart.dataset.establishmentId);
-                        }
-                    }
-                }, 300);
+            // Reload if no items left
+            if (data.cart_count === 0) {
+                window.location.reload();
+            } else {
+                // Select next available establishment
+                const nextCart = document.querySelector('.establishment-cart-box');
+                if (nextCart) {
+                    selectEstablishment(nextCart.dataset.establishmentId);
+                }
             }
         } else {
             showMessage(data.message || 'Error clearing cart', 'error');
@@ -271,33 +264,34 @@ async function clearEstablishmentCart(establishmentId) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showMessage('An error occurred while clearing the cart.', 'error');
+        showMessage('An error occurred during cart clearance', 'error');
     });
 }
 window.clearEstablishmentCart = clearEstablishmentCart;
 
 // =======================================================
-// SELECT ESTABLISHMENT (for checkout)
+// SELECT ESTABLISHMENT CART (Visual Feedback)
 // =======================================================
 function selectEstablishment(establishmentId) {
-    // Remove previous selection
+    // Remove active state from all boxes
     document.querySelectorAll('.establishment-cart-box').forEach(box => {
         box.classList.remove('active-cart');
     });
 
-    // Mark as active
-    const selectedBox = document.querySelector(`[data-establishment-id="${establishmentId}"]`);
-    if (!selectedBox) return;
+    // Add active state to selected box
+    const selectedBox = document.querySelector(`.establishment-cart-box[data-establishment-id="${establishmentId}"]`);
+    if (selectedBox) {
+        selectedBox.classList.add('active-cart');
 
-    selectedBox.classList.add('active-cart');
-    window.activeEstablishmentId = establishmentId;
+        // Store the active order ID (get first item's order ID)
+        const firstItem = selectedBox.querySelector('.cart-item');
+        if (firstItem) {
+            window.activeOrderId = firstItem.dataset.orderId;
+        }
 
-    // Get order ID from first item
-    const firstItem = selectedBox.querySelector('.cart-item');
-    window.activeOrderId = firstItem ? firstItem.dataset.orderId : null;
-
-    // Update summary
-    updateOrderSummary(selectedBox);
+        // Update summary
+        updateOrderSummary(selectedBox);
+    }
 }
 window.selectEstablishment = selectEstablishment;
 
@@ -342,9 +336,35 @@ function updateOrderSummary(cartBox) {
 window.updateOrderSummary = updateOrderSummary;
 
 // =======================================================
-// PROCEED TO CHECKOUT (PAYMONGO GCASH)
+// ✅ NEW: SHOW PAYMENT METHOD SELECTION
 // =======================================================
-function proceedToCheckout(button) {
+function showPaymentMethodSelection() {
+    if (!window.activeOrderId) {
+        showMessage('Please select an establishment to checkout', 'warning');
+        return;
+    }
+
+    // Hide initial checkout button
+    const initialBtn = document.getElementById('initial-checkout-btn');
+    if (initialBtn) {
+        initialBtn.style.display = 'none';
+    }
+
+    // Show payment method selection
+    const paymentSection = document.getElementById('payment-method-section');
+    if (paymentSection) {
+        paymentSection.style.display = 'block';
+
+        // Smooth scroll to payment options
+        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+window.showPaymentMethodSelection = showPaymentMethodSelection;
+
+// =======================================================
+// ✅ NEW: PROCEED TO PAYMONGO (ONLINE PAYMENT)
+// =======================================================
+function proceedToPayMongoCheckout(button) {
     if (!window.activeOrderId) {
         showMessage('Please select an establishment to checkout', 'warning');
         return;
@@ -402,10 +422,58 @@ function proceedToCheckout(button) {
         console.error('Checkout Error:', error);
         showMessage('Error: ' + error.message, 'error');
         button.disabled = false;
-        button.innerHTML = '<i class="fas fa-lock"></i> Proceed to Checkout';
+        button.innerHTML = '<i class="fas fa-credit-card"></i><div class="payment-method-info"><span class="payment-method-name">Online Payment</span><span class="payment-method-desc">Pay via GCash/Card</span></div>';
     });
 }
-window.proceedToCheckout = proceedToCheckout;
+window.proceedToPayMongoCheckout = proceedToPayMongoCheckout;
+
+// =======================================================
+// ✅ NEW: PROCEED TO CASH PAYMENT
+// =======================================================
+function proceedToCashPayment(button) {
+    if (!window.activeOrderId) {
+        showMessage('Please select an establishment to checkout', 'warning');
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Order...';
+
+    const csrfToken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('order_id', window.activeOrderId);
+
+    fetch('/payment/create-cash-order/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server error: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showMessage('Order placed successfully!', 'success');
+            // Redirect to success page
+            setTimeout(() => {
+                window.location.href = '/payment/success/?order_id=' + window.activeOrderId + '&payment_method=cash';
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to place order');
+        }
+    })
+    .catch(error => {
+        console.error('Cash Payment Error:', error);
+        showMessage('Error: ' + error.message, 'error');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-money-bill-wave"></i><div class="payment-method-info"><span class="payment-method-name">Cash Payment</span><span class="payment-method-desc">Pay when you claim</span></div>';
+    });
+}
+window.proceedToCashPayment = proceedToCashPayment;
 
 // =======================================================
 // HELPER FUNCTION: Get CSRF Token
@@ -506,4 +574,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-console.log('✅ Multi-Establishment Cart JS loaded successfully');
+console.log('✅ Multi-Establishment Cart JS with Payment Method Selection loaded successfully');
