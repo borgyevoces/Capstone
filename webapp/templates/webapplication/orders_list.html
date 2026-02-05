@@ -1,99 +1,23 @@
-{% extends "webapplication/kabsueats.html" %}
+{% extends "webapplication/food_establishment_dashboard.html" %}
 {% load static %}
 
-{% block title %}Orders - {{ establishment.name }}{% endblock %}
+{% block page_title %}Orders - {{ establishment.name }}{% endblock %}
+
+{% block extra_head_links %}
+<!-- No leaflet needed for orders page -->
+{% endblock %}
 
 {% block extra_css %}
 <style>
     body {
         background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-        min-height: 100vh;
-    }
-
-    /* Navigation Bar Styling */
-    .owner-navbar {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border-bottom: 1px solid #e2e8f0;
-        padding: 12px 0;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .owner-navbar-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .navbar-brand {
-        font-size: 28px;
-        font-weight: 700;
-        color: #B71C1C;
-        text-decoration: none;
-        font-family: 'Pacifico', cursive;
-    }
-
-    .navbar-links {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .navbar-link {
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #4a5568;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .navbar-link:hover {
-        background: rgba(183, 28, 28, 0.05);
-        color: #B71C1C;
-    }
-
-    .navbar-link.active {
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
-        color: white;
-    }
-
-    .navbar-link i {
-        font-size: 16px;
-    }
-
-    .establishment-name {
-        color: #2d3748;
-        font-weight: 600;
-        font-size: 14px;
-        padding: 10px 16px;
-        background: #f7fafc;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .establishment-name i {
-        color: #B71C1C;
     }
 
     .page-container {
         max-width: 1400px;
         margin: 0 auto;
         padding: 16px;
-        margin-top: 80px;
+        margin-top: 75px;
     }
 
     .page-header {
@@ -204,7 +128,7 @@
         color: white;
     }
 
-    /* Tab Icons Colors */
+    /* Tab Icons Colors - More vibrant */
     .status-tab[data-status="order_received"] .status-tab-icon {
         color: #f59e0b;
     }
@@ -226,7 +150,7 @@
         padding: 16px 20px 20px;
     }
 
-    /* Bulk Actions Bar */
+    /* Bulk Actions Bar - Sleeker */
     .bulk-actions-bar {
         background: linear-gradient(135deg, #fafbfc 0%, #f7f9fb 100%);
         border: 1px solid #e2e8f0;
@@ -280,9 +204,14 @@
         box-shadow: 0 4px 8px rgba(183, 28, 28, 0.3);
     }
 
+    .bulk-action-btn:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
     .bulk-action-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        transform: none;
     }
 
     /* Loading and Empty States */
@@ -322,7 +251,7 @@
         color: #a0aec0;
     }
 
-    /* Orders Table */
+    /* Orders Table - Compact & Clean */
     .orders-table {
         width: 100%;
         border-collapse: separate;
@@ -344,17 +273,24 @@
     .orders-table th:first-child {
         width: 40px;
         text-align: center;
+        border-radius: 0;
     }
 
     .orders-table td {
-        padding: 14px;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 12px 14px;
+        border-bottom: 1px solid #f0f4f8;
         color: #2d3748;
         font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .orders-table tbody tr {
+        transition: all 0.15s ease;
     }
 
     .orders-table tbody tr:hover {
         background: #fafbfc;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .order-checkbox {
@@ -365,243 +301,276 @@
     }
 
     .order-id {
-        font-weight: 700;
+        font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+        font-weight: 600;
         color: #B71C1C;
-        font-size: 14px;
+        font-size: 13px;
+        background: rgba(183, 28, 28, 0.06);
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
     }
 
     .customer-name {
-        font-weight: 600;
+        font-weight: 500;
         color: #2d3748;
+        font-size: 14px;
     }
 
     .order-items-preview {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .order-items-list {
         font-size: 12px;
         color: #718096;
     }
 
+    .order-items-preview strong {
+        color: #4a5568;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .order-items-list {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #a0aec0;
+        line-height: 1.4;
+    }
+
     .order-total {
         font-weight: 700;
-        color: #2d3748;
+        color: #B71C1C;
         font-size: 15px;
     }
 
     .order-time {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+        font-size: 12px;
+        color: #718096;
+    }
+
+    .order-time strong {
+        color: #2d3748;
+        display: block;
+        margin-bottom: 2px;
+        font-weight: 600;
         font-size: 13px;
     }
 
+    /* Action Buttons - Refined */
     .btn-next-step {
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
         border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 13px;
+        padding: 8px 14px;
+        border-radius: 7px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        white-space: nowrap;
     }
 
     .btn-next-step:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.3);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-next-step i {
+        font-size: 11px;
     }
 
     .order-status-badge {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-    }
-
-    /* New Order Highlight */
-    .new-order-row {
-        animation: highlightNew 2s ease-out;
-        background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0) 100%);
-    }
-
-    @keyframes highlightNew {
-        0% {
-            background: linear-gradient(90deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%);
-        }
-        100% {
-            background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0) 100%);
-        }
-    }
-
-    .new-order-badge {
-        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        margin-left: 8px;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    /* New Order Toast */
-    .new-order-toast {
-        position: fixed;
-        top: 80px;
-        right: 20px;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 600;
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-        z-index: 10001;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 600;
-        font-size: 14px;
-        animation: slideInRight 0.4s ease-out;
-        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
     }
 
-    .new-order-toast i {
-        font-size: 20px;
-    }
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .page-container {
+            max-width: 100%;
+            padding: 12px;
+        }
 
-    @keyframes slideInRight {
-        from { transform: translateX(400px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
+        .status-tab {
+            min-width: 120px;
+            padding: 12px;
+        }
 
-    @keyframes slideOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(400px); opacity: 0; }
+        .status-tab-title {
+            font-size: 12px;
+        }
+
+        .status-tab-icon {
+            font-size: 18px;
+        }
     }
 
     @media (max-width: 768px) {
-        .navbar-links {
-            gap: 4px;
+        .page-title {
+            font-size: 20px;
         }
-        .navbar-link {
-            padding: 8px 12px;
-            font-size: 13px;
+
+        .orders-table {
+            font-size: 12px;
         }
-        .establishment-name {
-            display: none;
+
+        .orders-table th,
+        .orders-table td {
+            padding: 10px 8px;
         }
-        .page-container {
-            padding: 12px;
-            margin-top: 70px;
+
+        .btn-next-step {
+            padding: 6px 10px;
+            font-size: 11px;
         }
+
+        .bulk-actions-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .bulk-actions-left {
+            justify-content: space-between;
+        }
+    }
+
+    /* Smooth animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .orders-table tbody tr {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Custom scrollbar */
+    .orders-table-container {
+        overflow-x: auto;
+    }
+
+    .orders-table-container::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 10px;
+    }
+
+    .orders-table-container::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
     }
 </style>
 {% endblock %}
 
-{% block content %}
-<!-- Owner Navigation Bar -->
-<nav class="owner-navbar">
-    <div class="owner-navbar-content">
-        <a href="{% url 'kabsueats_home' %}" class="navbar-brand">KabsuEats</a>
-        <div class="navbar-links">
-            <a href="{% url 'food_establishment_dashboard' %}" class="navbar-link">
-                <i class="fas fa-chart-line"></i>
-                Dashboard
-            </a>
-            <a href="{% url 'orders_list' %}" class="navbar-link active">
-                <i class="fas fa-shopping-bag"></i>
-                Orders
-            </a>
-            <span class="establishment-name">
-                <i class="fas fa-store"></i>
-                {{ establishment.name }}
-            </span>
-        </div>
-    </div>
-</nav>
-
-<div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
-        <h1 class="page-title">
-            <i class="fas fa-clipboard-list"></i>
-            Orders Management
-        </h1>
-        <p class="page-subtitle">Manage and track all incoming orders</p>
-    </div>
-
-    <!-- Orders Content Card -->
-    <div class="orders-content">
-        <!-- Status Tabs -->
-        <div class="status-tabs">
-            <button class="status-tab active" data-status="order_received" onclick="switchStatus('order_received')">
-                <i class="fas fa-bell status-tab-icon"></i>
-                <span class="status-tab-title">New Orders</span>
-                <span class="status-tab-count" id="count-order_received">0</span>
-            </button>
-            <button class="status-tab" data-status="preparing" onclick="switchStatus('preparing')">
-                <i class="fas fa-fire status-tab-icon"></i>
-                <span class="status-tab-title">Preparing</span>
-                <span class="status-tab-count" id="count-preparing">0</span>
-            </button>
-            <button class="status-tab" data-status="to_claim" onclick="switchStatus('to_claim')">
-                <i class="fas fa-box status-tab-icon"></i>
-                <span class="status-tab-title">To Claim</span>
-                <span class="status-tab-count" id="count-to_claim">0</span>
-            </button>
-            <button class="status-tab" data-status="completed" onclick="switchStatus('completed')">
-                <i class="fas fa-check-circle status-tab-icon"></i>
-                <span class="status-tab-title">Completed</span>
-                <span class="status-tab-count" id="count-completed">0</span>
-            </button>
+{% block main_content %}
+<main class="main-content">
+    <div class="page-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-clipboard-list"></i>
+                Orders Management
+            </div>
+            <div class="page-subtitle">Manage and track your establishment's orders</div>
         </div>
 
-        <!-- Orders Table Container -->
-        <div class="orders-table-container">
-            <!-- Bulk Actions Bar -->
-            <div class="bulk-actions-bar" id="bulkActionsBar">
-                <div class="bulk-actions-left">
-                    <input type="checkbox" class="select-all-checkbox" onchange="toggleSelectAll()">
-                    <span class="selected-count" id="selectedCount">0 selected</span>
-                </div>
-                <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
-                    <i class="fas fa-arrow-right"></i>
-                    <span id="bulkActionText">Move to Next Step</span>
+        <!-- Orders Content -->
+        <div class="orders-content">
+            <!-- Status Tabs -->
+            <div class="status-tabs">
+                <button class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="status-tab-title">New Orders</div>
+                    <div class="status-tab-count" id="count-order_received">0</div>
+                </button>
+
+                <button class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="status-tab-title">Preparing</div>
+                    <div class="status-tab-count" id="count-preparing">0</div>
+                </button>
+
+                <button class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="status-tab-title">Ready</div>
+                    <div class="status-tab-count" id="count-to_claim">0</div>
+                </button>
+
+                <button class="status-tab" data-status="completed" onclick="switchTab('completed')">
+                    <div class="status-tab-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="status-tab-title">Completed</div>
+                    <div class="status-tab-count" id="count-completed">0</div>
                 </button>
             </div>
 
-            <!-- Orders List -->
-            <div id="ordersListContainer">
-                <div class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading orders...</p>
+            <!-- Orders Table Container -->
+            <div class="orders-table-container">
+                <!-- Bulk Actions Bar -->
+                <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                    <div class="bulk-actions-left">
+                        <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
+                               onchange="toggleSelectAll()">
+                        <span class="selected-count" id="selectedCount">0 selected</span>
+                    </div>
+                    <button class="bulk-action-btn" id="bulkMoveBtn" onclick="bulkMoveToNextStep()" disabled>
+                        <i class="fas fa-forward"></i>
+                        <span id="bulkActionText">Move to Next Step</span>
+                    </button>
+                </div>
+
+                <!-- Orders List (Dynamically loaded) -->
+                <div id="ordersListContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading orders...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</main>
+{% endblock %}
 
+{% block page_javascript %}
 <script>
+// Global variables
+let allOrders = [];
 let currentStatus = 'order_received';
-let ordersData = {};
 let selectedOrders = new Set();
-let previousOrderCount = {};
-let knownOrderIds = new Set();
-let autoRefreshInterval = null;
 
+// Status workflow
 const statusWorkflow = {
     'order_received': 'preparing',
     'preparing': 'to_claim',
@@ -609,169 +578,89 @@ const statusWorkflow = {
     'completed': null
 };
 
+// Status labels
 const statusLabels = {
     'order_received': 'Preparing',
-    'preparing': 'To Claim',
+    'preparing': 'Ready to Claim',
     'to_claim': 'Completed',
-    'completed': 'Done'
+    'completed': 'Completed'
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+// Load orders on page load
+document.addEventListener('DOMContentLoaded', function () {
     loadOrders();
-    startAutoRefresh();
+    // Auto-refresh every 30 seconds
+    setInterval(loadOrders, 30000);
 });
 
-function startAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-    autoRefreshInterval = setInterval(() => {
-        loadOrders(true);
-    }, 10000);
-}
-
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-    }
-}
-
-function loadOrders(silentRefresh = false) {
-    if (!silentRefresh) {
-        document.getElementById('ordersListContainer').innerHTML = `
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading orders...</p>
-            </div>
-        `;
-    }
-
+function loadOrders() {
     fetch('/api/food-establishment/orders/')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const hasNewOrders = detectNewOrders(data.orders_by_status);
-                ordersData = data.orders_by_status;
-                updateStatusCounts();
-                renderOrders();
-
-                if (hasNewOrders && silentRefresh) {
-                    playNewOrderSound();
-                    showNewOrderToast();
-                }
+                allOrders = data.orders;
+                updateOrderCounts();
+                displayOrdersForCurrentTab();
             } else {
-                showError('Failed to load orders');
+                showNotification('Error loading orders', 'error');
             }
         })
         .catch(error => {
             console.error('Error loading orders:', error);
-            showError('Error loading orders. Please refresh the page.');
+            showNotification('Failed to load orders', 'error');
         });
 }
 
-function detectNewOrders(ordersByStatus) {
-    let hasNewOrders = false;
-
-    Object.keys(ordersByStatus).forEach(status => {
-        const currentOrders = ordersByStatus[status] || [];
-        const currentCount = currentOrders.length;
-        const previousCount = previousOrderCount[status] || 0;
-
-        if (currentCount > previousCount) {
-            hasNewOrders = true;
-            currentOrders.forEach(order => {
-                if (!knownOrderIds.has(order.id)) {
-                    knownOrderIds.add(order.id);
-                    order.isNew = true;
-                }
-            });
-        }
-        previousOrderCount[status] = currentCount;
-    });
-
-    return hasNewOrders;
-}
-
-function showNewOrderToast() {
-    const existingToast = document.querySelector('.new-order-toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'new-order-toast';
-    toast.innerHTML = `
-        <i class="fas fa-bell"></i>
-        <span>New order received!</span>
-    `;
-
-    toast.onclick = () => {
-        switchStatus('order_received');
-        toast.remove();
+function updateOrderCounts() {
+    const counts = {
+        'order_received': 0,
+        'preparing': 0,
+        'to_claim': 0,
+        'completed': 0
     };
 
-    document.body.appendChild(toast);
+    allOrders.forEach(order => {
+        const status = order.status.toLowerCase();
+        if (counts.hasOwnProperty(status)) {
+            counts[status]++;
+        }
+    });
 
-    setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.4s ease-out';
-        setTimeout(() => toast.remove(), 400);
-    }, 5000);
-}
-
-function playNewOrderSound() {
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-    } catch (error) {
-        console.log('Could not play sound:', error);
-    }
-}
-
-function updateStatusCounts() {
-    Object.keys(ordersData).forEach(status => {
-        const count = ordersData[status] ? ordersData[status].length : 0;
+    // Update count badges
+    Object.keys(counts).forEach(status => {
         const countElement = document.getElementById(`count-${status}`);
         if (countElement) {
-            countElement.textContent = count;
+            countElement.textContent = counts[status];
         }
     });
 }
 
-function switchStatus(status) {
+function switchTab(status) {
     currentStatus = status;
     selectedOrders.clear();
 
+    // Update active tab
     document.querySelectorAll('.status-tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    document.querySelector(`[data-status="${status}"]`).classList.add('active');
+    document.querySelector(`.status-tab[data-status="${status}"]`).classList.add('active');
 
-    renderOrders();
+    // Display orders for new tab
+    displayOrdersForCurrentTab();
+
+    // Hide bulk actions bar
+    updateBulkActionsBar();
 }
 
-function renderOrders() {
+function displayOrdersForCurrentTab() {
     const container = document.getElementById('ordersListContainer');
-    const orders = ordersData[currentStatus] || [];
+    const orders = allOrders.filter(order => order.status.toLowerCase() === currentStatus);
 
     if (orders.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
-                <h3>No orders yet</h3>
+                <h3>No ${statusLabels[currentStatus] || currentStatus.replace('_', ' ')} Orders</h3>
                 <p>Orders in this status will appear here.</p>
             </div>
         `;
@@ -779,6 +668,7 @@ function renderOrders() {
         return;
     }
 
+    // Show bulk actions bar
     document.getElementById('bulkActionsBar').style.display = 'flex';
 
     let html = `
@@ -801,18 +691,17 @@ function renderOrders() {
         const isSelected = selectedOrders.has(order.id);
         const nextStatus = statusWorkflow[currentStatus];
         const nextStepLabel = nextStatus ? statusLabels[nextStatus] : 'Completed';
-        const isNewOrder = order.isNew || false;
 
         html += `
-            <tr class="${isNewOrder ? 'new-order-row' : ''}">
+            <tr>
                 <td style="text-align: center;">
-                    <input type="checkbox" class="order-checkbox" data-order-id="${order.id}"
-                           ${isSelected ? 'checked' : ''} onchange="toggleOrderSelection(${order.id})">
+                    <input type="checkbox"
+                           class="order-checkbox"
+                           data-order-id="${order.id}"
+                           ${isSelected ? 'checked' : ''}
+                           onchange="toggleOrderSelection(${order.id})">
                 </td>
-                <td>
-                    <span class="order-id">#${order.id}</span>
-                    ${isNewOrder ? '<span class="new-order-badge">NEW</span>' : ''}
-                </td>
+                <td><span class="order-id">#${order.id}</span></td>
                 <td><span class="customer-name">${order.customer_name || 'Unknown'}</span></td>
                 <td>
                     <div class="order-items-preview">
@@ -843,7 +732,11 @@ function renderOrders() {
         `;
     });
 
-    html += `</tbody></table>`;
+    html += `
+            </tbody>
+        </table>
+    `;
+
     container.innerHTML = html;
     updateBulkActionsBar();
 }
@@ -873,6 +766,7 @@ function toggleSelectAll() {
             checkbox.checked = false;
         });
     }
+
     updateBulkActionsBar();
 }
 
@@ -909,6 +803,7 @@ function bulkMoveToNextStep() {
 
     const orderIds = Array.from(selectedOrders);
     if (confirm(`Move ${orderIds.length} orders to ${statusLabels[nextStatus]}?`)) {
+        // Update each order
         const promises = orderIds.map(orderId =>
             fetch(`/api/food-establishment/orders/${orderId}/update-status/`, {
                 method: 'POST',
@@ -924,11 +819,11 @@ function bulkMoveToNextStep() {
             .then(() => {
                 selectedOrders.clear();
                 loadOrders();
-                showNotification(`Successfully moved ${orderIds.length} orders!`, 'success');
+                showNotification(`Successfully moved ${orderIds.length} orders to ${statusLabels[nextStatus]}!`, 'success');
             })
             .catch(error => {
-                console.error('Error:', error);
-                showNotification('Error updating orders.', 'error');
+                console.error('Error updating orders:', error);
+                showNotification('Error updating some orders. Please try again.', 'error');
             });
     }
 }
@@ -942,19 +837,19 @@ function updateOrderStatus(orderId, newStatus) {
         },
         body: JSON.stringify({status: newStatus})
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadOrders();
-            showNotification(`Order #${orderId} moved to ${statusLabels[newStatus]}!`, 'success');
-        } else {
-            showNotification('Error updating order', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error updating order', 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadOrders();
+                showNotification(`Order #${orderId} moved to ${statusLabels[newStatus]}!`, 'success');
+            } else {
+                showNotification('Error updating order status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error updating order status', 'error');
+        });
 }
 
 function formatDate(dateString) {
@@ -970,24 +865,33 @@ function formatTime(dateString) {
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
     notification.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        position: fixed;
+        top: 20px;
+        right: 20px;
         background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
-        color: white; padding: 14px 20px; border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 600; font-size: 14px;
+        color: white;
+        padding: 14px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        font-weight: 600;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+        max-width: 350px;
     `;
-    notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-function showError(message) {
-    document.getElementById('ordersListContainer').innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Error Loading Orders</h3>
-            <p>${message}</p>
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
         </div>
     `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 function getCookie(name) {
@@ -1005,13 +909,31 @@ function getCookie(name) {
     return cookieValue;
 }
 
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        stopAutoRefresh();
-    } else {
-        loadOrders();
-        startAutoRefresh();
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
-});
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}
