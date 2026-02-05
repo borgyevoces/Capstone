@@ -2071,7 +2071,7 @@
             </a>
 
             <!-- Transaction History Button -->
-            <a href="{% url 'transaction_history' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
+            <a href="{% url 'user_transactions' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
                 <i class="fas fa-history"></i>
                 <span class="nav-btn-label">Transactions</span>
             </a>
