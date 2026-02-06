@@ -2929,18 +2929,256 @@
         return cookieValue;
     }
 
-    function toggleChatPanel() {
-        const panel = document.getElementById('chatPanel');
-        const chatWindow = document.getElementById('chatWindow');
+    // ==========================================
+    // NOTIFICATION PANEL FUNCTIONS
+    // ==========================================
+    function toggleNotificationPanel() {
+        const panel = document.getElementById('notificationPanel');
+        const chatPanel = document.getElementById('chatPanel');
 
         if (panel.classList.contains('open')) {
             panel.classList.remove('open');
         } else {
             panel.classList.add('open');
-            chatWindow.classList.remove('open');
-            loadConversations();
+            // Close chat panel if open
+            if (chatPanel) {
+                chatPanel.classList.remove('open');
+            }
+            loadNotifications();
         }
     }
+
+    function loadNotifications() {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayNotifications(data.notifications);
+                updateNotificationBadge(data.unread_count);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+        });
+    }
+
+    function displayNotifications(notifications) {
+        const notificationList = document.getElementById('notificationList');
+
+        if (!notifications || notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="notification-empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No new notifications</p>
+                </div>
+            `;
+            return;
+        }
+
+        notificationList.innerHTML = notifications.map(notif => {
+            const unreadClass = notif.is_read ? '' : 'unread';
+            const timeAgo = formatTimeAgo(notif.created_at);
+
+            let content = '';
+            if (notif.notification_type === 'new_order') {
+                content = `
+                    <div class="notification-item ${unreadClass}" onclick="markNotificationRead(${notif.id})">
+                        <div class="notification-header">
+                            <div class="notification-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">
+                                    <span>New Order</span>
+                                    <span class="notification-type-badge">Order</span>
+                                </div>
+                                <div class="notification-message">${notif.message}</div>
+
+                                ${notif.order_data ? `
+                                    <div class="customer-info">
+                                        <div class="customer-avatar">${notif.order_data.customer_name ? notif.order_data.customer_name.charAt(0).toUpperCase() : 'U'}</div>
+                                        <div class="customer-details">
+                                            <div class="customer-name">${notif.order_data.customer_name || 'Unknown'}</div>
+                                            <div class="customer-email">${notif.order_data.customer_email || ''}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="order-summary">
+                                        <div class="order-summary-header">
+                                            <span class="order-id">Order #${notif.order_data.order_id}</span>
+                                            <span class="order-total">₱${parseFloat(notif.order_data.total_amount || 0).toFixed(2)}</span>
+                                        </div>
+
+                                        ${notif.order_data.gcash_reference ? `
+                                            <div class="order-reference">
+                                                <i class="fas fa-receipt"></i> Ref: ${notif.order_data.gcash_reference}
+                                            </div>
+                                        ` : ''}
+
+                                        ${notif.order_data.items && notif.order_data.items.length > 0 ? `
+                                            <div class="order-items-list">
+                                                ${notif.order_data.items.map(item => `
+                                                    <div class="order-item-row">
+                                                        <span class="item-name-qty">${item.quantity}x ${item.name}</span>
+                                                        <span class="item-price">₱${parseFloat(item.price).toFixed(2)}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+
+                                        <div class="order-status-badge ${notif.order_data.payment_method === 'cash' ? 'pending' : 'paid'}">
+                                            <i class="fas fa-${notif.order_data.payment_method === 'cash' ? 'money-bill-wave' : 'check-circle'}"></i>
+                                            ${notif.order_data.payment_method === 'cash' ? 'Cash on Pickup' : 'Paid Online'}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <div class="notification-time">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="time-ago">${timeAgo}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Generic notification
+                content = `
+                    <div class="notification-item ${unreadClass}" onclick="markNotificationRead(${notif.id})">
+                        <div class="notification-header">
+                            <div class="notification-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">
+                                    <span>Notification</span>
+                                </div>
+                                <div class="notification-message">${notif.message}</div>
+                                <div class="notification-time">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="time-ago">${timeAgo}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return content;
+        }).join('');
+    }
+
+    function markNotificationRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications(); // Reload to update UI
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+
+    function markAllNotificationsRead() {
+        fetch('/api/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications(); // Reload to update UI
+            }
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
+        });
+    }
+
+    function updateNotificationBadge(count) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    function formatTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Auto-refresh notifications every 30 seconds
+    setInterval(() => {
+        if (!document.getElementById('notificationPanel').classList.contains('open')) {
+            // Just update badge without showing notifications
+            fetch('/api/notifications/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateNotificationBadge(data.unread_count);
+                }
+            })
+            .catch(error => console.error('Error updating notification badge:', error));
+        }
+    }, 30000);
+
+    // Load initial notification count on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationBadge(data.unread_count);
+            }
+        })
+        .catch(error => console.error('Error loading initial notifications:', error));
+    });
+
+    // ==========================================
+    // CHAT PANEL FUNCTIONS (ORIGINAL)
+    // ==========================================
 
     function loadConversations() {
         fetch(`/owner/chat/conversations/${establishmentId}/`)
