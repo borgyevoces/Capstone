@@ -5316,6 +5316,7 @@ def food_establishment_transaction_history(request):
 
         context = {
             'establishment': establishment,
+            'pk': establishment.pk,
         }
 
         return render(request, 'webapplication/transaction_history.html', context)
