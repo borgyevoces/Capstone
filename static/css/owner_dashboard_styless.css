@@ -2077,98 +2077,81 @@ body {
     }
 }
 
-/* Notification Panel */
+/* ==========================================
+   PROFESSIONAL NOTIFICATION PANEL DESIGN
+   Simple, Clean, and Complete
+   ========================================== */
+
+/* Notification Panel Container */
 .notification-panel {
     position: fixed;
-    top: 0;
-    right: -450px;
+    top: 70px;
+    right: -500px;
     width: 450px;
-    height: 100vh;
-    background: white;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    height: calc(100vh - 70px);
+    background: #ffffff;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 9999;
+    z-index: 999;
     display: flex;
     flex-direction: column;
 }
 
-.notification-panel.open {
+.notification-panel.show {
     right: 0;
 }
 
-/* Notification Header */
-.notification-header {
+/* Panel Header */
+.notification-panel-header {
+    padding: 20px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px;
-    background: linear-gradient(135deg, #e59b20 0%, #d68910 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
-.notification-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
+.notification-panel-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.notification-header .close-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s ease;
-}
-
-.notification-header .close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Notification Actions */
-.notification-actions {
-    padding: 12px 24px;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
     gap: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
 }
 
-.notification-actions button {
-    padding: 8px 16px;
+.notification-panel-title i {
+    color: #ef4444;
+    font-size: 20px;
+}
+
+.notification-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mark-all-read-btn,
+.close-notification-btn {
+    background: transparent;
     border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    color: #6b7280;
+    font-size: 16px;
 }
 
-.btn-mark-all-read {
-    background: #e59b20;
-    color: white;
+.mark-all-read-btn:hover,
+.close-notification-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
 }
 
-.btn-mark-all-read:hover {
-    background: #d68910;
-}
-
-.btn-clear-all {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-clear-all:hover {
-    background: #dc2626;
+.mark-all-read-btn {
+    font-size: 14px;
 }
 
 /* Notification List */
@@ -2180,54 +2163,39 @@ body {
 
 /* Individual Notification Item */
 .notification-item {
-    background: white;
+    background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 16px;
     margin-bottom: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    position: relative;
 }
 
 .notification-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .notification-item.unread {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+    background: linear-gradient(to right, #fef3c7 0%, #ffffff 3%);
+    border-left: 3px solid #f59e0b;
 }
 
-.notification-item.unread::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #3b82f6;
-    border-radius: 12px 0 0 12px;
-}
-
-/* Notification Header (Inside Item) */
-.notification-item .notification-header {
-    background: none;
-    padding: 0;
-    margin-bottom: 12px;
-    box-shadow: none;
+/* Notification Header Inside Item */
+.notification-item-header {
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    margin-bottom: 12px;
 }
 
 .notification-icon {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #e59b20 0%, #d68910 100%);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2236,11 +2204,12 @@ body {
     flex-shrink: 0;
 }
 
-.notification-content {
+.notification-content-header {
     flex: 1;
+    min-width: 0;
 }
 
-.notification-title {
+.notification-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2248,131 +2217,159 @@ body {
     margin-bottom: 4px;
 }
 
-.notification-title span:first-child {
-    font-weight: 600;
-    color: #111827;
+.notification-title-text {
+    font-weight: 700;
     font-size: 15px;
+    color: #111827;
 }
 
 .notification-type-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
-.notification-type-badge.new_order {
+.notification-type-badge.order {
     background: #dcfce7;
     color: #166534;
+}
+
+.notification-type-badge.completed {
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .notification-message {
     color: #6b7280;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
-/* Customer Information */
-.customer-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
+/* Customer Information Card */
+.customer-info-card {
     background: #f9fafb;
     border-radius: 8px;
+    padding: 12px;
     margin: 12px 0;
 }
 
+.customer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .customer-avatar {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 16px;
+    flex-shrink: 0;
 }
 
 .customer-details {
     flex: 1;
+    min-width: 0;
 }
 
 .customer-name {
-    font-weight: 600;
-    color: #111827;
+    font-weight: 700;
     font-size: 14px;
+    color: #111827;
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .customer-email {
-    color: #6b7280;
     font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Order Summary */
-.order-summary {
-    background: #f9fafb;
+/* Order Summary Card */
+.order-summary-card {
+    background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 12px;
     margin-top: 12px;
 }
 
-.order-summary-header {
+.order-summary-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e5e7eb;
 }
 
-.order-id {
-    font-weight: 600;
-    color: #111827;
-    font-size: 14px;
-}
-
-.order-total {
+.order-id-text {
     font-weight: 700;
-    color: #e59b20;
-    font-size: 16px;
+    font-size: 14px;
+    color: #111827;
 }
 
-.order-reference {
-    font-size: 12px;
+.order-total-amount {
+    font-weight: 800;
+    font-size: 18px;
+    color: #ef4444;
+}
+
+.order-reference-text {
+    font-size: 11px;
     color: #6b7280;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.order-items-list {
-    margin-top: 8px;
+.order-reference-text i {
+    font-size: 10px;
+}
+
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .order-item-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
     font-size: 13px;
 }
 
 .item-name-qty {
     color: #374151;
+    flex: 1;
 }
 
 .item-name-qty strong {
     color: #111827;
+    font-weight: 600;
 }
 
 .item-price {
-    font-weight: 600;
-    color: #6b7280;
+    font-weight: 700;
+    color: #ef4444;
+    white-space: nowrap;
 }
 
 /* Order Status Badge */
@@ -2382,12 +2379,13 @@ body {
     gap: 6px;
     padding: 6px 12px;
     border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
+    margin-top: 10px;
 }
 
-.order-status-badge.paid {
+.order-status-badge.completed {
     background: #dcfce7;
     color: #166534;
 }
@@ -2397,147 +2395,75 @@ body {
     color: #92400e;
 }
 
+.order-status-badge.preparing {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.order-status-badge.ready {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
 .order-status-badge.cancelled {
     background: #fee2e2;
     color: #991b1b;
 }
 
-/* Notification Time */
-.notification-time {
+.order-status-badge i {
+    font-size: 10px;
+}
+
+/* Notification Time Footer */
+.notification-time-footer {
     display: flex;
     align-items: center;
     gap: 6px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #f3f4f6;
     color: #9ca3af;
     font-size: 12px;
 }
 
-.time-ago {
+.notification-time-footer i {
+    font-size: 11px;
+}
+
+.time-ago-text {
     font-weight: 500;
 }
 
 /* Empty State */
 .notification-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
     text-align: center;
-    padding: 60px 24px;
     color: #9ca3af;
 }
 
 .notification-empty-state i {
-    font-size: 48px;
+    font-size: 64px;
     margin-bottom: 16px;
-    opacity: 0.5;
+    opacity: 0.4;
 }
 
 .notification-empty-state p {
     font-size: 15px;
     margin: 0;
-}
-
-/* Toast Notification (Popup) */
-.notification-toast {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    max-width: 400px;
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-}
-
-.toast-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #e59b20 0%, #d68910 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.toast-content {
-    flex: 1;
-}
-
-.toast-title {
-    font-weight: 600;
-    color: #111827;
-    font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.toast-message {
     color: #6b7280;
-    font-size: 13px;
 }
 
-.toast-close {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    padding: 4px;
-    transition: color 0.2s ease;
-}
-
-.toast-close:hover {
-    color: #374151;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .notification-panel {
-        width: 100%;
-        right: -100%;
-    }
-
-    .notification-toast {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-}
-
-/* Scrollbar Styling for Notification List */
+/* Scrollbar Styling */
 .notification-list::-webkit-scrollbar {
     width: 6px;
 }
 
 .notification-list::-webkit-scrollbar-track {
-    background: #f3f4f6;
+    background: #f9fafb;
 }
 
 .notification-list::-webkit-scrollbar-thumb {
@@ -2547,6 +2473,37 @@ body {
 
 .notification-list::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .notification-panel {
+        width: 100%;
+        right: -100%;
+    }
+
+    .notification-panel.show {
+        right: 0;
+    }
+}
+
+/* Loading State */
+.notification-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #9ca3af;
+}
+
+.notification-loading i {
+    font-size: 32px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 /* ==========================================
  * NAVIGATION ICON BUTTONS
