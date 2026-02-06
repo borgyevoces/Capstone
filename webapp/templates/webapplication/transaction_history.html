@@ -844,7 +844,8 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block main_content %}
+<main class="main-content">
 <div class="page-container">
     <!-- Page Header -->
     <div class="page-header">
@@ -1020,7 +1021,10 @@
         </div>
     </div>
 </div>
+</main>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
 // Global variable to store all transactions
 let allTransactions = [];
