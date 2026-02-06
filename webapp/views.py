@@ -5301,6 +5301,223 @@ def paymongo_payment_success(request):
         print(traceback.format_exc())
         return redirect('cart_view')
 
+@login_required
+def food_establishment_transaction_history(request):
+    """
+    Display transaction history page for food establishment owners
+    Shows a dashboard with all payment transactions
+
+    URL: /owner/transactions/
+    Template: transaction_history.html
+    """
+    try:
+        # Get the food establishment owned by the current user
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        context = {
+            'establishment': establishment,
+        }
+
+        return render(request, 'webapplication/transaction_history.html', context)
+
+    except FoodEstablishment.DoesNotExist:
+        return render(request, 'webapplication/error.html', {
+            'error_message': 'You do not have a registered food establishment.'
+        })
+
+@login_required
+def get_establishment_transactions(request):
+    """
+    API endpoint to get all transactions for the food establishment
+    Returns JSON with transaction details and statistics
+
+    URL: /api/establishment/transactions/
+    Method: GET
+    Returns: JSON with transactions and statistics
+    """
+    try:
+        # Get the food establishment owned by the current user
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        # Get all completed orders for this establishment
+        # Include orders with these statuses that represent completed transactions
+        completed_statuses = ['completed', 'to_claim', 'preparing', 'order_received']
+
+        orders = Order.objects.filter(
+            establishment=establishment,
+            status__in=completed_statuses
+        ).select_related(
+            'user', 'establishment'
+        ).prefetch_related(
+            'orderitem_set__menu_item'
+        ).order_by('-created_at')
+
+        # Build transactions data
+        transactions_data = []
+
+        for order in orders:
+            # Get order items
+            items = []
+            for order_item in order.orderitem_set.all():
+                items.append({
+                    'name': order_item.menu_item.name,
+                    'quantity': order_item.quantity,
+                    'price': str(order_item.price_at_order),
+                    'total': str(order_item.total_price),
+                })
+
+            # Determine payment method display name
+            payment_method = order.gcash_payment_method or 'cash'
+            payment_method_display_map = {
+                'gcash': 'GCash',
+                'paymaya': 'PayMaya',
+                'cash': 'Cash',
+                'card': 'Credit/Debit Card',
+                'paymongo': 'PayMongo',
+            }
+            payment_method_display = payment_method_display_map.get(
+                payment_method.lower(),
+                payment_method.upper()
+            )
+
+            # Build transaction data
+            transaction_data = {
+                'order_id': order.id,
+                'order_number': order.gcash_reference_number or f"ORD-{order.id}",
+                'created_at': order.created_at.isoformat(),
+                'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
+                'customer_name': f"{order.user.first_name} {order.user.last_name}".strip() or order.user.username,
+                'customer_email': order.user.email,
+                'amount': str(order.total_amount),
+                'payment_method': payment_method.lower(),
+                'payment_method_display': payment_method_display,
+                'reference_number': order.gcash_reference_number or order.paymongo_checkout_id or 'N/A',
+                'status': order.status,
+                'items': items,
+            }
+
+            transactions_data.append(transaction_data)
+
+        # Calculate statistics
+        # Total revenue (all time)
+        total_revenue = orders.aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+
+        # Total transactions count
+        total_transactions = orders.count()
+
+        # Monthly revenue (current month)
+        now = timezone.now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_revenue = orders.filter(
+            created_at__gte=month_start
+        ).aggregate(
+            total=Sum('total_amount')
+        )['total'] or Decimal('0.00')
+
+        # Success rate (completed vs all orders)
+        all_orders_count = Order.objects.filter(establishment=establishment).count()
+        completed_orders_count = orders.filter(status='completed').count()
+
+        if all_orders_count > 0:
+            success_rate = round((completed_orders_count / all_orders_count) * 100, 1)
+        else:
+            success_rate = 0
+
+        statistics = {
+            'total_revenue': str(total_revenue),
+            'total_transactions': total_transactions,
+            'monthly_revenue': str(monthly_revenue),
+            'success_rate': success_rate,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'transactions': transactions_data,
+            'statistics': statistics,
+            'establishment_name': establishment.name,
+        })
+
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Food establishment not found'
+        }, status=404)
+
+    except Exception as e:
+        import traceback
+        print(f"Error in get_establishment_transactions: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+@login_required
+def get_establishment_transaction_statistics(request):
+    """
+    Get detailed transaction statistics for charts and analytics
+
+    URL: /api/establishment/transaction-stats/
+    Method: GET
+    Returns: JSON with detailed statistics
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        # Get date range (last 30 days by default)
+        days = int(request.GET.get('days', 30))
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=days)
+
+        # Get orders in date range
+        orders = Order.objects.filter(
+            establishment=establishment,
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        )
+
+        # Revenue by payment method
+        revenue_by_method = orders.values('gcash_payment_method').annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-total')
+
+        # Revenue by day (for charts)
+        daily_revenue = {}
+        for i in range(days):
+            date = start_date + timedelta(days=i)
+            day_orders = orders.filter(
+                created_at__date=date.date()
+            )
+            daily_revenue[date.strftime('%Y-%m-%d')] = {
+                'revenue': str(day_orders.aggregate(total=Sum('total_amount'))['total'] or 0),
+                'count': day_orders.count()
+            }
+
+        # Top customers
+        top_customers = orders.values(
+            'user__username',
+            'user__first_name',
+            'user__last_name'
+        ).annotate(
+            total_spent=Sum('total_amount'),
+            order_count=Count('id')
+        ).order_by('-total_spent')[:10]
+
+        return JsonResponse({
+            'success': True,
+            'revenue_by_method': list(revenue_by_method),
+            'daily_revenue': daily_revenue,
+            'top_customers': list(top_customers),
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 # ==========================================
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE
 # ==========================================
