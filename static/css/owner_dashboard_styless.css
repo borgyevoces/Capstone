@@ -2078,19 +2078,19 @@ body {
 }
 
 /* ==========================================
-   IMPROVED COMPACT NOTIFICATION DESIGN
-   Clean, Simple, Space-Efficient
+   PROFESSIONAL NOTIFICATION PANEL DESIGN
+   Simple, Clean, and Complete
    ========================================== */
 
 /* Notification Panel Container */
 .notification-panel {
     position: fixed;
     top: 70px;
-    right: -420px;
-    width: 420px;
+    right: -500px;
+    width: 450px;
     height: calc(100vh - 70px);
     background: #ffffff;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 999;
     display: flex;
@@ -2103,9 +2103,9 @@ body {
 
 /* Panel Header */
 .notification-panel-header {
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2115,54 +2115,59 @@ body {
 .notification-panel-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 17px;
+    gap: 12px;
+    font-size: 18px;
     font-weight: 700;
-    color: #ffffff;
+    color: #111827;
 }
 
 .notification-panel-title i {
-    font-size: 18px;
+    color: #ef4444;
+    font-size: 20px;
 }
 
 .notification-header-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .mark-all-read-btn,
 .close-notification-btn {
-    background: rgba(255, 255, 255, 0.15);
+    background: transparent;
     border: none;
     cursor: pointer;
-    padding: 6px 8px;
+    padding: 8px;
     border-radius: 6px;
     transition: all 0.2s;
-    color: #ffffff;
-    font-size: 15px;
+    color: #6b7280;
+    font-size: 16px;
 }
 
 .mark-all-read-btn:hover,
 .close-notification-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.mark-all-read-btn {
+    font-size: 14px;
 }
 
 /* Notification List */
 .notification-list {
     flex: 1;
     overflow-y: auto;
-    padding: 12px;
-    background: #f9fafb;
+    padding: 16px;
 }
 
-/* Individual Notification Item - COMPACT DESIGN */
+/* Individual Notification Item */
 .notification-item {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 10px;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -2170,63 +2175,62 @@ body {
 
 .notification-item:hover {
     border-color: #d1d5db;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    transform: translateX(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .notification-item.unread {
-    background: linear-gradient(to right, #fef3c7 0%, #ffffff 2%);
+    background: linear-gradient(to right, #fef3c7 0%, #ffffff 3%);
     border-left: 3px solid #f59e0b;
 }
 
-/* Top Row: Icon + Title + Badge */
-.notification-top-row {
+/* Notification Header Inside Item */
+.notification-item-header {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .notification-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     background: linear-gradient(135deg, #ef4444, #dc2626);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 16px;
+    font-size: 18px;
     flex-shrink: 0;
 }
 
-.notification-title-section {
+.notification-content-header {
     flex: 1;
     min-width: 0;
 }
 
-.notification-title-text {
-    font-weight: 700;
-    font-size: 14px;
-    color: #111827;
-    margin-bottom: 2px;
+.notification-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
 }
 
-.notification-message {
-    color: #6b7280;
-    font-size: 12px;
-    line-height: 1.3;
+.notification-title-text {
+    font-weight: 700;
+    font-size: 15px;
+    color: #111827;
 }
 
 .notification-type-badge {
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 9px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .notification-type-badge.order {
@@ -2234,21 +2238,34 @@ body {
     color: #166534;
 }
 
-/* Customer Info - COMPACT */
-.customer-info-compact {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background: #f9fafb;
-    border-radius: 6px;
-    margin: 8px 0;
-    border: 1px solid #f3f4f6;
+.notification-type-badge.completed {
+    background: #dbeafe;
+    color: #1e40af;
 }
 
-.customer-avatar-small {
-    width: 32px;
-    height: 32px;
+.notification-message {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Customer Information Card */
+.customer-info-card {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.customer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.customer-avatar {
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     display: flex;
@@ -2256,176 +2273,165 @@ body {
     justify-content: center;
     color: white;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 16px;
     flex-shrink: 0;
 }
 
-.customer-details-compact {
+.customer-details {
     flex: 1;
     min-width: 0;
 }
 
-.customer-name-compact {
-    font-weight: 600;
-    font-size: 12px;
+.customer-name {
+    font-weight: 700;
+    font-size: 14px;
     color: #111827;
-    margin-bottom: 1px;
+    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.customer-email-compact {
-    font-size: 11px;
+.customer-email {
+    font-size: 12px;
     color: #6b7280;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Order Summary - COMPACT */
-.order-summary-compact {
+/* Order Summary Card */
+.order-summary-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 8px;
-    margin-top: 8px;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
 }
 
-.order-header-compact {
+.order-summary-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    padding-bottom: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px dashed #e5e7eb;
 }
 
-.order-id-compact {
+.order-id-text {
     font-weight: 700;
-    font-size: 12px;
+    font-size: 14px;
     color: #111827;
 }
 
-.order-total-compact {
+.order-total-amount {
     font-weight: 800;
-    font-size: 15px;
+    font-size: 18px;
     color: #ef4444;
 }
 
-.order-reference-compact {
-    font-size: 10px;
-    color: #9ca3af;
-    margin-bottom: 6px;
+.order-reference-text {
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
 
-.order-reference-compact i {
-    font-size: 9px;
+.order-reference-text i {
+    font-size: 10px;
 }
 
-/* Order Items List - COMPACT */
-.order-items-compact {
+.order-items {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 6px;
+    gap: 8px;
 }
 
-.order-item-compact {
+.order-item-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
-    padding: 2px 0;
+    font-size: 13px;
 }
 
-.item-name-compact {
+.item-name-qty {
     color: #374151;
     flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.item-quantity {
-    font-weight: 700;
+.item-name-qty strong {
     color: #111827;
-    min-width: 20px;
+    font-weight: 600;
 }
 
-.item-price-compact {
+.item-price {
     font-weight: 700;
     color: #ef4444;
     white-space: nowrap;
-    font-size: 12px;
 }
 
-/* Status Badge - COMPACT */
-.order-status-compact {
+/* Order Status Badge */
+.order-status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 10px;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    margin-top: 6px;
+    margin-top: 10px;
 }
 
-.order-status-compact.completed {
+.order-status-badge.completed {
     background: #dcfce7;
     color: #166534;
 }
 
-.order-status-compact.pending {
+.order-status-badge.pending {
     background: #fef3c7;
     color: #92400e;
 }
 
-.order-status-compact.preparing {
+.order-status-badge.preparing {
     background: #dbeafe;
     color: #1e40af;
 }
 
-.order-status-compact.ready {
+.order-status-badge.ready {
     background: #e0e7ff;
     color: #4338ca;
 }
 
-.order-status-compact.cancelled {
+.order-status-badge.cancelled {
     background: #fee2e2;
     color: #991b1b;
 }
 
-.order-status-compact i {
-    font-size: 9px;
+.order-status-badge i {
+    font-size: 10px;
 }
 
-/* Notification Footer - Time */
-.notification-footer-compact {
+/* Notification Time Footer */
+.notification-time-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 8px;
-    padding-top: 8px;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid #f3f4f6;
     color: #9ca3af;
+    font-size: 12px;
+}
+
+.notification-time-footer i {
     font-size: 11px;
 }
 
-.time-ago-compact {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.time-ago-text {
     font-weight: 500;
-}
-
-.time-ago-compact i {
-    font-size: 10px;
 }
 
 /* Empty State */
@@ -2434,26 +2440,26 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 24px;
+    padding: 80px 24px;
     text-align: center;
     color: #9ca3af;
 }
 
 .notification-empty-state i {
-    font-size: 48px;
-    margin-bottom: 12px;
+    font-size: 64px;
+    margin-bottom: 16px;
     opacity: 0.4;
 }
 
 .notification-empty-state p {
-    font-size: 14px;
+    font-size: 15px;
     margin: 0;
     color: #6b7280;
 }
 
 /* Scrollbar Styling */
 .notification-list::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
 }
 
 .notification-list::-webkit-scrollbar-track {
@@ -2491,7 +2497,7 @@ body {
 }
 
 .notification-loading i {
-    font-size: 28px;
+    font-size: 32px;
     animation: spin 1s linear infinite;
 }
 

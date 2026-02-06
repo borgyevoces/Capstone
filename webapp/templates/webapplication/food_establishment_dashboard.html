@@ -2146,7 +2146,7 @@
     </div>
 </div>
 
-<!-- IMPROVED COMPACT NOTIFICATION PANEL -->
+<!-- PROFESSIONAL NOTIFICATION PANEL -->
 <div class="notification-panel" id="notificationPanel">
     <!-- Panel Header -->
     <div class="notification-panel-header">
@@ -2166,12 +2166,12 @@
 
     <!-- Notification List -->
     <div class="notification-list" id="notificationList">
-        <!-- Loading State -->
+        <!-- Loading State (shows while fetching) -->
         <div class="notification-loading" id="notificationLoading" style="display: none;">
             <i class="fas fa-spinner"></i>
         </div>
 
-        <!-- Empty State -->
+        <!-- Empty State (shows when no notifications) -->
         <div class="notification-empty-state" id="notificationEmptyState" style="display: none;">
             <i class="fas fa-bell-slash"></i>
             <p>No notifications yet</p>
@@ -2181,71 +2181,75 @@
     </div>
 </div>
 
-<!-- Compact Notification Item Template -->
+<!-- Notification Item Template (Hidden, used by JavaScript) -->
 <template id="notificationItemTemplate">
     <div class="notification-item" data-notification-id="">
-        <!-- Top Row: Icon + Title + Badge -->
-        <div class="notification-top-row">
+        <!-- Notification Header with Icon -->
+        <div class="notification-item-header">
             <div class="notification-icon">
                 <i class="fas fa-shopping-cart"></i>
             </div>
-            <div class="notification-title-section">
-                <div class="notification-title-text">New Order</div>
+            <div class="notification-content-header">
+                <div class="notification-title-row">
+                    <span class="notification-title-text">New Order</span>
+                    <span class="notification-type-badge order">ORDER</span>
+                </div>
                 <p class="notification-message">Order has been completed</p>
             </div>
-            <span class="notification-type-badge order">ORDER</span>
         </div>
 
-        <!-- Customer Info - Compact -->
-        <div class="customer-info-compact">
-            <div class="customer-avatar-small">
-                <span class="customer-initial">R</span>
-            </div>
-            <div class="customer-details-compact">
-                <div class="customer-name-compact">Customer Name</div>
-                <div class="customer-email-compact">customer@email.com</div>
+        <!-- Customer Information Card -->
+        <div class="customer-info-card">
+            <div class="customer-info-row">
+                <div class="customer-avatar">
+                    <span class="customer-initial">R</span>
+                </div>
+                <div class="customer-details">
+                    <div class="customer-name">Customer Name</div>
+                    <div class="customer-email">customer@email.com</div>
+                </div>
             </div>
         </div>
 
-        <!-- Order Summary - Compact -->
-        <div class="order-summary-compact">
-            <div class="order-header-compact">
-                <span class="order-id-compact">Order #1</span>
-                <span class="order-total-compact">₱150.00</span>
+        <!-- Order Summary Card -->
+        <div class="order-summary-card">
+            <div class="order-summary-top">
+                <span class="order-id-text">Order #1</span>
+                <span class="order-total-amount">₱150.00</span>
             </div>
 
-            <div class="order-reference-compact">
+            <div class="order-reference-text">
                 <i class="fas fa-link"></i>
-                <span>Ref: link_xxxxx</span>
+                <span>Ref: link_4GbJ1KeQLBYU4gccghfEMTAF</span>
             </div>
 
-            <div class="order-items-compact">
-                <div class="order-item-compact">
-                    <span class="item-name-compact">
-                        <span class="item-quantity">1x</span> Item Name
-                    </span>
-                    <span class="item-price-compact">₱75.00</span>
+            <div class="order-items">
+                <div class="order-item-row">
+                    <span class="item-name-qty"><strong>1x</strong> Kinalamansiang Baka</span>
+                    <span class="item-price">₱75.00</span>
+                </div>
+                <div class="order-item-row">
+                    <span class="item-name-qty"><strong>1x</strong> Adobong manok</span>
+                    <span class="item-price">₱75.00</span>
                 </div>
             </div>
 
-            <div class="order-status-compact completed">
+            <div class="order-status-badge completed">
                 <i class="fas fa-check-circle"></i>
                 <span>COMPLETED</span>
             </div>
         </div>
 
-        <!-- Notification Footer -->
-        <div class="notification-footer-compact">
-            <div class="time-ago-compact">
-                <i class="far fa-clock"></i>
-                <span class="time-text">1 hour ago</span>
-            </div>
+        <!-- Notification Time Footer -->
+        <div class="notification-time-footer">
+            <i class="far fa-clock"></i>
+            <span class="time-ago-text">1 hour ago</span>
         </div>
     </div>
 </template>
 
 <script>
-// Compact Notification Panel JavaScript
+// Notification Panel JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     const notificationToggle = document.getElementById('notificationToggle');
     const notificationPanel = document.getElementById('notificationPanel');
@@ -2295,6 +2299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         notificationLoading.style.display = 'flex';
         notificationEmptyState.style.display = 'none';
 
+        // Clear existing notifications except loading/empty states
         const existingItems = notificationList.querySelectorAll('.notification-item');
         existingItems.forEach(item => item.remove());
 
@@ -2325,35 +2330,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const clone = template.content.cloneNode(true);
             const item = clone.querySelector('.notification-item');
 
+            // Set notification ID and unread status
             item.dataset.notificationId = notification.id;
             if (!notification.is_read) {
                 item.classList.add('unread');
             }
 
+            // Set notification title and message
             const titleText = clone.querySelector('.notification-title-text');
             const message = clone.querySelector('.notification-message');
             titleText.textContent = notification.title || 'New Order';
             message.textContent = notification.message || 'Order has been completed';
 
+            // Set notification type badge
             const typeBadge = clone.querySelector('.notification-type-badge');
             typeBadge.textContent = notification.notification_type ? notification.notification_type.toUpperCase() : 'ORDER';
 
+            // Set customer information
             if (notification.customer_name && notification.customer_email) {
                 const customerInitial = clone.querySelector('.customer-initial');
-                const customerName = clone.querySelector('.customer-name-compact');
-                const customerEmail = clone.querySelector('.customer-email-compact');
+                const customerName = clone.querySelector('.customer-name');
+                const customerEmail = clone.querySelector('.customer-email');
 
                 customerInitial.textContent = notification.customer_name.charAt(0).toUpperCase();
                 customerName.textContent = notification.customer_name;
                 customerEmail.textContent = notification.customer_email;
             } else {
-                clone.querySelector('.customer-info-compact').remove();
+                clone.querySelector('.customer-info-card').remove();
             }
 
+            // Set order information
             if (notification.order_id) {
-                const orderIdText = clone.querySelector('.order-id-compact');
-                const orderTotalAmount = clone.querySelector('.order-total-compact');
-                const orderReference = clone.querySelector('.order-reference-compact span');
+                const orderIdText = clone.querySelector('.order-id-text');
+                const orderTotalAmount = clone.querySelector('.order-total-amount');
+                const orderReference = clone.querySelector('.order-reference-text span');
 
                 orderIdText.textContent = `Order #${notification.order_id}`;
                 orderTotalAmount.textContent = `₱${parseFloat(notification.total_amount || 0).toFixed(2)}`;
@@ -2361,31 +2371,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (notification.payment_reference) {
                     orderReference.textContent = `Ref: ${notification.payment_reference}`;
                 } else {
-                    clone.querySelector('.order-reference-compact').remove();
+                    clone.querySelector('.order-reference-text').remove();
                 }
 
-                const orderItemsContainer = clone.querySelector('.order-items-compact');
+                // Render order items
+                const orderItemsContainer = clone.querySelector('.order-items');
                 orderItemsContainer.innerHTML = '';
 
                 if (notification.order_items && notification.order_items.length > 0) {
                     notification.order_items.forEach(orderItem => {
                         const itemRow = document.createElement('div');
-                        itemRow.className = 'order-item-compact';
+                        itemRow.className = 'order-item-row';
                         itemRow.innerHTML = `
-                            <span class="item-name-compact">
-                                <span class="item-quantity">${orderItem.quantity}x</span> ${orderItem.item_name}
-                            </span>
-                            <span class="item-price-compact">₱${parseFloat(orderItem.price).toFixed(2)}</span>
+                            <span class="item-name-qty"><strong>${orderItem.quantity}x</strong> ${orderItem.item_name}</span>
+                            <span class="item-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
                         `;
                         orderItemsContainer.appendChild(itemRow);
                     });
                 }
 
-                const statusBadge = clone.querySelector('.order-status-compact');
+                // Set order status
+                const statusBadge = clone.querySelector('.order-status-badge');
                 const status = (notification.order_status || 'pending').toLowerCase();
-                statusBadge.className = `order-status-compact ${status}`;
+                statusBadge.className = `order-status-badge ${status}`;
                 statusBadge.querySelector('span').textContent = status.toUpperCase();
 
+                // Update icon based on status
                 const statusIcon = statusBadge.querySelector('i');
                 const statusIcons = {
                     'completed': 'fa-check-circle',
@@ -2396,14 +2407,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 statusIcon.className = `fas ${statusIcons[status] || 'fa-circle'}`;
             } else {
-                clone.querySelector('.order-summary-compact').remove();
+                clone.querySelector('.order-summary-card').remove();
             }
 
-            const timeAgoText = clone.querySelector('.time-text');
+            // Set time ago
+            const timeAgoText = clone.querySelector('.time-ago-text');
             timeAgoText.textContent = getTimeAgo(notification.created_at);
 
+            // Add click handler
             item.addEventListener('click', function() {
                 markNotificationAsRead(notification.id);
+                // You can add navigation logic here if needed
             });
 
             notificationList.appendChild(clone);
@@ -2429,7 +2443,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateNotificationBadge(data.unread_count);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error marking notification as read:', error));
     }
 
     // Mark all notifications as read
@@ -2450,7 +2464,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateNotificationBadge(0);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error marking all as read:', error));
     }
 
     // Update notification badge count
