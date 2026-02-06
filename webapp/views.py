@@ -4948,7 +4948,7 @@ def get_order_details_establishment(request, order_id):
 def food_establishment_orders_view(request):
     """
     Main view for the orders management page
-    Renders the orders list template
+    Renders the orders list template with proper authentication
     """
     try:
         # Get the establishment owned by the current user
@@ -4956,7 +4956,7 @@ def food_establishment_orders_view(request):
 
         if not establishment:
             messages.error(request, 'No establishment found for your account.')
-            return redirect('food_establishment_dashboard')
+            return redirect('owner_login')
 
         context = {
             'establishment': establishment,
