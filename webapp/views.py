@@ -3976,7 +3976,7 @@ def get_notifications(request):
         for notif in notifications:
             try:
                 # ✅ CRITICAL: Defer payment_status when accessing order
-                order = Order.objects.defer('payment_status').get(pk=notif.order.id)
+                order = notif.order
 
                 # Get order items
                 order_items = []

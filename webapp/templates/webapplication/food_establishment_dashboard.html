@@ -2949,6 +2949,7 @@
     }
 
     function loadNotifications() {
+        console.log('🔔 Loading notifications...');
         fetch('/api/notifications/', {
             method: 'GET',
             headers: {
@@ -2956,15 +2957,25 @@
                 'X-CSRFToken': getCookie('csrftoken')
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('📦 Response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('✅ Notifications data received:', data);
             if (data.success) {
+                console.log(`📋 Number of notifications: ${data.notifications.length}`);
+                console.log(`🔔 Unread count: ${data.unread_count}`);
                 displayNotifications(data.notifications);
                 updateNotificationBadge(data.unread_count);
+            } else {
+                console.error('❌ API returned success=false:', data);
+                displayNotifications([]);
             }
         })
         .catch(error => {
-            console.error('Error loading notifications:', error);
+            console.error('❌ Error loading notifications:', error);
+            displayNotifications([]);
         });
     }
 
@@ -2982,11 +2993,13 @@
         }
 
         notificationList.innerHTML = notifications.map(notif => {
-            const unreadClass = notif.is_read ? '' : 'unread';
-            const timeAgo = formatTimeAgo(notif.created_at);
+            // Backend returns 'is_new' (true for unread), we need to invert it
+            const unreadClass = notif.is_new ? 'unread' : '';
+            const timeAgo = notif.time_ago || formatTimeAgo(notif.created_at);
 
             let content = '';
-            if (notif.notification_type === 'new_order') {
+            // Backend returns 'type' not 'notification_type'
+            if (notif.type === 'new_order' || notif.order) {
                 content = `
                     <div class="notification-item ${unreadClass}" onclick="markNotificationRead(${notif.id})">
                         <div class="notification-header">
@@ -3000,30 +3013,30 @@
                                 </div>
                                 <div class="notification-message">${notif.message}</div>
 
-                                ${notif.order_data ? `
+                                ${notif.customer && notif.order ? `
                                     <div class="customer-info">
-                                        <div class="customer-avatar">${notif.order_data.customer_name ? notif.order_data.customer_name.charAt(0).toUpperCase() : 'U'}</div>
+                                        <div class="customer-avatar">${notif.customer.name ? notif.customer.name.charAt(0).toUpperCase() : 'U'}</div>
                                         <div class="customer-details">
-                                            <div class="customer-name">${notif.order_data.customer_name || 'Unknown'}</div>
-                                            <div class="customer-email">${notif.order_data.customer_email || ''}</div>
+                                            <div class="customer-name">${notif.customer.name || 'Unknown'}</div>
+                                            <div class="customer-email">${notif.customer.email || ''}</div>
                                         </div>
                                     </div>
 
                                     <div class="order-summary">
                                         <div class="order-summary-header">
-                                            <span class="order-id">Order #${notif.order_data.order_id}</span>
-                                            <span class="order-total">₱${parseFloat(notif.order_data.total_amount || 0).toFixed(2)}</span>
+                                            <span class="order-id">Order #${notif.order.id}</span>
+                                            <span class="order-total">₱${parseFloat(notif.order.total_amount || 0).toFixed(2)}</span>
                                         </div>
 
-                                        ${notif.order_data.gcash_reference ? `
+                                        ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `
                                             <div class="order-reference">
-                                                <i class="fas fa-receipt"></i> Ref: ${notif.order_data.gcash_reference}
+                                                <i class="fas fa-receipt"></i> Ref: ${notif.order.reference_number}
                                             </div>
                                         ` : ''}
 
-                                        ${notif.order_data.items && notif.order_data.items.length > 0 ? `
+                                        ${notif.order.items && notif.order.items.length > 0 ? `
                                             <div class="order-items-list">
-                                                ${notif.order_data.items.map(item => `
+                                                ${notif.order.items.map(item => `
                                                     <div class="order-item-row">
                                                         <span class="item-name-qty">${item.quantity}x ${item.name}</span>
                                                         <span class="item-price">₱${parseFloat(item.price).toFixed(2)}</span>
@@ -3032,9 +3045,9 @@
                                             </div>
                                         ` : ''}
 
-                                        <div class="order-status-badge ${notif.order_data.payment_method === 'cash' ? 'pending' : 'paid'}">
-                                            <i class="fas fa-${notif.order_data.payment_method === 'cash' ? 'money-bill-wave' : 'check-circle'}"></i>
-                                            ${notif.order_data.payment_method === 'cash' ? 'Cash on Pickup' : 'Paid Online'}
+                                        <div class="order-status-badge ${notif.is_paid ? 'paid' : 'pending'}">
+                                            <i class="fas fa-${notif.is_paid ? 'check-circle' : 'money-bill-wave'}"></i>
+                                            ${notif.is_paid ? 'Paid Online' : notif.order.status || 'Pending'}
                                         </div>
                                     </div>
                                 ` : ''}
