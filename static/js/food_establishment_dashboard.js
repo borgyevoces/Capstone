@@ -10,6 +10,306 @@ let mapInitialized = false;
 let currentGeocodedAddress = '';
 
 // ==========================================
+// ✅ ADDED: CHAT PANEL TOGGLE FUNCTION (MISSING FUNCTION)
+// ==========================================
+function toggleChatPanel() {
+    const chatPanel = document.getElementById('chatPanel');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+
+    if (!chatPanel) {
+        console.error('Chat panel not found');
+        return;
+    }
+
+    // Toggle the 'open' class to show/hide the chat panel
+    if (chatPanel.classList.contains('open')) {
+        chatPanel.classList.remove('open');
+        if (chatToggleBtn) {
+            chatToggleBtn.classList.remove('active');
+        }
+    } else {
+        chatPanel.classList.add('open');
+        if (chatToggleBtn) {
+            chatToggleBtn.classList.add('active');
+        }
+
+        // Load conversations when opening
+        loadConversations();
+    }
+
+    // Hide chat window if open
+    if (chatWindow && chatWindow.style.display === 'flex') {
+        chatWindow.style.display = 'none';
+    }
+}
+
+// ==========================================
+// ✅ ADDED: BACK TO CONVERSATIONS FUNCTION
+// ==========================================
+function backToConversations() {
+    const chatWindow = document.getElementById('chatWindow');
+    const chatPanel = document.getElementById('chatPanel');
+
+    if (chatWindow) {
+        chatWindow.style.display = 'none';
+    }
+
+    if (chatPanel) {
+        chatPanel.classList.add('open');
+    }
+}
+
+// ==========================================
+// ✅ ADDED: LOAD CONVERSATIONS FUNCTION
+// ==========================================
+function loadConversations() {
+    const conversationsList = document.getElementById('conversationsList');
+
+    if (!conversationsList) {
+        console.error('Conversations list not found');
+        return;
+    }
+
+    // Show loading state
+    conversationsList.innerHTML = `
+        <div class="chat-empty-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading conversations...</p>
+        </div>
+    `;
+
+    // Fetch conversations from the server
+    fetch('/api/food-establishment/conversations/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.conversations && data.conversations.length > 0) {
+            conversationsList.innerHTML = data.conversations.map(conv => `
+                <div class="conversation-item" onclick="openConversation(${conv.customer_id}, '${escapeHtml(conv.customer_name)}')">
+                    <div class="conversation-avatar">
+                        ${conv.customer_name ? conv.customer_name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">${escapeHtml(conv.customer_name || 'Customer')}</div>
+                        <div class="conversation-preview">${escapeHtml(conv.last_message || 'No messages yet')}</div>
+                    </div>
+                    ${conv.unread_count > 0 ? `<span class="conversation-badge">${conv.unread_count}</span>` : ''}
+                </div>
+            `).join('');
+        } else {
+            conversationsList.innerHTML = `
+                <div class="chat-empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No conversations yet</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading conversations:', error);
+        conversationsList.innerHTML = `
+            <div class="chat-empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Failed to load conversations</p>
+            </div>
+        `;
+    });
+}
+
+// ==========================================
+// ✅ ADDED: OPEN CONVERSATION FUNCTION
+// ==========================================
+function openConversation(customerId, customerName) {
+    const chatWindow = document.getElementById('chatWindow');
+    const chatPanel = document.getElementById('chatPanel');
+    const chatWindowName = document.getElementById('chatWindowName');
+    const chatWindowAvatar = document.getElementById('chatWindowAvatar');
+
+    if (!chatWindow) {
+        console.error('Chat window not found');
+        return;
+    }
+
+    // Update header
+    if (chatWindowName) {
+        chatWindowName.textContent = customerName || 'Customer';
+    }
+
+    if (chatWindowAvatar) {
+        chatWindowAvatar.textContent = customerName ? customerName.charAt(0).toUpperCase() : 'U';
+    }
+
+    // Hide chat panel and show chat window
+    if (chatPanel) {
+        chatPanel.classList.remove('open');
+    }
+
+    chatWindow.style.display = 'flex';
+
+    // Store current customer ID for sending messages
+    window.currentCustomerId = customerId;
+
+    // Load messages for this conversation
+    loadMessages(customerId);
+}
+
+// ==========================================
+// ✅ ADDED: LOAD MESSAGES FUNCTION
+// ==========================================
+function loadMessages(customerId) {
+    const messagesContainer = document.getElementById('chatMessagesContainer');
+
+    if (!messagesContainer) {
+        console.error('Messages container not found');
+        return;
+    }
+
+    // Show loading state
+    messagesContainer.innerHTML = `
+        <div class="chat-empty-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading messages...</p>
+        </div>
+    `;
+
+    // Fetch messages from the server
+    fetch(`/api/food-establishment/messages/${customerId}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.messages && data.messages.length > 0) {
+            messagesContainer.innerHTML = data.messages.map(msg => `
+                <div class="chat-message ${msg.is_from_owner ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                    <div class="chat-message-bubble">
+                        ${escapeHtml(msg.content)}
+                        <div class="chat-message-time">${formatMessageTime(msg.created_at)}</div>
+                    </div>
+                    <button class="message-options-btn" onclick="showMessageOptions(${msg.id}, event)">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } else {
+            messagesContainer.innerHTML = `
+                <div class="chat-empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading messages:', error);
+        messagesContainer.innerHTML = `
+            <div class="chat-empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Failed to load messages</p>
+            </div>
+        `;
+    });
+}
+
+// ==========================================
+// ✅ ADDED: SEND MESSAGE FUNCTION
+// ==========================================
+function sendMessage(event) {
+    event.preventDefault();
+
+    const chatInput = document.getElementById('chatInput');
+    const message = chatInput.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    if (!window.currentCustomerId) {
+        showNotification('Please select a conversation first', 'error');
+        return;
+    }
+
+    // Send message to server
+    fetch('/api/food-establishment/send-message/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            customer_id: window.currentCustomerId,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear input
+            chatInput.value = '';
+
+            // Reload messages to show the new one
+            loadMessages(window.currentCustomerId);
+        } else {
+            showNotification(data.message || 'Failed to send message', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        showNotification('Failed to send message', 'error');
+    });
+}
+
+// ==========================================
+// ✅ ADDED: FORMAT MESSAGE TIME
+// ==========================================
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    // Less than 1 minute
+    if (diff < 60000) {
+        return 'Just now';
+    }
+
+    // Less than 1 hour
+    if (diff < 3600000) {
+        const minutes = Math.floor(diff / 60000);
+        return `${minutes}m ago`;
+    }
+
+    // Less than 24 hours
+    if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return `${hours}h ago`;
+    }
+
+    // More than 24 hours - show time
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ==========================================
+// ✅ ADDED: SHOW MESSAGE OPTIONS (PLACEHOLDER)
+// ==========================================
+function showMessageOptions(messageId, event) {
+    event.stopPropagation();
+    console.log('Show options for message:', messageId);
+    // Add your message options menu functionality here
+}
+
+// ==========================================
 // NOTIFICATION SYSTEM
 // ==========================================
 function showNotification(message, type = 'success') {
@@ -58,10 +358,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// ==========================================
-// ✅ FIXED: ADD MENU ITEM FORM HANDLER
-// Continuous adding without refresh
-// ==========================================
 function setupAddMenuItemForm() {
     const addMenuForm = document.getElementById('addMenuItemForm');
 
