@@ -6,7 +6,9 @@
 {% block extra_head_links %}
 {{ block.super }}
 <style>
-    /* Orders Page Specific Styles */
+    /* ==========================================
+       ORDERS PAGE COMPLETE STYLES
+       ========================================== */
 
     /* Override main-content from dashboard to use full width */
     main.main-content {
@@ -219,6 +221,12 @@
         color: #1a1a1a;
     }
 
+    .customer-email {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
     .items-info {
         display: flex;
         flex-direction: column;
@@ -237,8 +245,8 @@
 
     .price {
         font-weight: 700;
-        color: #059669;
-        font-size: 15px;
+        color: #B71C1C;
+        font-size: 16px;
     }
 
     .payment-badge {
@@ -252,24 +260,25 @@
     }
 
     .payment-cash {
-        background: #dcfce7;
-        color: #059669;
+        background: #d1fae5;
+        color: #10b981;
     }
 
     .payment-online {
         background: #dbeafe;
-        color: #1877F2;
+        color: #3b82f6;
     }
 
     .timestamp {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
     }
 
     .time {
         font-weight: 600;
         color: #1a1a1a;
+        font-size: 14px;
     }
 
     .date {
@@ -279,22 +288,22 @@
 
     .action-btn {
         padding: 8px 16px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
         border: none;
         border-radius: 6px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         font-size: 13px;
     }
 
     .action-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
     }
 
     .done-badge {
@@ -302,16 +311,16 @@
         align-items: center;
         gap: 6px;
         padding: 8px 16px;
-        background: #f3f4f6;
-        color: #6b7280;
+        background: #d1fae5;
+        color: #10b981;
         border-radius: 6px;
-        font-size: 13px;
         font-weight: 700;
+        font-size: 13px;
     }
 
     /* Empty State */
     .state-container {
-        padding: 60px 20px;
+        padding: 80px 20px;
         text-align: center;
     }
 
@@ -319,34 +328,21 @@
         width: 80px;
         height: 80px;
         margin: 0 auto 20px;
-        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 36px;
+    }
+
+    .empty-icon {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
         color: #9ca3af;
     }
 
-    .state-icon.loading-icon {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        color: #1877F2;
-        animation: pulse 2s infinite;
-    }
-
-    .state-icon.empty-icon {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        color: #dc2626;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
-    }
-
     .state-title {
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 24px;
+        font-weight: 800;
         color: #1a1a1a;
         margin-bottom: 8px;
     }
@@ -362,10 +358,10 @@
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 2000;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
         align-items: center;
         justify-content: center;
         padding: 20px;
@@ -375,7 +371,7 @@
         display: flex;
     }
 
-    .order-modal-content {
+    .modal-content {
         background: white;
         border-radius: 16px;
         max-width: 600px;
@@ -385,46 +381,50 @@
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
-    .order-modal-header {
+    .modal-header {
         padding: 24px;
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
-        color: white;
+        border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-radius: 16px 16px 0 0;
     }
 
-    .order-modal-title {
-        font-size: 22px;
+    .modal-title {
+        font-size: 20px;
         font-weight: 800;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        color: #1a1a1a;
     }
 
-    .order-modal-close {
-        background: transparent;
+    .close-modal {
+        background: none;
         border: none;
-        color: white;
         font-size: 24px;
+        color: #6b7280;
         cursor: pointer;
         padding: 4px;
-        transition: transform 0.2s;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
     }
 
-    .order-modal-close:hover {
-        transform: rotate(90deg);
+    .close-modal:hover {
+        background: #f3f4f6;
+        color: #1a1a1a;
     }
 
-    .order-modal-body {
+    .modal-body {
         padding: 24px;
     }
 
     .detail-row {
         display: flex;
         justify-content: space-between;
-        padding: 14px 0;
+        align-items: center;
+        padding: 12px 0;
         border-bottom: 1px solid #f3f4f6;
     }
 
@@ -437,8 +437,8 @@
     .detail-value {
         font-weight: 600;
         color: #1a1a1a;
-        text-align: right;
         font-size: 14px;
+        text-align: right;
     }
 
     .items-section {
@@ -471,18 +471,19 @@
     .item-name {
         font-weight: 600;
         color: #1a1a1a;
-        margin-bottom: 4px;
+        font-size: 14px;
     }
 
     .item-qty {
-        font-size: 13px;
+        font-size: 12px;
         color: #6b7280;
+        margin-top: 2px;
     }
 
     .item-price {
         font-weight: 700;
         color: #B71C1C;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     /* Toast Notifications */
@@ -491,16 +492,17 @@
         bottom: 30px;
         right: 30px;
         background: white;
-        padding: 16px 20px;
-        border-radius: 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        z-index: 3000;
-        animation: slideIn 0.3s ease-out;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 10001;
+        animation: slideIn 0.3s ease;
+        min-width: 300px;
         border-left: 4px solid #10b981;
     }
 
     .orders-toast.error {
-        border-left-color: #dc2626;
+        border-left-color: #ef4444;
     }
 
     @keyframes slideIn {
@@ -514,20 +516,29 @@
         }
     }
 
-    /* Responsive */
+    /* Responsive Design */
     @media (max-width: 768px) {
         .orders-table {
             font-size: 12px;
         }
 
-        .orders-table td,
-        .orders-table th {
+        .orders-table th,
+        .orders-table td {
             padding: 10px 8px;
         }
 
         .status-tab {
-            font-size: 13px;
+            font-size: 12px;
             padding: 10px 16px;
+        }
+
+        .bulk-action-btn {
+            font-size: 12px;
+            padding: 8px 16px;
+        }
+
+        .page-title {
+            font-size: 22px;
         }
     }
 </style>
@@ -538,10 +549,10 @@
     <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-title">
-            <i class="fas fa-shopping-bag"></i>
+            <i class="fas fa-clipboard-list"></i>
             Orders Management
         </h1>
-        <p class="page-subtitle">Track and manage all your orders in real-time</p>
+        <p class="page-subtitle">Manage and track all your establishment orders</p>
     </div>
 
     <!-- Status Tabs -->
@@ -555,12 +566,12 @@
                 <i class="fas fa-fire"></i> Preparing
                 <span class="tab-count" id="count-preparing">0</span>
             </div>
-            <div class="status-tab" data-status="ready_for_pickup" onclick="switchTab('ready_for_pickup')">
-                <i class="fas fa-check-circle"></i> Ready for Pickup
-                <span class="tab-count" id="count-ready_for_pickup">0</span>
+            <div class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
+                <i class="fas fa-hand-holding"></i> Ready for Pickup
+                <span class="tab-count" id="count-to_claim">0</span>
             </div>
             <div class="status-tab" data-status="completed" onclick="switchTab('completed')">
-                <i class="fas fa-flag-checkered"></i> Completed
+                <i class="fas fa-check-circle"></i> Completed
                 <span class="tab-count" id="count-completed">0</span>
             </div>
         </div>
@@ -580,10 +591,10 @@
             </button>
         </div>
 
-        <!-- Orders List -->
+        <!-- Orders List (Dynamically Loaded) -->
         <div id="ordersContainer">
             <div class="state-container">
-                <div class="state-icon loading-icon">
+                <div class="state-icon empty-icon">
                     <i class="fas fa-spinner fa-spin"></i>
                 </div>
                 <h3 class="state-title">Loading Orders...</h3>
@@ -595,50 +606,69 @@
 
 <!-- Order Details Modal -->
 <div class="order-modal" id="orderModal">
-    <div class="order-modal-content">
-        <div class="order-modal-header">
-            <h2 class="order-modal-title">
-                <i class="fas fa-receipt"></i>
-                Order Details
-            </h2>
-            <button class="order-modal-close" onclick="closeOrderModal()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Order Details</h2>
+            <button class="close-modal" onclick="closeOrderModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="order-modal-body" id="orderModalBody">
-            <!-- Order details will be populated here -->
+        <div class="modal-body" id="orderModalBody">
+            <!-- Dynamically populated -->
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_scripts %}
 <script>
+    // ==========================================
+    // GLOBAL STATE
+    // ==========================================
     let orders = [];
     let currentTab = 'order_received';
     let selectedOrders = new Set();
 
-    const LABELS = {
-        order_received: 'Order Received',
-        preparing: 'Preparing',
-        ready_for_pickup: 'Ready for Pickup',
-        completed: 'Completed'
-    };
-
+    // Status flow configuration
     const FLOW = {
-        order_received: 'preparing',
-        preparing: 'ready_for_pickup',
-        ready_for_pickup: 'completed',
-        completed: null
+        'order_received': 'preparing',
+        'preparing': 'to_claim',
+        'to_claim': 'completed',
+        'completed': null
     };
 
-    document.addEventListener('DOMContentLoaded', loadOrders);
+    // Status labels
+    const LABELS = {
+        'order_received': 'Order Received',
+        'preparing': 'Preparing',
+        'to_claim': 'Ready for Pickup',
+        'completed': 'Completed'
+    };
 
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Orders page loaded');
+        loadOrders();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadOrders, 30000);
+    });
+
+    // ==========================================
+    // DATA LOADING
+    // ==========================================
     function loadOrders() {
-        fetch('/api/food-establishment/orders/')
-            .then(r => r.json())
+        fetch('/api/food-establishment/orders/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf()
+            }
+        })
+            .then(response => response.json())
             .then(data => {
-                if (data.orders) {
+                console.log('Orders loaded:', data);
+                if (data.success && data.orders) {
                     orders = data.orders;
                     updateCounts();
                     renderOrders();
@@ -646,9 +676,15 @@
                     showError('Failed to load orders');
                 }
             })
-            .catch(() => showError('Network error. Please check your connection.'));
+            .catch(error => {
+                console.error('Error loading orders:', error);
+                showError('Network error. Please check your connection.');
+            });
     }
 
+    // ==========================================
+    // UI UPDATES
+    // ==========================================
     function updateCounts() {
         Object.keys(LABELS).forEach(status => {
             const count = orders.filter(o => (o.status || 'order_received') === status).length;
@@ -674,7 +710,7 @@
                 <div class="state-container">
                     <div class="state-icon empty-icon"><i class="fas fa-inbox"></i></div>
                     <h3 class="state-title">No ${LABELS[currentTab]}</h3>
-                    <p class="state-text">Orders will appear here</p>
+                    <p class="state-text">Orders will appear here when customers place them</p>
                 </div>
             `;
             updateBulk();
@@ -694,14 +730,37 @@
                 : '<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> Online</span>';
 
             html += `<tr>
-                <td style="text-align:center"><input type="checkbox" class="checkbox" data-id="${o.id}" ${selectedOrders.has(o.id) ? 'checked' : ''} onchange="toggleSelectOrder(${o.id})"></td>
+                <td style="text-align:center">
+                    <input type="checkbox" class="checkbox" data-id="${o.id}"
+                           ${selectedOrders.has(o.id) ? 'checked' : ''}
+                           onchange="toggleSelectOrder(${o.id})">
+                </td>
                 <td><a href="#" class="order-id" onclick="viewOrder(${o.id});return false">#${o.id}</a></td>
-                <td><span class="customer-name">${esc(o.customer_name || 'Unknown')}</span></td>
-                <td><div class="items-info"><span class="items-count">${o.items_count || 0} item${o.items_count !== 1 ? 's' : ''}</span><span class="items-preview">${esc(o.items_preview || '')}</span></div></td>
+                <td>
+                    <div class="customer-name">${esc(o.customer_name || 'Unknown')}</div>
+                    <div class="customer-email">${esc(o.customer_email || '')}</div>
+                </td>
+                <td>
+                    <div class="items-info">
+                        <span class="items-count">${o.items_count || 0} item${o.items_count !== 1 ? 's' : ''}</span>
+                        <span class="items-preview">${esc(o.items_preview || '')}</span>
+                    </div>
+                </td>
                 <td><span class="price">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span></td>
                 <td>${paymentHTML}</td>
-                <td><div class="timestamp"><span class="time">${formatTime(o.created_at)}</span><span class="date">${formatDate(o.created_at)}</span></div></td>
-                <td>${next ? `<button class="action-btn" onclick="moveOrder(${o.id})"><i class="fas fa-arrow-right"></i>${nextLabel}</button>` : '<span class="done-badge"><i class="fas fa-check"></i> Done</span>'}</td>
+                <td>
+                    <div class="timestamp">
+                        <span class="time">${formatTime(o.created_at)}</span>
+                        <span class="date">${formatDate(o.created_at)}</span>
+                    </div>
+                </td>
+                <td>
+                    ${next
+                        ? `<button class="action-btn" onclick="moveOrder(${o.id})">
+                               <i class="fas fa-arrow-right"></i> ${nextLabel}
+                           </button>`
+                        : '<span class="done-badge"><i class="fas fa-check"></i> Done</span>'}
+                </td>
             </tr>`;
         });
 
@@ -710,6 +769,9 @@
         updateBulk();
     }
 
+    // ==========================================
+    // ORDER DETAILS MODAL
+    // ==========================================
     function viewOrder(id) {
         const o = orders.find(x => x.id === id);
         if (!o) return;
@@ -719,20 +781,61 @@
             : '<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> Online Payment</span>';
 
         let itemsHTML = '';
-        if (o.items?.length > 0) {
-            itemsHTML = o.items.map(i => `<div class="item-row"><div class="item-info"><div class="item-name">${esc(i.name)}</div><div class="item-qty">Qty: ${i.quantity}</div></div><div class="item-price">₱${parseFloat(i.price).toFixed(2)}</div></div>`).join('');
+        if (o.items && o.items.length > 0) {
+            itemsHTML = o.items.map(i => `
+                <div class="item-row">
+                    <div class="item-info">
+                        <div class="item-name">${esc(i.name)}</div>
+                        <div class="item-qty">Quantity: ${i.quantity}</div>
+                    </div>
+                    <div class="item-price">₱${parseFloat(i.price).toFixed(2)}</div>
+                </div>
+            `).join('');
+        } else {
+            itemsHTML = '<p style="color: #6b7280;">No items found</p>';
         }
 
         document.getElementById('orderModalBody').innerHTML = `
-            <div class="detail-row"><span class="detail-label">Order #</span><span class="detail-value">#${o.id}</span></div>
-            <div class="detail-row"><span class="detail-label">Customer</span><span class="detail-value">${esc(o.customer_name || 'Unknown')}</span></div>
-            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${esc(o.customer_email || 'N/A')}</span></div>
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${LABELS[o.status] || o.status}</span></div>
-            <div class="detail-row"><span class="detail-label">Payment</span><span class="detail-value">${payHTML}</span></div>
-            <div class="detail-row"><span class="detail-label">Total</span><span class="detail-value" style="font-weight:700;color:#B71C1C;font-size:18px">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span></div>
-            <div class="detail-row"><span class="detail-label">Time</span><span class="detail-value">${formatTime(o.created_at)} - ${formatDate(o.created_at)}</span></div>
-            ${o.gcash_reference ? `<div class="detail-row"><span class="detail-label">Reference</span><span class="detail-value">${esc(o.gcash_reference)}</span></div>` : ''}
-            <div class="items-section"><h4 class="section-title">Order Items</h4>${itemsHTML}</div>
+            <div class="detail-row">
+                <span class="detail-label">Order #</span>
+                <span class="detail-value">#${o.id}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Customer</span>
+                <span class="detail-value">${esc(o.customer_name || 'Unknown')}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">${esc(o.customer_email || 'N/A')}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value">${LABELS[o.status] || o.status}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Payment Method</span>
+                <span class="detail-value">${payHTML}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Amount</span>
+                <span class="detail-value" style="font-weight:700;color:#B71C1C;font-size:18px">
+                    ₱${parseFloat(o.total_amount || 0).toFixed(2)}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Order Time</span>
+                <span class="detail-value">${formatTime(o.created_at)} - ${formatDate(o.created_at)}</span>
+            </div>
+            ${o.gcash_reference ? `
+            <div class="detail-row">
+                <span class="detail-label">Reference Number</span>
+                <span class="detail-value">${esc(o.gcash_reference)}</span>
+            </div>
+            ` : ''}
+            <div class="items-section">
+                <h4 class="section-title"><i class="fas fa-utensils"></i> Order Items</h4>
+                ${itemsHTML}
+            </div>
         `;
         document.getElementById('orderModal').classList.add('show');
     }
@@ -741,16 +844,27 @@
         document.getElementById('orderModal').classList.remove('show');
     }
 
+    // ==========================================
+    // SELECTION MANAGEMENT
+    // ==========================================
     function toggleSelectOrder(id) {
-        selectedOrders.has(id) ? selectedOrders.delete(id) : selectedOrders.add(id);
+        if (selectedOrders.has(id)) {
+            selectedOrders.delete(id);
+        } else {
+            selectedOrders.add(id);
+        }
         updateBulk();
     }
 
     function toggleAllOrders() {
         const cbs = document.querySelectorAll('.orders-table .checkbox[data-id]');
-        const all = document.querySelector('.bulk-actions .checkbox');
-        if (all?.checked) {
-            cbs.forEach(cb => { selectedOrders.add(parseInt(cb.dataset.id)); cb.checked = true; });
+        const mainCheckbox = document.querySelector('.bulk-actions .checkbox');
+
+        if (mainCheckbox && mainCheckbox.checked) {
+            cbs.forEach(cb => {
+                selectedOrders.add(parseInt(cb.dataset.id));
+                cb.checked = true;
+            });
         } else {
             selectedOrders.clear();
             cbs.forEach(cb => cb.checked = false);
@@ -762,8 +876,10 @@
         const count = selectedOrders.size;
         const next = FLOW[currentTab];
         document.getElementById('selectionText').textContent = `${count} selected`;
+
         const btn = document.getElementById('bulkBtn');
         const txt = document.getElementById('bulkText');
+
         if (count > 0 && next) {
             btn.disabled = false;
             txt.textContent = `Move ${count} to ${LABELS[next]}`;
@@ -773,9 +889,16 @@
         }
     }
 
+    // ==========================================
+    // STATUS UPDATES
+    // ==========================================
     function moveOrder(id) {
         const next = FLOW[currentTab];
-        if (!next) return;
+        if (!next) {
+            showToast('This is the final status', 'error');
+            return;
+        }
+
         if (confirm(`Move order #${id} to ${LABELS[next]}?`)) {
             updateStatus(id, next);
         }
@@ -784,76 +907,141 @@
     function bulkMove() {
         const next = FLOW[currentTab];
         if (!next || selectedOrders.size === 0) return;
+
         const ids = Array.from(selectedOrders);
-        if (confirm(`Move ${ids.length} order${ids.length > 1 ? 's' : ''} to ${LABELS[next]}?`)) {
+        const count = ids.length;
+
+        if (confirm(`Move ${count} order${count > 1 ? 's' : ''} to ${LABELS[next]}?`)) {
+            // Update all selected orders
             Promise.all(ids.map(id =>
                 fetch(`/api/food-establishment/orders/${id}/update-status/`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                    body: JSON.stringify({status: next})
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrf()
+                    },
+                    body: JSON.stringify({ status: next })
                 })
-            )).then(() => {
+            ))
+            .then(responses => Promise.all(responses.map(r => r.json())))
+            .then(results => {
+                const successCount = results.filter(r => r.success).length;
                 selectedOrders.clear();
                 loadOrders();
-                showToast(`Moved ${ids.length} order${ids.length > 1 ? 's' : ''} to ${LABELS[next]}!`);
-            }).catch(() => showToast('Error updating orders', 'error'));
+                showToast(`Successfully moved ${successCount} order${successCount > 1 ? 's' : ''} to ${LABELS[next]}!`);
+            })
+            .catch(error => {
+                console.error('Bulk update error:', error);
+                showToast('Error updating orders', 'error');
+            });
         }
     }
 
     function updateStatus(id, status) {
         fetch(`/api/food-establishment/orders/${id}/update-status/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-            body: JSON.stringify({status})
-        }).then(r => r.json()).then(data => {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf()
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
             if (data.success) {
                 loadOrders();
                 showToast(`Order #${id} moved to ${LABELS[status]}!`);
             } else {
-                showToast('Error updating order', 'error');
+                showToast(data.message || 'Error updating order', 'error');
             }
-        }).catch(() => showToast('Error updating order', 'error'));
+        })
+        .catch(error => {
+            console.error('Update error:', error);
+            showToast('Error updating order', 'error');
+        });
     }
 
-    function formatDate(d) {
-        return new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+    // ==========================================
+    // UTILITY FUNCTIONS
+    // ==========================================
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
     }
 
-    function formatTime(d) {
-        return new Date(d).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+    function formatTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
 
-    function esc(t) {
+    function esc(text) {
         const div = document.createElement('div');
-        div.textContent = t;
+        div.textContent = text;
         return div.innerHTML;
     }
 
-    function showToast(msg, type = 'success') {
-        const t = document.createElement('div');
-        t.className = `orders-toast ${type}`;
-        t.innerHTML = `<div style="display:flex;align-items:center;gap:10px"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><span>${esc(msg)}</span></div>`;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `orders-toast ${type}`;
+        toast.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${esc(message)}</span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
-    function showError(msg) {
-        document.getElementById('ordersContainer').innerHTML = `<div class="state-container"><div class="state-icon empty-icon"><i class="fas fa-exclamation-triangle"></i></div><h3 class="state-title">Error</h3><p class="state-text">${esc(msg)}</p><button onclick="loadOrders()" style="margin-top:20px;padding:12px 24px;background:#B71C1C;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600"><i class="fas fa-sync"></i> Retry</button></div>`;
+    function showError(message) {
+        document.getElementById('ordersContainer').innerHTML = `
+            <div class="state-container">
+                <div class="state-icon empty-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="state-title">Error</h3>
+                <p class="state-text">${esc(message)}</p>
+                <button onclick="loadOrders()"
+                        style="margin-top:20px;padding:12px 24px;background:#B71C1C;color:white;
+                               border:none;border-radius:8px;cursor:pointer;font-weight:600">
+                    <i class="fas fa-sync"></i> Retry
+                </button>
+            </div>
+        `;
     }
 
     function getCsrf() {
-        let t = null;
+        let token = null;
         if (document.cookie) {
-            document.cookie.split(';').forEach(c => {
-                c = c.trim();
-                if (c.startsWith('csrftoken=')) t = decodeURIComponent(c.substring(10));
+            document.cookie.split(';').forEach(cookie => {
+                const c = cookie.trim();
+                if (c.startsWith('csrftoken=')) {
+                    token = decodeURIComponent(c.substring(10));
+                }
             });
         }
-        return t;
+        return token;
     }
 
-    document.addEventListener('click', e => {
-        if (e.target.id === 'orderModal') closeOrderModal();
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'orderModal') {
+            closeOrderModal();
+        }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeOrderModal();
+        }
     });
 </script>
 {% endblock %}

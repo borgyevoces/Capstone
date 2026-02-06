@@ -4690,6 +4690,7 @@ import json
 
 
 @login_required
+@require_http_methods(["GET"])
 def get_establishment_orders(request):
     """
     API endpoint to get all orders for the food establishment owner
@@ -4698,8 +4699,27 @@ def get_establishment_orders(request):
     Endpoint: /api/food-establishment/orders/
     Method: GET
 
-    ✅ FIXED: Added more detailed logging and error handling
-    ✅ FIXED: Ensured all order statuses are properly returned
+    Returns JSON:
+    {
+        "success": true,
+        "orders": [
+            {
+                "id": 1,
+                "customer_name": "John Doe",
+                "customer_email": "john@example.com",
+                "status": "order_received",
+                "total_amount": "150.00",
+                "items_count": 3,
+                "items_preview": "2x Burger, 1x Fries",
+                "items": [...],
+                "created_at": "2026-02-06T10:30:00",
+                "payment_method": "cash",
+                "gcash_reference": ""
+            },
+            ...
+        ],
+        "total_orders": 10
+    }
     """
     try:
         # Get the establishment owned by the current user
@@ -4711,8 +4731,7 @@ def get_establishment_orders(request):
                 'message': 'No establishment found for this user'
             }, status=404)
 
-        # Get all orders for this establishment
-        # ✅ FIXED: Removed any status filtering to ensure ALL orders appear
+        # Get all orders for this establishment with related data
         orders = Order.objects.filter(
             establishment=establishment
         ).select_related(
@@ -4721,15 +4740,13 @@ def get_establishment_orders(request):
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
         ).order_by('-created_at')
 
-        # Debug logging
-        print(f"DEBUG: Found {orders.count()} orders for establishment {establishment.name}")
-
         # Build the response data
         orders_data = []
         for order in orders:
             # Get order items info
             items = []
             items_preview = []
+
             for order_item in order.orderitem_set.all():
                 items.append({
                     'name': order_item.menu_item.name,
@@ -4743,14 +4760,21 @@ def get_establishment_orders(request):
             if len(items_preview) > 2:
                 preview_text += f' +{len(items_preview) - 2} more'
 
-            # ✅ FIXED: Ensure status is always lowercase and valid
+            # Ensure status is always lowercase and valid
             order_status = order.status.lower() if order.status else 'order_received'
+
+            # Normalize legacy statuses
+            status_mapping = {
+                'pending': 'order_received',
+                'paid': 'order_received',
+            }
+            order_status = status_mapping.get(order_status, order_status)
 
             order_data = {
                 'id': order.id,
                 'customer_name': order.user.username if order.user else 'Unknown',
                 'customer_email': order.user.email if order.user else '',
-                'status': order_status,  # Ensure lowercase for consistency
+                'status': order_status,
                 'total_amount': str(order.total_amount),
                 'items_count': order.get_item_count(),
                 'items_preview': preview_text,
@@ -4758,12 +4782,9 @@ def get_establishment_orders(request):
                 'created_at': order.created_at.isoformat(),
                 'updated_at': order.updated_at.isoformat(),
                 'gcash_reference': order.gcash_reference_number or '',
-                'payment_method': order.gcash_payment_method or 'cash',  # ✅ Added payment method
+                'payment_method': order.gcash_payment_method or 'cash',
             }
             orders_data.append(order_data)
-
-            # Debug logging for each order
-            print(f"DEBUG: Order #{order.id} - Status: {order_status} - Items: {order.get_item_count()}")
 
         return JsonResponse({
             'success': True,
@@ -4781,7 +4802,7 @@ def get_establishment_orders(request):
         }, status=500)
 
 @login_required
-@require_http_methods(["POST"])
+@require_POST
 def update_order_status(request, order_id):
     """
     API endpoint to update the status of a specific order
@@ -4789,6 +4810,17 @@ def update_order_status(request, order_id):
     Endpoint: /api/food-establishment/orders/<order_id>/update-status/
     Method: POST
     Body: { "status": "preparing" | "to_claim" | "completed" }
+
+    Returns JSON:
+    {
+        "success": true,
+        "message": "Order status updated to preparing",
+        "order": {
+            "id": 1,
+            "status": "preparing",
+            "updated_at": "2026-02-06T10:35:00"
+        }
+    }
     """
     try:
         # Get the establishment owned by the current user
@@ -4801,7 +4833,8 @@ def update_order_status(request, order_id):
             }, status=404)
 
         # Get the order and verify it belongs to this establishment
-        order = Order.objects.select_related('establishment').get(
+        order = get_object_or_404(
+            Order.objects.select_related('establishment', 'user'),
             id=order_id,
             establishment=establishment
         )
@@ -4819,32 +4852,32 @@ def update_order_status(request, order_id):
             }, status=400)
 
         # Update the order status
+        old_status = order.status
         order.status = new_status
         order.save(update_fields=['status', 'updated_at'])
 
-        # Create notification for status change if needed
-        notification_types = {
-            'preparing': 'order_preparing',
-            'to_claim': 'order_ready',
-            'completed': 'order_completed'
-        }
+        # Create notification for status change
+        try:
+            notification_messages = {
+                'order_received': f'Order #{order.id} has been received',
+                'preparing': f'Your order #{order.id} is now being prepared',
+                'to_claim': f'Your order #{order.id} is ready for pickup!',
+                'completed': f'Order #{order.id} has been completed'
+            }
 
-        if new_status in notification_types:
-            try:
-                from .models import OrderNotification
-                OrderNotification.objects.create(
-                    establishment=establishment,
-                    order=order,
-                    notification_type=notification_types.get(new_status, 'order_update'),
-                    message=f'Order #{order.id} status updated to {new_status.replace("_", " ").title()}'
-                )
-            except Exception as notif_error:
-                # Don't fail the request if notification creation fails
-                print(f"Error creating notification: {notif_error}")
+            OrderNotification.objects.create(
+                establishment=establishment,
+                order=order,
+                notification_type='order_update',
+                message=notification_messages.get(new_status, f'Order #{order.id} status updated')
+            )
+        except Exception as notif_error:
+            # Don't fail the request if notification creation fails
+            print(f"Warning: Could not create notification: {notif_error}")
 
         return JsonResponse({
             'success': True,
-            'message': f'Order status updated to {new_status}',
+            'message': f'Order status updated to {new_status.replace("_", " ").title()}',
             'order': {
                 'id': order.id,
                 'status': order.status,
@@ -4855,7 +4888,7 @@ def update_order_status(request, order_id):
     except Order.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'message': 'Order not found or does not belong to your establishment'
+            'message': 'Order not found'
         }, status=404)
     except json.JSONDecodeError:
         return JsonResponse({
@@ -4864,7 +4897,7 @@ def update_order_status(request, order_id):
         }, status=400)
     except Exception as e:
         import traceback
-        print(f"Error in update_order_status: {str(e)}")
+        print(f"ERROR in update_order_status: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
@@ -4875,10 +4908,13 @@ def update_order_status(request, order_id):
 @require_http_methods(["GET"])
 def get_order_details_establishment(request, order_id):
     """
-    API endpoint to get detailed information about a specific order for establishment owner
+    API endpoint to get detailed information about a specific order
+    For establishment owners only
 
     Endpoint: /api/food-establishment/orders/<order_id>/details/
     Method: GET
+
+    Returns JSON with complete order details including items
     """
     try:
         # Get the establishment owned by the current user
@@ -4890,39 +4926,36 @@ def get_order_details_establishment(request, order_id):
                 'message': 'No establishment found for this user'
             }, status=404)
 
-        # Get the order and verify it belongs to this establishment
-        order = Order.objects.select_related(
-            'user', 'establishment'
-        ).prefetch_related(
-            Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
-        ).get(id=order_id, establishment=establishment)
+        # Get the order with all related data
+        order = get_object_or_404(
+            Order.objects.select_related('user', 'establishment')
+            .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            establishment=establishment
+        )
 
-        # Get order items
+        # Build items list
         items = []
         for order_item in order.orderitem_set.all():
             items.append({
                 'id': order_item.id,
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
-                'price': str(order_item.price_at_order),
-                'total': str(order_item.total_price),
-                'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
+                'price_at_order': str(order_item.price_at_order),
+                'total_price': str(order_item.total_price),
             })
 
         order_data = {
             'id': order.id,
-            'customer': {
-                'name': order.user.username if order.user else 'Unknown',
-                'email': order.user.email if order.user else '',
-            },
-            'status': order.status.lower(),
+            'customer_name': order.user.username if order.user else 'Unknown',
+            'customer_email': order.user.email if order.user else '',
+            'status': order.status,
             'total_amount': str(order.total_amount),
+            'payment_method': order.gcash_payment_method or 'cash',
+            'gcash_reference': order.gcash_reference_number or '',
             'items': items,
-            'items_count': order.get_item_count(),
             'created_at': order.created_at.isoformat(),
             'updated_at': order.updated_at.isoformat(),
-            'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
-            'gcash_reference': order.gcash_reference_number or '',
         }
 
         return JsonResponse({
@@ -4933,11 +4966,11 @@ def get_order_details_establishment(request, order_id):
     except Order.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'message': 'Order not found or does not belong to your establishment'
+            'message': 'Order not found'
         }, status=404)
     except Exception as e:
         import traceback
-        print(f"Error in get_order_details_establishment: {str(e)}")
+        print(f"ERROR in get_order_details_establishment: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
@@ -4949,6 +4982,9 @@ def food_establishment_orders_view(request):
     """
     Main view for the orders management page
     Renders the orders list template with proper authentication
+
+    URL: /owner/orders/
+    Template: webapplication/orders_list.html
     """
     try:
         # Get the establishment owned by the current user
