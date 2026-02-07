@@ -7,7 +7,7 @@
 {{ block.super }}
 <style>
     /* ==========================================
-       ORDERS PAGE COMPLETE STYLES
+       ICON CARD DESIGN - ORDERS PAGE
        ========================================== */
 
     /* Override main-content from dashboard to use full width */
@@ -20,100 +20,160 @@
     /* Page Header */
     .page-header {
         background: white;
-        border-radius: 12px;
-        padding: 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
     }
 
     .page-title {
-        font-size: 28px;
-        font-weight: 800;
-        color: #1a1a1a;
-        margin-bottom: 8px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 4px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        gap: 10px;
     }
 
     .page-subtitle {
         color: #6b7280;
-        font-size: 15px;
+        font-size: 13px;
     }
 
-    /* Status Tabs */
+    /* Status Cards with Icons */
     .status-tabs-container {
         background: white;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
     }
 
     .status-tabs {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .status-tabs::-webkit-scrollbar {
-        display: none;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
     }
 
     .status-tab {
-        flex-shrink: 0;
-        padding: 12px 24px;
-        border: 2px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 12px;
+        border: none;
         background: white;
-        border-radius: 10px;
+        border-radius: 8px;
         cursor: pointer;
-        transition: all 0.2s;
-        font-weight: 600;
-        font-size: 14px;
-        color: #4a5568;
+        transition: all 0.2s ease;
         position: relative;
+        text-align: center;
+    }
+
+    .status-tab::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: transparent;
+        border-radius: 8px 8px 0 0;
+        transition: background 0.2s ease;
     }
 
     .status-tab:hover {
-        border-color: #B71C1C;
-        color: #B71C1C;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.15);
+        background: #fafafa;
     }
 
-    .status-tab.active {
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
-        border-color: #B71C1C;
-        color: white;
-        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
+    .status-tab.active::after {
+        background: #B71C1C;
+    }
+
+    /* Icon Circles */
+    .tab-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+
+    /* Different colors for each status */
+    .status-tab[data-status="order_received"] .tab-icon {
+        background: #FEF3C7;
+        color: #D97706;
+        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
+    }
+
+    .status-tab[data-status="preparing"] .tab-icon {
+        background: #DBEAFE;
+        color: #2563EB;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    }
+
+    .status-tab[data-status="to_claim"] .tab-icon {
+        background: #E9D5FF;
+        color: #9333EA;
+        box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);
+    }
+
+    .status-tab[data-status="completed"] .tab-icon {
+        background: #D1FAE5;
+        color: #059669;
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+    }
+
+    .status-tab:hover .tab-icon {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-tab.active .tab-icon {
+        transform: scale(1.05);
+    }
+
+    .tab-label {
+        font-size: 15px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .status-tab.active .tab-label {
+        color: #B71C1C;
     }
 
     .tab-count {
-        display: inline-block;
-        margin-left: 8px;
-        padding: 2px 8px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 24px;
+        padding: 0 10px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        font-size: 13px;
         font-weight: 700;
+        color: #6b7280;
     }
 
     .status-tab.active .tab-count {
-        background: rgba(255, 255, 255, 0.25);
-    }
-
-    .status-tab:not(.active) .tab-count {
-        background: #f3f4f6;
-        color: #6b7280;
+        background: #B71C1C;
+        color: white;
     }
 
     /* Orders Container */
     .orders-container {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
         overflow: hidden;
     }
 
@@ -133,25 +193,25 @@
         gap: 12px;
         color: #6b7280;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 500;
     }
 
     .checkbox {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         cursor: pointer;
         accent-color: #B71C1C;
     }
 
     .bulk-action-btn {
         padding: 10px 20px;
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+        background: #B71C1C;
         color: white;
         border: none;
-        border-radius: 8px;
-        font-weight: 600;
+        border-radius: 6px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s ease;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -159,13 +219,12 @@
     }
 
     .bulk-action-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 
     .bulk-action-btn:not(:disabled):hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(183, 28, 28, 0.3);
+        background: #991515;
     }
 
     /* Orders Table */
@@ -175,16 +234,16 @@
     }
 
     .orders-table thead {
-        background: #f9fafb;
-        border-bottom: 2px solid #e5e7eb;
+        background: #fafafa;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     .orders-table th {
-        padding: 14px 16px;
+        padding: 12px 16px;
         text-align: left;
-        font-weight: 700;
-        font-size: 13px;
-        color: #374151;
+        font-weight: 600;
+        font-size: 11px;
+        color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -208,22 +267,21 @@
         font-weight: 700;
         color: #B71C1C;
         text-decoration: none;
-        transition: color 0.2s;
+        transition: color 0.15s;
     }
 
     .order-id:hover {
-        color: #8B0000;
-        text-decoration: underline;
+        color: #991515;
     }
 
     .customer-name {
-        font-weight: 600;
-        color: #1a1a1a;
+        font-weight: 500;
+        color: #111827;
     }
 
     .customer-email {
-        font-size: 12px;
-        color: #6b7280;
+        font-size: 13px;
+        color: #9ca3af;
         margin-top: 2px;
     }
 
@@ -234,19 +292,19 @@
     }
 
     .items-count {
-        font-weight: 700;
-        color: #1a1a1a;
+        font-weight: 600;
+        color: #111827;
     }
 
     .items-preview {
-        font-size: 12px;
-        color: #6b7280;
+        font-size: 13px;
+        color: #9ca3af;
     }
 
     .price {
         font-weight: 700;
-        color: #B71C1C;
-        font-size: 16px;
+        color: #111827;
+        font-size: 15px;
     }
 
     .payment-badge {
@@ -254,19 +312,19 @@
         align-items: center;
         gap: 6px;
         padding: 6px 12px;
-        border-radius: 6px;
+        border-radius: 16px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 600;
     }
 
     .payment-cash {
-        background: #d1fae5;
-        color: #10b981;
+        background: #D1FAE5;
+        color: #059669;
     }
 
     .payment-online {
-        background: #dbeafe;
-        color: #3b82f6;
+        background: #DBEAFE;
+        color: #2563EB;
     }
 
     .timestamp {
@@ -277,24 +335,24 @@
 
     .time {
         font-weight: 600;
-        color: #1a1a1a;
+        color: #111827;
         font-size: 14px;
     }
 
     .date {
         font-size: 12px;
-        color: #6b7280;
+        color: #9ca3af;
     }
 
     .action-btn {
         padding: 8px 16px;
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
+        background: #B71C1C;
         color: white;
         border: none;
         border-radius: 6px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s ease;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -302,8 +360,7 @@
     }
 
     .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
+        background: #991515;
     }
 
     .done-badge {
@@ -311,16 +368,16 @@
         align-items: center;
         gap: 6px;
         padding: 8px 16px;
-        background: #d1fae5;
-        color: #10b981;
+        background: #D1FAE5;
+        color: #059669;
         border-radius: 6px;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 13px;
     }
 
     /* Empty State */
     .state-container {
-        padding: 80px 20px;
+        padding: 60px 20px;
         text-align: center;
     }
 
@@ -332,24 +389,24 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 36px;
+        font-size: 32px;
     }
 
     .empty-icon {
-        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-        color: #9ca3af;
+        background: #f9fafb;
+        color: #d1d5db;
     }
 
     .state-title {
-        font-size: 24px;
-        font-weight: 800;
-        color: #1a1a1a;
+        font-size: 20px;
+        font-weight: 600;
+        color: #111827;
         margin-bottom: 8px;
     }
 
     .state-text {
         color: #6b7280;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     /* Order Modal */
@@ -365,6 +422,7 @@
         align-items: center;
         justify-content: center;
         padding: 20px;
+        backdrop-filter: blur(4px);
     }
 
     .order-modal.show {
@@ -373,16 +431,16 @@
 
     .modal-content {
         background: white;
-        border-radius: 16px;
+        border-radius: 8px;
         max-width: 600px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     }
 
     .modal-header {
-        padding: 24px;
+        padding: 20px 24px;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -390,30 +448,30 @@
     }
 
     .modal-title {
-        font-size: 20px;
-        font-weight: 800;
-        color: #1a1a1a;
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
     }
 
     .close-modal {
         background: none;
         border: none;
         font-size: 24px;
-        color: #6b7280;
+        color: #9ca3af;
         cursor: pointer;
-        padding: 4px;
+        padding: 0;
         width: 32px;
         height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 4px;
-        transition: all 0.2s;
+        transition: all 0.15s;
     }
 
     .close-modal:hover {
         background: #f3f4f6;
-        color: #1a1a1a;
+        color: #111827;
     }
 
     .modal-body {
@@ -429,14 +487,14 @@
     }
 
     .detail-label {
-        font-weight: 600;
+        font-weight: 500;
         color: #6b7280;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .detail-value {
-        font-weight: 600;
-        color: #1a1a1a;
+        font-weight: 500;
+        color: #111827;
         font-size: 14px;
         text-align: right;
     }
@@ -444,13 +502,13 @@
     .items-section {
         margin-top: 24px;
         padding-top: 24px;
-        border-top: 2px solid #e5e7eb;
+        border-top: 1px solid #e5e7eb;
     }
 
     .section-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1a1a1a;
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
         margin-bottom: 16px;
     }
 
@@ -460,7 +518,7 @@
         align-items: center;
         padding: 12px;
         background: #f9fafb;
-        border-radius: 8px;
+        border-radius: 6px;
         margin-bottom: 8px;
     }
 
@@ -469,8 +527,8 @@
     }
 
     .item-name {
-        font-weight: 600;
-        color: #1a1a1a;
+        font-weight: 500;
+        color: #111827;
         font-size: 14px;
     }
 
@@ -481,28 +539,32 @@
     }
 
     .item-price {
-        font-weight: 700;
-        color: #B71C1C;
+        font-weight: 600;
+        color: #111827;
         font-size: 14px;
     }
 
     /* Toast Notifications */
     .orders-toast {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
+        bottom: 24px;
+        right: 24px;
         background: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        padding: 16px 20px;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         z-index: 10001;
         animation: slideIn 0.3s ease;
         min-width: 300px;
-        border-left: 4px solid #10b981;
+        border: 1px solid #e5e7eb;
     }
 
     .orders-toast.error {
-        border-left-color: #ef4444;
+        border-left: 3px solid #ef4444;
+    }
+
+    .orders-toast:not(.error) {
+        border-left: 3px solid #10b981;
     }
 
     @keyframes slideIn {
@@ -517,7 +579,37 @@
     }
 
     /* Responsive Design */
+    @media (max-width: 968px) {
+        .status-tabs {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
     @media (max-width: 768px) {
+        main.main-content {
+            padding: 0 16px;
+            margin-top: 80px;
+        }
+
+        .page-header {
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 20px;
+        }
+
+        .status-tabs {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .tab-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+        }
+
         .orders-table {
             font-size: 12px;
         }
@@ -527,18 +619,9 @@
             padding: 10px 8px;
         }
 
-        .status-tab {
-            font-size: 12px;
-            padding: 10px 16px;
-        }
-
         .bulk-action-btn {
             font-size: 12px;
             padding: 8px 16px;
-        }
-
-        .page-title {
-            font-size: 22px;
         }
     }
 </style>
@@ -555,23 +638,35 @@
         <p class="page-subtitle">Manage and track all your establishment orders</p>
     </div>
 
-    <!-- Status Tabs -->
+    <!-- Status Cards with Icons -->
     <div class="status-tabs-container">
         <div class="status-tabs">
             <div class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
-                <i class="fas fa-clock"></i> Order Received
+                <div class="tab-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="tab-label">New Orders</div>
                 <span class="tab-count" id="count-order_received">0</span>
             </div>
             <div class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
-                <i class="fas fa-fire"></i> Preparing
+                <div class="tab-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="tab-label">Preparing</div>
                 <span class="tab-count" id="count-preparing">0</span>
             </div>
             <div class="status-tab" data-status="to_claim" onclick="switchTab('to_claim')">
-                <i class="fas fa-hand-holding"></i> Ready for Pickup
+                <div class="tab-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="tab-label">Ready</div>
                 <span class="tab-count" id="count-to_claim">0</span>
             </div>
             <div class="status-tab" data-status="completed" onclick="switchTab('completed')">
-                <i class="fas fa-check-circle"></i> Completed
+                <div class="tab-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="tab-label">Completed</div>
                 <span class="tab-count" id="count-completed">0</span>
             </div>
         </div>
@@ -810,7 +905,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Status</span>
-                <span class="detail-value">${LABELS[o.status] || o.status}</span>
+                <span class="detail-value">${LABELS[o.status || 'order_received']}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Payment Method</span>
@@ -818,7 +913,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Total Amount</span>
-                <span class="detail-value" style="font-weight:700;color:#B71C1C;font-size:18px">
+                <span class="detail-value" style="font-weight:600;color:#111827;font-size:16px">
                     ₱${parseFloat(o.total_amount || 0).toFixed(2)}
                 </span>
             </div>
@@ -1009,8 +1104,8 @@
                 <h3 class="state-title">Error</h3>
                 <p class="state-text">${esc(message)}</p>
                 <button onclick="loadOrders()"
-                        style="margin-top:20px;padding:12px 24px;background:#B71C1C;color:white;
-                               border:none;border-radius:8px;cursor:pointer;font-weight:600">
+                        style="margin-top:20px;padding:10px 20px;background:#B71C1C;color:white;
+                               border:none;border-radius:6px;cursor:pointer;font-weight:500">
                     <i class="fas fa-sync"></i> Retry
                 </button>
             </div>
