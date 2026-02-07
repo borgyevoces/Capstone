@@ -7,7 +7,7 @@
 {{ block.super }}
 <style>
     /* ==========================================
-       ICON CARD DESIGN - ORDERS PAGE
+       SIMPLE MINIMAL DESIGN - ORDERS PAGE
        ========================================== */
 
     /* Override main-content from dashboard to use full width */
@@ -20,22 +20,22 @@
     /* Page Header */
     .page-header {
         background: white;
-        border-radius: 8px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
         border: 1px solid #e5e7eb;
         text-align: center;
     }
 
     .page-title {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 600;
         color: #111827;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .page-subtitle {
@@ -46,28 +46,28 @@
     /* Status Cards with Icons */
     .status-tabs-container {
         background: white;
-        border-radius: 8px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
         border: 1px solid #e5e7eb;
     }
 
     .status-tabs {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
+        gap: 12px;
     }
 
     .status-tab {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 16px 12px;
+        padding: 12px 8px;
         border: none;
         background: white;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
         position: relative;
         text-align: center;
     }
@@ -78,10 +78,10 @@
         bottom: 0;
         left: 0;
         right: 0;
-        height: 3px;
+        height: 2px;
         background: transparent;
-        border-radius: 8px 8px 0 0;
-        transition: background 0.2s ease;
+        border-radius: 6px 6px 0 0;
+        transition: background 0.15s ease;
     }
 
     .status-tab:hover {
@@ -94,56 +94,43 @@
 
     /* Icon Circles */
     .tab-icon {
-        width: 64px;
-        height: 64px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 28px;
-        margin-bottom: 10px;
-        transition: all 0.2s ease;
+        font-size: 20px;
+        margin-bottom: 8px;
+        transition: all 0.15s ease;
     }
 
     /* Different colors for each status */
     .status-tab[data-status="order_received"] .tab-icon {
         background: #FEF3C7;
         color: #D97706;
-        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
     }
 
     .status-tab[data-status="preparing"] .tab-icon {
         background: #DBEAFE;
         color: #2563EB;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
     }
 
     .status-tab[data-status="to_claim"] .tab-icon {
         background: #E9D5FF;
         color: #9333EA;
-        box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);
     }
 
     .status-tab[data-status="completed"] .tab-icon {
         background: #D1FAE5;
         color: #059669;
-        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
-    }
-
-    .status-tab:hover .tab-icon {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .status-tab.active .tab-icon {
-        transform: scale(1.05);
     }
 
     .tab-label {
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 600;
         color: #374151;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
     .status-tab.active .tab-label {
@@ -154,12 +141,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 32px;
-        height: 24px;
-        padding: 0 10px;
+        min-width: 24px;
+        height: 20px;
+        padding: 0 8px;
         background: #f3f4f6;
-        border-radius: 12px;
-        font-size: 13px;
+        border-radius: 10px;
+        font-size: 12px;
         font-weight: 700;
         color: #6b7280;
     }
@@ -172,15 +159,15 @@
     /* Orders Container */
     .orders-container {
         background: white;
-        border-radius: 8px;
+        border-radius: 6px;
         border: 1px solid #e5e7eb;
         overflow: hidden;
     }
 
     /* Bulk Actions */
     .bulk-actions {
-        padding: 16px 20px;
-        background: #f9fafb;
+        padding: 12px 16px;
+        background: #fafafa;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -190,9 +177,9 @@
     .selection-info {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         color: #6b7280;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
     }
 
@@ -204,18 +191,18 @@
     }
 
     .bulk-action-btn {
-        padding: 10px 20px;
+        padding: 8px 16px;
         background: #B71C1C;
         color: white;
         border: none;
-        border-radius: 6px;
+        border-radius: 4px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 14px;
+        gap: 6px;
+        font-size: 13px;
     }
 
     .bulk-action-btn:disabled {
@@ -239,13 +226,13 @@
     }
 
     .orders-table th {
-        padding: 12px 16px;
+        padding: 10px 12px;
         text-align: left;
         font-weight: 600;
         font-size: 11px;
         color: #6b7280;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
 
     .orders-table th:first-child {
@@ -254,9 +241,9 @@
     }
 
     .orders-table td {
-        padding: 16px;
+        padding: 12px;
         border-bottom: 1px solid #f3f4f6;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .orders-table tr:hover {
@@ -264,14 +251,14 @@
     }
 
     .order-id {
-        font-weight: 700;
-        color: #B71C1C;
+        font-weight: 600;
+        color: #111827;
         text-decoration: none;
         transition: color 0.15s;
     }
 
     .order-id:hover {
-        color: #991515;
+        color: #6b7280;
     }
 
     .customer-name {
@@ -280,7 +267,7 @@
     }
 
     .customer-email {
-        font-size: 13px;
+        font-size: 12px;
         color: #9ca3af;
         margin-top: 2px;
     }
@@ -288,7 +275,7 @@
     .items-info {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
     }
 
     .items-count {
@@ -297,23 +284,23 @@
     }
 
     .items-preview {
-        font-size: 13px;
+        font-size: 12px;
         color: #9ca3af;
     }
 
     .price {
-        font-weight: 700;
+        font-weight: 600;
         color: #111827;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .payment-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 16px;
-        font-size: 12px;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
         font-weight: 600;
     }
 
@@ -334,29 +321,29 @@
     }
 
     .time {
-        font-weight: 600;
+        font-weight: 500;
         color: #111827;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .date {
-        font-size: 12px;
+        font-size: 11px;
         color: #9ca3af;
     }
 
     .action-btn {
-        padding: 8px 16px;
+        padding: 6px 12px;
         background: #B71C1C;
         color: white;
         border: none;
-        border-radius: 6px;
-        font-weight: 600;
+        border-radius: 4px;
+        font-weight: 500;
         cursor: pointer;
         transition: all 0.15s ease;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        font-size: 13px;
+        gap: 4px;
+        font-size: 12px;
     }
 
     .action-btn:hover {
@@ -366,30 +353,30 @@
     .done-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 16px;
+        gap: 4px;
+        padding: 6px 12px;
         background: #D1FAE5;
         color: #059669;
-        border-radius: 6px;
+        border-radius: 12px;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 11px;
     }
 
     /* Empty State */
     .state-container {
-        padding: 60px 20px;
+        padding: 50px 20px;
         text-align: center;
     }
 
     .state-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 16px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 32px;
+        font-size: 24px;
     }
 
     .empty-icon {
@@ -398,15 +385,15 @@
     }
 
     .state-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 600;
         color: #111827;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .state-text {
         color: #6b7280;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     /* Order Modal */
@@ -417,12 +404,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.4);
         z-index: 10000;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        backdrop-filter: blur(4px);
     }
 
     .order-modal.show {
@@ -431,16 +417,16 @@
 
     .modal-content {
         background: white;
-        border-radius: 8px;
+        border-radius: 6px;
         max-width: 600px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
 
     .modal-header {
-        padding: 20px 24px;
+        padding: 16px 20px;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -448,7 +434,7 @@
     }
 
     .modal-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         color: #111827;
     }
@@ -456,12 +442,12 @@
     .close-modal {
         background: none;
         border: none;
-        font-size: 24px;
+        font-size: 20px;
         color: #9ca3af;
         cursor: pointer;
         padding: 0;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -475,51 +461,51 @@
     }
 
     .modal-body {
-        padding: 24px;
+        padding: 20px;
     }
 
     .detail-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 0;
+        padding: 10px 0;
         border-bottom: 1px solid #f3f4f6;
     }
 
     .detail-label {
         font-weight: 500;
         color: #6b7280;
-        font-size: 13px;
+        font-size: 12px;
     }
 
     .detail-value {
         font-weight: 500;
         color: #111827;
-        font-size: 14px;
+        font-size: 13px;
         text-align: right;
     }
 
     .items-section {
-        margin-top: 24px;
-        padding-top: 24px;
+        margin-top: 20px;
+        padding-top: 20px;
         border-top: 1px solid #e5e7eb;
     }
 
     .section-title {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         color: #111827;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .item-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px;
+        padding: 10px;
         background: #f9fafb;
-        border-radius: 6px;
-        margin-bottom: 8px;
+        border-radius: 4px;
+        margin-bottom: 6px;
     }
 
     .item-info {
@@ -529,11 +515,11 @@
     .item-name {
         font-weight: 500;
         color: #111827;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .item-qty {
-        font-size: 12px;
+        font-size: 11px;
         color: #6b7280;
         margin-top: 2px;
     }
@@ -541,22 +527,23 @@
     .item-price {
         font-weight: 600;
         color: #111827;
-        font-size: 14px;
+        font-size: 13px;
     }
 
     /* Toast Notifications */
     .orders-toast {
         position: fixed;
-        bottom: 24px;
-        right: 24px;
+        bottom: 20px;
+        right: 20px;
         background: white;
-        padding: 16px 20px;
-        border-radius: 6px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 12px 16px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         z-index: 10001;
         animation: slideIn 0.3s ease;
-        min-width: 300px;
+        min-width: 280px;
         border: 1px solid #e5e7eb;
+        font-size: 13px;
     }
 
     .orders-toast.error {
