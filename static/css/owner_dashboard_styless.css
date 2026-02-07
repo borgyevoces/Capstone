@@ -2558,3 +2558,16 @@ body {
         padding: 10px 12px;
     }
 }
+/* ==========================================
+   SLIDE OUT ANIMATION FOR NOTIFICATIONS
+   ========================================== */
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
