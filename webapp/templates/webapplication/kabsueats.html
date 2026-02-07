@@ -898,30 +898,17 @@
             .hero-search-input {
                 padding: 14px 45px 14px 45px;
                 font-size: 14px;
+            }
 
-            <!-- Hero Search Bar Section -->
-            <div class="welcome-hero-section">
-                <div class="hero-search-wrapper">
-                    <label class="hero-search-label">Search for Food or Establishments</label>
-                    <div class="hero-search-input-container">
-                        <i class="fas fa-search hero-search-icon"></i>
-                        <input
-                            type="text"
-                            class="hero-search-input"
-                            id="heroSearchInput"
-                            placeholder="What are you craving today? Search restaurants, dishes, or cuisines..."
-                            autocomplete="off"
-                        />
-                        <i class="fas fa-times hero-search-clear" id="heroSearchClear"></i>
+            .hero-search-icon {
+                font-size: 16px;
+                left: 15px;
+            }
 
-                        <!-- Search Results Dropdown -->
-                        <div class="hero-search-dropdown search-dropdown" id="heroSearchDropdown">
-                            <div id="heroSearchResults"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            .hero-search-clear {
+                font-size: 16px;
+                right: 15px;
+            }
 
             .hero-search-dropdown {
                 max-height: 350px;
@@ -1044,17 +1031,30 @@
         {% block content %}
         <div class="pagecontent" id="Home">
 
+
+            <!-- Hero Search Bar Section -->
             <div class="welcome-hero-section">
-                {% if user.is_authenticated %}
-                    <h1 class="hero-title">Dashboard</h1>
-                    <h1 class="hero-title">Welcome to kabsuEats</h1>
-                    <p class="hero-subtitle">What delicious food are you craving today? Explore your favorite spots or try something new!</p>
-                {% else %}
-                    <h1 class="hero-title">Landing</h1>
-                    <h2 class="hero-title">Your one-stop <span class="highlight-food">food</span> guide</h2>
-                    <p class="hero-subtitle">Find the best restaurants, cafes, and food stalls near you.</p>
-                {% endif %}
+                <div class="hero-search-wrapper">
+                    <label class="hero-search-label">Search for Food or Establishments</label>
+                    <div class="hero-search-input-container">
+                        <i class="fas fa-search hero-search-icon"></i>
+                        <input
+                            type="text"
+                            class="hero-search-input"
+                            id="heroSearchInput"
+                            placeholder="What are you craving today? Search restaurants, dishes, or cuisines..."
+                            autocomplete="off"
+                        />
+                        <i class="fas fa-times hero-search-clear" id="heroSearchClear"></i>
+
+                        <!-- Search Results Dropdown -->
+                        <div class="hero-search-dropdown search-dropdown" id="heroSearchDropdown">
+                            <div id="heroSearchResults"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
 
 
             <!-- Best Sellers Section -->
