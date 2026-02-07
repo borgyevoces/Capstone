@@ -21,12 +21,12 @@
     }
 
     /* ========================================
-       PAGE CONTAINER - WIDER LAYOUT
+       PAGE CONTAINER
     ======================================== */
     .page-container {
-        max-width: 1600px; /* Increased from 1200px */
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 0 32px; /* Increased padding */
+        padding: 0 24px;
         margin-top: 90px;
     }
 
@@ -35,30 +35,30 @@
     ======================================== */
     .page-header {
         text-align: center;
-        padding: 16px 24px;
-        margin-bottom: 24px;
+        padding: 12px 20px;
+        margin-bottom: 20px;
     }
 
     .header-top {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
     .page-title-section {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
 
     .title-icon {
-        font-size: 28px;
+        font-size: 24px;
         color: #2d3748;
     }
 
     .page-title {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 700;
         color: #2d3748;
         margin: 0;
@@ -66,8 +66,8 @@
 
     .page-subtitle {
         color: #718096;
-        font-size: 14px;
-        margin-top: 6px;
+        font-size: 13px;
+        margin-top: 4px;
         font-weight: 400;
     }
 
@@ -76,19 +76,19 @@
     }
 
     /* ========================================
-       STATISTICS CARDS - MORE SPACIOUS
+       STATISTICS CARDS
     ======================================== */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Increased from 200px */
-        gap: 20px; /* Increased from 12px */
-        margin-bottom: 28px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
     }
 
     .stat-card {
         background: #f8f9fa;
-        border-radius: 12px;
-        padding: 20px 24px; /* Increased padding */
+        border-radius: 8px;
+        padding: 18px 20px;
         border: 1px solid #e9ecef;
         transition: all 0.2s ease;
         position: relative;
@@ -100,49 +100,48 @@
 
     .stat-card:hover {
         border-color: #B71C1C;
-        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.12);
-        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(183, 28, 28, 0.1);
     }
 
     .stat-card.revenue {
-        border-left: 4px solid #059669;
+        border-left: 3px solid #059669;
     }
 
     .stat-card.transactions {
-        border-left: 4px solid #3b82f6;
+        border-left: 3px solid #3b82f6;
     }
 
     .stat-card.monthly {
-        border-left: 4px solid #f59e0b;
+        border-left: 3px solid #f59e0b;
     }
 
     .stat-card.success-rate {
-        border-left: 4px solid #8b5cf6;
+        border-left: 3px solid #8b5cf6;
     }
 
     .stat-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
 
     .stat-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #868e96;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
 
     .stat-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 14px;
         color: white;
     }
 
@@ -163,21 +162,21 @@
     }
 
     .stat-value {
-        font-size: 32px; /* Increased from 24px */
+        font-size: 28px;
         font-weight: 800;
         color: #1a1a1a;
-        margin-bottom: 8px;
-        line-height: 1.1;
+        margin-bottom: 6px;
+        line-height: 1;
     }
 
     .stat-change {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 12px;
+        padding: 3px 8px;
+        border-radius: 10px;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
     }
 
     .stat-change.positive {
@@ -191,52 +190,51 @@
     }
 
     /* ========================================
-       TRANSACTIONS CONTENT - WIDER
+       TRANSACTIONS CONTENT
     ======================================== */
     .transactions-content {
         background: white;
-        border-radius: 12px;
-        padding: 24px; /* Increased from 16px */
+        border-radius: 8px;
+        padding: 20px;
         border: 1px solid #e9ecef;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .transactions-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
     }
 
     .transactions-title {
-        font-size: 20px; /* Increased from 18px */
+        font-size: 18px;
         font-weight: 700;
         color: #2d3748;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .transactions-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
     /* ========================================
-       BUTTONS - LARGER
+       BUTTONS
     ======================================== */
     .btn {
-        padding: 9px 18px; /* Increased from 7px 14px */
-        border-radius: 8px;
-        font-size: 13px; /* Increased from 11px */
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         transition: all 0.2s ease;
         border: none;
         text-decoration: none;
@@ -250,8 +248,6 @@
 
     .btn-primary:hover {
         background: #991515;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.2);
     }
 
     .btn-secondary {
@@ -263,7 +259,6 @@
     .btn-secondary:hover {
         border-color: #B71C1C;
         color: #B71C1C;
-        transform: translateY(-1px);
     }
 
     .btn-success {
@@ -273,14 +268,12 @@
 
     .btn-success:hover {
         background: #047857;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
     }
 
     .btn-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -295,18 +288,17 @@
     .btn-icon:hover {
         border-color: #B71C1C;
         color: #B71C1C;
-        transform: translateY(-1px);
     }
 
     /* ========================================
-       FILTERS - MORE SPACIOUS
+       FILTERS
     ======================================== */
     .filters-container {
         background: #f8f9fa;
         border: 1px solid #e9ecef;
-        border-radius: 10px;
-        padding: 20px; /* Increased from 16px */
-        margin-bottom: 20px;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
         display: none;
     }
 
@@ -328,19 +320,19 @@
 
     .filters-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Increased from 200px */
-        gap: 16px; /* Increased from 12px */
-        margin-bottom: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
     }
 
     .filter-group {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
 
     .filter-label {
-        font-size: 13px; /* Increased from 12px */
+        font-size: 12px;
         font-weight: 600;
         color: #495057;
         display: flex;
@@ -349,9 +341,9 @@
     }
 
     .filter-input {
-        padding: 10px 14px; /* Increased from 8px 12px */
+        padding: 8px 12px;
         border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 13px;
         font-family: inherit;
         transition: all 0.2s ease;
@@ -366,24 +358,24 @@
 
     .filters-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         justify-content: flex-end;
     }
 
     /* ========================================
-       TABLE - WIDER COLUMNS
+       TABLE - WIDER COLUMNS FOR BETTER SPACING
     ======================================== */
     .table-container {
         overflow-x: auto;
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid #e9ecef;
     }
 
     .transactions-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 13px; /* Slightly increased */
-        min-width: 1200px; /* Ensures table doesn't shrink too much */
+        font-size: 13px;
+        min-width: 1100px;
     }
 
     .transactions-table thead {
@@ -392,18 +384,18 @@
     }
 
     .transactions-table th {
-        padding: 16px 20px; /* Increased from 12px 16px */
+        padding: 14px 18px;
         text-align: left;
         font-weight: 700;
         color: #495057;
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         white-space: nowrap;
     }
 
     .transactions-table td {
-        padding: 18px 20px; /* Increased from 14px 16px */
+        padding: 16px 18px;
         border-bottom: 1px solid #f1f3f5;
         vertical-align: middle;
     }
@@ -424,11 +416,11 @@
         font-size: 13px;
     }
 
-    /* Date and Time - More Space */
+    /* Date and Time */
     .transaction-date {
         display: flex;
         flex-direction: column;
-        gap: 6px; /* Increased from 4px */
+        gap: 4px;
     }
 
     .date-text {
@@ -438,21 +430,21 @@
     }
 
     .time-text {
-        font-size: 12px;
+        font-size: 11px;
         color: #718096;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
     }
 
-    /* Payment Method Badge - Larger */
+    /* Payment Method Badge */
     .payment-method-badge {
         display: inline-flex;
         align-items: center;
-        gap: 8px; /* Increased from 6px */
-        padding: 8px 16px; /* Increased from 6px 12px */
-        border-radius: 8px;
-        font-size: 12px;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
     }
@@ -477,16 +469,16 @@
         color: #6a1b9a;
     }
 
-    /* Customer Info - More Space */
+    /* Customer Info */
     .customer-info {
         display: flex;
         align-items: center;
-        gap: 12px; /* Increased from 10px */
+        gap: 10px;
     }
 
     .customer-avatar {
-        width: 40px; /* Increased from 36px */
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background: linear-gradient(135deg, #B71C1C 0%, #991515 100%);
         color: white;
@@ -494,7 +486,7 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 14px; /* Increased from 13px */
+        font-size: 13px;
         flex-shrink: 0;
     }
 
@@ -504,20 +496,20 @@
         font-size: 13px;
     }
 
-    /* Amount - Larger Font */
+    /* Amount */
     .transaction-amount {
         font-weight: 800;
         color: #059669;
-        font-size: 15px; /* Increased from 14px */
+        font-size: 14px;
         white-space: nowrap;
     }
 
-    /* Status Badge - Larger */
+    /* Status Badge */
     .transaction-status-badge {
         display: inline-block;
-        padding: 7px 14px; /* Increased from 5px 12px */
-        border-radius: 8px;
-        font-size: 11px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -544,19 +536,19 @@
         color: #6b7280;
     }
 
-    /* View Details Button - Larger */
+    /* View Details Button */
     .btn-details {
-        padding: 8px 16px; /* Increased */
+        padding: 6px 12px;
         background: #f8f9fa;
         border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border-radius: 6px;
         color: #495057;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         transition: all 0.2s ease;
         white-space: nowrap;
     }
@@ -565,37 +557,35 @@
         background: #B71C1C;
         color: white;
         border-color: #B71C1C;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.2);
     }
 
     /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 60px 24px; /* Increased from 48px 20px */
+        padding: 48px 20px;
         color: #718096;
     }
 
     .empty-state i {
-        font-size: 80px; /* Increased from 64px */
+        font-size: 64px;
         color: #cbd5e0;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .empty-state h3 {
-        font-size: 22px; /* Increased from 20px */
+        font-size: 20px;
         color: #2d3748;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         font-weight: 700;
     }
 
     .empty-state p {
-        font-size: 15px; /* Increased from 14px */
+        font-size: 14px;
         color: #718096;
     }
 
     /* ========================================
-       MODAL - WIDER AND MORE SPACIOUS
+       MODAL
     ======================================== */
     .modal {
         display: none;
@@ -613,8 +603,8 @@
         background: white;
         margin: 3% auto;
         padding: 0;
-        border-radius: 16px;
-        max-width: 750px; /* Increased from 600px */
+        border-radius: 12px;
+        max-width: 650px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         animation: modalSlideIn 0.3s ease;
     }
@@ -631,37 +621,37 @@
     }
 
     .modal-header {
-        padding: 24px 32px; /* Increased from 20px 24px */
+        padding: 20px 24px;
         border-bottom: 2px solid #f1f3f5;
         display: flex;
         justify-content: space-between;
         align-items: center;
         background: #f8f9fa;
-        border-radius: 16px 16px 0 0;
+        border-radius: 12px 12px 0 0;
     }
 
     .modal-header h2 {
         margin: 0;
-        font-size: 22px; /* Increased from 20px */
+        font-size: 20px;
         color: #2d3748;
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
 
     .close {
         color: #718096;
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 300;
         cursor: pointer;
         transition: all 0.2s ease;
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 6px;
     }
 
     .close:hover {
@@ -670,14 +660,14 @@
     }
 
     .modal-body {
-        padding: 32px; /* Increased from 24px */
+        padding: 24px;
     }
 
     .detail-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 0; /* Increased from 14px 0 */
+        padding: 14px 0;
         border-bottom: 1px solid #f1f3f5;
     }
 
@@ -691,12 +681,11 @@
         font-size: 13px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        min-width: 200px; /* Added minimum width */
+        gap: 8px;
     }
 
     .detail-label i {
-        width: 24px; /* Increased from 20px */
+        width: 20px;
         text-align: center;
         color: #B71C1C;
     }
@@ -704,26 +693,25 @@
     .detail-value {
         font-weight: 500;
         color: #2d3748;
-        font-size: 14px; /* Increased from 13px */
+        font-size: 13px;
         text-align: right;
-        flex: 1;
     }
 
     /* Order Items Section in Modal */
     .order-items-section {
-        margin-top: 28px; /* Increased from 20px */
-        padding-top: 28px;
+        margin-top: 20px;
+        padding-top: 20px;
         border-top: 2px solid #e9ecef;
     }
 
     .order-items-title {
-        font-size: 17px; /* Increased from 16px */
+        font-size: 16px;
         font-weight: 700;
         color: #2d3748;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .order-items-title i {
@@ -733,16 +721,16 @@
     .order-item {
         display: flex;
         justify-content: space-between;
-        padding: 14px 20px; /* Increased from 12px 16px */
+        padding: 12px 16px;
         background: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 12px; /* Increased from 8px */
-        font-size: 14px; /* Increased from 13px */
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 13px;
     }
 
     .order-item strong {
         color: #B71C1C;
-        margin-right: 8px;
+        margin-right: 6px;
     }
 
     /* ========================================
@@ -750,18 +738,18 @@
     ======================================== */
     .loading-state {
         text-align: center;
-        padding: 60px 24px;
+        padding: 48px 20px;
         color: #718096;
     }
 
     .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f1f3f5;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f1f3f5;
         border-top-color: #B71C1C;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
-        margin: 0 auto 20px;
+        margin: 0 auto 16px;
     }
 
     @keyframes spin {
@@ -769,25 +757,21 @@
     }
 
     .loading-state p {
-        font-size: 15px;
+        font-size: 14px;
         color: #718096;
     }
 
     /* ========================================
        RESPONSIVE DESIGN
     ======================================== */
-    @media (max-width: 1400px) {
+    @media (max-width: 1200px) {
         .page-container {
-            max-width: 1200px;
-            padding: 0 24px;
+            max-width: 100%;
+            padding: 0 20px;
         }
     }
 
     @media (max-width: 992px) {
-        .page-container {
-            padding: 0 20px;
-        }
-
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
         }
@@ -795,11 +779,6 @@
         .transactions-header {
             flex-direction: column;
             align-items: flex-start;
-        }
-
-        .modal-content {
-            max-width: 90%;
-            margin: 5% auto;
         }
     }
 
@@ -817,7 +796,7 @@
         }
 
         .table-container {
-            border-radius: 8px;
+            border-radius: 6px;
         }
 
         .transactions-table {
@@ -830,26 +809,22 @@
         }
 
         .modal-content {
-            max-width: 95%;
-            margin: 10px;
+            max-width: 90%;
+            margin: 5% auto;
         }
 
         .modal-header {
-            padding: 20px;
+            padding: 18px 20px;
         }
 
         .modal-body {
-            padding: 24px 20px;
+            padding: 20px;
         }
 
         .detail-row {
             flex-direction: column;
             align-items: flex-start;
-            gap: 8px;
-        }
-
-        .detail-label {
-            min-width: auto;
+            gap: 6px;
         }
 
         .detail-value {
@@ -859,20 +834,20 @@
 
     @media (max-width: 480px) {
         .page-title {
-            font-size: 22px;
+            font-size: 20px;
         }
 
         .stat-value {
-            font-size: 26px;
+            font-size: 24px;
         }
 
         .btn {
-            padding: 8px 14px;
-            font-size: 12px;
+            padding: 6px 12px;
+            font-size: 11px;
         }
 
         .transactions-table {
-            min-width: 800px;
+            min-width: 900px;
         }
     }
 </style>
