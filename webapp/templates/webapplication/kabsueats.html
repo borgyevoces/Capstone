@@ -966,22 +966,9 @@
             </div>
         </div>
 
+
+    <!-- OLD SEARCH BAR REMOVED - Now using Hero Search Bar below in welcome section -->
     {% block search_visibility_control %}
-        {% if show_search|default:True %}
-        <div class="header-center">
-            <div class="search_container">
-                <i class="fas fa-search search-icon"></i>
-                <form id="search-form" onsubmit="event.preventDefault();">
-                    <input class="search_text" id="searchInput" name="q" placeholder="Search for foodshops, etc."
-                           value="{{ q|default_if_none:'' }}" autocomplete="off" />
-                    <!-- ✅ NEW: Realtime Search Dropdown -->
-                    <div class="search-dropdown" id="searchDropdown">
-                        <div id="searchDropdownContent"></div>
-                    </div>
-                </form>
-            </div>
-        </div>
-        {% endif %}
     {% endblock search_visibility_control %}
 
         <div class="Home_buttons">
