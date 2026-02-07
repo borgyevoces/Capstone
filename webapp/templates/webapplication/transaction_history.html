@@ -15,7 +15,7 @@
     }
 
     body {
-        background: white;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         min-height: 100vh;
     }
@@ -26,8 +26,8 @@
     .page-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 0 24px;
-        margin-top: 90px;
+        padding: 32px 24px;
+        margin-top: 80px;
     }
 
     /* ========================================
@@ -36,29 +36,29 @@
     .page-header {
         text-align: center;
         padding: 12px 20px;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
     }
 
     .header-top {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 4px;
+        margin-bottom: 8px;
     }
 
     .page-title-section {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
 
     .title-icon {
-        font-size: 24px;
+        font-size: 28px;
         color: #2d3748;
     }
 
     .page-title {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 700;
         color: #2d3748;
         margin: 0;
@@ -66,8 +66,8 @@
 
     .page-subtitle {
         color: #718096;
-        font-size: 13px;
-        margin-top: 4px;
+        font-size: 14px;
+        margin-top: 6px;
         font-weight: 400;
     }
 
@@ -80,6 +80,7 @@
     ======================================== */
     .stats-grid {
         display: grid;
+<<<<<<< HEAD
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 16px;
         margin-bottom: 20px;
@@ -91,92 +92,129 @@
         padding: 18px 20px;
         border: 1px solid #e9ecef;
         transition: all 0.2s ease;
+=======
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid;
+        transition: all 0.3s ease;
+>>>>>>> parent of 3ff8624 (design)
         position: relative;
+        overflow: hidden;
     }
 
     .stat-card::before {
-        display: none;
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: radial-gradient(circle, rgba(183, 28, 28, 0.1) 0%, transparent 70%);
+        border-radius: 50%;
+        transform: translate(30%, -30%);
     }
 
     .stat-card:hover {
-        border-color: #B71C1C;
-        box-shadow: 0 2px 8px rgba(183, 28, 28, 0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
     }
 
     .stat-card.revenue {
-        border-left: 3px solid #059669;
+        border-left-color: #059669;
     }
 
     .stat-card.transactions {
-        border-left: 3px solid #3b82f6;
+        border-left-color: #3b82f6;
     }
 
     .stat-card.monthly {
-        border-left: 3px solid #f59e0b;
+        border-left-color: #f59e0b;
     }
 
     .stat-card.success-rate {
-        border-left: 3px solid #8b5cf6;
+        border-left-color: #8b5cf6;
     }
 
     .stat-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+<<<<<<< HEAD
         margin-bottom: 12px;
+=======
+        margin-bottom: 16px;
+>>>>>>> parent of 3ff8624 (design)
     }
 
     .stat-label {
-        font-size: 11px;
-        color: #868e96;
+        font-size: 14px;
+        color: #6b7280;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
     }
 
     .stat-icon {
+<<<<<<< HEAD
         width: 32px;
         height: 32px;
         border-radius: 6px;
+=======
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+>>>>>>> parent of 3ff8624 (design)
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 20px;
         color: white;
     }
 
     .stat-card.revenue .stat-icon {
-        background: #059669;
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
     .stat-card.transactions .stat-icon {
-        background: #3b82f6;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
 
     .stat-card.monthly .stat-icon {
-        background: #f59e0b;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     }
 
     .stat-card.success-rate .stat-icon {
-        background: #8b5cf6;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     }
 
     .stat-value {
+<<<<<<< HEAD
         font-size: 28px;
+=======
+        font-size: 40px;
+>>>>>>> parent of 3ff8624 (design)
         font-weight: 800;
         color: #1a1a1a;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         line-height: 1;
     }
 
     .stat-change {
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 600;
-        padding: 3px 8px;
-        border-radius: 10px;
+        padding: 4px 10px;
+        border-radius: 20px;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
     }
 
     .stat-change.positive {
@@ -194,32 +232,39 @@
     ======================================== */
     .transactions-content {
         background: white;
+<<<<<<< HEAD
         border-radius: 8px;
         padding: 20px;
         border: 1px solid #e9ecef;
+=======
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(183, 28, 28, 0.1);
+>>>>>>> parent of 3ff8624 (design)
     }
 
     .transactions-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        margin-bottom: 32px;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 20px;
     }
 
     .transactions-title {
-        font-size: 18px;
+        font-size: 28px;
         font-weight: 700;
-        color: #2d3748;
+        color: #1a1a1a;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
     }
 
     .transactions-actions {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
@@ -227,72 +272,88 @@
        BUTTONS
     ======================================== */
     .btn {
-        padding: 7px 14px;
-        border-radius: 6px;
-        font-size: 11px;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
+        gap: 10px;
+        transition: all 0.3s ease;
         border: none;
         text-decoration: none;
         white-space: nowrap;
     }
 
     .btn-primary {
-        background: #B71C1C;
+        background: linear-gradient(135deg, #B71C1C 0%, #c62828 100%);
         color: white;
+        box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
     }
 
     .btn-primary:hover {
-        background: #991515;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(183, 28, 28, 0.4);
     }
 
     .btn-secondary {
         background: white;
-        color: #495057;
-        border: 1px solid #dee2e6;
+        color: #1a1a1a;
+        border: 2px solid #e5e7eb;
     }
 
     .btn-secondary:hover {
         border-color: #B71C1C;
         color: #B71C1C;
+        transform: translateY(-2px);
     }
 
     .btn-success {
-        background: #059669;
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
         color: white;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     }
 
     .btn-success:hover {
-        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
     }
 
     .btn-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+<<<<<<< HEAD
         padding: 0;
         background: white;
         color: #495057;
         border: 1px solid #dee2e6;
         cursor: pointer;
         transition: all 0.2s ease;
+=======
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+>>>>>>> parent of 3ff8624 (design)
     }
 
     .btn-icon:hover {
         border-color: #B71C1C;
         color: #B71C1C;
+        transform: translateY(-2px);
     }
 
     /* ========================================
        FILTERS
     ======================================== */
+<<<<<<< HEAD
     .filters-container {
         background: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -300,6 +361,17 @@
         padding: 16px;
         margin-bottom: 16px;
         display: none;
+=======
+    .transactions-filters {
+        background: #f9fafb;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 32px;
+        display: none;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        border: 2px dashed #e5e7eb;
+>>>>>>> parent of 3ff8624 (design)
     }
 
     .filters-container.show {
