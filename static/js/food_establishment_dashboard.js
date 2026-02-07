@@ -1911,162 +1911,214 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 // ==========================================
-// COLLAPSIBLE NOTIFICATION FUNCTIONS - ADDED
+// ULTRA SIMPLE ACCORDION NOTIFICATION SYSTEM
 // ==========================================
 
-// Override renderNotification function for collapsible design
+// Override renderNotification for accordion style
 window.renderNotificationOriginal = window.renderNotification;
 
 window.renderNotification = function(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
-    const statusClass = notif.order.status.toLowerCase();
-    const customerInitial = notif.customer.name.charAt(0).toUpperCase();
+    const customerInitial = notif.customer.name ? notif.customer.name.charAt(0).toUpperCase() : 'U';
     const customerEmail = notif.customer.email || 'customer@email.com';
     const orderId = notif.order.id || 'N/A';
+    const statusClass = notif.order.status ? notif.order.status.toLowerCase() : 'pending';
 
     // Format order items
-    const orderItemsHTML = notif.order.items.map(item => `
-        <div class="order-item-row">
-            <span class="item-name-qty">
-                <strong>${item.quantity}x</strong> ${item.name}
+    const orderItemsHTML = notif.order.items ? notif.order.items.map(item => `
+        <div class="notif-item">
+            <span class="notif-item-name">
+                <strong>${item.quantity}x</strong> ${escapeHtmlText(item.name)}
             </span>
-            <span class="item-price">₱${item.total.toFixed(2)}</span>
+            <span class="notif-item-price">₱${parseFloat(item.total).toFixed(2)}</span>
         </div>
-    `).join('');
+    `).join('') : '';
 
     return `
-        <div class="notification-item ${isUnread}" data-notification-id="${notif.id}" onclick="toggleNotificationItem('${notif.id}')">
+        <div class="notification-item ${isUnread}" data-notification-id="${notif.id}">
 
-            <!-- PREVIEW SECTION (Always Visible) -->
-            <div class="notification-preview">
-                <div class="notification-icon-compact">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-
-                <div class="notification-preview-content">
-                    <div class="notification-preview-top">
-                        <span class="notification-email">${escapeHtmlText(customerEmail)}</span>
-                        <i class="fas fa-chevron-down notification-expand-icon"></i>
-                    </div>
-
-                    <div class="notification-preview-bottom">
-                        <span class="notification-order-id">
-                            Order <strong>#${escapeHtmlText(orderId)}</strong>
-                        </span>
-                        <span class="notification-time-compact">
-                            <i class="far fa-clock"></i>
-                            ${notif.time_ago}
-                        </span>
-                        ${notif.type === 'new_order' ? '<span class="notification-type-badge-compact">NEW</span>' : ''}
-                    </div>
+            <!-- ONE LINE HEADER - Email Only -->
+            <div class="notif-header" onclick="toggleAccordion('${notif.id}')">
+                <span class="notif-email">${escapeHtmlText(customerEmail)}</span>
+                <div class="notif-toggle">
+                    <i class="fas fa-chevron-down"></i>
                 </div>
             </div>
 
-            <!-- DETAILS SECTION (Expandable) -->
-            <div class="notification-details">
-                <div class="notification-details-inner">
+            <!-- EXPANDABLE BODY - All Details -->
+            <div class="notif-body">
+                <div class="notif-content">
+
+                    <!-- Message -->
                     ${notif.message ? `
-                        <div class="notification-message">
-                            ${escapeHtmlText(notif.message)}
+                        <div class="notif-section">
+                            <div class="notif-value">${escapeHtmlText(notif.message)}</div>
                         </div>
                     ` : ''}
 
-                    <div class="customer-info-card">
-                        <div class="customer-info-row">
-                            <div class="customer-avatar">
-                                <span class="customer-initial">${customerInitial}</span>
-                            </div>
-                            <div class="customer-details">
-                                <div class="customer-name">${escapeHtmlText(notif.customer.name)}</div>
-                                <div class="customer-email-full">${escapeHtmlText(customerEmail)}</div>
+                    <!-- Customer Info -->
+                    <div class="notif-section">
+                        <div class="notif-label">Customer</div>
+                        <div class="notif-customer">
+                            <div class="notif-avatar">${customerInitial}</div>
+                            <div class="notif-customer-info">
+                                <div class="notif-customer-name">${escapeHtmlText(notif.customer.name)}</div>
+                                <div class="notif-customer-email">${escapeHtmlText(customerEmail)}</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="order-summary-card">
-                        <div class="order-summary-top">
-                            <span class="order-id-text">Order #${escapeHtmlText(orderId)}</span>
-                            <span class="order-total-amount">₱${notif.order.total_amount.toFixed(2)}</span>
-                        </div>
-
-                        ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `
-                            <div class="order-reference-text">
-                                <i class="fas fa-hashtag"></i>
-                                Ref: ${escapeHtmlText(notif.order.reference_number)}
+                    <!-- Order Details -->
+                    <div class="notif-section">
+                        <div class="notif-label">Order Details</div>
+                        <div class="notif-order">
+                            <div class="notif-order-header">
+                                <span class="notif-order-id">Order #${escapeHtmlText(orderId)}</span>
+                                <span class="notif-order-total">₱${parseFloat(notif.order.total_amount).toFixed(2)}</span>
                             </div>
-                        ` : ''}
 
-                        <div class="order-items">
-                            ${orderItemsHTML}
-                        </div>
-
-                        <div class="order-status-badge ${statusClass}">
-                            <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
-                            ${escapeHtmlText(notif.order.status)}
-                        </div>
-                    </div>
-
-                    ${notif.order.delivery_address ? `
-                        <div class="delivery-info-section">
-                            <div class="delivery-info-header">
-                                <div class="delivery-icon">
-                                    <i class="fas fa-map-marker-alt"></i>
+                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `
+                                <div class="notif-order-ref">
+                                    <i class="fas fa-hashtag"></i>
+                                    Ref: ${escapeHtmlText(notif.order.reference_number)}
                                 </div>
-                                <span class="delivery-title">Delivery Address</span>
+                            ` : ''}
+
+                            ${orderItemsHTML ? `
+                                <div class="notif-items">
+                                    ${orderItemsHTML}
+                                </div>
+                            ` : ''}
+
+                            <div class="notif-status ${statusClass}">
+                                <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
+                                ${escapeHtmlText(notif.order.status || 'Pending')}
                             </div>
-                            <div class="delivery-address">
-                                <i class="fas fa-location-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Address -->
+                    ${notif.order.delivery_address ? `
+                        <div class="notif-section">
+                            <div class="notif-label">Delivery Address</div>
+                            <div class="notif-delivery">
+                                <i class="fas fa-map-marker-alt"></i>
                                 ${escapeHtmlText(notif.order.delivery_address)}
                             </div>
                         </div>
                     ` : ''}
 
-                    <div class="notification-actions">
-                        <button class="action-btn primary" onclick="event.stopPropagation(); viewOrderDetailsPage('${notif.order.id}')">
+                    <!-- Time -->
+                    <div class="notif-time">
+                        <i class="far fa-clock"></i>
+                        ${notif.time_ago}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="notif-actions">
+                        <button class="notif-btn notif-btn-primary" onclick="event.stopPropagation(); viewOrder('${notif.order.id}')">
                             <i class="fas fa-eye"></i>
                             View Order
                         </button>
-                        <button class="action-btn secondary" onclick="event.stopPropagation(); dismissNotificationItem('${notif.id}')">
+                        <button class="notif-btn notif-btn-secondary" onclick="event.stopPropagation(); dismissNotif('${notif.id}')">
                             <i class="fas fa-times"></i>
                             Dismiss
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>
     `;
 };
 
-// Toggle notification expansion
-function toggleNotificationItem(notificationId) {
-    const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+// Toggle accordion expansion
+function toggleAccordion(notificationId) {
+    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
 
-    if (notificationItem) {
-        // Close all other notifications first
-        document.querySelectorAll('.notification-item.expanded').forEach(item => {
-            if (item.dataset.notificationId !== notificationId) {
-                item.classList.remove('expanded');
-            }
-        });
+    if (!item) return;
 
-        // Toggle current notification
-        notificationItem.classList.toggle('expanded');
+    const isExpanded = item.classList.contains('expanded');
+
+    // Close all other notifications
+    document.querySelectorAll('.notification-item.expanded').forEach(otherItem => {
+        if (otherItem.dataset.notificationId !== notificationId) {
+            otherItem.classList.remove('expanded');
+        }
+    });
+
+    // Toggle current notification
+    if (isExpanded) {
+        item.classList.remove('expanded');
+    } else {
+        item.classList.add('expanded');
 
         // Mark as read when expanded
-        if (notificationItem.classList.contains('expanded') && notificationItem.classList.contains('unread')) {
+        if (item.classList.contains('unread')) {
             markNotificationRead(notificationId);
+            item.classList.remove('unread');
         }
     }
 }
 
 // View order details
-function viewOrderDetailsPage(orderId) {
+function viewOrder(orderId) {
     window.location.href = `/orders/${orderId}/`;
 }
 
 // Dismiss notification
-function dismissNotificationItem(notificationId) {
+function dismissNotif(notificationId) {
+    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+
+    if (!item) return;
+
+    // Animate out
+    item.style.animation = 'slideOut 0.3s ease';
+
+    setTimeout(() => {
+        item.remove();
+
+        // Check if empty
+        const list = document.getElementById('notificationList');
+        if (list && list.children.length === 0) {
+            list.innerHTML = `
+                <div class="notification-empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications</p>
+                </div>
+            `;
+        }
+
+        // Update badge
+        updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length);
+    }, 300);
+
+    // Call API to dismiss
     fetch(`/api/notifications/${notificationId}/dismiss/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).catch(error => console.error('Error dismissing notification:', error));
+}
+
+// Helper function to escape HTML
+function escapeHtmlText(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Mark notification as read
+function markNotificationRead(notificationId) {
+    fetch(`/api/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2076,41 +2128,8 @@ function dismissNotificationItem(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
-            if (notificationItem) {
-                notificationItem.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    notificationItem.remove();
-
-                    // Check if list is empty
-                    const notificationList = document.getElementById('notificationList');
-                    if (notificationList && notificationList.children.length === 0) {
-                        notificationList.innerHTML = `
-                            <div class="notification-empty-state">
-                                <i class="fas fa-bell-slash"></i>
-                                <p>No notifications yet</p>
-                            </div>
-                        `;
-                    }
-
-                    // Update badge
-                    const currentCount = document.querySelectorAll('.notification-item.unread').length;
-                    updateNotificationBadge(currentCount);
-                }, 300);
-            }
+            updateNotificationBadge(data.unread_count || 0);
         }
     })
-    .catch(error => console.error('Error dismissing notification:', error));
-}
-
-// Helper function to escape HTML
-function escapeHtmlText(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text ? String(text).replace(/[&<>"']/g, m => map[m]) : '';
+    .catch(error => console.error('Error marking as read:', error));
 }
