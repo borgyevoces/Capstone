@@ -17,108 +17,113 @@
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
         /* ==========================================
-           ULTRA SIMPLE & MODERN ACCORDION NOTIFICATION
+           SIMPLE ONE-LINE ACCORDION NOTIFICATION
+           Email lang ang nakikita, pag click arrow lalabas lahat
            ========================================== */
 
-        /* Notification Item - Accordion Style */
         .notification-item {
             background: #ffffff;
             border-radius: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             border: 1px solid #e5e7eb;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
         }
 
         .notification-item:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
         }
 
         .notification-item.unread {
             border-left: 3px solid #f59e0b;
-            background: linear-gradient(to right, #fffbeb 0%, #ffffff 5%);
+            background: #fffbeb;
         }
 
         .notification-item.expanded {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-color: #dc2626;
         }
 
-        /* Compact Header - One Line with Email Only */
-        .notif-header {
+        /* ONE LINE HEADER - Email + Arrow only */
+        .notif-line {
             display: flex;
             align-items: center;
-            padding: 12px 14px;
+            padding: 10px 12px;
             cursor: pointer;
-            gap: 10px;
-            transition: background 0.2s;
+            gap: 8px;
+            transition: background 0.15s;
         }
 
-        .notif-header:hover {
+        .notif-line:hover {
             background: rgba(0, 0, 0, 0.02);
         }
 
-        .notif-header:active {
-            background: rgba(0, 0, 0, 0.05);
+        .notif-line:active {
+            background: rgba(0, 0, 0, 0.04);
         }
 
-        .notif-email {
+        .notif-email-text {
             flex: 1;
             font-size: 13px;
             font-weight: 600;
-            color: #111827;
+            color: #1f2937;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .notif-toggle {
-            width: 24px;
-            height: 24px;
+        .notif-arrow {
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
+            border-radius: 3px;
             background: #f3f4f6;
             color: #6b7280;
-            font-size: 12px;
-            transition: all 0.3s ease;
+            font-size: 11px;
+            transition: all 0.25s ease;
             flex-shrink: 0;
         }
 
-        .notif-header:hover .notif-toggle {
+        .notif-line:hover .notif-arrow {
             background: #e5e7eb;
-            color: #374151;
         }
 
-        .notification-item.expanded .notif-toggle {
+        .notification-item.expanded .notif-arrow {
             background: #dc2626;
             color: white;
             transform: rotate(180deg);
         }
 
-        /* Expandable Content */
-        .notif-body {
+        /* EXPANDABLE DETAILS - Hidden by default */
+        .notif-expand {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: max-height 0.35s ease;
         }
 
-        .notification-item.expanded .notif-body {
-            max-height: 800px;
+        .notification-item.expanded .notif-expand {
+            max-height: 1000px;
         }
 
-        .notif-content {
-            padding: 0 14px 14px 14px;
+        .notif-inner {
+            padding: 12px;
             border-top: 1px solid #f3f4f6;
         }
 
-        /* Content Sections */
-        .notif-section {
-            margin-top: 12px;
+        /* Section Spacing */
+        .notif-block {
+            margin-bottom: 10px;
         }
 
-        .notif-label {
-            font-size: 11px;
+        .notif-block:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Section Label */
+        .notif-sec-label {
+            font-size: 10px;
             font-weight: 700;
             color: #9ca3af;
             text-transform: uppercase;
@@ -126,25 +131,27 @@
             margin-bottom: 6px;
         }
 
-        .notif-value {
+        /* Message */
+        .notif-msg {
             font-size: 13px;
-            color: #374151;
+            color: #4b5563;
             line-height: 1.5;
+            margin-bottom: 10px;
         }
 
-        /* Customer Info */
-        .notif-customer {
+        /* Customer Card */
+        .notif-cust {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
+            gap: 8px;
+            padding: 8px;
             background: #f9fafb;
             border-radius: 6px;
         }
 
-        .notif-avatar {
-            width: 36px;
-            height: 36px;
+        .notif-pic {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             display: flex;
@@ -152,23 +159,23 @@
             justify-content: center;
             color: white;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px;
             flex-shrink: 0;
         }
 
-        .notif-customer-info {
+        .notif-cust-data {
             flex: 1;
             min-width: 0;
         }
 
-        .notif-customer-name {
+        .notif-cust-name {
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: #111827;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
-        .notif-customer-email {
+        .notif-cust-mail {
             font-size: 11px;
             color: #6b7280;
             overflow: hidden;
@@ -176,139 +183,146 @@
             white-space: nowrap;
         }
 
-        /* Order Summary */
-        .notif-order {
+        /* Order Box */
+        .notif-ord {
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            padding: 10px;
+            padding: 8px;
         }
 
-        .notif-order-header {
+        .notif-ord-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .notif-order-id {
+        .notif-ord-num {
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             color: #111827;
         }
 
-        .notif-order-total {
+        .notif-ord-amt {
             font-weight: 800;
-            font-size: 16px;
+            font-size: 15px;
             color: #dc2626;
         }
 
-        .notif-order-ref {
+        .notif-ref {
             background: #eff6ff;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 3px 6px;
+            border-radius: 3px;
             font-size: 10px;
             color: #2563eb;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
         }
 
-        .notif-items {
+        .notif-ref i {
+            font-size: 9px;
+        }
+
+        .notif-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            margin-top: 8px;
+            gap: 3px;
+            margin-top: 6px;
         }
 
-        .notif-item {
+        .notif-prod {
             display: flex;
             justify-content: space-between;
-            padding: 6px 8px;
+            padding: 5px 6px;
             background: #f9fafb;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 3px;
+            font-size: 11px;
         }
 
-        .notif-item-name {
+        .notif-prod-name {
             color: #374151;
         }
 
-        .notif-item-name strong {
+        .notif-prod-name strong {
             color: #dc2626;
             font-weight: 700;
         }
 
-        .notif-item-price {
+        .notif-prod-price {
             font-weight: 700;
             color: #dc2626;
         }
 
-        /* Status Badge */
-        .notif-status {
+        .notif-stat {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
+            gap: 3px;
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
-        .notif-status.completed { background: #dcfce7; color: #166534; }
-        .notif-status.paid { background: #dcfce7; color: #166534; }
-        .notif-status.pending { background: #fef3c7; color: #92400e; }
-        .notif-status.cancelled { background: #fee2e2; color: #991b1b; }
+        .notif-stat i {
+            font-size: 8px;
+        }
 
-        /* Delivery Address */
-        .notif-delivery {
+        .notif-stat.completed { background: #dcfce7; color: #166534; }
+        .notif-stat.paid { background: #dcfce7; color: #166534; }
+        .notif-stat.pending { background: #fef3c7; color: #92400e; }
+        .notif-stat.cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* Delivery */
+        .notif-addr {
             background: #fef3c7;
             border-left: 2px solid #f59e0b;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             color: #78350f;
             line-height: 1.4;
         }
 
-        .notif-delivery i {
-            font-size: 11px;
+        .notif-addr i {
+            font-size: 10px;
             margin-right: 4px;
             color: #f59e0b;
         }
 
         /* Time */
-        .notif-time {
-            font-size: 11px;
+        .notif-when {
+            font-size: 10px;
             color: #9ca3af;
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px solid #f3f4f6;
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        .notif-time i {
-            font-size: 10px;
+        .notif-when i {
+            font-size: 9px;
         }
 
-        /* Actions */
-        .notif-actions {
+        /* Buttons */
+        .notif-btns {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: 8px;
         }
 
         .notif-btn {
             flex: 1;
-            padding: 8px;
+            padding: 7px;
             border: none;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -319,55 +333,44 @@
         }
 
         .notif-btn i {
-            font-size: 11px;
+            font-size: 10px;
         }
 
-        .notif-btn-primary {
+        .notif-btn-view {
             background: linear-gradient(135deg, #dc2626, #b91c1c);
             color: white;
         }
 
-        .notif-btn-primary:hover {
+        .notif-btn-view:hover {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
         }
 
-        .notif-btn-secondary {
+        .notif-btn-dismiss {
             background: #f3f4f6;
             color: #374151;
         }
 
-        .notif-btn-secondary:hover {
+        .notif-btn-dismiss:hover {
             background: #e5e7eb;
-        }
-
-        /* Badge for unread count */
-        .notif-badge {
-            background: #dc2626;
-            color: white;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: auto;
         }
 
         /* Empty State */
         .notification-empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 50px 20px;
             color: #9ca3af;
         }
 
         .notification-empty-state i {
-            font-size: 48px;
+            font-size: 40px;
             opacity: 0.3;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .notification-empty-state p {
-            font-size: 14px;
+            font-size: 13px;
             color: #6b7280;
             margin: 0;
         }
@@ -375,12 +378,12 @@
         /* Loading */
         .notification-loading {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px 20px;
             color: #9ca3af;
         }
 
         .notification-loading i {
-            font-size: 32px;
+            font-size: 28px;
             animation: spin 1s linear infinite;
         }
 
@@ -394,18 +397,18 @@
             to { opacity: 0; transform: translateX(100px); }
         }
 
-        /* Panel Styles */
+        /* Panel */
         .notification-panel {
             position: fixed;
             right: 0;
             top: 70px;
-            width: 380px;
+            width: 360px;
             height: calc(100vh - 70px);
             background: #f9fafb;
             border-left: 1px solid #e5e7eb;
-            box-shadow: -2px 0 20px rgba(0,0,0,0.08);
+            box-shadow: -2px 0 15px rgba(0,0,0,0.08);
             transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s ease;
             z-index: 998;
             display: flex;
             flex-direction: column;
@@ -416,7 +419,7 @@
         }
 
         .notification-panel-header {
-            padding: 16px;
+            padding: 14px;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
@@ -429,17 +432,17 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
         }
 
         .notification-panel-title i {
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .notification-header-actions {
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }
 
         .mark-all-read-btn,
@@ -447,9 +450,9 @@
             background: rgba(255, 255, 255, 0.15);
             border: none;
             color: white;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 4px;
             transition: all 0.2s;
         }
@@ -462,11 +465,11 @@
         .notification-list {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 8px;
         }
 
         .notification-list::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
 
         .notification-list::-webkit-scrollbar-track {
@@ -482,19 +485,17 @@
             background: #9ca3af;
         }
 
-        /* Mobile Responsive */
+        /* Mobile */
         @media (max-width: 768px) {
             .notification-panel {
                 width: 100vw;
-                top: 60px;
-                height: calc(100vh - 60px);
             }
 
-            .notif-header {
-                padding: 10px 12px;
+            .notif-line {
+                padding: 8px 10px;
             }
 
-            .notif-email {
+            .notif-email-text {
                 font-size: 12px;
             }
         }
