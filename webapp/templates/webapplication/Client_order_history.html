@@ -20,34 +20,34 @@
     .order-history-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 20px 24px;
+        padding: 20px 16px;
         min-height: calc(100vh - 200px);
     }
 
     .order-history-header {
         text-align: center;
-        margin-bottom: 32px;
+        margin-bottom: 30px;
         padding-top: 15px;
     }
 
     .order-history-header h1 {
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 700;
         color: #1a202c;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
     }
 
     .order-history-header h1 i {
         color: #B71C1C;
-        font-size: 30px;
+        font-size: 26px;
     }
 
     .order-history-header p {
-        font-size: 16px;
+        font-size: 15px;
         color: #718096;
         font-weight: 500;
     }
@@ -56,18 +56,18 @@
     .order-tabs {
         display: flex;
         justify-content: center;
-        gap: 10px;
-        margin-bottom: 28px;
+        gap: 8px;
+        margin-bottom: 24px;
         flex-wrap: wrap;
-        background: #f8f9fa;
+        background: white;
         border-radius: 12px;
-        padding: 14px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         border: 1px solid #e9ecef;
     }
 
     .order-tab {
-        padding: 12px 24px;
+        padding: 10px 20px;
         background: transparent;
         border: none;
         border-radius: 8px;
@@ -78,7 +78,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
+        font-size: 13px;
         position: relative;
     }
 
@@ -94,17 +94,17 @@
     }
 
     .order-tab i {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .order-tab-count {
         background: rgba(183, 28, 28, 0.15);
         color: #B71C1C;
-        padding: 3px 9px;
+        padding: 2px 8px;
         border-radius: 10px;
         font-size: 11px;
         font-weight: 700;
-        min-width: 24px;
+        min-width: 22px;
         text-align: center;
     }
 
@@ -117,78 +117,77 @@
     .orders-list {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 16px;
     }
 
-    /* Order Card - Wider & More Spacious */
+    /* Order Card - Compact & Modern */
     .order-card {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         overflow: hidden;
         transition: all 0.2s ease;
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .order-card:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         transform: translateY(-2px);
-        border-color: #B71C1C;
     }
 
     .order-card-header {
         background: linear-gradient(135deg, #fafbfc 0%, #f7f9fb 100%);
-        padding: 18px 24px;
+        padding: 14px 18px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 12px;
-        border-bottom: 2px solid #e2e8f0;
+        gap: 10px;
+        border-bottom: 1px solid #e2e8f0;
     }
 
     .order-card-header-left {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
     }
 
     .order-number {
         font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 14px;
         color: #B71C1C;
-        background: rgba(183, 28, 28, 0.08);
-        padding: 6px 14px;
-        border-radius: 8px;
+        background: rgba(183, 28, 28, 0.06);
+        padding: 4px 10px;
+        border-radius: 6px;
     }
 
     .order-date {
-        font-size: 13px;
+        font-size: 12px;
         color: #718096;
         font-weight: 500;
     }
 
     .order-date i {
-        font-size: 12px;
-        margin-right: 5px;
+        font-size: 11px;
+        margin-right: 4px;
     }
 
     /* Status Badges - Matching Owner Dashboard */
     .order-status-badge {
-        padding: 7px 14px;
+        padding: 5px 12px;
         border-radius: 8px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.3px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
     .order-status-badge i {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     /* Status Colors - Exactly matching Owner Dashboard */
@@ -229,43 +228,43 @@
     }
 
     .order-card-body {
-        padding: 20px 24px;
+        padding: 16px 18px;
     }
 
     .order-establishment {
         display: flex;
         align-items: center;
-        gap: 16px;
-        margin-bottom: 20px;
-        padding-bottom: 18px;
-        border-bottom: 2px solid #f0f4f8;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f0f4f8;
     }
 
     .establishment-image {
-        width: 60px;
-        height: 60px;
-        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
         object-fit: cover;
         border: 2px solid #e2e8f0;
     }
 
     .establishment-info h3 {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         color: #1a202c;
         margin-bottom: 4px;
     }
 
     .establishment-info p {
-        font-size: 13px;
+        font-size: 12px;
         color: #718096;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
     .establishment-info i {
-        font-size: 12px;
+        font-size: 11px;
         color: #B71C1C;
     }
 
@@ -273,16 +272,16 @@
     .order-items {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
     }
 
     .order-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 14px 16px;
+        padding: 12px 14px;
         background: #f8f9fa;
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid #e9ecef;
         transition: all 0.2s ease;
     }
@@ -295,70 +294,70 @@
     .order-item-info {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
         flex: 1;
     }
 
     .order-item-image {
-        width: 55px;
-        height: 55px;
-        border-radius: 8px;
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
         object-fit: cover;
         border: 2px solid #e2e8f0;
     }
 
     .order-item-details h4 {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         color: #2d3748;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
     }
 
     .order-item-quantity {
-        font-size: 12px;
+        font-size: 11px;
         color: #718096;
         font-weight: 500;
         background: white;
-        padding: 2px 10px;
-        border-radius: 6px;
+        padding: 2px 8px;
+        border-radius: 4px;
         display: inline-block;
         border: 1px solid #e2e8f0;
     }
 
     .order-item-price {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         color: #059669;
         white-space: nowrap;
-        margin-left: 16px;
+        margin-left: 12px;
     }
 
     /* Order Card Footer */
     .order-card-footer {
-        padding: 18px 24px;
+        padding: 14px 18px;
         background: #fafbfc;
-        border-top: 2px solid #e2e8f0;
+        border-top: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 14px;
+        gap: 12px;
     }
 
     .order-total {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
 
     .order-total-label {
-        font-size: 14px;
+        font-size: 13px;
         color: #718096;
         font-weight: 600;
     }
 
     .order-total-amount {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 800;
         color: #B71C1C;
     }
@@ -366,25 +365,25 @@
     /* Order Actions */
     .order-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
     .order-action-btn {
-        padding: 9px 18px;
-        border-radius: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
         border: none;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
     .order-action-btn i {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .btn-view-details {
@@ -406,7 +405,7 @@
 
     .btn-pay:hover {
         background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-        box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
     }
 
     .btn-track {
@@ -416,7 +415,7 @@
 
     .btn-track:hover {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
     }
 
     .btn-rate {
@@ -426,7 +425,7 @@
 
     .btn-rate:hover {
         background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.2);
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
     }
 
     .btn-reorder {
@@ -436,48 +435,48 @@
 
     .btn-reorder:hover {
         background: linear-gradient(135deg, #8B0000 0%, #6B0000 100%);
-        box-shadow: 0 4px 8px rgba(183, 28, 28, 0.2);
+        box-shadow: 0 2px 8px rgba(183, 28, 28, 0.2);
     }
 
     /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 60px 24px;
+        padding: 60px 20px;
         background: white;
         border-radius: 12px;
         border: 2px dashed #e2e8f0;
     }
 
     .empty-state i {
-        font-size: 72px;
+        font-size: 64px;
         color: #cbd5e0;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .empty-state h3 {
-        font-size: 22px;
+        font-size: 20px;
         color: #2d3748;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         font-weight: 700;
     }
 
     .empty-state p {
-        font-size: 15px;
+        font-size: 14px;
         color: #718096;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
     }
 
     .empty-state-btn {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 12px 24px;
+        padding: 10px 20px;
         background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         color: white;
         text-decoration: none;
         border-radius: 8px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
@@ -492,17 +491,14 @@
     /* Loading State */
     .loading-state {
         text-align: center;
-        padding: 60px 24px;
+        padding: 60px 20px;
     }
 
-    .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f1f3f5;
-        border-top-color: #B71C1C;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin: 0 auto 20px;
+    .loading-state i {
+        font-size: 48px;
+        color: #B71C1C;
+        margin-bottom: 16px;
+        animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
@@ -510,7 +506,7 @@
     }
 
     .loading-state p {
-        font-size: 15px;
+        font-size: 14px;
         color: #718096;
         font-weight: 500;
     }
@@ -528,10 +524,6 @@
 
     @media (max-width: 768px) {
         .order-history-header h1 {
-            font-size: 26px;
-        }
-
-        .order-history-header h1 i {
             font-size: 24px;
         }
 
@@ -540,20 +532,20 @@
         }
 
         .order-tab {
-            padding: 10px 16px;
-            font-size: 13px;
+            padding: 8px 14px;
+            font-size: 12px;
         }
 
         .order-card-header {
-            padding: 14px 16px;
+            padding: 12px 14px;
         }
 
         .order-card-body {
-            padding: 16px;
+            padding: 14px;
         }
 
         .order-card-footer {
-            padding: 14px 16px;
+            padding: 12px 14px;
             flex-direction: column;
             align-items: flex-start;
         }
@@ -569,17 +561,13 @@
         }
 
         .establishment-image {
-            width: 50px;
-            height: 50px;
-        }
-
-        .order-item-image {
             width: 45px;
             height: 45px;
         }
 
-        .order-total-amount {
-            font-size: 20px;
+        .order-item-image {
+            width: 42px;
+            height: 42px;
         }
     }
 
@@ -588,13 +576,9 @@
             padding: 16px 12px;
         }
 
-        .order-history-header h1 {
-            font-size: 22px;
-        }
-
         .order-number {
-            font-size: 14px;
-            padding: 5px 10px;
+            font-size: 13px;
+            padding: 3px 8px;
         }
 
         .order-date {
@@ -602,15 +586,19 @@
         }
 
         .establishment-info h3 {
-            font-size: 16px;
+            font-size: 15px;
         }
 
         .order-item-details h4 {
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .order-item-price {
-            font-size: 14px;
+            font-size: 13px;
+        }
+
+        .order-total-amount {
+            font-size: 18px;
         }
     }
 </style>
@@ -622,34 +610,38 @@
     <div class="order-history-header">
         <h1>
             <i class="fas fa-clipboard-list"></i>
-            My Orders
+            My Order History
         </h1>
-        <p>Track and manage all your food orders</p>
+        <p>Track and manage all your food orders in one place</p>
     </div>
 
-    <!-- Order Status Tabs -->
+    <!-- Order Status Tabs - SYNCED with Owner Dashboard -->
     <div class="order-tabs">
-        <button class="order-tab active" onclick="filterOrders('all')" data-status="all">
+        <button class="order-tab active" data-status="all" onclick="switchTab('all')">
             <i class="fas fa-list"></i>
             All Orders
             <span class="order-tab-count" id="count-all">0</span>
         </button>
-        <button class="order-tab" onclick="filterOrders('order_received')" data-status="order_received">
+
+        <button class="order-tab" data-status="order_received" onclick="switchTab('order_received')">
             <i class="fas fa-bell"></i>
-            Received
+            Order Received
             <span class="order-tab-count" id="count-order_received">0</span>
         </button>
-        <button class="order-tab" onclick="filterOrders('preparing')" data-status="preparing">
+
+        <button class="order-tab" data-status="preparing" onclick="switchTab('preparing')">
             <i class="fas fa-fire"></i>
             Preparing
             <span class="order-tab-count" id="count-preparing">0</span>
         </button>
-        <button class="order-tab" onclick="filterOrders('to_claim')" data-status="to_claim">
+
+        <button class="order-tab" data-status="to_claim" onclick="switchTab('to_claim')">
             <i class="fas fa-box"></i>
-            Ready
+            To Claim
             <span class="order-tab-count" id="count-to_claim">0</span>
         </button>
-        <button class="order-tab" onclick="filterOrders('completed')" data-status="completed">
+
+        <button class="order-tab" data-status="completed" onclick="switchTab('completed')">
             <i class="fas fa-check-circle"></i>
             Completed
             <span class="order-tab-count" id="count-completed">0</span>
@@ -657,10 +649,9 @@
     </div>
 
     <!-- Orders List -->
-    <div id="ordersList" class="orders-list">
-        <!-- Loading state -->
+    <div class="orders-list" id="ordersList">
         <div class="loading-state">
-            <div class="spinner"></div>
+            <i class="fas fa-spinner"></i>
             <p>Loading your orders...</p>
         </div>
     </div>
@@ -676,41 +667,48 @@
     let currentFilter = 'all';
 
     // ========================================
-    // INITIALIZE ON PAGE LOAD
+    // INITIALIZE
     // ========================================
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🍽️ Order History page loaded');
+        console.log('🚀 Order History Page Initialized');
         loadOrders();
+
+        // Auto-refresh every 30 seconds to sync with owner updates
+        setInterval(loadOrders, 30000);
     });
 
     // ========================================
     // LOAD ORDERS FROM API
     // ========================================
     function loadOrders() {
-        console.log('📡 Fetching orders from API...');
+        console.log('📥 Loading orders from API...');
 
-        fetch('/api/my-orders/')
+        fetch('/api/user/transactions/')
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('✅ Orders received:', data);
-                allOrders = data.orders || [];
-                updateOrderCounts();
-                displayOrders(allOrders);
+                console.log('✅ Orders loaded:', data);
+
+                if (data.success && data.orders) {
+                    allOrders = data.orders;
+                    updateOrderCounts();
+                    filterOrders(currentFilter);
+                } else {
+                    showError('No orders found');
+                }
             })
             .catch(error => {
                 console.error('❌ Error loading orders:', error);
-                showError('Unable to load your orders. Please try again later.');
+                showError('Failed to load orders. Please try again.');
             });
     }
 
     // ========================================
-    // UPDATE ORDER COUNTS IN TABS
+    // UPDATE ORDER COUNTS
     // ========================================
     function updateOrderCounts() {
         const counts = {
@@ -721,14 +719,31 @@
             completed: allOrders.filter(o => o.status === 'completed').length
         };
 
-        Object.keys(counts).forEach(status => {
-            const countElement = document.getElementById(`count-${status}`);
-            if (countElement) {
-                countElement.textContent = counts[status];
-            }
-        });
+        console.log('📊 Order counts:', counts);
 
-        console.log('📊 Order counts updated:', counts);
+        // Update count badges
+        document.getElementById('count-all').textContent = counts.all;
+        document.getElementById('count-order_received').textContent = counts.order_received;
+        document.getElementById('count-preparing').textContent = counts.preparing;
+        document.getElementById('count-to_claim').textContent = counts.to_claim;
+        document.getElementById('count-completed').textContent = counts.completed;
+    }
+
+    // ========================================
+    // SWITCH TABS
+    // ========================================
+    function switchTab(status) {
+        console.log('🔄 Switching to tab:', status);
+        currentFilter = status;
+
+        // Update active tab UI
+        document.querySelectorAll('.order-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`.order-tab[data-status="${status}"]`).classList.add('active');
+
+        // Filter and display orders
+        filterOrders(status);
     }
 
     // ========================================
@@ -736,33 +751,29 @@
     // ========================================
     function filterOrders(status) {
         console.log('🔍 Filtering orders by status:', status);
-        currentFilter = status;
 
-        // Update active tab
-        document.querySelectorAll('.order-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        event.target.closest('.order-tab').classList.add('active');
+        let filteredOrders;
+        if (status === 'all') {
+            filteredOrders = allOrders;
+        } else {
+            filteredOrders = allOrders.filter(order => order.status === status);
+        }
 
-        // Filter and display orders
-        const filtered = status === 'all'
-            ? allOrders
-            : allOrders.filter(order => order.status === status);
-
-        displayOrders(filtered);
+        console.log(`✅ Filtered ${filteredOrders.length} orders`);
+        renderOrders(filteredOrders);
     }
 
     // ========================================
-    // DISPLAY ORDERS IN THE LIST
+    // RENDER ORDERS TO PAGE
     // ========================================
-    function displayOrders(orders) {
+    function renderOrders(orders) {
         const ordersList = document.getElementById('ordersList');
 
         if (orders.length === 0) {
             ordersList.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <h3>No Orders Found</h3>
+                    <i class="fas fa-shopping-bag"></i>
+                    <h3>No orders found</h3>
                     <p>You haven't placed any orders yet. Start exploring delicious food!</p>
                     <a href="{% url 'kabsueats_home' %}" class="empty-state-btn">
                         <i class="fas fa-utensils"></i>
