@@ -17,8 +17,8 @@
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
         /* ==========================================
-           COLLAPSIBLE NOTIFICATION STYLE
-           Email first, click arrow to expand details
+           SIMPLE ONE-LINE ACCORDION NOTIFICATION
+           Email lang ang nakikita, pag click arrow lalabas lahat
            ========================================== */
 
         .notification-item {
@@ -229,78 +229,393 @@
         .notif-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
+            margin-top: 6px;
         }
 
-        .notif-item {
+        .notif-prod {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            padding: 5px 6px;
+            background: #f9fafb;
+            border-radius: 3px;
             font-size: 11px;
+        }
+
+        .notif-prod-name {
             color: #374151;
         }
 
-        .notif-item-name {
-            flex: 1;
-        }
-
-        .notif-item-name strong {
-            color: #111827;
+        .notif-prod-name strong {
+            color: #dc2626;
             font-weight: 700;
         }
 
-        .notif-item-price {
+        .notif-prod-price {
             font-weight: 700;
             color: #dc2626;
         }
 
-        /* Status Badge */
-        .notif-status {
+        .notif-stat {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
+            gap: 3px;
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             margin-top: 6px;
         }
 
-        .notif-status.completed {
-            background: #d1fae5;
-            color: #065f46;
+        .notif-stat i {
+            font-size: 8px;
         }
 
-        .notif-status.pending {
+        .notif-stat.completed { background: #dcfce7; color: #166534; }
+        .notif-stat.paid { background: #dcfce7; color: #166534; }
+        .notif-stat.pending { background: #fef3c7; color: #92400e; }
+        .notif-stat.cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* Delivery */
+        .notif-addr {
             background: #fef3c7;
-            color: #92400e;
+            border-left: 2px solid #f59e0b;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #78350f;
+            line-height: 1.4;
         }
 
-        .notif-status.preparing {
-            background: #dbeafe;
-            color: #1e40af;
+        .notif-addr i {
+            font-size: 10px;
+            margin-right: 4px;
+            color: #f59e0b;
         }
 
-        .notif-status.cancelled {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Time Footer */
-        .notif-time {
+        /* Time */
+        .notif-when {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #f3f4f6;
             display: flex;
             align-items: center;
             gap: 4px;
-            font-size: 11px;
-            color: #9ca3af;
-            padding-top: 8px;
-            margin-top: 8px;
-            border-top: 1px solid #f3f4f6;
         }
 
-        .notif-time i {
+        .notif-when i {
+            font-size: 9px;
+        }
+
+        /* Buttons */
+        .notif-btns {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .notif-btn {
+            flex: 1;
+            padding: 7px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .notif-btn i {
             font-size: 10px;
+        }
+
+        .notif-btn-view {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+        }
+
+        .notif-btn-view:hover {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+        }
+
+        .notif-btn-dismiss {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .notif-btn-dismiss:hover {
+            background: #e5e7eb;
+        }
+
+        /* Empty State */
+        .notification-empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #9ca3af;
+        }
+
+        .notification-empty-state i {
+            font-size: 40px;
+            opacity: 0.3;
+            margin-bottom: 10px;
+        }
+
+        .notification-empty-state p {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        /* Loading */
+        .notification-loading {
+            text-align: center;
+            padding: 30px 20px;
+            color: #9ca3af;
+        }
+
+        .notification-loading i {
+            font-size: 28px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        /* Panel */
+        .notification-panel {
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 360px;
+            height: calc(100vh - 70px);
+            background: #f9fafb;
+            border-left: 1px solid #e5e7eb;
+            box-shadow: -2px 0 15px rgba(0,0,0,0.08);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 998;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notification-panel.open {
+            transform: translateX(0);
+        }
+
+        .notification-panel-header {
+            padding: 14px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+        }
+
+        .notification-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .notification-panel-title i {
+            font-size: 16px;
+        }
+
+        .notification-header-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .mark-all-read-btn,
+        .close-notification-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .mark-all-read-btn:hover,
+        .close-notification-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .notification-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .notification-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .notification-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .notification-panel {
+                width: 100vw;
+            }
+
+            .notif-line {
+                padding: 8px 10px;
+            }
+
+            .notif-email-text {
+                font-size: 12px;
+            }
+        }
+                width: 36px;
+                height: 36px;
+            }
+
+            .customer-initial {
+                font-size: 14px;
+            }
+        }
+
+        .notification-toggle-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--text-dark, #333);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .notification-toggle-btn:hover {
+            background: var(--bg-light, #f5f7fa);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #f02849;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .notification-panel {
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 400px;
+            height: calc(100vh - 70px);
+            background: white;
+            border-left: 1px solid var(--border, #e4e6eb);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 998;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notification-panel.open {
+            transform: translateX(0);
+        }
+
+        .notification-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border, #e4e6eb);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+            color: white;
+        }
+
+        .notification-panel-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .mark-all-read-btn,
+        .notification-close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            transition: opacity 0.2s;
+        }
+
+        .mark-all-read-btn:hover,
+        .notification-close-btn:hover {
+            opacity: 0.8;
+        }
+
+        .notification-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .notification-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted, #65676b);
+        }
+
+        .notification-empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .notification-panel {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                top: 60px;
+                height: calc(100vh - 60px);
+            }
         }
 
         /* ==========================================
@@ -2048,7 +2363,8 @@
                 <span class="nav-btn-label">Transactions</span>
             </a>
 
-            <button class="notification-toggle-btn" id="notificationToggleBtn" title="Notifications">
+            <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
+                    title="Notifications">
                 <i class="fas fa-bell"></i>
                 <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
             </button>
@@ -2152,76 +2468,69 @@
     </div>
 </div>
 
-<!-- Notification Item Template (MODIFIED - Collapsible Version) -->
+<!-- Notification Item Template (Hidden, used by JavaScript) -->
 <template id="notificationItemTemplate">
     <div class="notification-item" data-notification-id="">
-        <!-- Collapsed Header - Shows only email and arrow -->
-        <div class="notif-line">
-            <span class="notif-email-text">customer@email.com</span>
-            <div class="notif-arrow">
-                <i class="fas fa-chevron-down"></i>
+        <!-- Notification Header with Icon -->
+        <div class="notification-item-header">
+            <div class="notification-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="notification-content-header">
+                <div class="notification-title-row">
+                    <span class="notification-title-text">New Order</span>
+                    <span class="notification-type-badge order">ORDER</span>
+                </div>
+                <p class="notification-message">Order has been completed</p>
             </div>
         </div>
 
-        <!-- Expandable Details - Hidden by default -->
-        <div class="notif-expand">
-            <div class="notif-inner">
-                <!-- Message Section -->
-                <div class="notif-block">
-                    <div class="notif-sec-label">Message</div>
-                    <div class="notif-msg">Order has been completed</div>
+        <!-- Customer Information Card -->
+        <div class="customer-info-card">
+            <div class="customer-info-row">
+                <div class="customer-avatar">
+                    <span class="customer-initial">R</span>
                 </div>
-
-                <!-- Customer Info Section -->
-                <div class="notif-block customer-info-section">
-                    <div class="notif-sec-label">Customer</div>
-                    <div class="notif-cust">
-                        <div class="notif-pic">R</div>
-                        <div class="notif-cust-data">
-                            <div class="notif-cust-name">Customer Name</div>
-                            <div class="notif-cust-mail">customer@email.com</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Details Section -->
-                <div class="notif-block order-summary-section">
-                    <div class="notif-sec-label">Order Details</div>
-                    <div class="notif-ord">
-                        <div class="notif-ord-top">
-                            <span class="notif-ord-num">Order #1</span>
-                            <span class="notif-ord-amt">₱150.00</span>
-                        </div>
-
-                        <div class="notif-ref">
-                            <i class="fas fa-link"></i>
-                            <span>Ref: link_4GbJ1KeQLBYU4gccghfEMTAF</span>
-                        </div>
-
-                        <div class="notif-list">
-                            <div class="notif-item">
-                                <span class="notif-item-name"><strong>1x</strong> Kinalamansiang Baka</span>
-                                <span class="notif-item-price">₱75.00</span>
-                            </div>
-                            <div class="notif-item">
-                                <span class="notif-item-name"><strong>1x</strong> Adobong manok</span>
-                                <span class="notif-item-price">₱75.00</span>
-                            </div>
-                        </div>
-
-                        <div class="notif-status completed">
-                            <i class="fas fa-check-circle"></i>
-                            <span>COMPLETED</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Time Footer -->
-                <div class="notif-time">
-                    <i class="far fa-clock"></i>
-                    <span class="time-ago-text">1 hour ago</span>
+                <div class="customer-details">
+                    <div class="customer-name">Customer Name</div>
+                    <div class="customer-email">customer@email.com</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Order Summary Card -->
+        <div class="order-summary-card">
+            <div class="order-summary-top">
+                <span class="order-id-text">Order #1</span>
+                <span class="order-total-amount">₱150.00</span>
+            </div>
+
+            <div class="order-reference-text">
+                <i class="fas fa-link"></i>
+                <span>Ref: link_4GbJ1KeQLBYU4gccghfEMTAF</span>
+            </div>
+
+            <div class="order-items">
+                <div class="order-item-row">
+                    <span class="item-name-qty"><strong>1x</strong> Kinalamansiang Baka</span>
+                    <span class="item-price">₱75.00</span>
+                </div>
+                <div class="order-item-row">
+                    <span class="item-name-qty"><strong>1x</strong> Adobong manok</span>
+                    <span class="item-price">₱75.00</span>
+                </div>
+            </div>
+
+            <div class="order-status-badge completed">
+                <i class="fas fa-check-circle"></i>
+                <span>COMPLETED</span>
+            </div>
+        </div>
+
+        <!-- Notification Time Footer -->
+        <div class="notification-time-footer">
+            <i class="far fa-clock"></i>
+            <span class="time-ago-text">1 hour ago</span>
         </div>
     </div>
 </template>
@@ -2229,7 +2538,7 @@
 <script>
 // Notification Panel JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    const notificationToggle = document.getElementById('notificationToggleBtn');
+    const notificationToggle = document.getElementById('notificationToggle');
     const notificationPanel = document.getElementById('notificationPanel');
     const closeNotificationBtn = document.getElementById('closeNotificationBtn');
     const markAllReadBtn = document.getElementById('markAllReadBtn');
@@ -2301,7 +2610,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Render notifications
-    // MODIFIED: Render notifications with collapsible functionality
     function renderNotifications(notifications) {
         const template = document.getElementById('notificationItemTemplate');
 
@@ -2315,32 +2623,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.classList.add('unread');
             }
 
-            // Set email in the collapsed header
-            const emailText = clone.querySelector('.notif-email-text');
-            emailText.textContent = notification.customer_email || 'Unknown Customer';
-
-            // Set notification message
-            const message = clone.querySelector('.notif-msg');
+            // Set notification title and message
+            const titleText = clone.querySelector('.notification-title-text');
+            const message = clone.querySelector('.notification-message');
+            titleText.textContent = notification.title || 'New Order';
             message.textContent = notification.message || 'Order has been completed';
+
+            // Set notification type badge
+            const typeBadge = clone.querySelector('.notification-type-badge');
+            typeBadge.textContent = notification.notification_type ? notification.notification_type.toUpperCase() : 'ORDER';
 
             // Set customer information
             if (notification.customer_name && notification.customer_email) {
-                const customerInitial = clone.querySelector('.notif-pic');
-                const customerName = clone.querySelector('.notif-cust-name');
-                const customerEmail = clone.querySelector('.notif-cust-mail');
+                const customerInitial = clone.querySelector('.customer-initial');
+                const customerName = clone.querySelector('.customer-name');
+                const customerEmail = clone.querySelector('.customer-email');
 
                 customerInitial.textContent = notification.customer_name.charAt(0).toUpperCase();
                 customerName.textContent = notification.customer_name;
                 customerEmail.textContent = notification.customer_email;
             } else {
-                clone.querySelector('.customer-info-section').remove();
+                clone.querySelector('.customer-info-card').remove();
             }
 
             // Set order information
             if (notification.order_id) {
-                const orderIdText = clone.querySelector('.notif-ord-num');
-                const orderTotalAmount = clone.querySelector('.notif-ord-amt');
-                const orderReference = clone.querySelector('.notif-ref span');
+                const orderIdText = clone.querySelector('.order-id-text');
+                const orderTotalAmount = clone.querySelector('.order-total-amount');
+                const orderReference = clone.querySelector('.order-reference-text span');
 
                 orderIdText.textContent = `Order #${notification.order_id}`;
                 orderTotalAmount.textContent = `₱${parseFloat(notification.total_amount || 0).toFixed(2)}`;
@@ -2348,29 +2658,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (notification.payment_reference) {
                     orderReference.textContent = `Ref: ${notification.payment_reference}`;
                 } else {
-                    clone.querySelector('.notif-ref').remove();
+                    clone.querySelector('.order-reference-text').remove();
                 }
 
                 // Render order items
-                const orderItemsContainer = clone.querySelector('.notif-list');
+                const orderItemsContainer = clone.querySelector('.order-items');
                 orderItemsContainer.innerHTML = '';
 
                 if (notification.order_items && notification.order_items.length > 0) {
                     notification.order_items.forEach(orderItem => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'notif-item';
-                        itemDiv.innerHTML = `
-                            <span class="notif-item-name"><strong>${orderItem.quantity}x</strong> ${orderItem.item_name}</span>
-                            <span class="notif-item-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
+                        const itemRow = document.createElement('div');
+                        itemRow.className = 'order-item-row';
+                        itemRow.innerHTML = `
+                            <span class="item-name-qty"><strong>${orderItem.quantity}x</strong> ${orderItem.item_name}</span>
+                            <span class="item-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
                         `;
-                        orderItemsContainer.appendChild(itemDiv);
+                        orderItemsContainer.appendChild(itemRow);
                     });
                 }
 
                 // Set order status
-                const statusBadge = clone.querySelector('.notif-status');
+                const statusBadge = clone.querySelector('.order-status-badge');
                 const status = (notification.order_status || 'pending').toLowerCase();
-                statusBadge.className = `notif-status ${status}`;
+                statusBadge.className = `order-status-badge ${status}`;
                 statusBadge.querySelector('span').textContent = status.toUpperCase();
 
                 // Update icon based on status
@@ -2384,32 +2694,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 statusIcon.className = `fas ${statusIcons[status] || 'fa-circle'}`;
             } else {
-                clone.querySelector('.order-summary-section').remove();
+                clone.querySelector('.order-summary-card').remove();
             }
 
             // Set time ago
             const timeAgoText = clone.querySelector('.time-ago-text');
             timeAgoText.textContent = getTimeAgo(notification.created_at);
 
-            notificationList.appendChild(clone);
-
-            // Add toggle functionality to the newly added item
-            const addedItem = notificationList.querySelector(`[data-notification-id="${notification.id}"]`);
-            const toggleLine = addedItem.querySelector('.notif-line');
-
-            toggleLine.addEventListener('click', function(e) {
-                e.stopPropagation();
-
-                // Toggle expanded state
-                addedItem.classList.toggle('expanded');
-
-                // Mark as read when expanded
-                if (addedItem.classList.contains('expanded') && addedItem.classList.contains('unread')) {
-                    markNotificationAsRead(notification.id);
-                }
+            // Add click handler
+            item.addEventListener('click', function() {
+                markNotificationAsRead(notification.id);
+                // You can add navigation logic here if needed
             });
+
+            notificationList.appendChild(clone);
         });
     }
+
     // Mark single notification as read
     function markNotificationAsRead(notificationId) {
         fetch(`/api/notifications/${notificationId}/mark-read/`, {
@@ -3280,15 +3581,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // NOTIFICATION PANEL FUNCTIONS
     // ==========================================
     function toggleNotificationPanel() {
-        console.log("🔔 toggleNotificationPanel called!");
         const panel = document.getElementById('notificationPanel');
-        if (!panel) { console.error("❌ Notification panel not found!"); return; }
         const chatPanel = document.getElementById('chatPanel');
 
-        if (panel.classList.contains('show')) {
-            panel.classList.remove('show');
+        if (panel.classList.contains('open')) {
+            panel.classList.remove('open');
         } else {
-            panel.classList.add('show');
+            panel.classList.add('open');
             // Close chat panel if open
             if (chatPanel) {
                 chatPanel.classList.remove('open');
@@ -3501,7 +3800,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-refresh notifications every 30 seconds
     setInterval(() => {
-        if (!document.getElementById('notificationPanel').classList.contains('show')) {
+        if (!document.getElementById('notificationPanel').classList.contains('open')) {
             // Just update badge without showing notifications
             fetch('/api/notifications/', {
                 method: 'GET',
