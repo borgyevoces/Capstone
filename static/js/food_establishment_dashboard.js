@@ -1164,91 +1164,191 @@ function loadNotifications() {
     });
 }
 // ✅ ENHANCED: Render notification with complete order details
+// ==========================================
+// REPLACED: Simple One-Line Accordion Notification
+// ==========================================
 function renderNotification(notif) {
     const isUnread = notif.is_new ? 'unread' : '';
-    const statusClass = notif.order.status.toLowerCase();
-    const customerInitial = notif.customer.name.charAt(0).toUpperCase();
+    const initial = notif.customer.name ? notif.customer.name.charAt(0).toUpperCase() : 'U';
+    const email = notif.customer.email || 'customer@email.com';
+    const orderId = notif.order.id || 'N/A';
+    const status = notif.order.status ? notif.order.status.toLowerCase() : 'pending';
 
-    // Format order items
-    const orderItemsHTML = notif.order.items.map(item => `
-        <div class="order-item-row">
-            <div class="item-name-qty">
-                <strong>${item.name}</strong> x${item.quantity}
-            </div>
-            <div class="item-price">₱${item.total.toFixed(2)}</div>
+    // Format items
+    const items = notif.order.items ? notif.order.items.map(item => `
+        <div class="notif-prod">
+            <span class="notif-prod-name">
+                <strong>${item.quantity}x</strong> ${escapeHtml(item.name)}
+            </span>
+            <span class="notif-prod-price">₱${parseFloat(item.total).toFixed(2)}</span>
         </div>
-    `).join('');
+    `).join('') : '';
 
     return `
-        <div class="notification-item ${isUnread}" onclick="markNotificationRead(${notif.id})" data-notification-id="${notif.id}">
-            <div class="notification-header">
-                <div class="notification-icon">
-                    <i class="fas fa-shopping-cart"></i>
+        <div class="notification-item ${isUnread}" data-nid="${notif.id}">
+
+            <!-- ONE LINE: Email + Arrow ONLY -->
+            <div class="notif-line" onclick="toggleNotif('${notif.id}')">
+                <span class="notif-email-text">${escapeHtml(email)}</span>
+                <div class="notif-arrow">
+                    <i class="fas fa-chevron-down"></i>
                 </div>
-                <div class="notification-content">
-                    <div class="notification-title">
-                        <span>New Order #${notif.order.id}</span>
-                        <span class="notification-type-badge ${notif.type}">NEW ORDER</span>
+            </div>
+
+            <!-- EXPANDABLE: All Details (Hidden by default) -->
+            <div class="notif-expand">
+                <div class="notif-inner">
+
+                    ${notif.message ? `
+                        <div class="notif-msg">${escapeHtml(notif.message)}</div>
+                    ` : ''}
+
+                    <!-- Customer -->
+                    <div class="notif-block">
+                        <div class="notif-sec-label">Customer</div>
+                        <div class="notif-cust">
+                            <div class="notif-pic">${initial}</div>
+                            <div class="notif-cust-data">
+                                <div class="notif-cust-name">${escapeHtml(notif.customer.name)}</div>
+                                <div class="notif-cust-mail">${escapeHtml(email)}</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="notification-message">${notif.message}</div>
-                </div>
-            </div>
 
-            <!-- Customer Information -->
-            <div class="customer-info">
-                <div class="customer-avatar">${customerInitial}</div>
-                <div class="customer-details">
-                    <div class="customer-name">${notif.customer.name}</div>
-                    <div class="customer-email">${notif.customer.email}</div>
-                </div>
-            </div>
+                    <!-- Order -->
+                    <div class="notif-block">
+                        <div class="notif-sec-label">Order Details</div>
+                        <div class="notif-ord">
+                            <div class="notif-ord-top">
+                                <span class="notif-ord-num">Order #${escapeHtml(orderId)}</span>
+                                <span class="notif-ord-amt">₱${parseFloat(notif.order.total_amount).toFixed(2)}</span>
+                            </div>
 
-            <!-- Order Summary -->
-            <div class="order-summary">
-                <div class="order-summary-header">
-                    <span class="order-id">Order #${notif.order.id}</span>
-                    <span class="order-total">₱${notif.order.total_amount.toFixed(2)}</span>
-                </div>
+                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `
+                                <div class="notif-ref">
+                                    <i class="fas fa-hashtag"></i>
+                                    Ref: ${escapeHtml(notif.order.reference_number)}
+                                </div>
+                            ` : ''}
 
-                ${notif.order.reference_number !== 'N/A' ? `
-                    <div class="order-reference">
-                        <i class="fas fa-hashtag"></i> Ref: ${notif.order.reference_number}
+                            ${items ? `<div class="notif-list">${items}</div>` : ''}
+
+                            <div class="notif-stat ${status}">
+                                <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
+                                ${escapeHtml(notif.order.status || 'Pending')}
+                            </div>
+                        </div>
                     </div>
-                ` : ''}
 
-                <div class="order-items-list">
-                    ${orderItemsHTML}
-                </div>
+                    ${notif.order.delivery_address ? `
+                        <div class="notif-block">
+                            <div class="notif-sec-label">Delivery Address</div>
+                            <div class="notif-addr">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${escapeHtml(notif.order.delivery_address)}
+                            </div>
+                        </div>
+                    ` : ''}
 
-                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                    <span class="order-status-badge ${statusClass}">
-                        <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
-                        ${notif.order.status}
-                    </span>
-                    <span style="font-size: 12px; color: #6b7280;">
-                        ${notif.order.item_count} item${notif.order.item_count > 1 ? 's' : ''}
-                    </span>
+                    <div class="notif-when">
+                        <i class="far fa-clock"></i>
+                        ${notif.time_ago}
+                    </div>
+
+                    <div class="notif-btns">
+                        <button class="notif-btn notif-btn-view" onclick="event.stopPropagation(); viewOrderPage('${notif.order.id}')">
+                            <i class="fas fa-eye"></i>
+                            View Order
+                        </button>
+                        <button class="notif-btn notif-btn-dismiss" onclick="event.stopPropagation(); removeNotif('${notif.id}')">
+                            <i class="fas fa-times"></i>
+                            Dismiss
+                        </button>
+                    </div>
+
                 </div>
             </div>
-
-            <!-- Timestamps -->
-            <div class="notification-time">
-                <i class="far fa-clock"></i>
-                <span class="time-ago">${notif.time_ago}</span>
-                <span style="margin-left: auto; font-size: 11px;">
-                    ${notif.created_at}
-                </span>
-            </div>
-
-            ${notif.payment_confirmed_at ? `
-                <div class="notification-time" style="margin-top: 4px; color: #10b981;">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Paid: ${notif.payment_confirmed_at}</span>
-                </div>
-            ` : ''}
         </div>
     `;
 }
+
+// Helper: Escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, c => map[c]);
+}
+
+// Toggle notification expansion
+function toggleNotif(nid) {
+    const item = document.querySelector(`[data-nid="${nid}"]`);
+    if (!item) return;
+
+    const wasExpanded = item.classList.contains('expanded');
+
+    // Close all other notifications
+    document.querySelectorAll('.notification-item.expanded').forEach(el => {
+        el.classList.remove('expanded');
+    });
+
+    // Toggle this one
+    if (!wasExpanded) {
+        item.classList.add('expanded');
+
+        // Mark as read when expanded
+        if (item.classList.contains('unread')) {
+            markNotificationRead(nid);
+            item.classList.remove('unread');
+        }
+    }
+}
+
+// View order page
+function viewOrderPage(oid) {
+    window.location.href = `/orders/${oid}/`;
+}
+
+// Remove notification with animation
+function removeNotif(nid) {
+    const item = document.querySelector(`[data-nid="${nid}"]`);
+    if (!item) return;
+
+    item.style.animation = 'slideOut 0.3s ease';
+
+    setTimeout(() => {
+        item.remove();
+
+        // Check if list is empty
+        const list = document.getElementById('notificationList');
+        if (list && list.children.length === 0) {
+            list.innerHTML = `
+                <div class="notification-empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications</p>
+                </div>
+            `;
+        }
+
+        // Update badge count
+        updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length);
+    }, 300);
+
+    // Call API to dismiss
+    fetch(`/api/notifications/${nid}/dismiss/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).catch(e => console.error('Dismiss error:', e));
+}
+
 
 function pollNotifications() {
     if (!document.getElementById('notificationPanel').classList.contains('open')) {
@@ -1910,207 +2010,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-// ==========================================
-// SIMPLE ONE-LINE ACCORDION NOTIFICATIONS
-// Email lang initially, click arrow to expand all details
-// ==========================================
-
-// Override renderNotification for one-line accordion
-window.renderNotificationOriginal = window.renderNotification;
-
-window.renderNotification = function(notif) {
-    const isUnread = notif.is_new ? 'unread' : '';
-    const initial = notif.customer.name ? notif.customer.name.charAt(0).toUpperCase() : 'U';
-    const email = notif.customer.email || 'customer@email.com';
-    const orderId = notif.order.id || 'N/A';
-    const status = notif.order.status ? notif.order.status.toLowerCase() : 'pending';
-
-    // Format items
-    const items = notif.order.items ? notif.order.items.map(item => `
-        <div class="notif-prod">
-            <span class="notif-prod-name">
-                <strong>${item.quantity}x</strong> ${esc(item.name)}
-            </span>
-            <span class="notif-prod-price">₱${parseFloat(item.total).toFixed(2)}</span>
-        </div>
-    `).join('') : '';
-
-    return `
-        <div class="notification-item ${isUnread}" data-nid="${notif.id}">
-
-            <!-- ONE LINE: Email + Arrow -->
-            <div class="notif-line" onclick="toggle('${notif.id}')">
-                <span class="notif-email-text">${esc(email)}</span>
-                <div class="notif-arrow">
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-
-            <!-- EXPANDABLE: All Details -->
-            <div class="notif-expand">
-                <div class="notif-inner">
-
-                    ${notif.message ? `
-                        <div class="notif-msg">${esc(notif.message)}</div>
-                    ` : ''}
-
-                    <!-- Customer -->
-                    <div class="notif-block">
-                        <div class="notif-sec-label">Customer</div>
-                        <div class="notif-cust">
-                            <div class="notif-pic">${initial}</div>
-                            <div class="notif-cust-data">
-                                <div class="notif-cust-name">${esc(notif.customer.name)}</div>
-                                <div class="notif-cust-mail">${esc(email)}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Order -->
-                    <div class="notif-block">
-                        <div class="notif-sec-label">Order Details</div>
-                        <div class="notif-ord">
-                            <div class="notif-ord-top">
-                                <span class="notif-ord-num">Order #${esc(orderId)}</span>
-                                <span class="notif-ord-amt">₱${parseFloat(notif.order.total_amount).toFixed(2)}</span>
-                            </div>
-
-                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `
-                                <div class="notif-ref">
-                                    <i class="fas fa-hashtag"></i>
-                                    Ref: ${esc(notif.order.reference_number)}
-                                </div>
-                            ` : ''}
-
-                            ${items ? `<div class="notif-list">${items}</div>` : ''}
-
-                            <div class="notif-stat ${status}">
-                                <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
-                                ${esc(notif.order.status || 'Pending')}
-                            </div>
-                        </div>
-                    </div>
-
-                    ${notif.order.delivery_address ? `
-                        <div class="notif-block">
-                            <div class="notif-sec-label">Delivery Address</div>
-                            <div class="notif-addr">
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${esc(notif.order.delivery_address)}
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div class="notif-when">
-                        <i class="far fa-clock"></i>
-                        ${notif.time_ago}
-                    </div>
-
-                    <div class="notif-btns">
-                        <button class="notif-btn notif-btn-view" onclick="event.stopPropagation(); goOrder('${notif.order.id}')">
-                            <i class="fas fa-eye"></i>
-                            View Order
-                        </button>
-                        <button class="notif-btn notif-btn-dismiss" onclick="event.stopPropagation(); remove('${notif.id}')">
-                            <i class="fas fa-times"></i>
-                            Dismiss
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-// Toggle expansion
-function toggle(nid) {
-    const item = document.querySelector(`[data-nid="${nid}"]`);
-    if (!item) return;
-
-    const wasExpanded = item.classList.contains('expanded');
-
-    // Close all
-    document.querySelectorAll('.notification-item.expanded').forEach(el => {
-        el.classList.remove('expanded');
-    });
-
-    // Toggle this one
-    if (!wasExpanded) {
-        item.classList.add('expanded');
-
-        // Mark as read
-        if (item.classList.contains('unread')) {
-            markRead(nid);
-            item.classList.remove('unread');
-        }
-    }
-}
-
-// Mark as read
-function markRead(nid) {
-    fetch(`/api/notifications/${nid}/mark-read/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            updateNotificationBadge(d.unread_count || 0);
-        }
-    })
-    .catch(e => console.error('Mark read error:', e));
-}
-
-// Go to order
-function goOrder(oid) {
-    window.location.href = `/orders/${oid}/`;
-}
-
-// Remove notification
-function remove(nid) {
-    const item = document.querySelector(`[data-nid="${nid}"]`);
-    if (!item) return;
-
-    item.style.animation = 'slideOut 0.3s ease';
-
-    setTimeout(() => {
-        item.remove();
-
-        const list = document.getElementById('notificationList');
-        if (list && list.children.length === 0) {
-            list.innerHTML = `
-                <div class="notification-empty-state">
-                    <i class="fas fa-bell-slash"></i>
-                    <p>No notifications</p>
-                </div>
-            `;
-        }
-
-        updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length);
-    }, 300);
-
-    fetch(`/api/notifications/${nid}/dismiss/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    }).catch(e => console.error('Dismiss error:', e));
-}
-
-// Escape HTML
-function esc(txt) {
-    if (!txt) return '';
-    const m = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return String(txt).replace(/[&<>"']/g, c => m[c]);
-}
