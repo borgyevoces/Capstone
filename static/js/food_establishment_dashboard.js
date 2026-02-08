@@ -2010,3 +2010,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// ==========================================
+// NOTIFICATION PANEL EVENT LISTENERS - ADDED FIX
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔔 Setting up notification panel event listeners...');
+
+    const notificationToggleBtn = document.getElementById('notificationToggleBtn');
+    const closeNotificationBtn = document.getElementById('closeNotificationBtn');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    const notificationPanel = document.getElementById('notificationPanel');
+
+    // Toggle notification panel when bell icon is clicked
+    if (notificationToggleBtn) {
+        notificationToggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔔 Notification button clicked!');
+            toggleNotificationPanel();
+        });
+        console.log('✅ Notification toggle button listener added');
+    } else {
+        console.error('❌ Notification toggle button not found!');
+    }
+
+    // Close notification panel when X button is clicked
+    if (closeNotificationBtn) {
+        closeNotificationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('❌ Close notification button clicked!');
+            if (notificationPanel) {
+                notificationPanel.classList.remove('show');
+            }
+        });
+        console.log('✅ Close notification button listener added');
+    } else {
+        console.error('❌ Close notification button not found!');
+    }
+
+    // Mark all notifications as read
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('✅ Mark all read button clicked!');
+            markAllNotificationsRead();
+        });
+        console.log('✅ Mark all read button listener added');
+    } else {
+        console.error('❌ Mark all read button not found!');
+    }
+
+    // Close notification panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (notificationPanel &&
+            notificationPanel.classList.contains('show') &&
+            !notificationPanel.contains(e.target) &&
+            e.target !== notificationToggleBtn &&
+            !notificationToggleBtn.contains(e.target)) {
+            console.log('👆 Clicked outside notification panel, closing...');
+            notificationPanel.classList.remove('show');
+        }
+    });
+
+    console.log('✅ Notification panel event listeners setup complete!');
+});
