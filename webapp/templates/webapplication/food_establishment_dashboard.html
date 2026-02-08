@@ -2471,73 +2471,75 @@
 <!-- Notification Item Template (Hidden, used by JavaScript) -->
 <template id="notificationItemTemplate">
     <div class="notification-item" data-notification-id="">
-        <!-- Notification Header with Icon -->
-        <div class="notification-item-header">
-            <div class="notification-icon">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
-            <div class="notification-content-header">
-                <div class="notification-title-row">
-                    <span class="notification-title-text">New Order</span>
-                    <span class="notification-type-badge order">ORDER</span>
-                </div>
-                <p class="notification-message">Order has been completed</p>
+        <!-- ONE LINE: Email + Arrow ONLY -->
+        <div class="notif-line">
+            <span class="notif-email-text">customer@email.com</span>
+            <div class="notif-arrow">
+                <i class="fas fa-chevron-down"></i>
             </div>
         </div>
 
-        <!-- Customer Information Card -->
-        <div class="customer-info-card">
-            <div class="customer-info-row">
-                <div class="customer-avatar">
-                    <span class="customer-initial">R</span>
+        <!-- EXPANDABLE: All Details (Hidden by default) -->
+        <div class="notif-expand">
+            <div class="notif-inner">
+                <!-- Message -->
+                <div class="notif-msg"></div>
+
+                <!-- Customer -->
+                <div class="notif-block">
+                    <div class="notif-sec-label">Customer</div>
+                    <div class="notif-cust">
+                        <div class="notif-pic">
+                            <span class="customer-initial">U</span>
+                        </div>
+                        <div class="notif-cust-data">
+                            <div class="notif-cust-name customer-name">Customer</div>
+                            <div class="notif-cust-mail customer-email">email@test.com</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="customer-details">
-                    <div class="customer-name">Customer Name</div>
-                    <div class="customer-email">customer@email.com</div>
+
+                <!-- Order -->
+                <div class="notif-block">
+                    <div class="notif-sec-label">Order Details</div>
+                    <div class="notif-ord">
+                        <div class="notif-ord-top">
+                            <span class="notif-ord-num order-id-text">Order #1</span>
+                            <span class="notif-ord-amt order-total-amount">₱0.00</span>
+                        </div>
+                        <div class="notif-ref order-reference-text" style="display:none;">
+                            <i class="fas fa-hashtag"></i>
+                            <span class="ref-text">Ref: N/A</span>
+                        </div>
+                        <div class="notif-list order-items"></div>
+                        <div class="notif-stat order-status-badge">
+                            <i class="fas fa-clock"></i>
+                            <span>PENDING</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time -->
+                <div class="notif-when">
+                    <i class="far fa-clock"></i>
+                    <span class="time-ago-text">Just now</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="notif-btns">
+                    <button class="notif-btn notif-btn-view">
+                        <i class="fas fa-eye"></i>
+                        View Order
+                    </button>
+                    <button class="notif-btn notif-btn-dismiss">
+                        <i class="fas fa-times"></i>
+                        Dismiss
+                    </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Order Summary Card -->
-        <div class="order-summary-card">
-            <div class="order-summary-top">
-                <span class="order-id-text">Order #1</span>
-                <span class="order-total-amount">₱150.00</span>
-            </div>
-
-            <div class="order-reference-text">
-                <i class="fas fa-link"></i>
-                <span>Ref: link_4GbJ1KeQLBYU4gccghfEMTAF</span>
-            </div>
-
-            <div class="order-items">
-                <div class="order-item-row">
-                    <span class="item-name-qty"><strong>1x</strong> Kinalamansiang Baka</span>
-                    <span class="item-price">₱75.00</span>
-                </div>
-                <div class="order-item-row">
-                    <span class="item-name-qty"><strong>1x</strong> Adobong manok</span>
-                    <span class="item-price">₱75.00</span>
-                </div>
-            </div>
-
-            <div class="order-status-badge completed">
-                <i class="fas fa-check-circle"></i>
-                <span>COMPLETED</span>
-            </div>
-        </div>
-
-        <!-- Notification Time Footer -->
-        <div class="notification-time-footer">
-            <i class="far fa-clock"></i>
-            <span class="time-ago-text">1 hour ago</span>
         </div>
     </div>
 </template>
-
-<script>
-// Notification Panel JavaScript
-document.addEventListener('DOMContentLoaded', function() {
     const notificationToggle = document.getElementById('notificationToggle');
     const notificationPanel = document.getElementById('notificationPanel');
     const closeNotificationBtn = document.getElementById('closeNotificationBtn');
@@ -2612,6 +2614,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render notifications
     function renderNotifications(notifications) {
         const template = document.getElementById('notificationItemTemplate');
+        const notificationList = document.getElementById('notificationList');
+
+        if (!template || !notificationList) return;
+
+        notificationList.innerHTML = '';
+
+        if (!notifications || notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="notification-empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications</p>
+                </div>
+            `;
+            return;
+        }
 
         notifications.forEach(notification => {
             const clone = template.content.cloneNode(true);
@@ -2619,96 +2636,170 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Set notification ID and unread status
             item.dataset.notificationId = notification.id;
-            if (!notification.is_read) {
+            item.dataset.nid = notification.id;
+            if (notification.is_new || !notification.is_read) {
                 item.classList.add('unread');
             }
 
-            // Set notification title and message
-            const titleText = clone.querySelector('.notification-title-text');
-            const message = clone.querySelector('.notification-message');
-            titleText.textContent = notification.title || 'New Order';
-            message.textContent = notification.message || 'Order has been completed';
+            // Set email in one-line header
+            const emailText = clone.querySelector('.notif-email-text');
+            const email = (notification.customer && notification.customer.email) ||
+                         notification.customer_email || 'customer@email.com';
+            emailText.textContent = email;
 
-            // Set notification type badge
-            const typeBadge = clone.querySelector('.notification-type-badge');
-            typeBadge.textContent = notification.notification_type ? notification.notification_type.toUpperCase() : 'ORDER';
+            // Set click handler for accordion
+            const notifLine = clone.querySelector('.notif-line');
+            notifLine.onclick = function() {
+                toggleNotif(notification.id);
+            };
 
-            // Set customer information
-            if (notification.customer_name && notification.customer_email) {
-                const customerInitial = clone.querySelector('.customer-initial');
-                const customerName = clone.querySelector('.customer-name');
-                const customerEmail = clone.querySelector('.customer-email');
-
-                customerInitial.textContent = notification.customer_name.charAt(0).toUpperCase();
-                customerName.textContent = notification.customer_name;
-                customerEmail.textContent = notification.customer_email;
+            // Set message
+            const msgEl = clone.querySelector('.notif-msg');
+            if (notification.message) {
+                msgEl.textContent = notification.message;
+                msgEl.style.display = 'block';
             } else {
-                clone.querySelector('.customer-info-card').remove();
+                msgEl.style.display = 'none';
             }
 
-            // Set order information
-            if (notification.order_id) {
-                const orderIdText = clone.querySelector('.order-id-text');
-                const orderTotalAmount = clone.querySelector('.order-total-amount');
-                const orderReference = clone.querySelector('.order-reference-text span');
+            // Set customer info
+            const customerName = (notification.customer && notification.customer.name) ||
+                               notification.customer_name || 'Customer';
+            const initial = customerName.charAt(0).toUpperCase();
 
-                orderIdText.textContent = `Order #${notification.order_id}`;
-                orderTotalAmount.textContent = `₱${parseFloat(notification.total_amount || 0).toFixed(2)}`;
+            clone.querySelector('.customer-initial').textContent = initial;
+            clone.querySelector('.customer-name').textContent = customerName;
+            clone.querySelector('.customer-email').textContent = email;
 
-                if (notification.payment_reference) {
-                    orderReference.textContent = `Ref: ${notification.payment_reference}`;
-                } else {
-                    clone.querySelector('.order-reference-text').remove();
-                }
+            // Set order info
+            const orderId = (notification.order && notification.order.id) ||
+                          notification.order_id || 'N/A';
+            const totalAmount = (notification.order && notification.order.total_amount) ||
+                              notification.total_amount || 0;
 
-                // Render order items
-                const orderItemsContainer = clone.querySelector('.order-items');
-                orderItemsContainer.innerHTML = '';
+            clone.querySelector('.order-id-text').textContent = `Order #${orderId}`;
+            clone.querySelector('.order-total-amount').textContent = `₱${parseFloat(totalAmount).toFixed(2)}`;
 
-                if (notification.order_items && notification.order_items.length > 0) {
-                    notification.order_items.forEach(orderItem => {
-                        const itemRow = document.createElement('div');
-                        itemRow.className = 'order-item-row';
-                        itemRow.innerHTML = `
-                            <span class="item-name-qty"><strong>${orderItem.quantity}x</strong> ${orderItem.item_name}</span>
-                            <span class="item-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
-                        `;
-                        orderItemsContainer.appendChild(itemRow);
-                    });
-                }
-
-                // Set order status
-                const statusBadge = clone.querySelector('.order-status-badge');
-                const status = (notification.order_status || 'pending').toLowerCase();
-                statusBadge.className = `order-status-badge ${status}`;
-                statusBadge.querySelector('span').textContent = status.toUpperCase();
-
-                // Update icon based on status
-                const statusIcon = statusBadge.querySelector('i');
-                const statusIcons = {
-                    'completed': 'fa-check-circle',
-                    'pending': 'fa-clock',
-                    'preparing': 'fa-fire',
-                    'ready': 'fa-box-open',
-                    'cancelled': 'fa-times-circle'
-                };
-                statusIcon.className = `fas ${statusIcons[status] || 'fa-circle'}`;
+            // Set reference
+            const refEl = clone.querySelector('.order-reference-text');
+            const refNumber = (notification.order && notification.order.reference_number) ||
+                            notification.payment_reference || notification.gcash_reference_number;
+            if (refNumber && refNumber !== 'N/A') {
+                refEl.style.display = 'inline-flex';
+                refEl.querySelector('.ref-text').textContent = `Ref: ${refNumber}`;
             } else {
-                clone.querySelector('.order-summary-card').remove();
+                refEl.style.display = 'none';
             }
 
-            // Set time ago
-            const timeAgoText = clone.querySelector('.time-ago-text');
-            timeAgoText.textContent = getTimeAgo(notification.created_at);
+            // Set order items
+            const itemsContainer = clone.querySelector('.order-items');
+            itemsContainer.innerHTML = '';
+            const items = (notification.order && notification.order.items) ||
+                        notification.order_items || [];
 
-            // Add click handler
-            item.addEventListener('click', function() {
-                markNotificationAsRead(notification.id);
-                // You can add navigation logic here if needed
-            });
+            if (items.length > 0) {
+                items.forEach(orderItem => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'notif-prod';
+                    const itemName = orderItem.name || orderItem.item_name || orderItem.menu_item?.name || 'Item';
+                    const itemQty = orderItem.quantity || 1;
+                    const itemTotal = orderItem.total || orderItem.price || orderItem.total_price || 0;
+
+                    itemDiv.innerHTML = `
+                        <span class="notif-prod-name">
+                            <strong>${itemQty}x</strong> ${itemName}
+                        </span>
+                        <span class="notif-prod-price">₱${parseFloat(itemTotal).toFixed(2)}</span>
+                    `;
+                    itemsContainer.appendChild(itemDiv);
+                });
+            }
+
+            // Set status
+            const statusBadge = clone.querySelector('.order-status-badge');
+            const status = ((notification.order && notification.order.status) ||
+                          notification.order_status || 'pending').toLowerCase();
+            statusBadge.className = `notif-stat ${status}`;
+
+            const isPaid = notification.is_paid || status === 'paid' || status === 'completed';
+            statusBadge.querySelector('i').className = `fas fa-${isPaid ? 'check-circle' : 'clock'}`;
+            statusBadge.querySelector('span').textContent = status.toUpperCase();
+
+            // Set time
+            const timeText = notification.time_ago || getTimeAgo(notification.created_at);
+            clone.querySelector('.time-ago-text').textContent = timeText;
+
+            // Set action buttons
+            const viewBtn = clone.querySelector('.notif-btn-view');
+            viewBtn.onclick = function(e) {
+                e.stopPropagation();
+                window.location.href = `/orders/${orderId}/`;
+            };
+
+            const dismissBtn = clone.querySelector('.notif-btn-dismiss');
+            dismissBtn.onclick = function(e) {
+                e.stopPropagation();
+                removeNotif(notification.id);
+            };
 
             notificationList.appendChild(clone);
         });
+    }
+
+    // Toggle accordion
+    function toggleNotif(nid) {
+        const item = document.querySelector(`[data-nid="${nid}"]`);
+        if (!item) return;
+
+        const wasExpanded = item.classList.contains('expanded');
+
+        // Close all
+        document.querySelectorAll('.notification-item.expanded').forEach(el => {
+            el.classList.remove('expanded');
+        });
+
+        // Toggle this one
+        if (!wasExpanded) {
+            item.classList.add('expanded');
+
+            // Mark as read
+            if (item.classList.contains('unread')) {
+                markNotificationAsRead(nid);
+                item.classList.remove('unread');
+            }
+        }
+    }
+
+    // Remove notification
+    function removeNotif(nid) {
+        const item = document.querySelector(`[data-nid="${nid}"]`);
+        if (!item) return;
+
+        item.style.animation = 'slideOut 0.3s ease';
+
+        setTimeout(() => {
+            item.remove();
+
+            const list = document.getElementById('notificationList');
+            if (list && list.children.length === 0) {
+                list.innerHTML = `
+                    <div class="notification-empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No notifications</p>
+                    </div>
+                `;
+            }
+
+            updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length);
+        }, 300);
+
+        fetch(`/api/notifications/${nid}/dismiss/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).catch(e => console.error('Dismiss error:', e));
     }
 
     // Mark single notification as read
