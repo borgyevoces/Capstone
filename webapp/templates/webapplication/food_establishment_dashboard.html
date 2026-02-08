@@ -3284,10 +3284,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const panel = document.getElementById('notificationPanel');
         const chatPanel = document.getElementById('chatPanel');
 
-        if (panel.classList.contains('open')) {
-            panel.classList.remove('open');
+        if (panel.classList.contains('show')) {
+            panel.classList.remove('show');
         } else {
-            panel.classList.add('open');
+            panel.classList.add('show');
             // Close chat panel if open
             if (chatPanel) {
                 chatPanel.classList.remove('open');
@@ -3500,7 +3500,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-refresh notifications every 30 seconds
     setInterval(() => {
-        if (!document.getElementById('notificationPanel').classList.contains('open')) {
+        if (!document.getElementById('notificationPanel').classList.contains('show')) {
             // Just update badge without showing notifications
             fetch('/api/notifications/', {
                 method: 'GET',

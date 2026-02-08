@@ -1124,10 +1124,10 @@ function confirmMapLocation() {
 // ==========================================
 function toggleNotificationPanel() {
     const panel = document.getElementById('notificationPanel');
-    if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
+    if (panel.classList.contains('show')) {
+        panel.classList.remove('show');
     } else {
-        panel.classList.add('open');
+        panel.classList.add('show');
         loadNotifications();
     }
 }
@@ -1351,7 +1351,7 @@ function removeNotif(nid) {
 
 
 function pollNotifications() {
-    if (!document.getElementById('notificationPanel').classList.contains('open')) {
+    if (!document.getElementById('notificationPanel').classList.contains('show')) {
         fetch('/api/notifications/', {
             method: 'GET',
             headers: {
@@ -1501,7 +1501,7 @@ document.addEventListener('keydown', function(e) {
         }
 
         const notificationPanel = document.getElementById('notificationPanel');
-        if (notificationPanel && notificationPanel.classList.contains('open')) {
+        if (notificationPanel && notificationPanel.classList.contains('show')) {
             toggleNotificationPanel();
         }
 
