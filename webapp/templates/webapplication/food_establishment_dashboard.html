@@ -2539,33 +2539,29 @@
     </div>
 
     <div class="sidebar-menu">
-        <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item active">
-            <i class="fas fa-chart-pie"></i>
+        <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}">
+            <i class="fas fa-chart-line"></i>
             <span>Dashboard</span>
         </a>
-        <a href="{% url 'owner_manage_menu' %}" class="sidebar-item">
-            <i class="fas fa-utensils"></i>
-            <span>Menu</span>
-        </a>
-        <a href="{% url 'owner_orders' %}" class="sidebar-item">
-            <i class="fas fa-shopping-cart"></i>
+        <a href="{% url 'orders_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}">
+            <i class="fas fa-shopping-bag"></i>
             <span>Orders</span>
+        </a>
+        <a href="{% url 'establishment_transaction_history' %}" class="sidebar-item {% if request.resolver_match.url_name == 'establishment_transaction_history' %}active{% endif %}">
+            <i class="fas fa-history"></i>
+            <span>Transactions</span>
         </a>
         <a href="#" class="sidebar-item" onclick="openSalesReportModal(); return false;">
             <i class="fas fa-chart-bar"></i>
             <span>Sales Report</span>
         </a>
-        <a href="{% url 'owner_reviews' %}" class="sidebar-item">
-            <i class="fas fa-star"></i>
-            <span>Reviews</span>
-        </a>
-        <a href="{% url 'manage_establishment' %}" class="sidebar-item">
-            <i class="fas fa-cog"></i>
-            <span>Settings</span>
-        </a>
     </div>
 
     <div class="sidebar-footer">
+        <a href="#" onclick="showDeleteConfirmation(event)" class="sidebar-item" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 15px; margin-bottom: 10px;">
+            <i class="fas fa-trash-alt"></i>
+            <span>Delete Establishment</span>
+        </a>
         <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
             <i class="fas fa-sign-out-alt"></i>
             <span>Logout</span>
@@ -2581,7 +2577,6 @@
         </button>
         <span class="navbar-page-title">{{ establishment.name }}</span>
         <div class="navbar-actions">
-
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
                     title="Notifications">
                 <i class="fas fa-bell"></i>
