@@ -2350,33 +2350,237 @@
             }
         }
 
+
+        /* ==========================================
+           SIDEBAR NAVIGATION LAYOUT
+           ========================================== */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-family: 'Pacifico', cursive;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        .sidebar.collapsed .sidebar-logo span {
+            display: none;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .sidebar-item.active {
+            background: rgba(183, 28, 28, 0.15);
+            color: white;
+            border-left-color: var(--primary);
+        }
+
+        .sidebar-item i {
+            font-size: 20px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .sidebar-item span {
+            display: none;
+        }
+
+        .sidebar-footer {
+            padding: 20px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item.logout {
+            color: rgba(255, 107, 107, 0.9);
+        }
+
+        .sidebar-item.logout:hover {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+        }
+
+        /* Sidebar toggle button */
+        .sidebar-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dark);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: none;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: var(--bg-light);
+        }
+
+        .navbar-page-title {
+            font-family: 'Pacifico', cursive;
+            font-size: 24px;
+            color: #000000;
+            font-weight: 400;
+            flex: 1;
+        }
+
+        /* Adjust navbar for sidebar layout */
+        .navbar {
+            left: 260px !important;
+            width: calc(100% - 260px) !important;
+        }
+
+        .sidebar.collapsed ~ .navbar {
+            left: 70px !important;
+            width: calc(100% - 70px) !important;
+        }
+
+        /* Adjust body for sidebar */
+        body {
+            padding-left: 260px;
+        }
+
+        body.sidebar-collapsed {
+            padding-left: 70px;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-toggle-btn {
+                display: block;
+            }
+
+            .navbar {
+                left: 0 !important;
+                width: 100% !important;
+            }
+
+            body {
+                padding-left: 0;
+                padding-top: 70px;
+            }
+
+            .navbar-page-title {
+                font-size: 20px;
+            }
+        }
+
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+<!-- SIDEBAR NAVIGATION -->
+<div class="sidebar" id="mainSidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <i class="fas fa-utensils"></i>
+            <span>KabsuEats</span>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item active">
+            <i class="fas fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'owner_manage_menu' %}" class="sidebar-item">
+            <i class="fas fa-utensils"></i>
+            <span>Menu</span>
+        </a>
+        <a href="{% url 'owner_orders' %}" class="sidebar-item">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Orders</span>
+        </a>
+        <a href="#" class="sidebar-item" onclick="openSalesReportModal(); return false;">
+            <i class="fas fa-chart-bar"></i>
+            <span>Sales Report</span>
+        </a>
+        <a href="{% url 'owner_reviews' %}" class="sidebar-item">
+            <i class="fas fa-star"></i>
+            <span>Reviews</span>
+        </a>
+        <a href="{% url 'manage_establishment' %}" class="sidebar-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+
 <nav class="navbar">
     <div class="navbar-container">
-        <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
-            KabsuEats
-        </a>
+        <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <span class="navbar-page-title">{{ establishment.name }}</span>
         <div class="navbar-actions">
-            <!-- Dashboard Button (Active) -->
-            <a href="{% url 'food_establishment_dashboard' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}" title="Dashboard" style="text-decoration: none; color: inherit;">
-                <i class="fas fa-chart-line"></i>
-                <span class="nav-btn-label">Dashboard</span>
-            </a>
-
-            <!-- Orders Button -->
-            <a href="{% url 'orders_list' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'orders_list' %}active{% endif %}" title="Orders" style="text-decoration: none; color: inherit;">
-                <i class="fas fa-shopping-bag"></i>
-                <span class="nav-btn-label">Orders</span>
-            </a>
-
-            <!-- Transaction History Button -->
-            <a href="{% url 'establishment_transaction_history' %}" class="nav-icon-btn {% if request.resolver_match.url_name == 'establishment_transaction_history' %}active{% endif %}" title="Transaction History" style="text-decoration: none; color: inherit;">
-                <i class="fas fa-history"></i>
-                <span class="nav-btn-label">Transactions</span>
-            </a>
 
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
                     title="Notifications">
@@ -4575,6 +4779,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 5000);
         }
     }
+
+
+
+    // Sidebar toggle functionality
+    function toggleSidebar() {
+        const sidebar = document.getElementById('mainSidebar');
+        const body = document.body;
+
+        if (window.innerWidth <= 768) {
+            // Mobile: slide in/out
+            sidebar.classList.toggle('mobile-open');
+        } else {
+            // Desktop: collapse/expand
+            sidebar.classList.toggle('collapsed');
+            body.classList.toggle('sidebar-collapsed');
+        }
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('mainSidebar');
+            const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+
+            if (sidebar && sidebar.classList.contains('mobile-open') &&
+                !sidebar.contains(e.target) &&
+                !toggleBtn?.contains(e.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        }
+    });
 
 
     {% block page_javascript %}
