@@ -3431,14 +3431,12 @@ body.sidebar-collapsed {
     text-align: center;
 }
 
-/* Update navbar-btn to be circular */
+/* Update navbar-btn - no border, just icon */
 .navbar-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    width: 56px;
-    height: 56px;
+    padding: 8px;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -3451,7 +3449,7 @@ body.sidebar-collapsed {
 }
 
 .navbar-btn i {
-    font-size: 44px;
+    font-size: 36px;
     color: var(--primary);
 }
 
