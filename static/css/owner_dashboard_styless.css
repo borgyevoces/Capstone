@@ -338,11 +338,11 @@ body {
     max-width: 500px;
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border: 2px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 24px 28px;
+    border-radius: 16px;
+    padding: 16px 24px;
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 16px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -374,8 +374,8 @@ body {
 }
 
 .top-action-btn:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .top-action-btn.add-item-btn:hover {
@@ -387,17 +387,17 @@ body {
 }
 
 .top-action-btn:active {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .btn-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 26px;
     flex-shrink: 0;
     position: relative;
     z-index: 1;
@@ -407,17 +407,17 @@ body {
 .top-action-btn.add-item-btn .btn-icon {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
 }
 
 .top-action-btn.update-btn .btn-icon {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
 }
 
 .top-action-btn:hover .btn-icon {
-    transform: scale(1.15) rotate(12deg);
+    transform: scale(1.12) rotate(10deg);
     background: white;
 }
 
@@ -433,20 +433,20 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     position: relative;
     z-index: 1;
 }
 
 .btn-label {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--text-dark);
     transition: color 0.3s ease;
 }
 
 .btn-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-muted);
     font-weight: 500;
     transition: color 0.3s ease;
@@ -870,7 +870,7 @@ body {
 }
 
 .menu-info {
-    padding: 12px;
+    padding: 14px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -879,7 +879,7 @@ body {
 .menu-name {
     font-size: 14px;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     color: var(--text-dark);
     line-height: 1.4;
     display: -webkit-box;
@@ -901,23 +901,24 @@ body {
 }
 
 .menu-price {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--primary);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .menu-actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 8px;
+    margin-top: auto;
 }
 
 .action-btn {
-    padding: 8px 5px;
+    padding: 9px 6px;
     background: var(--bg-light);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
     cursor: pointer;
     font-size: 11px;
     font-weight: 600;
@@ -926,7 +927,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
+    white-space: nowrap;
 }
 
 .action-btn:hover {
@@ -934,6 +936,7 @@ body {
     color: white;
     border-color: var(--primary);
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(183, 28, 28, 0.25);
 }
 
 .action-btn i {
@@ -1535,27 +1538,27 @@ body {
     .top-action-buttons {
         flex-direction: column;
         padding: 0 16px;
-        gap: 14px;
+        gap: 12px;
         margin-bottom: 20px;
     }
 
     .top-action-btn {
         max-width: 100%;
-        padding: 18px 20px;
+        padding: 14px 18px;
     }
 
     .btn-icon {
-        width: 52px;
-        height: 52px;
-        font-size: 26px;
+        width: 46px;
+        height: 46px;
+        font-size: 24px;
     }
 
     .btn-label {
-        font-size: 17px;
+        font-size: 16px;
     }
 
     .btn-desc {
-        font-size: 13px;
+        font-size: 12px;
     }
 
     /* FULL WIDTH CONTAINER - MOBILE */
@@ -3428,8 +3431,8 @@ body.sidebar-collapsed {
     align-items: center;
     justify-content: center;
     padding: 0;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     background: white;
     border: 1px solid var(--border);
     border-radius: 50%;
@@ -3440,11 +3443,11 @@ body.sidebar-collapsed {
 .navbar-btn:hover {
     background: var(--bg-light);
     border-color: var(--primary);
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 .navbar-btn i {
-    font-size: 24px;
+    font-size: 28px;
     color: var(--primary);
 }
 
