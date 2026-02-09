@@ -88,7 +88,9 @@ urlpatterns = [
                   path('payment/paymongo/success/', views.paymongo_payment_success, name='paymongo_payment_success'),
                   path('debug/order/<int:order_id>/', views.debug_order_status, name='debug_order'),
                   path('api/establishment/profile/', views.get_establishment_profile, name='get_establishment_profile'),
-
+                  path('establishment/profile/', views.food_establishment_profile, name='food_establishment_profile'),
+                  path('establishment/deactivate/', views.deactivate_establishment, name='deactivate_establishment'),
+    
                   #Client Side
                   path('my-purchases/', views.order_history_view, name='order_history'),
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),

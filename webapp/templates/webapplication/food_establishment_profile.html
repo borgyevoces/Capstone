@@ -1,0 +1,1005 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
+    <title>{{ establishment.name }} - Profile Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
+    <style>
+        /* Profile Settings Specific Styles */
+        .profile-settings-container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .profile-settings-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-settings-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-settings-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .settings-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .settings-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .settings-card-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+        }
+
+        .settings-card-title h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .settings-card-title p {
+            margin: 5px 0 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Profile Information Section */
+        .profile-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .profile-info-item {
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .profile-info-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-info-value {
+            font-size: 16px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .profile-image-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-image-display img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #667eea;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Danger Zone Styles */
+        .danger-zone-card {
+            background: #fff5f5;
+            border: 2px solid #fee2e2;
+        }
+
+        .danger-zone-card:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .danger-icon {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+
+        .danger-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .danger-action-btn {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+            border: 2px solid transparent;
+        }
+
+        .delete-action {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: 2px solid #dc2626;
+        }
+
+        .delete-action:hover {
+            background: #991b1b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .deactivate-action {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: 2px solid #f59e0b;
+        }
+
+        .deactivate-action:hover {
+            background: #d97706;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .danger-action-btn i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .danger-action-btn h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .danger-action-btn p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Back Button */
+        .back-to-dashboard {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-to-dashboard:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Delete Modal Styles */
+        .delete-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .delete-modal-overlay.active {
+            display: flex;
+        }
+
+        .delete-modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .delete-modal-header {
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .delete-modal-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .delete-modal-title h3 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .delete-modal-title p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .delete-modal-body {
+            padding: 30px;
+        }
+
+        .delete-warning-list {
+            background: #fff5f5;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .delete-warning-list h4 {
+            margin: 0 0 15px 0;
+            color: #991b1b;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .delete-warning-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .delete-warning-list li {
+            margin-bottom: 8px;
+            color: #7f1d1d;
+            font-size: 14px;
+        }
+
+        .confirmation-input-group {
+            margin-bottom: 25px;
+        }
+
+        .confirmation-input-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #374151;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .confirmation-input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .confirmation-input-group input:focus {
+            outline: none;
+            border-color: #dc2626;
+        }
+
+        .delete-modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .delete-modal-actions button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-confirm-btn {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+        }
+
+        .delete-confirm-btn:hover:not(:disabled) {
+            background: #991b1b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .delete-confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .delete-cancel-btn {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .delete-cancel-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* Deactivate Modal Styles */
+        .deactivate-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .deactivate-modal-overlay.active {
+            display: flex;
+        }
+
+        .deactivate-modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .deactivate-modal-header {
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .deactivate-modal-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .deactivate-modal-body {
+            padding: 30px;
+        }
+
+        .deactivate-info-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .deactivate-info-box h4 {
+            margin: 0 0 15px 0;
+            color: #92400e;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .deactivate-info-box p {
+            margin: 0 0 10px 0;
+            color: #78350f;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .deactivate-modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .deactivate-modal-actions button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .deactivate-confirm-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .deactivate-confirm-btn:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .deactivate-cancel-btn {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .deactivate-cancel-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .profile-settings-container {
+                padding: 20px;
+            }
+
+            .profile-settings-header h1 {
+                font-size: 24px;
+            }
+
+            .settings-card {
+                padding: 20px;
+            }
+
+            .danger-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .delete-modal-actions,
+            .deactivate-modal-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Sidebar styles - keeping the same layout */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 250px;
+            background: linear-gradient(180deg, #1e1e2d 0%, #27293d 100%);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .sidebar-logo i {
+            font-size: 24px;
+            color: #f02849;
+        }
+
+        .sidebar.collapsed .sidebar-logo span {
+            display: none;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+            color: white;
+            box-shadow: 0 4px 8px rgba(240, 40, 73, 0.3);
+        }
+
+        .sidebar-item i {
+            font-size: 18px;
+            min-width: 20px;
+        }
+
+        .sidebar.collapsed .sidebar-item span {
+            display: none;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item.logout {
+            color: #ef4444;
+        }
+
+        .sidebar-item.logout:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Main content adjustment */
+        body {
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+
+        body.sidebar-collapsed {
+            margin-left: 70px;
+        }
+
+        .sidebar-toggle-btn {
+            position: fixed;
+            left: 250px;
+            top: 20px;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: #f02849;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            body {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle-btn {
+                left: 20px;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar" id="mainSidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <i class="fas fa-utensils"></i>
+            <span>KabsuEats</span>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <!-- Profile Settings is the active page now -->
+        <a href="#" class="sidebar-item active">
+            <i class="fas fa-cog"></i>
+            <span>Profile Settings</span>
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<!-- Sidebar Toggle Button -->
+<button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Main Content -->
+<div class="profile-settings-container">
+    <!-- Back Button -->
+    <a href="{% url 'food_establishment_dashboard' %}" class="back-to-dashboard">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+
+    <!-- Profile Settings Header -->
+    <div class="profile-settings-header">
+        <h1>
+            <i class="fas fa-user-cog"></i>
+            Profile Settings
+        </h1>
+        <p>Manage your establishment profile and account settings</p>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="settings-grid">
+
+        <!-- Establishment Profile Card -->
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="settings-card-title">
+                    <h2>Establishment Information</h2>
+                    <p>View your establishment details</p>
+                </div>
+            </div>
+
+            <!-- Profile Image -->
+            <div class="profile-image-display">
+                <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                     alt="{{ establishment.name }}">
+            </div>
+
+            <!-- Profile Information Grid -->
+            <div class="profile-info-grid">
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-store"></i>
+                        Establishment Name
+                    </div>
+                    <div class="profile-info-value">{{ establishment.name }}</div>
+                </div>
+
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </div>
+                    <div class="profile-info-value">{{ establishment.email }}</div>
+                </div>
+
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-phone"></i>
+                        Contact Number
+                    </div>
+                    <div class="profile-info-value">{{ establishment.contact_number }}</div>
+                </div>
+
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Address
+                    </div>
+                    <div class="profile-info-value">{{ establishment.address }}</div>
+                </div>
+
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-clock"></i>
+                        Operating Hours
+                    </div>
+                    <div class="profile-info-value">
+                        {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+                    </div>
+                </div>
+
+                <div class="profile-info-item">
+                    <div class="profile-info-label">
+                        <i class="fas fa-info-circle"></i>
+                        Description
+                    </div>
+                    <div class="profile-info-value">{{ establishment.description|truncatewords:20 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone Card -->
+        <div class="settings-card danger-zone-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon danger-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="settings-card-title">
+                    <h2>Danger Zone</h2>
+                    <p>Irreversible actions - proceed with caution</p>
+                </div>
+            </div>
+
+            <div class="danger-actions">
+                <!-- Delete Establishment -->
+                <a href="#" class="danger-action-btn delete-action" onclick="showDeleteConfirmation(event)">
+                    <i class="fas fa-trash-alt"></i>
+                    <h3>Delete Establishment</h3>
+                    <p>Permanently remove your establishment</p>
+                </a>
+
+                <!-- Deactivate Establishment -->
+                <a href="#" class="danger-action-btn deactivate-action" onclick="showDeactivateConfirmation(event)">
+                    <i class="fas fa-ban"></i>
+                    <h3>Deactivate Establishment</h3>
+                    <p>Temporarily disable your establishment</p>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Delete Establishment Modal -->
+<div class="delete-modal-overlay" id="deleteModal">
+    <div class="delete-modal">
+        <div class="delete-modal-header">
+            <div class="delete-modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="delete-modal-title">
+                <h3>Delete Establishment?</h3>
+                <p>This action cannot be undone</p>
+            </div>
+        </div>
+        <div class="delete-modal-body">
+            <div class="delete-warning-list">
+                <h4><i class="fas fa-exclamation-circle"></i> Warning: You will permanently lose:</h4>
+                <ul>
+                    <li>All menu items and categories</li>
+                    <li>Order history and customer data</li>
+                    <li>Transaction records and analytics</li>
+                    <li>Reviews and ratings</li>
+                    <li>All establishment settings</li>
+                </ul>
+            </div>
+
+            <div class="confirmation-input-group">
+                <label for="deleteConfirmText">
+                    Type "DELETE" to confirm:
+                </label>
+                <input
+                    type="text"
+                    id="deleteConfirmText"
+                    placeholder="Type DELETE in capital letters"
+                    oninput="validateDeleteInput()"
+                >
+            </div>
+
+            <form method="POST" action="{% url 'delete_establishment' %}" id="deleteForm">
+                {% csrf_token %}
+                <div class="delete-modal-actions">
+                    <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="delete-confirm-btn" id="deleteConfirmBtn" disabled>
+                        Delete Permanently
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Establishment Modal -->
+<div class="deactivate-modal-overlay" id="deactivateModal">
+    <div class="deactivate-modal">
+        <div class="deactivate-modal-header">
+            <div class="deactivate-modal-icon">
+                <i class="fas fa-pause-circle"></i>
+            </div>
+            <div class="delete-modal-title">
+                <h3>Deactivate Establishment?</h3>
+                <p>Temporarily disable your establishment</p>
+            </div>
+        </div>
+        <div class="deactivate-modal-body">
+            <div class="deactivate-info-box">
+                <h4><i class="fas fa-info-circle"></i> What happens when you deactivate:</h4>
+                <p><strong>✓</strong> Your establishment will be hidden from customer searches</p>
+                <p><strong>✓</strong> Customers cannot place new orders</p>
+                <p><strong>✓</strong> All data remains intact and can be restored</p>
+                <p><strong>✓</strong> You can reactivate anytime from your dashboard</p>
+            </div>
+
+            <form method="POST" action="{% url 'deactivate_establishment' %}" id="deactivateForm">
+                {% csrf_token %}
+                <div class="deactivate-modal-actions">
+                    <button type="button" class="deactivate-cancel-btn" onclick="closeDeactivateModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="deactivate-confirm-btn">
+                        Deactivate Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sidebar Toggle Function
+    function toggleSidebar() {
+        const sidebar = document.getElementById('mainSidebar');
+        const body = document.body;
+
+        if (window.innerWidth <= 768) {
+            sidebar.classList.toggle('mobile-open');
+        } else {
+            sidebar.classList.toggle('collapsed');
+            body.classList.toggle('sidebar-collapsed');
+        }
+    }
+
+    // Delete Modal Functions
+    function showDeleteConfirmation(event) {
+        event.preventDefault();
+        document.getElementById('deleteModal').classList.add('active');
+        document.getElementById('deleteConfirmText').value = '';
+        document.getElementById('deleteConfirmBtn').disabled = true;
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+    }
+
+    function validateDeleteInput() {
+        const input = document.getElementById('deleteConfirmText');
+        const confirmBtn = document.getElementById('deleteConfirmBtn');
+
+        if (input.value === 'DELETE') {
+            confirmBtn.disabled = false;
+        } else {
+            confirmBtn.disabled = true;
+        }
+    }
+
+    // Deactivate Modal Functions
+    function showDeactivateConfirmation(event) {
+        event.preventDefault();
+        document.getElementById('deactivateModal').classList.add('active');
+    }
+
+    function closeDeactivateModal() {
+        document.getElementById('deactivateModal').classList.remove('active');
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const deleteModal = document.getElementById('deleteModal');
+        const deactivateModal = document.getElementById('deactivateModal');
+
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+        if (event.target === deactivateModal) {
+            closeDeactivateModal();
+        }
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('mainSidebar');
+        const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+
+        if (sidebar && sidebar.classList.contains('mobile-open') &&
+            !sidebar.contains(event.target) &&
+            !toggleBtn.contains(event.target)) {
+            sidebar.classList.remove('mobile-open');
+        }
+    });
+</script>
+
+</body>
+</html>

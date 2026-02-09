@@ -2828,12 +2828,8 @@
                 </button>
                 <div class="navbar-menu" id="navMenu">
                     <div class="navbar-menu-header">Settings</div>
-                    <a href="#" onclick="showDeleteConfirmation(event); closeDropdown();" class="navbar-menu-item">
-                        <i class="fas fa-trash-alt"></i>
-                        <span>Delete Establishment</span>
-                    </a>
-                    <a href="#" onclick="openProfileModal(); closeDropdown();" class="navbar-menu-item">
-                        <i class="fas fa-user"></i>
+                    <a href="{% url 'food_establishment_profile' %}" class="navbar-menu-item">
+                        <i class="fas fa-user-cog"></i>
                         <span>Profile</span>
                     </a>
                 </div>

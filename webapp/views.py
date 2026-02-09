@@ -4693,6 +4693,63 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import FoodEstablishment
 
+@login_required(login_url='owner_login')
+def food_establishment_profile(request):
+    """
+    Display the food establishment profile settings page.
+    Shows establishment information and provides options to delete or deactivate.
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        context = {
+            'establishment': establishment,
+        }
+
+        return render(request, 'webapplication/food_establishment_profile.html', context)
+
+    except FoodEstablishment.DoesNotExist:
+        return redirect('owner_login')
+    except Exception as e:
+        return redirect('food_establishment_dashboard')
+
+@login_required(login_url='owner_login')
+@require_http_methods(["POST"])
+def deactivate_establishment(request):
+    """
+    Deactivate the food establishment owned by the current user.
+    This will hide the establishment from customer searches but keep all data intact.
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        establishment_name = establishment.name
+
+        # Set the establishment as inactive
+        # Assuming there's an 'is_active' field in your FoodEstablishment model
+        # If not, you'll need to add this field to your model:
+        # is_active = models.BooleanField(default=True)
+        establishment.is_active = False
+        establishment.save()
+
+        # Redirect to dashboard with success message
+        # You can use Django messages framework for this
+        from django.contrib import messages
+        messages.success(request,
+                         f'{establishment_name} has been deactivated successfully. You can reactivate it anytime.')
+
+        return redirect('food_establishment_dashboard')
+
+    except FoodEstablishment.DoesNotExist:
+        from django.contrib import messages
+        messages.error(request, 'No establishment found for this account.')
+        return redirect('owner_login')
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('food_establishment_dashboard')
 
 @login_required
 def get_establishment_profile(request):
