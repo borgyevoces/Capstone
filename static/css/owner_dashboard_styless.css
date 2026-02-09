@@ -587,7 +587,7 @@ body {
 .card {
     background: var(--bg);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 20px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     transition: all var(--transition);
@@ -615,7 +615,7 @@ body {
 .card-title-center {
     font-size: 18px;
     font-weight: 700;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     color: var(--text-dark);
     display: flex;
     align-items: center;
@@ -915,19 +915,19 @@ body {
 }
 
 .action-btn {
-    padding: 9px 6px;
+    padding: 10px 10px;
     background: var(--bg-light);
     border: 1px solid var(--border);
     border-radius: 7px;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-dark);
     transition: all var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 5px;
     white-space: nowrap;
 }
 
@@ -940,7 +940,7 @@ body {
 }
 
 .action-btn i {
-    font-size: 11px;
+    font-size: 12px;
 }
 
 /* ==========================================
@@ -3447,7 +3447,7 @@ body.sidebar-collapsed {
 }
 
 .navbar-btn i {
-    font-size: 28px;
+    font-size: 32px;
     color: var(--primary);
 }
 
