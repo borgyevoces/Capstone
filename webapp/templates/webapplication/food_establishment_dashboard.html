@@ -3514,24 +3514,37 @@ document.addEventListener('DOMContentLoaded', function() {
     {% endif %}
 
     <div class="dashboard-layout">
+
         <aside class="dashboard-sidebar">
-            <div class="dashboard-grid">
-                <div class="card">
-                    <div class="card-title">
-                        <i class="fas fa-bolt"></i> Quick Actions
-                    </div>
 
-                    <div class="btn-group">
-                        <button class="btn btn-transparent" onclick="openModal('addMenuItemModal')">
-                            <i class="fas fa-plus"></i> Add Menu Item
-                        </button>
-                        <button class="btn btn-transparent" onclick="openModal('updateStoreDetailsModal')">
-                            <i class="fas fa-edit"></i> Update Details
-                        </button>
-                    </div>
+            <!-- REDESIGNED QUICK ACTIONS -->
+            <div class="quick-actions-modern">
+                <h3 class="quick-actions-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h3>
+                <div class="action-buttons-grid">
+                    <button class="action-btn-modern add-item" onclick="openModal('addMenuItemModal')">
+                        <div class="action-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="action-text">
+                            <span class="action-label">Add Menu Item</span>
+                            <span class="action-desc">Create new dish</span>
+                        </div>
+                    </button>
+                    <button class="action-btn-modern update-details" onclick="openModal('updateStoreDetailsModal')">
+                        <div class="action-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="action-text">
+                            <span class="action-label">Update Details</span>
+                            <span class="action-desc">Edit establishment</span>
+                        </div>
+                    </button>
                 </div>
-
             </div>
+
         </aside>
 
         <section class="dashboard-content">

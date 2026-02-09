@@ -329,6 +329,147 @@ body {
     gap: 18px;
 }
 
+/* ==========================================
+   MODERN QUICK ACTIONS SECTION
+   ========================================== */
+
+.quick-actions-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+}
+
+.quick-actions-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quick-actions-title i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.action-buttons-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.action-btn-modern {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.action-btn-modern:hover::before {
+    opacity: 1;
+}
+
+.action-btn-modern:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(183, 28, 28, 0.15);
+}
+
+.action-btn-modern:active {
+    transform: translateY(0);
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.action-btn-modern.add-item .action-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.action-btn-modern.update-details .action-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn-modern:hover .action-icon {
+    transform: scale(1.1) rotate(5deg);
+    background: white;
+}
+
+.action-btn-modern.add-item:hover .action-icon {
+    color: #10b981;
+}
+
+.action-btn-modern.update-details:hover .action-icon {
+    color: #3b82f6;
+}
+
+.action-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+}
+
+.action-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    transition: color 0.3s ease;
+}
+
+.action-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.action-btn-modern:hover .action-label,
+.action-btn-modern:hover .action-desc {
+    color: white;
+}
+
+
 .dashboard-content {
     flex-grow: 1;
     min-width: 0;
@@ -600,18 +741,25 @@ body {
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
+    gap: 16px;
 }
 
 /* Responsive grid adjustments */
 @media (max-width: 1600px) {
+    .menu-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+    }
+}
+
+@media (max-width: 1400px) {
     .menu-grid {
         grid-template-columns: repeat(4, 1fr);
         gap: 12px;
     }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
     .menu-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
