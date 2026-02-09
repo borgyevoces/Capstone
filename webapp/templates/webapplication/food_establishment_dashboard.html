@@ -2539,6 +2539,10 @@
     </div>
 
     <div class="sidebar-menu">
+        <a href="#" onclick="showDeleteConfirmation(event)" class="sidebar-item" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 15px; margin-bottom: 10px;">
+            <i class="fas fa-trash-alt"></i>
+            <span>Delete Establishment</span>
+        </a>
         <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}">
             <i class="fas fa-chart-line"></i>
             <span>Dashboard</span>
@@ -2558,10 +2562,6 @@
     </div>
 
     <div class="sidebar-footer">
-        <a href="#" onclick="showDeleteConfirmation(event)" class="sidebar-item" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 15px; margin-bottom: 10px;">
-            <i class="fas fa-trash-alt"></i>
-            <span>Delete Establishment</span>
-        </a>
         <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
             <i class="fas fa-sign-out-alt"></i>
             <span>Logout</span>
@@ -2589,21 +2589,9 @@
             </button>
 
             <div class="navbar-dropdown">
-                <button class="navbar-btn" onclick="toggleDropdown()" title="Menu">
+                <button class="navbar-btn" onclick="toggleDropdown()" title="Profile">
                     <i class="fas fa-user-circle"></i>
-                    <span>{{ establishment.name }}</span>
-                    <i class="fas fa-chevron-down"></i>
                 </button>
-                <div class="navbar-menu" id="navMenu">
-                    <a href="#" onclick="showDeleteConfirmation(event)" class="delete-establishment-link">
-                        <i class="fas fa-trash-alt"></i>
-                        <span>Delete Establishment</span>
-                    </a>
-                    <a href="{% url 'logout_owner' %}" class="logout-link">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
-                    </a>
-                </div>
             </div>
         </div>
     </div>
