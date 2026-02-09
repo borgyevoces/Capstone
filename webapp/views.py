@@ -4688,6 +4688,59 @@ from django.db.models import Prefetch, Count, Sum
 from .models import Order, OrderItem, FoodEstablishment
 import json
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from .models import FoodEstablishment
+
+
+@login_required
+def get_establishment_profile(request):
+    """
+    API endpoint para kunin ang establishment profile details
+    Returns JSON data ng establishment info
+    """
+    try:
+        # Get the establishment owned by the current user
+        establishment = get_object_or_404(
+            FoodEstablishment,
+            owner=request.user
+        )
+
+        # Prepare amenities list
+        amenities_list = [amenity.name for amenity in establishment.amenities.all()]
+
+        # Prepare profile data
+        profile_data = {
+            'id': establishment.id,
+            'name': establishment.name,
+            'address': establishment.address,
+            'category': establishment.category.name if establishment.category else 'N/A',
+            'opening_time': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+            'closing_time': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+            'status': establishment.calculated_status,
+            'amenities': amenities_list,
+            'payment_methods': establishment.payment_methods or 'N/A',
+            'latitude': float(establishment.latitude) if establishment.latitude else None,
+            'longitude': float(establishment.longitude) if establishment.longitude else None,
+            'image_url': establishment.image.url if establishment.image else None,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'profile': profile_data
+        })
+
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Establishment not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 @require_http_methods(["GET"])

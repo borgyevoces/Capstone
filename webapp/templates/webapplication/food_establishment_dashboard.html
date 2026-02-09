@@ -2525,6 +2525,234 @@
         }
 
 
+
+/* ==========================================
+   PROFILE MODAL STYLES
+   ========================================== */
+
+.profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.profile-modal-overlay.active {
+    display: flex;
+}
+
+.profile-modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+.profile-modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px 16px 0 0;
+}
+
+.profile-modal-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.profile-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.profile-modal-body {
+    padding: 24px;
+}
+
+.profile-image-section {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.profile-modal-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #667eea;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-detail-group {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.profile-detail-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.profile-detail-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-detail-label i {
+    font-size: 14px;
+    color: #667eea;
+}
+
+.profile-detail-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.5;
+}
+
+.amenity-tag {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+/* ==========================================
+   UPDATED NAVBAR MENU STYLES
+   ========================================== */
+
+.navbar-menu-header {
+    padding: 12px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.navbar-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.navbar-menu-item:last-child {
+    border-bottom: none;
+}
+
+.navbar-menu-item:hover {
+    background: #f9fafb;
+    color: #667eea;
+    padding-left: 22px;
+}
+
+.navbar-menu-item i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Update navbar-btn to be circular */
+.navbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.navbar-btn:hover {
+    background: var(--bg-light);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.navbar-btn i {
+    font-size: 24px;
+    color: var(--primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .profile-modal {
+        max-width: 100%;
+        margin: 10px;
+    }
+
+    .profile-modal-image {
+        width: 120px;
+        height: 120px;
+    }
+
+    .profile-detail-value {
+        font-size: 14px;
+    }
+}
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -2539,10 +2767,6 @@
     </div>
 
     <div class="sidebar-menu">
-        <a href="#" onclick="showDeleteConfirmation(event)" class="sidebar-item" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 15px; margin-bottom: 10px;">
-            <i class="fas fa-trash-alt"></i>
-            <span>Delete Establishment</span>
-        </a>
         <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'food_establishment_dashboard' %}active{% endif %}">
             <i class="fas fa-chart-line"></i>
             <span>Dashboard</span>
@@ -2589,13 +2813,135 @@
             </button>
 
             <div class="navbar-dropdown">
-                <button class="navbar-btn" onclick="toggleDropdown()" title="Profile">
+                <button class="navbar-btn" onclick="toggleDropdown()" title="Settings">
                     <i class="fas fa-user-circle"></i>
                 </button>
+                <div class="navbar-menu" id="navMenu">
+                    <div class="navbar-menu-header">Settings</div>
+                    <a href="#" onclick="showDeleteConfirmation(event); closeDropdown();" class="navbar-menu-item">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Delete Establishment</span>
+                    </a>
+                    <a href="#" onclick="openProfileModal(); closeDropdown();" class="navbar-menu-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </nav>
+
+
+<!-- PROFILE MODAL -->
+<div class="profile-modal-overlay" id="profileModal">
+    <div class="profile-modal">
+        <div class="profile-modal-header">
+            <h2><i class="fas fa-user"></i> Establishment Profile</h2>
+            <button class="profile-modal-close" onclick="closeProfileModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="profile-modal-body">
+            <!-- Profile Image -->
+            <div class="profile-image-section">
+                <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                     alt="{{ establishment.name }}"
+                     class="profile-modal-image">
+            </div>
+
+            <!-- Establishment Name -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-store"></i> Establishment Name
+                </div>
+                <div class="profile-detail-value">{{ establishment.name }}</div>
+            </div>
+
+            <!-- Address -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-map-marker-alt"></i> Address
+                </div>
+                <div class="profile-detail-value">{{ establishment.address }}</div>
+            </div>
+
+            <!-- Category -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-tag"></i> Category
+                </div>
+                <div class="profile-detail-value">{{ establishment.category.name|default:"N/A" }}</div>
+            </div>
+
+            <!-- Operating Hours -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-clock"></i> Operating Hours
+                </div>
+                <div class="profile-detail-value">
+                    {% if establishment.opening_time and establishment.closing_time %}
+                        {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
+                    {% else %}
+                        Not Set
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-circle"></i> Status
+                </div>
+                <div class="profile-detail-value">
+                    <span class="status-badge status-{{ establishment.calculated_status|lower }}">
+                        {% if establishment.calculated_status == 'Open' %}
+                            Open Now
+                        {% else %}
+                            Closed Now
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Amenities -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-star"></i> Amenities
+                </div>
+                <div class="profile-detail-value">
+                    {% for amenity in establishment.amenities.all %}
+                        <span class="amenity-tag">{{ amenity.name }}</span>
+                    {% empty %}
+                        N/A
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-credit-card"></i> Payment Methods
+                </div>
+                <div class="profile-detail-value">{{ establishment.payment_methods|default:"N/A" }}</div>
+            </div>
+
+            <!-- Location Coordinates -->
+            <div class="profile-detail-group">
+                <div class="profile-detail-label">
+                    <i class="fas fa-map"></i> Location
+                </div>
+                <div class="profile-detail-value">
+                    {% if establishment.latitude and establishment.longitude %}
+                        {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6 }}
+                    {% else %}
+                        Not Set
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Delete Establishment Confirmation Modal -->
 <div class="delete-modal-overlay" id="deleteModal">
@@ -3211,12 +3557,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                         <button class="btn btn-transparent" onclick="openModal('updateStoreDetailsModal')">
                             <i class="fas fa-edit"></i> Update Details
-                        </button>
-                        <button class="btn btn-transparent" onclick="openModal('storeReviewsModal')">
-                            <i class="fas fa-star"></i> View Reviews
-                        </button>
-                        <button class="btn btn-transparent" onclick="openModal('viewStoreDetailsModal')">
-                            <i class="fas fa-info-circle"></i> View Details
                         </button>
                     </div>
                 </div>
@@ -4795,7 +5135,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 
-    {% block page_javascript %}
+
+// Profile Modal Functions
+function openProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function closeDropdown() {
+    const menu = document.getElementById('navMenu');
+    if (menu) {
+        menu.classList.remove('show');
+    }
+}
+
+// Close profile modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('profileModal');
+    if (modal && e.target === modal) {
+        closeProfileModal();
+    }
+});
+
+// Close profile modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeProfileModal();
+    }
+});
+
+
+        {% block page_javascript %}
     // Page-specific JavaScript
     {% endblock %}
 </script>
