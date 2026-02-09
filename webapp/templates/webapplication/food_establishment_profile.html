@@ -809,6 +809,32 @@
             </div>
         </div>
 
+    <!-- Update Details Card -->
+    <div class="settings-card update-details-card">
+        <div class="settings-card-header">
+            <div class="settings-card-icon update-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="settings-card-title">
+                <h2>Update Establishment</h2>
+                <p>Modify your establishment information</p>
+            </div>
+        </div>
+
+        <button class="update-details-btn" onclick="window.location.href='{% url 'food_establishment_dashboard' %}'; setTimeout(() => openModal('updateStoreDetailsModal'), 500);">
+            <div class="update-btn-icon">
+                <i class="fas fa-pen-to-square"></i>
+            </div>
+            <div class="update-btn-text">
+                <h3>Update Details</h3>
+                <p>Edit establishment name, address, hours, and more</p>
+            </div>
+            <div class="update-btn-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </button>
+    </div>
+
         <!-- Danger Zone Card -->
         <div class="settings-card danger-zone-card">
             <div class="settings-card-header">

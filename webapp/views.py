@@ -2799,6 +2799,7 @@ def food_establishment_dashboard(request):
     dashboard_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
     total_reviews = dashboard_reviews.count()
     average_rating = round(dashboard_reviews.aggregate(Avg('rating'))['rating__avg'] or 0, 1)
+    top_sellers_count = sum(1 for item in menu_items if item.is_top_seller)
 
     context = {
         'establishment': establishment,
@@ -2812,6 +2813,7 @@ def food_establishment_dashboard(request):
         'update_token': str(uuid.uuid4()),
         'menu_add_token': str(uuid.uuid4()),
         'pk': establishment.pk,
+        'top_sellers_count': top_sellers_count,
     }
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
@@ -4728,14 +4730,12 @@ def deactivate_establishment(request):
         establishment_name = establishment.name
 
         # Set the establishment as inactive
-        # Assuming there's an 'is_active' field in your FoodEstablishment model
-        # If not, you'll need to add this field to your model:
+        # NOTE: You need to add 'is_active' field to your FoodEstablishment model if it doesn't exist:
         # is_active = models.BooleanField(default=True)
         establishment.is_active = False
         establishment.save()
 
         # Redirect to dashboard with success message
-        # You can use Django messages framework for this
         from django.contrib import messages
         messages.success(request,
                          f'{establishment_name} has been deactivated successfully. You can reactivate it anytime.')
