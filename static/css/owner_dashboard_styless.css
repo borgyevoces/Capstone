@@ -314,172 +314,169 @@ body {
 }
 
 .dashboard-layout {
-    display: flex;
-    gap: 24px;
-    align-items: stretch;
-}
-
-.dashboard-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 90px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+    display: block;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* ==========================================
-   MODERN QUICK ACTIONS SECTION
+   TOP ACTION BUTTONS
    ========================================== */
 
-.quick-actions-modern {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--border);
-}
-
-.quick-actions-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 16px;
+.top-action-buttons {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding: 0 24px;
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.quick-actions-title i {
-    color: var(--primary);
-    font-size: 18px;
-}
-
-.action-buttons-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.action-btn-modern {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+.top-action-btn {
+    flex: 1;
+    max-width: 500px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 18px;
+    padding: 24px 28px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 18px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
-.action-btn-modern::before {
+.top-action-btn::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
-.action-btn-modern:hover::before {
+.top-action-btn.add-item-btn::before {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.top-action-btn.update-btn::before {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.top-action-btn:hover::before {
     opacity: 1;
 }
 
-.action-btn-modern:hover {
-    border-color: var(--primary);
+.top-action-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.top-action-btn.add-item-btn:hover {
+    border-color: #10b981;
+}
+
+.top-action-btn.update-btn:hover {
+    border-color: #3b82f6;
+}
+
+.top-action-btn:active {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(183, 28, 28, 0.15);
 }
 
-.action-btn-modern:active {
-    transform: translateY(0);
-}
-
-.action-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+.btn-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 32px;
     flex-shrink: 0;
     position: relative;
     z-index: 1;
     transition: all 0.3s ease;
 }
 
-.action-btn-modern.add-item .action-icon {
+.top-action-btn.add-item-btn .btn-icon {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
-.action-btn-modern.update-details .action-icon {
+.top-action-btn.update-btn .btn-icon {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.action-btn-modern:hover .action-icon {
-    transform: scale(1.1) rotate(5deg);
+.top-action-btn:hover .btn-icon {
+    transform: scale(1.15) rotate(12deg);
     background: white;
 }
 
-.action-btn-modern.add-item:hover .action-icon {
+.top-action-btn.add-item-btn:hover .btn-icon {
     color: #10b981;
 }
 
-.action-btn-modern.update-details:hover .action-icon {
+.top-action-btn.update-btn:hover .btn-icon {
     color: #3b82f6;
 }
 
-.action-text {
+.btn-text {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     position: relative;
     z-index: 1;
 }
 
-.action-label {
-    font-size: 15px;
+.btn-label {
+    font-size: 20px;
     font-weight: 700;
     color: var(--text-dark);
     transition: color 0.3s ease;
 }
 
-.action-desc {
-    font-size: 12px;
+.btn-desc {
+    font-size: 14px;
     color: var(--text-muted);
     font-weight: 500;
     transition: color 0.3s ease;
 }
 
-.action-btn-modern:hover .action-label,
-.action-btn-modern:hover .action-desc {
+.top-action-btn:hover .btn-label,
+.top-action-btn:hover .btn-desc {
     color: white;
 }
 
+/* ==========================================
+   FULL WIDTH CONTAINER
+   ========================================== */
 
-.dashboard-content {
-    flex-grow: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+.full-width-container {
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 24px;
 }
 
-.dashboard-content > div:first-child {
-    margin-top: 0 !important;
-    align-self: flex-start;
+.dashboard-content {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+}
+
+/* Remove old sidebar styles */
+.dashboard-sidebar {
+    display: none;
 }
 
 /* ==========================================
@@ -1526,13 +1523,44 @@ body {
     }
 
     .dashboard-layout {
-        flex-direction: column;
+        display: block;
+        width: 100%;
     }
 
     .dashboard-sidebar {
-        width: 100%;
-        position: static;
-        margin-bottom: 24px;
+        display: none;
+    }
+
+    /* TOP ACTION BUTTONS - MOBILE */
+    .top-action-buttons {
+        flex-direction: column;
+        padding: 0 16px;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .top-action-btn {
+        max-width: 100%;
+        padding: 18px 20px;
+    }
+
+    .btn-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 26px;
+    }
+
+    .btn-label {
+        font-size: 17px;
+    }
+
+    .btn-desc {
+        font-size: 13px;
+    }
+
+    /* FULL WIDTH CONTAINER - MOBILE */
+    .full-width-container {
+        padding: 0 16px;
     }
 
     .alert {

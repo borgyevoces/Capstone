@@ -3513,138 +3513,89 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     {% endif %}
 
-    <div class="dashboard-layout">
-
-        <aside class="dashboard-sidebar">
-
-            <!-- REDESIGNED QUICK ACTIONS -->
-            <div class="quick-actions-modern">
-                <h3 class="quick-actions-title">
-                    <i class="fas fa-bolt"></i>
-                    Quick Actions
-                </h3>
-                <div class="action-buttons-grid">
-                    <button class="action-btn-modern add-item" onclick="openModal('addMenuItemModal')">
-                        <div class="action-icon">
-                            <i class="fas fa-plus-circle"></i>
-                        </div>
-                        <div class="action-text">
-                            <span class="action-label">Add Menu Item</span>
-                            <span class="action-desc">Create new dish</span>
-                        </div>
-                    </button>
-                    <button class="action-btn-modern update-details" onclick="openModal('updateStoreDetailsModal')">
-                        <div class="action-icon">
-                            <i class="fas fa-edit"></i>
-                        </div>
-                        <div class="action-text">
-                            <span class="action-label">Update Details</span>
-                            <span class="action-desc">Edit establishment</span>
-                        </div>
-                    </button>
-                </div>
+    <!-- ACTION BUTTONS AT TOP -->
+    <div class="top-action-buttons">
+        <button class="top-action-btn add-item-btn" onclick="openModal('addMenuItemModal')">
+            <div class="btn-icon">
+                <i class="fas fa-plus-circle"></i>
             </div>
-
-        </aside>
-
-        <section class="dashboard-content">
-<div style="background: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-    <!-- LEFT SIDE: Welcome Text -->
-    <div style="flex: 1;">
-        <h2 style="font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 3px;">
-            Owner Dashboard
-        </h2>
-        <p style="color: var(--text-muted); font-size: 13px;">
-            Welcome back! Manage your establishment <span style="color: var(--primary); font-weight: 600;">{{ establishment.name }}</span> here.
-        </p>
+            <div class="btn-text">
+                <span class="btn-label">Add Menu Item</span>
+                <span class="btn-desc">Create new dish</span>
+            </div>
+        </button>
+        <button class="top-action-btn update-btn" onclick="openModal('updateStoreDetailsModal')">
+            <div class="btn-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="btn-text">
+                <span class="btn-label">Update Details</span>
+                <span class="btn-desc">Edit establishment</span>
+            </div>
+        </button>
     </div>
 
-    <!-- RIGHT SIDE: Stats Display -->
-    <div class="store-stats-display" style="margin: 0; flex-shrink: 0;">
-        <div class="stat-card">
-            <div class="stat-icon bestseller">
-                <i class="fas fa-award"></i>
+    <!-- FULL WIDTH MENU SECTION -->
+    <div class="full-width-container">
+        <div class="card menu-section">
+            <div class="card-title-center">
+                <i class="fas fa-hamburger"></i> Your Menu
             </div>
-            <div class="stat-content">
-                <div class="stat-number" id="bestSellerCount">0</div>
-                <div class="stat-label">Best Sellers</div>
-            </div>
-        </div>
-
-        <div class="stat-divider"></div>
-
-        <div class="stat-card">
-            <div class="stat-icon available">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number" id="availableCount">0</div>
-                <div class="stat-label">Available Items</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-            <div class="card menu-section">
-                <div class="card-title-center">
-                    <i class="fas fa-hamburger"></i> Your Menu
-                </div>
-                {% if menu_items %}
-                <div class="menu-grid">
-                    {% for item in menu_items %}
-                    <div class="menu-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}"
-                         data-item-description="{{ item.description }}" data-item-price="{{ item.price|floatformat:2 }}"
-                         data-item-quantity="{{ item.quantity|default:0 }}"
-                         data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
-                        <div class="menu-image">
-                            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}"
-                                 alt="{{ item.name }}">
-                            <div class="badges-container">
-                                {% if item.is_top_seller %}
-                                <span class="badge bestseller">
-                                        <i class="fas fa-award"></i> Best Seller
-                                    </span>
-                                {% endif %}
-                                {% if item.quantity > 0 %}
-                                <span class="badge available">Available: {{ item.quantity }}</span>
-                                {% else %}
-                                <span class="badge soldout">Out of Stock</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="menu-info">
-                            <div class="menu-name">{{ item.name }}</div>
-                            <div class="menu-desc">{{ item.description }}</div>
-                            <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
-                            <div class="menu-actions">
-                                <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
-                                    <i class="fas fa-pen"></i> Edit
-                                </button>
-                                <form action="{% url 'toggle_top_seller' item.id %}" method="post"
-                                      style="display: contents;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="action-btn seller">
-                                        <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
-                                        {% endif %}
-                                    </button>
-                                </form>
-                                <button type="button" class="action-btn delete"
-                                        onclick="deleteMenuItem('{{ item.id }}', this)">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
+            {% if menu_items %}
+            <div class="menu-grid">
+                {% for item in menu_items %}
+                <div class="menu-card" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}"
+                     data-item-description="{{ item.description }}" data-item-price="{{ item.price|floatformat:2 }}"
+                     data-item-quantity="{{ item.quantity|default:0 }}"
+                     data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
+                    <div class="menu-image">
+                        <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}"
+                             alt="{{ item.name }}">
+                        <div class="badges-container">
+                            {% if item.is_top_seller %}
+                            <span class="badge bestseller">
+                                    <i class="fas fa-award"></i> Best Seller
+                                </span>
+                            {% endif %}
+                            {% if item.quantity > 0 %}
+                            <span class="badge available">Available: {{ item.quantity }}</span>
+                            {% else %}
+                            <span class="badge soldout">Out of Stock</span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="menu-info">
+                        <div class="menu-name">{{ item.name }}</div>
+                        <div class="menu-desc">{{ item.description }}</div>
+                        <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
+                        <div class="menu-actions">
+                            <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
+                                <i class="fas fa-pen"></i> Edit
+                            </button>
+                            <form action="{% url 'toggle_top_seller' item.id %}" method="post"
+                                  style="display: contents;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn seller">
+                                    <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <button type="button" class="action-btn delete"
+                                    onclick="deleteMenuItem('{{ item.id }}', this)">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                {% else %}
-                <div class="no-items">
-                    <i class="fas fa-inbox"></i>
-                    <p>No menu items yet. Add your first item to get started!</p>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
-        </section>
+            {% else %}
+            <div class="no-items">
+                <i class="fas fa-inbox"></i>
+                <p>No menu items yet. Add your first item to get started!</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </main>
 {% endblock %}
