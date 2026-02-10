@@ -8,26 +8,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
     <style>
-        /* EXACT SAME STYLING AS DASHBOARD */
-
-        /* Body */
         body {
             background: #f8f9fa;
             margin-left: 260px;
-            padding-top: 0;
-            transition: margin-left 0.3s ease;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            overflow-x: hidden;
         }
 
         body.sidebar-collapsed {
             margin-left: 70px;
         }
 
-        /* Sidebar - EXACT COPY */
+        /* Sidebar */
         .sidebar {
             position: fixed;
             left: 0;
@@ -38,12 +34,7 @@
             z-index: 1001;
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar.collapsed {
-            width: 70px;
         }
 
         .sidebar-header {
@@ -58,7 +49,6 @@
             color: white;
             font-family: 'Pacifico', cursive;
             font-size: 24px;
-            transition: all 0.3s ease;
         }
 
         .sidebar-logo i {
@@ -66,14 +56,9 @@
             color: #B71C1C;
         }
 
-        .sidebar.collapsed .sidebar-logo span {
-            display: none;
-        }
-
         .sidebar-menu {
             flex: 1;
             padding: 20px 0;
-            overflow-y: auto;
         }
 
         .sidebar-item {
@@ -83,7 +68,6 @@
             padding: 15px 20px;
             color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
-            transition: all 0.3s ease;
             cursor: pointer;
             border-left: 3px solid transparent;
         }
@@ -102,11 +86,6 @@
         .sidebar-item i {
             font-size: 20px;
             min-width: 20px;
-            text-align: center;
-        }
-
-        .sidebar.collapsed .sidebar-item span {
-            display: none;
         }
 
         .sidebar-footer {
@@ -123,169 +102,356 @@
             color: #ff6b6b;
         }
 
-        .sidebar-toggle-btn {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 10px;
-            position: fixed;
-            left: 220px;
-            top: 20px;
-            z-index: 1002;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar.collapsed ~ .sidebar-toggle-btn {
-            left: 30px;
-        }
-
-        /* Main Content */
+        /* Main Container - FIT BY DEFAULT */
         .profile-container {
-            padding: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 20px;
+            max-width: 100%;
+            height: calc(100vh - 40px);
+            overflow-y: auto;
         }
 
         /* Back Button */
-        .back-to-dashboard {
+        .back-btn {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
+            gap: 8px;
+            padding: 10px 16px;
             background: white;
             color: #1f2937;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
             border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .back-to-dashboard:hover {
-            background: #f9fafb;
-            transform: translateX(-5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        }
-
-        /* Profile Header */
-        .profile-header {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
-        }
-
-        .profile-header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-            color: #1a1a1a;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .profile-header h1 i {
-            color: #B71C1C;
-        }
-
-        .profile-header p {
-            margin: 8px 0 0 0;
-            color: #6b7280;
+            margin-bottom: 16px;
             font-size: 14px;
         }
 
-        /* Profile Card */
-        .profile-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
-            margin-bottom: 20px;
+        .back-btn:hover {
+            background: #f9fafb;
         }
 
-        /* Profile Image */
-        .profile-image-section {
+        /* Profile Grid Layout - FIT SCREEN */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        /* Left Column - Image & Info */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Wide Establishment Image */
+        .establishment-image-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .establishment-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f3f4f6;
+        }
+
+        .establishment-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-upload-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px;
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .establishment-image-wrapper:hover .image-upload-overlay {
+            opacity: 1;
+        }
+
+        .image-upload-overlay label {
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        /* Quick Info Card */
+        .quick-info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .quick-info-item {
+            padding: 12px;
             border-bottom: 1px solid #f3f4f6;
         }
 
-        .profile-image-section img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #B71C1C;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        .quick-info-item:last-child {
+            border-bottom: none;
         }
 
-        /* Profile Details Grid */
-        .profile-details-grid {
+        .quick-info-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        /* Right Column - Editable Form */
+        .right-column {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+
+        .section-header i {
+            color: #B71C1C;
+            font-size: 22px;
+        }
+
+        /* Form Styling */
+        .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
         }
 
-        .profile-detail-item {
-            padding: 12px;
-            background: #f9fafb;
-            border-radius: 8px;
-            border-left: 3px solid #B71C1C;
+        .form-group {
+            margin-bottom: 0;
         }
 
-        .profile-detail-label {
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
             font-size: 12px;
             font-weight: 700;
-            color: #6b7280;
+            color: #374151;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group label i {
+            color: #B71C1C;
+            margin-right: 4px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* Save Button */
+        .save-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .save-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+            grid-column: 1 / -1;
+            background: #fff5f5;
+            border: 2px solid #fee2e2;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .danger-zone-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .danger-zone-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #991b1b;
+            font-weight: 700;
+        }
+
+        .danger-zone-header i {
+            color: #dc2626;
+        }
+
+        .danger-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .danger-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .danger-btn.delete {
+            background: #dc2626;
+            color: white;
+        }
+
+        .danger-btn.deactivate {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .danger-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Amenities & Payment Checkboxes */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 8px;
         }
 
-        .profile-detail-label i {
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            font-size: 13px !important;
+            text-transform: none !important;
+            margin: 0 !important;
+            cursor: pointer;
+        }
+
+        /* Map Button */
+        .map-btn {
+            width: 100%;
+            padding: 10px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
             font-size: 14px;
-            color: #B71C1C;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .profile-detail-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a1a;
-            line-height: 1.5;
-        }
-
-        /* Amenities */
-        .amenity-tag {
-            display: inline-block;
-            background: #eff6ff;
-            color: #1e40af;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-right: 8px;
-            margin-bottom: 8px;
+        .map-btn:hover {
+            background: #2563eb;
         }
 
         /* Status Badge */
         .status-badge {
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
             display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .status-open {
@@ -298,413 +464,14 @@
             color: #991b1b;
         }
 
-        /* Update Details Button */
-        .update-details-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-        }
-
-        .update-details-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .update-details-btn:hover::before {
-            opacity: 1;
-        }
-
-        .update-details-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            border-color: #3b82f6;
-        }
-
-        .update-btn-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-
-        .update-details-btn:hover .update-btn-icon {
-            background: white;
-            color: #3b82f6;
-        }
-
-        .update-btn-content {
-            flex: 1;
-            position: relative;
-            z-index: 1;
-        }
-
-        .update-btn-label {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 4px;
-            transition: color 0.3s ease;
-        }
-
-        .update-btn-desc {
-            display: block;
-            font-size: 14px;
-            color: #6b7280;
-            transition: color 0.3s ease;
-        }
-
-        .update-details-btn:hover .update-btn-label,
-        .update-details-btn:hover .update-btn-desc {
-            color: white;
-        }
-
-        /* Danger Zone */
-        .danger-zone-card {
-            background: #fff5f5;
-            border: 2px solid #fee2e2;
-            border-radius: 12px;
-            padding: 24px;
-        }
-
-        .danger-zone-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #fecaca;
-        }
-
-        .danger-zone-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 22px;
-        }
-
-        .danger-zone-title h2 {
-            margin: 0;
-            font-size: 22px;
-            color: #991b1b;
-            font-weight: 700;
-        }
-
-        .danger-zone-title p {
-            margin: 5px 0 0 0;
-            color: #7f1d1d;
-            font-size: 14px;
-        }
-
-        .danger-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .danger-action-btn {
-            padding: 16px;
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: block;
-        }
-
-        .delete-action {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-        }
-
-        .delete-action:hover {
-            background: #991b1b;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
-        }
-
-        .deactivate-action {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .deactivate-action:hover {
-            background: #d97706;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
-        }
-
-        .danger-action-btn i {
-            font-size: 28px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .danger-action-btn h3 {
-            margin: 0 0 6px 0;
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .danger-action-btn p {
-            margin: 0;
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        /* Modals */
-        .delete-modal-overlay,
-        .deactivate-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(5px);
-        }
-
-        .delete-modal-overlay.active,
-        .deactivate-modal-overlay.active {
-            display: flex;
-        }
-
-        .delete-modal,
-        .deactivate-modal {
-            background: white;
-            border-radius: 16px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: modalSlideIn 0.3s ease;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9) translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .delete-modal-header {
-            padding: 30px;
-            text-align: center;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-            border-radius: 16px 16px 0 0;
-        }
-
-        .deactivate-modal-header {
-            padding: 30px;
-            text-align: center;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            border-radius: 16px 16px 0 0;
-        }
-
-        .delete-modal-icon,
-        .deactivate-modal-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 40px;
-        }
-
-        .delete-modal-title h3 {
-            margin: 0 0 10px 0;
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .delete-modal-title p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 16px;
-        }
-
-        .delete-modal-body,
-        .deactivate-modal-body {
-            padding: 30px;
-        }
-
-        .delete-warning-list {
-            background: #fff5f5;
-            border-left: 4px solid #dc2626;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-
-        .delete-warning-list h4 {
-            margin: 0 0 15px 0;
-            color: #991b1b;
-            font-size: 16px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .delete-warning-list ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .delete-warning-list li {
-            margin-bottom: 8px;
-            color: #7f1d1d;
-            font-size: 14px;
-        }
-
-        .deactivate-info-box {
-            background: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-
-        .deactivate-info-box h4 {
-            margin: 0 0 15px 0;
-            color: #92400e;
-            font-size: 16px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .deactivate-info-box p {
-            margin: 0 0 10px 0;
-            color: #78350f;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .confirmation-input-group {
-            margin-bottom: 25px;
-        }
-
-        .confirmation-input-group label {
-            display: block;
-            margin-bottom: 10px;
-            color: #374151;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .confirmation-input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .confirmation-input-group input:focus {
-            outline: none;
-            border-color: #dc2626;
-        }
-
-        .delete-modal-actions,
-        .deactivate-modal-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .delete-modal-actions button,
-        .deactivate-modal-actions button {
-            flex: 1;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .delete-confirm-btn,
-        .deactivate-confirm-btn {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-        }
-
-        .deactivate-confirm-btn {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-
-        .delete-confirm-btn:hover:not(:disabled),
-        .deactivate-confirm-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
-
-        .delete-confirm-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .delete-cancel-btn,
-        .deactivate-cancel-btn {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .delete-cancel-btn:hover,
-        .deactivate-cancel-btn:hover {
-            background: #e5e7eb;
-        }
-
         /* Responsive */
         @media (max-width: 1024px) {
-            .profile-details-grid {
+            .profile-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .form-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -722,37 +489,49 @@
                 transform: translateX(0);
             }
 
-            .sidebar-toggle-btn {
-                left: 20px;
-            }
-
-            .profile-container {
-                padding: 20px;
-            }
-
-            .profile-header h1 {
-                font-size: 22px;
-            }
-
-            .profile-image-section img {
-                width: 150px;
-                height: 150px;
-            }
-
             .danger-actions {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .delete-modal-actions,
-            .deactivate-modal-actions {
-                flex-direction: column;
-            }
+        /* Location Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 8px;
+            margin: 16px 0;
         }
     </style>
 </head>
 <body>
 
-<!-- Sidebar - EXACT COPY -->
+<!-- Sidebar -->
 <div class="sidebar" id="mainSidebar">
     <div class="sidebar-header">
         <div class="sidebar-logo">
@@ -760,14 +539,12 @@
             <span>KabsuEats</span>
         </div>
     </div>
-
     <div class="sidebar-menu">
         <a href="#" class="sidebar-item active">
             <i class="fas fa-cog"></i>
             <span>Profile Settings</span>
         </a>
     </div>
-
     <div class="sidebar-footer">
         <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
             <i class="fas fa-sign-out-alt"></i>
@@ -776,300 +553,351 @@
     </div>
 </div>
 
-<!-- Sidebar Toggle -->
-<button class="sidebar-toggle-btn" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
-</button>
-
 <!-- Main Content -->
 <div class="profile-container">
-    <!-- Back Button -->
-    <a href="{% url 'food_establishment_dashboard' %}" class="back-to-dashboard">
+    <a href="{% url 'food_establishment_dashboard' %}" class="back-btn">
         <i class="fas fa-arrow-left"></i>
         Back to Dashboard
     </a>
 
-    <!-- Profile Header -->
-    <div class="profile-header">
-        <h1>
-            <i class="fas fa-user-cog"></i>
-            Profile Settings
-        </h1>
-        <p>Manage your establishment profile and account settings</p>
-    </div>
-
-    <!-- Establishment Profile Card -->
-    <div class="profile-card">
-        <!-- Profile Image -->
-        <div class="profile-image-section">
-            <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
-                 alt="{{ establishment.name }}">
-        </div>
-
-        <!-- Profile Details Grid -->
-        <div class="profile-details-grid">
-            <!-- Establishment Name -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-store"></i> Establishment Name
-                </div>
-                <div class="profile-detail-value">{{ establishment.name }}</div>
+    <div class="profile-grid">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Establishment Image -->
+            <div class="establishment-image-card">
+                <form id="imageForm" method="POST" enctype="multipart/form-data" action="{% url 'update_establishment_details_ajax' pk=pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_status" value="1">
+                    <div class="establishment-image-wrapper">
+                        <img id="establishmentImage" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="{{ establishment.name }}">
+                        <div class="image-upload-overlay">
+                            <label for="imageInput">
+                                <i class="fas fa-camera"></i> Change Image
+                            </label>
+                            <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;" onchange="uploadImage()">
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            <!-- Address -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-map-marker-alt"></i> Address
+            <!-- Quick Info -->
+            <div class="quick-info-card">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
+                        <i class="fas fa-store"></i> Establishment
+                    </div>
+                    <div class="quick-info-value">{{ establishment.name }}</div>
                 </div>
-                <div class="profile-detail-value">{{ establishment.address }}</div>
-            </div>
-
-            <!-- Category -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-tag"></i> Category
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
+                        <i class="fas fa-tag"></i> Category
+                    </div>
+                    <div class="quick-info-value">{{ establishment.category.name|default:"N/A" }}</div>
                 </div>
-                <div class="profile-detail-value">{{ establishment.category.name|default:"N/A" }}</div>
-            </div>
-
-            <!-- Operating Hours -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-clock"></i> Operating Hours
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
+                        <i class="fas fa-circle"></i> Status
+                    </div>
+                    <div class="quick-info-value">
+                        <span class="status-badge status-{{ establishment.calculated_status|lower }}">
+                            {{ establishment.calculated_status }}
+                        </span>
+                    </div>
                 </div>
-                <div class="profile-detail-value">
-                    {% if establishment.opening_time and establishment.closing_time %}
-                        {{ establishment.opening_time|time:"g:i A" }} - {{ establishment.closing_time|time:"g:i A" }}
-                    {% else %}
-                        Not Set
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Status -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-circle"></i> Status
-                </div>
-                <div class="profile-detail-value">
-                    <span class="status-badge status-{{ establishment.calculated_status|lower }}">
-                        {% if establishment.calculated_status == 'Open' %}
-                            Open Now
-                        {% else %}
-                            Closed Now
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Amenities -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-star"></i> Amenities
-                </div>
-                <div class="profile-detail-value">
-                    {% for amenity in establishment.amenities.all %}
-                        <span class="amenity-tag">{{ amenity.name }}</span>
-                    {% empty %}
-                        N/A
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Payment Methods -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-credit-card"></i> Payment Methods
-                </div>
-                <div class="profile-detail-value">{{ establishment.payment_methods|default:"N/A" }}</div>
-            </div>
-
-            <!-- Location Coordinates -->
-            <div class="profile-detail-item">
-                <div class="profile-detail-label">
-                    <i class="fas fa-map"></i> Location Coordinates
-                </div>
-                <div class="profile-detail-value">
-                    {% if establishment.latitude and establishment.longitude %}
-                        {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6 }}
-                    {% else %}
-                        Not Set
-                    {% endif %}
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
+                        <i class="fas fa-map-marker-alt"></i> Address
+                    </div>
+                    <div class="quick-info-value" style="font-size: 12px;">{{ establishment.address }}</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Update Details Card -->
-    <div class="profile-card">
-        <a href="{% url 'food_establishment_dashboard' %}?open_update_modal=true" class="update-details-btn">
-            <div class="update-btn-icon">
+        <!-- Right Column - Editable Form -->
+        <div class="right-column">
+            <div class="section-header">
                 <i class="fas fa-edit"></i>
+                <h2>Edit Establishment Details</h2>
             </div>
-            <div class="update-btn-content">
-                <span class="update-btn-label">Update Details</span>
-                <span class="update-btn-desc">Edit establishment name, address, hours, and more</span>
-            </div>
-        </a>
-    </div>
 
-    <!-- Danger Zone -->
-    <div class="danger-zone-card">
-        <div class="danger-zone-header">
-            <div class="danger-zone-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="danger-zone-title">
-                <h2>Danger Zone</h2>
-                <p>Irreversible actions - proceed with caution</p>
-            </div>
-        </div>
+            <form id="updateForm" method="POST" action="{% url 'update_establishment_details_ajax' pk=pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="update_status" value="1">
+                <input type="hidden" name="latitude" id="latitude" value="{{ establishment.latitude|default:'' }}">
+                <input type="hidden" name="longitude" id="longitude" value="{{ establishment.longitude|default:'' }}">
 
-        <div class="danger-actions">
-            <a href="#" class="danger-action-btn delete-action" onclick="showDeleteConfirmation(event)">
-                <i class="fas fa-trash-alt"></i>
-                <h3>Delete Establishment</h3>
-                <p>Permanently remove</p>
-            </a>
+                <div class="form-grid">
+                    <!-- Establishment Name -->
+                    <div class="form-group full-width">
+                        <label for="name"><i class="fas fa-store"></i> Establishment Name</label>
+                        <input type="text" id="name" name="name" class="form-control" value="{{ establishment.name }}" required>
+                    </div>
 
-            <a href="#" class="danger-action-btn deactivate-action" onclick="showDeactivateConfirmation(event)">
-                <i class="fas fa-ban"></i>
-                <h3>Deactivate Establishment</h3>
-                <p>Temporarily disable</p>
-            </a>
+                    <!-- Category -->
+                    <div class="form-group">
+                        <label for="category"><i class="fas fa-tag"></i> Category</label>
+                        <select id="category" name="category" class="form-control" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if establishment.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Address (readonly) -->
+                    <div class="form-group">
+                        <label for="address"><i class="fas fa-map-marker-alt"></i> Address</label>
+                        <input type="text" id="address" name="address" class="form-control" value="{{ establishment.address }}" readonly>
+                    </div>
+
+                    <!-- Opening Time -->
+                    <div class="form-group">
+                        <label for="opening_time"><i class="fas fa-clock"></i> Opening Time</label>
+                        <input type="time" id="opening_time" name="opening_time" class="form-control" value="{{ establishment.opening_time|time:'H:i'|default:'' }}">
+                    </div>
+
+                    <!-- Closing Time -->
+                    <div class="form-group">
+                        <label for="closing_time"><i class="fas fa-moon"></i> Closing Time</label>
+                        <input type="time" id="closing_time" name="closing_time" class="form-control" value="{{ establishment.closing_time|time:'H:i'|default:'' }}">
+                    </div>
+
+                    <!-- Set Location Button -->
+                    <div class="form-group full-width">
+                        <label><i class="fas fa-map"></i> Pin Location</label>
+                        <button type="button" class="map-btn" onclick="openLocationModal()">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {% if establishment.latitude and establishment.longitude %}
+                            Update Location on Map
+                            {% else %}
+                            Set Location on Map
+                            {% endif %}
+                        </button>
+                        <small id="locationStatus" style="display: block; margin-top: 4px; font-size: 11px; color: #6b7280;">
+                            {% if establishment.latitude and establishment.longitude %}
+                            <i class="fas fa-check-circle" style="color: #10b981;"></i> Location: {{ establishment.latitude|floatformat:6 }}, {{ establishment.longitude|floatformat:6 }}
+                            {% else %}
+                            <i class="fas fa-exclamation-circle" style="color: #dc2626;"></i> No location set
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div class="form-group full-width">
+                        <label><i class="fas fa-star"></i> Amenities</label>
+                        <div class="checkbox-grid">
+                            {% for amenity in amenities %}
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="amenity_{{ amenity.id }}" name="amenities" value="{{ amenity.id }}"
+                                    {% if amenity in establishment.amenities.all %}checked{% endif %}>
+                                <label for="amenity_{{ amenity.id }}">{{ amenity.name }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="form-group full-width">
+                        <label><i class="fas fa-credit-card"></i> Payment Methods</label>
+                        <div class="checkbox-grid">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="payment_cash" name="payment_methods" value="Cash"
+                                    {% if 'Cash' in establishment.payment_methods %}checked{% endif %}>
+                                <label for="payment_cash">Cash</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="payment_gcash" name="payment_methods" value="GCash"
+                                    {% if 'GCash' in establishment.payment_methods %}checked{% endif %}>
+                                <label for="payment_gcash">GCash</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <div class="form-group full-width">
+                        <button type="submit" class="save-btn">
+                            <i class="fas fa-save"></i>
+                            Save All Changes
+                        </button>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="danger-zone">
+                        <div class="danger-zone-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Danger Zone</h3>
+                        </div>
+                        <div class="danger-actions">
+                            <button type="button" class="danger-btn delete" onclick="showDeleteModal()">
+                                <i class="fas fa-trash-alt"></i>
+                                Delete Establishment
+                            </button>
+                            <button type="button" class="danger-btn deactivate" onclick="showDeactivateModal()">
+                                <i class="fas fa-ban"></i>
+                                Deactivate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Delete Modal -->
-<div class="delete-modal-overlay" id="deleteModal">
-    <div class="delete-modal">
-        <div class="delete-modal-header">
-            <div class="delete-modal-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="delete-modal-title">
-                <h3>Delete Establishment?</h3>
-                <p>This action cannot be undone</p>
-            </div>
-        </div>
-        <div class="delete-modal-body">
-            <div class="delete-warning-list">
-                <h4><i class="fas fa-exclamation-circle"></i> Warning: You will permanently lose:</h4>
-                <ul>
-                    <li>All menu items and categories</li>
-                    <li>Order history and customer data</li>
-                    <li>Transaction records and analytics</li>
-                    <li>Reviews and ratings</li>
-                    <li>All establishment settings</li>
-                </ul>
-            </div>
+<!-- Location Modal -->
+<div class="modal" id="locationModal">
+    <div class="modal-content">
+        <h3><i class="fas fa-map-marker-alt"></i> Set Your Location</h3>
+        <div id="map"></div>
+        <button type="button" class="save-btn" onclick="saveLocation()">
+            <i class="fas fa-check"></i> Confirm Location
+        </button>
+        <button type="button" class="save-btn" onclick="closeLocationModal()" style="background: #6b7280; margin-top: 8px;">
+            Cancel
+        </button>
+    </div>
+</div>
 
-            <div class="confirmation-input-group">
-                <label for="deleteConfirmText">Type "DELETE" to confirm:</label>
-                <input type="text" id="deleteConfirmText" placeholder="Type DELETE in capital letters" oninput="validateDeleteInput()">
-            </div>
-
-            <form method="POST" action="{% url 'delete_establishment' %}">
-                {% csrf_token %}
-                <div class="delete-modal-actions">
-                    <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="submit" class="delete-confirm-btn" id="deleteConfirmBtn" disabled>Delete Permanently</button>
-                </div>
-            </form>
-        </div>
+<!-- Delete Modal (simple) -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <h3 style="color: #dc2626;"><i class="fas fa-exclamation-triangle"></i> Delete Establishment?</h3>
+        <p>Type <strong>DELETE</strong> to confirm:</p>
+        <input type="text" id="deleteConfirm" class="form-control" placeholder="Type DELETE">
+        <form method="POST" action="{% url 'delete_establishment' %}" style="margin-top: 16px;">
+            {% csrf_token %}
+            <button type="submit" class="danger-btn delete" id="deleteBtn" disabled style="width: 100%; margin-bottom: 8px;">
+                <i class="fas fa-trash-alt"></i> Delete Permanently
+            </button>
+            <button type="button" class="save-btn" onclick="closeDeleteModal()" style="background: #6b7280;">
+                Cancel
+            </button>
+        </form>
     </div>
 </div>
 
 <!-- Deactivate Modal -->
-<div class="deactivate-modal-overlay" id="deactivateModal">
-    <div class="deactivate-modal">
-        <div class="deactivate-modal-header">
-            <div class="deactivate-modal-icon">
-                <i class="fas fa-pause-circle"></i>
-            </div>
-            <div class="delete-modal-title">
-                <h3>Deactivate Establishment?</h3>
-                <p>Temporarily disable your establishment</p>
-            </div>
-        </div>
-        <div class="deactivate-modal-body">
-            <div class="deactivate-info-box">
-                <h4><i class="fas fa-info-circle"></i> What happens when you deactivate:</h4>
-                <p><strong>✓</strong> Your establishment will be hidden from customer searches</p>
-                <p><strong>✓</strong> Customers cannot place new orders</p>
-                <p><strong>✓</strong> All data remains intact and can be restored</p>
-                <p><strong>✓</strong> You can reactivate anytime from your dashboard</p>
-            </div>
-
-            <form method="POST" action="{% url 'deactivate_establishment' %}">
-                {% csrf_token %}
-                <div class="deactivate-modal-actions">
-                    <button type="button" class="deactivate-cancel-btn" onclick="closeDeactivateModal()">Cancel</button>
-                    <button type="submit" class="deactivate-confirm-btn">Deactivate Now</button>
-                </div>
-            </form>
-        </div>
+<div class="modal" id="deactivateModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <h3 style="color: #f59e0b;"><i class="fas fa-pause-circle"></i> Deactivate Establishment?</h3>
+        <p>Your establishment will be temporarily hidden from customers.</p>
+        <form method="POST" action="{% url 'deactivate_establishment' %}" style="margin-top: 16px;">
+            {% csrf_token %}
+            <button type="submit" class="danger-btn deactivate" style="width: 100%; margin-bottom: 8px;">
+                <i class="fas fa-ban"></i> Deactivate Now
+            </button>
+            <button type="button" class="save-btn" onclick="closeDeactivateModal()" style="background: #6b7280;">
+                Cancel
+            </button>
+        </form>
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script>
-    function toggleSidebar() {
-        const sidebar = document.getElementById('mainSidebar');
-        const body = document.body;
+let map, marker;
+const CVSU_LAT = {{ CVSU_LATITUDE|default:"14.1649" }};
+const CVSU_LNG = {{ CVSU_LONGITUDE|default:"120.9881" }};
 
-        if (window.innerWidth <= 768) {
-            sidebar.classList.toggle('mobile-open');
+// Upload image immediately
+function uploadImage() {
+    document.getElementById('imageForm').submit();
+}
+
+// Location Modal
+function openLocationModal() {
+    document.getElementById('locationModal').classList.add('active');
+    setTimeout(() => {
+        if (!map) {
+            const lat = parseFloat(document.getElementById('latitude').value) || CVSU_LAT;
+            const lng = parseFloat(document.getElementById('longitude').value) || CVSU_LNG;
+
+            map = L.map('map').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                geocodeLocation(pos.lat, pos.lng);
+            });
+
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                geocodeLocation(e.latlng.lat, e.latlng.lng);
+            });
+        }
+    }, 100);
+}
+
+function geocodeLocation(lat, lng) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('address').value = data.display_name;
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('locationStatus').innerHTML = `<i class="fas fa-check-circle" style="color: #10b981;"></i> Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        });
+}
+
+function saveLocation() {
+    closeLocationModal();
+}
+
+function closeLocationModal() {
+    document.getElementById('locationModal').classList.remove('active');
+}
+
+// Delete Modal
+function showDeleteModal() {
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    document.getElementById('deleteConfirm').value = '';
+}
+
+document.getElementById('deleteConfirm').addEventListener('input', function() {
+    document.getElementById('deleteBtn').disabled = this.value !== 'DELETE';
+});
+
+// Deactivate Modal
+function showDeactivateModal() {
+    document.getElementById('deactivateModal').classList.add('active');
+}
+
+function closeDeactivateModal() {
+    document.getElementById('deactivateModal').classList.remove('active');
+}
+
+// Form submission
+document.getElementById('updateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Changes saved successfully!');
+            location.reload();
         } else {
-            sidebar.classList.toggle('collapsed');
-            body.classList.toggle('sidebar-collapsed');
+            alert('Error: ' + (data.error || 'Could not save changes'));
         }
-    }
-
-    function showDeleteConfirmation(event) {
-        event.preventDefault();
-        document.getElementById('deleteModal').classList.add('active');
-        document.getElementById('deleteConfirmText').value = '';
-        document.getElementById('deleteConfirmBtn').disabled = true;
-    }
-
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.remove('active');
-    }
-
-    function validateDeleteInput() {
-        const input = document.getElementById('deleteConfirmText');
-        const confirmBtn = document.getElementById('deleteConfirmBtn');
-        confirmBtn.disabled = input.value !== 'DELETE';
-    }
-
-    function showDeactivateConfirmation(event) {
-        event.preventDefault();
-        document.getElementById('deactivateModal').classList.add('active');
-    }
-
-    function closeDeactivateModal() {
-        document.getElementById('deactivateModal').classList.remove('active');
-    }
-
-    window.onclick = function(event) {
-        const deleteModal = document.getElementById('deleteModal');
-        const deactivateModal = document.getElementById('deactivateModal');
-
-        if (event.target === deleteModal) closeDeleteModal();
-        if (event.target === deactivateModal) closeDeactivateModal();
-    }
-
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('mainSidebar');
-        const toggleBtn = document.querySelector('.sidebar-toggle-btn');
-
-        if (sidebar && sidebar.classList.contains('mobile-open') &&
-            !sidebar.contains(event.target) &&
-            !toggleBtn.contains(event.target)) {
-            sidebar.classList.remove('mobile-open');
-        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error saving changes');
     });
+});
 </script>
 
 </body>

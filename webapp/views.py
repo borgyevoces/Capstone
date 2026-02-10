@@ -4695,26 +4695,34 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import FoodEstablishment
 
+
 @login_required(login_url='owner_login')
 def food_establishment_profile(request):
     """
-    Display the food establishment profile settings page.
-    Shows establishment information and provides options to delete or deactivate.
+    Display the food establishment profile settings page with inline editing.
     """
     try:
+        from .models import Category, Amenity
+        import os
+
         # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
 
         context = {
             'establishment': establishment,
+            'categories': Category.objects.all().order_by('name'),
+            'amenities': Amenity.objects.all().order_by('name'),
+            'pk': establishment.pk,
+            'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE', '14.1649'),
+            'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE', '120.9881'),
         }
 
-        return render(request, 'webapplication/food_establishment_profile.html', context)
+        return render(request, 'webapplication/profile_with_inline_edit.html', context)
 
     except FoodEstablishment.DoesNotExist:
         return redirect('owner_login')
     except Exception as e:
-        return redirect('food_establishment_dashboard')
+        return redirect('food_establishment_dashboard') 
 
 @login_required(login_url='owner_login')
 @require_http_methods(["POST"])
