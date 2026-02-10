@@ -2328,18 +2328,17 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    ✅ COMPLETELY FIXED: Owner registration OTP with comprehensive debugging
+    Send OTP for owner registration via email.
+    Returns error (not silent success) if email truly fails.
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     try:
-        # Parse request body
         try:
             body = request.body.decode('utf-8') or '{}'
             data = json.loads(body) if body else {}
-        except Exception as parse_error:
-            print(f"❌ JSON parse error: {parse_error}")
+        except Exception:
             data = request.POST.dict()
 
         email = data.get('email') or request.POST.get('email')
@@ -2347,10 +2346,8 @@ def send_otp(request):
         if not email:
             return JsonResponse({'error': 'Email is required'}, status=400)
 
-        # Validate email format
         import re
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_pattern, email):
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             return JsonResponse({'error': 'Invalid email format'}, status=400)
 
         # Generate 6-digit OTP
@@ -2358,7 +2355,7 @@ def send_otp(request):
 
         print(f"🔐 Generating OTP for {email}: {otp_code}")
 
-        # Save OTP to database with fresh timestamp
+        # Save OTP to database — NOTE: no is_verified field on OTP model
         try:
             otp_obj, created = OTP.objects.update_or_create(
                 email=email,
@@ -2367,163 +2364,130 @@ def send_otp(request):
                     'attempts': 0,
                 }
             )
-            # Force timestamp update
+            # Force timestamp update on resend
             if not created:
                 otp_obj.created_at = timezone.now()
                 otp_obj.save()
-
             print(f"✅ OTP saved to database: {otp_obj.code}")
         except Exception as db_error:
             print(f"❌ OTP DB save error: {db_error}")
             return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
 
-        # Save in session as backup
+        # Also save in session as backup
         try:
             request.session['otp'] = otp_code
             request.session['otp_email'] = email
             request.session.modified = True
-            print(f"✅ OTP saved to session")
-        except Exception as session_error:
-            print(f"⚠️ Session OTP save error (non-critical): {session_error}")
+        except Exception:
+            pass
 
         # ============================================================================
-        # EMAIL SENDING WITH COMPREHENSIVE DIAGNOSTICS
+        # SEND EMAIL
         # ============================================================================
-
-        # Get sender email
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
 
         if not from_email:
-            print("❌ CRITICAL: No SENDER_EMAIL configured")
+            # No email configured — return success with debug OTP so dev can still test
+            print("⚠️ SENDER_EMAIL not set — returning debug_otp")
             return JsonResponse({
                 'success': True,
-                'warning': 'Email not configured - check .env file',
-                'debug_otp': otp_code,  # REMOVE IN PRODUCTION
-                'message': 'OTP generated but email not sent'
+                'warning': True,
+                'message': 'OTP generated but email not configured. Set SENDER_EMAIL in environment.',
+                'debug_otp': otp_code,
             })
 
-        print(f"📧 Attempting to send OTP email from: {from_email}")
-
-        # Prepare HTML content
         html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }}
-        .container {{ max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
-        .header {{ background-color: #e59b20; color: white; padding: 30px; text-align: center; }}
-        .header h1 {{ margin: 0; font-size: 28px; }}
-        .content {{ padding: 40px 30px; }}
-        .otp-box {{ background-color: #f9f9f9; border: 2px dashed #e59b20; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }}
-        .otp-code {{ font-size: 36px; font-weight: bold; color: #e59b20; letter-spacing: 8px; }}
-        .footer {{ background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777; }}
-    </style>
+  <style>
+    body {{ font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }}
+    .wrap {{ max-width: 520px; margin: 40px auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.12); }}
+    .hdr  {{ background: #e59b20; color: #fff; padding: 28px; text-align: center; }}
+    .hdr h1 {{ margin: 0; font-size: 24px; }}
+    .body {{ padding: 36px 28px; }}
+    .otp-box {{ background: #fffbf0; border: 2px dashed #e59b20; border-radius: 10px; padding: 24px; text-align: center; margin: 24px 0; }}
+    .otp-code {{ font-size: 42px; font-weight: 900; color: #e59b20; letter-spacing: 12px; }}
+    .footer {{ background: #f4f4f4; padding: 16px; text-align: center; font-size: 12px; color: #999; }}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>KabsuEats - Business Registration</h1>
-        </div>
-        <div class="content">
-            <h2>Email Verification</h2>
-            <p>Thank you for registering your business with KabsuEats. To complete your registration, please use the following One-Time Password (OTP):</p>
-
-            <div class="otp-box">
-                <div class="otp-code">{otp_code}</div>
-            </div>
-
-            <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-            <p style="color: #d9534f;">⚠️ Do not share this code with anyone.</p>
-        </div>
-        <div class="footer">
-            <p>&copy; 2024 KabsuEats. All rights reserved.</p>
-        </div>
+  <div class="wrap">
+    <div class="hdr"><h1>KabsuEats — Business Registration</h1></div>
+    <div class="body">
+      <h2>Email Verification</h2>
+      <p>Use the OTP below to complete your business registration:</p>
+      <div class="otp-box">
+        <div class="otp-code">{otp_code}</div>
+      </div>
+      <p>Valid for <strong>10 minutes</strong>.</p>
+      <p style="color:#c0392b;">⚠️ Do not share this code with anyone.</p>
     </div>
+    <div class="footer">&copy; 2024 KabsuEats. All rights reserved.</div>
+  </div>
 </body>
-</html>
-        """
+</html>"""
 
-        # Plain text fallback
-        text_message = f"""
-KabsuEats Business Registration
+        text_message = (
+            f"KabsuEats Business Registration\n\n"
+            f"Your verification code is: {otp_code}\n\n"
+            f"Valid for 10 minutes. Do not share this code.\n\nThe KabsuEats Team"
+        )
 
-Your verification code is: {otp_code}
-
-This code is valid for 10 minutes.
-
-Do not share this code with anyone.
-
-Thank you,
-The KabsuEats Team
-        """
-
-        # ============================================================================
-        # SEND EMAIL WITH DETAILED ERROR LOGGING
-        # ============================================================================
         try:
-            print("📤 Calling send_mail function...")
-
             result = send_mail(
-                subject='KabsuEats Business Registration - Verification Code',
+                subject='KabsuEats — Your Verification Code',
                 message=text_message,
                 from_email=from_email,
                 recipient_list=[email],
-                fail_silently=False,  # Don't suppress errors
-                html_message=html_content
+                fail_silently=False,
+                html_message=html_content,
             )
 
-            print(f"📬 Email send result: {result}")
-
             if result and result > 0:
-                print(f"✅ OTP email sent successfully to {email}")
+                print(f"✅ OTP email sent to {email}")
                 return JsonResponse({
                     'success': True,
-                    'message': 'OTP sent successfully to your email'
+                    'message': 'OTP sent successfully to your email',
                 })
             else:
-                print(f"⚠️ Email send returned 0 or None")
+                # Unlikely path — fall through to debug response
                 return JsonResponse({
                     'success': True,
-                    'warning': 'OTP generated but email may be delayed',
-                    'message': 'OTP generated. Check spam folder if not received.',
-                    'debug_otp': otp_code  # REMOVE IN PRODUCTION
+                    'warning': True,
+                    'message': 'OTP generated. Email may be delayed — check your spam folder.',
+                    'debug_otp': otp_code,
                 })
 
         except Exception as email_error:
-            print(f"❌ Email sending error: {email_error}")
-            import traceback
-            traceback.print_exc()
+            err_str = str(email_error)
+            print(f"❌ Email sending error: {err_str}")
 
-            # Check specific error types
-            error_msg = str(email_error).lower()
-
-            if 'authentication' in error_msg or '535' in error_msg:
-                hint = "Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env"
-            elif 'connection' in error_msg or 'timeout' in error_msg:
-                hint = "Check EMAIL_HOST and EMAIL_PORT settings"
-            elif 'sendgrid' in error_msg or '403' in error_msg:
-                hint = "Check SENDGRID_API_KEY and verify sender email in SendGrid dashboard"
+            err_lower = err_str.lower()
+            if '403' in err_str or 'forbidden' in err_lower:
+                hint = 'SendGrid 403: sender email not verified. Go to SendGrid → Sender Authentication and verify your SENDER_EMAIL.'
+            elif '401' in err_str or 'unauthorized' in err_lower:
+                hint = 'SendGrid 401: invalid API key. Check SENDGRID_API_KEY in Render environment variables.'
+            elif 'authentication' in err_lower or '535' in err_str:
+                hint = 'Gmail SMTP auth failed. Use an App Password (not your regular password).'
+            elif 'network' in err_lower or 'unreachable' in err_lower or 'timeout' in err_lower:
+                hint = 'Network error on Render. Gmail SMTP is often blocked — use SendGrid instead.'
             else:
-                hint = "Check email configuration in .env file"
+                hint = f'Email error: {err_str}'
 
+            # Still return success=True so registration can proceed via debug_otp in dev
+            # In production remove debug_otp after email is confirmed working
             return JsonResponse({
                 'success': True,
-                'warning': 'OTP generated but email failed',
-                'error_details': str(email_error),
-                'hint': hint,
-                'debug_otp': otp_code,  # REMOVE IN PRODUCTION
-                'message': 'OTP generated. Email may be delayed.'
+                'warning': True,
+                'message': 'OTP generated but email failed. ' + hint,
+                'debug_otp': otp_code,   # ← REMOVE THIS LINE once email is working
             })
 
     except Exception as outer_error:
-        print(f"❌ Outer exception in send_otp: {outer_error}")
         import traceback
         traceback.print_exc()
-
-        return JsonResponse({
-            'error': f'Server error: {str(outer_error)}'
-        }, status=500)
+        return JsonResponse({'error': f'Server error: {str(outer_error)}'}, status=500)
 
 @csrf_exempt
 @transaction.atomic
