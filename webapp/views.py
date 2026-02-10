@@ -949,9 +949,9 @@ def send_registration_otp(request):
             defaults={
                 'code': otp_code,
                 'attempts': 0,
-                'is_verified': False
             }
         )
+
         # Force update the created_at timestamp
         if not created:
             otp_obj.created_at = timezone.now()
@@ -1278,8 +1278,7 @@ def verify_otp_only(request):
                 }, status=400)
 
             # Mark as verified (but don't delete yet)
-            otp_entry.is_verified = True
-            otp_entry.save()
+            pass
 
             return JsonResponse({'success': True, 'message': 'OTP verified'})
         else:
@@ -1336,7 +1335,6 @@ def resend_otp(request):
             defaults={
                 'code': otp_code,
                 'attempts': 0,
-                'is_verified': False
             }
         )
         # Force update the created_at timestamp
@@ -2367,7 +2365,6 @@ def send_otp(request):
                 defaults={
                     'code': otp_code,
                     'attempts': 0,
-                    'is_verified': False
                 }
             )
             # Force timestamp update
