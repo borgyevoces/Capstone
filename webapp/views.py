@@ -4717,7 +4717,7 @@ def food_establishment_profile(request):
             'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE', '120.9881'),
         }
 
-        return render(request, 'webapplication/profile_with_inline_edit.html', context)
+        return render(request, 'webapplication/food_establishment_profile.html', context)
 
     except FoodEstablishment.DoesNotExist:
         return redirect('owner_login')
