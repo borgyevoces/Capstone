@@ -4722,7 +4722,7 @@ def food_establishment_profile(request):
     except FoodEstablishment.DoesNotExist:
         return redirect('owner_login')
     except Exception as e:
-        return redirect('food_establishment_dashboard') 
+        return redirect('food_establishment_dashboard')
 
 @login_required(login_url='owner_login')
 @require_http_methods(["POST"])
