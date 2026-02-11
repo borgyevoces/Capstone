@@ -71,16 +71,16 @@
         }
 
         /* ============================================ */
-        /* ✅ NAV ACTIONS GROUP (My Orders + Cart tight) */
+        /* ============================================ */
+        /* ✅ NAV ACTIONS GROUP — Segmented Tab Style  */
         /* ============================================ */
         .nav-actions-group {
             display: flex;
-            align-items: center;
-            gap: 4px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            align-items: stretch;
+            background: #f1f3f5;
             border-radius: 10px;
-            padding: 2px 4px;
+            padding: 3px;
+            gap: 2px;
         }
 
         .nav-actions-group .order-history-nav {
@@ -91,29 +91,65 @@
             margin: 0 !important;
         }
 
+        /* Each tab segment */
         .nav-actions-group .order-history-link,
         .nav-actions-group .cart-link {
-            padding: 7px 12px;
-            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 16px;
+            border-radius: 7px;
             font-size: 13px;
             font-weight: 600;
+            color: #374151;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.18s ease, color 0.18s ease;
+            background: transparent;
         }
 
-        .nav-actions-group .order-history-link:hover,
+        /* My Orders — "active" selected tab style */
+        .nav-actions-group .order-history-link {
+            background: #ffffff;
+            color: #111827;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+        }
+
+        /* Cart — sits flat/unselected */
+        .nav-actions-group .cart-link {
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .nav-actions-group .order-history-link:hover {
+            background: #ffffff;
+            color: #111827;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+
         .nav-actions-group .cart-link:hover {
-            background: rgba(183, 28, 28, 0.08);
-            color: #B71C1C;
-            transform: none;
+            background: rgba(255,255,255,0.65);
+            color: #111827;
+        }
+
+        .nav-actions-group .order-history-link i,
+        .nav-actions-group .cart-link i {
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
             .nav-actions-group {
-                gap: 2px;
-                padding: 1px 2px;
+                padding: 2px;
+                gap: 1px;
             }
-            .nav-actions-group .order-history-link span,
+            .nav-actions-group .order-history-link span:not(.cart-badge),
             .nav-actions-group .cart-link span:not(.cart-badge) {
                 display: none;
+            }
+            .nav-actions-group .order-history-link,
+            .nav-actions-group .cart-link {
+                padding: 7px 10px;
+                gap: 0;
             }
             .profile-icon-default {
                 width: 34px;
@@ -132,6 +168,16 @@
             }
         }
 
+
+        /* Specificity override — beats kabsueats_desktopview.css rules */
+        .header-right .nav-actions-group .order-history-link,
+        .header-right .nav-actions-group .cart-link {
+            padding: 7px 16px !important;
+            border-radius: 7px !important;
+            font-size: 13px !important;
+            transform: none !important;
+            margin: 0 !important;
+        }
 
         .search-dropdown {
             position: absolute;
