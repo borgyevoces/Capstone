@@ -7,30 +7,23 @@
     <title>{{ establishment.name }} - Profile Settings</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
     <style>
         /* ================================================================
-           STANDALONE PROFILE SETTINGS - NO SIDEBAR
-           Clean, Modern, Responsive Design
+           IMPROVED PROFILE SETTINGS - COLLAPSIBLE EDIT + PERFECT LAYOUT
            ================================================================ */
 
         :root {
             --primary-red: #B71C1C;
-            --primary-red-dark: #8B0000;
             --primary-red-light: #dc2626;
             --primary-green: #10b981;
-            --primary-blue: #3b82f6;
             --text-dark: #1a1a1a;
             --text-gray: #6b7280;
-            --text-light: #9ca3af;
             --border-light: #e5e7eb;
             --bg-gray: #f8f9fa;
-            --bg-white: #ffffff;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
         }
 
         * {
@@ -41,158 +34,163 @@
 
         body {
             background: var(--bg-gray);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            color: var(--text-dark);
-            line-height: 1.6;
+            margin-left: 260px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            overflow-x: hidden;
         }
 
-        /* ============ TOP NAVBAR WITH LOGO ============ */
-        .top-navbar {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            padding: 16px 0;
-            box-shadow: var(--shadow-md);
-            position: sticky;
+        body.sidebar-collapsed {
+            margin-left: 70px;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            position: fixed;
+            left: 0;
             top: 0;
-            z-index: 100;
-        }
-
-        .navbar-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 30px;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            z-index: 1001;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
 
-        .navbar-logo {
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
             display: flex;
             align-items: center;
             gap: 12px;
             color: white;
             font-family: 'Pacifico', cursive;
-            font-size: 26px;
+            font-size: 24px;
             text-decoration: none;
         }
 
-        .navbar-logo i {
-            font-size: 30px;
+        .sidebar-logo i {
+            font-size: 28px;
             color: var(--primary-red);
         }
 
-        .navbar-actions {
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .nav-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
+            gap: 15px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
-            transition: all 0.3s;
-            border: none;
             cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
         }
 
-        .btn-primary {
-            background: var(--primary-red);
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
             color: white;
         }
 
-        .btn-primary:hover {
-            background: var(--primary-red-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .sidebar-item.active {
+            background: rgba(183, 28, 28, 0.15);
             color: white;
+            border-left-color: var(--primary-red);
         }
 
-        /* ============ MAIN CONTAINER ============ */
+        .sidebar-item i {
+            font-size: 20px;
+            min-width: 20px;
+        }
+
+        .sidebar-footer {
+            padding: 20px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item.logout {
+            color: rgba(255, 107, 107, 0.9);
+        }
+
+        .sidebar-item.logout:hover {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+        }
+
+        /* ============ PROFILE CONTAINER ============ */
         .profile-container {
-            max-width: 1400px;
+            padding: 30px 40px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 40px 30px;
         }
 
-        /* Back Button */
         .back-btn {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            padding: 12px 24px;
-            background: var(--bg-white);
+            padding: 10px 20px;
+            background: white;
             color: var(--text-dark);
             text-decoration: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 600;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 30px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
             transition: all 0.3s;
-            border: 2px solid transparent;
         }
 
         .back-btn:hover {
             background: var(--primary-red);
             color: white;
-            transform: translateX(-6px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--primary-red);
+            transform: translateX(-4px);
         }
 
-        /* ============ PROFILE GRID - TWO COLUMNS ============ */
+        /* ============ PROFILE GRID - OPTIMIZED FOR SCREEN FIT ============ */
         .profile-grid {
             display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 30px;
-            align-items: start;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+            max-height: calc(100vh - 140px);
         }
 
-        /* ============ LEFT COLUMN - ESTABLISHMENT INFO ============ */
+        /* LEFT COLUMN - Fixed Info */
         .left-column {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
+            height: fit-content;
             position: sticky;
-            top: 120px;
+            top: 20px;
         }
 
         /* Establishment Image Card */
-        .image-card {
-            background: var(--bg-white);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow 0.3s;
+        .establishment-image-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .image-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .image-wrapper {
+        .establishment-image-wrapper {
             position: relative;
             width: 100%;
             padding-top: 75%;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .image-wrapper img {
+        .establishment-image-wrapper img {
             position: absolute;
             top: 0;
             left: 0;
@@ -201,239 +199,163 @@
             object-fit: cover;
         }
 
-        .image-overlay {
+        .image-upload-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
-            padding: 20px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 15px;
             opacity: 0;
             transition: opacity 0.3s;
         }
 
-        .image-wrapper:hover .image-overlay {
+        .establishment-image-wrapper:hover .image-upload-overlay {
             opacity: 1;
         }
 
-        .image-overlay label {
+        .image-upload-overlay label {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             color: white;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         /* Quick Info Card */
-        .info-card {
-            background: var(--bg-white);
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
+        .quick-info-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            transition: box-shadow 0.3s;
         }
 
-        .info-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .info-item {
-            padding: 18px 22px;
+        .quick-info-item {
+            padding: 15px 18px;
             border-bottom: 1px solid var(--border-light);
         }
 
-        .info-item:last-child {
+        .quick-info-item:last-child {
             border-bottom: none;
         }
 
-        .info-label {
+        .quick-info-label {
             font-size: 11px;
             color: var(--text-gray);
             text-transform: uppercase;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            font-weight: 700;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        .info-label i {
+        .quick-info-label i {
             color: var(--primary-red);
-            font-size: 13px;
         }
 
-        .info-value {
-            font-size: 15px;
+        .quick-info-value {
+            font-size: 14px;
             font-weight: 600;
             color: var(--text-dark);
         }
 
         .status-badge {
             display: inline-block;
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .status-open {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            background: #d1fae5;
             color: #065f46;
-            border: 1px solid #6ee7b7;
         }
 
         .status-closed {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            background: #fee2e2;
             color: #991b1b;
-            border: 1px solid #fca5a5;
         }
 
-        /* Logout Button in Left Column */
-        .logout-card {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
-            border: 2px solid #fca5a5;
-        }
-
-        .logout-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .logout-btn:hover {
-            background: #991b1b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
-        }
-
-        /* ============ RIGHT COLUMN - EDIT SECTION ============ */
+        /* ============ RIGHT COLUMN - COLLAPSIBLE EDIT SECTION ============ */
         .right-column {
-            background: var(--bg-white);
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            transition: box-shadow 0.3s;
+            max-height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
         }
 
-        .right-column:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        /* Collapsible Header */
-        .section-header {
-            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
-            color: white;
-            padding: 24px 28px;
-            cursor: pointer;
-            user-select: none;
+        /* COLLAPSIBLE HEADER - Click to Expand */
+        .section-header-collapsible {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-light) 100%);
+            color: white;
+            cursor: pointer;
+            user-select: none;
             transition: all 0.3s;
         }
 
-        .section-header:hover {
-            background: linear-gradient(135deg, var(--primary-red-dark) 0%, #6b0000 100%);
+        .section-header-collapsible:hover {
+            background: linear-gradient(135deg, var(--primary-red-light) 0%, #ef4444 100%);
         }
 
-        .section-header:active {
-            transform: scale(0.99);
+        .section-header-collapsible:active {
+            transform: scale(0.98);
         }
 
-        .section-title {
+        .section-header-title {
             display: flex;
             align-items: center;
-            gap: 14px;
-            font-size: 22px;
-            font-weight: 800;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
         }
 
-        .section-title i {
-            font-size: 24px;
+        .section-header-title i {
+            font-size: 22px;
         }
 
         .collapse-arrow {
-            font-size: 20px;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 18px;
+            transition: transform 0.3s ease;
         }
 
-        .section-header.collapsed .collapse-arrow {
+        .section-header-collapsible.collapsed .collapse-arrow {
             transform: rotate(-90deg);
         }
 
-        /* Collapsible Content */
+        /* COLLAPSIBLE CONTENT - Hidden by default */
         .collapsible-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .collapsible-content.expanded {
-            max-height: 3000px;
+            max-height: 2000px;
             overflow-y: auto;
         }
 
-        .form-wrapper {
-            padding: 32px;
+        .form-content-wrapper {
+            padding: 24px;
         }
 
-        /* Success Message */
-        .success-message {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-            color: #065f46;
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            display: none;
-            align-items: center;
-            gap: 12px;
-            font-weight: 700;
-            border-left: 5px solid #10b981;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-        }
-
-        .success-message.show {
-            display: flex;
-            animation: slideIn 0.4s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Form Grid */
+        /* Form Styling */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 22px;
+            gap: 18px;
         }
 
         .form-group {
@@ -447,34 +369,32 @@
         .form-group label {
             display: block;
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             color: #374151;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .form-group label i {
             color: var(--primary-red);
-            margin-right: 8px;
-            font-size: 13px;
+            margin-right: 6px;
         }
 
         .form-control {
             width: 100%;
-            padding: 13px 16px;
+            padding: 11px 14px;
             border: 2px solid var(--border-light);
-            border-radius: 8px;
-            font-size: 15px;
-            font-family: inherit;
+            border-radius: 6px;
+            font-size: 14px;
             transition: all 0.3s;
-            background: var(--bg-white);
+            background: white;
         }
 
         .form-control:focus {
             outline: none;
             border-color: var(--primary-red);
-            box-shadow: 0 0 0 4px rgba(183, 28, 28, 0.12);
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
         }
 
         .form-control:read-only {
@@ -485,7 +405,7 @@
 
         textarea.form-control {
             resize: vertical;
-            min-height: 80px;
+            min-height: 70px;
         }
 
         select.form-control {
@@ -496,97 +416,95 @@
         .location-status {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            color: #1e40af;
-            margin-top: 12px;
-            border: 1px solid #93c5fd;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #065f46;
+            margin-top: 8px;
         }
 
         /* Update Location Button */
-        .location-btn {
+        .update-location-btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             transition: all 0.3s;
         }
 
-        .location-btn:hover {
+        .update-location-btn:hover {
             background: #2563eb;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
-        /* Checkbox Grid */
+        /* Checkbox Groups */
         .checkbox-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
+            gap: 12px;
         }
 
         .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .checkbox-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
             accent-color: var(--primary-red);
         }
 
         .checkbox-item label {
             margin: 0;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             text-transform: none;
-            letter-spacing: 0;
         }
 
         /* Save Button */
         .save-btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: linear-gradient(135deg, var(--primary-green) 0%, #059669 100%);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 17px;
-            font-weight: 800;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-top: 28px;
+            gap: 10px;
+            margin-top: 24px;
             transition: all 0.3s;
         }
 
         .save-btn:hover {
             background: #059669;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
         }
 
         .save-btn:active {
-            transform: translateY(-1px);
+            transform: translateY(0);
         }
 
         .save-btn:disabled {
@@ -597,56 +515,55 @@
 
         /* Danger Zone */
         .danger-zone {
-            background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%);
-            border: 2px solid #fca5a5;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 28px;
+            background: #fff5f5;
+            border: 2px solid #fee2e2;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
         }
 
-        .danger-header {
+        .danger-zone-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 18px;
+            gap: 10px;
+            margin-bottom: 16px;
             color: #991b1b;
         }
 
-        .danger-header i {
-            font-size: 22px;
+        .danger-zone-header i {
+            font-size: 20px;
         }
 
-        .danger-header h3 {
-            font-size: 19px;
-            font-weight: 800;
+        .danger-zone-header h3 {
+            font-size: 18px;
+            font-weight: 700;
             margin: 0;
         }
 
-        .danger-description {
+        .danger-zone-description {
             color: #7f1d1d;
-            font-size: 14px;
-            margin-bottom: 18px;
-            line-height: 1.7;
-            font-weight: 500;
+            font-size: 13px;
+            margin-bottom: 16px;
+            line-height: 1.6;
         }
 
-        .danger-actions {
+        .danger-zone-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 14px;
+            gap: 12px;
         }
 
         .danger-btn {
-            padding: 14px 22px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             transition: all 0.3s;
         }
 
@@ -658,7 +575,7 @@
         .delete-btn:hover {
             background: #991b1b;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
 
         .deactivate-btn {
@@ -669,23 +586,53 @@
         .deactivate-btn:hover {
             background: #d97706;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
-        /* Map */
+        /* Map Container */
         #map {
             width: 100%;
-            height: 400px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-sm);
-            margin-top: 14px;
+            height: 350px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 12px;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            border-left: 4px solid #059669;
+        }
+
+        .success-message.show {
+            display: flex;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Loading Spinner */
         .spinner {
             display: inline-block;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top-color: white;
             border-radius: 50%;
@@ -696,108 +643,8 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-header {
-            padding: 24px 28px;
-            border-bottom: 2px solid var(--border-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-gray);
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--text-dark);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--text-gray);
-            transition: color 0.3s;
-        }
-
-        .modal-close:hover {
-            color: var(--primary-red);
-        }
-
-        .modal-footer {
-            padding: 20px 28px;
-            border-top: 2px solid var(--border-light);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            background: var(--bg-gray);
-        }
-
-        .modal-btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .modal-btn-cancel {
-            border: 2px solid var(--border-light);
-            background: white;
-            color: var(--text-dark);
-        }
-
-        .modal-btn-cancel:hover {
-            border-color: var(--text-gray);
-            background: var(--bg-gray);
-        }
-
-        .modal-btn-save {
-            border: none;
-            background: var(--primary-red);
-            color: white;
-        }
-
-        .modal-btn-save:hover {
-            background: var(--primary-red-dark);
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
-        }
-
-        /* ============ RESPONSIVE DESIGN ============ */
-        @media (max-width: 1200px) {
-            .profile-grid {
-                grid-template-columns: 350px 1fr;
-                gap: 24px;
-            }
-        }
-
-        @media (max-width: 992px) {
+        /* Responsive Design */
+        @media (max-width: 1024px) {
             .profile-grid {
                 grid-template-columns: 1fr;
             }
@@ -812,16 +659,20 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                margin-left: 0;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
             .profile-container {
-                padding: 24px 20px;
-            }
-
-            .navbar-container {
-                padding: 0 20px;
-            }
-
-            .navbar-logo {
-                font-size: 22px;
+                padding: 20px;
             }
 
             .form-grid {
@@ -832,59 +683,56 @@
                 grid-template-columns: 1fr;
             }
 
-            .danger-actions {
+            .danger-zone-actions {
                 grid-template-columns: 1fr;
-            }
-
-            .section-title {
-                font-size: 18px;
-            }
-
-            .form-wrapper {
-                padding: 24px 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .back-btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .navbar-actions {
-                flex-direction: column;
-                width: 100%;
-                gap: 8px;
-            }
-
-            .nav-btn {
-                width: 100%;
-                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
 
-<!-- Top Navbar -->
-<nav class="top-navbar">
-    <div class="navbar-container">
-        <a href="{% url 'food_establishment_dashboard' %}" class="navbar-logo">
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-logo">
             <i class="fas fa-utensils"></i>
             <span>KabsuEats</span>
         </a>
-        <div class="navbar-actions">
-            <a href="{% url 'food_establishment_dashboard' %}" class="nav-btn btn-secondary">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-        </div>
     </div>
-</nav>
+
+    <div class="sidebar-menu">
+        <a href="{% url 'food_establishment_dashboard' %}" class="sidebar-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'orders_list' %}" class="sidebar-item">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Orders</span>
+        </a>
+        <a href="{% url 'establishment_transaction_history' %}" class="sidebar-item">
+            <i class="fas fa-history"></i>
+            <span>Transactions</span>
+        </a>
+        <a href="{% url 'store_reviews' %}" class="sidebar-item">
+            <i class="fas fa-star"></i>
+            <span>Sales Report</span>
+        </a>
+        <a href="{% url 'food_establishment_profile' %}" class="sidebar-item active">
+            <i class="fas fa-cog"></i>
+            <span>Profile Settings</span>
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="{% url 'logout_owner' %}" class="sidebar-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
 
 <!-- Main Content -->
 <div class="profile-container">
-    <!-- Back Button -->
     <a href="{% url 'food_establishment_dashboard' %}" class="back-btn">
         <i class="fas fa-arrow-left"></i>
         Back to Dashboard
@@ -897,16 +745,16 @@
     </div>
 
     <div class="profile-grid">
-        <!-- LEFT COLUMN - Quick Info -->
+        <!-- LEFT COLUMN - Quick Info (Always Visible) -->
         <div class="left-column">
             <!-- Establishment Image -->
-            <div class="image-card">
+            <div class="establishment-image-card">
                 <form id="imageForm" method="POST" enctype="multipart/form-data" action="{% url 'update_establishment_details_ajax' pk=pk %}">
                     {% csrf_token %}
                     <input type="hidden" name="update_status" value="1">
-                    <div class="image-wrapper">
+                    <div class="establishment-image-wrapper">
                         <img id="establishmentImage" src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="{{ establishment.name }}">
-                        <div class="image-overlay">
+                        <div class="image-upload-overlay">
                             <label for="imageInput">
                                 <i class="fas fa-camera"></i> Change Image
                             </label>
@@ -917,68 +765,60 @@
             </div>
 
             <!-- Quick Info -->
-            <div class="info-card">
-                <div class="info-item">
-                    <div class="info-label">
+            <div class="quick-info-card">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
                         <i class="fas fa-store"></i> Establishment
                     </div>
-                    <div class="info-value" id="display-name">{{ establishment.name }}</div>
+                    <div class="quick-info-value" id="display-name">{{ establishment.name }}</div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
                         <i class="fas fa-tag"></i> Category
                     </div>
-                    <div class="info-value" id="display-category">{{ establishment.category.name|default:"N/A" }}</div>
+                    <div class="quick-info-value" id="display-category">{{ establishment.category.name|default:"N/A" }}</div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
                         <i class="fas fa-circle"></i> Status
                     </div>
-                    <div class="info-value">
+                    <div class="quick-info-value">
                         <span class="status-badge status-{{ establishment.calculated_status|lower }}" id="display-status">
                             {{ establishment.calculated_status }}
                         </span>
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
                         <i class="fas fa-clock"></i> Hours
                     </div>
-                    <div class="info-value" id="display-hours">
+                    <div class="quick-info-value" id="display-hours">
                         {{ establishment.opening_time|default:"--" }} - {{ establishment.closing_time|default:"--" }}
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">
+                <div class="quick-info-item">
+                    <div class="quick-info-label">
                         <i class="fas fa-map-marker-alt"></i> Address
                     </div>
-                    <div class="info-value" style="font-size: 13px;" id="display-address">{{ establishment.address }}</div>
+                    <div class="quick-info-value" style="font-size: 12px;" id="display-address">{{ establishment.address }}</div>
                 </div>
-            </div>
-
-            <!-- Logout Button -->
-            <div class="logout-card">
-                <a href="{% url 'logout_owner' %}" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN - Edit Section -->
+        <!-- RIGHT COLUMN - Collapsible Edit Section -->
         <div class="right-column">
             <!-- Collapsible Header -->
-            <div class="section-header collapsed" onclick="toggleEdit()">
-                <div class="section-title">
+            <div class="section-header-collapsible collapsed" onclick="toggleEditSection()">
+                <div class="section-header-title">
                     <i class="fas fa-edit"></i>
                     <span>Edit Establishment Details</span>
                 </div>
                 <i class="fas fa-chevron-down collapse-arrow"></i>
             </div>
 
-            <!-- Collapsible Content -->
+            <!-- Collapsible Content (Hidden by default) -->
             <div class="collapsible-content" id="editContent">
-                <div class="form-wrapper">
+                <div class="form-content-wrapper">
                     <form id="updateForm" method="POST" action="{% url 'update_establishment_details_ajax' pk=pk %}">
                         {% csrf_token %}
                         <input type="hidden" name="update_status" value="1">
@@ -1023,13 +863,13 @@
                             <!-- Pin Location -->
                             <div class="form-group full-width">
                                 <label><i class="fas fa-map-pin"></i> Pin Location</label>
-                                <button type="button" class="location-btn" onclick="openMap()">
+                                <button type="button" class="update-location-btn" onclick="openMapModal()">
                                     <i class="fas fa-location-arrow"></i>
                                     Update Location on Map
                                 </button>
                                 <div class="location-status" id="locationStatus" style="display: none;">
                                     <i class="fas fa-check-circle"></i>
-                                    <span>Location: <span id="coords">{{ establishment.latitude }}, {{ establishment.longitude }}</span></span>
+                                    <span>Location: <span id="currentCoords">{{ establishment.latitude }}, {{ establishment.longitude }}</span></span>
                                 </div>
                             </div>
 
@@ -1071,14 +911,14 @@
 
                             <!-- Danger Zone -->
                             <div class="danger-zone">
-                                <div class="danger-header">
+                                <div class="danger-zone-header">
                                     <i class="fas fa-exclamation-triangle"></i>
                                     <h3>Danger Zone</h3>
                                 </div>
-                                <p class="danger-description">
-                                    These actions are permanent and cannot be undone. Please proceed with extreme caution.
+                                <p class="danger-zone-description">
+                                    These actions are permanent and cannot be undone. Please proceed with caution.
                                 </p>
-                                <div class="danger-actions">
+                                <div class="danger-zone-actions">
                                     <button type="button" class="danger-btn delete-btn" onclick="confirmDelete()">
                                         <i class="fas fa-trash"></i>
                                         Delete Establishment
@@ -1098,16 +938,16 @@
 </div>
 
 <!-- Map Modal -->
-<div id="mapModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Update Location</h3>
-            <button class="modal-close" onclick="closeMap()">&times;</button>
+<div id="mapModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
+        <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700;">Update Location</h3>
+            <button onclick="closeMapModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
         </div>
         <div id="map"></div>
-        <div class="modal-footer">
-            <button class="modal-btn modal-btn-cancel" onclick="closeMap()">Cancel</button>
-            <button class="modal-btn modal-btn-save" onclick="saveLocation()">Save Location</button>
+        <div style="padding: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px;">
+            <button onclick="closeMapModal()" style="padding: 10px 20px; border: 2px solid #e5e7eb; background: white; color: #374151; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
+            <button onclick="saveLocation()" style="padding: 10px 20px; border: none; background: var(--primary-red); color: white; border-radius: 6px; font-weight: 600; cursor: pointer;">Save Location</button>
         </div>
     </div>
 </div>
@@ -1117,8 +957,8 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script>
     // Toggle Edit Section
-    function toggleEdit() {
-        const header = document.querySelector('.section-header');
+    function toggleEditSection() {
+        const header = document.querySelector('.section-header-collapsible');
         const content = document.getElementById('editContent');
 
         header.classList.toggle('collapsed');
@@ -1131,19 +971,21 @@
     const CVSU_LAT = {{ CVSU_LATITUDE|default:"14.412768" }};
     const CVSU_LNG = {{ CVSU_LONGITUDE|default:"120.981348" }};
 
-    function openMap() {
+    function openMapModal() {
         document.getElementById('mapModal').style.display = 'flex';
 
         if (!map) {
             map = L.map('map').setView([CVSU_LAT, CVSU_LNG], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-            const lat = document.getElementById('latitude').value;
-            const lng = document.getElementById('longitude').value;
+            const currentLat = document.getElementById('latitude').value;
+            const currentLng = document.getElementById('longitude').value;
 
-            if (lat && lng) {
-                marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-                map.setView([lat, lng], 16);
+            if (currentLat && currentLng) {
+                marker = L.marker([currentLat, currentLng], {draggable: true}).addTo(map);
+                map.setView([currentLat, currentLng], 16);
             }
 
             map.on('click', function(e) {
@@ -1158,7 +1000,7 @@
         }
     }
 
-    function closeMap() {
+    function closeMapModal() {
         document.getElementById('mapModal').style.display = 'none';
     }
 
@@ -1167,27 +1009,31 @@
             const latlng = marker.getLatLng();
             document.getElementById('latitude').value = latlng.lat;
             document.getElementById('longitude').value = latlng.lng;
-            document.getElementById('coords').textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+            document.getElementById('currentCoords').textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
             document.getElementById('locationStatus').style.display = 'inline-flex';
-            closeMap();
+            closeMapModal();
         }
     }
 
     // Upload Image
     function uploadImage() {
         const formData = new FormData(document.getElementById('imageForm'));
+        const saveBtn = document.getElementById('saveBtn');
 
         fetch("{% url 'update_establishment_details_ajax' pk=pk %}", {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 document.getElementById('establishmentImage').src = data.image_url;
-                showSuccess('Image updated successfully!');
+                showSuccessMessage('Image updated successfully!');
             } else {
-                alert('Error: ' + (data.message || 'Unknown error'));
+                alert('Error uploading image: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -1196,73 +1042,79 @@
         });
     }
 
-    // Submit Form
+    // Submit Form with Real-time Updates
     document.getElementById('updateForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
-        const btn = document.getElementById('saveBtn');
+        const saveBtn = document.getElementById('saveBtn');
 
-        btn.disabled = true;
-        btn.innerHTML = '<div class="spinner"></div> Saving...';
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner"></div> Saving...';
 
         fetch("{% url 'update_establishment_details_ajax' pk=pk %}", {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Real-time updates
+                // Update left column (Quick Info) in real-time
                 document.getElementById('display-name').textContent = data.establishment.name;
                 document.getElementById('display-category').textContent = data.establishment.category;
                 document.getElementById('display-address').textContent = data.establishment.address;
                 document.getElementById('display-hours').textContent = `${data.establishment.opening_time} - ${data.establishment.closing_time}`;
 
-                showSuccess('All changes saved successfully!');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
+                showSuccessMessage('All changes saved successfully!');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
             } else {
                 alert('Error: ' + (data.message || 'Unknown error'));
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error saving changes');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save All Changes</span>';
         });
     });
 
     // Show success message
-    function showSuccess(text) {
+    function showSuccessMessage(text) {
         const msg = document.getElementById('successMessage');
         document.getElementById('successText').textContent = text;
         msg.classList.add('show');
-        setTimeout(() => msg.classList.remove('show'), 3000);
+        setTimeout(() => {
+            msg.classList.remove('show');
+        }, 3000);
     }
 
-    // Confirm actions
+    // Confirm Delete
     function confirmDelete() {
         if (confirm('Are you sure you want to DELETE this establishment? This action cannot be undone!')) {
             window.location.href = "{% url 'delete_establishment' %}";
         }
     }
 
+    // Confirm Deactivate
     function confirmDeactivate() {
-        if (confirm('Are you sure you want to DEACTIVATE your account?')) {
+        if (confirm('Are you sure you want to DEACTIVATE your account? You can reactivate it later.')) {
             window.location.href = "{% url 'deactivate_establishment' %}";
         }
     }
 
-    // Show location on load
+    // Show location status if coordinates exist
     window.addEventListener('DOMContentLoaded', function() {
         const lat = document.getElementById('latitude').value;
         const lng = document.getElementById('longitude').value;
         if (lat && lng) {
-            document.getElementById('coords').textContent = `${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}`;
+            document.getElementById('currentCoords').textContent = `${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}`;
             document.getElementById('locationStatus').style.display = 'inline-flex';
         }
     });
