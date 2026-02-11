@@ -23,8 +23,116 @@
 
     <style>
         /* ============================================ */
-        /* ✅ REALTIME SEARCH DROPDOWN STYLES */
+        /* ✅ DEFAULT PROFILE PERSON ICON */
         /* ============================================ */
+        .profile-icon-default {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid #e5e7eb;
+            color: #f9fafb;
+            flex-shrink: 0;
+        }
+
+        .profile-icon-default svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .profile-icon-default:hover {
+            opacity: 0.85;
+            transform: scale(1.05);
+            border-color: #B71C1C;
+        }
+
+        /* Profile modal icon default */
+        .profile-modal-icon-default {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px auto;
+            color: #f9fafb;
+            border: 3px solid #e5e7eb;
+        }
+
+        .profile-modal-icon-default svg {
+            width: 45px;
+            height: 45px;
+        }
+
+        /* ============================================ */
+        /* ✅ NAV ACTIONS GROUP (My Orders + Cart tight) */
+        /* ============================================ */
+        .nav-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 2px 4px;
+        }
+
+        .nav-actions-group .order-history-nav {
+            margin-right: 0;
+        }
+
+        .nav-actions-group .cart_client a {
+            margin: 0 !important;
+        }
+
+        .nav-actions-group .order-history-link,
+        .nav-actions-group .cart-link {
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .nav-actions-group .order-history-link:hover,
+        .nav-actions-group .cart-link:hover {
+            background: rgba(183, 28, 28, 0.08);
+            color: #B71C1C;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .nav-actions-group {
+                gap: 2px;
+                padding: 1px 2px;
+            }
+            .nav-actions-group .order-history-link span,
+            .nav-actions-group .cart-link span:not(.cart-badge) {
+                display: none;
+            }
+            .profile-icon-default {
+                width: 34px;
+                height: 34px;
+            }
+            .profile-icon-default svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-icon-default {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+
         .search-dropdown {
             position: absolute;
             top: 100%;
@@ -979,25 +1087,35 @@
 
         <div class="header-right">
             {% if user.is_authenticated %}
-            <!-- Order History Link -->
-            <div class="order-history-nav">
-                <a href="{% url 'order_history' %}" class="pagelinks order-history-link">
-                    <i class="fas fa-receipt"></i> <span>My Orders</span>
-                </a>
-            </div>
+            <!-- Orders + Cart tight group -->
+            <div class="nav-actions-group">
+                <div class="order-history-nav">
+                    <a href="{% url 'order_history' %}" class="pagelinks order-history-link">
+                        <i class="fas fa-receipt"></i> <span>My Orders</span>
+                    </a>
+                </div>
 
-            <!-- Cart -->
-            <div class="cart_client">
-                <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
-                    <i class="fas fa-shopping-cart"></i> Cart
-                    <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
-                </a>
+                <!-- Cart -->
+                <div class="cart_client">
+                    <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
+                        <i class="fas fa-shopping-cart"></i> Cart
+                        <span class="cart-badge" id="cart-count-badge">{{ cart_count|default:"0" }}</span>
+                    </a>
+                </div>
             </div>
             {% endif %}
 
             {% if user.is_authenticated %}
                 <div class="profile-container">
-                    <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
+                    {% if user.userprofile.profile_picture %}
+                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
+                    {% else %}
+                        <div class="profile-icon-default" onclick="toggleDropdown()" title="{{ user.username }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    {% endif %}
                     <div id="userDropdown" class="dropdown-menu">
                         <a href="{% url 'order_history' %}"><i class="fas fa-receipt"></i> Order History</a>
                         <a href="#" onclick="openSettingsModal(event)"><i class="fas fa-cog"></i> Settings</a>
@@ -1125,39 +1243,9 @@
             <h2 class="establishments-section-title">Food Establishments</h2>
 
             {% block filters %}
-            <!-- ✅ REPOSITIONED: Filters moved here, right above establishments -->
+            <!-- Filters: Categories only -->
             <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
-                <!-- Filter Dropdowns -->
                 <div class="filter_container" style="margin: 0;">
-                <div class="select_wrapper">
-                    <select id="statusFilter" onchange="applyFilters()">
-                        <option value="">Status</option>
-                        <option value="Open" {% if status_filter == "Open" %}selected{% endif %}>Open</option>
-                        <option value="Closed" {% if status_filter == "Closed" %}selected{% endif %}>Closed</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="alphabetFilter" onchange="applyFilters()">
-                        <option value="">Alphabetical</option>
-                        {% for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                            <option value="{{ char }}" {% if alpha_filter == char %}selected{% endif %}>Sort by {{ char }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="distanceFilter" onchange="applyFilters()">
-                        <option value="">Distance</option>
-                        <option value="nearest">Nearest to Farthest</option>
-                        <option value="farthest">Farthest to Nearest</option>
-                    </select>
-                </div>
-                <div class="select_wrapper">
-                    <select id="ratingsFilter" onchange="applyFilters()">
-                        <option value="">Ratings</option>
-                        <option value="highest">Highest to Lowest</option>
-                        <option value="lowest">Lowest to Lowest</option>
-                    </select>
-                </div>
                 <div class="select_wrapper">
                     <select id="categoryFilter" onchange="applyFilters()">
                         <option value="">Categories</option>
@@ -1280,9 +1368,16 @@
 
                 <div class="profile-form-group" style="text-align: center;">
                     <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    <img id="profileImagePreview"
-                        src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                        alt="Current Profile">
+                    {% if user.userprofile.profile_picture %}
+                        <img id="profileImagePreview" src="{{ user.userprofile.profile_picture.url }}" alt="Current Profile">
+                    {% else %}
+                        <div id="profileIconPreviewDefault" class="profile-modal-icon-default">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <img id="profileImagePreview" src="" alt="Current Profile" style="display:none;">
+                    {% endif %}
                 </div>
 
                 <div class="profile-form-group">
@@ -1420,6 +1515,12 @@
                         // Show map
                         mapSection.style.setProperty('display', 'block', 'important');
 
+                        // Hide Grid View button when map is shown
+                        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
+                        if (layoutSettingsBtn) {
+                            layoutSettingsBtn.style.setProperty('display', 'none', 'important');
+                        }
+
                         if (toggleMapBtn) {
                             if (!mapSection.classList.contains('active')) {
                                 setTimeout(() => {
@@ -1441,6 +1542,12 @@
                         mapSection.classList.remove('active');
                         mapSection.style.setProperty('display', 'none', 'important');
                         bestSellersSection.style.setProperty('display', 'block', 'important');
+
+                        // Show Grid View button again when back to best sellers
+                        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
+                        if (layoutSettingsBtn) {
+                            layoutSettingsBtn.style.removeProperty('display');
+                        }
                     }
                 });
             });
