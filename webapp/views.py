@@ -2328,8 +2328,8 @@ def owner_register_step3_credentials(request):
 @csrf_exempt
 def send_otp(request):
     """
-    Send OTP for owner registration via email.
-    Returns error (not silent success) if email truly fails.
+    Send OTP for business owner registration via SendGrid.
+    No debug fallback — returns real error if email fails.
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -2352,10 +2352,9 @@ def send_otp(request):
 
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999)).zfill(6)
+        print(f"🔐 Generating OTP for {email}")
 
-        print(f"🔐 Generating OTP for {email}: {otp_code}")
-
-        # Save OTP to database — NOTE: no is_verified field on OTP model
+        # Save OTP to database (OTP model has: email, code, created_at, attempts — no is_verified)
         try:
             otp_obj, created = OTP.objects.update_or_create(
                 email=email,
@@ -2364,16 +2363,15 @@ def send_otp(request):
                     'attempts': 0,
                 }
             )
-            # Force timestamp update on resend
             if not created:
                 otp_obj.created_at = timezone.now()
                 otp_obj.save()
-            print(f"✅ OTP saved to database: {otp_obj.code}")
+            print(f"✅ OTP saved to database")
         except Exception as db_error:
             print(f"❌ OTP DB save error: {db_error}")
-            return JsonResponse({'error': 'Failed to generate OTP'}, status=500)
+            return JsonResponse({'error': 'Failed to generate OTP. Please try again.'}, status=500)
 
-        # Also save in session as backup
+        # Session backup
         try:
             request.session['otp'] = otp_code
             request.session['otp_email'] = email
@@ -2382,33 +2380,33 @@ def send_otp(request):
             pass
 
         # ============================================================================
-        # SEND EMAIL
+        # SEND VIA SENDGRID — no fallback, no debug_otp
         # ============================================================================
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
+        sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
 
-        if not from_email:
-            # No email configured — return success with debug OTP so dev can still test
-            print("⚠️ SENDER_EMAIL not set — returning debug_otp")
-            return JsonResponse({
-                'success': True,
-                'warning': True,
-                'message': 'OTP generated but email not configured. Set SENDER_EMAIL in environment.',
-                'debug_otp': otp_code,
-            })
+        if not from_email or not sendgrid_key:
+            print("❌ SENDER_EMAIL or SENDGRID_API_KEY not configured in environment")
+            return JsonResponse(
+                {'error': 'Email service is not configured. Please contact support.'},
+                status=500
+            )
 
-        html_content = f"""
-<!DOCTYPE html>
+        html_content = f"""<!DOCTYPE html>
 <html>
 <head>
   <style>
     body {{ font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }}
-    .wrap {{ max-width: 520px; margin: 40px auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.12); }}
+    .wrap {{ max-width: 520px; margin: 40px auto; background: #fff; border-radius: 10px;
+             overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.12); }}
     .hdr  {{ background: #e59b20; color: #fff; padding: 28px; text-align: center; }}
     .hdr h1 {{ margin: 0; font-size: 24px; }}
     .body {{ padding: 36px 28px; }}
-    .otp-box {{ background: #fffbf0; border: 2px dashed #e59b20; border-radius: 10px; padding: 24px; text-align: center; margin: 24px 0; }}
+    .otp-box {{ background: #fffbf0; border: 2px dashed #e59b20; border-radius: 10px;
+                padding: 24px; text-align: center; margin: 24px 0; }}
     .otp-code {{ font-size: 42px; font-weight: 900; color: #e59b20; letter-spacing: 12px; }}
-    .footer {{ background: #f4f4f4; padding: 16px; text-align: center; font-size: 12px; color: #999; }}
+    .footer {{ background: #f4f4f4; padding: 16px; text-align: center;
+               font-size: 12px; color: #999; }}
   </style>
 </head>
 <body>
@@ -2435,59 +2433,56 @@ def send_otp(request):
         )
 
         try:
-            result = send_mail(
-                subject='KabsuEats — Your Verification Code',
-                message=text_message,
-                from_email=from_email,
-                recipient_list=[email],
-                fail_silently=False,
-                html_message=html_content,
-            )
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail, Email, To, Content
 
-            if result and result > 0:
+            sg_msg = Mail(
+                from_email=Email(from_email),
+                to_emails=[To(email)],
+                subject='KabsuEats — Your Verification Code',
+            )
+            sg_msg.content = [
+                Content("text/plain", text_message),
+                Content("text/html", html_content),
+            ]
+
+            sg = SendGridAPIClient(sendgrid_key)
+            response = sg.send(sg_msg)
+            print(f"📬 SendGrid response: {response.status_code}")
+
+            if response.status_code in (200, 202):
                 print(f"✅ OTP email sent to {email}")
                 return JsonResponse({
                     'success': True,
-                    'message': 'OTP sent successfully to your email',
+                    'message': 'OTP sent to your email.',
                 })
             else:
-                # Unlikely path — fall through to debug response
-                return JsonResponse({
-                    'success': True,
-                    'warning': True,
-                    'message': 'OTP generated. Email may be delayed — check your spam folder.',
-                    'debug_otp': otp_code,
-                })
+                print(f"⚠️ SendGrid unexpected status: {response.status_code}")
+                return JsonResponse(
+                    {'error': f'Email delivery failed (status {response.status_code}). Please try again.'},
+                    status=500
+                )
 
-        except Exception as email_error:
-            err_str = str(email_error)
-            print(f"❌ Email sending error: {err_str}")
-
+        except Exception as sg_error:
+            err_str = str(sg_error)
+            print(f"❌ SendGrid error: {err_str}")
             err_lower = err_str.lower()
-            if '403' in err_str or 'forbidden' in err_lower:
-                hint = 'SendGrid 403: sender email not verified. Go to SendGrid → Sender Authentication and verify your SENDER_EMAIL.'
-            elif '401' in err_str or 'unauthorized' in err_lower:
-                hint = 'SendGrid 401: invalid API key. Check SENDGRID_API_KEY in Render environment variables.'
-            elif 'authentication' in err_lower or '535' in err_str:
-                hint = 'Gmail SMTP auth failed. Use an App Password (not your regular password).'
-            elif 'network' in err_lower or 'unreachable' in err_lower or 'timeout' in err_lower:
-                hint = 'Network error on Render. Gmail SMTP is often blocked — use SendGrid instead.'
-            else:
-                hint = f'Email error: {err_str}'
 
-            # Still return success=True so registration can proceed via debug_otp in dev
-            # In production remove debug_otp after email is confirmed working
-            return JsonResponse({
-                'success': True,
-                'warning': True,
-                'message': 'OTP generated but email failed. ' + hint,
-                'debug_otp': otp_code,   # ← REMOVE THIS LINE once email is working
-            })
+            if '401' in err_str or 'unauthorized' in err_lower:
+                user_msg = 'Email service authentication failed. Please contact support (SendGrid 401).'
+            elif '403' in err_str or 'forbidden' in err_lower:
+                user_msg = 'Email service permission error. Sender email may not be verified (SendGrid 403).'
+            elif '429' in err_str:
+                user_msg = 'Too many requests. Please wait a moment and try again.'
+            else:
+                user_msg = 'Failed to send OTP email. Please try again.'
+
+            return JsonResponse({'error': user_msg}, status=500)
 
     except Exception as outer_error:
         import traceback
         traceback.print_exc()
-        return JsonResponse({'error': f'Server error: {str(outer_error)}'}, status=500)
+        return JsonResponse({'error': 'Server error. Please try again.'}, status=500)
 
 @csrf_exempt
 @transaction.atomic
