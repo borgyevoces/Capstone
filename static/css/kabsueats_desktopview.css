@@ -252,7 +252,7 @@
     .header-right {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 25px;
         z-index: 1002;
         position: relative;
         flex-shrink: 0;
@@ -334,6 +334,7 @@
         align-items: center;
         gap: 7px;
         transition: color 0.2s ease;
+        margin: 60px;
     }
 
     .cart_client a:hover {
@@ -387,21 +388,20 @@
         display: inline-block;
         z-index: 1005;
         order: 3;
+        right: 25px;
     }
 
     .profile-image {
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         object-fit: cover;
         cursor: pointer;
         transition: all 0.2s ease;
-        border: 2px solid #e5e7eb;
     }
 
     .profile-image:hover {
         opacity: 0.8;
-        border-color: #B71C1C;
     }
 
     /* Profile Dropdown */
@@ -504,6 +504,10 @@
         pointer-events: none;
     }
 
+    #ratingsFilter,
+    #distanceFilter,
+    #alphabetFilter,
+    #statusFilter,
     #categoryFilter {
         padding-left: 8px;
     }

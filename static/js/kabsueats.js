@@ -289,21 +289,26 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ============================================
-// ✅ FIXED AND IMPROVED applyFilters() FUNCTION
+// âœ… FIXED AND IMPROVED applyFilters() FUNCTION
 // ============================================
 function applyFilters() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-    // Removed: statusFilter, alphabetFilter, distanceFilter, ratingsFilter
+    const statusFilter = document.getElementById('statusFilter');
+    const selectedStatus = statusFilter ? statusFilter.value : '';
+
+    const alphabetFilter = document.getElementById('alphabetFilter');
+    const selectedAlphabet = alphabetFilter ? alphabetFilter.value.toLowerCase() : '';
+
+    const distanceFilter = document.getElementById('distanceFilter');
+    const selectedDistanceSort = distanceFilter ? distanceFilter.value : '';
+
+    const ratingsFilter = document.getElementById('ratingsFilter');
+    const selectedRatingsSort = ratingsFilter ? ratingsFilter.value : '';
+
     const categoryFilter = document.getElementById('categoryFilter');
     const selectedCategory = categoryFilter ? categoryFilter.value.toLowerCase() : '';
-
-    // Keep these as empty/null so sorting logic below is skipped gracefully
-    const selectedStatus = '';
-    const selectedAlphabet = '';
-    const selectedDistanceSort = '';
-    const selectedRatingsSort = '';
 
     const currentUrl = new URL(window.location.href);
     const urlCategory = currentUrl.pathname.includes('karenderya') ? 'karenderya' : currentUrl.pathname.includes('cafe_establishments') ? 'cafe' : '';
@@ -358,30 +363,40 @@ function applyFilters() {
     // Apply sorting
     if (selectedAlphabet) {
         visibleItems.sort((a, b) => (a.dataset.name || '').localeCompare(b.dataset.name || ''));
+        if (distanceFilter) distanceFilter.value = '';
+        if (ratingsFilter) ratingsFilter.value = '';
     } else if (selectedDistanceSort === 'nearest') {
         visibleItems.sort((a, b) => {
             const distanceA = parseFloat(a.dataset.distance) || Infinity;
             const distanceB = parseFloat(b.dataset.distance) || Infinity;
             return distanceA - distanceB;
         });
+        if (alphabetFilter) alphabetFilter.value = '';
+        if (ratingsFilter) ratingsFilter.value = '';
     } else if (selectedDistanceSort === 'farthest') {
         visibleItems.sort((a, b) => {
             const distanceA = parseFloat(a.dataset.distance) || -Infinity;
             const distanceB = parseFloat(b.dataset.distance) || -Infinity;
             return distanceB - distanceA;
         });
+        if (alphabetFilter) alphabetFilter.value = '';
+        if (ratingsFilter) ratingsFilter.value = '';
     } else if (selectedRatingsSort === 'highest') {
         visibleItems.sort((a, b) => {
             const ratingA = parseFloat(a.dataset.rating) || 0;
             const ratingB = parseFloat(b.dataset.rating) || 0;
             return ratingB - ratingA;
         });
+        if (alphabetFilter) alphabetFilter.value = '';
+        if (distanceFilter) distanceFilter.value = '';
     } else if (selectedRatingsSort === 'lowest') {
         visibleItems.sort((a, b) => {
             const ratingA = parseFloat(a.dataset.rating) || 0;
             const ratingB = parseFloat(b.dataset.rating) || 0;
             return ratingA - ratingB;
         });
+        if (alphabetFilter) alphabetFilter.value = '';
+        if (distanceFilter) distanceFilter.value = '';
     }
 
     // Hide all items first
