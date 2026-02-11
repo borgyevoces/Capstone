@@ -76,11 +76,7 @@
         .nav-actions-group {
             display: flex;
             align-items: center;
-            gap: 4px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 2px 4px;
+            gap: 15px;
         }
 
         .nav-actions-group .order-history-nav {
@@ -93,27 +89,36 @@
 
         .nav-actions-group .order-history-link,
         .nav-actions-group .cart-link {
-            padding: 7px 12px;
+            padding: 8px 16px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .nav-actions-group .order-history-link:hover,
         .nav-actions-group .cart-link:hover {
-            background: rgba(183, 28, 28, 0.08);
+            background: rgba(183, 28, 28, 0.1);
             color: #B71C1C;
-            transform: none;
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
             .nav-actions-group {
-                gap: 2px;
-                padding: 1px 2px;
+                gap: 8px;
             }
             .nav-actions-group .order-history-link span,
             .nav-actions-group .cart-link span:not(.cart-badge) {
                 display: none;
+            }
+            .nav-actions-group .order-history-link,
+            .nav-actions-group .cart-link {
+                padding: 8px 12px;
             }
             .profile-icon-default {
                 width: 34px;
