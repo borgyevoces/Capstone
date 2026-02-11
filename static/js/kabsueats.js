@@ -530,7 +530,8 @@ if (logoutModal) {
 }
 
 // Toggle dropdown for user menu
-window.toggleDropdown = function() {
+window.toggleDropdown = function(event) {
+    if (event) event.stopPropagation();
     const dropdown = document.getElementById("userDropdown");
     if (dropdown) {
         dropdown.classList.toggle("show");
@@ -538,17 +539,23 @@ window.toggleDropdown = function() {
 };
 
 // Close dropdown if clicked outside
-window.addEventListener("click", function(event) {
+document.addEventListener("click", function(event) {
     const dropdown = document.getElementById("userDropdown");
-    const profileImage = document.querySelector(".profile-image");
-    if (dropdown && !dropdown.contains(event.target) && event.target !== profileImage) {
-        dropdown.classList.remove("show");
+    const profileContainer = document.getElementById("profileContainer");
+    if (dropdown && dropdown.classList.contains("show")) {
+        if (!profileContainer || !profileContainer.contains(event.target)) {
+            dropdown.classList.remove("show");
+        }
     }
 });
 
 // Open settings modal
 window.openSettingsModal = function(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
+    // Close dropdown first
+    const dropdown = document.getElementById("userDropdown");
+    if (dropdown) dropdown.classList.remove("show");
+    // Open modal
     const modal = document.getElementById("settingsModal");
     if (modal) {
         modal.style.display = "flex";
