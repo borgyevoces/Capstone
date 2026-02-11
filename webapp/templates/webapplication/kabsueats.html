@@ -144,6 +144,35 @@
             }
         }
 
+        /* ============================================ */
+        /* ✅ LOGOUT BUTTON IN SETTINGS MODAL */
+        /* ============================================ */
+        .logout-button-modal {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .logout-button-modal:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .logout-button-modal i {
+            font-size: 16px;
+        }
+
 
         .search-dropdown {
             position: absolute;
@@ -1406,6 +1435,13 @@
 
                 <button type="submit" class="profile-form-submit">Save Changes</button>
             </form>
+
+            <!-- Logout Button -->
+            <div style="margin-top: 20px; text-align: center; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <a href="{% url 'user_logout' %}" class="logout-button-modal">
+                    <i class="fas fa-sign-out-alt"></i> Log Out
+                </a>
+            </div>
         </div>
     </div>
 
