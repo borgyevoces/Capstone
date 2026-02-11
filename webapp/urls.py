@@ -134,6 +134,9 @@ urlpatterns = [
                        name='food_establishment_dashboard'),
                   path('dashboard/update-details/<int:pk>/ajax/', views.update_establishment_details_ajax,
                        name='update_establishment_details_ajax'),
+                path('establishment/<int:pk>/details/',
+                        views.get_establishment_details_ajax,
+                        name='get_establishment_details_ajax'),
 
                   # OLD GCash Routes (Keep for compatibility but not used)
                   path('gcash/payment-request/', views.gcash_payment_request, name='gcash_payment_request'),

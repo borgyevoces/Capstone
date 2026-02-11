@@ -3009,10 +3009,15 @@ def toggle_top_seller(request, item_id):
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
     return redirect('food_establishment_dashboard')
 
-@login_required
-@require_POST
+@login_required(login_url='owner_login')
+@require_http_methods(["POST"])
 def update_establishment_details_ajax(request, pk):
+    """
+    AJAX endpoint for updating establishment details in real-time.
+    Returns JSON response with updated data for instant UI updates.
+    """
     try:
+        # Get establishment owned by current user
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
         return JsonResponse({
@@ -3020,6 +3025,7 @@ def update_establishment_details_ajax(request, pk):
             'error': 'Establishment not found or access denied.'
         }, status=404)
 
+    # Use the form for validation
     form = FoodEstablishmentUpdateForm(request.POST, request.FILES, instance=establishment)
 
     if form.is_valid():
@@ -3044,42 +3050,102 @@ def update_establishment_details_ajax(request, pk):
                 except ValueError:
                     pass
 
+            # ✅ Handle payment methods (checkboxes come as multiple values)
+            payment_methods_list = request.POST.getlist('payment_methods')
+            if payment_methods_list:
+                instance.payment_methods = ', '.join(payment_methods_list)
+            else:
+                instance.payment_methods = ''
+
+            # ✅ Save the instance
             instance.save()
+
+            # ✅ Save many-to-many relationships (amenities)
             form.save_m2m()
 
-            # Prepare response data
+            # ✅ Prepare comprehensive response data for real-time UI update
             data = {
                 'success': True,
                 'message': 'Establishment details updated successfully.',
                 'name': instance.name,
                 'address': instance.address,
-                'status': instance.status,
-                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,  # ✅ NEW
-                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,  # ✅ NEW
+                'status': instance.calculated_status,  # Use calculated_status property
+                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,
+                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,
                 'category': instance.category.name if instance.category else None,
+                'category_id': instance.category.id if instance.category else None,
                 'payment_methods': instance.payment_methods,
-                'latitude': str(instance.latitude),
-                'longitude': str(instance.longitude),
+                'latitude': str(instance.latitude) if instance.latitude else None,
+                'longitude': str(instance.longitude) if instance.longitude else None,
                 'image_url': instance.image.url if instance.image else '',
                 'amenities': ', '.join([a.name for a in instance.amenities.all()]),
+                'amenities_list': [{'id': a.id, 'name': a.name} for a in instance.amenities.all()],
             }
 
             return JsonResponse(data)
 
         except Exception as e:
             print(f"Database save error: {e}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({
                 'success': False,
-                'error': 'A database error occurred during update.'
+                'error': f'A database error occurred: {str(e)}'
             }, status=500)
     else:
-        errors = {k: v for k, v in form.errors.items()}
+        # Return validation errors
+        errors = {k: v[0] if isinstance(v, list) else v for k, v in form.errors.items()}
         return JsonResponse({
             'success': False,
             'error': 'Validation failed. Please check your inputs.',
             'errors': errors
         }, status=400)
 
+@login_required(login_url='owner_login')
+@require_http_methods(["GET"])
+def get_establishment_details_ajax(request, pk):
+    """
+    AJAX endpoint to get current establishment details.
+    Useful for refreshing data without page reload.
+    """
+    try:
+        establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
+
+        data = {
+            'success': True,
+            'establishment': {
+                'id': establishment.id,
+                'name': establishment.name,
+                'address': establishment.address,
+                'status': establishment.calculated_status,
+                'opening_time': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+                'closing_time': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+                'opening_time_24h': establishment.opening_time.strftime(
+                    '%H:%M') if establishment.opening_time else None,
+                'closing_time_24h': establishment.closing_time.strftime(
+                    '%H:%M') if establishment.closing_time else None,
+                'category': establishment.category.name if establishment.category else None,
+                'category_id': establishment.category.id if establishment.category else None,
+                'payment_methods': establishment.payment_methods,
+                'latitude': float(establishment.latitude) if establishment.latitude else None,
+                'longitude': float(establishment.longitude) if establishment.longitude else None,
+                'image_url': establishment.image.url if establishment.image else None,
+                'amenities': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
+            }
+        }
+
+        return JsonResponse(data)
+
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Establishment not found or access denied.'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 # ===================================================================================================================
 # ================================================END OWNER ========================================================
 # ===================================================================================================================
