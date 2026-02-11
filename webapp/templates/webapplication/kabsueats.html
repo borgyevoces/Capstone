@@ -71,16 +71,20 @@
         }
 
         /* ============================================ */
-        /* ✅ NAV ACTIONS GROUP (My Orders + Cart tight) */
+        /* ✅ NAV ACTIONS GROUP (My Orders + Cart separated) */
         /* ============================================ */
         .nav-actions-group {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         .nav-actions-group .order-history-nav {
             margin-right: 0;
+        }
+
+        .nav-actions-group .cart_client {
+            margin: 0;
         }
 
         .nav-actions-group .cart_client a {
@@ -89,7 +93,7 @@
 
         .nav-actions-group .order-history-link,
         .nav-actions-group .cart-link {
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
@@ -99,6 +103,8 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid transparent;
         }
 
         .nav-actions-group .order-history-link:hover,
@@ -106,6 +112,7 @@
             background: rgba(183, 28, 28, 0.1);
             color: #B71C1C;
             transform: translateY(-2px);
+            border-color: rgba(183, 28, 28, 0.2);
         }
 
         @media (max-width: 768px) {
@@ -1113,9 +1120,9 @@
             {% if user.is_authenticated %}
                 <div class="profile-container">
                     {% if user.userprofile.profile_picture %}
-                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="profile-image" onclick="toggleDropdown()">
+                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="profile-image" onclick="openSettingsModal(event)" title="Edit Profile">
                     {% else %}
-                        <div class="profile-icon-default" onclick="toggleDropdown()" title="{{ user.username }}">
+                        <div class="profile-icon-default" onclick="openSettingsModal(event)" title="Edit Profile">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                 <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
                             </svg>

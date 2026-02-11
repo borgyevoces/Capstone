@@ -226,7 +226,7 @@
     .header-right {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
 
     .auth_links {
