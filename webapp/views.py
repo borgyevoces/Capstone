@@ -948,8 +948,7 @@ def send_registration_otp(request):
             email=email,
             defaults={
                 'code': otp_code,
-                'attempts': 0,
-                'is_verified': False
+                'attempts': 0
             }
         )
         # Force update the created_at timestamp
@@ -1277,9 +1276,10 @@ def verify_otp_only(request):
                     'error': 'Too many failed attempts. Please request a new OTP.'
                 }, status=400)
 
-            # Mark as verified (but don't delete yet)
-            otp_entry.is_verified = True
-            otp_entry.save()
+            # Mark as verified by deleting after a short delay or just keep it
+            # No need to mark as verified, we'll delete it after user registration completes
+            # otp_entry is still valid until user completes registration
+
 
             return JsonResponse({'success': True, 'message': 'OTP verified'})
         else:
@@ -1335,8 +1335,7 @@ def resend_otp(request):
             email=email,
             defaults={
                 'code': otp_code,
-                'attempts': 0,
-                'is_verified': False
+                'attempts': 0
             }
         )
         # Force update the created_at timestamp
@@ -2366,8 +2365,7 @@ def send_otp(request):
                 email=email,
                 defaults={
                     'code': otp_code,
-                    'attempts': 0,
-                    'is_verified': False
+                    'attempts': 0
                 }
             )
             # Force timestamp update
