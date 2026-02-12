@@ -77,7 +77,7 @@
             display: flex;
             align-items: center;
             gap: 20px;
-            margin-right: 15px; /* Add margin to separate from profile */
+            margin-right: 15px;
         }
 
         .nav-actions-group .order-history-nav {
@@ -174,7 +174,9 @@
             font-size: 16px;
         }
 
-
+        /* ============================================ */
+        /* ✅ SEARCH DROPDOWN STYLES */
+        /* ============================================ */
         .search-dropdown {
             position: absolute;
             top: 100%;
@@ -389,11 +391,6 @@
                 font-size: 16px;
             }
 
-            .leaflet-routing-container {
-                max-width: 280px !important;
-                font-size: 11px !important;
-            }
-
             .establishments-section-title {
                 font-size: 22px;
                 margin: 20px 0 15px 0;
@@ -414,7 +411,7 @@
             }
         }
 
-        /* View Selector Button - Smaller, Cleaner Design */
+        /* View Selector Button */
         .view-selector-container {
             display: flex;
             justify-content: space-between;
@@ -428,7 +425,6 @@
             display: inline-block;
         }
 
-        /* Container for left-aligned dropdown above map */
         .dropdown-container-left {
             display: flex;
             justify-content: flex-start;
@@ -458,12 +454,6 @@
         .view-dropdown-button:hover {
             border-color: #cbd5e0;
             background: #f7fafc;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .view-dropdown-button:active {
-            transform: translateY(0);
         }
 
         .view-dropdown-button-text {
@@ -513,7 +503,6 @@
             cursor: pointer;
             transition: all 0.2s ease;
             border-bottom: 1px solid #f0f0f0;
-            background: transparent;
         }
 
         .view-dropdown-option:last-child {
@@ -521,7 +510,6 @@
         }
 
         .view-dropdown-option:hover {
-            background: transparent;
             padding-left: 20px;
         }
 
@@ -529,13 +517,6 @@
             font-size: 16px;
             width: 20px;
             text-align: center;
-        }
-
-        .view-dropdown-option-icon.map {
-            color: #6b7280;
-        }
-
-        .view-dropdown-option-icon.bestsellers {
             color: #6b7280;
         }
 
@@ -554,53 +535,6 @@
             font-size: 11px;
             color: #9ca3af;
             line-height: 1.3;
-        }
-
-        @media (max-width: 768px) {
-            .view-dropdown-button {
-                font-size: 13px;
-                padding: 9px 14px;
-                min-width: 140px;
-            }
-
-            .view-dropdown-menu {
-                min-width: 240px;
-            }
-
-            .view-dropdown-option {
-                padding: 11px 14px;
-            }
-
-            .dropdown-container-left {
-                padding: 0 15px;
-                margin: 12px 0 8px 0;
-            }
-
-            .view-selector-container {
-                margin: 12px 0 8px 0;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .view-dropdown-button {
-                font-size: 12px;
-                padding: 8px 12px;
-                min-width: 130px;
-            }
-
-            .view-dropdown-menu {
-                min-width: 100%;
-                max-width: 250px;
-            }
-
-            .dropdown-container-left {
-                padding: 0 10px;
-                margin: 10px 0 5px 0;
-            }
-
-            .view-selector-container {
-                margin: 10px 0 6px 0;
-            }
         }
 
         /* Map Section Styles */
@@ -634,15 +568,6 @@
             }
         }
 
-        /* ✅ Layout Settings Button */
-        .view-selector-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 0 20px;
-        }
-
         .layout-settings-btn {
             display: flex;
             align-items: center;
@@ -668,18 +593,6 @@
             font-size: 16px;
         }
 
-        /* Update view dropdown button to match */
-        .view-dropdown-button {
-            background: white !important;
-            border: 2px solid #e5e7eb !important;
-            color: #4a5568 !important;
-        }
-
-        .view-dropdown-button:hover {
-            border-color: #cbd5e0 !important;
-            background: #f7fafc !important;
-        }
-
         /* ✅ Grid Layout Styles */
         .best-sellers-scroll.grid-layout {
             display: grid !important;
@@ -694,7 +607,6 @@
             width: 100% !important;
         }
 
-        /* Hide scroll buttons in grid mode */
         .best-sellers-container.grid-mode .scroll-btn {
             display: none !important;
         }
@@ -703,7 +615,6 @@
             overflow: visible !important;
         }
 
-        /* Mobile responsiveness for grid */
         @media (max-width: 1400px) {
             .best-sellers-scroll.grid-layout {
                 grid-template-columns: repeat(4, 1fr);
@@ -728,65 +639,8 @@
             }
         }
 
-        /* ========================================== */
-        /* ORDER HISTORY NAVBAR STYLES */
-        /* ========================================== */
-        .order-history-nav {
-            margin-right: 15px;
-        }
-
-        .order-history-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            color: #374151;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .order-history-link:hover {
-            background: rgba(183, 28, 28, 0.1);
-            color: #B71C1C;
-            transform: translateY(-2px);
-        }
-
-        .order-history-link i {
-            font-size: 16px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Profile Dropdown - Enhanced */
-        .dropdown-menu a {
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .dropdown-menu a:hover {
-            background: #f3f4f6;
-            color: #B71C1C;
-        }
-
-        .dropdown-menu a i {
-            width: 20px;
-            text-align: center;
-        }
-
         /* ============================================ */
-        /* HERO SEARCH BAR STYLES */
+        /* ✅ HERO SEARCH BAR STYLES */
         /* ============================================ */
         .hero-search-wrapper {
             position: relative;
@@ -876,7 +730,7 @@
             display: block;
         }
 
-        /* ✅ NEW: Menu Match Indicator for Establishments */
+        /* ✅ Menu Match Indicator for Establishments */
         .menu-match-indicator {
             position: absolute;
             top: 10px;
@@ -904,9 +758,35 @@
             font-size: 12px;
         }
 
-        /* ✅ Hide Best Sellers when searching */
-        .best-sellers-section.search-active {
-            display: none !important;
+        /* ✅ SEARCH RESULTS SECTION - Replaces Best Sellers */
+        .search-results-section {
+            display: none;
+            padding: 40px 20px;
+        }
+
+        .search-results-section.active {
+            display: block;
+        }
+
+        .search-results-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .search-results-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .search-results-header p {
+            color: #6b7280;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
@@ -996,10 +876,8 @@
             </div>
         </div>
 
-
-    <!-- OLD SEARCH BAR REMOVED - Now using Hero Search Bar below in welcome section -->
-    {% block search_visibility_control %}
-    {% endblock search_visibility_control %}
+        {% block search_visibility_control %}
+        {% endblock search_visibility_control %}
 
         <div class="Home_buttons">
             <div class="auth_links_Home_About">
@@ -1009,7 +887,6 @@
 
         <div class="header-right">
             {% if user.is_authenticated %}
-            <!-- Orders + Cart tight group -->
             <div class="nav-actions-group">
                 <div class="order-history-nav">
                     <a href="{% url 'order_history' %}" class="pagelinks order-history-link">
@@ -1017,7 +894,6 @@
                     </a>
                 </div>
 
-                <!-- Cart -->
                 <div class="cart_client">
                     <a href="{% url 'view_cart' %}" class="pagelinks cart-link">
                         <i class="fas fa-shopping-cart"></i> Cart
@@ -1038,9 +914,7 @@
                             </svg>
                         </div>
                     {% endif %}
-                    <!-- Profile Dropdown -->
                     <div id="userDropdown" class="dropdown-menu profile-dropdown-menu">
-                        <!-- User Info Header -->
                         <div class="profile-dropdown-header">
                             <div class="profile-dropdown-avatar">
                                 {% if user.userprofile.profile_picture %}
@@ -1056,14 +930,11 @@
                                 <span class="profile-dropdown-email">{{ user.email }}</span>
                             </div>
                         </div>
-                        <!-- Divider -->
                         <div class="profile-dropdown-divider"></div>
-                        <!-- Menu Items -->
                         <a href="#" class="profile-dropdown-item" onclick="openSettingsModal(event)">
                             <span class="profile-dropdown-item-icon edit"><i class="fas fa-user-edit"></i></span>
                             <span>Edit Profile</span>
                         </a>
-                        <!-- Divider -->
                         <div class="profile-dropdown-divider"></div>
                         <a href="{% url 'user_logout' %}" class="profile-dropdown-item logout">
                             <span class="profile-dropdown-item-icon signout"><i class="fas fa-sign-out-alt"></i></span>
@@ -1079,12 +950,10 @@
             {% endif %}
         </div>
     </header>
-    </header>
 
     <main class="main-content">
         {% block content %}
         <div class="pagecontent" id="Home">
-
 
             <!-- Hero Search Bar Section -->
             <div class="welcome-hero-section">
@@ -1109,9 +978,7 @@
                 </div>
             </div>
 
-
-
-            <!-- Best Sellers Section -->
+            <!-- Best Sellers Section (Original) -->
             <div class="best-sellers-section" id="bestSellersSection">
                 <div class="best-sellers-header">
                     <h2>
@@ -1121,7 +988,6 @@
                     <p>Top-rated items from all our partner establishments - Updated in real-time!</p>
                 </div>
 
-                <!-- View Selector Button - Positioned below header, left aligned -->
                 <div class="view-selector-container">
                     <div class="view-dropdown-wrapper">
                         <button class="view-dropdown-button" id="viewDropdownBtn">
@@ -1149,14 +1015,12 @@
                         </div>
                     </div>
 
-                    <!-- ✅ Grid View Button - Right aligned -->
                     <button class="layout-settings-btn" id="layoutSettingsBtn" title="Toggle Layout">
                         <i class="fas fa-th"></i>
                         <span>Grid View</span>
                     </button>
                 </div>
 
-                <!-- Map Section (Hidden by default) - NOW INSIDE BEST SELLERS SECTION -->
                 <div id="mapSection" style="display: none; margin: 20px 0;">
                     <div id="establishmentsMap" style="height:600px; width:100%;"></div>
                     <button id="locationRouteBtn" class="location-route-btn" title="Show Route to Establishment">
@@ -1164,10 +1028,8 @@
                     </button>
                 </div>
 
-                <!-- Map Toggle Button (Hidden - for kabsueats.js) -->
                 <button id="toggleMapBtn" style="display: none;">🗺️ View Map</button>
 
-                <!-- Best Sellers Items Container -->
                 <div class="best-sellers-container" id="bestSellersContainer">
                     <button class="scroll-btn scroll-btn-left" id="scrollLeftBtn" aria-label="Scroll Left">
                         <i class="fas fa-chevron-left"></i>
@@ -1188,11 +1050,37 @@
                 </div>
             </div>
 
-            <!-- ✅ NEW: Establishments Section Title -->
+            <!-- ✅ NEW: Search Results Section (Shows when searching for MENU) -->
+            <div class="search-results-section" id="searchResultsSection">
+                <div class="search-results-header">
+                    <h2>
+                        <i class="fas fa-search"></i>
+                        Search Results for "<span id="searchQueryText"></span>"
+                    </h2>
+                    <p>Found <span id="searchResultsCount">0</span> matching menu items</p>
+                </div>
+
+                <div class="best-sellers-container" id="searchResultsContainer">
+                    <button class="scroll-btn scroll-btn-left" id="searchScrollLeftBtn" aria-label="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="best-sellers-wrapper">
+                        <div class="best-sellers-scroll" id="searchResultsScroll">
+                            <!-- Menu results will be inserted here -->
+                        </div>
+                    </div>
+
+                    <button class="scroll-btn scroll-btn-right" id="searchScrollRightBtn" aria-label="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ✅ Establishments Section Title -->
             <h2 class="establishments-section-title">Food Establishments</h2>
 
             {% block filters %}
-            <!-- Filters: Categories only -->
             <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
                 <div class="filter_container" style="margin: 0;">
                 <div class="select_wrapper">
@@ -1308,7 +1196,7 @@
         {% endblock %}
     </main>
 
-    <!-- Settings Modal (Keeping original) -->
+    <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
@@ -1373,21 +1261,23 @@
 
     <script>
         // ============================================
-        // ✅ ENHANCED REAL-TIME SEARCH WITH AUTO-SORT
+        // ✅ ENHANCED SEARCH WITH SEPARATE RESULTS
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            initializeEnhancedSearch();
+            initializeSeparateSearch();
         });
 
         let bestSellersData = [];
         let currentSearchQuery = '';
+        let searchType = ''; // 'menu' or 'establishment'
 
-        function initializeEnhancedSearch() {
+        function initializeSeparateSearch() {
             const searchInput = document.getElementById('heroSearchInput');
             const searchClear = document.getElementById('heroSearchClear');
             const searchDropdown = document.getElementById('heroSearchDropdown');
             const searchResults = document.getElementById('heroSearchResults');
             const bestSellersSection = document.getElementById('bestSellersSection');
+            const searchResultsSection = document.getElementById('searchResultsSection');
 
             if (!searchInput) return;
 
@@ -1408,7 +1298,6 @@
                 const query = e.target.value.trim();
                 currentSearchQuery = query;
 
-                // Show/hide clear button
                 if (query) {
                     searchClear.classList.add('active');
                 } else {
@@ -1417,14 +1306,10 @@
 
                 searchTimeout = setTimeout(() => {
                     if (query.length > 0) {
-                        performEnhancedSearch(query);
-                        // Hide best sellers when searching
-                        bestSellersSection.classList.add('search-active');
+                        performSeparateSearch(query);
                     } else {
                         searchDropdown.classList.remove('active');
-                        clearSearch();
-                        // Show best sellers when not searching
-                        bestSellersSection.classList.remove('search-active');
+                        clearAllSearch();
                     }
                 }, 300);
             });
@@ -1434,11 +1319,10 @@
                 searchClear.classList.remove('active');
                 searchDropdown.classList.remove('active');
                 currentSearchQuery = '';
-                clearSearch();
-                bestSellersSection.classList.remove('search-active');
+                searchType = '';
+                clearAllSearch();
             });
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
                     searchDropdown.classList.remove('active');
@@ -1446,16 +1330,16 @@
             });
         }
 
-        function performEnhancedSearch(query) {
+        function performSeparateSearch(query) {
             const lowerQuery = query.toLowerCase();
 
-            // Search menu items from best sellers
+            // Search menu items
             const matchedMenus = bestSellersData.filter(item =>
                 item.name.toLowerCase().includes(lowerQuery) ||
                 (item.description && item.description.toLowerCase().includes(lowerQuery))
             );
 
-            // Get establishments
+            // Search establishments
             const establishments = document.querySelectorAll('.food-establishment-item');
             const matchedEstablishments = [];
 
@@ -1475,19 +1359,35 @@
                 }
             });
 
-            // Display search results
-            renderEnhancedSearchResults(matchedMenus, matchedEstablishments, query);
-
-            // Auto-sort establishments
-            if (matchedMenus.length > 0) {
-                autoSortEstablishments(matchedMenus);
+            // Determine search type
+            if (matchedMenus.length > 0 && matchedEstablishments.length === 0) {
+                searchType = 'menu';
+            } else if (matchedEstablishments.length > 0 && matchedMenus.length === 0) {
+                searchType = 'establishment';
+            } else if (matchedMenus.length > 0 && matchedEstablishments.length > 0) {
+                searchType = 'menu'; // Prefer showing menu results
             } else {
-                // If no menu matches, just filter establishments
-                filterEstablishments(matchedEstablishments);
+                searchType = '';
+            }
+
+            // Display dropdown
+            renderSeparateSearchDropdown(matchedMenus, matchedEstablishments, query);
+
+            // Handle results based on type
+            if (searchType === 'menu') {
+                showMenuResults(matchedMenus, query);
+                autoSortEstablishments(matchedMenus);
+            } else if (searchType === 'establishment') {
+                hideMenuResults();
+                filterEstablishmentsOnly(matchedEstablishments);
+            } else {
+                // No results
+                hideMenuResults();
+                clearEstablishments();
             }
         }
 
-        function renderEnhancedSearchResults(menus, establishments, query) {
+        function renderSeparateSearchDropdown(menus, establishments, query) {
             const searchResults = document.getElementById('heroSearchResults');
             const searchDropdown = document.getElementById('heroSearchDropdown');
             let html = '';
@@ -1497,14 +1397,14 @@
                     <div class="search-dropdown-section">
                         <div class="search-dropdown-title">
                             <i class="fas fa-hamburger"></i>
-                            Menu Items
+                            Menu Items (${menus.length})
                         </div>
                 `;
 
                 menus.slice(0, 5).forEach(item => {
                     const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
                     html += `
-                        <div class="search-dropdown-item" onclick="goToEstablishment(${item.establishment.id})">
+                        <div class="search-dropdown-item" onclick="selectMenuSearch('${escapeHtml(item.name)}')">
                             <div class="search-dropdown-item-icon">
                                 <i class="fas fa-utensils"></i>
                             </div>
@@ -1530,7 +1430,7 @@
                     <div class="search-dropdown-section">
                         <div class="search-dropdown-title">
                             <i class="fas fa-store"></i>
-                            Establishments
+                            Establishments (${establishments.length})
                         </div>
                 `;
 
@@ -1539,7 +1439,7 @@
                     const statusIcon = est.status.toLowerCase() === 'open' ? 'check-circle' : 'times-circle';
 
                     html += `
-                        <div class="search-dropdown-item" onclick="goToEstablishment(${est.id})">
+                        <div class="search-dropdown-item" onclick="selectEstablishmentSearch('${escapeHtml(est.name)}')">
                             <div class="search-dropdown-item-icon">
                                 <i class="fas fa-utensils"></i>
                             </div>
@@ -1552,11 +1452,6 @@
                                     </span>
                                     <span>•</span>
                                     <span>${est.category}</span>
-                                    <span>•</span>
-                                    <span>
-                                        <i class="fas fa-star" style="color: #fbbf24;"></i>
-                                        ${est.rating.toFixed(1)}
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -1579,11 +1474,89 @@
             searchDropdown.classList.add('active');
         }
 
+        function selectMenuSearch(menuName) {
+            document.getElementById('heroSearchInput').value = menuName;
+            document.getElementById('heroSearchDropdown').classList.remove('active');
+            performSeparateSearch(menuName);
+        }
+
+        function selectEstablishmentSearch(estName) {
+            document.getElementById('heroSearchInput').value = estName;
+            document.getElementById('heroSearchDropdown').classList.remove('active');
+            performSeparateSearch(estName);
+        }
+
+        function showMenuResults(menus, query) {
+            const bestSellersSection = document.getElementById('bestSellersSection');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const searchResultsScroll = document.getElementById('searchResultsScroll');
+            const searchQueryText = document.getElementById('searchQueryText');
+            const searchResultsCount = document.getElementById('searchResultsCount');
+
+            // Hide best sellers
+            bestSellersSection.style.display = 'none';
+
+            // Show search results
+            searchResultsSection.classList.add('active');
+            searchQueryText.textContent = query;
+            searchResultsCount.textContent = menus.length;
+
+            // Render menu cards (reuse best seller card style)
+            let html = '';
+            menus.forEach(item => {
+                const imageUrl = item.image_url || "{% static 'images/menu.png' %}";
+                const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
+                const estName = item.establishment.name;
+                const estId = item.establishment.id;
+
+                html += `
+                    <div class="best-seller-card">
+                        <div class="best-seller-badge">
+                            <i class="fas fa-search"></i>
+                            Search Result
+                        </div>
+                        <img src="${imageUrl}" alt="${item.name}" class="best-seller-image">
+                        <div class="best-seller-info">
+                            <h3 class="best-seller-name">${item.name}</h3>
+                            <p class="best-seller-price">${price}</p>
+                            <div class="best-seller-meta">
+                                <span class="best-seller-orders">
+                                    <i class="fas fa-shopping-bag"></i>
+                                    ${item.total_orders || 0} orders
+                                </span>
+                                <span class="best-seller-stock ${item.is_available ? '' : 'out-of-stock'}">
+                                    <i class="fas fa-box"></i>
+                                    ${item.quantity} left
+                                </span>
+                            </div>
+                            <div class="best-seller-establishment">
+                                <i class="fas fa-store"></i>
+                                <span>${estName}</span>
+                            </div>
+                            <button class="best-seller-view-btn" onclick="goToEstablishment(${estId})">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            searchResultsScroll.innerHTML = html;
+        }
+
+        function hideMenuResults() {
+            const bestSellersSection = document.getElementById('bestSellersSection');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+
+            bestSellersSection.style.display = 'none';
+            searchResultsSection.classList.remove('active');
+        }
+
         function autoSortEstablishments(matchedMenus) {
             const establishments = document.querySelectorAll('.food-establishment-item');
             const container = document.querySelector('.nearest_slidescontainer');
 
-            // Get establishments that have the searched menu items
             const establishmentIds = new Set(matchedMenus.map(m => m.establishment.id));
 
             // Clear existing indicators
@@ -1604,37 +1577,34 @@
                 return 0;
             });
 
-            // Reorder in DOM and add indicators
-            sortedEstablishments.forEach((est, index) => {
+            // Reorder and add indicators
+            sortedEstablishments.forEach((est) => {
                 container.appendChild(est);
 
                 const hasMenu = establishmentIds.has(parseInt(est.dataset.id));
                 if (hasMenu) {
-                    // Show indicator
                     est.style.display = '';
                     const indicator = document.createElement('div');
                     indicator.className = 'menu-match-indicator';
                     indicator.innerHTML = '<i class="fas fa-check-circle"></i> Has Menu';
                     est.appendChild(indicator);
                 } else {
-                    // Still show but without indicator
                     est.style.display = '';
                 }
             });
         }
 
-        function filterEstablishments(matchedEstablishments) {
+        function filterEstablishmentsOnly(matchedEstablishments) {
             const establishments = document.querySelectorAll('.food-establishment-item');
             const matchedIds = new Set(matchedEstablishments.map(e => e.id));
 
-            // Clear indicators
             establishments.forEach(est => {
                 const existingIndicator = est.querySelector('.menu-match-indicator');
                 if (existingIndicator) {
                     existingIndicator.remove();
                 }
 
-                if (matchedIds.size === 0 || matchedIds.has(est.dataset.id)) {
+                if (matchedIds.has(est.dataset.id)) {
                     est.style.display = '';
                 } else {
                     est.style.display = 'none';
@@ -1642,8 +1612,23 @@
             });
         }
 
-        function clearSearch() {
+        function clearEstablishments() {
             const establishments = document.querySelectorAll('.food-establishment-item');
+            establishments.forEach(est => {
+                est.style.display = 'none';
+            });
+        }
+
+        function clearAllSearch() {
+            const bestSellersSection = document.getElementById('bestSellersSection');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const establishments = document.querySelectorAll('.food-establishment-item');
+
+            // Show best sellers
+            bestSellersSection.style.display = 'block';
+            searchResultsSection.classList.remove('active');
+
+            // Reset establishments
             establishments.forEach(est => {
                 est.style.display = '';
                 const indicator = est.querySelector('.menu-match-indicator');
@@ -1660,6 +1645,12 @@
 
         function escapeRegex(str) {
             return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function goToEstablishment(establishmentId) {
@@ -1686,21 +1677,16 @@
             });
         }
 
-        // Initialize Map (keeping original functionality)
+        // Map and other existing functionality (keeping original code)
         let establishmentsMap = null;
         let userMarker = null;
         let routingControl = null;
         let isRouteActive = false;
 
         function initMap() {
-            if (typeof L === 'undefined') {
-                return;
-            }
-
+            if (typeof L === 'undefined') return;
             const mapElement = document.getElementById('establishmentsMap');
-            if (!mapElement || establishmentsMap) {
-                return;
-            }
+            if (!mapElement || establishmentsMap) return;
 
             establishmentsMap = L.map('establishmentsMap').setView([14.2695, 120.8816], 14);
 
@@ -1715,18 +1701,13 @@
                 const name = est.dataset.name;
 
                 if (lat && lng) {
-                    L.marker([lat, lng])
-                        .bindPopup(`<b>${name}</b>`)
-                        .addTo(establishmentsMap);
+                    L.marker([lat, lng]).bindPopup(`<b>${name}</b>`).addTo(establishmentsMap);
                 }
             });
 
-            setTimeout(() => {
-                establishmentsMap.invalidateSize();
-            }, 100);
+            setTimeout(() => { establishmentsMap.invalidateSize(); }, 100);
         }
 
-        // View dropdown functionality
         const viewDropdownBtn = document.getElementById('viewDropdownBtn');
         const viewDropdownMenu = document.getElementById('viewDropdownMenu');
         const mapSection = document.getElementById('mapSection');
@@ -1766,145 +1747,10 @@
                 });
             });
         }
-
-        // Route button
-        const routeBtn = document.getElementById('locationRouteBtn');
-        if (routeBtn && mapSection) {
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.attributeName === 'style') {
-                        const isVisible = mapSection.style.display !== 'none';
-                        routeBtn.style.display = isVisible ? 'flex' : 'none';
-                    }
-                });
-            });
-
-            observer.observe(mapSection, { attributes: true });
-
-            routeBtn.addEventListener('click', function() {
-                if (typeof establishmentsMap === 'undefined' || !establishmentsMap) {
-                    alert('Map is not initialized. Please wait.');
-                    return;
-                }
-
-                if (typeof userMarker === 'undefined' || !userMarker) {
-                    alert('Please click "Show My Location" button on the map first to enable your location.');
-                    return;
-                }
-
-                if (isRouteActive && routingControl) {
-                    establishmentsMap.removeControl(routingControl);
-                    routingControl = null;
-                    isRouteActive = false;
-                    routeBtn.classList.remove('active');
-                    routeBtn.title = 'Show Route to Establishment';
-                } else {
-                    const establishments = document.querySelectorAll('.food-establishment-item');
-                    if (establishments.length === 0) {
-                        alert('No establishments available.');
-                        return;
-                    }
-
-                    let targetEstablishment = null;
-                    for (let est of establishments) {
-                        if (est.style.display !== 'none') {
-                            targetEstablishment = est;
-                            break;
-                        }
-                    }
-
-                    if (!targetEstablishment) {
-                        alert('No establishment found. Please adjust your filters.');
-                        return;
-                    }
-
-                    const destLat = parseFloat(targetEstablishment.dataset.lat);
-                    const destLng = parseFloat(targetEstablishment.dataset.lng);
-                    const estName = targetEstablishment.dataset.name;
-
-                    if (!destLat || !destLng) {
-                        alert('Invalid establishment location.');
-                        return;
-                    }
-
-                    const userLatLng = userMarker.getLatLng();
-
-                    routingControl = L.Routing.control({
-                        waypoints: [
-                            L.latLng(userLatLng.lat, userLatLng.lng),
-                            L.latLng(destLat, destLng)
-                        ],
-                        routeWhileDragging: false,
-                        addWaypoints: false,
-                        draggableWaypoints: false,
-                        fitSelectedRoutes: true,
-                        showAlternatives: false,
-                        show: true,
-                        lineOptions: {
-                            styles: [{
-                                color: '#E9A420',
-                                opacity: 0.8,
-                                weight: 6
-                            }]
-                        },
-                        createMarker: function(i, waypoint, n) {
-                            let marker;
-                            if (i === 0) {
-                                marker = L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'route-marker-start',
-                                        html: '<div style="background:#4CAF50;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">A</div>',
-                                        iconSize: [30, 30],
-                                        iconAnchor: [15, 15]
-                                    })
-                                });
-                            } else if (i === n - 1) {
-                                marker = L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'route-marker-end',
-                                        html: '<div style="background:#F44336;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">B</div>',
-                                        iconSize: [30, 30],
-                                        iconAnchor: [15, 15]
-                                    })
-                                });
-                            }
-                            return marker;
-                        },
-                        router: L.Routing.osrmv1({
-                            serviceUrl: 'https://router.project-osrm.org/route/v1'
-                        })
-                    }).addTo(establishmentsMap);
-
-                    setTimeout(() => {
-                        const container = document.querySelector('.leaflet-routing-container');
-                        if (container) {
-                            container.style.zIndex = '600';
-                            container.style.display = 'block';
-                            container.style.visibility = 'visible';
-                        }
-                    }, 100);
-
-                    isRouteActive = true;
-                    routeBtn.classList.add('active');
-                    routeBtn.title = 'Hide Route';
-
-                    establishmentsMap.fitBounds([
-                        [userLatLng.lat, userLatLng.lng],
-                        [destLat, destLng]
-                    ], {
-                        padding: [80, 80],
-                        maxZoom: 15
-                    });
-                }
-            });
-        }
     </script>
 
-    <!-- Additional JS libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Other custom JS files -->
     <script src="{% static 'js/kabsueats.js' %}"></script>
     <script src="{% static 'js/establishment_details.js' %}"></script>
     <script src="{% static 'js/cart.js' %}"></script>
@@ -1913,32 +1759,18 @@
 <footer class="footer">
     <div class="footer-container">
         <div class="footer-section">
-            <h3>
-                <i class="fas fa-utensils"></i>
-                KabsuEats
-            </h3>
+            <h3><i class="fas fa-utensils"></i> KabsuEats</h3>
             <p>Your trusted food shops platform connecting you with the best local restaurants and food establishments.</p>
             <div class="footer-social">
-                <a href="#" class="social-icon" aria-label="Facebook">
-                    <i class="fab fa-facebook-f"></i>
-                </a>
-                <a href="#" class="social-icon" aria-label="Instagram">
-                    <i class="fab fa-instagram"></i>
-                </a>
-                <a href="#" class="social-icon" aria-label="Twitter">
-                    <i class="fab fa-twitter"></i>
-                </a>
-                <a href="#" class="social-icon" aria-label="TikTok">
-                    <i class="fab fa-tiktok"></i>
-                </a>
+                <a href="#" class="social-icon" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social-icon" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="social-icon" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-icon" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
 
         <div class="footer-section">
-            <h3>
-                <i class="fas fa-link"></i>
-                Quick Links
-            </h3>
+            <h3><i class="fas fa-link"></i> Quick Links</h3>
             <ul class="footer-links">
                 <li><a href="#"><i class="fas fa-chevron-right"></i> About Us</a></li>
                 <li><a href="#"><i class="fas fa-chevron-right"></i> How It Works</a></li>
@@ -1948,10 +1780,7 @@
         </div>
 
         <div class="footer-section">
-            <h3>
-                <i class="fas fa-file-alt"></i>
-                Legal
-            </h3>
+            <h3><i class="fas fa-file-alt"></i> Legal</h3>
             <ul class="footer-links">
                 <li><a href="#"><i class="fas fa-chevron-right"></i> Terms & Conditions</a></li>
                 <li><a href="#"><i class="fas fa-chevron-right"></i> Privacy Policy</a></li>
@@ -1961,10 +1790,7 @@
         </div>
 
         <div class="footer-section">
-            <h3>
-                <i class="fas fa-headset"></i>
-                Contact Us
-            </h3>
+            <h3><i class="fas fa-headset"></i> Contact Us</h3>
             <ul class="footer-links">
                 <li><a href="mailto:support@kabsueats.com"><i class="fas fa-envelope"></i> support@kabsueats.com</a></li>
                 <li><a href="tel:+639123456789"><i class="fas fa-phone"></i> +63 912 345 6789</a></li>
