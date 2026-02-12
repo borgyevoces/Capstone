@@ -322,24 +322,104 @@
         }
 
         /* ✅ Establishments Section Title */
+        /* ============================================ */
+        /* ✅ ESTABLISHMENTS SECTION TITLE WITH ICON */
+        /* ============================================ */
         .establishments-section-title {
             font-size: 28px;
             font-weight: 700;
             color: #1f2937;
-            text-align: center;
+            text-align: left;
             margin: 40px 0 20px 0;
+            padding: 0 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 12px;
         }
 
-        .establishments-section-title::before,
-        .establishments-section-title::after {
-            content: '';
-            flex: 1;
-            height: 2px;
-            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        .establishments-section-title i {
+            color: #B71C1C;
+            font-size: 32px;
+            animation: pulse-icon 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-icon {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* ============================================ */
+        /* ✅ IMPROVED FILTER SECTION LAYOUT */
+        /* ============================================ */
+        .filters-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 20px 0;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter_container {
+            margin: 0;
+        }
+
+        .select_wrapper {
+            position: relative;
+            min-width: 200px;
+        }
+
+        .select_wrapper select {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        .select_wrapper select:hover {
+            border-color: #B71C1C;
+            box-shadow: 0 2px 8px rgba(183, 28, 28, 0.1);
+        }
+
+        .select_wrapper select:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .filters-section {
+                padding: 0 15px;
+            }
+
+            .select_wrapper {
+                min-width: 180px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .select_wrapper {
+                min-width: 100%;
+            }
+
+            .select_wrapper select {
+                font-size: 13px;
+                padding: 10px 35px 10px 14px;
+            }
         }
 
         /* ✅ Location & Route Button Styles */
@@ -392,8 +472,12 @@
             }
 
             .establishments-section-title {
-                font-size: 22px;
-                margin: 20px 0 15px 0;
+                font-size: 24px;
+                margin: 30px 0 15px 0;
+            }
+
+            .establishments-section-title i {
+                font-size: 28px;
             }
         }
 
@@ -408,6 +492,11 @@
 
             .establishments-section-title {
                 font-size: 20px;
+                padding: 0 15px;
+            }
+
+            .establishments-section-title i {
+                font-size: 24px;
             }
         }
 
@@ -1143,21 +1232,25 @@
                 </div>
             </div>
 
-            <!-- ✅ Establishments Section Title -->
-            <h2 class="establishments-section-title">Food Establishments</h2>
+            <!-- ✅ UPDATED: Establishments Section Title with Icon -->
+            <h2 class="establishments-section-title">
+                <i class="fas fa-store"></i>
+                Food Establishments
+            </h2>
 
+            <!-- ✅ UPDATED: Filters Section with improved layout -->
             {% block filters %}
-            <div style="display: flex; gap: 15px; align-items: center; margin: 20px 0; flex-wrap: wrap; justify-content: center;">
-                <div class="filter_container" style="margin: 0;">
-                <div class="select_wrapper">
-                    <select id="categoryFilter" onchange="applyFilters()">
-                        <option value="">Categories</option>
-                        {% for cat in all_categories %}
-                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="filters-section">
+                <div class="filter_container">
+                    <div class="select_wrapper">
+                        <select id="categoryFilter" onchange="applyFilters()">
+                            <option value="">Categories</option>
+                            {% for cat in all_categories %}
+                                <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-            </div>
             </div>
             {% endblock %}
 
