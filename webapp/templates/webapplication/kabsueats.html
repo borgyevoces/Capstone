@@ -1261,7 +1261,7 @@
 
     <script>
         // ============================================
-        // ✅ ENHANCED SEARCH WITH SEPARATE RESULTS
+        // ✅ ENHANCED SEARCH WITH SEPARATE RESULTS AND MATCHING CARD DESIGN
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
             initializeSeparateSearch();
@@ -1501,13 +1501,20 @@
             searchQueryText.textContent = query;
             searchResultsCount.textContent = menus.length;
 
-            // Render menu cards (reuse best seller card style)
+            // ✅ RENDER MENU CARDS WITH EXACT SAME DESIGN AS BEST SELLERS
             let html = '';
             menus.forEach(item => {
                 const imageUrl = item.image_url || "{% static 'images/menu.png' %}";
                 const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
                 const estName = item.establishment.name;
                 const estId = item.establishment.id;
+                const estImage = item.establishment.image_url || '';
+                const estCategory = item.establishment.category || '';
+                const estStatus = item.establishment.status || 'Open';
+                const statusClass = estStatus.toLowerCase();
+                const orders = item.total_orders || 0;
+                const stock = item.quantity || 0;
+                const stockClass = item.is_available ? '' : 'out-of-stock';
 
                 html += `
                     <div class="best-seller-card">
@@ -1516,27 +1523,40 @@
                             Search Result
                         </div>
                         <img src="${imageUrl}" alt="${item.name}" class="best-seller-image">
-                        <div class="best-seller-info">
+                        <div class="best-seller-content">
                             <h3 class="best-seller-name">${item.name}</h3>
                             <p class="best-seller-price">${price}</p>
-                            <div class="best-seller-meta">
-                                <span class="best-seller-orders">
+
+                            <div class="best-seller-stats">
+                                <div class="stat-item">
                                     <i class="fas fa-shopping-bag"></i>
-                                    ${item.total_orders || 0} orders
-                                </span>
-                                <span class="best-seller-stock ${item.is_available ? '' : 'out-of-stock'}">
+                                    <strong>${orders}</strong> orders
+                                </div>
+                                <div class="stat-item ${stockClass}">
                                     <i class="fas fa-box"></i>
-                                    ${item.quantity} left
-                                </span>
+                                    <strong>${stock}</strong> left
+                                </div>
                             </div>
+
                             <div class="best-seller-establishment">
-                                <i class="fas fa-store"></i>
-                                <span>${estName}</span>
+                                ${estImage ? `<img src="${estImage}" alt="${estName}" class="establishment-logo">` : ''}
+                                <div class="establishment-info">
+                                    <div class="establishment-name">${estName}</div>
+                                    <div class="establishment-category">
+                                        ${estCategory}
+                                        <span class="establishment-status ${statusClass}">
+                                            ${estStatus}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <button class="best-seller-view-btn" onclick="goToEstablishment(${estId})">
-                                <i class="fas fa-eye"></i>
-                                View Details
-                            </button>
+
+                            <div class="best-seller-actions">
+                                <button class="view-item-btn" onclick="goToEstablishment(${estId})">
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
