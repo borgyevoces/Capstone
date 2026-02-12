@@ -204,7 +204,6 @@
             font-weight: 700;
             color: #6b7280;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
@@ -212,30 +211,29 @@
         }
 
         .search-dropdown-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            margin: 4px 0;
             display: flex;
             align-items: center;
             gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .search-dropdown-item:hover {
-            background: #f9fafb;
+            background: #f3f4f6;
         }
 
         .search-dropdown-item-icon {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #B71C1C 0%, #8B1010 100%);
             border-radius: 8px;
-            background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             flex-shrink: 0;
         }
 
@@ -245,9 +243,9 @@
         }
 
         .search-dropdown-item-name {
-            font-size: 14px;
             font-weight: 600;
-            color: #111827;
+            font-size: 14px;
+            color: #1f2937;
             margin-bottom: 2px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -259,176 +257,35 @@
             color: #6b7280;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .search-dropdown-item-establishment {
-            font-size: 11px;
             color: #9ca3af;
             font-style: italic;
-        }
-
-        .search-dropdown-empty {
-            padding: 32px 16px;
-            text-align: center;
-            color: #9ca3af;
-        }
-
-        .search-dropdown-empty i {
-            font-size: 48px;
-            color: #d1d5db;
-            margin-bottom: 12px;
-        }
-
-        .search-dropdown-empty p {
-            font-size: 14px;
-            font-weight: 500;
         }
 
         .search-match {
             background: #fef3c7;
             font-weight: 600;
-            padding: 0 2px;
+            color: #b91c1c;
         }
 
-        .search_container {
-            position: relative;
-        }
-
-        @media (max-width: 768px) {
-            .search-dropdown {
-                max-height: 300px;
-            }
-            .search-dropdown-item {
-                padding: 10px 12px;
-            }
-            .search-dropdown-item-icon {
-                width: 36px;
-                height: 36px;
-                font-size: 16px;
-            }
-            .search-dropdown-item-name {
-                font-size: 13px;
-            }
-            .search-dropdown-item-meta {
-                font-size: 11px;
-            }
-        }
-
-        /* ✅ NEW: Establishments Section Title */
-        .establishments-section-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #111827;
-            margin: 30px 0 20px 0;
+        .search-dropdown-empty {
             text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
         }
 
-        /* ✅ UPDATED: Filter container positioning */
-        .filter_container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            padding: 0 20px;
+        .search-dropdown-empty i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
         }
 
-        /* Search and filters wrapper styles remain the same */
-        .search-and-filters-wrapper {
-            z-index: 10000 !important;
-        }
-
-        #mapSection {
-            position: relative;
-            z-index: 1 !important;
-        }
-
-        #establishmentsMap {
-            z-index: 1 !important;
-        }
-
-        .leaflet-top,
-        .leaflet-bottom,
-        .leaflet-control {
-            z-index: 500 !important;
-        }
-
-        .leaflet-control-zoom,
-        .leaflet-control-layers {
-            z-index: 500 !important;
-        }
-
-        .leaflet-routing-container {
-            z-index: 600 !important;
-            background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
-            max-width: 320px !important;
-        }
-
-        .leaflet-routing-container.leaflet-control {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-
-        .leaflet-routing-alt {
-            padding: 10px !important;
-            background: white !important;
-        }
-
-        .leaflet-routing-alt h2 {
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            margin-bottom: 8px !important;
-            color: #333 !important;
-        }
-
-        .leaflet-routing-alt h3 {
-            font-size: 13px !important;
-            font-weight: 500 !important;
-            margin: 5px 0 !important;
-            color: #555 !important;
-        }
-
-        .leaflet-routing-alt table {
-            width: 100% !important;
-            font-size: 12px !important;
-        }
-
-        .leaflet-routing-alt td {
-            padding: 4px !important;
-        }
-
-        /* Cart Badge */
-        .cart-link {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            background-color: #f87171;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            line-height: 1;
-            min-width: 18px;
-            text-align: center;
-            transform: translate(50%, -50%);
-            display: none;
-        }
-
-        .cart-badge.show {
-            display: block;
+        .search-dropdown-empty p {
+            font-size: 14px;
+            margin: 0;
         }
 
         /* Scroll to Top Button */
@@ -438,63 +295,76 @@
             right: 30px;
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, #B71C1C 0%, #8c1616 100%);
+            background: linear-gradient(135deg, #B71C1C 0%, #8B1010 100%);
             color: white;
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
-            transition: all 0.3s ease;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-        }
-
-        .scroll-to-top.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .scroll-to-top:hover {
-            transform: translateY(-5px) scale(1.1);
-            box-shadow: 0 6px 20px rgba(183, 28, 28, 0.6);
-        }
-
-        .scroll-to-top:active {
-            transform: translateY(-3px) scale(1.05);
-        }
-
-        /* Location Route Button */
-        .location-route-btn {
-            position: absolute;
-            top: 90px;
-            right: 10px;
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-            cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            color: #333;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);
             transition: all 0.3s ease;
-            z-index: 700;
+            z-index: 1000;
+        }
+
+        .scroll-to-top:hover {
+            background: linear-gradient(135deg, #8B1010 0%, #6B0C0C 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(183, 28, 28, 0.4);
+        }
+
+        .scroll-to-top.show {
+            display: flex;
+        }
+
+        /* ✅ Establishments Section Title */
+        .establishments-section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin: 40px 0 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .establishments-section-title::before,
+        .establishments-section-title::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        }
+
+        /* ✅ Location & Route Button Styles */
+        .location-route-btn {
+            position: absolute;
+            top: 90px;
+            left: 10px;
+            z-index: 500;
+            background: white;
+            border: 2px solid #E9A420;
+            color: #E9A420;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
         }
 
         .location-route-btn:hover {
-            background: #f4f4f4;
-            border-color: #E9A420;
-            color: #E9A420;
+            background: #fff9e6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .location-route-btn.active {
@@ -899,53 +769,20 @@
             padding: 12px 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: #374151;
             text-decoration: none;
             transition: all 0.2s ease;
         }
 
         .dropdown-menu a:hover {
-            background: rgba(183, 28, 28, 0.1);
+            background: #f3f4f6;
             color: #B71C1C;
-            padding-left: 20px;
         }
 
         .dropdown-menu a i {
             width: 20px;
             text-align: center;
-            font-size: 14px;
-        }
-
-        /* Mobile Responsive for Order History */
-        @media (max-width: 768px) {
-            .order-history-link span {
-                display: none;
-            }
-
-            .order-history-link {
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-
-            .order-history-link i {
-                font-size: 18px;
-                margin: 0;
-            }
-
-            .header-right {
-                gap: 5px;
-            }
-
-            .order-history-nav {
-                margin-right: 5px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .order-history-link {
-                padding: 8px;
-            }
         }
 
         /* ============================================ */
@@ -1039,6 +876,39 @@
             display: block;
         }
 
+        /* ✅ NEW: Menu Match Indicator for Establishments */
+        .menu-match-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            z-index: 10;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+            50% { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.6); }
+        }
+
+        .menu-match-indicator i {
+            font-size: 12px;
+        }
+
+        /* ✅ Hide Best Sellers when searching */
+        .best-sellers-section.search-active {
+            display: none !important;
+        }
+
         @media (max-width: 768px) {
             .hero-search-label {
                 font-size: 14px;
@@ -1063,6 +933,11 @@
             .hero-search-dropdown {
                 max-height: 350px;
             }
+
+            .menu-match-indicator {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1078,6 +953,11 @@
 
             .hero-search-dropdown {
                 max-height: 300px;
+            }
+
+            .menu-match-indicator {
+                padding: 4px 8px;
+                font-size: 9px;
             }
         }
     </style>
@@ -1154,7 +1034,7 @@
                     {% else %}
                         <div class="profile-icon-default" onclick="toggleDropdown(event)" title="{{ user.get_full_name|default:user.username }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
                             </svg>
                         </div>
                     {% endif %}
@@ -1167,7 +1047,7 @@
                                     <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile">
                                 {% else %}
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                                        <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
                                     </svg>
                                 {% endif %}
                             </div>
@@ -1335,6 +1215,7 @@
                         {% for establishment in food_establishments %}
                             {% if establishment.status != 'Disabled' %}
                                 <div class="nearest_box food-establishment-item"
+                                     data-id="{{ establishment.id }}"
                                      data-name="{{ establishment.name|lower }}"
                                      data-lat="{{ establishment.latitude }}"
                                      data-lng="{{ establishment.longitude }}"
@@ -1343,7 +1224,8 @@
                                      data-distance="{{ establishment.distance|floatformat:2 }}"
                                      data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                                     data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                     data-closing-time="{{ establishment.closing_time|time:'H:i' }}"
+                                     style="position: relative;">
 
                                     <a href="{% url 'food_establishment_details' establishment.id %}">
                                         {% if establishment.image %}
@@ -1426,7 +1308,7 @@
         {% endblock %}
     </main>
 
-    <!-- Settings Modal -->
+    <!-- Settings Modal (Keeping original) -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
@@ -1442,7 +1324,7 @@
                     {% else %}
                         <div id="profileIconPreviewDefault" class="profile-modal-icon-default">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
                             </svg>
                         </div>
                         <img id="profileImagePreview" src="" alt="Current Profile" style="display:none;">
@@ -1450,206 +1332,449 @@
                 </div>
 
                 <div class="profile-form-group">
-                    <label for="id_profile_picture" style="text-align: left; display: block; font-weight: bold;">Change Profile Picture:</label>
-                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewImage(event)">
+                    <label for="id_profile_picture">Change Profile Picture:</label>
+                    <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewProfileImage(event)">
                 </div>
 
                 <div class="profile-form-group">
-                    <label for="id_username" style="text-align: left; display: block; font-weight: bold;">Username (Read-only):</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
+                    <label for="id_first_name">First Name:</label>
+                    <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" required>
                 </div>
 
-                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <div class="profile-form-group">
+                    <label for="id_last_name">Last Name:</label>
+                    <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" required>
+                </div>
 
-                <button type="submit" class="profile-form-submit">Save Changes</button>
+                <div class="profile-form-group">
+                    <label for="id_email">Email Address:</label>
+                    <input type="email" name="email" id="id_email" value="{{ user.email }}" required>
+                </div>
+
+                <div class="profile-form-group">
+                    <label for="id_phone">Phone Number:</label>
+                    <input type="text" name="phone" id="id_phone" value="{{ user.userprofile.phone|default_if_none:'' }}" placeholder="+639123456789">
+                </div>
+
+                <div class="profile-form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'user_logout' %}" class="logout-button-modal">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Log Out
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Libraries -->
+    {% block extra_js %}
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
-    <!-- Custom JavaScript -->
-    <script src="{% static 'js/kabsueats_map.js' %}"></script>
-    <script src="{% static 'js/kabsueats.js' %}"></script>
-    <script src="{% static 'js/status_updater.js' %}"></script>
-
-    {% block extra_js %}
     <script>
-        // JavaScript constants for Cart and Auth
-        const UPDATE_PROFILE_URL = "{% url 'update_profile' %}";
-        const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
-        const VIEW_CART_URL = "{% url 'view_cart' %}";
-        const IS_USER_AUTHENTICATED = "{% if user.is_authenticated %}true{% else %}false{% endif %}" === 'true';
-
-        // updateCartBadge function
-        function updateCartBadge(count) {
-            const badge = document.getElementById('cart-count-badge');
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.style.display = 'block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
-
-        // Message Notification Auto-Dismiss and Manual Close
+        // ============================================
+        // ✅ ENHANCED REAL-TIME SEARCH WITH AUTO-SORT
+        // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            if (IS_USER_AUTHENTICATED) {
-                updateCartBadge({{ cart_count|default:0 }});
-            }
-
-            const messagesContainer = document.getElementById('messagesContainer');
-            if (messagesContainer) {
-                setTimeout(function() {
-                    const messages = messagesContainer.querySelectorAll('.message-alert');
-                    messages.forEach(function(message) {
-                        message.classList.add('fade-out');
-                        setTimeout(function() {
-                            message.remove();
-                            if (messagesContainer.querySelectorAll('.message-alert').length === 0) {
-                                messagesContainer.remove();
-                            }
-                        }, 300);
-                    });
-                }, 5000);
-            }
-
-            // Initialize location route button
-            initLocationRouteButton();
-
-            // Initialize red dropdown button
-            initViewDropdown();
+            initializeEnhancedSearch();
         });
 
-        // Red Dropdown Toggle & View Switcher
-        function initViewDropdown() {
-            const dropdownBtn = document.getElementById('viewDropdownBtn');
-            const dropdownMenu = document.getElementById('viewDropdownMenu');
-            const currentViewText = document.getElementById('currentViewText');
-            const dropdownOptions = document.querySelectorAll('.view-dropdown-option');
+        let bestSellersData = [];
+        let currentSearchQuery = '';
 
-            const mapSection = document.getElementById('mapSection');
+        function initializeEnhancedSearch() {
+            const searchInput = document.getElementById('heroSearchInput');
+            const searchClear = document.getElementById('heroSearchClear');
+            const searchDropdown = document.getElementById('heroSearchDropdown');
+            const searchResults = document.getElementById('heroSearchResults');
             const bestSellersSection = document.getElementById('bestSellersSection');
-            const toggleMapBtn = document.getElementById('toggleMapBtn');
 
-            if (!dropdownBtn || !dropdownMenu) return;
+            if (!searchInput) return;
 
-            // Toggle dropdown on button click
-            dropdownBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                dropdownBtn.classList.toggle('open');
-                dropdownMenu.classList.toggle('show');
+            // Fetch best sellers data
+            fetch('/api/best-sellers/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        bestSellersData = data.items;
+                    }
+                })
+                .catch(error => console.error('Error loading best sellers:', error));
+
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                currentSearchQuery = query;
+
+                // Show/hide clear button
+                if (query) {
+                    searchClear.classList.add('active');
+                } else {
+                    searchClear.classList.remove('active');
+                }
+
+                searchTimeout = setTimeout(() => {
+                    if (query.length > 0) {
+                        performEnhancedSearch(query);
+                        // Hide best sellers when searching
+                        bestSellersSection.classList.add('search-active');
+                    } else {
+                        searchDropdown.classList.remove('active');
+                        clearSearch();
+                        // Show best sellers when not searching
+                        bestSellersSection.classList.remove('search-active');
+                    }
+                }, 300);
+            });
+
+            searchClear.addEventListener('click', function() {
+                searchInput.value = '';
+                searchClear.classList.remove('active');
+                searchDropdown.classList.remove('active');
+                currentSearchQuery = '';
+                clearSearch();
+                bestSellersSection.classList.remove('search-active');
             });
 
             // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
-                if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
+                if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                    searchDropdown.classList.remove('active');
+                }
+            });
+        }
+
+        function performEnhancedSearch(query) {
+            const lowerQuery = query.toLowerCase();
+
+            // Search menu items from best sellers
+            const matchedMenus = bestSellersData.filter(item =>
+                item.name.toLowerCase().includes(lowerQuery) ||
+                (item.description && item.description.toLowerCase().includes(lowerQuery))
+            );
+
+            // Get establishments
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            const matchedEstablishments = [];
+
+            establishments.forEach(est => {
+                const name = est.dataset.name || '';
+                const category = est.dataset.category || '';
+
+                if (name.includes(lowerQuery) || category.includes(lowerQuery)) {
+                    matchedEstablishments.push({
+                        id: est.dataset.id,
+                        name: name,
+                        category: category,
+                        status: est.dataset.status,
+                        rating: parseFloat(est.dataset.rating || 0),
+                        element: est
+                    });
                 }
             });
 
-            // Handle option selection
-            dropdownOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const viewType = this.dataset.view;
-                    const viewTitle = this.querySelector('.view-dropdown-option-title').textContent;
+            // Display search results
+            renderEnhancedSearchResults(matchedMenus, matchedEstablishments, query);
 
-                    // Update button text
-                    currentViewText.textContent = viewTitle;
+            // Auto-sort establishments
+            if (matchedMenus.length > 0) {
+                autoSortEstablishments(matchedMenus);
+            } else {
+                // If no menu matches, just filter establishments
+                filterEstablishments(matchedEstablishments);
+            }
+        }
 
-                    // Close dropdown
-                    dropdownBtn.classList.remove('open');
-                    dropdownMenu.classList.remove('show');
+        function renderEnhancedSearchResults(menus, establishments, query) {
+            const searchResults = document.getElementById('heroSearchResults');
+            const searchDropdown = document.getElementById('heroSearchDropdown');
+            let html = '';
 
-                    if (viewType === 'map') {
-                        // Show Map, hide ONLY best sellers items (not the header/button)
-                        console.log('✅ Showing Map, Keeping Button & Establishments');
+            if (menus.length > 0) {
+                html += `
+                    <div class="search-dropdown-section">
+                        <div class="search-dropdown-title">
+                            <i class="fas fa-hamburger"></i>
+                            Menu Items
+                        </div>
+                `;
 
-                        // Hide only the best sellers container (items), keep header and button visible
-                        const bestSellersContainer = document.querySelector('.best-sellers-container');
-                        const bestSellersHeader = document.querySelector('.best-sellers-header');
+                menus.slice(0, 5).forEach(item => {
+                    const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
+                    html += `
+                        <div class="search-dropdown-item" onclick="goToEstablishment(${item.establishment.id})">
+                            <div class="search-dropdown-item-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="search-dropdown-item-content">
+                                <div class="search-dropdown-item-name">${highlightMatch(item.name, query)}</div>
+                                <div class="search-dropdown-item-meta">
+                                    <span>${price}</span>
+                                    <span>•</span>
+                                    <span class="search-dropdown-item-establishment">
+                                        at ${item.establishment.name}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
 
-                        if (bestSellersContainer) {
-                            bestSellersContainer.style.setProperty('display', 'none', 'important');
-                        }
+                html += '</div>';
+            }
 
-                        // Keep the section and header visible (button is inside section)
-                        bestSellersSection.style.setProperty('display', 'block', 'important');
+            if (establishments.length > 0) {
+                html += `
+                    <div class="search-dropdown-section">
+                        <div class="search-dropdown-title">
+                            <i class="fas fa-store"></i>
+                            Establishments
+                        </div>
+                `;
 
-                        // Show map
-                        mapSection.style.setProperty('display', 'block', 'important');
+                establishments.slice(0, 5).forEach(est => {
+                    const statusColor = est.status.toLowerCase() === 'open' ? '#10b981' : '#ef4444';
+                    const statusIcon = est.status.toLowerCase() === 'open' ? 'check-circle' : 'times-circle';
 
-                        // Hide Grid View button when map is shown
-                        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
-                        if (layoutSettingsBtn) {
-                            layoutSettingsBtn.style.setProperty('display', 'none', 'important');
-                        }
+                    html += `
+                        <div class="search-dropdown-item" onclick="goToEstablishment(${est.id})">
+                            <div class="search-dropdown-item-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="search-dropdown-item-content">
+                                <div class="search-dropdown-item-name">${highlightMatch(est.name, query)}</div>
+                                <div class="search-dropdown-item-meta">
+                                    <span style="color: ${statusColor};">
+                                        <i class="fas fa-${statusIcon}"></i>
+                                        ${est.status}
+                                    </span>
+                                    <span>•</span>
+                                    <span>${est.category}</span>
+                                    <span>•</span>
+                                    <span>
+                                        <i class="fas fa-star" style="color: #fbbf24;"></i>
+                                        ${est.rating.toFixed(1)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
 
-                        if (toggleMapBtn) {
-                            if (!mapSection.classList.contains('active')) {
-                                setTimeout(() => {
-                                    toggleMapBtn.click();
-                                }, 100);
-                            }
-                        }
+                html += '</div>';
+            }
 
-                    } else if (viewType === 'bestsellers') {
-                        // Show Best Sellers items, hide Map
-                        console.log('✅ Showing Best Sellers');
+            if (menus.length === 0 && establishments.length === 0) {
+                html = `
+                    <div class="search-dropdown-empty">
+                        <i class="fas fa-search"></i>
+                        <p>No results found for "${query}"</p>
+                    </div>
+                `;
+            }
 
-                        const bestSellersContainer = document.querySelector('.best-sellers-container');
+            searchResults.innerHTML = html;
+            searchDropdown.classList.add('active');
+        }
 
-                        if (bestSellersContainer) {
-                            bestSellersContainer.style.setProperty('display', 'flex', 'important');
-                        }
+        function autoSortEstablishments(matchedMenus) {
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            const container = document.querySelector('.nearest_slidescontainer');
 
-                        mapSection.classList.remove('active');
-                        mapSection.style.setProperty('display', 'none', 'important');
-                        bestSellersSection.style.setProperty('display', 'block', 'important');
+            // Get establishments that have the searched menu items
+            const establishmentIds = new Set(matchedMenus.map(m => m.establishment.id));
 
-                        // Show Grid View button again when back to best sellers
-                        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
-                        if (layoutSettingsBtn) {
-                            layoutSettingsBtn.style.removeProperty('display');
-                        }
-                    }
+            // Clear existing indicators
+            establishments.forEach(est => {
+                const existingIndicator = est.querySelector('.menu-match-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+            });
+
+            // Sort establishments
+            const sortedEstablishments = Array.from(establishments).sort((a, b) => {
+                const aHasMenu = establishmentIds.has(parseInt(a.dataset.id));
+                const bHasMenu = establishmentIds.has(parseInt(b.dataset.id));
+
+                if (aHasMenu && !bHasMenu) return -1;
+                if (!aHasMenu && bHasMenu) return 1;
+                return 0;
+            });
+
+            // Reorder in DOM and add indicators
+            sortedEstablishments.forEach((est, index) => {
+                container.appendChild(est);
+
+                const hasMenu = establishmentIds.has(parseInt(est.dataset.id));
+                if (hasMenu) {
+                    // Show indicator
+                    est.style.display = '';
+                    const indicator = document.createElement('div');
+                    indicator.className = 'menu-match-indicator';
+                    indicator.innerHTML = '<i class="fas fa-check-circle"></i> Has Menu';
+                    est.appendChild(indicator);
+                } else {
+                    // Still show but without indicator
+                    est.style.display = '';
+                }
+            });
+        }
+
+        function filterEstablishments(matchedEstablishments) {
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            const matchedIds = new Set(matchedEstablishments.map(e => e.id));
+
+            // Clear indicators
+            establishments.forEach(est => {
+                const existingIndicator = est.querySelector('.menu-match-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+
+                if (matchedIds.size === 0 || matchedIds.has(est.dataset.id)) {
+                    est.style.display = '';
+                } else {
+                    est.style.display = 'none';
+                }
+            });
+        }
+
+        function clearSearch() {
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            establishments.forEach(est => {
+                est.style.display = '';
+                const indicator = est.querySelector('.menu-match-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            });
+        }
+
+        function highlightMatch(text, query) {
+            const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+            return text.replace(regex, '<span class="search-match">$1</span>');
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function goToEstablishment(establishmentId) {
+            window.location.href = `/food_establishment/${establishmentId}/`;
+        }
+
+        // Scroll to top button
+        const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                scrollToTopBtn.classList.add('show');
+            } else {
+                scrollToTopBtn.classList.remove('show');
+            }
+        });
+
+        if (scrollToTopBtn) {
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
                 });
             });
         }
 
-        function dismissMessage(button) {
-            const message = button.closest('.message-alert');
-            const container = document.getElementById('messagesContainer');
+        // Initialize Map (keeping original functionality)
+        let establishmentsMap = null;
+        let userMarker = null;
+        let routingControl = null;
+        let isRouteActive = false;
 
-            message.classList.add('fade-out');
-            setTimeout(function() {
-                message.remove();
-                if (container && container.querySelectorAll('.message-alert').length === 0) {
-                    container.remove();
+        function initMap() {
+            if (typeof L === 'undefined') {
+                return;
+            }
+
+            const mapElement = document.getElementById('establishmentsMap');
+            if (!mapElement || establishmentsMap) {
+                return;
+            }
+
+            establishmentsMap = L.map('establishmentsMap').setView([14.2695, 120.8816], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(establishmentsMap);
+
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            establishments.forEach(est => {
+                const lat = parseFloat(est.dataset.lat);
+                const lng = parseFloat(est.dataset.lng);
+                const name = est.dataset.name;
+
+                if (lat && lng) {
+                    L.marker([lat, lng])
+                        .bindPopup(`<b>${name}</b>`)
+                        .addTo(establishmentsMap);
                 }
-            }, 300);
+            });
+
+            setTimeout(() => {
+                establishmentsMap.invalidateSize();
+            }, 100);
         }
 
-        // Location Route Button
-        function initLocationRouteButton() {
-            const routeBtn = document.getElementById('locationRouteBtn');
-            const mapSection = document.getElementById('mapSection');
+        // View dropdown functionality
+        const viewDropdownBtn = document.getElementById('viewDropdownBtn');
+        const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+        const mapSection = document.getElementById('mapSection');
+        const bestSellersContainer = document.getElementById('bestSellersContainer');
 
-            if (!routeBtn) return;
+        if (viewDropdownBtn) {
+            viewDropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                viewDropdownBtn.classList.toggle('open');
+                viewDropdownMenu.classList.toggle('show');
+            });
 
-            let routingControl = null;
-            let isRouteActive = false;
+            document.addEventListener('click', function() {
+                viewDropdownBtn.classList.remove('open');
+                viewDropdownMenu.classList.remove('show');
+            });
 
+            const viewOptions = document.querySelectorAll('.view-dropdown-option');
+            viewOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    const currentViewText = document.getElementById('currentViewText');
+
+                    if (view === 'map') {
+                        mapSection.style.display = 'block';
+                        bestSellersContainer.style.display = 'none';
+                        currentViewText.textContent = 'View Map';
+                        initMap();
+                    } else {
+                        mapSection.style.display = 'none';
+                        bestSellersContainer.style.display = 'block';
+                        currentViewText.textContent = 'Best Sellers';
+                    }
+
+                    viewDropdownBtn.classList.remove('open');
+                    viewDropdownMenu.classList.remove('show');
+                });
+            });
+        }
+
+        // Route button
+        const routeBtn = document.getElementById('locationRouteBtn');
+        if (routeBtn && mapSection) {
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.attributeName === 'style') {
-                        const isMapVisible = mapSection.style.display !== 'none';
-                        routeBtn.style.display = isMapVisible ? 'flex' : 'none';
+                        const isVisible = mapSection.style.display !== 'none';
+                        routeBtn.style.display = isVisible ? 'flex' : 'none';
                     }
                 });
             });

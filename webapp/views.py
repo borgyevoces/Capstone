@@ -5704,6 +5704,100 @@ def get_establishment_transaction_statistics(request):
 # ==========================================
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE
 # ==========================================
+def search_menu_items(request):
+    """
+    API endpoint for real-time menu search
+    Returns menu items and establishments that match the search query
+    """
+    try:
+        query = request.GET.get('q', '').strip()
+
+        if not query:
+            return JsonResponse({
+                'success': False,
+                'error': 'No search query provided'
+            })
+
+        # Search menu items
+        menu_items = MenuItem.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query),
+            quantity__gt=0,
+            food_establishment__isnull=False,
+            food_establishment__status='Active'
+        ).select_related('food_establishment').values(
+            'id',
+            'name',
+            'description',
+            'price',
+            'image',
+            'food_establishment__id',
+            'food_establishment__name'
+        )[:20]
+
+        # Format menu items data
+        menus_data = []
+        for item in menu_items:
+            menus_data.append({
+                'id': item['id'],
+                'name': item['name'],
+                'description': item['description'],
+                'price': float(item['price']),
+                'image_url': item['image'] if item['image'] else None,
+                'establishment': {
+                    'id': item['food_establishment__id'],
+                    'name': item['food_establishment__name']
+                }
+            })
+
+        # Search establishments
+        establishments = FoodEstablishment.objects.filter(
+            Q(name__icontains=query) | Q(category__name__icontains=query),
+            status='Active'
+        ).select_related('category').values(
+            'id',
+            'name',
+            'category__name',
+            'opening_time',
+            'closing_time'
+        )[:10]
+
+        # Format establishments data
+        establishments_data = []
+        for est in establishments:
+            # Determine if open
+            now = timezone.localtime(timezone.now()).time()
+            opening = est['opening_time']
+            closing = est['closing_time']
+
+            is_open = False
+            if opening and closing:
+                if opening < closing:
+                    is_open = opening <= now <= closing
+                else:  # overnight establishment
+                    is_open = now >= opening or now <= closing
+
+            establishments_data.append({
+                'id': est['id'],
+                'name': est['name'],
+                'category': est['category__name'] if est['category__name'] else 'Other',
+                'status': 'Open' if is_open else 'Closed'
+            })
+
+        return JsonResponse({
+            'success': True,
+            'menus': menus_data,
+            'establishments': establishments_data,
+            'query': query
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"Error in search_menu_items: {e}")
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 def order_history_view(request):
