@@ -78,6 +78,23 @@
             align-items: center;
             gap: 20px;
             margin-right: 15px;
+            position: relative;
+            z-index: 1000;
+        }
+
+        /* Profile Container - Always on Top */
+        .profile-container {
+            position: relative;
+            z-index: 1010 !important;
+            cursor: pointer;
+        }
+
+        .profile-image,
+        .profile-icon-default {
+            cursor: pointer !important;
+            position: relative;
+            z-index: 1010 !important;
+            pointer-events: auto !important;
         }
 
         .nav-actions-group .order-history-nav {
