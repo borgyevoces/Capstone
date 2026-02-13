@@ -10,6 +10,16 @@
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
     <style>
 /* ============================================================
+   DESKTOP WIDTH CONTROL
+   ============================================================ */
+@media (min-width: 1024px) {
+    .registration-container {
+        max-width: 1200px !important;
+        margin: 0 auto;
+    }
+}
+
+/* ============================================================
    LOCATION CONTROLS STYLES
    ============================================================ */
 
@@ -238,12 +248,15 @@
 
 /* Location Status */
 .location-status {
-    display: inline-block;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin: 15px auto;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 15px;
     font-weight: 500;
-    margin-top: 10px;
+    text-align: center;
     animation: fadeIn 0.3s ease;
 }
 
@@ -256,27 +269,27 @@
     background: linear-gradient(135deg, #FFB74D 0%, #FFA726 100%);
     color: white;
     border: none;
-    box-shadow: 0 3px 10px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
 .location-status.success {
     background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
     color: white;
     border: none;
-    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .location-status.error {
     background: linear-gradient(135deg, #EF5350 0%, #E53935 100%);
     color: white;
     border: none;
-    box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
 }
 
 .spinner {
     display: inline-block;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-top: 3px solid white;
     border-radius: 50%;

@@ -302,23 +302,57 @@ function initStep1() {
 
         const viewbox = `${cvsuLatLngObj.lng - 0.01},${cvsuLatLngObj.lat + 0.01},${cvsuLatLngObj.lng + 0.01},${cvsuLatLngObj.lat - 0.01}`;
 
-        // Enhanced search with addressdetails for better results
+        // Create a combined results array
+        let allResults = [];
+
+        // First, search in existing establishments from database
+        if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
+            const lowerQuery = query.toLowerCase();
+            const establishmentMatches = EXISTING_ESTABLISHMENTS.filter(est => {
+                const nameMatch = est.name && est.name.toLowerCase().includes(lowerQuery);
+                const addressMatch = est.address && est.address.toLowerCase().includes(lowerQuery);
+                return nameMatch || addressMatch;
+            }).map(est => ({
+                type: 'establishment',
+                lat: est.latitude,
+                lon: est.longitude,
+                display_name: est.name,
+                address: est.address,
+                name: est.name,
+                isEstablishment: true
+            }));
+
+            allResults = [...establishmentMatches];
+        }
+
+        // Then fetch from Nominatim for general places
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1&limit=10&addressdetails=1&extratags=1`)
             .then(res => res.json())
             .then(data => {
-                // Filter results to only show those within the 500m radius
-                const filteredResults = data.filter(result => {
+                // Filter Nominatim results to only show those within the 500m radius
+                const filteredNominatim = data.filter(result => {
                     const lat = parseFloat(result.lat);
                     const lng = parseFloat(result.lon);
                     const latlng = L.latLng(lat, lng);
                     const distance = map.distance(latlng, cvsuLatLngObj);
                     return distance <= RADIUS;
-                });
-                displaySearchResults(filteredResults);
+                }).map(result => ({
+                    ...result,
+                    isEstablishment: false
+                }));
+
+                // Combine both results (establishments first)
+                allResults = [...allResults, ...filteredNominatim];
+                displaySearchResults(allResults);
             })
             .catch(err => {
                 console.error('Search error:', err);
-                autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
+                // Even if Nominatim fails, show establishment results if any
+                if (allResults.length > 0) {
+                    displaySearchResults(allResults);
+                } else {
+                    autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
+                }
             });
     }
 
@@ -333,14 +367,48 @@ function initStep1() {
         results.forEach((result) => {
             const item = document.createElement('div');
             item.className = 'autocomplete-item';
-            const name = result.display_name.split(',')[0];
-            const address = result.display_name;
 
-            item.innerHTML = `
-                <div class="autocomplete-name">${name}</div>
-                <div class="autocomplete-address">${address}</div>
-            `;
-            item.addEventListener('click', () => selectSearchResult(result, name));
+            // Different display for establishments vs general places
+            if (result.isEstablishment) {
+                // For registered establishments
+                const name = result.name;
+                const address = result.address || 'Registered Establishment';
+
+                item.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="
+                            width: 32px;
+                            height: 32px;
+                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+                            border-radius: 6px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                        ">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="autocomplete-name">🏪 ${name}</div>
+                            <div class="autocomplete-address">${address}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // For general Nominatim results
+                const name = result.display_name.split(',')[0];
+                const address = result.display_name;
+
+                item.innerHTML = `
+                    <div class="autocomplete-name">${name}</div>
+                    <div class="autocomplete-address">${address}</div>
+                `;
+            }
+
+            item.addEventListener('click', () => selectSearchResult(result, result.name || result.display_name.split(',')[0]));
             autocompleteDropdown.appendChild(item);
         });
     }
@@ -503,11 +571,13 @@ function initStep1() {
     }
 
     function showLocationStatus(message, type) {
-        locationStatus.textContent = message;
         locationStatus.className = `location-status ${type}`;
-        locationStatus.style.display = 'inline-block';
+        locationStatus.style.display = 'block';
+
         if (type === 'loading') {
             locationStatus.innerHTML = `<span class="spinner"></span>${message}`;
+        } else {
+            locationStatus.textContent = message;
         }
     }
 
