@@ -2309,47 +2309,43 @@ def owner_logout(request):
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
 
-
 @login_required
-@require_POST
+@require_http_methods(["POST"])
 def delete_establishment(request):
     """
-    Delete the food establishment owned by the current user.
-    This will cascade delete all related data (menu items, orders, reviews, etc.)
+    Permanently delete an establishment and all associated data.
+
+    Args:
+        request: HTTP POST request
+
+    Returns:
+        Redirect to home or login page
     """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    from django.contrib.auth import logout
+
     try:
-        # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
 
-        establishment_name = establishment.name
+        # Delete establishment image if exists
+        if establishment.image:
+            try:
+                default_storage.delete(establishment.image.path)
+            except Exception as e:
+                logger.warning(f"Could not delete establishment image: {str(e)}")
 
         # Delete the establishment (cascade will handle related objects)
         establishment.delete()
 
-        # Clear session data
-        if 'food_establishment_id' in request.session:
-            del request.session['food_establishment_id']
-
-        # Logout the user
+        messages.success(request, 'Your establishment has been permanently deleted.')
         logout(request)
+        return redirect('kabsueats_home')
 
-        return JsonResponse({
-            'success': True,
-            'message': f'{establishment_name} has been successfully deleted.',
-            'redirect_url': reverse('owner_login')
-        })
-
-    except FoodEstablishment.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'No establishment found for this account.'
-        }, status=404)
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'An error occurred: {str(e)}'
-        }, status=500)
-
+        logger.error(f"Error deleting establishment: {str(e)}")
+        messages.error(request, 'Could not delete establishment.')
+        return redirect('food_establishment_profile')
 
 def owner_register_step1_location(request):
     establishments = FoodEstablishment.objects.values('name', 'address', 'latitude', 'longitude')
@@ -2363,7 +2359,6 @@ def owner_register_step1_location(request):
         'existing_establishments': json.dumps(establishments_list)
     })
 
-
 def owner_register_step2_details(request):
     payment_methods = ["Cash", "GCash"]
     context = {
@@ -2373,10 +2368,8 @@ def owner_register_step2_details(request):
     }
     return render(request, 'webapplication/register_step2_details.html', context)
 
-
 def owner_register_step3_credentials(request):
     return render(request, 'webapplication/register_step3_credentials.html')
-
 
 @csrf_exempt
 def send_otp(request):
@@ -2578,7 +2571,6 @@ The KabsuEats Team
             'error': f'Server error: {str(outer_error)}'
         }, status=500)
 
-
 @csrf_exempt
 def verify_and_register(request):
     """
@@ -2763,7 +2755,6 @@ def verify_and_register(request):
     print(f"   - Other Amenity: {establishment.other_amenity}")
 
     return JsonResponse({'success': True, 'redirect_url': '/food_establishment/dashboard/'})
-
 
 @login_required(login_url='owner_login')
 def food_establishment_dashboard(request):
@@ -3129,151 +3120,165 @@ def toggle_top_seller(request, item_id):
     messages.info(request, "Please use the 'Add New Menu Item' modal on the dashboard page.")
     return redirect('food_establishment_dashboard')
 
-
-@login_required(login_url='owner_login')
+@login_required
 @require_http_methods(["POST"])
 def update_establishment_details_ajax(request, pk):
     """
-    AJAX endpoint for updating establishment details in real-time.
-    Returns JSON response with updated data for instant UI updates.
-    """
-    try:
-        # Get establishment owned by current user
-        establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
-    except FoodEstablishment.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Establishment not found or access denied.'
-        }, status=404)
+    Enhanced AJAX view to update establishment details including:
+    - Image upload
+    - Multiple categories with "Other" option
+    - Multiple amenities with "Other" option
+    - All other establishment fields
 
-    # Use the form for validation
-    form = FoodEstablishmentUpdateForm(request.POST, request.FILES, instance=establishment)
+    Args:
+        request: HTTP request with POST data and FILES
+        pk: Primary key of FoodEstablishment
 
-    if form.is_valid():
-        try:
-            from datetime import time as dt_time
-
-            instance = form.save(commit=False)
-
-            # ✅ Handle time fields from POST data
-            opening_time_str = request.POST.get('opening_time')
-            closing_time_str = request.POST.get('closing_time')
-
-            if opening_time_str:
-                try:
-                    instance.opening_time = dt_time.fromisoformat(opening_time_str)
-                except ValueError:
-                    pass
-
-            if closing_time_str:
-                try:
-                    instance.closing_time = dt_time.fromisoformat(closing_time_str)
-                except ValueError:
-                    pass
-
-            # ✅ Handle payment methods (checkboxes come as multiple values)
-            payment_methods_list = request.POST.getlist('payment_methods')
-            if payment_methods_list:
-                instance.payment_methods = ', '.join(payment_methods_list)
-            else:
-                instance.payment_methods = ''
-
-            # ✅ Save the instance
-            instance.save()
-
-            # ✅ Save many-to-many relationships (amenities)
-            form.save_m2m()
-
-            # ✅ Prepare comprehensive response data for real-time UI update
-            data = {
-                'success': True,
-                'message': 'Establishment details updated successfully.',
-                'name': instance.name,
-                'address': instance.address,
-                'status': instance.calculated_status,  # Use calculated_status property
-                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,
-                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,
-                'categories': [{'id': cat.id, 'name': cat.name} for cat in instance.categories.all()],
-                'categories_str': ', '.join([cat.name for cat in instance.categories.all()]),
-                'other_category': instance.other_category,
-                'payment_methods': instance.payment_methods,
-                'latitude': str(instance.latitude) if instance.latitude else None,
-                'longitude': str(instance.longitude) if instance.longitude else None,
-                'image_url': instance.image.url if instance.image else '',
-                'amenities': ', '.join([a.name for a in instance.amenities.all()]),
-                'amenities_list': [{'id': a.id, 'name': a.name} for a in instance.amenities.all()],
-                'other_amenity': instance.other_amenity,
-            }
-
-            return JsonResponse(data)
-
-        except Exception as e:
-            print(f"Database save error: {e}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({
-                'success': False,
-                'error': f'A database error occurred: {str(e)}'
-            }, status=500)
-    else:
-        # Return validation errors
-        errors = {k: v[0] if isinstance(v, list) else v for k, v in form.errors.items()}
-        return JsonResponse({
-            'success': False,
-            'error': 'Validation failed. Please check your inputs.',
-            'errors': errors
-        }, status=400)
-
-
-@login_required(login_url='owner_login')
-@require_http_methods(["GET"])
-def get_establishment_details_ajax(request, pk):
-    """
-    AJAX endpoint to get current establishment details.
-    Useful for refreshing data without page reload.
+    Returns:
+        JSON response with updated data
     """
     try:
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
 
-        data = {
+        # Update basic fields
+        establishment.name = request.POST.get('name', establishment.name)
+        establishment.payment_methods = request.POST.get('payment_methods', establishment.payment_methods)
+        establishment.opening_time = request.POST.get('opening_time', establishment.opening_time)
+        establishment.closing_time = request.POST.get('closing_time', establishment.closing_time)
+        establishment.address = request.POST.get('address', establishment.address)
+        establishment.latitude = request.POST.get('latitude', establishment.latitude)
+        establishment.longitude = request.POST.get('longitude', establishment.longitude)
+
+        # Handle image upload
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            # Delete old image if exists
+            if establishment.image:
+                try:
+                    default_storage.delete(establishment.image.path)
+                except Exception as e:
+                    logger.warning(f"Could not delete old image: {str(e)}")
+            establishment.image = image_file
+
+        # Handle categories (ManyToMany with "Other" option)
+        category_ids = request.POST.getlist('categories')
+        establishment.categories.clear()
+
+        for cat_id in category_ids:
+            try:
+                category = Category.objects.get(id=cat_id)
+                establishment.categories.add(category)
+            except Category.DoesNotExist:
+                logger.warning(f"Category with id {cat_id} not found")
+                pass
+
+        # Handle "Other" category
+        if 'category_other_check' in request.POST:
+            establishment.other_category = request.POST.get('other_category', '')
+        else:
+            establishment.other_category = None
+
+        # Handle amenities (ManyToMany with "Other" option)
+        amenity_ids = request.POST.getlist('amenities')
+        establishment.amenities.clear()
+
+        for amen_id in amenity_ids:
+            try:
+                amenity = Amenity.objects.get(id=amen_id)
+                establishment.amenities.add(amenity)
+            except Amenity.DoesNotExist:
+                logger.warning(f"Amenity with id {amen_id} not found")
+                pass
+
+        # Handle "Other" amenity
+        if 'amenity_other_check' in request.POST:
+            establishment.other_amenity = request.POST.get('other_amenity', '')
+        else:
+            establishment.other_amenity = None
+
+        establishment.save()
+
+        # Prepare categories string for display
+        categories_list = list(establishment.categories.values_list('name', flat=True))
+        if establishment.other_category:
+            categories_list.append(f"Other: {establishment.other_category}")
+        categories_str = ", ".join(categories_list) if categories_list else "Not set"
+
+        # Prepare amenities list for display
+        amenities_list = []
+        for amenity in establishment.amenities.all():
+            amenities_list.append({'name': amenity.name})
+        if establishment.other_amenity:
+            amenities_list.append({'name': f"Other: {establishment.other_amenity}"})
+
+        return JsonResponse({
             'success': True,
-            'establishment': {
-                'id': establishment.id,
-                'name': establishment.name,
-                'address': establishment.address,
-                'status': establishment.calculated_status,
-                'opening_time': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
-                'closing_time': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
-                'opening_time_24h': establishment.opening_time.strftime(
-                    '%H:%M') if establishment.opening_time else None,
-                'closing_time_24h': establishment.closing_time.strftime(
-                    '%H:%M') if establishment.closing_time else None,
-                'categories': [{'id': cat.id, 'name': cat.name} for cat in establishment.categories.all()],
-                'categories_str': ', '.join([cat.name for cat in establishment.categories.all()]),
-                'other_category': establishment.other_category,
-                'payment_methods': establishment.payment_methods,
-                'latitude': float(establishment.latitude) if establishment.latitude else None,
-                'longitude': float(establishment.longitude) if establishment.longitude else None,
-                'image_url': establishment.image.url if establishment.image else None,
-                'amenities': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
-                'other_amenity': establishment.other_amenity,
-            }
-        }
-
-        return JsonResponse(data)
+            'name': establishment.name,
+            'categories_str': categories_str,
+            'payment_methods': establishment.payment_methods or 'Not set',
+            'opening_time': establishment.opening_time.strftime('%H:%M') if establishment.opening_time else 'Not set',
+            'closing_time': establishment.closing_time.strftime('%H:%M') if establishment.closing_time else 'Not set',
+            'address': establishment.address or 'Address not set',
+            'status': establishment.status,
+            'amenities_list': amenities_list,
+            'image_url': establishment.image.url if establishment.image else None
+        })
 
     except FoodEstablishment.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'Establishment not found or access denied.'
+            'error': 'Establishment not found'
         }, status=404)
     except Exception as e:
+        logger.error(f"Error updating establishment: {str(e)}")
         return JsonResponse({
             'success': False,
             'error': str(e)
         }, status=500)
 
+@login_required
+@require_http_methods(["GET"])
+def get_establishment_details_ajax(request, pk):
+    """
+    Get establishment details for populating the edit form.
 
+    Args:
+        request: HTTP GET request
+        pk: Primary key of FoodEstablishment
+
+    Returns:
+        JSON with establishment details
+    """
+    try:
+        establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
+
+        return JsonResponse({
+            'success': True,
+            'name': establishment.name,
+            'address': establishment.address,
+            'latitude': establishment.latitude,
+            'longitude': establishment.longitude,
+            'opening_time': establishment.opening_time.strftime('%H:%M') if establishment.opening_time else '',
+            'closing_time': establishment.closing_time.strftime('%H:%M') if establishment.closing_time else '',
+            'payment_methods': establishment.payment_methods or '',
+            'categories': list(establishment.categories.values_list('id', flat=True)),
+            'other_category': establishment.other_category or '',
+            'amenities': list(establishment.amenities.values_list('id', flat=True)),
+            'other_amenity': establishment.other_amenity or '',
+            'image_url': establishment.image.url if establishment.image else None
+        })
+
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Establishment not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error getting establishment details: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 # ===================================================================================================================
 # ================================================END OWNER ========================================================
 # ===================================================================================================================
@@ -4915,71 +4920,161 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import FoodEstablishment
+logger = logging.getLogger(__name__)
 
-
-@login_required(login_url='owner_login')
-def food_establishment_profile(request):
+@require_http_methods(["GET"])
+def get_nearby_establishments(request):
     """
-    Display the food establishment profile settings page with inline editing.
+    API endpoint to get establishments within a specified radius.
+
+    Query Parameters:
+        - lat (float, required): Latitude of center point
+        - lng (float, required): Longitude of center point
+        - radius (float, optional): Radius in meters (default: 500)
+        - establishment_id (int, optional): Current establishment ID to exclude
+
+    Returns:
+        JSON with list of nearby establishments
     """
     try:
-        from .models import Category, Amenity
-        import os
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius_meters = float(request.GET.get('radius', 500))
+        current_establishment_id = request.GET.get('establishment_id')
 
-        # Get the establishment owned by the current user
+        # Get all establishments with valid coordinates
+        query = FoodEstablishment.objects.filter(
+            latitude__isnull=False,
+            longitude__isnull=False
+        )
+
+        # Exclude current establishment if provided
+        if current_establishment_id:
+            query = query.exclude(id=current_establishment_id)
+
+        all_establishments = query
+
+        # Filter by distance using Haversine formula
+        nearby_establishments = []
+        for est in all_establishments:
+            distance = calculate_distance(
+                lat, lng,
+                float(est.latitude), float(est.longitude)
+            )
+
+            if distance <= radius_meters:
+                nearby_establishments.append({
+                    'id': est.id,
+                    'name': est.name,
+                    'address': est.address,
+                    'latitude': float(est.latitude),
+                    'longitude': float(est.longitude),
+                    'distance': round(distance, 2)
+                })
+
+        return JsonResponse({
+            'success': True,
+            'establishments': nearby_establishments,
+            'count': len(nearby_establishments)
+        })
+
+    except (ValueError, TypeError) as e:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid parameters'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in get_nearby_establishments: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate distance between two coordinates using Haversine formula.
+
+    Args:
+        lat1, lon1: First coordinate (latitude, longitude)
+        lat2, lon2: Second coordinate (latitude, longitude)
+
+    Returns:
+        Distance in meters (float)
+    """
+    R = 6371000  # Earth's radius in meters
+
+    lat1_rad = radians(lat1)
+    lat2_rad = radians(lat2)
+    delta_lat = radians(lat2 - lat1)
+    delta_lon = radians(lon2 - lon1)
+
+    a = sin(delta_lat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    distance = R * c
+    return distance
+
+@login_required
+def food_establishment_profile(request):
+    """
+    Display the food establishment profile page with edit capabilities.
+
+    Args:
+        request: HTTP request
+
+    Returns:
+        Rendered template with establishment, categories, and amenities
+    """
+    try:
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        # Get all categories and amenities for the edit form
+        categories = Category.objects.all().order_by('name')
+        amenities = Amenity.objects.all().order_by('name')
 
         context = {
             'establishment': establishment,
-            'categories': Category.objects.all().order_by('name'),
-            'amenities': Amenity.objects.all().order_by('name'),
-            'pk': establishment.pk,
-            'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE', '14.1649'),
-            'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE', '120.9881'),
+            'categories': categories,
+            'amenities': amenities,
+            'CVSU_LATITUDE': 14.1649,  # Default CvSU coordinates
+            'CVSU_LONGITUDE': 120.9881,
         }
 
         return render(request, 'webapplication/food_establishment_profile.html', context)
 
-    except FoodEstablishment.DoesNotExist:
-        return redirect('owner_login')
     except Exception as e:
-        return redirect('food_establishment_dashboard')
+        logger.error(f"Error loading establishment profile: {str(e)}")
+        return render(request, 'webapplication/error.html', {
+            'error': 'Could not load establishment profile'
+        })
 
-
-@login_required(login_url='owner_login')
+@login_required
 @require_http_methods(["POST"])
 def deactivate_establishment(request):
     """
-    Deactivate the food establishment owned by the current user.
-    This will hide the establishment from customer searches but keep all data intact.
+    Temporarily deactivate an establishment (hide from public view).
+
+    Args:
+        request: HTTP POST request
+
+    Returns:
+        Redirect to dashboard or profile
     """
+    from django.shortcuts import redirect
+    from django.contrib import messages
+
     try:
-        # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
-
-        establishment_name = establishment.name
-
-        # Set the establishment as inactive
-        # NOTE: You need to add 'is_active' field to your FoodEstablishment model if it doesn't exist:
-        # is_active = models.BooleanField(default=True)
         establishment.is_active = False
         establishment.save()
 
-        # Redirect to dashboard with success message
-        from django.contrib import messages
-        messages.success(request,
-                         f'{establishment_name} has been deactivated successfully. You can reactivate it anytime.')
-
+        messages.success(request, 'Your establishment has been deactivated.')
         return redirect('food_establishment_dashboard')
 
-    except FoodEstablishment.DoesNotExist:
-        from django.contrib import messages
-        messages.error(request, 'No establishment found for this account.')
-        return redirect('owner_login')
     except Exception as e:
-        from django.contrib import messages
-        messages.error(request, f'An error occurred: {str(e)}')
-        return redirect('food_establishment_dashboard')
+        logger.error(f"Error deactivating establishment: {str(e)}")
+        messages.error(request, 'Could not deactivate establishment.')
+        return redirect('food_establishment_profile')
 
 
 @login_required
