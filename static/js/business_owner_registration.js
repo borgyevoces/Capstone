@@ -104,41 +104,35 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // Show existing registered establishments on map with their images
+    // Show existing registered establishments on map with building/store icons
     if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
         EXISTING_ESTABLISHMENTS.forEach(est => {
             if (est.latitude && est.longitude) {
-                // Use establishment image if available, otherwise use default marker
-                const imageUrl = est.image || 'https://via.placeholder.com/50x50?text=Est';
-
                 const estIcon = L.divIcon({
                     className: 'existing-establishment-marker',
                     html: `
                         <div style="
                             position: relative;
-                            width: 50px;
-                            height: 50px;
-                            border-radius: 50%;
-                            overflow: hidden;
-                            border: 3px solid #4CAF50;
-                            background: white;
+                            width: 36px;
+                            height: 36px;
+                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+                            border-radius: 8px;
+                            border: 2px solid white;
                             box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
                             cursor: pointer;
                         ">
-                            <img src="${imageUrl}"
-                                 alt="${est.name}"
-                                 style="
-                                    width: 100%;
-                                    height: 100%;
-                                    object-fit: cover;
-                                 "
-                                 onerror="this.src='https://via.placeholder.com/50x50?text=Est';"
-                            />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
                         </div>
                     `,
-                    iconSize: [50, 50],
-                    iconAnchor: [25, 25],
-                    popupAnchor: [0, -25]
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                    popupAnchor: [0, -36]
                 });
 
                 const marker = L.marker([est.latitude, est.longitude], {
@@ -378,21 +372,21 @@ function initStep1() {
 
     useCurrentLocationBtn.addEventListener('click', () => {
         if (!navigator.geolocation) {
-            showLocationStatus('Geolocation is not supported by your browser', 'error');
+            showLocationStatus('❌ Geolocation not supported by your browser', 'error');
             return;
         }
 
-        showLocationStatus('Getting your location...', 'loading');
+        // Disable button and show immediate feedback
         useCurrentLocationBtn.disabled = true;
+        useCurrentLocationBtn.style.opacity = '0.6';
+        showLocationStatus('🔍 Locating you...', 'loading');
 
-        // Optimized for fast, accurate, real-time location
+        // Optimized options for fastest response
         const geoOptions = {
             enableHighAccuracy: true,
-            timeout: 5000,           // 5 seconds timeout for quick response
+            timeout: 8000,           // 8 seconds timeout
             maximumAge: 0            // Always get fresh position
         };
-
-        let positionWatchId = null;
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -402,62 +396,55 @@ function initStep1() {
                 const userLatLng = L.latLng(lat, lng);
                 const distance = map.distance(userLatLng, cvsuLatLngObj);
 
-                console.log(`GPS Lock: Accuracy ±${accuracy.toFixed(0)}m, Distance: ${distance.toFixed(0)}m`);
+                console.log(`📍 GPS Lock: Lat ${lat.toFixed(6)}, Lng ${lng.toFixed(6)}, Accuracy ±${accuracy.toFixed(0)}m`);
 
                 if (distance <= RADIUS) {
                     placeMarker(userLatLng);
-                    map.setView(userLatLng, 18);
-                    showLocationStatus(`📍 Location set! (Accuracy: ±${accuracy.toFixed(0)}m)`, 'success');
+                    map.setView(userLatLng, 18, { animate: true, duration: 0.5 });
 
-                    // Start watching position for real-time updates
-                    if (!positionWatchId) {
-                        positionWatchId = navigator.geolocation.watchPosition(
-                            (pos) => {
-                                const newLat = pos.coords.latitude;
-                                const newLng = pos.coords.longitude;
-                                const newLatLng = L.latLng(newLat, newLng);
-                                const newDistance = map.distance(newLatLng, cvsuLatLngObj);
+                    // Show success with accuracy info
+                    const accuracyText = accuracy < 20 ? '🎯 Very accurate' : accuracy < 50 ? '✅ Good' : '📍 Located';
+                    showLocationStatus(`${accuracyText} (±${Math.round(accuracy)}m)`, 'success');
 
-                                if (newDistance <= RADIUS && window.userMarker) {
-                                    // Update marker position in real-time
-                                    window.userMarker.setLatLng(newLatLng);
-                                    validatePosition(newLatLng);
-                                }
-                            },
-                            (err) => console.warn('Watch position error:', err),
-                            { enableHighAccuracy: true, maximumAge: 1000 }
-                        );
-
-                        // Store watchId to clear later if needed
-                        window.locationWatchId = positionWatchId;
-                    }
+                    // Auto-hide success message after 3 seconds
+                    setTimeout(() => {
+                        const statusEl = document.getElementById('location-status');
+                        if (statusEl) statusEl.style.display = 'none';
+                    }, 3000);
                 } else {
-                    showLocationStatus(`You are ${Math.round(distance)}m from CvSU (limit: 500m)`, 'error');
-                    msg.textContent = '❌ Your current location is outside the allowed area.';
+                    const distanceKm = (distance / 1000).toFixed(2);
+                    showLocationStatus(`❌ You're ${distanceKm}km away (limit: 500m)`, 'error');
+                    msg.textContent = `❌ Your location is ${Math.round(distance)}m from CvSU. Please select within 500m.`;
                     msg.className = 'map-validation-message invalid';
                 }
+
                 useCurrentLocationBtn.disabled = false;
+                useCurrentLocationBtn.style.opacity = '1';
             },
             (error) => {
-                let errorMsg = 'Unable to get your location';
+                console.error('Geolocation error:', error);
+                let errorMsg = '❌ Unable to get location';
+
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        errorMsg = '❌ Location permission denied. Please enable location access.';
+                        errorMsg = '❌ Location access denied. Please enable location permissions.';
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        errorMsg = '❌ Location unavailable. Move to an open area with GPS signal.';
+                        errorMsg = '❌ Location unavailable. Make sure GPS is enabled.';
                         break;
                     case error.TIMEOUT:
                         errorMsg = '⏱️ Location timeout. Please try again.';
                         break;
+                    default:
+                        errorMsg = `❌ Error: ${error.message}`;
                 }
+
                 showLocationStatus(errorMsg, 'error');
                 useCurrentLocationBtn.disabled = false;
-                console.error('Geolocation error:', error);
+                useCurrentLocationBtn.style.opacity = '1';
             },
             geoOptions
         );
-
     });
 
     removePinBtn.addEventListener('click', () => {
@@ -469,12 +456,6 @@ function initStep1() {
             sessionStorage.removeItem('latitude');
             sessionStorage.removeItem('longitude');
             updateRemovePinButton(false);
-
-            // Stop watching position if active
-            if (window.locationWatchId) {
-                navigator.geolocation.clearWatch(window.locationWatchId);
-                window.locationWatchId = null;
-            }
 
             const locationInfo = document.getElementById('location-info');
             if (locationInfo) locationInfo.classList.remove('show');
