@@ -995,6 +995,148 @@
                 font-size: 9px;
             }
         }
+
+        /* ============================================ */
+        /* ✅ IMPROVED CATEGORY FILTER STYLES */
+        /* ============================================ */
+        .filters-section {
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .filter_container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .select_wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .select_wrapper::before {
+            content: '🏷️';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .select_wrapper::after {
+            content: '▼';
+            font-size: 10px;
+            color: #6b7280;
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: transform 0.3s ease;
+        }
+
+        .select_wrapper:hover::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        #categoryFilter {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            outline: none;
+            padding: 14px 45px 14px 45px;
+            min-width: 220px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        #categoryFilter:hover {
+            border-color: #B71C1C;
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.15);
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+
+        #categoryFilter:focus {
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 4px rgba(183, 28, 28, 0.1);
+            background: white;
+        }
+
+        #categoryFilter option {
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        #categoryFilter option:first-child {
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        /* Filter Label */
+        .filter-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-right: 10px;
+        }
+
+        .filter-label i {
+            color: #B71C1C;
+            font-size: 16px;
+        }
+
+        /* Mobile Responsive for Category Filter */
+        @media (max-width: 768px) {
+            .filters-section {
+                padding: 0 15px;
+                margin-bottom: 20px;
+            }
+
+            .filter_container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            #categoryFilter {
+                width: 100%;
+                min-width: auto;
+                padding: 12px 40px 12px 40px;
+                font-size: 14px;
+            }
+
+            .filter-label {
+                display: none;
+            }
+
+            .select_wrapper::before {
+                left: 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #categoryFilter {
+                padding: 10px 35px 10px 35px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1238,13 +1380,17 @@
                 Food Establishments
             </h2>
 
-            <!-- ✅ UPDATED: Filters Section with improved layout -->
+            <!-- ✅ FIXED: Category Filter Section - Left Aligned with Better Design -->
             {% block filters %}
             <div class="filters-section">
                 <div class="filter_container">
+                    <span class="filter-label">
+                        <i class="fas fa-filter"></i>
+                        Filter by:
+                    </span>
                     <div class="select_wrapper">
                         <select id="categoryFilter" onchange="applyFilters()">
-                            <option value="">Categories</option>
+                            <option value="">All Categories</option>
                             {% for cat in all_categories %}
                                 <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
                             {% endfor %}
@@ -1929,6 +2075,33 @@
                     viewDropdownMenu.classList.remove('show');
                 });
             });
+        }
+
+        // Category Filter Function
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+            const establishments = document.querySelectorAll('.food-establishment-item');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            let visibleCount = 0;
+
+            establishments.forEach(est => {
+                const category = est.dataset.category || '';
+
+                let matchesCategory = !categoryFilter || category === categoryFilter;
+
+                if (matchesCategory) {
+                    est.style.display = '';
+                    visibleCount++;
+                } else {
+                    est.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                noResultsMessage.style.display = 'block';
+            } else {
+                noResultsMessage.style.display = 'none';
+            }
         }
     </script>
 
