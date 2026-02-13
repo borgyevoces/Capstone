@@ -301,8 +301,8 @@ class UserProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        # Tanging 'profile_picture' lang ang kukunin sa UserProfile model
-        fields = ['profile_picture']
+        # ✅ FIXED: was 'profile_picture', actual field in UserProfile model is 'profile_image'
+        fields = ['profile_image']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
