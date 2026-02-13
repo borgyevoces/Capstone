@@ -130,57 +130,66 @@
         }
 
         .profile-header {
-            background: linear-gradient(135deg, #B71C1C 0%, #D32F2F 100%);
-            padding: 40px;
-            color: white;
             position: relative;
-        }
-
-        .profile-header-content {
-            display: flex;
-            align-items: center;
-            gap: 30px;
+            height: 350px;
+            overflow: hidden;
         }
 
         .establishment-image {
-            width: 150px;
-            height: 150px;
-            border-radius: 12px;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-header-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+            padding: 40px;
+            color: white;
         }
 
         .establishment-info h1 {
-            font-size: 32px;
+            font-size: 42px;
             font-weight: 700;
             margin-bottom: 10px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-badge i {
+            font-size: 10px;
         }
 
         .status-badge.open {
             background: #10b981;
+            color: white;
         }
 
         .status-badge.closed {
             background: #ef4444;
+            color: white;
         }
 
         .edit-profile-btn {
             position: absolute;
             top: 20px;
             right: 20px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: white;
             color: #B71C1C;
             border: none;
@@ -192,12 +201,13 @@
             gap: 8px;
             font-size: 14px;
             transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .edit-profile-btn:hover {
             background: #f9fafb;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         }
 
         /* ===== DETAILS GRID ===== */
@@ -770,13 +780,13 @@
         <!-- PROFILE CARD -->
         <div class="profile-card">
             <div class="profile-header">
-                <div class="profile-header-content">
-                    {% if establishment.image %}
-                        <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" class="establishment-image">
-                    {% else %}
-                        <img src="{% static 'images/default-establishment.jpg' %}" alt="{{ establishment.name }}" class="establishment-image">
-                    {% endif %}
+                {% if establishment.image %}
+                    <img src="{{ establishment.image.url }}" alt="{{ establishment.name }}" class="establishment-image">
+                {% else %}
+                    <img src="{% static 'images/default-establishment.jpg' %}" alt="{{ establishment.name }}" class="establishment-image">
+                {% endif %}
 
+                <div class="profile-header-overlay">
                     <div class="establishment-info">
                         <h1 id="display-name">{{ establishment.name }}</h1>
                         <div class="status-badge {{ establishment.calculated_status|lower }}" id="display-status">
