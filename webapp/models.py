@@ -82,8 +82,17 @@ class FoodEstablishment(models.Model):
 
     image = models.ImageField(upload_to='establishment_images/', null=True, blank=True)
 
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
+    # ✅ CHANGED: Multiple categories support (was single ForeignKey, now ManyToManyField)
+    categories = models.ManyToManyField('Category', blank=True, related_name='establishments')
+    # ✅ NEW: Custom category text for "Other" option
+    other_category = models.CharField(max_length=200, blank=True, null=True,
+                                      help_text="Custom category when 'Other' is selected")
+
+    # Multiple amenities (already existed, kept as-is)
     amenities = models.ManyToManyField('Amenity', blank=True)
+    # ✅ NEW: Custom amenity text for "Other" option
+    other_amenity = models.CharField(max_length=200, blank=True, null=True,
+                                     help_text="Custom amenity when 'Other' is selected")
 
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
@@ -113,6 +122,22 @@ class FoodEstablishment(models.Model):
             return "Open" if self.opening_time <= now <= self.closing_time else "Closed"
         else:
             return "Open" if now >= self.opening_time or now <= self.closing_time else "Closed"
+
+    # ✅ NEW: Helper method to get all categories including custom
+    def get_all_categories(self):
+        """Returns list of all category names including custom 'Other' category"""
+        category_names = list(self.categories.values_list('name', flat=True))
+        if self.other_category:
+            category_names.append(f"Other: {self.other_category}")
+        return category_names
+
+    # ✅ NEW: Helper method to get all amenities including custom
+    def get_all_amenities(self):
+        """Returns list of all amenity names including custom 'Other' amenity"""
+        amenity_names = list(self.amenities.values_list('name', flat=True))
+        if self.other_amenity:
+            amenity_names.append(f"Other: {self.other_amenity}")
+        return amenity_names
 
 
 class OTP(models.Model):
@@ -234,106 +259,80 @@ class Review(models.Model):
 
 
 class UserProfile(models.Model):
-    """Extends the built-in Django User model with a profile picture."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
+    """Extension of the User model to store additional user information."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
-    def __str__(self):
-        return f'{self.user.username}\'s Profile'
+    # Location preferences (for future features)
+    default_latitude = models.FloatField(null=True, blank=True)
+    default_longitude = models.FloatField(null=True, blank=True)
 
-
-# ================================
-# Signals
-# ================================
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Signal receiver to create a UserProfile when a new User is created."""
-    if created:
-        UserProfile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    """Signal receiver to save the UserProfile whenever the User is saved."""
-    try:
-        instance.userprofile.save()
-    except UserProfile.DoesNotExist:
-        # Create a new profile if it doesn't exist for some reason
-        UserProfile.objects.create(user=instance)
-
-
-# ================================
-# Deprecated/Redundant Models (as noted in original code)
-# ================================
-class PaymentMethod(models.Model):
-    """Represents a payment method.
-    NOTE: The PaymentMethod model is now deprecated. Payment methods are now stored as a CharField in FoodEstablishment.
-    """
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-
-class FoodEstablishmentCode(models.Model):
-    """
-    Represents a login code for a food establishment.
-    NOTE: This is likely redundant since FoodEstablishment already has an 'access_code'.
-    """
-    food_establishment = models.OneToOneField(FoodEstablishment, on_delete=models.CASCADE)
-    code = models.CharField(max_length=6, unique=True)
-
-    def __str__(self):
-        return f"{self.food_establishment.name} - {self.code}"
-
-    def save(self, *args, **kwargs):
-        if not self.code:
-            self.code = generate_access_code()
-        super().save(*args, **kwargs)
-
-
-# ===============================
-# Shopping Cart & Order Models
-# ===============================
-
-class Cart(models.Model):
-    """
-    Kumakatawan sa isang shopping cart.
-    Kailangan ng user at establishment para malaman kung kanino at saan nag-oorder.
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    establishment = models.ForeignKey('FoodEstablishment', on_delete=models.CASCADE)
-    is_active = models.BooleanField(default=True)  # Para malaman kung cart pa o naging Order na
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Cart for {self.user.username} at {self.establishment.name} (Active: {self.is_active})"
+        return f"Profile of {self.user.username}"
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Automatically create UserProfile when a User is created."""
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Save UserProfile whenever User is saved."""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+
+
+class Cart(models.Model):
+    """Shopping cart for a user to collect items before checkout."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart for {self.user.username}"
+
+    def get_total_price(self):
+        """Calculate the total price of all items in the cart."""
+        return sum(item.total_price for item in self.items.all())
+
+    def get_item_count(self):
+        """Count total number of items in cart."""
+        return sum(item.quantity for item in self.items.all())
 
 
 class CartItem(models.Model):
-    """Isang item sa loob ng Cart."""
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    """Individual item in a shopping cart."""
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
+    quantity = models.PositiveIntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
 
-    def total_price(self):
-        """Kalkulahin ang subtotal para sa item na ito."""
-        return self.menu_item.price * self.quantity
+    class Meta:
+        unique_together = ('cart', 'menu_item')
 
     def __str__(self):
-        return f"{self.quantity}x {self.menu_item.name} in Cart {self.cart.id}"
+        return f"{self.quantity}x {self.menu_item.name} in cart"
+
+    @property
+    def total_price(self):
+        """Calculate the total price for this cart item."""
+        return self.menu_item.price * self.quantity
 
 
-# ✅✅✅ FIXED ORDER MODEL - CRITICAL CHANGES ✅✅✅
 class Order(models.Model):
-    """
-    ✅ FIXED: Proper Order model with correct relationships
-    """
+    """Represents a customer's order from a food establishment."""
     STATUS_CHOICES = [
         ('order_received', 'Order Received'),
         ('preparing', 'Preparing'),
-        ('to_claim', 'To Claim'),
+        ('ready_for_pickup', 'Ready for Pickup'),
         ('completed', 'Completed'),
         # Legacy statuses (for backward compatibility)
         ('PENDING', 'Pending Payment'),

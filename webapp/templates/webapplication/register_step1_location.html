@@ -2,503 +2,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Register (1/3): Pin Location - KabsuEats</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Register (2/3): Details - KabsuEats</title>
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
     <style>
-/* ============================================================
-   DESKTOP WIDTH CONTROL - REDUCED FOR COMPACT LAYOUT
-   ============================================================ */
-@media (min-width: 1024px) {
-    .registration-container {
-        max-width: 900px !important;
-        margin: 0 auto;
-    }
-}
+        /* Desktop width control - compact layout */
+        @media (min-width: 1024px) {
+            .registration-container {
+                max-width: 900px !important;
+                margin: 0 auto;
+            }
+        }
 
-/* ============================================================
-   LOCATION CONTROLS STYLES
-   ============================================================ */
+        /* Checkbox group styling */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
 
-/* Search Container Styles */
-.search-container {
-    position: relative;
-    margin-bottom: 15px;
-    width: 100%;
-}
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
 
-.search-input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
+        .checkbox-item:hover {
+            border-color: #2196F3;
+            background: #f8f9fa;
+        }
 
-.search-input {
-    width: 100%;
-    padding: 12px 45px 12px 45px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 15px;
-    transition: all 0.3s ease;
-    background: white;
-}
+        .checkbox-item.checked {
+            border-color: #2196F3;
+            background: #e3f2fd;
+        }
 
-.search-input:focus {
-    outline: none;
-    border-color: #2196F3;
-    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-}
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
 
-.search-icon {
-    position: absolute;
-    left: 15px;
-    width: 18px;
-    height: 18px;
-    color: #666;
-    pointer-events: none;
-}
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 14px;
+            flex: 1;
+            user-select: none;
+        }
 
-.clear-search {
-    position: absolute;
-    right: 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    display: none;
-    color: #666;
-    transition: color 0.2s;
-}
+        /* Other input container */
+        .other-input-container {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f7ff;
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
 
-.clear-search:hover {
-    color: #333;
-}
+        .other-input-container.show {
+            display: block;
+        }
 
-.clear-search.show {
-    display: block;
-}
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-/* Autocomplete Dropdown */
-.autocomplete-dropdown {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-}
+        .other-input-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1976D2;
+            font-size: 14px;
+        }
 
-.autocomplete-dropdown.show {
-    display: block;
-}
+        .other-input-container input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
 
-.autocomplete-item {
-    padding: 12px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #f5f5f5;
-    transition: background 0.2s;
-}
+        .other-input-container input:focus {
+            outline: none;
+            border-color: #1565C0;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
 
-.autocomplete-item:last-child {
-    border-bottom: none;
-}
+        .other-input-container input::placeholder {
+            color: #999;
+        }
 
-.autocomplete-item:hover {
-    background: #f5f5f5;
-}
+        /* Validation error messages */
+        .validation-error {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 8px;
+            font-weight: 500;
+            display: none;
+        }
 
-.autocomplete-item.active {
-    background: #e3f2fd;
-}
+        .validation-error.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
 
-.autocomplete-name {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 3px;
-}
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-.autocomplete-address {
-    font-size: 13px;
-    color: #666;
-}
+        /* Section labels */
+        .form-group label:first-child {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
 
-.autocomplete-loading {
-    padding: 15px;
-    text-align: center;
-    color: #666;
-}
-
-.autocomplete-no-results {
-    padding: 15px;
-    text-align: center;
-    color: #999;
-}
-
-/* Location Buttons Container */
-.location-button-container {
-    position: relative;
-    margin-bottom: 15px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-
-/* Button Base Styles */
-.focus-cvsu-btn,
-.current-location-btn,
-.remove-pin-btn {
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    color: white;
-}
-
-/* Focus on CvSU Button */
-.focus-cvsu-btn {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
-}
-
-.focus-cvsu-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
-}
-
-.focus-cvsu-btn:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.focus-cvsu-btn:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-/* Current Location Button */
-.current-location-btn {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-}
-
-.current-location-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-}
-
-.current-location-btn:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.current-location-btn:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-/* Remove Pin Button - Initially Light/Disabled Look */
-.remove-pin-btn {
-    background: #e0e0e0;
-    color: #999;
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
-.remove-pin-btn.active {
-    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
-    cursor: pointer;
-}
-
-.remove-pin-btn.active:hover {
-    background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
-}
-
-.remove-pin-btn.active:active {
-    transform: translateY(0);
-}
-
-.focus-cvsu-btn svg,
-.current-location-btn svg,
-.remove-pin-btn svg {
-    width: 18px;
-    height: 18px;
-}
-
-/* Location Status */
-.location-status {
-    display: block;
-    width: 100%;
-    max-width: 400px;
-    margin: 15px auto;
-    padding: 14px 20px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 500;
-    text-align: center;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.location-status.loading {
-    background: linear-gradient(135deg, #FFB74D 0%, #FFA726 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
-}
-
-.location-status.success {
-    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-}
-
-.location-status.error {
-    background: linear-gradient(135deg, #EF5350 0%, #E53935 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
-}
-
-.spinner {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-right: 10px;
-    vertical-align: middle;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Location Info */
-.location-info {
-    margin-top: 10px;
-    padding: 12px;
-    background: #e7f3ff;
-    border-left: 4px solid #2196F3;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #1976D2;
-    display: none;
-}
-
-.location-info.show {
-    display: block;
-}
-
-.location-info strong {
-    color: #0d47a1;
-}
-
-/* Map Height - Reduced for compact view */
-#map {
-    height: 450px !important;
-    border-radius: 8px;
-    margin-bottom: 15px;
-}
-
-/* Responsive Design for Mobile */
-@media (max-width: 768px) {
-    .location-button-container {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .focus-cvsu-btn,
-    .current-location-btn,
-    .remove-pin-btn {
-        width: 100%;
-        padding: 14px 20px;
-    }
-
-    .location-status {
-        width: 100%;
-        text-align: center;
-    }
-
-    #map {
-        height: 400px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .focus-cvsu-btn,
-    .current-location-btn,
-    .remove-pin-btn {
-        padding: 12px 16px;
-        font-size: 13px;
-    }
-
-    .focus-cvsu-btn svg,
-    .current-location-btn svg,
-    .remove-pin-btn svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    #map {
-        height: 350px !important;
-    }
-}
-
-/* Moderate width for larger screens - not too wide */
-@media (min-width: 1024px) and (max-width: 1399px) {
-    .registration-container {
-        max-width: 900px !important;
-    }
-
-    #map {
-        height: 450px !important;
-    }
-}
-
-/* Slightly wider for very large screens but still controlled */
-@media (min-width: 1400px) {
-    .registration-container {
-        max-width: 1000px !important;
-    }
-
-    #map {
-        height: 500px !important;
-    }
-}
+        /* Responsive */
+        @media (max-width: 768px) {
+            .checkbox-group {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="registration-container">
-        <div class="registration-header">
-            <h1>Business Registration</h1>
-            <div class="progress-bar">
-                <div class="progress-step active">1</div>
-                <div class="progress-step">2</div>
-                <div class="progress-step">3</div>
-            </div>
-        </div>
-
-        <div class="registration-content">
-            <h2>Step 1: Pin Your Location</h2>
-            <p>Search for a location, click inside the circle (within 500m of CvSU-Bacoor), or use your current GPS location.</p>
-            <p id="establishment-count" style="font-size: 13px; color: #666; margin-top: -5px;">
-                <span id="est-count-number"></span>
-            </p>
-
-            <!-- Location Controls -->
-            <!-- Search Bar -->
-            <div class="search-container">
-                <div class="search-input-wrapper">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input
-                        type="text"
-                        id="location-search"
-                        class="search-input"
-                        placeholder="Search for a place near CvSU..."
-                        autocomplete="off"
-                    />
-                    <button type="button" id="clear-search" class="clear-search">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
-            </div>
-
-            <!-- Three Buttons Below Search -->
-            <div class="location-button-container">
-                <button type="button" id="focus-cvsu-btn" class="focus-cvsu-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="12" r="3"/>
-                        <line x1="12" y1="2" x2="12" y2="6"/>
-                        <line x1="12" y1="18" x2="12" y2="22"/>
-                        <line x1="2" y1="12" x2="6" y2="12"/>
-                        <line x1="18" y1="12" x2="22" y2="12"/>
-                    </svg>
-                    Focus on CvSU
-                </button>
-
-                <button type="button" id="use-current-location-btn" class="current-location-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-                        <circle cx="12" cy="9" r="2.5"/>
-                    </svg>
-                    Use My Location
-                </button>
-
-                <button type="button" id="remove-pin-btn" class="remove-pin-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                    Remove Pin
-                </button>
-            </div>
-
-            <span id="location-status" class="location-status" style="display: none;"></span>
-
-            <!-- Location Info Display -->
-            <div id="location-info" class="location-info">
-                <strong>📍 Current Location:</strong> <span id="location-coords"></span>
-            </div>
-
-            <div id="map"></div>
-            <div id="validation-message" class="map-validation-message">Please pin a location on the map.</div>
-            <div class="navigation-buttons">
-                 <button id="next-step-btn" class="btn-primary" disabled style="margin-left: auto;">Next: Add Details</button>
-            </div>
-            <p class="login-link">Already have an account? <a href="{% url 'owner_login' %}">Login here</a>.</p>
+<div class="registration-container">
+    <div class="registration-header">
+        <h1>Business Registration</h1>
+        <div class="progress-bar">
+            <div class="progress-step active">1</div>
+            <div class="progress-step active">2</div>
+            <div class="progress-step">3</div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // CvSU coordinates from Django template
-        const CVSU_COORDS = {
-            lat: {{ CVSU_LATITUDE|default:"14.412768" }},
-            lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
-        };
+    <div class="registration-content">
+        <h2>Step 2: Establishment Details</h2>
+        <p>Please provide the following required information about your business.</p>
 
-        // All registered establishments to display on map
-        const EXISTING_ESTABLISHMENTS = {{ existing_establishments|safe }};
-    </script>
-    <script src="{% static 'js/business_owner_registration.js' %}"></script>
+        <form id="details-form" enctype="multipart/form-data">
+            <div class="form-grid">
+                <!-- Establishment Name - Full Width -->
+                <div class="form-group full-width">
+                    <label for="name">Establishment Name *</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your establishment name">
+                </div>
+
+                <!-- Address - Full Width -->
+                <div class="form-group full-width">
+                    <label for="address">Address (auto-generated from pin) *</label>
+                    <input type="text" id="address" name="address" required readonly>
+                </div>
+
+                <!-- Opening Time - Left Column -->
+                <div class="form-group">
+                    <label for="opening_time">Opening Time *</label>
+                    <input type="time" id="opening_time" name="opening_time" required>
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
+                        ⏰ Example: 08:00 for 8:00 AM
+                    </small>
+                </div>
+
+                <!-- Closing Time - Right Column -->
+                <div class="form-group">
+                    <label for="closing_time">Closing Time *</label>
+                    <input type="time" id="closing_time" name="closing_time" required>
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
+                        ⏰ Example: 22:00 for 10:00 PM
+                    </small>
+                </div>
+
+                <!-- Categories - Full Width with Multiple Selection -->
+                <div class="form-group full-width">
+                    <label>Categories (select at least one) *</label>
+                    <div class="checkbox-group" id="category-group">
+                        {% for cat in categories %}
+                        {% if cat.name != "Other" %}
+                        <div class="checkbox-item" data-checkbox-item>
+                            <input type="checkbox" id="category_{{ cat.id }}" name="categories" value="{{ cat.id }}">
+                            <label for="category_{{ cat.id }}">{{ cat.name }}</label>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <!-- Other option -->
+                        <div class="checkbox-item" data-checkbox-item>
+                            <input type="checkbox" id="category_other" name="categories" value="other">
+                            <label for="category_other">Other (specify)</label>
+                        </div>
+                    </div>
+                    <div class="validation-error" id="category-error">⚠️ Please select at least one category</div>
+
+                    <!-- Other category input - appears when Other is checked -->
+                    <div class="other-input-container" id="other-category-container">
+                        <label for="other_category_text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Specify Other Category *
+                        </label>
+                        <input type="text" id="other_category_text" name="other_category_text"
+                               placeholder="e.g., Vegan Restaurant, Dessert Shop, Food Truck">
+                    </div>
+                </div>
+
+                <!-- Upload Establishment Image - Full Width -->
+                <div class="form-group full-width">
+                    <label for="establishment_image">Upload Establishment Image *</label>
+                    <input type="file" id="establishment_image" name="establishment_image" accept="image/*" required>
+                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
+                        📷 Accepted formats: JPG, PNG, WEBP (Max 5MB)
+                    </small>
+                </div>
+
+                <!-- Payment Options - Full Width -->
+                <div class="form-group full-width">
+                    <label>Payment Options (select at least one) *</label>
+                    <div class="checkbox-group" id="payment-group">
+                        {% for method in payment_methods %}
+                        <div class="checkbox-item" data-checkbox-item>
+                            <input type="checkbox" id="payment_{{ method|lower }}" name="payment_methods" value="{{ method }}">
+                            <label for="payment_{{ method|lower }}">{{ method }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="validation-error" id="payment-error">⚠️ Please select at least one payment method</div>
+                </div>
+
+                <!-- Amenities - Full Width with Multiple Selection -->
+                <div class="form-group full-width">
+                    <label>Amenities (select at least one) *</label>
+                    <div class="checkbox-group" id="amenities-group">
+                        {% for amenity in amenities %}
+                        {% if amenity.name != "Other" %}
+                        <div class="checkbox-item" data-checkbox-item>
+                            <input type="checkbox" id="amenity_{{ amenity.id }}" name="amenities" value="{{ amenity.id }}">
+                            <label for="amenity_{{ amenity.id }}">{{ amenity.name }}</label>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <!-- Other option -->
+                        <div class="checkbox-item" data-checkbox-item>
+                            <input type="checkbox" id="amenity_other" name="amenities" value="other">
+                            <label for="amenity_other">Other (specify)</label>
+                        </div>
+                    </div>
+                    <div class="validation-error" id="amenities-error">⚠️ Please select at least one amenity</div>
+
+                    <!-- Other amenity input - appears when Other is checked -->
+                    <div class="other-input-container" id="other-amenity-container">
+                        <label for="other_amenity_text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Specify Other Amenity *
+                        </label>
+                        <input type="text" id="other_amenity_text" name="other_amenity_text"
+                               placeholder="e.g., Pet-Friendly, Live Music, Rooftop Seating">
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="navigation-buttons">
+            <button id="back-step-btn" class="btn-secondary" type="button">← Back: Location</button>
+            <button id="next-step-btn" class="btn-primary" type="button" disabled>Next: Create Account →</button>
+        </div>
+
+        <p class="login-link">Already have an account? <a href="{% url 'owner_login' %}">Login here</a>.</p>
+    </div>
+</div>
+
+<script src="{% static 'js/business_owner_registration.js' %}"></script>
 </body>
 </html>

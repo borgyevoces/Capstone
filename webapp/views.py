@@ -2532,8 +2532,11 @@ The KabsuEats Team
         }, status=500)
 
 @csrf_exempt
-@transaction.atomic
 def verify_and_register(request):
+    """
+    ✅ UPDATED: Support for multiple categories and amenities with "Other" option
+    Handles business owner registration with OTP verification
+    """
     if request.method != "POST":
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
 
@@ -2548,21 +2551,37 @@ def verify_and_register(request):
     except Exception:
         return JsonResponse({'error': 'Invalid registrationData format.'}, status=400)
 
+    # Extract basic registration data
     email = data.get('email')
     password = data.get('password')
     name = data.get('name') or data.get('establishment_name') or data.get('store_name')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
     address = data.get('address') or data.get('display_address') or ''
-    category_id = data.get('category')
+
+    # ============================================================
+    # ✅ NEW: Extract multiple categories and "Other" category
+    # ============================================================
+    categories_ids = data.get('categories') or []  # Array of category IDs: ["1", "2", "3"]
+    other_category = data.get('other_category')  # Custom category text: "Vegan Cafe"
+
+    # Payment methods
     payment_methods = ', '.join(data.get('paymentMethods', [])) if data.get('paymentMethods') else data.get(
         'payment_methods', '')
-    amenities_ids = data.get('amenities') or []
 
+    # ============================================================
+    # ✅ NEW: Extract multiple amenities and "Other" amenity
+    # ============================================================
+    amenities_ids = data.get('amenities') or []  # Array of amenity IDs: ["1", "4", "7"]
+    other_amenity = data.get('other_amenity')  # Custom amenity text: "Pet-Friendly"
+
+    # Validate required fields
     if not email or not password or not name:
         return JsonResponse({'error': 'Missing required registration fields.'}, status=400)
 
+    # ============================================================
     # Verify OTP
+    # ============================================================
     otp_ok = False
     try:
         otp_entry = OTP.objects.get(email=email)
@@ -2577,17 +2596,19 @@ def verify_and_register(request):
     if not otp_ok:
         return JsonResponse({'error': 'Invalid or expired OTP.'}, status=400)
 
-    # Create user (username = email)
+    # ============================================================
+    # Create User
+    # ============================================================
     user, created = User.objects.get_or_create(username=email, defaults={'email': email})
     user.set_password(password)
     user.is_active = True
     user.save()
 
-    # Create establishment
-    category = Category.objects.filter(id=category_id).first() if category_id else None
+    # ============================================================
+    # Parse time strings to time objects
+    # ============================================================
     from datetime import time as dt_time
 
-    # ✅ Parse time strings to time objects
     opening_time_str = data.get('opening_time')
     closing_time_str = data.get('closing_time')
 
@@ -2596,7 +2617,6 @@ def verify_and_register(request):
 
     if opening_time_str:
         try:
-            # Handle both "HH:MM" and "HH:MM:SS" formats
             opening_time = dt_time.fromisoformat(opening_time_str)
         except ValueError as e:
             print(f"⚠️ Invalid opening_time format: {opening_time_str} - {e}")
@@ -2607,26 +2627,58 @@ def verify_and_register(request):
         except ValueError as e:
             print(f"⚠️ Invalid closing_time format: {closing_time_str} - {e}")
 
+    # ============================================================
+    # ✅ UPDATED: Create establishment without single 'category' field
+    # Note: We now use 'categories' (ManyToMany) and 'other_category' (CharField)
+    # ============================================================
     establishment = FoodEstablishment.objects.create(
         owner=user,
         name=name,
         address=address,
-        opening_time=opening_time,  # ✅ Changed
-        closing_time=closing_time,  # ✅ Added
+        opening_time=opening_time,
+        closing_time=closing_time,
         latitude=float(latitude) if latitude else None,
         longitude=float(longitude) if longitude else None,
-        category=category,
-        payment_methods=payment_methods or ''
+        payment_methods=payment_methods or '',
+        other_category=other_category,  # ✅ NEW: Store custom category text
+        other_amenity=other_amenity  # ✅ NEW: Store custom amenity text
     )
 
-    # Link amenities if any
+    # ============================================================
+    # ✅ NEW: Link multiple categories (ManyToMany relationship)
+    # ============================================================
+    if categories_ids:
+        try:
+            # Convert string IDs to integers and filter valid categories
+            valid_category_ids = [int(cid) for cid in categories_ids if str(cid).isdigit()]
+            if valid_category_ids:
+                establishment.categories.set(Category.objects.filter(id__in=valid_category_ids))
+                print(f"✅ Linked {len(valid_category_ids)} categories to establishment: {name}")
+            else:
+                print(f"⚠️ No valid category IDs found")
+        except Exception as e:
+            print(f"⚠️ Error setting categories: {e}")
+            establishment.categories.clear()
+
+    # ============================================================
+    # ✅ UPDATED: Link multiple amenities
+    # ============================================================
     if amenities_ids:
         try:
-            establishment.amenities.set(Amenity.objects.filter(id__in=amenities_ids))
-        except Exception:
+            # Convert string IDs to integers and filter valid amenities
+            valid_amenity_ids = [int(aid) for aid in amenities_ids if str(aid).isdigit()]
+            if valid_amenity_ids:
+                establishment.amenities.set(Amenity.objects.filter(id__in=valid_amenity_ids))
+                print(f"✅ Linked {len(valid_amenity_ids)} amenities to establishment: {name}")
+            else:
+                print(f"⚠️ No valid amenity IDs found")
+        except Exception as e:
+            print(f"⚠️ Error setting amenities: {e}")
             establishment.amenities.clear()
 
-    # ✅ Handle uploaded image (profile or cover)
+    # ============================================================
+    # Handle uploaded image
+    # ============================================================
     if 'profile_image' in request.FILES:
         establishment.image = request.FILES['profile_image']
     elif 'cover_image' in request.FILES:
@@ -2634,7 +2686,9 @@ def verify_and_register(request):
 
     establishment.save()
 
-    # ✅ Auto-login user
+    # ============================================================
+    # Auto-login user
+    # ============================================================
     user = authenticate(request, username=email, password=password)
     if user:
         login(request, user)
@@ -2645,12 +2699,20 @@ def verify_and_register(request):
             login(request, user)
             request.session['food_establishment_id'] = establishment.id
         except Exception as e:
-            print("Auto-login failed:", e)
+            print(f"⚠️ Auto-login failed: {e}")
 
+    # ============================================================
     # Clean up OTPs
+    # ============================================================
     OTP.objects.filter(email=email).delete()
     request.session.pop('otp', None)
     request.session.pop('otp_email', None)
+
+    print(f"✅ Registration successful for {name}")
+    print(f"   - Categories: {list(establishment.categories.values_list('name', flat=True))}")
+    print(f"   - Other Category: {establishment.other_category}")
+    print(f"   - Amenities: {list(establishment.amenities.values_list('name', flat=True))}")
+    print(f"   - Other Amenity: {establishment.other_amenity}")
 
     return JsonResponse({'success': True, 'redirect_url': '/food_establishment/dashboard/'})
 

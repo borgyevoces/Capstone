@@ -604,9 +604,15 @@ function initStep1() {
 /* ============================================================
    STEP 2 – ESTABLISHMENT DETAILS
    ============================================================ */
+/* ============================================================
+   STEP 2 – ESTABLISHMENT DETAILS (COMPLETE WITH MULTIPLE SELECTION)
+   ✅ Categories: Multiple checkboxes + "Other" with text input
+   ✅ Amenities: Multiple checkboxes + "Other" with text input
+   ============================================================ */
 function initStep2() {
+    // Check if Step 1 was completed
     if (!sessionStorage.getItem('latitude')) {
-        console.warn('Please complete Step 1 first. Redirecting...');
+        console.warn('⚠️ Please complete Step 1 first. Redirecting...');
         window.location.href = '/owner/register/location/';
         return;
     }
@@ -615,59 +621,251 @@ function initStep2() {
     const nextBtn = document.getElementById('next-step-btn');
     const backBtn = document.getElementById('back-step-btn');
     const addressInput = document.getElementById('address');
+
+    // Get location from Step 1
     const lat = sessionStorage.getItem('latitude');
     const lng = sessionStorage.getItem('longitude');
 
+    // Fetch and auto-fill address from coordinates
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
         .then(res => res.json())
         .then(data => {
-            if (data && data.display_name) addressInput.value = data.display_name;
+            if (data && data.display_name) {
+                addressInput.value = data.display_name;
+            }
             validateForm();
         })
         .catch(err => {
-            console.error("Error fetching address: ", err);
-            addressInput.value = "Could not fetch address. Please check connection.";
+            console.error('❌ Error fetching address:', err);
+            addressInput.value = 'Could not fetch address. Please check connection.';
             validateForm();
         });
 
-    const requiredFields = Array.from(form.querySelectorAll('[required]'));
+    // ============================================================
+    // CHECKBOX VISUAL FEEDBACK AND INTERACTION
+    // ============================================================
+    const checkboxItems = document.querySelectorAll('[data-checkbox-item]');
 
-    function validateForm() {
-        const isFilled = requiredFields.every(f => f.value.trim() !== '');
-        const paymentChecked = form.querySelectorAll('input[name="payment_methods"]:checked').length > 0;
-        const amenitiesChecked = form.querySelectorAll('input[name="amenities"]:checked').length > 0;
-        nextBtn.disabled = !(isFilled && paymentChecked && amenitiesChecked);
+    checkboxItems.forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+
+        // Click anywhere on item to toggle checkbox
+        item.addEventListener('click', function(e) {
+            if (e.target !== checkbox && e.target.tagName !== 'LABEL') {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Visual feedback when checked
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                item.classList.add('checked');
+            } else {
+                item.classList.remove('checked');
+            }
+            validateForm();
+        });
+    });
+
+    // ============================================================
+    // "OTHER" CATEGORY HANDLING
+    // ============================================================
+    const categoryOtherCheckbox = document.getElementById('category_other');
+    const otherCategoryContainer = document.getElementById('other-category-container');
+    const otherCategoryInput = document.getElementById('other_category_text');
+
+    if (categoryOtherCheckbox) {
+        categoryOtherCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Show the text input field
+                otherCategoryContainer.classList.add('show');
+                otherCategoryInput.required = true;
+                otherCategoryInput.focus();
+            } else {
+                // Hide the text input field
+                otherCategoryContainer.classList.remove('show');
+                otherCategoryInput.required = false;
+                otherCategoryInput.value = '';
+            }
+            validateForm();
+        });
+
+        // Validate when typing in other category field
+        otherCategoryInput.addEventListener('input', validateForm);
     }
 
+    // ============================================================
+    // "OTHER" AMENITY HANDLING
+    // ============================================================
+    const amenityOtherCheckbox = document.getElementById('amenity_other');
+    const otherAmenityContainer = document.getElementById('other-amenity-container');
+    const otherAmenityInput = document.getElementById('other_amenity_text');
+
+    if (amenityOtherCheckbox) {
+        amenityOtherCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Show the text input field
+                otherAmenityContainer.classList.add('show');
+                otherAmenityInput.required = true;
+                otherAmenityInput.focus();
+            } else {
+                // Hide the text input field
+                otherAmenityContainer.classList.remove('show');
+                otherAmenityInput.required = false;
+                otherAmenityInput.value = '';
+            }
+            validateForm();
+        });
+
+        // Validate when typing in other amenity field
+        otherAmenityInput.addEventListener('input', validateForm);
+    }
+
+    // ============================================================
+    // FORM VALIDATION
+    // ============================================================
+    function validateForm() {
+        let isValid = true;
+
+        // 1. Validate regular required fields (text inputs, time, file)
+        const requiredInputs = form.querySelectorAll('input[required]:not([type="checkbox"])');
+        requiredInputs.forEach(input => {
+            if (!input.value || !input.value.trim()) {
+                isValid = false;
+            }
+        });
+
+        // 2. Validate Categories (at least one must be selected)
+        const categoryCheckboxes = form.querySelectorAll('input[name="categories"]:checked');
+        const categoryError = document.getElementById('category-error');
+
+        if (categoryCheckboxes.length === 0) {
+            categoryError.classList.add('show');
+            isValid = false;
+        } else {
+            categoryError.classList.remove('show');
+        }
+
+        // 3. If "Other" category is checked, validate the text input
+        if (categoryOtherCheckbox && categoryOtherCheckbox.checked) {
+            if (!otherCategoryInput.value || !otherCategoryInput.value.trim()) {
+                isValid = false;
+            }
+        }
+
+        // 4. Validate Payment Methods (at least one must be selected)
+        const paymentCheckboxes = form.querySelectorAll('input[name="payment_methods"]:checked');
+        const paymentError = document.getElementById('payment-error');
+
+        if (paymentCheckboxes.length === 0) {
+            paymentError.classList.add('show');
+            isValid = false;
+        } else {
+            paymentError.classList.remove('show');
+        }
+
+        // 5. Validate Amenities (at least one must be selected)
+        const amenityCheckboxes = form.querySelectorAll('input[name="amenities"]:checked');
+        const amenitiesError = document.getElementById('amenities-error');
+
+        if (amenityCheckboxes.length === 0) {
+            amenitiesError.classList.add('show');
+            isValid = false;
+        } else {
+            amenitiesError.classList.remove('show');
+        }
+
+        // 6. If "Other" amenity is checked, validate the text input
+        if (amenityOtherCheckbox && amenityOtherCheckbox.checked) {
+            if (!otherAmenityInput.value || !otherAmenityInput.value.trim()) {
+                isValid = false;
+            }
+        }
+
+        // Enable/disable next button
+        nextBtn.disabled = !isValid;
+        return isValid;
+    }
+
+    // Run validation on any input change
     form.addEventListener('input', validateForm);
     form.addEventListener('change', validateForm);
-    backBtn.addEventListener('click', () => window.location.href = '/owner/register/location/');
 
+    // ============================================================
+    // BACK BUTTON
+    // ============================================================
+    backBtn.addEventListener('click', () => {
+        window.location.href = '/owner/register/location/';
+    });
+
+    // ============================================================
+    // NEXT BUTTON - COLLECT ALL DATA
+    // ============================================================
     nextBtn.addEventListener('click', () => {
-        const details = {
-    name: form.querySelector('#name').value.trim(),
-    address: form.querySelector('#address').value.trim(),
-    opening_time: form.querySelector('#opening_time').value,  // ✅ Changed
-    closing_time: form.querySelector('#closing_time').value,   // ✅ Added
-    category: form.querySelector('#category').value,
-    paymentMethods: Array.from(form.querySelectorAll('input[name="payment_methods"]:checked')).map(el => el.value),
-    amenities: Array.from(form.querySelectorAll('input[name="amenities"]:checked')).map(el => el.value)
-};
+        if (!validateForm()) {
+            alert('⚠️ Please fill in all required fields.');
+            return;
+        }
 
+        // Collect selected categories (IDs only, exclude "other")
+        const selectedCategories = Array.from(form.querySelectorAll('input[name="categories"]:checked'))
+            .map(el => el.value)
+            .filter(val => val !== 'other');  // Remove "other" from IDs
+
+        // Get custom category text if "Other" was selected
+        const otherCategory = categoryOtherCheckbox && categoryOtherCheckbox.checked
+            ? otherCategoryInput.value.trim()
+            : null;
+
+        // Collect selected amenities (IDs only, exclude "other")
+        const selectedAmenities = Array.from(form.querySelectorAll('input[name="amenities"]:checked'))
+            .map(el => el.value)
+            .filter(val => val !== 'other');  // Remove "other" from IDs
+
+        // Get custom amenity text if "Other" was selected
+        const otherAmenity = amenityOtherCheckbox && amenityOtherCheckbox.checked
+            ? otherAmenityInput.value.trim()
+            : null;
+
+        // Collect payment methods
+        const paymentMethods = Array.from(form.querySelectorAll('input[name="payment_methods"]:checked'))
+            .map(el => el.value);
+
+        // Build details object
+        const details = {
+            name: form.querySelector('#name').value.trim(),
+            address: form.querySelector('#address').value.trim(),
+            opening_time: form.querySelector('#opening_time').value,
+            closing_time: form.querySelector('#closing_time').value,
+            categories: selectedCategories,        // Array of category IDs: ["1", "2", "3"]
+            other_category: otherCategory,         // String or null: "Vegan Cafe"
+            paymentMethods: paymentMethods,        // Array: ["Cash", "GCash"]
+            amenities: selectedAmenities,          // Array of amenity IDs: ["1", "4", "7"]
+            other_amenity: otherAmenity           // String or null: "Pet-Friendly"
+        };
+
+        console.log('✅ Step 2 Data Collected:', details);
+
+        // Handle image upload
         const fileInput = document.getElementById('establishment_image');
         if (fileInput.files.length > 0) {
             const reader = new FileReader();
             reader.onload = (e) => {
+                // Store image as base64
                 sessionStorage.setItem('establishment_image_data', e.target.result);
+                // Store all details
                 sessionStorage.setItem('establishmentDetails', JSON.stringify(details));
+                // Proceed to Step 3
                 window.location.href = '/owner/register/credentials/';
             };
             reader.readAsDataURL(fileInput.files[0]);
         } else {
-            console.error('Please upload your establishment image.');
+            alert('⚠️ Please upload your establishment image.');
         }
     });
 
+    // Initial validation
     validateForm();
 }
 
