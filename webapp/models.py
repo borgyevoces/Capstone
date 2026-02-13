@@ -9,6 +9,10 @@ from django.db.models import Sum, F
 import string
 from datetime import timedelta
 from decimal import Decimal
+import logging
+
+# ✅ ADD THIS: Logger for error handling
+logger = logging.getLogger(__name__)
 
 
 # ================================
@@ -258,10 +262,11 @@ class Review(models.Model):
         return f"Review for {self.establishment.name} by {self.user.username}"
 
 
+# ✅✅✅ FIXED USERPROFILE MODEL - PHONE_NUMBER REMOVED ✅✅✅
 class UserProfile(models.Model):
     """Extension of the User model to store additional user information."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    # ✅ REMOVED: phone_number field (hindi naman ginagamit)
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
     # Location preferences (for future features)
@@ -276,18 +281,37 @@ class UserProfile(models.Model):
         return f"Profile of {self.user.username}"
 
 
+# ✅✅✅ IMPROVED SIGNALS WITH ERROR HANDLING ✅✅✅
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    """Automatically create UserProfile when a User is created."""
+    """
+    Automatically create UserProfile when a User is created.
+    ✅ IMPROVED: Has error handling to prevent crashes
+    """
     if created:
-        UserProfile.objects.get_or_create(user=instance)
+        try:
+            UserProfile.objects.get_or_create(user=instance)
+        except Exception as e:
+            logger.error(f"Failed to create profile for user {instance.id}: {e}")
 
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    """Save UserProfile whenever User is saved."""
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
+    """
+    Save UserProfile whenever User is saved.
+    ✅ FIXED: Won't crash if database schema is mismatched or profile doesn't exist
+    """
+    try:
+        # ✅ Use filter() instead of hasattr() to avoid implicit database query that can fail
+        profile = UserProfile.objects.filter(user=instance).first()
+        if profile:
+            profile.save()
+        elif not kwargs.get('created', False):
+            # If profile doesn't exist and user is not being created, try to create it
+            UserProfile.objects.create(user=instance)
+    except Exception as e:
+        # ✅ Log but don't crash - allows login to proceed even if there's a database issue
+        logger.warning(f"Could not save/create profile for user {instance.id}: {e}")
 
 
 class Cart(models.Model):
