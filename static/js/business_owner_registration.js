@@ -39,7 +39,7 @@ function initStep1() {
     const cvsuLatLng = [CVSU_COORDS.lat, CVSU_COORDS.lng];
     const RADIUS = 500;
 
-    // --- HIGH RESOLUTION MAP LAYERS ---
+    // --- CLEAN MAP LAYER (NO RED OVERLAY) ---
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
@@ -63,14 +63,14 @@ function initStep1() {
     });
 
     const baseMaps = {
+        "Street Map": streetLayer,
         "Hybrid (Satellite + Labels)": hybridLayer,
         "Satellite": satelliteLayer,
-        "Street": streetLayer,
         "Terrain": terrainLayer
     };
 
     const map = L.map('map', {
-        layers: [hybridLayer],
+        layers: [streetLayer],  // Default to street map (cleanest view)
         maxZoom: 21,
         minZoom: 10
     }).setView(cvsuLatLng, 16);
@@ -78,11 +78,29 @@ function initStep1() {
     window.map = map;
     L.control.layers(baseMaps).addTo(map);
 
-    L.marker(cvsuLatLng).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>').openPopup();
+    // Small subtle CvSU marker
+    L.marker(cvsuLatLng, {
+        icon: L.divIcon({
+            className: 'cvsu-marker',
+            html: `<div style="
+                background: #1976D2;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        })
+    }).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>');
+
+    // Subtle light boundary circle (very transparent)
     L.circle(cvsuLatLng, {
-        color: 'red',
-        fillColor: '#f03',
-        fillOpacity: 0.2,
+        color: '#2196F3',          // Blue border
+        fillColor: '#E3F2FD',      // Very light blue fill
+        fillOpacity: 0.15,         // Very transparent - establishments clearly visible
+        weight: 2,                 // Thin border
         radius: RADIUS
     }).addTo(map);
 
@@ -92,16 +110,28 @@ function initStep1() {
             if (window.userMarker) {
                 window.userMarker.setLatLng(e.latlng);
             } else {
+                // Create custom modern pin marker
+                const customIcon = L.divIcon({
+                    className: 'custom-pin-marker',
+                    html: `
+                        <div style="position: relative;">
+                            <svg width="40" height="50" viewBox="0 0 40 50" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));">
+                                <!-- Pin body -->
+                                <path d="M20 0 C 11 0 4 7 4 16 C 4 28 20 50 20 50 S 36 28 36 16 C 36 7 29 0 20 0 Z"
+                                      fill="#FF5722" stroke="white" stroke-width="2"/>
+                                <!-- Inner circle -->
+                                <circle cx="20" cy="16" r="6" fill="white"/>
+                            </svg>
+                        </div>
+                    `,
+                    iconSize: [40, 50],
+                    iconAnchor: [20, 50],
+                    popupAnchor: [0, -50]
+                });
+
                 window.userMarker = L.marker(e.latlng, {
                     draggable: true,
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
+                    icon: customIcon
                 }).addTo(map);
 
                 window.userMarker.on('dragend', (evt) => {
@@ -110,7 +140,7 @@ function initStep1() {
                     if (dist <= RADIUS) {
                         validatePosition(pos);
                     } else {
-                        msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+                        msg.textContent = '❌ Please pin inside the circle (within 500m).';
                         msg.className = 'map-validation-message invalid';
                         nextBtn.disabled = true;
                         updateRemovePinButton(false);
@@ -119,7 +149,7 @@ function initStep1() {
             }
             validatePosition(e.latlng);
         } else {
-            msg.textContent = '❌ Please pin inside the red circle (within 500m).';
+            msg.textContent = '❌ Please pin inside the circle (within 500m).';
             msg.className = 'map-validation-message invalid';
             nextBtn.disabled = true;
         }
@@ -198,11 +228,22 @@ function initStep1() {
         autocompleteDropdown.innerHTML = '<div class="autocomplete-loading"><span class="spinner"></span>Searching...</div>';
         autocompleteDropdown.classList.add('show');
 
-        const viewbox = `${cvsuLatLngObj.lng - 0.01},${cvsuLatLngObj.lat - 0.01},${cvsuLatLngObj.lng + 0.01},${cvsuLatLngObj.lat + 0.01}`;
+        const viewbox = `${cvsuLatLngObj.lng - 0.01},${cvsuLatLngObj.lat + 0.01},${cvsuLatLngObj.lng + 0.01},${cvsuLatLngObj.lat - 0.01}`;
 
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1&limit=10`)
+        // Enhanced search with addressdetails for better results
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1&limit=10&addressdetails=1&extratags=1`)
             .then(res => res.json())
-            .then(data => displaySearchResults(data))
+            .then(data => {
+                // Filter results to only show those within the 500m radius
+                const filteredResults = data.filter(result => {
+                    const lat = parseFloat(result.lat);
+                    const lng = parseFloat(result.lon);
+                    const latlng = L.latLng(lat, lng);
+                    const distance = map.distance(latlng, cvsuLatLngObj);
+                    return distance <= RADIUS;
+                });
+                displaySearchResults(filteredResults);
+            })
             .catch(err => {
                 console.error('Search error:', err);
                 autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
@@ -212,7 +253,7 @@ function initStep1() {
     function displaySearchResults(results) {
         currentSelectedIndex = -1;
         if (results.length === 0) {
-            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found near CvSU</div>';
+            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found within 500m of CvSU</div>';
             return;
         }
 
@@ -220,16 +261,19 @@ function initStep1() {
         results.forEach((result) => {
             const item = document.createElement('div');
             item.className = 'autocomplete-item';
+            const name = result.display_name.split(',')[0];
+            const address = result.display_name;
+
             item.innerHTML = `
-                <div class="autocomplete-name">${result.display_name.split(',')[0]}</div>
-                <div class="autocomplete-address">${result.display_name}</div>
+                <div class="autocomplete-name">${name}</div>
+                <div class="autocomplete-address">${address}</div>
             `;
-            item.addEventListener('click', () => selectSearchResult(result));
+            item.addEventListener('click', () => selectSearchResult(result, name));
             autocompleteDropdown.appendChild(item);
         });
     }
 
-    function selectSearchResult(result) {
+    function selectSearchResult(result, name) {
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
         const latlng = L.latLng(lat, lng);
@@ -238,10 +282,11 @@ function initStep1() {
         if (distance <= RADIUS) {
             placeMarker(latlng);
             map.setView(latlng, 18);
-            searchInput.value = result.display_name.split(',')[0];
+            searchInput.value = name;
+            showLocationStatus('Location selected!', 'success');
         } else {
             showLocationStatus('This location is outside the 500m radius', 'error');
-            msg.textContent = '❌ Please select a location within the red circle (within 500m).';
+            msg.textContent = '❌ Please select a location within the circle (within 500m).';
             msg.className = 'map-validation-message invalid';
         }
         autocompleteDropdown.classList.remove('show');
@@ -327,16 +372,28 @@ function initStep1() {
         if (window.userMarker) {
             window.userMarker.setLatLng(latlng);
         } else {
+            // Create custom modern pin marker
+            const customIcon = L.divIcon({
+                className: 'custom-pin-marker',
+                html: `
+                    <div style="position: relative;">
+                        <svg width="40" height="50" viewBox="0 0 40 50" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));">
+                            <!-- Pin body -->
+                            <path d="M20 0 C 11 0 4 7 4 16 C 4 28 20 50 20 50 S 36 28 36 16 C 36 7 29 0 20 0 Z"
+                                  fill="#FF5722" stroke="white" stroke-width="2"/>
+                            <!-- Inner circle -->
+                            <circle cx="20" cy="16" r="6" fill="white"/>
+                        </svg>
+                    </div>
+                `,
+                iconSize: [40, 50],
+                iconAnchor: [20, 50],
+                popupAnchor: [0, -50]
+            });
+
             window.userMarker = L.marker(latlng, {
                 draggable: true,
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
+                icon: customIcon
             }).addTo(map);
 
             window.userMarker.on('dragend', (evt) => {
@@ -345,7 +402,7 @@ function initStep1() {
                 if (distance <= RADIUS) {
                     validatePosition(pos);
                 } else {
-                    msg.textContent = '❌ Pin must be within the red circle (within 500m).';
+                    msg.textContent = '❌ Pin must be within the circle (within 500m).';
                     msg.className = 'map-validation-message invalid';
                     nextBtn.disabled = true;
                     updateRemovePinButton(false);
@@ -367,6 +424,13 @@ function initStep1() {
     function hideLocationStatus() {
         setTimeout(() => { locationStatus.style.display = 'none'; }, 3000);
     }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            autocompleteDropdown.classList.remove('show');
+        }
+    });
 }
 
 /* ============================================================
