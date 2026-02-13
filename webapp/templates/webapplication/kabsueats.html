@@ -1219,8 +1219,8 @@
 
             {% if user.is_authenticated %}
                 <div class="profile-container" id="profileContainer">
-                    {% if user.userprofile.profile_picture %}
-                        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile" class="profile-image" onclick="toggleDropdown(event)" title="{{ user.get_full_name|default:user.username }}">
+                    {% if user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" alt="Profile" class="profile-image" onclick="toggleDropdown(event)" title="{{ user.get_full_name|default:user.username }}">
                     {% else %}
                         <div class="profile-icon-default" onclick="toggleDropdown(event)" title="{{ user.get_full_name|default:user.username }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -1231,8 +1231,8 @@
                     <div id="userDropdown" class="dropdown-menu profile-dropdown-menu">
                         <div class="profile-dropdown-header">
                             <div class="profile-dropdown-avatar">
-                                {% if user.userprofile.profile_picture %}
-                                    <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile">
+                                {% if user.profile.profile_image %}
+                                    <img src="{{ user.profile.profile_image.url }}" alt="Profile">
                                 {% else %}
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                         <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
@@ -1529,8 +1529,8 @@
 
                 <div class="profile-form-group" style="text-align: center;">
                     <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    {% if user.userprofile.profile_picture %}
-                        <img id="profileImagePreview" src="{{ user.userprofile.profile_picture.url }}" alt="Current Profile">
+                    {% if user.profile.profile_image %}
+                        <img id="profileImagePreview" src="{{ user.profile.profile_image.url }}" alt="Current Profile">
                     {% else %}
                         <div id="profileIconPreviewDefault" class="profile-modal-icon-default">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -1546,25 +1546,15 @@
                     <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" onchange="previewProfileImage(event)">
                 </div>
 
+                <!-- ✅ DISPLAY ONLY: Email address -->
                 <div class="profile-form-group">
-                    <label for="id_first_name">First Name:</label>
-                    <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" required>
+                    <label for="id_email_display">Email Address:</label>
+                    <input type="email" id="id_email_display" value="{{ user.email }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    <small style="color: #666; font-size: 12px;">Email cannot be changed</small>
                 </div>
 
-                <div class="profile-form-group">
-                    <label for="id_last_name">Last Name:</label>
-                    <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" required>
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_email">Email Address:</label>
-                    <input type="email" name="email" id="id_email" value="{{ user.email }}" required>
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_phone">Phone Number:</label>
-                    <input type="text" name="phone" id="id_phone" value="{{ user.userprofile.phone|default_if_none:'' }}" placeholder="+639123456789">
-                </div>
+                <!-- ✅ REMOVED: First Name, Last Name, Phone Number fields -->
+                <!-- Hindi na kailangan - profile picture lang ang editable -->
 
                 <div class="profile-form-actions">
                     <button type="submit" class="btn btn-primary">Save Changes</button>

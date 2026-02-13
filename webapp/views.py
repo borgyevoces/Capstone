@@ -589,43 +589,46 @@ def search_food_establishments(request):
 
 
 @login_required
-@require_http_methods(["POST"])
 def update_profile(request):
     """
-    Handles the POST request for updating the user's profile (picture and username).
-    It returns a JSON response for the AJAX call.
+    ✅ SIMPLIFIED: Update profile picture only
+    Removed phone_number, first_name, last_name fields completely
     """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'errors': 'Invalid request method'}, status=400)
+
     try:
-        # Kunin ang UserProfile instance, o gumawa kung wala pa (highly recommended)
+        # Get or create UserProfile (with error handling)
         profile, created = UserProfile.objects.get_or_create(user=request.user)
-    except Exception as e:
-        return JsonResponse({'success': False, 'errors': 'Failed to retrieve/create user profile.'}, status=400)
 
-    # I-instantiate ang form gamit ang POST data at FILES (para sa image)
-    form = UserProfileUpdateForm(request.POST, request.FILES, instance=profile)
+        # Handle profile picture upload
+        if 'profile_picture' in request.FILES:
+            profile.profile_image = request.FILES['profile_picture']
+            profile.save()
 
-    if form.is_valid():
-        try:
-            profile = form.save()
+            # Get profile picture URL
+            profile_pic_url = profile.profile_image.url if profile.profile_image else '/static/images/default-avatar.png'
 
-            # Kunin ang URL ng bagong profile picture
-            profile_pic_url = profile.profile_picture.url if profile.profile_picture else '/static/images/placeholder_profile.png'
-
-            # I-return ang success JSON response
             return JsonResponse({
                 'success': True,
-                'message': 'Profile updated successfully!',
-                'username': profile.user.username,
+                'message': 'Profile picture updated successfully!',
                 'profile_picture_url': profile_pic_url
             })
-        except Exception as e:
-            # Error sa pag-save sa database
-            return JsonResponse({'success': False, 'errors': f'Database error: {str(e)}'}, status=500)
-    else:
-        # I-extract ang errors para i-display
-        errors = '; '.join([f"{k}: {v[0]}" for k, v in form.errors.items()])
-        return JsonResponse({'success': False, 'errors': errors}, status=400)
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': 'No profile picture provided'
+            }, status=400)
 
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Profile update error: {str(e)}")
+
+        return JsonResponse({
+            'success': False,
+            'errors': f'Error updating profile: {str(e)}'
+        }, status=500)
 
 def category_establishments_view(request, category_name):
     try:
