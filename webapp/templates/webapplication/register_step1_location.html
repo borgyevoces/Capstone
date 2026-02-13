@@ -10,11 +10,11 @@
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
     <style>
 /* ============================================================
-   DESKTOP WIDTH CONTROL
+   DESKTOP WIDTH CONTROL - REDUCED FOR COMPACT LAYOUT
    ============================================================ */
 @media (min-width: 1024px) {
     .registration-container {
-        max-width: 1200px !important;
+        max-width: 900px !important;
         margin: 0 auto;
     }
 }
@@ -323,6 +323,13 @@
     color: #0d47a1;
 }
 
+/* Map Height - Reduced for compact view */
+#map {
+    height: 450px !important;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
 /* Responsive Design for Mobile */
 @media (max-width: 768px) {
     .location-button-container {
@@ -341,6 +348,10 @@
         width: 100%;
         text-align: center;
     }
+
+    #map {
+        height: 400px !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -357,30 +368,31 @@
         width: 16px;
         height: 16px;
     }
+
+    #map {
+        height: 350px !important;
+    }
 }
 
-/* Wide layout for desktop - make map bigger */
-@media (min-width: 1200px) {
+/* Moderate width for larger screens - not too wide */
+@media (min-width: 1024px) and (max-width: 1399px) {
     .registration-container {
-        max-width: 1400px !important;
-    }
-
-    .registration-content {
-        max-width: 100% !important;
+        max-width: 900px !important;
     }
 
     #map {
-        height: 600px !important;
+        height: 450px !important;
     }
 }
 
+/* Slightly wider for very large screens but still controlled */
 @media (min-width: 1400px) {
     .registration-container {
-        max-width: 1600px !important;
+        max-width: 1000px !important;
     }
 
     #map {
-        height: 650px !important;
+        height: 500px !important;
     }
 }
     </style>
