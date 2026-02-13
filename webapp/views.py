@@ -5927,43 +5927,28 @@ def search_menu_items(request):
             status='Active'
         ).prefetch_related('categories').distinct()[:10]
 
-        # Convert to list of dicts with category names
-        establishments_list = []
-        for est in establishments:
-            categories_names = ', '.join([cat.name for cat in est.categories.all()])
-            establishments_list.append({
-                'id': est.id,
-                'name': est.name,
-                'category__name': categories_names,
-                'opening_time': est.opening_time.strftime('%H:%M') if est.opening_time else '',
-                'closing_time': est.closing_time.strftime('%H:%M') if est.closing_time else ''
-            })
-
         # Format establishments data
         establishments_data = []
-        for est in establishments_list:
+        for est in establishments:
+            # Get categories as string
+            categories_names = ', '.join([cat.name for cat in est.categories.all()])
+
             # Determine if open
             now = timezone.localtime(timezone.now()).time()
-            opening_str = est['opening_time']
-            closing_str = est['closing_time']
+            opening = est.opening_time
+            closing = est.closing_time
 
             is_open = False
-            if opening_str and closing_str:
-                try:
-                    from datetime import time as dt_time
-                    opening = dt_time(int(opening_str.split(':')[0]), int(opening_str.split(':')[1]))
-                    closing = dt_time(int(closing_str.split(':')[0]), int(closing_str.split(':')[1]))
-                    if opening < closing:
-                        is_open = opening <= now <= closing
-                    else:  # overnight establishment
-                        is_open = now >= opening or now <= closing
-                except:
-                    is_open = False
+            if opening and closing:
+                if opening < closing:
+                    is_open = opening <= now <= closing
+                else:  # overnight establishment
+                    is_open = now >= opening or now <= closing
 
             establishments_data.append({
-                'id': est['id'],
-                'name': est['name'],
-                'category': est['category__name'] if est['category__name'] else 'Other',
+                'id': est.id,
+                'name': est.name,
+                'category': categories_names if categories_names else 'Other',
                 'status': 'Open' if is_open else 'Closed'
             })
 
