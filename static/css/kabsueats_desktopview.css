@@ -2182,3 +2182,28 @@
         font-size: 18px;
     }
 }
+/* ============================================ */
+/* FIX: Ensure Profile Button is Always Clickable */
+/* ============================================ */
+.profile-container {
+    position: relative !important;
+    z-index: 9999 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+.profile-image,
+.profile-icon-default {
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+.header-right {
+    z-index: 9998 !important;
+}
+
+.nav-actions-group {
+    z-index: 9997 !important;
+}
