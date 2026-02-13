@@ -872,6 +872,7 @@ function initStep2() {
 /* ============================================================
    STEP 3 – ACCOUNT CREDENTIALS + OTP
    ✅ FIXED: Added CSRF token for OTP request
+   ✅ NEW: Added OTP expiry timer and resend functionality
    ============================================================ */
 function initStep3() {
     if (!sessionStorage.getItem('establishmentDetails')) {
@@ -890,6 +891,17 @@ function initStep3() {
     const otpError = document.getElementById('otpError');
     const loading = document.getElementById('loadingSpinner');
     const successModal = document.getElementById('successModal');
+    const otpEmailDisplay = document.getElementById('otp-email-display');
+    const otpTimer = document.getElementById('otp-timer');
+    const otpTimerLabel = document.getElementById('otp-timer-label');
+    const otpTimerContainer = document.getElementById('otp-timer-container');
+    const resendOtpBtn = document.getElementById('resend-otp-btn');
+    const resendCountdown = document.getElementById('resend-countdown');
+
+    let otpExpiryTime = null;
+    let timerInterval = null;
+    let resendCooldownTime = null;
+    let resendInterval = null;
 
     function validateInputs() {
         const ok = passwordInput.value.length >= 8 &&
@@ -901,8 +913,65 @@ function initStep3() {
     [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
     backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
 
+    // ✅ Start OTP countdown timer (10 minutes)
+    function startOtpTimer() {
+        // Clear any existing timer
+        if (timerInterval) clearInterval(timerInterval);
+
+        // Set expiry time to 10 minutes from now
+        otpExpiryTime = Date.now() + (10 * 60 * 1000);
+
+        timerInterval = setInterval(() => {
+            const remaining = otpExpiryTime - Date.now();
+
+            if (remaining <= 0) {
+                clearInterval(timerInterval);
+                otpTimer.textContent = '0:00';
+                otpTimer.style.color = '#dc2626';
+                otpTimerLabel.textContent = 'OTP expired!';
+                otpTimerContainer.style.background = '#fee2e2';
+                otpError.textContent = 'OTP has expired. Please request a new one.';
+                document.getElementById('verify-otp-btn').disabled = true;
+                resendOtpBtn.disabled = false;
+                return;
+            }
+
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            otpTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Change color to orange when less than 2 minutes
+            if (remaining < 120000) {
+                otpTimer.style.color = '#f59e0b';
+                otpTimerContainer.style.background = '#fef3c7';
+            }
+        }, 1000);
+    }
+
+    // ✅ Start resend cooldown timer (30 seconds)
+    function startResendCooldown() {
+        resendOtpBtn.disabled = true;
+        resendCooldownTime = Date.now() + (30 * 1000);
+
+        if (resendInterval) clearInterval(resendInterval);
+
+        resendInterval = setInterval(() => {
+            const remaining = resendCooldownTime - Date.now();
+
+            if (remaining <= 0) {
+                clearInterval(resendInterval);
+                resendOtpBtn.disabled = false;
+                resendCountdown.textContent = '';
+                return;
+            }
+
+            const seconds = Math.ceil(remaining / 1000);
+            resendCountdown.textContent = `(${seconds}s)`;
+        }, 100);
+    }
+
     // ✅ FIXED: Send OTP with CSRF token
-    sendOtpBtn.addEventListener('click', () => {
+    function sendOTP() {
         const email = emailInput.value;
         sendOtpBtn.disabled = true;
         sendOtpBtn.textContent = 'Sending...';
@@ -913,15 +982,28 @@ function initStep3() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken  // ✅ Added CSRF token
+                'X-CSRFToken': csrftoken
             },
             body: JSON.stringify({ email })
         })
         .then(res => res.json())
         .then(data => {
-            console.log('OTP Response:', data);  // Debug log
+            console.log('OTP Response:', data);
             if (data.success) {
-                otpModal.style.display = 'flex';  // ✅ Should work now!
+                otpEmailDisplay.textContent = email;
+                otpModal.style.display = 'flex';
+                startOtpTimer();
+                startResendCooldown();
+
+                // Reset OTP input and error
+                document.getElementById('otp-input').value = '';
+                otpError.textContent = '';
+                document.getElementById('verify-otp-btn').disabled = false;
+
+                // Reset timer styling
+                otpTimer.style.color = '#dc2626';
+                otpTimerLabel.textContent = 'OTP expires in:';
+                otpTimerContainer.style.background = '#f0f9ff';
             } else {
                 alert('Failed to send OTP: ' + (data.error || 'Unknown error'));
                 console.error('Failed to send OTP:', data.error);
@@ -935,10 +1017,66 @@ function initStep3() {
             sendOtpBtn.disabled = false;
             sendOtpBtn.textContent = 'Send OTP to register establishment';
         });
+    }
+
+    sendOtpBtn.addEventListener('click', sendOTP);
+
+    // ✅ Resend OTP button handler
+    resendOtpBtn.addEventListener('click', () => {
+        resendOtpBtn.disabled = true;
+        resendOtpBtn.textContent = 'Sending...';
+
+        const email = emailInput.value;
+        const csrftoken = getCookie('csrftoken');
+
+        fetch('/api/send-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ email })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                otpError.textContent = '';
+                otpError.style.color = '#16a34a';
+                otpError.textContent = '✓ New OTP sent successfully!';
+                setTimeout(() => {
+                    otpError.textContent = '';
+                    otpError.style.color = 'red';
+                }, 3000);
+
+                // Restart timers
+                startOtpTimer();
+                startResendCooldown();
+
+                // Re-enable verify button
+                document.getElementById('verify-otp-btn').disabled = false;
+
+                // Reset timer styling
+                otpTimer.style.color = '#dc2626';
+                otpTimerLabel.textContent = 'OTP expires in:';
+                otpTimerContainer.style.background = '#f0f9ff';
+            } else {
+                otpError.textContent = data.error || 'Failed to resend OTP';
+            }
+        })
+        .catch((err) => {
+            console.error('Error resending OTP:', err);
+            otpError.textContent = 'Network error. Please try again.';
+        })
+        .finally(() => {
+            resendOtpBtn.disabled = false;
+            resendOtpBtn.textContent = 'Resend OTP';
+        });
     });
 
     window.addEventListener('click', (e) => {
-        if (e.target === otpModal) otpModal.style.display = 'none';
+        if (e.target === otpModal) {
+            // Don't close modal by clicking outside - user must complete or refresh page
+        }
         if (e.target === successModal) successModal.style.display = 'none';
     });
 
@@ -977,13 +1115,17 @@ function initStep3() {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': csrftoken  // ✅ Added CSRF token
+                    'X-CSRFToken': csrftoken
                 }
             });
 
             const result = await res.json();
 
             if (!res.ok || !result.success) throw new Error(result.error || 'Registration failed.');
+
+            // Clear timers
+            if (timerInterval) clearInterval(timerInterval);
+            if (resendInterval) clearInterval(resendInterval);
 
             sessionStorage.clear();
             otpModal.style.display = 'none';
