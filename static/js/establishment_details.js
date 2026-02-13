@@ -636,3 +636,77 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error loading cart count:', error));
     }
 });
+// =======================================================
+// PROFILE DROPDOWN FUNCTIONS
+// =======================================================
+// Toggle dropdown for user menu
+if (typeof window.toggleDropdown === 'undefined') {
+    window.toggleDropdown = function(event) {
+        if (event) event.stopPropagation();
+        const dropdown = document.getElementById("userDropdown");
+        if (dropdown) {
+            dropdown.classList.toggle("show");
+        }
+    };
+}
+
+// Close dropdown if clicked outside
+document.addEventListener("click", function(event) {
+    const dropdown = document.getElementById("userDropdown");
+    const profileContainer = document.getElementById("profileContainer");
+    if (dropdown && dropdown.classList.contains("show")) {
+        if (!profileContainer || !profileContainer.contains(event.target)) {
+            dropdown.classList.remove("show");
+        }
+    }
+});
+
+// Open settings modal
+if (typeof window.openSettingsModal === 'undefined') {
+    window.openSettingsModal = function(event) {
+        if (event) event.preventDefault();
+        // Close dropdown first
+        const dropdown = document.getElementById("userDropdown");
+        if (dropdown) dropdown.classList.remove("show");
+        // Open modal
+        const modal = document.getElementById("settingsModal");
+        if (modal) {
+            modal.style.display = "flex";
+        }
+    };
+}
+
+// Close settings modal
+if (typeof window.closeSettingsModal === 'undefined') {
+    window.closeSettingsModal = function() {
+        const modal = document.getElementById("settingsModal");
+        if (modal) {
+            modal.style.display = "none";
+        }
+    };
+}
+
+// Image Preview Function for Profile Picture
+if (typeof window.previewImage === 'undefined') {
+    window.previewImage = function(event) {
+        const input = event.target;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('profileImagePreview');
+                if (preview) {
+                    preview.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+}
+
+// Close modals on clicking outside content
+window.onclick = function(event) {
+    const settingsModal = document.getElementById("settingsModal");
+    if (event.target === settingsModal && settingsModal) {
+        settingsModal.style.display = "none";
+    }
+};

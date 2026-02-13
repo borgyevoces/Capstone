@@ -1222,3 +1222,173 @@
 .nav-actions-group {
     z-index: 9997 !important;
 }
+/* ============================================ */
+/* FIX: Ensure Profile Button is Always Clickable */
+/* ============================================ */
+.profile-container {
+    position: relative !important;
+    z-index: 9999 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+.profile-image,
+.profile-icon-default {
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+.header-right {
+    z-index: 9998 !important;
+}
+
+.nav-actions-group {
+    z-index: 9997 !important;
+}
+
+/* ============================================ */
+/* PROFILE DROPDOWN MENU STYLES */
+/* ============================================ */
+.profile-dropdown-menu {
+    position: absolute !important;
+    top: calc(100% + 12px) !important;
+    right: 0 !important;
+    background: white !important;
+    min-width: 280px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+    z-index: 10000 !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    display: none !important;
+    border: 1px solid #f0f0f0 !important;
+    animation: dropdownFadeIn 0.2s ease !important;
+}
+
+.profile-dropdown-menu.show {
+    display: block !important;
+}
+
+.profile-dropdown-menu::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -7px !important;
+    right: 18px !important;
+    width: 14px !important;
+    height: 14px !important;
+    background: white !important;
+    border-left: 1px solid #f0f0f0 !important;
+    border-top: 1px solid #f0f0f0 !important;
+    transform: rotate(45deg) !important;
+    z-index: 1 !important;
+}
+
+@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.profile-dropdown-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 20px !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.profile-dropdown-avatar {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    border: 2px solid white !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.profile-dropdown-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.profile-dropdown-avatar svg {
+    width: 28px !important;
+    height: 28px !important;
+    fill: white !important;
+}
+
+.profile-dropdown-user-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.profile-dropdown-name {
+    display: block !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    color: white !important;
+    margin-bottom: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.profile-dropdown-email {
+    display: block !important;
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.profile-dropdown-divider {
+    height: 1px !important;
+    background: #f0f0f0 !important;
+    margin: 0 !important;
+}
+
+.profile-dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 20px !important;
+    color: #1f2937 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+}
+
+.profile-dropdown-item:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+}
+
+.profile-dropdown-item.logout:hover {
+    background: linear-gradient(90deg, rgba(220, 38, 38, 0.05) 0%, rgba(185, 28, 28, 0.05) 100%) !important;
+    color: #dc2626 !important;
+}
+
+.profile-dropdown-item-icon {
+    width: 20px !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 16px !important;
+}
+
+.profile-dropdown-item-icon.edit {
+    color: #667eea !important;
+}
+
+.profile-dropdown-item-icon.signout {
+    color: #dc2626 !important;
+}
