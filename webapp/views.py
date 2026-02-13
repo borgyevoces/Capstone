@@ -2308,11 +2308,7 @@ def delete_establishment(request):
         }, status=500)
 
 def owner_register_step1_location(request):
-    """Nagre-render ng Page 1: Location Pinning with existing establishments."""
-    # Get all approved establishments to show on map
-    establishments = FoodEstablishment.objects.filter(is_approved=True).values(
-        'id', 'name', 'latitude', 'longitude', 'address', 'category__name'
-    )
+    establishments = FoodEstablishment.objects.values('name', 'address', 'latitude', 'longitude')
 
     # Convert to list for JSON serialization
     establishments_list = list(establishments)

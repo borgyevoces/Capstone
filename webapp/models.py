@@ -66,6 +66,7 @@ class FoodEstablishment(models.Model):
     # Ang OneToOneField ay nagsisiguro na ang isang User account ay may-ari lamang ng ISANG establishment.
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     # Basic Information
+    is_approved = models.BooleanField(default=False)
     name = models.CharField(max_length=255)
     address = models.TextField()
     opening_time = models.TimeField(
