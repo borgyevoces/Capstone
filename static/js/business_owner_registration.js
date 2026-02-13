@@ -104,24 +104,41 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // Show existing registered establishments on map
+    // Show existing registered establishments on map with their images
     if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
         EXISTING_ESTABLISHMENTS.forEach(est => {
             if (est.latitude && est.longitude) {
+                // Use establishment image if available, otherwise use default marker
+                const imageUrl = est.image || 'https://via.placeholder.com/50x50?text=Est';
+
                 const estIcon = L.divIcon({
                     className: 'existing-establishment-marker',
                     html: `
-                        <div style="position: relative;">
-                            <svg width="30" height="38" viewBox="0 0 30 38" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-                                <path d="M15 0 C 8 0 3 5 3 12 C 3 21 15 38 15 38 S 27 21 27 12 C 27 5 22 0 15 0 Z"
-                                      fill="#4CAF50" stroke="white" stroke-width="1.5"/>
-                                <circle cx="15" cy="12" r="4" fill="white"/>
-                            </svg>
+                        <div style="
+                            position: relative;
+                            width: 50px;
+                            height: 50px;
+                            border-radius: 50%;
+                            overflow: hidden;
+                            border: 3px solid #4CAF50;
+                            background: white;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                            cursor: pointer;
+                        ">
+                            <img src="${imageUrl}"
+                                 alt="${est.name}"
+                                 style="
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                 "
+                                 onerror="this.src='https://via.placeholder.com/50x50?text=Est';"
+                            />
                         </div>
                     `,
-                    iconSize: [30, 38],
-                    iconAnchor: [15, 38],
-                    popupAnchor: [0, -38]
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25],
+                    popupAnchor: [0, -25]
                 });
 
                 const marker = L.marker([est.latitude, est.longitude], {
@@ -183,28 +200,16 @@ function initStep1() {
             if (window.userMarker) {
                 window.userMarker.setLatLng(e.latlng);
             } else {
-                // Create custom modern pin marker
-                const customIcon = L.divIcon({
-                    className: 'custom-pin-marker',
-                    html: `
-                        <div style="position: relative;">
-                            <svg width="40" height="50" viewBox="0 0 40 50" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));">
-                                <!-- Pin body -->
-                                <path d="M20 0 C 11 0 4 7 4 16 C 4 28 20 50 20 50 S 36 28 36 16 C 36 7 29 0 20 0 Z"
-                                      fill="#FF5722" stroke="white" stroke-width="2"/>
-                                <!-- Inner circle -->
-                                <circle cx="20" cy="16" r="6" fill="white"/>
-                            </svg>
-                        </div>
-                    `,
-                    iconSize: [40, 50],
-                    iconAnchor: [20, 50],
-                    popupAnchor: [0, -50]
-                });
-
                 window.userMarker = L.marker(e.latlng, {
                     draggable: true,
-                    icon: customIcon
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
                 }).addTo(map);
 
                 window.userMarker.on('dragend', (evt) => {
@@ -380,12 +385,14 @@ function initStep1() {
         showLocationStatus('Getting your location...', 'loading');
         useCurrentLocationBtn.disabled = true;
 
-        // First try: Quick position with timeout
-        const quickOptions = {
+        // Optimized for fast, accurate, real-time location
+        const geoOptions = {
             enableHighAccuracy: true,
-            timeout: 5000,           // 5 seconds timeout
-            maximumAge: 0            // Don't use cached position
+            timeout: 5000,           // 5 seconds timeout for quick response
+            maximumAge: 0            // Always get fresh position
         };
+
+        let positionWatchId = null;
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -395,12 +402,35 @@ function initStep1() {
                 const userLatLng = L.latLng(lat, lng);
                 const distance = map.distance(userLatLng, cvsuLatLngObj);
 
-                console.log(`GPS Lock: Accuracy ${accuracy.toFixed(0)}m, Distance from CvSU: ${distance.toFixed(0)}m`);
+                console.log(`GPS Lock: Accuracy ±${accuracy.toFixed(0)}m, Distance: ${distance.toFixed(0)}m`);
 
                 if (distance <= RADIUS) {
                     placeMarker(userLatLng);
                     map.setView(userLatLng, 18);
-                    showLocationStatus(`Location set! (Accuracy: ±${accuracy.toFixed(0)}m)`, 'success');
+                    showLocationStatus(`📍 Location set! (Accuracy: ±${accuracy.toFixed(0)}m)`, 'success');
+
+                    // Start watching position for real-time updates
+                    if (!positionWatchId) {
+                        positionWatchId = navigator.geolocation.watchPosition(
+                            (pos) => {
+                                const newLat = pos.coords.latitude;
+                                const newLng = pos.coords.longitude;
+                                const newLatLng = L.latLng(newLat, newLng);
+                                const newDistance = map.distance(newLatLng, cvsuLatLngObj);
+
+                                if (newDistance <= RADIUS && window.userMarker) {
+                                    // Update marker position in real-time
+                                    window.userMarker.setLatLng(newLatLng);
+                                    validatePosition(newLatLng);
+                                }
+                            },
+                            (err) => console.warn('Watch position error:', err),
+                            { enableHighAccuracy: true, maximumAge: 1000 }
+                        );
+
+                        // Store watchId to clear later if needed
+                        window.locationWatchId = positionWatchId;
+                    }
                 } else {
                     showLocationStatus(`You are ${Math.round(distance)}m from CvSU (limit: 500m)`, 'error');
                     msg.textContent = '❌ Your current location is outside the allowed area.';
@@ -415,37 +445,19 @@ function initStep1() {
                         errorMsg = '❌ Location permission denied. Please enable location access.';
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        errorMsg = '❌ Location information unavailable. Try moving to an open area.';
+                        errorMsg = '❌ Location unavailable. Move to an open area with GPS signal.';
                         break;
                     case error.TIMEOUT:
-                        errorMsg = '⏱️ Location request timed out. Please try again.';
+                        errorMsg = '⏱️ Location timeout. Please try again.';
                         break;
                 }
                 showLocationStatus(errorMsg, 'error');
                 useCurrentLocationBtn.disabled = false;
                 console.error('Geolocation error:', error);
             },
-            quickOptions
+            geoOptions
         );
 
-        // Optional: Watch position for continuous updates (commented out for now)
-        // Uncomment if you want real-time position updates
-        /*
-        let watchId = navigator.geolocation.watchPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                const userLatLng = L.latLng(lat, lng);
-
-                if (window.userMarker) {
-                    window.userMarker.setLatLng(userLatLng);
-                    validatePosition(userLatLng);
-                }
-            },
-            null,
-            { enableHighAccuracy: true, maximumAge: 1000 }
-        );
-        */
     });
 
     removePinBtn.addEventListener('click', () => {
@@ -457,6 +469,12 @@ function initStep1() {
             sessionStorage.removeItem('latitude');
             sessionStorage.removeItem('longitude');
             updateRemovePinButton(false);
+
+            // Stop watching position if active
+            if (window.locationWatchId) {
+                navigator.geolocation.clearWatch(window.locationWatchId);
+                window.locationWatchId = null;
+            }
 
             const locationInfo = document.getElementById('location-info');
             if (locationInfo) locationInfo.classList.remove('show');
@@ -475,28 +493,16 @@ function initStep1() {
         if (window.userMarker) {
             window.userMarker.setLatLng(latlng);
         } else {
-            // Create custom modern pin marker
-            const customIcon = L.divIcon({
-                className: 'custom-pin-marker',
-                html: `
-                    <div style="position: relative;">
-                        <svg width="40" height="50" viewBox="0 0 40 50" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));">
-                            <!-- Pin body -->
-                            <path d="M20 0 C 11 0 4 7 4 16 C 4 28 20 50 20 50 S 36 28 36 16 C 36 7 29 0 20 0 Z"
-                                  fill="#FF5722" stroke="white" stroke-width="2"/>
-                            <!-- Inner circle -->
-                            <circle cx="20" cy="16" r="6" fill="white"/>
-                        </svg>
-                    </div>
-                `,
-                iconSize: [40, 50],
-                iconAnchor: [20, 50],
-                popupAnchor: [0, -50]
-            });
-
             window.userMarker = L.marker(latlng, {
                 draggable: true,
-                icon: customIcon
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
             }).addTo(map);
 
             window.userMarker.on('dragend', (evt) => {
