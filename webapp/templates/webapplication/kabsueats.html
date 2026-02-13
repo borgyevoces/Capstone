@@ -1009,6 +1009,8 @@
             justify-content: flex-start;
             align-items: center;
             gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .select_wrapper {
@@ -1030,7 +1032,7 @@
         .select_wrapper::after {
             content: '▼';
             font-size: 10px;
-            color: #6b7280;
+            color: #1f2937;
             position: absolute;
             right: 14px;
             top: 50%;
@@ -1047,8 +1049,8 @@
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
-            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-            border: 2px solid #e5e7eb;
+            background: #ffffff;
+            border: 2px solid #d1d5db;
             border-radius: 12px;
             cursor: pointer;
             font-size: 15px;
@@ -1056,15 +1058,16 @@
             color: #1f2937;
             outline: none;
             padding: 14px 45px 14px 45px;
-            min-width: 220px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            min-width: 250px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
+            line-height: 1.5;
         }
 
         #categoryFilter:hover {
             border-color: #B71C1C;
-            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.15);
-            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+            box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2);
+            background: #ffffff;
         }
 
         #categoryFilter:focus {
@@ -1075,13 +1078,14 @@
 
         #categoryFilter option {
             padding: 12px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
-            color: #374151;
+            color: #1f2937;
+            background: white;
         }
 
         #categoryFilter option:first-child {
-            color: #9ca3af;
+            color: #6b7280;
             font-weight: 600;
         }
 
@@ -1090,15 +1094,15 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-            margin-right: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-right: 5px;
         }
 
         .filter-label i {
             color: #B71C1C;
-            font-size: 16px;
+            font-size: 17px;
         }
 
         /* Mobile Responsive for Category Filter */
@@ -1109,20 +1113,19 @@
             }
 
             .filter_container {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 12px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 10px;
             }
 
             #categoryFilter {
-                width: 100%;
-                min-width: auto;
+                min-width: 200px;
                 padding: 12px 40px 12px 40px;
                 font-size: 14px;
             }
 
             .filter-label {
-                display: none;
+                font-size: 14px;
             }
 
             .select_wrapper::before {
@@ -1132,8 +1135,19 @@
         }
 
         @media (max-width: 480px) {
+            .filter_container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
             #categoryFilter {
+                width: 100%;
+                min-width: auto;
                 padding: 10px 35px 10px 35px;
+                font-size: 13px;
+            }
+
+            .filter-label {
                 font-size: 13px;
             }
         }
