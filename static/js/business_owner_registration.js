@@ -63,14 +63,14 @@ function initStep1() {
     });
 
     const baseMaps = {
-        "Street Map": streetLayer,
         "Hybrid (Satellite + Labels)": hybridLayer,
+        "Street Map": streetLayer,
         "Satellite": satelliteLayer,
         "Terrain": terrainLayer
     };
 
     const map = L.map('map', {
-        layers: [streetLayer],  // Default to street map (cleanest view)
+        layers: [hybridLayer],  // Default to hybrid map
         maxZoom: 21,
         minZoom: 10
     }).setView(cvsuLatLng, 16);
@@ -103,6 +103,79 @@ function initStep1() {
         weight: 2,                 // Thin border
         radius: RADIUS
     }).addTo(map);
+
+    // Show existing registered establishments on map
+    if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
+        EXISTING_ESTABLISHMENTS.forEach(est => {
+            if (est.latitude && est.longitude) {
+                const estIcon = L.divIcon({
+                    className: 'existing-establishment-marker',
+                    html: `
+                        <div style="position: relative;">
+                            <svg width="30" height="38" viewBox="0 0 30 38" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                                <path d="M15 0 C 8 0 3 5 3 12 C 3 21 15 38 15 38 S 27 21 27 12 C 27 5 22 0 15 0 Z"
+                                      fill="#4CAF50" stroke="white" stroke-width="1.5"/>
+                                <circle cx="15" cy="12" r="4" fill="white"/>
+                            </svg>
+                        </div>
+                    `,
+                    iconSize: [30, 38],
+                    iconAnchor: [15, 38],
+                    popupAnchor: [0, -38]
+                });
+
+                const marker = L.marker([est.latitude, est.longitude], {
+                    icon: estIcon
+                }).addTo(map);
+
+                // Add popup with establishment info
+                marker.bindPopup(`
+                    <div style="text-align: center; padding: 5px;">
+                        <strong style="color: #4CAF50; font-size: 14px;">${est.name}</strong><br>
+                        <small style="color: #666;">${est.category__name || 'Restaurant'}</small><br>
+                        <small style="color: #888;">${est.address || ''}</small>
+                    </div>
+                `);
+            }
+        });
+    }
+
+    // Add markers for all registered establishments
+    if (typeof REGISTERED_ESTABLISHMENTS !== 'undefined' && REGISTERED_ESTABLISHMENTS.length > 0) {
+        REGISTERED_ESTABLISHMENTS.forEach(establishment => {
+            if (establishment.latitude && establishment.longitude) {
+                const estIcon = L.divIcon({
+                    className: 'establishment-marker',
+                    html: `
+                        <div style="position: relative;">
+                            <svg width="30" height="38" viewBox="0 0 30 38" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                                <path d="M15 0 C 8 0 3 5 3 12 C 3 21 15 38 15 38 S 27 21 27 12 C 27 5 22 0 15 0 Z"
+                                      fill="#4CAF50" stroke="white" stroke-width="1.5"/>
+                                <circle cx="15" cy="12" r="4" fill="white"/>
+                            </svg>
+                        </div>
+                    `,
+                    iconSize: [30, 38],
+                    iconAnchor: [15, 38],
+                    popupAnchor: [0, -38]
+                });
+
+                const marker = L.marker([establishment.latitude, establishment.longitude], {
+                    icon: estIcon
+                }).addTo(map);
+
+                // Create popup with establishment info
+                const popupContent = `
+                    <div style="min-width: 150px;">
+                        <strong style="font-size: 14px; color: #333;">${establishment.name}</strong><br>
+                        <span style="font-size: 12px; color: #666;">${establishment.category__name || 'Restaurant'}</span><br>
+                        <span style="font-size: 11px; color: #999;">${establishment.address || 'Near CvSU'}</span>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+            }
+        });
+    }
 
     map.on('click', (e) => {
         const distance = map.distance(e.latlng, cvsuLatLng);
@@ -307,19 +380,29 @@ function initStep1() {
         showLocationStatus('Getting your location...', 'loading');
         useCurrentLocationBtn.disabled = true;
 
+        // First try: Quick position with timeout
+        const quickOptions = {
+            enableHighAccuracy: true,
+            timeout: 5000,           // 5 seconds timeout
+            maximumAge: 0            // Don't use cached position
+        };
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
                 const userLatLng = L.latLng(lat, lng);
                 const distance = map.distance(userLatLng, cvsuLatLngObj);
+
+                console.log(`GPS Lock: Accuracy ${accuracy.toFixed(0)}m, Distance from CvSU: ${distance.toFixed(0)}m`);
 
                 if (distance <= RADIUS) {
                     placeMarker(userLatLng);
                     map.setView(userLatLng, 18);
-                    showLocationStatus('Location set successfully!', 'success');
+                    showLocationStatus(`Location set! (Accuracy: ±${accuracy.toFixed(0)}m)`, 'success');
                 } else {
-                    showLocationStatus('You are outside the 500m radius from CvSU', 'error');
+                    showLocationStatus(`You are ${Math.round(distance)}m from CvSU (limit: 500m)`, 'error');
                     msg.textContent = '❌ Your current location is outside the allowed area.';
                     msg.className = 'map-validation-message invalid';
                 }
@@ -329,20 +412,40 @@ function initStep1() {
                 let errorMsg = 'Unable to get your location';
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        errorMsg = 'Location permission denied';
+                        errorMsg = '❌ Location permission denied. Please enable location access.';
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        errorMsg = 'Location information unavailable';
+                        errorMsg = '❌ Location information unavailable. Try moving to an open area.';
                         break;
                     case error.TIMEOUT:
-                        errorMsg = 'Location request timed out';
+                        errorMsg = '⏱️ Location request timed out. Please try again.';
                         break;
                 }
                 showLocationStatus(errorMsg, 'error');
                 useCurrentLocationBtn.disabled = false;
+                console.error('Geolocation error:', error);
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            quickOptions
         );
+
+        // Optional: Watch position for continuous updates (commented out for now)
+        // Uncomment if you want real-time position updates
+        /*
+        let watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const userLatLng = L.latLng(lat, lng);
+
+                if (window.userMarker) {
+                    window.userMarker.setLatLng(userLatLng);
+                    validatePosition(userLatLng);
+                }
+            },
+            null,
+            { enableHighAccuracy: true, maximumAge: 1000 }
+        );
+        */
     });
 
     removePinBtn.addEventListener('click', () => {
@@ -431,6 +534,14 @@ function initStep1() {
             autocompleteDropdown.classList.remove('show');
         }
     });
+
+    // Display establishment count
+    const estCountElement = document.getElementById('est-count-number');
+    if (estCountElement && typeof REGISTERED_ESTABLISHMENTS !== 'undefined') {
+        const count = REGISTERED_ESTABLISHMENTS.length;
+        estCountElement.textContent = `📍 ${count} establishment${count !== 1 ? 's' : ''} currently registered near CvSU`;
+        estCountElement.style.color = count > 0 ? '#4CAF50' : '#999';
+    }
 }
 
 /* ============================================================

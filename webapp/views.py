@@ -2308,10 +2308,19 @@ def delete_establishment(request):
         }, status=500)
 
 def owner_register_step1_location(request):
-    """Nagre-render ng Page 1: Location Pinning."""
+    """Nagre-render ng Page 1: Location Pinning with existing establishments."""
+    # Get all approved establishments to show on map
+    establishments = FoodEstablishment.objects.filter(is_approved=True).values(
+        'id', 'name', 'latitude', 'longitude', 'address', 'category__name'
+    )
+
+    # Convert to list for JSON serialization
+    establishments_list = list(establishments)
+
     return render(request, 'webapplication/register_step1_location.html', {
         'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
-        'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE')
+        'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE'),
+        'existing_establishments': json.dumps(establishments_list)
     })
 
 def owner_register_step2_details(request):

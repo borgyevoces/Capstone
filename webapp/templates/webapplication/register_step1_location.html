@@ -10,6 +10,24 @@
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
     <style>
 /* ============================================================
+   WIDER DESKTOP VIEW
+   ============================================================ */
+@media (min-width: 1024px) {
+    .registration-container {
+        max-width: 95% !important;
+        width: 95% !important;
+    }
+
+    .registration-content {
+        max-width: 100% !important;
+    }
+
+    #map {
+        height: 600px !important;
+    }
+}
+
+/* ============================================================
    LOCATION CONTROLS STYLES
    ============================================================ */
 
@@ -335,6 +353,31 @@
         height: 16px;
     }
 }
+
+/* Wide layout for desktop - make map bigger */
+@media (min-width: 1200px) {
+    .registration-container {
+        max-width: 1400px !important;
+    }
+
+    .registration-content {
+        max-width: 100% !important;
+    }
+
+    #map {
+        height: 600px !important;
+    }
+}
+
+@media (min-width: 1400px) {
+    .registration-container {
+        max-width: 1600px !important;
+    }
+
+    #map {
+        height: 650px !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -351,6 +394,9 @@
         <div class="registration-content">
             <h2>Step 1: Pin Your Location</h2>
             <p>Search for a location, click inside the circle (within 500m of CvSU-Bacoor), or use your current GPS location.</p>
+            <p id="establishment-count" style="font-size: 13px; color: #666; margin-top: -5px;">
+                <span id="est-count-number"></span>
+            </p>
 
             <!-- Location Controls -->
             <!-- Search Bar -->
@@ -432,6 +478,9 @@
             lat: {{ CVSU_LATITUDE|default:"14.412768" }},
             lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
         };
+
+        // All registered establishments to display on map
+        const EXISTING_ESTABLISHMENTS = {{ existing_establishments|safe }};
     </script>
     <script src="{% static 'js/business_owner_registration.js' %}"></script>
 </body>
