@@ -2267,6 +2267,82 @@ def create_buynow_payment_link(request):
 # ===================================================================================================================
 User = get_user_model()
 
+@require_http_methods(["GET"])
+def get_nearby_establishments(request):
+    """
+    API endpoint to get establishments within 500m radius.
+    Used by the map to show nearby establishments.
+    """
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius_meters = float(request.GET.get('radius', 500))
+        current_establishment_id = request.GET.get('establishment_id')
+
+        # Get all establishments with valid coordinates
+        query = FoodEstablishment.objects.filter(
+            latitude__isnull=False,
+            longitude__isnull=False
+        )
+
+        # Exclude current establishment if provided
+        if current_establishment_id:
+            query = query.exclude(id=current_establishment_id)
+
+        all_establishments = query
+
+        # Filter by distance using Haversine formula
+        nearby_establishments = []
+        for est in all_establishments:
+            distance = calculate_distance(
+                lat, lng,
+                float(est.latitude), float(est.longitude)
+            )
+
+            if distance <= radius_meters:
+                nearby_establishments.append({
+                    'id': est.id,
+                    'name': est.name,
+                    'address': est.address,
+                    'latitude': float(est.latitude),
+                    'longitude': float(est.longitude),
+                    'distance': round(distance, 2)
+                })
+
+        return JsonResponse({
+            'success': True,
+            'establishments': nearby_establishments,
+            'count': len(nearby_establishments)
+        })
+
+    except (ValueError, TypeError):
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid parameters'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate distance between two coordinates using Haversine formula.
+    Returns distance in meters.
+    """
+    R = 6371000  # Earth's radius in meters
+
+    lat1_rad = radians(lat1)
+    lat2_rad = radians(lat2)
+    delta_lat = radians(lat2 - lat1)
+    delta_lon = radians(lon2 - lon1)
+
+    a = sin(delta_lat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    distance = R * c
+    return distance
 
 def owner_login(request):
     """
@@ -2300,7 +2376,6 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
-
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2308,7 +2383,6 @@ def owner_logout(request):
     logout(request)
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
-
 
 @login_required
 @require_POST
