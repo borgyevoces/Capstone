@@ -1026,7 +1026,7 @@
             transform: translateY(-50%);
             font-size: 16px;
             pointer-events: none;
-            z-index: 0;
+            z-index: 1;
         }
 
         .select_wrapper::after {
@@ -1039,7 +1039,6 @@
             transform: translateY(-50%);
             pointer-events: none;
             transition: transform 0.3s ease;
-            z-index: 0;
         }
 
         .select_wrapper:hover::after {
@@ -1059,12 +1058,13 @@
             color: #1f2937;
             outline: none;
             padding: 14px 45px 14px 45px;
-            min-width: 250px;
+            min-width: 280px;
+            width: auto;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
             line-height: 1.5;
-            position: relative;
-            z-index: 1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         #categoryFilter:hover {
