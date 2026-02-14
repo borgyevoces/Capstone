@@ -6045,7 +6045,6 @@ def search_menu_items(request):
             'error': str(e)
         }, status=500)
 
-
 @login_required
 def order_history_view(request):
     """
@@ -6053,7 +6052,6 @@ def order_history_view(request):
     Template: Client_order_history.html
     """
     return render(request, 'webapplication/Client_order_history.html')
-
 
 @login_required
 def get_user_transaction_history(request):
@@ -6128,7 +6126,6 @@ def get_user_transaction_history(request):
             'message': str(e)
         }, status=500)
 
-
 @login_required
 def reorder_items(request, order_id):
     """
@@ -6191,7 +6188,6 @@ def reorder_items(request, order_id):
             'success': False,
             'message': str(e)
         }, status=500)
-
 
 @login_required
 def get_order_details(request, order_id):
@@ -6263,12 +6259,10 @@ def get_order_details(request, order_id):
             'message': str(e)
         }, status=500)
 
-
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 import os
-
 
 @csrf_exempt
 def create_admin_user(request):
