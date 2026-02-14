@@ -1154,6 +1154,65 @@
                 font-size: 13px;
             }
         }
+
+        /* ============================================ */
+        /* ✅ IMPROVED SAVE CHANGES BUTTON */
+        /* ============================================ */
+        .save-changes-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            color: white !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            padding: 14px 32px !important;
+            border-radius: 12px !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .save-changes-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+        }
+
+        .save-changes-btn:active {
+            transform: translateY(0) !important;
+        }
+
+        .save-changes-btn i {
+            font-size: 18px;
+        }
+
+        /* ============================================ */
+        /* ✅ CATEGORY FILTER - ENSURE TEXT VISIBLE */
+        /* ============================================ */
+        #categoryFilter {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-size: 16px !important;
+        }
+
+        #categoryFilter option {
+            color: #000000 !important;
+            font-weight: 600 !important;
+        }
+
+        .select_wrapper::before {
+            z-index: 0 !important;
+        }
+
+        .select_wrapper::after {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            z-index: 0 !important;
+        }
     </style>
 </head>
 <body>
@@ -1552,7 +1611,10 @@
                 </div>
 
                 <div class="profile-form-actions">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary save-changes-btn">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
                 </div>
             </form>
         </div>
