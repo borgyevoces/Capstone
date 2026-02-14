@@ -4903,9 +4903,10 @@ def get_best_sellers(request):
         from django.db.models import Count, Q
 
         # ✅ STEP 1: Get items marked as top sellers from approved establishments
+        # NOTE: MenuItem doesn't have is_available field, so we just check quantity > 0
         top_seller_items = MenuItem.objects.filter(
             is_top_seller=True,
-            is_available=True,
+            quantity__gt=0,  # Only items with stock
             food_establishment__is_approved=True
         ).select_related(
             'food_establishment'
@@ -4915,14 +4916,11 @@ def get_best_sellers(request):
 
         best_sellers = list(top_seller_items)
 
-        # ✅ STEP 2: If we don't have enough top sellers, get available items from different establishments
+        # ✅ STEP 2: If we don't have enough top sellers, get items with stock from different establishments
         if len(best_sellers) < 10:
-            # Get establishment IDs we already have
-            existing_establishment_ids = [item.food_establishment.id for item in best_sellers]
-
-            # Get available items from OTHER establishments
+            # Get items from OTHER establishments that have stock
             additional_items = MenuItem.objects.filter(
-                is_available=True,
+                quantity__gt=0,  # Has stock
                 food_establishment__is_approved=True
             ).exclude(
                 id__in=[item.id for item in best_sellers]  # Exclude items we already have
@@ -4938,10 +4936,9 @@ def get_best_sellers(request):
                     break
                 best_sellers.append(item)
 
-        # ✅ STEP 3: If STILL no items, get ANY available items
+        # ✅ STEP 3: If STILL no items, get ANY items (even with quantity 0)
         if len(best_sellers) == 0:
             best_sellers = list(MenuItem.objects.filter(
-                is_available=True,
                 food_establishment__is_approved=True
             ).select_related(
                 'food_establishment'
@@ -4961,6 +4958,9 @@ def get_best_sellers(request):
                 category_list.append(establishment.other_category)
             category_display = ", ".join(category_list) if category_list else "Uncategorized"
 
+            # Check if item is available (has stock)
+            is_available = item.quantity > 0
+
             items_data.append({
                 'id': item.id,
                 'name': item.name,
@@ -4968,8 +4968,8 @@ def get_best_sellers(request):
                 'price': float(item.price),
                 'image_url': item.image.url if item.image else None,
                 'is_top_seller': item.is_top_seller,
-                'is_available': item.is_available,
-                'quantity': item.quantity if hasattr(item, 'quantity') else 0,
+                'is_available': is_available,  # Calculate from quantity
+                'quantity': item.quantity,
                 'total_orders': getattr(item, 'total_orders', 0),
                 # Nested establishment object
                 'establishment': {
@@ -5002,7 +5002,7 @@ def get_best_sellers(request):
             'error': str(e),
             'items': []
         }, status=500)
-
+    
 @require_http_methods(["GET"])
 def get_best_sellers_alternative(request):
     """
