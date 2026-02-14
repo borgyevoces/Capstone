@@ -570,17 +570,25 @@ window.closeSettingsModal = function() {
     }
 };
 
-// Image Preview Function for Profile Picture
-window.previewImage = function(event) {
+// ✅ FIXED: Profile Picture Preview Function
+window.previewProfileImage = function(event) {
     const input = event.target;
+    const preview = document.getElementById('profileImagePreview');
+    const defaultIcon = document.getElementById('profileIconPreviewDefault');
+
     if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = function (e) {
-            const preview = document.getElementById('profileImagePreview');
+
+        reader.onload = function(e) {
             if (preview) {
                 preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            if (defaultIcon) {
+                defaultIcon.style.display = 'none';
             }
         };
+
         reader.readAsDataURL(input.files[0]);
     }
 };
@@ -1185,7 +1193,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ============================================
-// Profile Update Form Handler
+// ✅ FIXED: Profile Update Form Handler
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const profileForm = document.getElementById('profileUpdateForm');
@@ -1195,8 +1203,16 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
 
             const formData = new FormData(profileForm);
+            const saveButton = profileForm.querySelector('button[type="submit"]');
 
-            fetch(UPDATE_PROFILE_URL, {
+            // Disable button and show loading state
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            // ✅ FIXED: Direct URL instead of undefined variable
+            fetch('/update_profile/', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -1206,26 +1222,52 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Success notification
                     alert('Profile updated successfully!');
-                    closeSettingsModal();
 
-                    const profileImages = document.querySelectorAll('.profile-image');
+                    // Update all profile images on the page
                     if (data.profile_picture_url) {
-                        profileImages.forEach(img => {
+                        // Update navbar profile icon
+                        const navProfileImg = document.querySelector('.profile-icon-default img');
+                        const navProfileIcon = document.querySelector('.profile-icon-default');
+
+                        if (navProfileImg) {
+                            navProfileImg.src = data.profile_picture_url;
+                            navProfileImg.style.display = 'block';
+                        } else if (navProfileIcon) {
+                            // Replace default icon with image
+                            navProfileIcon.innerHTML = `<img src="${data.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        }
+
+                        // Update all other profile images
+                        const allProfileImages = document.querySelectorAll('.profile-image, [id^="profileImage"]');
+                        allProfileImages.forEach(img => {
                             img.src = data.profile_picture_url;
                         });
                     }
-                    const usernameInput = document.getElementById('id_username');
-                    if (usernameInput) {
-                        usernameInput.value = data.username;
-                    }
+
+                    // Close modal
+                    closeSettingsModal();
+
+                    // Reload page to reflect changes everywhere
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+
                 } else {
                     alert('Error updating profile: ' + (data.errors || 'Unknown error'));
                 }
             })
             .catch(error => {
                 console.error('Fetch Error:', error);
-                alert('An unexpected error occurred.');
+                alert('An unexpected error occurred while updating your profile.');
+            })
+            .finally(() => {
+                // Re-enable button
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                }
             });
         });
     }

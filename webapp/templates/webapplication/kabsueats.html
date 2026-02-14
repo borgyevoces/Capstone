@@ -1586,7 +1586,7 @@
         {% endblock %}
     </main>
 
-    <!-- Settings Modal -->
+    <!-- ✅ FIXED: Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
@@ -1597,15 +1597,20 @@
 
                 <div class="profile-form-group" style="text-align: center;">
                     <label for="profileImagePreview" style="font-weight: 600;">Current Profile Picture:</label>
-                    {% if user.userprofile.profile_picture %}
-                        <img id="profileImagePreview" src="{{ user.userprofile.profile_picture.url }}" alt="Current Profile">
+                    {% if user.profile.profile_image %}
+                        <img id="profileImagePreview" src="{{ user.profile.profile_image.url }}" alt="Current Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 10px auto; display: block; border: 3px solid #e5e7eb;">
+                        <div id="profileIconPreviewDefault" class="profile-modal-icon-default" style="display: none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
                     {% else %}
                         <div id="profileIconPreviewDefault" class="profile-modal-icon-default">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                 <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437.695Z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <img id="profileImagePreview" src="" alt="Current Profile" style="display:none;">
+                        <img id="profileImagePreview" src="" alt="Current Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 10px auto; display: none; border: 3px solid #e5e7eb;">
                     {% endif %}
                 </div>
 
@@ -1626,6 +1631,13 @@
                     </button>
                 </div>
             </form>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center;">
+                <a href="{% url 'user_logout' %}" class="logout-button-modal">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
         </div>
     </div>
 
