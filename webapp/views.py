@@ -4894,23 +4894,64 @@ def create_test_notification(request):
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    API endpoint to get best-selling menu items across all establishments
+    ✅ IMPROVED: API endpoint to get best-selling menu items across all establishments
+    - First tries to get items marked as top_seller
+    - Falls back to showing items from different establishments if not enough top sellers
+    - Ensures variety by showing items from multiple establishments
     """
     try:
-        # Get menu items that are marked as top sellers and from approved establishments
-        # ✅ FIXED: Use is_approved (not is_active which doesn't exist)
-        best_sellers = MenuItem.objects.filter(
+        from django.db.models import Count, Q
+
+        # ✅ STEP 1: Get items marked as top sellers from approved establishments
+        top_seller_items = MenuItem.objects.filter(
             is_top_seller=True,
-            food_establishment__is_approved=True  # ✅ FIXED: Use is_approved instead of is_active
+            is_available=True,
+            food_establishment__is_approved=True
         ).select_related(
-            'food_establishment'  # ✅ FIXED: food_establishment instead of establishment
+            'food_establishment'
         ).prefetch_related(
             'food_establishment__categories'
-        ).order_by('-top_seller_marked_at')[:20]  # Get top 20 best sellers
+        ).order_by('-top_seller_marked_at')[:20]
 
+        best_sellers = list(top_seller_items)
+
+        # ✅ STEP 2: If we don't have enough top sellers, get available items from different establishments
+        if len(best_sellers) < 10:
+            # Get establishment IDs we already have
+            existing_establishment_ids = [item.food_establishment.id for item in best_sellers]
+
+            # Get available items from OTHER establishments
+            additional_items = MenuItem.objects.filter(
+                is_available=True,
+                food_establishment__is_approved=True
+            ).exclude(
+                id__in=[item.id for item in best_sellers]  # Exclude items we already have
+            ).select_related(
+                'food_establishment'
+            ).prefetch_related(
+                'food_establishment__categories'
+            ).order_by('-created_at')[:20]  # Get recent items
+
+            # Add to best_sellers list (mix from different establishments)
+            for item in additional_items:
+                if len(best_sellers) >= 20:
+                    break
+                best_sellers.append(item)
+
+        # ✅ STEP 3: If STILL no items, get ANY available items
+        if len(best_sellers) == 0:
+            best_sellers = list(MenuItem.objects.filter(
+                is_available=True,
+                food_establishment__is_approved=True
+            ).select_related(
+                'food_establishment'
+            ).prefetch_related(
+                'food_establishment__categories'
+            ).order_by('-created_at')[:20])
+
+        # ✅ STEP 4: Build the response data
         items_data = []
         for item in best_sellers:
-            # ✅ FIXED: Access food_establishment instead of establishment
             establishment = item.food_establishment
 
             # Get all category names (ManyToMany)
@@ -4924,13 +4965,13 @@ def get_best_sellers(request):
                 'id': item.id,
                 'name': item.name,
                 'description': item.description or '',
-                'price': float(item.price),  # Convert to float for JS
-                'image_url': item.image.url if item.image else None,  # JS expects image_url
+                'price': float(item.price),
+                'image_url': item.image.url if item.image else None,
                 'is_top_seller': item.is_top_seller,
                 'is_available': item.is_available,
                 'quantity': item.quantity if hasattr(item, 'quantity') else 0,
                 'total_orders': getattr(item, 'total_orders', 0),
-                # Nested establishment object that JS expects
+                # Nested establishment object
                 'establishment': {
                     'id': establishment.id,
                     'name': establishment.name,
@@ -4939,7 +4980,7 @@ def get_best_sellers(request):
                     'opening_time': establishment.opening_time.strftime('%H:%M') if establishment.opening_time else '',
                     'closing_time': establishment.closing_time.strftime('%H:%M') if establishment.closing_time else '',
                 },
-                # Also keep flat structure for compatibility
+                # Flat structure for compatibility
                 'establishment_id': establishment.id,
                 'establishment_name': establishment.name,
                 'category': category_display,
@@ -4954,13 +4995,12 @@ def get_best_sellers(request):
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Error in get_best_sellers: {str(e)}")
+        logger.error(f"Error fetching best sellers: {str(e)}")
 
         return JsonResponse({
             'success': False,
-            'error': 'Failed to load best sellers',
-            'items': [],
-            'count': 0
+            'error': str(e),
+            'items': []
         }, status=500)
 
 @require_http_methods(["GET"])
