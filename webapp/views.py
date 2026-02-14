@@ -4898,21 +4898,19 @@ def get_best_sellers(request):
     """
     try:
         # Get menu items that are marked as top sellers and are available
-        # Remove the problematic select_related('category') since MenuItem doesn't have category field
+        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         best_sellers = MenuItem.objects.filter(
             is_top_seller=True,
-            is_available=True,
-            establishment__status='Active'  # Only from active establishments
+            food_establishment__status='Active'  # ✅ FIXED: food_establishment instead of establishment
         ).select_related(
-            'establishment'  # Only select the establishment, not category
-        ).order_by('-created_at')[:20]  # Get top 20 best sellers
+            'food_establishment'  # ✅ FIXED: food_establishment instead of establishment
+        ).order_by('-top_seller_marked_at')[:20]  # Get top 20 best sellers
 
         items_data = []
         for item in best_sellers:
-            # Get the establishment's category instead
-            establishment = item.establishment
-            category_name = establishment.category.name if hasattr(establishment,
-                                                                   'category') and establishment.category else None
+            # ✅ FIXED: Access food_establishment instead of establishment
+            establishment = item.food_establishment
+            category_name = establishment.category.name if hasattr(establishment, 'category') and establishment.category else None
 
             items_data.append({
                 'id': item.id,
@@ -4923,7 +4921,6 @@ def get_best_sellers(request):
                 'establishment_id': establishment.id,
                 'establishment_name': establishment.name,
                 'category': category_name,
-                'is_available': item.is_available,
                 'is_top_seller': item.is_top_seller,
             })
 
@@ -4951,17 +4948,15 @@ def get_best_sellers_alternative(request):
     API endpoint to get popular menu items based on order count
     """
     try:
-        # Get items from active establishments
+        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         menu_items = MenuItem.objects.filter(
-            is_available=True,
-            establishment__status='Active'
-        ).select_related('establishment')
+            food_establishment__status='Active'  # ✅ FIXED
+        ).select_related('food_establishment')  # ✅ FIXED
 
-        # If you want to order by actual sales/orders, you'll need to count order items
-        # For now, prioritize items marked as top sellers
+        # Prioritize items marked as top sellers
         best_sellers = menu_items.filter(
             is_top_seller=True
-        ).order_by('-created_at')[:20]
+        ).order_by('-top_seller_marked_at')[:20]
 
         # If not enough top sellers, get other available items
         if best_sellers.count() < 10:
@@ -4972,10 +4967,10 @@ def get_best_sellers_alternative(request):
 
         items_data = []
         for item in best_sellers[:20]:  # Limit to 20
-            establishment = item.establishment
+            # ✅ FIXED: Access food_establishment
+            establishment = item.food_establishment
             category_name = None
 
-            # Safely get category
             if hasattr(establishment, 'category') and establishment.category:
                 category_name = establishment.category.name
 
@@ -4988,7 +4983,6 @@ def get_best_sellers_alternative(request):
                 'establishment_id': establishment.id,
                 'establishment_name': establishment.name,
                 'category': category_name,
-                'is_available': item.is_available,
                 'is_top_seller': item.is_top_seller,
             })
 
@@ -5001,7 +4995,7 @@ def get_best_sellers_alternative(request):
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Error in get_best_sellers: {str(e)}")
+        logger.error(f"Error in get_best_sellers_alternative: {str(e)}")
 
         return JsonResponse({
             'success': False,
@@ -5016,18 +5010,17 @@ def get_best_sellers_by_orders(request):
     API endpoint to get best-selling items based on actual order data
     """
     try:
-        # Assuming you have an OrderItem model that links to MenuItem
-        # Get items ordered by how many times they've been ordered
+        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         best_sellers = MenuItem.objects.filter(
-            is_available=True,
-            establishment__status='Active'
-        ).select_related('establishment').annotate(
-            order_count=Count('orderitem')  # Adjust field name to match your OrderItem model
+            food_establishment__status='Active'  # ✅ FIXED
+        ).select_related('food_establishment').annotate(  # ✅ FIXED
+            order_count=Count('orderitem')
         ).order_by('-order_count', '-created_at')[:20]
 
         items_data = []
         for item in best_sellers:
-            establishment = item.establishment
+            # ✅ FIXED: Access food_establishment
+            establishment = item.food_establishment
             category_name = None
 
             if hasattr(establishment, 'category') and establishment.category:
@@ -5042,7 +5035,6 @@ def get_best_sellers_by_orders(request):
                 'establishment_id': establishment.id,
                 'establishment_name': establishment.name,
                 'category': category_name,
-                'is_available': item.is_available,
                 'order_count': item.order_count if hasattr(item, 'order_count') else 0,
             })
 
@@ -5055,7 +5047,7 @@ def get_best_sellers_by_orders(request):
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Error in get_best_sellers: {str(e)}")
+        logger.error(f"Error in get_best_sellers_by_orders: {str(e)}")
 
         return JsonResponse({
             'success': False,

@@ -95,7 +95,7 @@ urlpatterns = [
                        name='get_best_sellers_alternative'),
                   path('api/best-sellers-by-orders/', views.get_best_sellers_by_orders,
                        name='get_best_sellers_by_orders'),
-    
+
                   #Client Side
                   path('api/search-menu/', views.search_menu_items, name='search_menu_items'),
                   path('my-purchases/', views.order_history_view, name='order_history'),
