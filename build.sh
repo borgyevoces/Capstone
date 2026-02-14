@@ -28,9 +28,15 @@ echo "🗄️  Step 3: Applying database migrations..."
 python manage.py migrate --noinput
 echo "✅ Database migrations applied!"
 
+# Create default admin account
+echo ""
+echo "👤 Step 4: Creating default admin account..."
+python manage.py create_default_admin
+echo "✅ Admin account ready!"
+
 # Collect static files
 echo ""
-echo "📁 Step 4: Collecting static files..."
+echo "📁 Step 5: Collecting static files..."
 python manage.py collectstatic --noinput
 echo "✅ Static files collected!"
 
