@@ -1547,31 +1547,12 @@
                 </div>
 
                 <div class="profile-form-group">
-                    <label for="id_first_name">First Name:</label>
-                    <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" required>
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_last_name">Last Name:</label>
-                    <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" required>
-                </div>
-
-                <div class="profile-form-group">
                     <label for="id_email">Email Address:</label>
-                    <input type="email" name="email" id="id_email" value="{{ user.email }}" required>
-                </div>
-
-                <div class="profile-form-group">
-                    <label for="id_phone">Phone Number:</label>
-                    <input type="text" name="phone" id="id_phone" value="{{ user.userprofile.phone|default_if_none:'' }}" placeholder="+639123456789">
+                    <input type="email" name="email" id="id_email" value="{{ user.email }}" required readonly style="background-color: #f3f4f6; cursor: not-allowed;">
                 </div>
 
                 <div class="profile-form-actions">
                     <button type="submit" class="btn btn-primary">Save Changes</button>
-                    <a href="{% url 'user_logout' %}" class="logout-button-modal">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Log Out
-                    </a>
                 </div>
             </form>
         </div>
