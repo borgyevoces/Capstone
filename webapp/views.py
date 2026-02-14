@@ -4901,7 +4901,7 @@ def get_best_sellers(request):
         # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         best_sellers = MenuItem.objects.filter(
             is_top_seller=True,
-            food_establishment__status='Active'  # ✅ FIXED: food_establishment instead of establishment
+            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
         ).select_related(
             'food_establishment'  # ✅ FIXED: food_establishment instead of establishment
         ).order_by('-top_seller_marked_at')[:20]  # Get top 20 best sellers
@@ -4950,7 +4950,7 @@ def get_best_sellers_alternative(request):
     try:
         # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         menu_items = MenuItem.objects.filter(
-            food_establishment__status='Active'  # ✅ FIXED
+            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
         ).select_related('food_establishment')  # ✅ FIXED
 
         # Prioritize items marked as top sellers
@@ -5012,7 +5012,7 @@ def get_best_sellers_by_orders(request):
     try:
         # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
         best_sellers = MenuItem.objects.filter(
-            food_establishment__status='Active'  # ✅ FIXED
+            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
         ).select_related('food_establishment').annotate(  # ✅ FIXED
             order_count=Count('orderitem')
         ).order_by('-order_count', '-created_at')[:20]
@@ -6054,7 +6054,7 @@ def search_menu_items(request):
             Q(name__icontains=query) | Q(description__icontains=query),
             quantity__gt=0,
             food_establishment__isnull=False,
-            food_establishment__status='Active'
+            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
         ).select_related('food_establishment').values(
             'id',
             'name',
