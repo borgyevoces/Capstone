@@ -99,6 +99,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'webapp.middleware.AsyncErrorHandlerMiddleware',  # Handle async errors gracefully
 ]
 
 ROOT_URLCONF = 'Capstone.urls'
@@ -284,20 +285,70 @@ DEFAULT_FROM_EMAIL = SENDER_EMAIL or 'noreply@kabsueats.com'
 # ============================================================================
 # LOGGING (for debugging)
 # ============================================================================
-if DEBUG:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'suppress_cancelled': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: not (
+                'CancelledError' in record.getMessage() or
+                'asyncio.exceptions.CancelledError' in record.getMessage()
+            )
         },
-        'root': {
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'filters': ['suppress_cancelled'],
+            'formatter': 'verbose' if DEBUG else 'simple',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'formatter': 'verbose',
+            'filters': ['suppress_cancelled'],
+        } if not DEBUG else {
+            'class': 'logging.NullHandler',
+        },
+    },
+    'loggers': {
+        'django': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
-    }
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'asyncio': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'webapp': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
 
 # ============================================================================
 # PAYMONGO
