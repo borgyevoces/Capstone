@@ -4891,88 +4891,178 @@ def create_test_notification(request):
             'traceback': traceback.format_exc()
         }, status=500)
 
-
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    ✅ FIXED: Handles payment_status gracefully in best sellers query
+    API endpoint to get best-selling menu items across all establishments
     """
     try:
-        # Time threshold for "recent" orders (last 30 days)
-        time_threshold = timezone.now() - timedelta(days=30)
-
-        # ✅ FIXED: Use defer on orderitem__order to exclude payment_status
+        # Get menu items that are marked as top sellers and are available
+        # Remove the problematic select_related('category') since MenuItem doesn't have category field
         best_sellers = MenuItem.objects.filter(
-            Q(is_top_seller=True) |
-            Q(
-                orderitem__order__status__in=['PAID', 'PREPARING', 'READY', 'COMPLETED'],
-                orderitem__order__created_at__gte=time_threshold
-            )
-        ).annotate(
-            total_orders=Count('orderitem__order', distinct=True),
-            total_quantity_sold=Sum('orderitem__quantity')
-        ).filter(
-            quantity__gt=0,
-            food_establishment__isnull=False
+            is_top_seller=True,
+            is_available=True,
+            establishment__status='Active'  # Only from active establishments
         ).select_related(
-            'food_establishment',
-            'food_establishment__category'
-        ).order_by(
-            '-total_orders',
-            '-total_quantity_sold',
-            '-is_top_seller'
-        )[:20]
+            'establishment'  # Only select the establishment, not category
+        ).order_by('-created_at')[:20]  # Get top 20 best sellers
 
-        # Format response data
         items_data = []
         for item in best_sellers:
-            establishment = item.food_establishment
-
-            if not establishment:
-                continue
+            # Get the establishment's category instead
+            establishment = item.establishment
+            category_name = establishment.category.name if hasattr(establishment,
+                                                                   'category') and establishment.category else None
 
             items_data.append({
                 'id': item.id,
                 'name': item.name,
-                'description': item.description,
-                'price': float(item.price),
-                'image_url': item.image.url if item.image else None,
-                'is_available': item.quantity > 0,
-                'quantity': item.quantity,
-                'total_orders': item.total_orders or 0,
-                'total_sold': item.total_quantity_sold or 0,
+                'description': item.description or '',
+                'price': str(item.price),
+                'image': item.image.url if item.image else None,
+                'establishment_id': establishment.id,
+                'establishment_name': establishment.name,
+                'category': category_name,
+                'is_available': item.is_available,
                 'is_top_seller': item.is_top_seller,
-                'establishment': {
-                    'id': establishment.id,
-                    'name': establishment.name,
-                    'categories': ', '.join([cat.name for cat in establishment.categories.all()]) or 'Other',
-                    'address': establishment.address,
-                    'image_url': establishment.image.url if establishment.image else None,
-                    'opening_time': establishment.opening_time.strftime(
-                        '%H:%M') if establishment.opening_time else None,
-                    'closing_time': establishment.closing_time.strftime(
-                        '%H:%M') if establishment.closing_time else None,
-                }
             })
 
         return JsonResponse({
             'success': True,
-            'count': len(items_data),
             'items': items_data,
-            'timestamp': timezone.now().isoformat()
+            'count': len(items_data)
         })
 
     except Exception as e:
-        import traceback
-        print(f"Error in get_best_sellers: {e}")
-        traceback.print_exc()
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in get_best_sellers: {str(e)}")
+
         return JsonResponse({
             'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
+            'error': 'Failed to load best sellers',
+            'items': [],
+            'count': 0
         }, status=500)
 
+@require_http_methods(["GET"])
+def get_best_sellers_alternative(request):
+    """
+    API endpoint to get popular menu items based on order count
+    """
+    try:
+        # Get items from active establishments
+        menu_items = MenuItem.objects.filter(
+            is_available=True,
+            establishment__status='Active'
+        ).select_related('establishment')
 
+        # If you want to order by actual sales/orders, you'll need to count order items
+        # For now, prioritize items marked as top sellers
+        best_sellers = menu_items.filter(
+            is_top_seller=True
+        ).order_by('-created_at')[:20]
+
+        # If not enough top sellers, get other available items
+        if best_sellers.count() < 10:
+            additional_items = menu_items.exclude(
+                is_top_seller=True
+            ).order_by('-created_at')[:10]
+            best_sellers = list(best_sellers) + list(additional_items)
+
+        items_data = []
+        for item in best_sellers[:20]:  # Limit to 20
+            establishment = item.establishment
+            category_name = None
+
+            # Safely get category
+            if hasattr(establishment, 'category') and establishment.category:
+                category_name = establishment.category.name
+
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description or '',
+                'price': str(item.price),
+                'image': item.image.url if item.image else None,
+                'establishment_id': establishment.id,
+                'establishment_name': establishment.name,
+                'category': category_name,
+                'is_available': item.is_available,
+                'is_top_seller': item.is_top_seller,
+            })
+
+        return JsonResponse({
+            'success': True,
+            'items': items_data,
+            'count': len(items_data)
+        })
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in get_best_sellers: {str(e)}")
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to load best sellers',
+            'items': [],
+            'count': 0
+        }, status=500)
+
+@require_http_methods(["GET"])
+def get_best_sellers_by_orders(request):
+    """
+    API endpoint to get best-selling items based on actual order data
+    """
+    try:
+        # Assuming you have an OrderItem model that links to MenuItem
+        # Get items ordered by how many times they've been ordered
+        best_sellers = MenuItem.objects.filter(
+            is_available=True,
+            establishment__status='Active'
+        ).select_related('establishment').annotate(
+            order_count=Count('orderitem')  # Adjust field name to match your OrderItem model
+        ).order_by('-order_count', '-created_at')[:20]
+
+        items_data = []
+        for item in best_sellers:
+            establishment = item.establishment
+            category_name = None
+
+            if hasattr(establishment, 'category') and establishment.category:
+                category_name = establishment.category.name
+
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description or '',
+                'price': str(item.price),
+                'image': item.image.url if item.image else None,
+                'establishment_id': establishment.id,
+                'establishment_name': establishment.name,
+                'category': category_name,
+                'is_available': item.is_available,
+                'order_count': item.order_count if hasattr(item, 'order_count') else 0,
+            })
+
+        return JsonResponse({
+            'success': True,
+            'items': items_data,
+            'count': len(items_data)
+        })
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in get_best_sellers: {str(e)}")
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to load best sellers',
+            'items': [],
+            'count': 0
+        }, status=500)
 # ==========================================
 # ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR OWNER SIDE
 

@@ -91,6 +91,11 @@ urlpatterns = [
                   path('establishment/profile/', views.food_establishment_profile, name='food_establishment_profile'),
                   path('establishment/deactivate/', views.deactivate_establishment, name='deactivate_establishment'),
                   path('api/establishment/nearby/', views.get_nearby_establishments, name='get_nearby_establishments'),
+                  path('api/best-sellers-alternative/', views.get_best_sellers_alternative,
+                       name='get_best_sellers_alternative'),
+                  path('api/best-sellers-by-orders/', views.get_best_sellers_by_orders,
+                       name='get_best_sellers_by_orders'),
+    
                   #Client Side
                   path('api/search-menu/', views.search_menu_items, name='search_menu_items'),
                   path('my-purchases/', views.order_history_view, name='order_history'),
