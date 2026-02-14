@@ -1489,7 +1489,7 @@
                                      data-lat="{{ establishment.latitude }}"
                                      data-lng="{{ establishment.longitude }}"
                                      data-status="{{ establishment.calculated_status }}"
-                                     data-category="{{ establishment.category.name|default_if_none:''|lower }}"
+                                     data-category="{% for cat in establishment.categories.all %}{{ cat.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
                                      data-distance="{{ establishment.distance|floatformat:2 }}"
                                      data-rating="{{ establishment.average_rating|default_if_none:'0'|floatformat:1 }}"
                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
@@ -1517,8 +1517,17 @@
                                        <span class="status-text">{{ establishment.calculated_status }}</span>
                                    </span>
 
-                                    {% if establishment.category %}
-                                        <div class="category-display">{{ establishment.category.name }}</div>
+                                    {% if establishment.categories.all %}
+                                        <div class="category-display">
+                                            {% for cat in establishment.categories.all %}
+                                                {{ cat.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                            {% if establishment.other_category %}
+                                                {% if establishment.categories.all %}, {% endif %}{{ establishment.other_category }}
+                                            {% endif %}
+                                        </div>
+                                    {% elif establishment.other_category %}
+                                        <div class="category-display">{{ establishment.other_category }}</div>
                                     {% endif %}
 
                                     <div class="food-name">
