@@ -630,6 +630,7 @@ def update_profile(request):
             'errors': f'Error updating profile: {str(e)}'
         }, status=500)
 
+
 def category_establishments_view(request, category_name):
     try:
         category = Category.objects.get(name__iexact=category_name)
@@ -2267,6 +2268,7 @@ def create_buynow_payment_link(request):
 # ===================================================================================================================
 User = get_user_model()
 
+
 @require_http_methods(["GET"])
 def get_nearby_establishments(request):
     """
@@ -2326,6 +2328,7 @@ def get_nearby_establishments(request):
             'error': str(e)
         }, status=500)
 
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
     Calculate distance between two coordinates using Haversine formula.
@@ -2343,6 +2346,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
     distance = R * c
     return distance
+
 
 def owner_login(request):
     """
@@ -2376,6 +2380,7 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
+
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2383,6 +2388,7 @@ def owner_logout(request):
     logout(request)
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
+
 
 @login_required
 @require_POST
@@ -4891,17 +4897,18 @@ def create_test_notification(request):
             'traceback': traceback.format_exc()
         }, status=500)
 
+
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
     API endpoint to get best-selling menu items across all establishments
     """
     try:
-        # Get menu items that are marked as top sellers and are available
-        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
+        # Get menu items that are marked as top sellers and from approved establishments
+        # ✅ FIXED: Use is_approved (not is_active which doesn't exist)
         best_sellers = MenuItem.objects.filter(
             is_top_seller=True,
-            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
+            food_establishment__is_approved=True  # ✅ FIXED: Use is_approved instead of is_active
         ).select_related(
             'food_establishment'  # ✅ FIXED: food_establishment instead of establishment
         ).order_by('-top_seller_marked_at')[:20]  # Get top 20 best sellers
@@ -4910,7 +4917,10 @@ def get_best_sellers(request):
         for item in best_sellers:
             # ✅ FIXED: Access food_establishment instead of establishment
             establishment = item.food_establishment
-            category_name = establishment.category.name if hasattr(establishment, 'category') and establishment.category else None
+
+            # Get first category name if exists (since it's ManyToMany now)
+            categories = establishment.categories.all()
+            category_name = categories.first().name if categories.exists() else None
 
             items_data.append({
                 'id': item.id,
@@ -4942,15 +4952,16 @@ def get_best_sellers(request):
             'count': 0
         }, status=500)
 
+
 @require_http_methods(["GET"])
 def get_best_sellers_alternative(request):
     """
     API endpoint to get popular menu items based on order count
     """
     try:
-        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
+        # ✅ FIXED: Use 'food_establishment' and is_approved instead of is_active
         menu_items = MenuItem.objects.filter(
-            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
+            food_establishment__is_approved=True  # ✅ FIXED: Use is_approved instead of is_active
         ).select_related('food_establishment')  # ✅ FIXED
 
         # Prioritize items marked as top sellers
@@ -4969,10 +4980,10 @@ def get_best_sellers_alternative(request):
         for item in best_sellers[:20]:  # Limit to 20
             # ✅ FIXED: Access food_establishment
             establishment = item.food_establishment
-            category_name = None
 
-            if hasattr(establishment, 'category') and establishment.category:
-                category_name = establishment.category.name
+            # Get first category name if exists (since it's ManyToMany now)
+            categories = establishment.categories.all()
+            category_name = categories.first().name if categories.exists() else None
 
             items_data.append({
                 'id': item.id,
@@ -5004,15 +5015,16 @@ def get_best_sellers_alternative(request):
             'count': 0
         }, status=500)
 
+
 @require_http_methods(["GET"])
 def get_best_sellers_by_orders(request):
     """
     API endpoint to get best-selling items based on actual order data
     """
     try:
-        # ✅ FIXED: Use 'food_establishment' instead of 'establishment'
+        # ✅ FIXED: Use 'food_establishment' and is_approved instead of is_active
         best_sellers = MenuItem.objects.filter(
-            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
+            food_establishment__is_approved=True  # ✅ FIXED: Use is_approved instead of is_active
         ).select_related('food_establishment').annotate(  # ✅ FIXED
             order_count=Count('orderitem')
         ).order_by('-order_count', '-created_at')[:20]
@@ -5021,10 +5033,10 @@ def get_best_sellers_by_orders(request):
         for item in best_sellers:
             # ✅ FIXED: Access food_establishment
             establishment = item.food_establishment
-            category_name = None
 
-            if hasattr(establishment, 'category') and establishment.category:
-                category_name = establishment.category.name
+            # Get first category name if exists (since it's ManyToMany now)
+            categories = establishment.categories.all()
+            category_name = categories.first().name if categories.exists() else None
 
             items_data.append({
                 'id': item.id,
@@ -5055,6 +5067,8 @@ def get_best_sellers_by_orders(request):
             'items': [],
             'count': 0
         }, status=500)
+
+
 # ==========================================
 # ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR OWNER SIDE
 
@@ -6127,6 +6141,7 @@ def search_menu_items(request):
             'error': str(e)
         }, status=500)
 
+
 @login_required
 def order_history_view(request):
     """
@@ -6134,6 +6149,7 @@ def order_history_view(request):
     Template: Client_order_history.html
     """
     return render(request, 'webapplication/Client_order_history.html')
+
 
 @login_required
 def get_user_transaction_history(request):
@@ -6208,6 +6224,7 @@ def get_user_transaction_history(request):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 def reorder_items(request, order_id):
     """
@@ -6270,6 +6287,7 @@ def reorder_items(request, order_id):
             'success': False,
             'message': str(e)
         }, status=500)
+
 
 @login_required
 def get_order_details(request, order_id):
@@ -6341,10 +6359,12 @@ def get_order_details(request, order_id):
             'message': str(e)
         }, status=500)
 
+
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 import os
+
 
 @csrf_exempt
 def create_admin_user(request):
