@@ -1349,154 +1349,65 @@
                 </div>
             </div>
 
+            <!-- ============================================ -->
+            <!-- ✅ BESTSELLERS SECTION - NEWLY ADDED -->
+            <!-- ============================================ -->
             <section id="bestsellers-section" class="bestsellers-section">
-    <div class="bestsellers-header">
-        <h2 class="bestsellers-title">
-            <i class="fas fa-fire"></i>
-            Top-rated items from all our partner establishments - Updated in real-time!
-        </h2>
-        <div class="bestsellers-controls">
-            <button id="bestsellersMenuBtn" class="bestsellers-menu-btn">
-                <i class="fas fa-trophy"></i>
-                Best Sellers
-                <i class="fas fa-chevron-down"></i>
-            </button>
-            <button id="switchToGridView" class="switch-view-btn">
-                <i class="fas fa-th"></i>
-                Grid View
-            </button>
-        </div>
-    </div>
-
-    <div id="bestsellersCarousel" class="bestsellers-carousel">
-        <button class="carousel-nav prev" id="carouselPrev">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-
-        <div class="bestsellers-carousel-container">
-            <div class="bestsellers-carousel-track" id="bestsellersCarouselTrack">
-                <div class="bestseller-card-skeleton">
-                    <div class="skeleton-image"></div>
-                    <div class="skeleton-badge"></div>
-                    <div class="skeleton-text"></div>
-                    <div class="skeleton-text short"></div>
-                    <div class="skeleton-button"></div>
-                </div>
-                <div class="bestseller-card-skeleton">
-                    <div class="skeleton-image"></div>
-                    <div class="skeleton-badge"></div>
-                    <div class="skeleton-text"></div>
-                    <div class="skeleton-text short"></div>
-                    <div class="skeleton-button"></div>
-                </div>
-                <div class="bestseller-card-skeleton">
-                    <div class="skeleton-image"></div>
-                    <div class="skeleton-badge"></div>
-                    <div class="skeleton-text"></div>
-                    <div class="skeleton-text short"></div>
-                    <div class="skeleton-button"></div>
-                </div>
-            </div>
-        </div>
-
-        <button class="carousel-nav next" id="carouselNext">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</section>
-
-<!-- ============================================ -->
-<!-- ✅ BESTSELLER MODAL & MAP SIDEBAR -->
-<!-- ILAGAY ITO BAGO MAGSARA ANG </body> TAG -->
-<!-- ============================================ -->
-
-<div id="bestsellerModal" class="bestseller-modal">
-    <div class="bestseller-modal-overlay" onclick="closeBestsellerModal()"></div>
-    <div class="bestseller-modal-content">
-        <button class="bestseller-modal-close" onclick="closeBestsellerModal()">
-            <i class="fas fa-times"></i>
-        </button>
-
-        <div class="bestseller-modal-body">
-            <div class="bestseller-modal-image">
-                <img id="modalItemImage" src="" alt="">
-                <span class="bestseller-badge">
-                    <i class="fas fa-fire"></i> Best Seller
-                </span>
-            </div>
-
-            <div class="bestseller-modal-details">
-                <h2 id="modalItemName" class="modal-item-name"></h2>
-                <p id="modalItemDescription" class="modal-item-description"></p>
-
-                <div class="modal-price-section">
-                    <span class="modal-price" id="modalItemPrice">₱0.00</span>
-                    <span class="modal-stock" id="modalItemStock">
-                        <i class="fas fa-box"></i> 0 Items
-                    </span>
-                </div>
-
-                <div class="modal-establishment-info">
-                    <div class="establishment-header">
-                        <i class="fas fa-store"></i>
-                        <span id="modalEstablishmentName"></span>
-                    </div>
-                    <div class="establishment-details">
-                        <div class="establishment-address">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span id="modalEstablishmentAddress"></span>
-                        </div>
-                        <div class="establishment-status" id="modalEstablishmentStatus">
-                            <i class="fas fa-circle"></i>
-                            <span>Closed</span>
-                        </div>
-                    </div>
-                    <button class="view-map-btn" onclick="viewEstablishmentLocation()">
-                        <i class="fas fa-map"></i> View Map
-                    </button>
-                </div>
-
-                <div class="modal-quantity-section">
-                    <label>Quantity:</label>
-                    <div class="quantity-controls">
-                        <button class="qty-btn" onclick="decreaseQuantity()">
-                            <i class="fas fa-minus"></i>
+                <div class="bestsellers-header">
+                    <h2 class="bestsellers-title">
+                        <i class="fas fa-fire"></i>
+                        Top-rated items from all our partner establishments - Updated in real-time!
+                    </h2>
+                    <div class="bestsellers-controls">
+                        <button id="bestsellersMenuBtn" class="bestsellers-menu-btn">
+                            <i class="fas fa-trophy"></i>
+                            Best Sellers
+                            <i class="fas fa-chevron-down"></i>
                         </button>
-                        <input type="number" id="modalQuantity" value="1" min="1" readonly>
-                        <button class="qty-btn" onclick="increaseQuantity()">
-                            <i class="fas fa-plus"></i>
+                        <button id="switchToGridView" class="switch-view-btn">
+                            <i class="fas fa-th"></i>
+                            Grid View
                         </button>
                     </div>
                 </div>
 
-                <div class="modal-actions">
-                    <button class="add-to-cart-btn" onclick="addBestsellerToCart()">
-                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                <div id="bestsellersCarousel" class="bestsellers-carousel">
+                    <button class="carousel-nav prev" id="carouselPrev">
+                        <i class="fas fa-chevron-left"></i>
                     </button>
-                    <button class="buy-now-btn" onclick="buyBestsellerNow()">
-                        <i class="fas fa-bolt"></i> Buy Now
+
+                    <div class="bestsellers-carousel-container">
+                        <div class="bestsellers-carousel-track" id="bestsellersCarouselTrack">
+                            <div class="bestseller-card-skeleton">
+                                <div class="skeleton-image"></div>
+                                <div class="skeleton-badge"></div>
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text short"></div>
+                                <div class="skeleton-button"></div>
+                            </div>
+                            <div class="bestseller-card-skeleton">
+                                <div class="skeleton-image"></div>
+                                <div class="skeleton-badge"></div>
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text short"></div>
+                                <div class="skeleton-button"></div>
+                            </div>
+                            <div class="bestseller-card-skeleton">
+                                <div class="skeleton-image"></div>
+                                <div class="skeleton-badge"></div>
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text short"></div>
+                                <div class="skeleton-button"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="carousel-nav next" id="carouselNext">
+                        <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
+            </section>
 
-<div id="viewMapSidebar" class="view-map-sidebar">
-    <div class="map-sidebar-header">
-        <h3><i class="fas fa-map-marker-alt"></i> View Location</h3>
-        <button class="map-sidebar-close" onclick="closeMapSidebar()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <div class="map-sidebar-content">
-        <div id="mapContainer" class="map-container"></div>
-        <div class="map-info">
-            <h4 id="mapEstablishmentName"></h4>
-            <p id="mapEstablishmentAddress"></p>
-        </div>
-    </div>
-</div>
 
             <!-- ✅ UPDATED: Establishments Section Title with Icon -->
             <h2 class="establishments-section-title">
@@ -1932,5 +1843,100 @@
 <button class="scroll-to-top" id="scrollToTopBtn">
     <i class="fas fa-arrow-up"></i>
 </button>
+
+    <!-- ============================================ -->
+    <!-- ✅ BESTSELLER MODAL - NEWLY ADDED -->
+    <!-- ============================================ -->
+    <div id="bestsellerModal" class="bestseller-modal">
+        <div class="bestseller-modal-overlay" onclick="closeBestsellerModal()"></div>
+        <div class="bestseller-modal-content">
+            <button class="bestseller-modal-close" onclick="closeBestsellerModal()">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="bestseller-modal-body">
+                <div class="bestseller-modal-image">
+                    <img id="modalItemImage" src="" alt="">
+                    <span class="bestseller-badge">
+                        <i class="fas fa-fire"></i> Best Seller
+                    </span>
+                </div>
+
+                <div class="bestseller-modal-details">
+                    <h2 id="modalItemName" class="modal-item-name"></h2>
+                    <p id="modalItemDescription" class="modal-item-description"></p>
+
+                    <div class="modal-price-section">
+                        <span class="modal-price" id="modalItemPrice">₱0.00</span>
+                        <span class="modal-stock" id="modalItemStock">
+                            <i class="fas fa-box"></i> 0 Items
+                        </span>
+                    </div>
+
+                    <div class="modal-establishment-info">
+                        <div class="establishment-header">
+                            <i class="fas fa-store"></i>
+                            <span id="modalEstablishmentName"></span>
+                        </div>
+                        <div class="establishment-details">
+                            <div class="establishment-address">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span id="modalEstablishmentAddress"></span>
+                            </div>
+                            <div class="establishment-status" id="modalEstablishmentStatus">
+                                <i class="fas fa-circle"></i>
+                                <span>Closed</span>
+                            </div>
+                        </div>
+                        <button class="view-map-btn" onclick="viewEstablishmentLocation()">
+                            <i class="fas fa-map"></i> View Map
+                        </button>
+                    </div>
+
+                    <div class="modal-quantity-section">
+                        <label>Quantity:</label>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" onclick="decreaseQuantity()">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" id="modalQuantity" value="1" min="1" readonly>
+                            <button class="qty-btn" onclick="increaseQuantity()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="add-to-cart-btn" onclick="addBestsellerToCart()">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        <button class="buy-now-btn" onclick="buyBestsellerNow()">
+                            <i class="fas fa-bolt"></i> Buy Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ✅ VIEW MAP SIDEBAR - NEWLY ADDED -->
+    <!-- ============================================ -->
+    <div id="viewMapSidebar" class="view-map-sidebar">
+        <div class="map-sidebar-header">
+            <h3><i class="fas fa-map-marker-alt"></i> View Location</h3>
+            <button class="map-sidebar-close" onclick="closeMapSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="map-sidebar-content">
+            <div id="mapContainer" class="map-container"></div>
+            <div class="map-info">
+                <h4 id="mapEstablishmentName"></h4>
+                <p id="mapEstablishmentAddress"></p>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

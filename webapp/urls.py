@@ -1,4 +1,8 @@
-# your_app_name/urls.py
+# ==========================================
+# COMPLETE URLs.py FILE
+# REPLACE YOUR ENTIRE urls.py WITH THIS
+# ==========================================
+
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
@@ -17,6 +21,9 @@ urlpatterns = [
                        name='food_establishment_details'),
                   path('view-directions/<int:establishment_id>/', views.view_directions, name='view_directions'),
                   path('about/', views.about_page, name='kabsueats_about'),
+
+                  # ✅ NEW: Bestsellers API Endpoint
+                  path('api/bestsellers/', views.get_bestsellers, name='get_bestsellers'),
 
                   # 2. User Authentication & Profile
                   path('accounts/login/', views.user_login_register, name='user_login'),
@@ -59,31 +66,40 @@ urlpatterns = [
                   path('payment/create-gcash-link/', views.create_gcash_payment_link, name='create_gcash_payment_link'),
                   path('payment/gcash-success/', views.gcash_payment_success, name='gcash_payment_success'),
                   path('payment/gcash-cancel/', views.gcash_payment_cancel, name='gcash_payment_cancel'),
-                  path('payment/debug-create-payload/<int:order_id>/', views.debug_create_gcash_payload, name='debug_create_gcash_payload'),
+                  path('payment/debug-create-payload/<int:order_id>/', views.debug_create_gcash_payload,
+                       name='debug_create_gcash_payload'),
                   path('payment/webhook/', views.paymongo_webhook, name='paymongo_webhook'),
                   path('paymongo_checkout/', views.paymongo_checkout, name='paymongo_checkout'),
                   path('payment-status/<str:status>/', views.payment_status, name='payment_status'),
                   path('create-buynow-payment/', views.create_buynow_payment_link, name='create_buynow_payment'),
 
-                  # ✅ FIXED: Notification API Endpoints (removed duplicates)
+                  # Notification API Endpoints
                   path('api/notifications/', views.get_notifications, name='get_notifications'),
-                  path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
-                  path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+                  path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read,
+                       name='mark_notification_read'),
+                  path('api/notifications/mark-all-read/', views.mark_all_notifications_read,
+                       name='mark_all_notifications_read'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
 
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
 
                   # Owner Side
-                  path('api/food-establishment/orders/',views.get_establishment_orders,name='api_establishment_orders'),
-                  path('api/food-establishment/orders/<int:order_id>/update-status/', views.update_order_status, name='api_update_order_status'),
-                  path('api/food-establishment/orders/<int:order_id>/details/', views.get_order_details_establishment, name='api_order_details_establishment'),
+                  path('api/food-establishment/orders/', views.get_establishment_orders,
+                       name='api_establishment_orders'),
+                  path('api/food-establishment/orders/<int:order_id>/update-status/', views.update_order_status,
+                       name='api_update_order_status'),
+                  path('api/food-establishment/orders/<int:order_id>/details/', views.get_order_details_establishment,
+                       name='api_order_details_establishment'),
                   path('owner/orders/', views.food_establishment_orders_view, name='orders_list'),
-                  path('owner/transactions/',views.food_establishment_transaction_history, name='establishment_transaction_history'),
-                  path('api/establishment/transactions/', views.get_establishment_transactions,  name='get_establishment_transactions'),
-                  path('api/establishment/transaction-stats/', views.get_establishment_transaction_statistics,  name='get_establishment_transaction_stats'),
+                  path('owner/transactions/', views.food_establishment_transaction_history,
+                       name='establishment_transaction_history'),
+                  path('api/establishment/transactions/', views.get_establishment_transactions,
+                       name='get_establishment_transactions'),
+                  path('api/establishment/transaction-stats/', views.get_establishment_transaction_statistics,
+                       name='get_establishment_transaction_stats'),
                   path('payment/create-cash-order/', views.create_cash_order, name='create_cash_order'),
-                  path('payment/success/',views.payment_success, name='payment_success'),
+                  path('payment/success/', views.payment_success, name='payment_success'),
                   path('payment/paymongo/success/', views.paymongo_payment_success, name='paymongo_payment_success'),
                   path('debug/order/<int:order_id>/', views.debug_order_status, name='debug_order'),
                   path('api/establishment/profile/', views.get_establishment_profile, name='get_establishment_profile'),
@@ -91,7 +107,7 @@ urlpatterns = [
                   path('establishment/deactivate/', views.deactivate_establishment, name='deactivate_establishment'),
                   path('api/establishment/nearby/', views.get_nearby_establishments, name='get_nearby_establishments'),
 
-                  #Client Side
+                  # Client Side
                   path('api/search-menu/', views.search_menu_items, name='search_menu_items'),
                   path('my-purchases/', views.order_history_view, name='order_history'),
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
@@ -135,9 +151,9 @@ urlpatterns = [
                        name='food_establishment_dashboard'),
                   path('dashboard/update-details/<int:pk>/ajax/', views.update_establishment_details_ajax,
                        name='update_establishment_details_ajax'),
-                path('establishment/<int:pk>/details/',
-                        views.get_establishment_details_ajax,
-                        name='get_establishment_details_ajax'),
+                  path('establishment/<int:pk>/details/',
+                       views.get_establishment_details_ajax,
+                       name='get_establishment_details_ajax'),
 
                   # OLD GCash Routes (Keep for compatibility but not used)
                   path('gcash/payment-request/', views.gcash_payment_request, name='gcash_payment_request'),
@@ -146,13 +162,15 @@ urlpatterns = [
                        name='view_order_confirmation'),
 
                   # Chat URLs
-                  path('chat/customer/<int:establishment_id>/',views.customer_chat_view, name='customer_chat'),
+                  path('chat/customer/<int:establishment_id>/', views.customer_chat_view, name='customer_chat'),
                   path('chat/owner/<int:customer_id>/', views.owner_chat_view, name='owner_chat'),
-                  path('chat/inbox/',views.owner_inbox_view,name='owner_inbox'),
-                  path('chat/messages/<int:customer_id>/<int:establishment_id>/',views.get_chat_messages,
+                  path('chat/inbox/', views.owner_inbox_view, name='owner_inbox'),
+                  path('chat/messages/<int:customer_id>/<int:establishment_id>/', views.get_chat_messages,
                        name='get_chat_messages'),
-                  path('owner/chat/conversations/<int:establishment_id>/',views.get_owner_conversations,name='get_owner_conversations'),
-                  path('owner/chat/messages/<int:customer_id>/<int:establishment_id>/',views.get_chat_messages_api,name='get_chat_messages_api'),
+                  path('owner/chat/conversations/<int:establishment_id>/', views.get_owner_conversations,
+                       name='get_owner_conversations'),
+                  path('owner/chat/messages/<int:customer_id>/<int:establishment_id>/', views.get_chat_messages_api,
+                       name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -6267,3 +6267,58 @@ def create_admin_user(request):
             'message': f'❌ Failed to create superuser: {str(e)}',
             'type': type(e).__name__
         }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_bestsellers(request):
+    """
+    Get all top seller items across all establishments
+    Returns real-time bestseller data with establishment info
+    """
+    try:
+        # Get all menu items marked as top sellers with available stock
+        bestsellers = MenuItem.objects.filter(
+            is_top_seller=True,
+            quantity__gt=0  # Only show items that are in stock
+        ).select_related(
+            'food_establishment'
+        ).annotate(
+            total_orders=Count('orderitem')
+        ).order_by('-top_seller_marked_at', '-total_orders')[:20]  # Get top 20 bestsellers
+
+        bestsellers_data = []
+        for item in bestsellers:
+            establishment = item.food_establishment
+
+            # Calculate establishment status
+            status = get_current_status(establishment.opening_time, establishment.closing_time)
+
+            bestsellers_data.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description,
+                'price': float(item.price),
+                'image': item.image.url if item.image else None,
+                'quantity': item.quantity,
+                'total_orders': item.total_orders,
+                'establishment': {
+                    'id': establishment.id,
+                    'name': establishment.name,
+                    'address': establishment.address,
+                    'status': status,
+                    'latitude': establishment.latitude,
+                    'longitude': establishment.longitude,
+                }
+            })
+
+        return JsonResponse({
+            'success': True,
+            'bestsellers': bestsellers_data,
+            'count': len(bestsellers_data)
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
