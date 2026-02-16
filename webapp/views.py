@@ -4913,10 +4913,9 @@ def get_best_sellers(request):
         from collections import defaultdict
 
         # ✅ STEP 1: Get ALL approved and active establishments
+        # Note: 'status' is a @property, not a database field, so we can't filter by it
         approved_establishments = FoodEstablishment.objects.filter(
             is_approved=True
-        ).exclude(
-            status='Disabled'
         )
 
         establishment_count = approved_establishments.count()

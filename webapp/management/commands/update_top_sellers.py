@@ -47,9 +47,9 @@ class Command(BaseCommand):
         min_orders = options['min_orders']
         reset = options['reset']
 
-        self.stdout.write(self.style.NOTICE(f'\n{"=" * 60}'))
+        self.stdout.write(self.style.NOTICE(f'\n{"="*60}'))
         self.stdout.write(self.style.NOTICE('KabsuEats - Top Sellers Update'))
-        self.stdout.write(self.style.NOTICE(f'{"=" * 60}\n'))
+        self.stdout.write(self.style.NOTICE(f'{"="*60}\n'))
 
         # Step 1: Reset existing top sellers if requested
         if reset:
@@ -61,10 +61,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f'✓ Reset {reset_count} existing top sellers\n'))
 
         # Step 2: Get approved establishments
+        # Note: 'status' is a @property method, not a database field
         approved_establishments = FoodEstablishment.objects.filter(
             is_approved=True
-        ).exclude(
-            status='Disabled'
         )
 
         establishments_count = approved_establishments.count()
@@ -168,7 +167,7 @@ class Command(BaseCommand):
             marked_count += 1
 
         # Step 6: Display summary
-        self.stdout.write(f'\n{"=" * 60}')
+        self.stdout.write(f'\n{"="*60}')
         self.stdout.write(self.style.SUCCESS(f'✓ Successfully marked {marked_count} items as top sellers'))
 
         # Show distribution across establishments
@@ -181,6 +180,6 @@ class Command(BaseCommand):
         for est_name, count in sorted(establishment_distribution.items(), key=lambda x: x[1], reverse=True):
             self.stdout.write(f'  • {est_name}: {count} items')
 
-        self.stdout.write(f'\n{"=" * 60}')
+        self.stdout.write(f'\n{"="*60}')
         self.stdout.write(self.style.SUCCESS('Done! View your top sellers at: /api/best-sellers/'))
-        self.stdout.write(f'{"=" * 60}\n')
+        self.stdout.write(f'{"="*60}\n')
