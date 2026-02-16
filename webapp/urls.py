@@ -70,8 +70,6 @@ urlpatterns = [
                   path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
-                  path('api/best-sellers/', views.get_best_sellers, name='get_best_sellers'),
-                  path('api/auto-populate-best-sellers/', views.auto_populate_best_sellers, name='auto_populate_best_sellers'),
 
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
@@ -92,10 +90,6 @@ urlpatterns = [
                   path('establishment/profile/', views.food_establishment_profile, name='food_establishment_profile'),
                   path('establishment/deactivate/', views.deactivate_establishment, name='deactivate_establishment'),
                   path('api/establishment/nearby/', views.get_nearby_establishments, name='get_nearby_establishments'),
-                  path('api/best-sellers-alternative/', views.get_best_sellers_alternative,
-                       name='get_best_sellers_alternative'),
-                  path('api/best-sellers-by-orders/', views.get_best_sellers_by_orders,
-                       name='get_best_sellers_by_orders'),
 
                   #Client Side
                   path('api/search-menu/', views.search_menu_items, name='search_menu_items'),
@@ -103,7 +97,6 @@ urlpatterns = [
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
                   path('api/reorder/<int:order_id>/', views.reorder_items, name='reorder_items'),
                   path('api/order/<int:order_id>/', views.get_order_details, name='get_order_details'),
-                  path('fix-bestsellers/', views.fix_bestsellers_view, name='fix_bestsellers'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,
