@@ -630,6 +630,7 @@ def update_profile(request):
             'errors': f'Error updating profile: {str(e)}'
         }, status=500)
 
+
 def category_establishments_view(request, category_name):
     try:
         category = Category.objects.get(name__iexact=category_name)
@@ -2267,6 +2268,7 @@ def create_buynow_payment_link(request):
 # ===================================================================================================================
 User = get_user_model()
 
+
 @require_http_methods(["GET"])
 def get_nearby_establishments(request):
     """
@@ -2326,6 +2328,7 @@ def get_nearby_establishments(request):
             'error': str(e)
         }, status=500)
 
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
     Calculate distance between two coordinates using Haversine formula.
@@ -2343,6 +2346,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
     distance = R * c
     return distance
+
 
 def owner_login(request):
     """
@@ -2376,6 +2380,7 @@ def owner_login(request):
     # GET request -> render login page
     return render(request, 'webapplication/owner_login.html')
 
+
 def owner_logout(request):
     """Nag-logout sa owner at nire-redirect sa owner login page."""
     if 'food_establishment_id' in request.session:
@@ -2383,6 +2388,7 @@ def owner_logout(request):
     logout(request)
     messages.success(request, "You have been successfully logged out.")
     return redirect('owner_login')
+
 
 @login_required
 @require_POST
@@ -4891,62 +4897,102 @@ def create_test_notification(request):
             'traceback': traceback.format_exc()
         }, status=500)
 
+
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
     ✅ IMPROVED: API endpoint to get best-selling menu items across all establishments
-    - First tries to get items marked as top_seller
-    - Falls back to showing items from different establishments if not enough top sellers
-    - Ensures variety by showing items from multiple establishments
+    - **ENSURES VARIETY**: Distributes items evenly across all establishments
+    - Fetches items from ALL approved establishments
+    - Uses round-robin approach to show items from different establishments
+    - Prioritizes diversity over just showing all items from one establishment
     """
     try:
-        from django.db.models import Count, Q
+        from django.db.models import Count, Q, Sum
+        from django.db.models.functions import Coalesce
+        from collections import defaultdict
 
-        # ✅ STEP 1: Get items marked as top sellers from approved establishments
-        # NOTE: MenuItem doesn't have is_available field, so we just check quantity > 0
-        top_seller_items = MenuItem.objects.filter(
-            is_top_seller=True,
-            quantity__gt=0,  # Only items with stock
-            food_establishment__is_approved=True
+        # ✅ STEP 1: Get ALL approved and active establishments
+        approved_establishments = FoodEstablishment.objects.filter(
+            is_approved=True
+        ).exclude(
+            status='Disabled'
+        )
+
+        establishment_count = approved_establishments.count()
+
+        if establishment_count == 0:
+            # No approved establishments
+            return JsonResponse({
+                'success': True,
+                'items': [],
+                'count': 0,
+                'message': 'No approved establishments found'
+            })
+
+        # ✅ STEP 2: Get ALL menu items from approved establishments with order counts
+        all_menu_items = MenuItem.objects.filter(
+            food_establishment__in=approved_establishments
         ).select_related(
             'food_establishment'
         ).prefetch_related(
             'food_establishment__categories'
-        ).order_by('-top_seller_marked_at')[:20]
+        ).annotate(
+            total_orders=Coalesce(
+                Sum('orderitem__quantity', filter=Q(orderitem__order__status='Completed')),
+                0
+            )
+        ).order_by('-is_top_seller', '-total_orders', '-created_at')
 
-        best_sellers = list(top_seller_items)
+        # ✅ STEP 3: Group items by establishment
+        items_by_establishment = defaultdict(list)
+        for item in all_menu_items:
+            items_by_establishment[item.food_establishment_id].append(item)
 
-        # ✅ STEP 2: If we don't have enough top sellers, get items with stock from different establishments
-        if len(best_sellers) < 10:
-            # Get items from OTHER establishments that have stock
-            additional_items = MenuItem.objects.filter(
-                quantity__gt=0,  # Has stock
-                food_establishment__is_approved=True
-            ).exclude(
-                id__in=[item.id for item in best_sellers]  # Exclude items we already have
-            ).select_related(
-                'food_establishment'
-            ).prefetch_related(
-                'food_establishment__categories'
-            ).order_by('-created_at')[:20]  # Get recent items
+        # ✅ STEP 4: Use ROUND-ROBIN distribution to ensure variety
+        # This ensures we get items from ALL establishments, not just one
+        best_sellers = []
+        max_items_per_establishment = 5  # Max items from each establishment initially
 
-            # Add to best_sellers list (mix from different establishments)
-            for item in additional_items:
-                if len(best_sellers) >= 20:
-                    break
+        # First pass: Get up to max_items_per_establishment from each establishment
+        for establishment_id, items in items_by_establishment.items():
+            for item in items[:max_items_per_establishment]:
                 best_sellers.append(item)
+                if len(best_sellers) >= 30:
+                    break
+            if len(best_sellers) >= 30:
+                break
 
-        # ✅ STEP 3: If STILL no items, get ANY items (even with quantity 0)
+        # Second pass: If we still need more items, do round-robin
+        if len(best_sellers) < 30:
+            round_robin_index = 0
+            establishment_ids = list(items_by_establishment.keys())
+            items_taken = defaultdict(int)
+
+            while len(best_sellers) < 30:
+                # Get next establishment in round-robin
+                current_establishment = establishment_ids[round_robin_index % len(establishment_ids)]
+                items_from_est = items_by_establishment[current_establishment]
+
+                # Get next item from this establishment that we haven't added
+                next_index = items_taken[current_establishment]
+                if next_index < len(items_from_est):
+                    candidate_item = items_from_est[next_index]
+                    if candidate_item not in best_sellers:
+                        best_sellers.append(candidate_item)
+                        items_taken[current_establishment] += 1
+
+                round_robin_index += 1
+
+                # Safety break if we've exhausted all establishments
+                if round_robin_index > len(establishment_ids) * 50:
+                    break
+
+        # ✅ STEP 5: If STILL no items (edge case), get any items
         if len(best_sellers) == 0:
-            best_sellers = list(MenuItem.objects.filter(
-                food_establishment__is_approved=True
-            ).select_related(
-                'food_establishment'
-            ).prefetch_related(
-                'food_establishment__categories'
-            ).order_by('-created_at')[:20])
+            best_sellers = list(all_menu_items[:30])
 
-        # ✅ STEP 4: Build the response data
+        # ✅ STEP 5: Build the response data
         items_data = []
         for item in best_sellers:
             establishment = item.food_establishment
@@ -5002,7 +5048,8 @@ def get_best_sellers(request):
             'error': str(e),
             'items': []
         }, status=500)
-    
+
+
 @require_http_methods(["GET"])
 def get_best_sellers_alternative(request):
     """
@@ -5081,6 +5128,7 @@ def get_best_sellers_alternative(request):
             'count': 0
         }, status=500)
 
+
 @require_http_methods(["GET"])
 def get_best_sellers_by_orders(request):
     """
@@ -5149,6 +5197,8 @@ def get_best_sellers_by_orders(request):
             'items': [],
             'count': 0
         }, status=500)
+
+
 # ==========================================
 # ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR OWNER SIDE
 
@@ -6221,6 +6271,7 @@ def search_menu_items(request):
             'error': str(e)
         }, status=500)
 
+
 @login_required
 def order_history_view(request):
     """
@@ -6228,6 +6279,7 @@ def order_history_view(request):
     Template: Client_order_history.html
     """
     return render(request, 'webapplication/Client_order_history.html')
+
 
 @login_required
 def get_user_transaction_history(request):
@@ -6302,6 +6354,7 @@ def get_user_transaction_history(request):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 def reorder_items(request, order_id):
     """
@@ -6364,6 +6417,7 @@ def reorder_items(request, order_id):
             'success': False,
             'message': str(e)
         }, status=500)
+
 
 @login_required
 def get_order_details(request, order_id):
@@ -6435,10 +6489,12 @@ def get_order_details(request, order_id):
             'message': str(e)
         }, status=500)
 
+
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 import os
+
 
 @csrf_exempt
 def create_admin_user(request):
