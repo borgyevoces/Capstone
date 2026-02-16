@@ -1986,4 +1986,359 @@
 
 .nav-actions-group {
     z-index: 9997 !important;
+}/* ============================================ */
+/* ✅ BESTSELLERS MOBILE STYLES */
+/* Add this to your kabsueats_phoneview.css */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    /* Bestsellers Section */
+    .bestsellers-section {
+        padding: 12px;
+        margin: 12px 0 15px 0;
+        border-radius: 10px;
+    }
+
+    .bestsellers-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .bestsellers-title {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .bestsellers-title i {
+        font-size: 16px;
+    }
+
+    .bestsellers-controls {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .bestsellers-menu-btn,
+    .switch-view-btn {
+        flex: 1;
+        min-width: calc(50% - 5px);
+        padding: 8px 12px;
+        font-size: 12px;
+        justify-content: center;
+    }
+
+    /* Carousel */
+    .bestsellers-carousel {
+        padding: 0 35px;
+    }
+
+    .carousel-nav {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .carousel-nav.prev {
+        left: 0;
+    }
+
+    .carousel-nav.next {
+        right: 0;
+    }
+
+    /* Bestseller Cards */
+    .bestseller-card {
+        min-width: 220px;
+        max-width: 220px;
+    }
+
+    .bestseller-card-image {
+        height: 150px;
+    }
+
+    .bestseller-badge {
+        font-size: 10px;
+        padding: 4px 10px;
+        top: 8px;
+        left: 8px;
+    }
+
+    .bestseller-card-content {
+        padding: 12px;
+    }
+
+    .bestseller-card-name {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .bestseller-card-price {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .bestseller-card-info {
+        font-size: 11px;
+        margin-bottom: 10px;
+    }
+
+    .bestseller-card-establishment {
+        padding: 6px 10px;
+        margin-bottom: 10px;
+    }
+
+    .establishment-name {
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    .establishment-address {
+        font-size: 10px;
+    }
+
+    .establishment-status {
+        font-size: 10px;
+        padding: 3px 6px;
+        margin-top: 3px;
+    }
+
+    .bestseller-card-button {
+        padding: 10px;
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    /* Loading Skeleton */
+    .bestseller-card-skeleton {
+        min-width: 220px;
+        max-width: 220px;
+    }
+
+    .skeleton-image {
+        height: 150px;
+    }
+
+    /* Modal */
+    .bestseller-modal-content {
+        width: 95%;
+        max-height: 95vh;
+        border-radius: 12px;
+    }
+
+    .bestseller-modal-close {
+        top: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+
+    .bestseller-modal-body {
+        grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .bestseller-modal-image {
+        height: 250px;
+    }
+
+    .bestseller-modal-image .bestseller-badge {
+        top: 10px;
+        left: 10px;
+    }
+
+    .modal-item-name {
+        font-size: 20px;
+    }
+
+    .modal-item-description {
+        font-size: 13px;
+    }
+
+    .modal-price-section {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .modal-price {
+        font-size: 24px;
+    }
+
+    .modal-stock {
+        font-size: 12px;
+    }
+
+    .modal-establishment-info {
+        padding: 12px;
+    }
+
+    .establishment-header {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .establishment-details .establishment-address {
+        font-size: 12px;
+    }
+
+    .establishment-details .establishment-status {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    .view-map-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .modal-quantity-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .modal-quantity-section label {
+        font-size: 14px;
+    }
+
+    .quantity-controls {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .qty-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    #modalQuantity {
+        width: 60px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .modal-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    .add-to-cart-btn,
+    .buy-now-btn {
+        padding: 12px;
+        font-size: 14px;
+        width: 100%;
+    }
+
+    /* Map Sidebar */
+    .view-map-sidebar {
+        width: 100%;
+    }
+
+    .map-sidebar-header {
+        padding: 15px;
+    }
+
+    .map-sidebar-header h3 {
+        font-size: 16px;
+    }
+
+    .map-sidebar-close {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+
+    .map-sidebar-content {
+        padding: 15px;
+    }
+
+    .map-container {
+        height: 300px;
+    }
+
+    .map-info h4 {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .map-info p {
+        font-size: 13px;
+    }
+}
+
+/* Extra small devices (phones in portrait, less than 375px) */
+@media (max-width: 374px) {
+    .bestsellers-section {
+        padding: 10px;
+    }
+
+    .bestsellers-title {
+        font-size: 13px;
+    }
+
+    .bestsellers-carousel {
+        padding: 0 30px;
+    }
+
+    .carousel-nav {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .bestseller-card {
+        min-width: 200px;
+        max-width: 200px;
+    }
+
+    .bestseller-card-image {
+        height: 140px;
+    }
+
+    .bestseller-card-name {
+        font-size: 13px;
+    }
+
+    .bestseller-card-price {
+        font-size: 15px;
+    }
+
+    .bestseller-modal-image {
+        height: 220px;
+    }
+
+    .modal-item-name {
+        font-size: 18px;
+    }
+
+    .modal-price {
+        font-size: 22px;
+    }
+}
+
+/* Landscape mode adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    .bestseller-modal-content {
+        max-height: 98vh;
+    }
+
+    .bestseller-modal-body {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .bestseller-modal-image {
+        height: 300px;
+    }
+
+    .modal-actions {
+        grid-template-columns: 1fr 1fr;
+    }
 }

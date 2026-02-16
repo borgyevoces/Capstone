@@ -2661,4 +2661,577 @@ function goToEstablishment(establishmentId) {
 
 function goToMenuItem(establishmentId, menuItemId) {
     window.location.href = `/food_establishment/${establishmentId}/#menu-item-${menuItemId}`;
+}// ============================================
+// ✅ BESTSELLERS FUNCTIONALITY
+// Add this to your kabsueats.js file
+// ============================================
+
+// Global variables for bestsellers
+let bestsellersData = [];
+let currentBestsellerItem = null;
+let currentCarouselIndex = 0;
+
+// ============================================
+// Initialize Bestsellers on Page Load
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    loadBestsellers();
+    initializeCarouselControls();
+    initializeBestsellersMenuButton();
+});
+
+// ============================================
+// Load Bestsellers from API
+// ============================================
+function loadBestsellers() {
+    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
+
+    if (!carouselTrack) {
+        console.error('Bestsellers carousel track not found');
+        return;
+    }
+
+    // Show loading skeleton
+    showLoadingSkeleton();
+
+    // Fetch bestsellers from API
+    fetch('/api/bestsellers/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.bestsellers && data.bestsellers.length > 0) {
+                bestsellersData = data.bestsellers;
+                renderBestsellers(data.bestsellers);
+            } else {
+                showNoBestsellers();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bestsellers:', error);
+            showErrorMessage();
+        });
 }
+
+// ============================================
+// Render Bestsellers Cards
+// ============================================
+function renderBestsellers(items) {
+    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
+
+    if (!carouselTrack) return;
+
+    // Clear existing content
+    carouselTrack.innerHTML = '';
+
+    // Render each bestseller card
+    items.forEach((item, index) => {
+        const card = createBestsellerCard(item, index);
+        carouselTrack.appendChild(card);
+    });
+
+    // Update carousel controls
+    updateCarouselControls();
+}
+
+// ============================================
+// Create Bestseller Card Element
+// ============================================
+function createBestsellerCard(item, index) {
+    const card = document.createElement('div');
+    card.className = 'bestseller-card';
+    card.setAttribute('data-index', index);
+    card.setAttribute('data-item-id', item.id);
+
+    // Status class
+    const statusClass = item.establishment.status.toLowerCase() === 'open' ? 'open' : 'closed';
+
+    // Default image if none provided
+    const imageUrl = item.image || '/static/images/default-food.jpg';
+
+    card.innerHTML = `
+        <div class="bestseller-card-image">
+            <img src="${imageUrl}" alt="${item.name}"
+                 onerror="this.src='/static/images/default-food.jpg'">
+            <span class="bestseller-badge">
+                <i class="fas fa-fire"></i> Best Seller
+            </span>
+        </div>
+        <div class="bestseller-card-content">
+            <h3 class="bestseller-card-name">${item.name}</h3>
+            <div class="bestseller-card-price">₱${parseFloat(item.price).toFixed(2)}</div>
+            <div class="bestseller-card-info">
+                <span class="bestseller-card-stock">
+                    <i class="fas fa-box"></i> ${item.quantity} Items
+                </span>
+                <span class="bestseller-card-orders">
+                    <i class="fas fa-shopping-bag"></i> ${item.total_orders || 0} orders
+                </span>
+            </div>
+            <div class="bestseller-card-establishment">
+                <div class="establishment-name">
+                    <i class="fas fa-store"></i>
+                    ${item.establishment.name}
+                </div>
+                <div class="establishment-address">
+                    <i class="fas fa-map-marker-alt"></i>
+                    ${item.establishment.address.substring(0, 50)}${item.establishment.address.length > 50 ? '...' : ''}
+                </div>
+                <div class="establishment-status ${statusClass}">
+                    <i class="fas fa-circle"></i>
+                    <span>${item.establishment.status}</span>
+                </div>
+            </div>
+            <button class="bestseller-card-button" onclick="openBestsellerModal(${index})">
+                <i class="fas fa-eye"></i> View Details
+            </button>
+        </div>
+    `;
+
+    return card;
+}
+
+// ============================================
+// Loading Skeleton
+// ============================================
+function showLoadingSkeleton() {
+    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
+    if (!carouselTrack) return;
+
+    carouselTrack.innerHTML = `
+        <div class="bestseller-card-skeleton">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-badge"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+            <div class="skeleton-button"></div>
+        </div>
+        <div class="bestseller-card-skeleton">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-badge"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+            <div class="skeleton-button"></div>
+        </div>
+        <div class="bestseller-card-skeleton">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-badge"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+            <div class="skeleton-button"></div>
+        </div>
+    `;
+}
+
+// ============================================
+// No Bestsellers Message
+// ============================================
+function showNoBestsellers() {
+    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
+    if (!carouselTrack) return;
+
+    carouselTrack.innerHTML = `
+        <div style="text-align: center; padding: 40px; width: 100%; color: #6b7280;">
+            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+            <p style="font-size: 16px; font-weight: 600;">No bestsellers available at the moment</p>
+            <p style="font-size: 14px;">Check back later for top-rated items!</p>
+        </div>
+    `;
+}
+
+// ============================================
+// Error Message
+// ============================================
+function showErrorMessage() {
+    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
+    if (!carouselTrack) return;
+
+    carouselTrack.innerHTML = `
+        <div style="text-align: center; padding: 40px; width: 100%; color: #ef4444;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <p style="font-size: 16px; font-weight: 600;">Failed to load bestsellers</p>
+            <p style="font-size: 14px;">Please try refreshing the page</p>
+            <button onclick="loadBestsellers()" style="margin-top: 15px; padding: 10px 20px; background: #B71C1C; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+        </div>
+    `;
+}
+
+// ============================================
+// Carousel Controls
+// ============================================
+function initializeCarouselControls() {
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => moveCarousel(-1));
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => moveCarousel(1));
+    }
+}
+
+function moveCarousel(direction) {
+    const track = document.getElementById('bestsellersCarouselTrack');
+    if (!track) return;
+
+    const cards = track.querySelectorAll('.bestseller-card');
+    const visibleCards = getVisibleCardsCount();
+    const maxIndex = Math.max(0, cards.length - visibleCards);
+
+    currentCarouselIndex = Math.max(0, Math.min(currentCarouselIndex + direction, maxIndex));
+
+    const cardWidth = 280; // min-width of card
+    const gap = 20; // gap between cards
+    const offset = -(currentCarouselIndex * (cardWidth + gap));
+
+    track.style.transform = `translateX(${offset}px)`;
+
+    updateCarouselControls();
+}
+
+function getVisibleCardsCount() {
+    const containerWidth = document.querySelector('.bestsellers-carousel-container')?.offsetWidth || 1200;
+    const cardWidth = 280;
+    const gap = 20;
+    return Math.floor(containerWidth / (cardWidth + gap));
+}
+
+function updateCarouselControls() {
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+    const track = document.getElementById('bestsellersCarouselTrack');
+
+    if (!prevBtn || !nextBtn || !track) return;
+
+    const cards = track.querySelectorAll('.bestseller-card');
+    const visibleCards = getVisibleCardsCount();
+    const maxIndex = Math.max(0, cards.length - visibleCards);
+
+    prevBtn.disabled = currentCarouselIndex === 0;
+    nextBtn.disabled = currentCarouselIndex >= maxIndex || cards.length <= visibleCards;
+}
+
+// ============================================
+// Bestsellers Menu Button
+// ============================================
+function initializeBestsellersMenuButton() {
+    const menuBtn = document.getElementById('bestsellersMenuBtn');
+
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            if (bestsellersData.length > 0) {
+                openBestsellerModal(0);
+            }
+        });
+    }
+}
+
+// ============================================
+// Open Bestseller Modal
+// ============================================
+function openBestsellerModal(index) {
+    if (!bestsellersData[index]) {
+        console.error('Invalid bestseller index:', index);
+        return;
+    }
+
+    currentBestsellerItem = bestsellersData[index];
+
+    const modal = document.getElementById('bestsellerModal');
+    if (!modal) return;
+
+    // Populate modal with item data
+    const item = currentBestsellerItem;
+    const establishment = item.establishment;
+
+    // Set image
+    const modalImage = document.getElementById('modalItemImage');
+    if (modalImage) {
+        modalImage.src = item.image || '/static/images/default-food.jpg';
+        modalImage.alt = item.name;
+    }
+
+    // Set item details
+    document.getElementById('modalItemName').textContent = item.name;
+    document.getElementById('modalItemDescription').textContent = item.description || 'No description available';
+    document.getElementById('modalItemPrice').textContent = `₱${parseFloat(item.price).toFixed(2)}`;
+    document.getElementById('modalItemStock').innerHTML = `<i class="fas fa-box"></i> ${item.quantity} Items`;
+
+    // Set establishment details
+    document.getElementById('modalEstablishmentName').textContent = establishment.name;
+    document.getElementById('modalEstablishmentAddress').textContent = establishment.address;
+
+    // Set establishment status
+    const statusElement = document.getElementById('modalEstablishmentStatus');
+    const statusClass = establishment.status.toLowerCase() === 'open' ? 'open' : 'closed';
+    statusElement.className = `establishment-status ${statusClass}`;
+    statusElement.innerHTML = `
+        <i class="fas fa-circle"></i>
+        <span>${establishment.status}</span>
+    `;
+
+    // Reset quantity
+    document.getElementById('modalQuantity').value = 1;
+
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// ============================================
+// Close Bestseller Modal
+// ============================================
+function closeBestsellerModal() {
+    const modal = document.getElementById('bestsellerModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    currentBestsellerItem = null;
+}
+
+// ============================================
+// Quantity Controls
+// ============================================
+function increaseQuantity() {
+    const quantityInput = document.getElementById('modalQuantity');
+    if (!quantityInput || !currentBestsellerItem) return;
+
+    const currentQty = parseInt(quantityInput.value);
+    const maxQty = currentBestsellerItem.quantity;
+
+    if (currentQty < maxQty) {
+        quantityInput.value = currentQty + 1;
+    }
+}
+
+function decreaseQuantity() {
+    const quantityInput = document.getElementById('modalQuantity');
+    if (!quantityInput) return;
+
+    const currentQty = parseInt(quantityInput.value);
+
+    if (currentQty > 1) {
+        quantityInput.value = currentQty - 1;
+    }
+}
+
+// ============================================
+// Add to Cart
+// ============================================
+function addBestsellerToCart() {
+    if (!currentBestsellerItem) {
+        showNotification('Please select an item', 'error');
+        return;
+    }
+
+    const quantity = parseInt(document.getElementById('modalQuantity').value);
+
+    // Use your existing add to cart function
+    // Assuming you have an addToCart function in your kabsueats.js
+    const itemData = {
+        menu_item_id: currentBestsellerItem.id,
+        quantity: quantity,
+        establishment_id: currentBestsellerItem.establishment.id
+    };
+
+    fetch('/cart/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(itemData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Item added to cart!', 'success');
+            closeBestsellerModal();
+
+            // Update cart count if you have this function
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        } else {
+            showNotification(data.message || 'Failed to add to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to cart:', error);
+        showNotification('An error occurred', 'error');
+    });
+}
+
+// ============================================
+// Buy Now
+// ============================================
+function buyBestsellerNow() {
+    if (!currentBestsellerItem) {
+        showNotification('Please select an item', 'error');
+        return;
+    }
+
+    const quantity = parseInt(document.getElementById('modalQuantity').value);
+
+    // First add to cart, then redirect to checkout
+    const itemData = {
+        menu_item_id: currentBestsellerItem.id,
+        quantity: quantity,
+        establishment_id: currentBestsellerItem.establishment.id
+    };
+
+    fetch('/cart/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(itemData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Redirect to cart/checkout page
+            window.location.href = '/cart/';
+        } else {
+            showNotification(data.message || 'Failed to process order', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error processing order:', error);
+        showNotification('An error occurred', 'error');
+    });
+}
+
+// ============================================
+// View Establishment Location
+// ============================================
+function viewEstablishmentLocation() {
+    if (!currentBestsellerItem) return;
+
+    const establishment = currentBestsellerItem.establishment;
+    const sidebar = document.getElementById('viewMapSidebar');
+
+    if (!sidebar) return;
+
+    // Set establishment info
+    document.getElementById('mapEstablishmentName').textContent = establishment.name;
+    document.getElementById('mapEstablishmentAddress').textContent = establishment.address;
+
+    // Initialize map (you'll need to implement this based on your map library)
+    initializeMap(establishment.latitude, establishment.longitude, establishment.name);
+
+    // Show sidebar
+    sidebar.classList.add('active');
+}
+
+function closeMapSidebar() {
+    const sidebar = document.getElementById('viewMapSidebar');
+    if (sidebar) {
+        sidebar.classList.remove('active');
+    }
+}
+
+// ============================================
+// Initialize Map (Placeholder - implement based on your map library)
+// ============================================
+function initializeMap(lat, lng, name) {
+    // This is a placeholder - implement based on your map library (Google Maps, Leaflet, etc.)
+    const mapContainer = document.getElementById('mapContainer');
+
+    if (!mapContainer) return;
+
+    // Example using Google Maps (you need to include Google Maps API)
+    if (typeof google !== 'undefined' && google.maps) {
+        const map = new google.maps.Map(mapContainer, {
+            center: { lat: lat, lng: lng },
+            zoom: 15
+        });
+
+        new google.maps.Marker({
+            position: { lat: lat, lng: lng },
+            map: map,
+            title: name
+        });
+    } else {
+        // Fallback: Show a message or use another map provider
+        mapContainer.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; color: #6b7280;">
+                <div style="text-align: center;">
+                    <i class="fas fa-map-marked-alt" style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>Map unavailable</p>
+                    <p style="font-size: 12px;">Lat: ${lat}, Lng: ${lng}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+// Get CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Show Notification (if not already implemented)
+function showNotification(message, type = 'info') {
+    // Check if you have an existing notification system
+    if (typeof showToast === 'function') {
+        showToast(message, type);
+        return;
+    }
+
+    // Simple notification implementation
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 99999;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Handle window resize for carousel
+window.addEventListener('resize', () => {
+    updateCarouselControls();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeBestsellerModal();
+        closeMapSidebar();
+    }
+});
