@@ -12,6 +12,7 @@ class FoodEstablishmentAdmin(admin.ModelAdmin):
                 obj.image.url
             )
         return "-"
+
     image_tag.short_description = 'Image'
 
     # ✅ FIXED: 'category' → custom method 'get_categories'
@@ -21,6 +22,7 @@ class FoodEstablishmentAdmin(admin.ModelAdmin):
         if obj.other_category:
             cats.append(f"Other: {obj.other_category}")
         return ", ".join(cats) if cats else "-"
+
     get_categories.short_description = 'Categories'
 
     list_display = ('name', 'address', 'status', 'get_categories', 'image_tag',)
@@ -31,8 +33,32 @@ class FoodEstablishmentAdmin(admin.ModelAdmin):
 
 class MenuItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'food_establishment', 'price', 'quantity', 'is_top_seller')
-    search_fields = ('name',)
-    list_filter = ('quantity', 'is_top_seller',)
+    search_fields = ('name', 'food_establishment__name')
+    list_filter = ('quantity', 'is_top_seller', 'food_establishment')
+    actions = ['mark_as_top_seller', 'unmark_as_top_seller']
+
+    def mark_as_top_seller(self, request, queryset):
+        """Mark selected items as top sellers"""
+        from django.utils import timezone
+        updated = 0
+        for item in queryset:
+            item.is_top_seller = True
+            item.top_seller_marked_at = timezone.now()
+            item.save()
+            updated += 1
+        self.message_user(request, f'{updated} items marked as top sellers')
+
+    mark_as_top_seller.short_description = "✅ Mark as top seller"
+
+    def unmark_as_top_seller(self, request, queryset):
+        """Remove top seller flag"""
+        updated = queryset.update(
+            is_top_seller=False,
+            top_seller_marked_at=None
+        )
+        self.message_user(request, f'{updated} items unmarked')
+
+    unmark_as_top_seller.short_description = "❌ Remove top seller flag"
 
 
 @admin.register(InvitationCode)

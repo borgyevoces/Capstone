@@ -6569,3 +6569,100 @@ def create_admin_user(request):
             'message': f'❌ Failed to create superuser: {str(e)}',
             'type': type(e).__name__
         }, status=500)
+
+
+# ============================================
+# AUTO-POPULATE BEST SELLERS (One-time setup)
+# ============================================
+from django.views.decorators.http import require_http_methods
+
+
+@require_http_methods(["GET"])
+def auto_populate_best_sellers(request):
+    """
+    Utility view to automatically mark items as top sellers.
+    Visit this URL ONCE to populate: /api/auto-populate-best-sellers/
+
+    This distributes top seller flags across ALL establishments evenly.
+    """
+    try:
+        from collections import defaultdict
+
+        # Get approved establishments
+        approved = FoodEstablishment.objects.filter(is_approved=True)
+
+        if approved.count() == 0:
+            return JsonResponse({
+                'success': False,
+                'message': 'No approved establishments found',
+                'action': 'Please approve establishments in Django admin first at /admin/',
+                'establishments_count': 0
+            })
+
+        # Get all menu items from approved establishments
+        all_items = MenuItem.objects.filter(food_establishment__in=approved)
+        total_items = all_items.count()
+
+        if total_items == 0:
+            return JsonResponse({
+                'success': False,
+                'message': 'No menu items found in approved establishments',
+                'action': 'Please add menu items to your establishments',
+                'establishments_count': approved.count(),
+                'total_items': 0
+            })
+
+        # Group items by establishment
+        items_by_establishment = defaultdict(list)
+        for item in all_items:
+            items_by_establishment[item.food_establishment_id].append(item)
+
+        # Reset all existing top sellers first
+        MenuItem.objects.update(is_top_seller=False, top_seller_marked_at=None)
+
+        # Mark items using ROUND-ROBIN distribution (3 per establishment)
+        marked_items = []
+        items_per_establishment = 3  # Number of items to mark per establishment
+
+        for establishment_id, items in items_by_establishment.items():
+            establishment = FoodEstablishment.objects.get(id=establishment_id)
+            for item in items[:items_per_establishment]:  # Take first N items from each
+                item.is_top_seller = True
+                item.top_seller_marked_at = timezone.now()
+                item.save()
+                marked_items.append({
+                    'id': item.id,
+                    'name': item.name,
+                    'price': float(item.price),
+                    'establishment_id': establishment.id,
+                    'establishment_name': establishment.name
+                })
+
+        # Group by establishment for response
+        distribution = defaultdict(int)
+        for item in marked_items:
+            distribution[item['establishment_name']] += 1
+
+        return JsonResponse({
+            'success': True,
+            'message': f'✅ Successfully marked {len(marked_items)} items as top sellers!',
+            'marked_items_count': len(marked_items),
+            'establishments_count': len(items_by_establishment),
+            'distribution': dict(distribution),
+            'marked_items': marked_items,
+            'next_steps': [
+                '1. Visit /api/best-sellers/ to verify items are showing',
+                '2. Go to homepage to see Best Sellers section',
+                '3. Items are distributed evenly across all establishments'
+            ],
+            'api_test_url': f'{request.scheme}://{request.get_host()}/api/best-sellers/'
+        })
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'action': 'Check your database and ensure establishments are approved'
+        }, status=500)
