@@ -4898,7 +4898,6 @@ def create_test_notification(request):
         }, status=500)
 
 
-@require_http_methods(["GET"])
 # ==========================================
 # ORDER TRANSACTION HISTORY VIEWS - COMPLETE CODE           FOR OWNER SIDE
 
