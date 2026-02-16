@@ -103,6 +103,7 @@ urlpatterns = [
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
                   path('api/reorder/<int:order_id>/', views.reorder_items, name='reorder_items'),
                   path('api/order/<int:order_id>/', views.get_order_details, name='get_order_details'),
+                  path('fix-bestsellers/', views.fix_bestsellers_view, name='fix_bestsellers'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,

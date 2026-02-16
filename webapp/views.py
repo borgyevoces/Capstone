@@ -6580,12 +6580,155 @@ def get_order_details(request, order_id):
             'message': str(e)
         }, status=500)
 
-
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 import os
 
+@csrf_exempt
+def fix_bestsellers_view(request):
+    """
+    Browser-accessible fix for Best Sellers
+    URL: /fix-bestsellers/?secret=fixnow2024
+
+    ⚠️ REMOVE THIS URL AFTER USING!
+    """
+    # Security check
+    secret = request.GET.get('secret', '')
+    if secret != 'fixnow2024':
+        return JsonResponse({
+            'error': 'Access Denied',
+            'message': 'Add ?secret=fixnow2024 to the URL'
+        }, status=403)
+
+    try:
+        results = {
+            'step_1_establishments': {},
+            'step_2_stock': {},
+            'step_3_top_sellers': {},
+            'summary': {}
+        }
+
+        # ============================================
+        # STEP 1: Approve Establishments
+        # ============================================
+        total_establishments = FoodEstablishment.objects.count()
+        approved_before = FoodEstablishment.objects.filter(is_approved=True).count()
+
+        if total_establishments == 0:
+            return JsonResponse({
+                'error': 'No establishments found',
+                'message': 'Please add establishments first in Django admin',
+                'admin_url': '/admin/webapplication/foodestablishment/'
+            })
+
+        # Approve all
+        FoodEstablishment.objects.all().update(is_approved=True)
+        approved_after = FoodEstablishment.objects.filter(is_approved=True).count()
+
+        results['step_1_establishments'] = {
+            'total': total_establishments,
+            'approved_before': approved_before,
+            'approved_after': approved_after,
+            'newly_approved': approved_after - approved_before,
+            'status': '✅ Success'
+        }
+
+        # ============================================
+        # STEP 2: Set Stock
+        # ============================================
+        total_items = MenuItem.objects.count()
+        items_in_stock_before = MenuItem.objects.filter(quantity__gt=0).count()
+
+        if total_items == 0:
+            return JsonResponse({
+                'error': 'No menu items found',
+                'message': 'Please add menu items first in Django admin',
+                'admin_url': '/admin/webapplication/menuitem/',
+                'partial_results': results
+            })
+
+        # Set stock for items with 0 quantity
+        items_updated = MenuItem.objects.filter(quantity=0).update(quantity=10)
+        items_in_stock_after = MenuItem.objects.filter(quantity__gt=0).count()
+
+        results['step_2_stock'] = {
+            'total_items': total_items,
+            'in_stock_before': items_in_stock_before,
+            'in_stock_after': items_in_stock_after,
+            'updated': items_updated,
+            'status': '✅ Success'
+        }
+
+        # ============================================
+        # STEP 3: Mark Top Sellers
+        # ============================================
+        top_sellers_before = MenuItem.objects.filter(is_top_seller=True).count()
+
+        # Get items to mark as top sellers
+        items_to_mark = MenuItem.objects.filter(
+            food_establishment__is_approved=True,
+            quantity__gt=0
+        ).annotate(
+            total_orders=Coalesce(
+                Sum('orderitem__quantity', filter=Q(orderitem__order__status='Completed')),
+                0
+            )
+        ).order_by('-total_orders', '-created_at')[:30]
+
+        marked_items = []
+        now = timezone.now()
+
+        for item in items_to_mark:
+            item.is_top_seller = True
+            item.top_seller_marked_at = now
+            item.save()
+
+            marked_items.append({
+                'id': item.id,
+                'name': item.name,
+                'establishment': item.food_establishment.name,
+                'price': float(item.price),
+                'quantity': item.quantity,
+                'orders': getattr(item, 'total_orders', 0)
+            })
+
+        top_sellers_after = MenuItem.objects.filter(is_top_seller=True).count()
+
+        results['step_3_top_sellers'] = {
+            'marked_before': top_sellers_before,
+            'marked_after': top_sellers_after,
+            'newly_marked': len(marked_items),
+            'items': marked_items,
+            'status': '✅ Success'
+        }
+
+        # ============================================
+        # SUMMARY
+        # ============================================
+        results['summary'] = {
+            'success': True,
+            'message': 'Best Sellers configured successfully!',
+            'approved_establishments': approved_after,
+            'items_in_stock': items_in_stock_after,
+            'top_sellers_marked': top_sellers_after,
+            'next_steps': [
+                'Visit /api/best-sellers/ to verify API',
+                'Refresh your homepage (Ctrl+Shift+R)',
+                'Check browser console for "✅ Loaded X best sellers"',
+                '⚠️ IMPORTANT: Remove /fix-bestsellers/ URL from urls.py after using!'
+            ]
+        }
+
+        return JsonResponse(results, json_dumps_params={'indent': 2})
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'An error occurred while fixing best sellers'
+        }, status=500)
 
 @csrf_exempt
 def create_admin_user(request):
