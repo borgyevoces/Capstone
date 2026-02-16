@@ -4901,19 +4901,17 @@ def create_test_notification(request):
 @require_http_methods(["GET"])
 def get_best_sellers(request):
     """
-    ✅ IMPROVED: API endpoint to get best-selling menu items across all establishments
-    - **ENSURES VARIETY**: Distributes items evenly across all establishments
-    - Fetches items from ALL approved establishments
-    - Uses round-robin approach to show items from different establishments
-    - Prioritizes diversity over just showing all items from one establishment
+    ✅ WORKING: API endpoint to get best-selling menu items across all establishments
+    - Shows items from ALL approved establishments
+    - Uses round-robin distribution for variety
+    - GUARANTEED to return items if they exist in database
     """
     try:
-        from django.db.models import Count, Q, Sum
+        from django.db.models import Sum, Q
         from django.db.models.functions import Coalesce
         from collections import defaultdict
 
-        # ✅ STEP 1: Get ALL approved and active establishments
-        # Note: 'status' is a @property, not a database field, so we can't filter by it
+        # ✅ STEP 1: Get ALL approved establishments
         approved_establishments = FoodEstablishment.objects.filter(
             is_approved=True
         )
@@ -4921,15 +4919,14 @@ def get_best_sellers(request):
         establishment_count = approved_establishments.count()
 
         if establishment_count == 0:
-            # No approved establishments
             return JsonResponse({
                 'success': True,
                 'items': [],
                 'count': 0,
-                'message': 'No approved establishments found'
+                'message': 'No approved establishments found. Please approve establishments in Django admin.'
             })
 
-        # ✅ STEP 2: Get ALL menu items from approved establishments with order counts
+        # ✅ STEP 2: Get ALL menu items from approved establishments
         all_menu_items = MenuItem.objects.filter(
             food_establishment__in=approved_establishments
         ).select_related(
@@ -4943,55 +4940,63 @@ def get_best_sellers(request):
             )
         ).order_by('-is_top_seller', '-total_orders', '-created_at')
 
-        # ✅ STEP 3: Group items by establishment
+        total_items = all_menu_items.count()
+
+        if total_items == 0:
+            return JsonResponse({
+                'success': True,
+                'items': [],
+                'count': 0,
+                'message': f'Found {establishment_count} approved establishments but no menu items. Please add menu items.'
+            })
+
+        # ✅ STEP 3: Group items by establishment for round-robin distribution
         items_by_establishment = defaultdict(list)
         for item in all_menu_items:
             items_by_establishment[item.food_establishment_id].append(item)
 
-        # ✅ STEP 4: Use ROUND-ROBIN distribution to ensure variety
-        # This ensures we get items from ALL establishments, not just one
+        # ✅ STEP 4: Round-robin selection for maximum variety
         best_sellers = []
-        max_items_per_establishment = 5  # Max items from each establishment initially
+        max_per_establishment = 5
 
-        # First pass: Get up to max_items_per_establishment from each establishment
+        # First pass: Get up to 5 items from each establishment
         for establishment_id, items in items_by_establishment.items():
-            for item in items[:max_items_per_establishment]:
+            for item in items[:max_per_establishment]:
                 best_sellers.append(item)
                 if len(best_sellers) >= 30:
                     break
             if len(best_sellers) >= 30:
                 break
 
-        # Second pass: If we still need more items, do round-robin
+        # Second pass: Continue round-robin if needed
         if len(best_sellers) < 30:
             round_robin_index = 0
             establishment_ids = list(items_by_establishment.keys())
             items_taken = defaultdict(int)
 
-            while len(best_sellers) < 30:
-                # Get next establishment in round-robin
-                current_establishment = establishment_ids[round_robin_index % len(establishment_ids)]
-                items_from_est = items_by_establishment[current_establishment]
+            for est_id in establishment_ids:
+                items_taken[est_id] = min(max_per_establishment, len(items_by_establishment[est_id]))
 
-                # Get next item from this establishment that we haven't added
-                next_index = items_taken[current_establishment]
+            while len(best_sellers) < 30:
+                current_est = establishment_ids[round_robin_index % len(establishment_ids)]
+                items_from_est = items_by_establishment[current_est]
+                next_index = items_taken[current_est]
+
                 if next_index < len(items_from_est):
-                    candidate_item = items_from_est[next_index]
-                    if candidate_item not in best_sellers:
-                        best_sellers.append(candidate_item)
-                        items_taken[current_establishment] += 1
+                    candidate = items_from_est[next_index]
+                    if candidate not in best_sellers:
+                        best_sellers.append(candidate)
+                        items_taken[current_est] += 1
 
                 round_robin_index += 1
-
-                # Safety break if we've exhausted all establishments
                 if round_robin_index > len(establishment_ids) * 50:
                     break
 
-        # ✅ STEP 5: If STILL no items (edge case), get any items
+        # ✅ STEP 5: If somehow still empty, just take first 30
         if len(best_sellers) == 0:
             best_sellers = list(all_menu_items[:30])
 
-        # ✅ STEP 5: Build the response data
+        # ✅ STEP 4: Build the response data
         items_data = []
         for item in best_sellers:
             establishment = item.food_establishment
@@ -5050,6 +5055,93 @@ def get_best_sellers(request):
 
 
 @require_http_methods(["GET"])
+def auto_populate_best_sellers(request):
+    """
+    🔧 UTILITY: Auto-populate best sellers from all establishments
+    Visit this URL once to mark items: /api/auto-populate-best-sellers/
+    """
+    try:
+        from django.utils import timezone
+        from collections import defaultdict
+
+        # Get approved establishments
+        approved = FoodEstablishment.objects.filter(is_approved=True)
+
+        if approved.count() == 0:
+            return JsonResponse({
+                'success': False,
+                'message': '❌ No approved establishments found',
+                'action': 'Please approve establishments in Django admin at /admin/',
+                'approved_count': 0,
+                'total_establishments': FoodEstablishment.objects.count()
+            })
+
+        # Get all menu items from approved establishments
+        all_items = MenuItem.objects.filter(food_establishment__in=approved)
+
+        if all_items.count() == 0:
+            return JsonResponse({
+                'success': False,
+                'message': '❌ No menu items found in approved establishments',
+                'approved_establishments': approved.count(),
+                'action': 'Please add menu items to establishments'
+            })
+
+        # Group by establishment
+        items_by_est = defaultdict(list)
+        for item in all_items:
+            items_by_est[item.food_establishment_id].append(item)
+
+        # Reset all existing top sellers
+        reset_count = MenuItem.objects.filter(is_top_seller=True).count()
+        MenuItem.objects.update(is_top_seller=False, top_seller_marked_at=None)
+
+        # Mark items from each establishment (round-robin for fairness)
+        marked_items = []
+        items_per_establishment = 3  # Mark 3 items per establishment
+
+        for establishment_id, items in items_by_est.items():
+            count = 0
+            for item in items:
+                if count >= items_per_establishment:
+                    break
+                item.is_top_seller = True
+                item.top_seller_marked_at = timezone.now()
+                item.save()
+                marked_items.append({
+                    'id': item.id,
+                    'name': item.name,
+                    'price': float(item.price),
+                    'establishment': item.food_establishment.name
+                })
+                count += 1
+
+        return JsonResponse({
+            'success': True,
+            'message': f'✅ Successfully marked {len(marked_items)} items as top sellers!',
+            'details': {
+                'reset_count': reset_count,
+                'newly_marked': len(marked_items),
+                'establishments_count': len(items_by_est),
+                'items_per_establishment': items_per_establishment
+            },
+            'marked_items': marked_items,
+            'next_steps': [
+                '1. Visit /api/best-sellers/ to verify',
+                '2. Go to homepage to see Best Sellers section',
+                '3. Items are now distributed across all establishments!'
+            ]
+        })
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
+
 def get_best_sellers_alternative(request):
     """
     API endpoint to get popular menu items based on order count
@@ -6568,101 +6660,4 @@ def create_admin_user(request):
             'status': 'error',
             'message': f'❌ Failed to create superuser: {str(e)}',
             'type': type(e).__name__
-        }, status=500)
-
-
-# ============================================
-# AUTO-POPULATE BEST SELLERS (One-time setup)
-# ============================================
-from django.views.decorators.http import require_http_methods
-
-
-@require_http_methods(["GET"])
-def auto_populate_best_sellers(request):
-    """
-    Utility view to automatically mark items as top sellers.
-    Visit this URL ONCE to populate: /api/auto-populate-best-sellers/
-
-    This distributes top seller flags across ALL establishments evenly.
-    """
-    try:
-        from collections import defaultdict
-
-        # Get approved establishments
-        approved = FoodEstablishment.objects.filter(is_approved=True)
-
-        if approved.count() == 0:
-            return JsonResponse({
-                'success': False,
-                'message': 'No approved establishments found',
-                'action': 'Please approve establishments in Django admin first at /admin/',
-                'establishments_count': 0
-            })
-
-        # Get all menu items from approved establishments
-        all_items = MenuItem.objects.filter(food_establishment__in=approved)
-        total_items = all_items.count()
-
-        if total_items == 0:
-            return JsonResponse({
-                'success': False,
-                'message': 'No menu items found in approved establishments',
-                'action': 'Please add menu items to your establishments',
-                'establishments_count': approved.count(),
-                'total_items': 0
-            })
-
-        # Group items by establishment
-        items_by_establishment = defaultdict(list)
-        for item in all_items:
-            items_by_establishment[item.food_establishment_id].append(item)
-
-        # Reset all existing top sellers first
-        MenuItem.objects.update(is_top_seller=False, top_seller_marked_at=None)
-
-        # Mark items using ROUND-ROBIN distribution (3 per establishment)
-        marked_items = []
-        items_per_establishment = 3  # Number of items to mark per establishment
-
-        for establishment_id, items in items_by_establishment.items():
-            establishment = FoodEstablishment.objects.get(id=establishment_id)
-            for item in items[:items_per_establishment]:  # Take first N items from each
-                item.is_top_seller = True
-                item.top_seller_marked_at = timezone.now()
-                item.save()
-                marked_items.append({
-                    'id': item.id,
-                    'name': item.name,
-                    'price': float(item.price),
-                    'establishment_id': establishment.id,
-                    'establishment_name': establishment.name
-                })
-
-        # Group by establishment for response
-        distribution = defaultdict(int)
-        for item in marked_items:
-            distribution[item['establishment_name']] += 1
-
-        return JsonResponse({
-            'success': True,
-            'message': f'✅ Successfully marked {len(marked_items)} items as top sellers!',
-            'marked_items_count': len(marked_items),
-            'establishments_count': len(items_by_establishment),
-            'distribution': dict(distribution),
-            'marked_items': marked_items,
-            'next_steps': [
-                '1. Visit /api/best-sellers/ to verify items are showing',
-                '2. Go to homepage to see Best Sellers section',
-                '3. Items are distributed evenly across all establishments'
-            ],
-            'api_test_url': f'{request.scheme}://{request.get_host()}/api/best-sellers/'
-        })
-
-    except Exception as e:
-        import traceback
-        return JsonResponse({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc(),
-            'action': 'Check your database and ensure establishments are approved'
         }, status=500)
