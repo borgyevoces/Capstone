@@ -42,6 +42,7 @@
 
     <div class="nav-right">
         {% if user.is_authenticated %}
+            {% block extra_nav_buttons %}{% endblock %}
             <a href="{% url 'order_history' %}" class="nib"><i class="fas fa-receipt"></i> My Orders</a>
             <a href="{% url 'view_cart' %}" class="nib cart-link">
                 <i class="fas fa-shopping-cart"></i> Cart
@@ -83,7 +84,6 @@
             <a href="{% url 'user_login_register' %}" class="nib"><i class="fas fa-sign-in-alt"></i> Login</a>
             <a href="{% url 'user_login_register' %}" class="nib login-btn">Register</a>
         {% endif %}
-        {% block extra_nav_buttons %}{% endblock %}
     </div>
 </header>
 

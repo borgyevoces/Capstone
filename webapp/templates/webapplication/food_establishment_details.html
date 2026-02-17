@@ -17,6 +17,141 @@
    TIME-BASED STATUS BADGE STYLES
    ============================================================ */
 
+/* ============================================================
+   REVIEWS SECTION - NEW CARD DESIGN
+   ============================================================ */
+.reviews-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.review-login-prompt { margin: 0; font-size: 0.82em; color: #6b7280; }
+.review-login-prompt a { color: var(--red, #B71C1C); font-weight: 600; text-decoration: none; }
+.user-review-hint { margin: 0; font-size: 0.82em; color: #6b7280; }
+
+.review-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+    position: relative;
+}
+.review-card:last-child { border-bottom: none; }
+.review-card:hover { background: #fafafa; border-radius: 8px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+
+.review-card--mine {
+    background: #fff8f8;
+    border-radius: 10px;
+    padding: 14px 12px;
+    border: 1.5px solid #fdd;
+    margin-bottom: 8px;
+}
+.review-card--mine:hover { background: #fff3f3; margin: 0 0 8px; }
+
+.review-card__avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+}
+.review-card__avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+.review-card--mine .review-card__avatar img { border-color: #B71C1C; }
+
+.review-card__body { flex: 1; min-width: 0; }
+
+.review-card__top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.review-card__name {
+    font-weight: 700;
+    font-size: 0.88em;
+    color: #1f2937;
+}
+.review-card__badge {
+    background: #B71C1C;
+    color: white;
+    font-size: 0.68em;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.review-card__stars {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+.review-card__stars i { color: #f59e0b; font-size: 0.78em; }
+.review-card__stars i.empty { color: #d1d5db; }
+.review-card__date {
+    font-size: 0.75em;
+    color: #9ca3af;
+    margin-left: auto;
+}
+.review-card__comment {
+    font-size: 0.85em;
+    color: #374151;
+    line-height: 1.55;
+    margin: 0;
+    word-break: break-word;
+}
+
+.review-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+.review-action-btn {
+    background: none;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 7px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 0.8em;
+    transition: all 0.2s;
+}
+.review-action-btn:hover { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+.review-action-btn--delete:hover { background: #fee2e2; color: #B71C1C; border-color: #fca5a5; }
+
+.reviews-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: #9ca3af;
+}
+.reviews-empty i { font-size: 2em; margin-bottom: 10px; display: block; opacity: 0.4; }
+.reviews-empty p { font-size: 0.9em; margin: 0; }
+
+.all-reviews-list-wrapper {
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.all-reviews-list-wrapper::-webkit-scrollbar { width: 4px; }
+.all-reviews-list-wrapper::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+
+/* ============================================================ */
+
 .status-badge {
     display: inline-block;
     padding: 6px 12px;
@@ -903,11 +1038,15 @@
                     <p>
                         <i class="fas fa-store"></i>
                         <strong>Categories:</strong><br>
-                        {% if establishment.category %}
-                        {{ establishment.category.name }}
+                        {% with cats=establishment.categories.all %}
+                        {% if cats %}
+                            {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% elif establishment.other_category %}
+                            {{ establishment.other_category }}
                         {% else %}
-                        N/A
+                            N/A
                         {% endif %}
+                        {% endwith %}
                     </p>
 
                     <p>
@@ -961,7 +1100,7 @@
             <section class="section-card reviews-section">
                 <h2>Customer Reviews</h2>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                <div class="reviews-header-bar">
                     <div class="review-filters">
                         <select class="review-filter-dropdown" id="reviewFilterDropdown">
                             <option value="all">All Reviews</option>
@@ -972,13 +1111,13 @@
 
                     {% if user.is_authenticated %}
                     {% if not user_review %}
-                    <button class="btn-review" id="addReviewBtn" onclick="openReviewModal()"><i class="fas fa-star"></i> Write a Review</button>
+                    <button class="btn-review" id="addReviewBtn" onclick="openReviewModal()"><i class="fas fa-pen"></i> Write a Review</button>
                     {% else %}
-                    <p class="text-muted" style="margin: 0; font-size: 0.82em;">Your review is highlighted below. Click the pencil icon to edit it.</p>
+                    <p class="user-review-hint" id="userReviewHint">✏️ Click the pencil icon to edit your review.</p>
                     {% endif %}
                     {% else %}
-                    <p class="text-muted review-login-prompt" style="margin: 0; font-size: 0.82em;">
-                        Log in to write a review. <a href="{% url 'user_login_register' %}">Log In / Sign Up</a>
+                    <p class="review-login-prompt">
+                        <a href="{% url 'user_login_register' %}"><i class="fas fa-sign-in-alt"></i> Log in to review</a>
                     </p>
                     {% endif %}
                 </div>
@@ -986,79 +1125,83 @@
                 <div class="all-reviews-list-wrapper">
                     <div class="all-reviews-list" id="allReviewsList">
 
-                        {# NEW REVIEW LAYOUT: Render User's Review First #}
+                        {# User's own review rendered first #}
                         {% if user_review %}
-                        {% with review=user_review review_type=user_review.rating|get_review_type %}
-                        <div class="review-item user-highlight {{ review_type }}" data-review-id="{{ review.id }}"
+                        {% with review=user_review %}
+                        <div class="review-card review-card--mine" data-review-id="{{ review.id }}"
                              data-is-user-review="true" data-rating="{{ review.rating }}">
-                            <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                                 alt="{{ review.user.username }}" class="review-user-pic">
-
-                            <div class="review-main">
-                                <div class="review-main-top">
-                                    <div class="review-user-info">
-                                        <span class="review-username">{{ review.user.username }} <span
-                                                class="badge-user-review">(You)</span></span>
-                                        <div class="review-stars">
-                                            {% for i in "12345" %}
-                                            {% if forloop.counter <= review.rating %}
-                                            <i class="fas fa-star filled"></i>
-                                            {% else %}
-                                            <i class="far fa-star"></i>
-                                            {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
-                                    </div>
-                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
-                                </div>
+                            <div class="review-card__avatar">
+                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                     alt="{{ review.user.username }}">
                             </div>
-
-                            <div class="review-actions">
-                                <i class="fas fa-edit edit-review" data-review-id="{{ review.id }}"
-                                   data-rating="{{ review.rating }}"
-                                   data-comment="{{ review.comment|default:''|escapejs }}"></i>
-                                <i class="fas fa-trash-alt delete-review" data-review-id="{{ review.id }}"></i>
+                            <div class="review-card__body">
+                                <div class="review-card__top">
+                                    <span class="review-card__name">{{ review.user.username }}</span>
+                                    <span class="review-card__badge">You</span>
+                                    <div class="review-card__stars">
+                                        {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                        <i class="fas fa-star"></i>
+                                        {% else %}
+                                        <i class="far fa-star empty"></i>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="review-card__date">{{ review.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <p class="review-card__comment">{{ review.comment|default:'' }}</p>
+                            </div>
+                            <div class="review-card__actions">
+                                <button class="review-action-btn edit-review"
+                                        data-review-id="{{ review.id }}"
+                                        data-rating="{{ review.rating }}"
+                                        data-comment="{{ review.comment|default:''|escapejs }}"
+                                        title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="review-action-btn review-action-btn--delete delete-review"
+                                        data-review-id="{{ review.id }}"
+                                        title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                         {% endwith %}
                         {% endif %}
 
-                        {# NEW REVIEW LAYOUT: Render Other Reviews #}
+                        {# Other reviews #}
                         {% for review in reviews %}
-                        {% with review_type=review.rating|get_review_type %}
-                        <div class="review-item {{ review_type }}" data-review-id="{{ review.id }}"
-                             data-rating="{{ review.rating }}">
-                            <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                                 alt="{{ review.user.username }}" class="review-user-pic">
-
-                            <div class="review-main">
-                                <div class="review-main-top">
-                                    <div class="review-user-info">
-                                        <span class="review-username">{{ review.user.username }}</span>
-                                        <div class="review-stars">
-                                            {% for i in "12345" %}
-                                            {% if forloop.counter <= review.rating %}
-                                            <i class="fas fa-star filled"></i>
-                                            {% else %}
-                                            <i class="far fa-star"></i>
-                                            {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                        <div class="review-card" data-review-id="{{ review.id }}" data-rating="{{ review.rating }}">
+                            <div class="review-card__avatar">
+                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                                     alt="{{ review.user.username }}">
+                            </div>
+                            <div class="review-card__body">
+                                <div class="review-card__top">
+                                    <span class="review-card__name">{{ review.user.username }}</span>
+                                    <div class="review-card__stars">
+                                        {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                        <i class="fas fa-star"></i>
+                                        {% else %}
+                                        <i class="far fa-star empty"></i>
+                                        {% endif %}
+                                        {% endfor %}
                                     </div>
-                                    <p class="review-comment">{{ review.comment|default:'' }}</p>
+                                    <span class="review-card__date">{{ review.created_at|date:"M d, Y" }}</span>
                                 </div>
+                                <p class="review-card__comment">{{ review.comment|default:'' }}</p>
                             </div>
                         </div>
-                        {% endwith %}
                         {% empty %}
                         {% if not user_review %}
-                        <p class="text-muted" id="noReviewsMessage">Be the first to leave a review!</p>
+                        <div class="reviews-empty" id="noReviewsMessage">
+                            <i class="fas fa-comment-slash"></i>
+                            <p>Be the first to leave a review!</p>
+                        </div>
                         {% endif %}
                         {% endfor %}
-                        <p class="text-muted hidden-message" id="noFilteredReviews">No reviews found for this
-                            filter.</p>
+                        <p class="text-muted hidden-message" id="noFilteredReviews" style="display:none;">No reviews found for this filter.</p>
                     </div>
                 </div>
             </section>
@@ -2147,11 +2290,11 @@
 
     // ---- Build star HTML for a given rating ----
     function buildStarsHTML(rating) {
-        let html = '<div class="review-stars">';
+        let html = '<div class="review-card__stars">';
         for (let i = 1; i <= 5; i++) {
             html += (i <= rating)
-                ? '<i class="fas fa-star filled"></i>'
-                : '<i class="far fa-star"></i>';
+                ? '<i class="fas fa-star"></i>'
+                : '<i class="far fa-star empty"></i>';
         }
         html += '</div>';
         return html;
@@ -2210,49 +2353,49 @@
         const noMsg = document.getElementById('noReviewsMessage');
         if (noMsg) noMsg.style.display = 'none';
 
-        // Build the card — same structure as Django template renders
+        const starsHtml = buildStarsHTML(rating);
+
+        // Build card using new review-card structure
         const card = document.createElement('div');
-        card.className = 'review-item user-highlight';
+        card.className = 'review-card review-card--mine';
         card.setAttribute('data-is-user-review', 'true');
         card.setAttribute('data-rating', rating);
-        // data-review-id will be set after we get the server response id (see below)
 
         card.innerHTML =
-            '<img src="' + profilePicUrl + '" alt="' + username + '" class="review-user-pic">' +
-            '<div class="review-main">' +
-                '<div class="review-main-top">' +
-                    '<div class="review-user-info">' +
-                        '<span class="review-username">' + username + ' <span class="badge-user-review">(You)</span></span>' +
-                        buildStarsHTML(rating) +
-                        '<span class="review-date">' + formatToday() + '</span>' +
-                    '</div>' +
-                    '<p class="review-comment">' + comment.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' +
-                '</div>' +
+            '<div class="review-card__avatar">' +
+                '<img src="' + profilePicUrl + '" alt="' + username + '">' +
             '</div>' +
-            '<div class="review-actions">' +
-                '<i class="fas fa-edit edit-review" data-review-id="" data-rating="' + rating + '" data-comment="' + comment.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '"></i>' +
-                '<i class="fas fa-trash-alt delete-review" data-review-id=""></i>' +
+            '<div class="review-card__body">' +
+                '<div class="review-card__top">' +
+                    '<span class="review-card__name">' + username + '</span>' +
+                    '<span class="review-card__badge">You</span>' +
+                    starsHtml +
+                    '<span class="review-card__date">' + formatToday() + '</span>' +
+                '</div>' +
+                '<p class="review-card__comment">' + comment.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' +
+            '</div>' +
+            '<div class="review-card__actions">' +
+                '<button class="review-action-btn edit-review" data-review-id="" data-rating="' + rating + '" data-comment="' + comment.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '" title="Edit"><i class="fas fa-pen"></i></button>' +
+                '<button class="review-action-btn review-action-btn--delete delete-review" data-review-id="" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
             '</div>';
 
-        // Insert at the very top of the list (before any existing reviews)
         list.insertBefore(card, list.firstChild);
-
-        return card; // return so we can patch the review-id later
+        return card;
     }
 
     // ---- Update an EXISTING user review card in place (realtime) ----
     function updateExistingReviewCard(reviewId, rating, comment) {
-        const card = document.querySelector('.review-item[data-review-id="' + reviewId + '"]');
+        const card = document.querySelector('.review-card[data-review-id="' + reviewId + '"]');
         if (!card) return;
 
         card.setAttribute('data-rating', rating);
 
         // Update stars
-        const starsContainer = card.querySelector('.review-stars');
+        const starsContainer = card.querySelector('.review-card__stars');
         if (starsContainer) starsContainer.outerHTML = buildStarsHTML(rating);
 
         // Update comment
-        const commentEl = card.querySelector('.review-comment');
+        const commentEl = card.querySelector('.review-card__comment');
         if (commentEl) commentEl.textContent = comment;
 
         // Update edit button data attributes
@@ -2352,7 +2495,7 @@
                         // Get current user's profile picture URL
                         // We embed it server-side so it's always correct
                         let profilePicUrl = '{% if request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{% static "images/placeholder_profile.png" %}{% endif %}';
-                        const existingUserCard = document.querySelector('.review-item.user-highlight .review-user-pic');
+                        const existingUserCard = document.querySelector('.review-card.review-card--mine .review-card__avatar img');
                         if (existingUserCard) profilePicUrl = existingUserCard.getAttribute('src');
 
                         // Get username from the page (from the existing user card or a known element)
@@ -2436,7 +2579,7 @@
                 .then(function(data) {
                     if (!data.success) return;
                     // Remove the card from DOM realtime
-                    const card = document.querySelector('.review-item[data-review-id="' + reviewId + '"]');
+                    const card = document.querySelector('.review-card[data-review-id="' + reviewId + '"]');
                     if (card) card.remove();
 
                     // Show "Write a Review" button again
@@ -2448,7 +2591,7 @@
                     if (hint) hint.style.display = 'none';
 
                     // If no reviews left, show "Be the first..." message
-                    const remaining = document.querySelectorAll('.review-item');
+                    const remaining = document.querySelectorAll(".review-card");
                     if (remaining.length === 0) {
                         let noMsg = document.getElementById('noReviewsMessage');
                         if (!noMsg) {
@@ -2479,7 +2622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterDropdown) {
         filterDropdown.addEventListener('change', function() {
             const filterValue = this.value;
-            const allReviews = document.querySelectorAll('.review-item');
+            const allReviews = document.querySelectorAll(".review-card");
             const noFilteredMsg = document.getElementById('noFilteredReviews');
             let visibleCount = 0;
 
