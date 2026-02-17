@@ -68,14 +68,13 @@
         color: var(--g700); text-decoration: none; display: inline-flex;
         align-items: center; gap: 5px; border: 1px solid transparent; transition: .2s;
     }
+    .nib:visited { color: var(--g700); }
+    .nib:active, .nib:focus { background: transparent; color: var(--g700); border-color: transparent; outline: none; box-shadow: none; }
     .nib:hover { background: rgba(183,28,28,.08); color: var(--red); }
     .login-btn { background: var(--g900); color: #fff !important; border-radius: 7px !important; font-size: 12px; }
     .login-btn:hover { background: var(--red) !important; }
-    .cart-badge {
-        background: var(--red); color: #fff; border-radius: 50%;
-        min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
-        display: inline-flex; align-items: center; justify-content: center; padding: 0 3px;
-    }
+    .cart-link { position: relative; }
+    .cart-badge { position: absolute; top: -7px; right: -9px; background: var(--red); color: #fff; border-radius: 50%; min-width: 17px; height: 17px; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; border: 2px solid #fff; line-height: 1; }
     .pav {
         width: 34px; height: 34px; border-radius: 50%;
         background: linear-gradient(135deg,var(--g800),var(--g700));

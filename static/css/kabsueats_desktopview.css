@@ -40,10 +40,13 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .brand { font-family: 'Pacifico', cursive; font-size: 28px; color: var(--g900); text-decoration: none; }
 .nav-right { display: flex; align-items: center; gap: 18px; }
 .nib { padding: 9px 15px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--g700); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: .2s; font-family: 'Poppins', sans-serif; }
+.nib:visited { color: var(--g700); }
+.nib:active, .nib:focus { background: transparent; color: var(--g700); border-color: transparent; outline: none; box-shadow: none; }
 .nib:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
 .login-btn { background: var(--g900); color: white !important; border-radius: 8px !important; }
 .login-btn:hover { background: var(--red) !important; border-color: var(--red) !important; color: white !important; }
-.cart-badge { background: var(--red); color: #fff; border-radius: 50%; min-width: 20px; height: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; }
+.cart-link { position: relative; }
+.cart-badge { position: absolute; top: -7px; right: -9px; background: var(--red); color: #fff; border-radius: 50%; min-width: 18px; height: 18px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; border: 2px solid #fff; line-height: 1; }
 .pav { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1f2937,#374151); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--g200); color: #f9fafb; transition: .2s; overflow: hidden; }
 .pav:hover { border-color: var(--red); transform: scale(1.05); }
 .pav svg { width: 22px; height: 22px; }
