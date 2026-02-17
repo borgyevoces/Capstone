@@ -290,42 +290,11 @@ function switchTile(t) {
 // CATEGORY FILTER — filters DOM elements
 // ============================================
 function applyFilter() {
-    const sel = document.getElementById('catFilt');
-    const val = (sel ? sel.value : '').trim().toLowerCase();
-    const items = document.querySelectorAll('.food-est-item');
-
-    // Toggle visual "active" state on the select element
-    if (sel) sel.classList.toggle('active-filter', !!val);
-
-    items.forEach(el => {
-        if (!val) {
-            // "All Categories" selected — show everything
-            el.style.display = '';
-            return;
-        }
-        const rawCat = (el.dataset.category || '').toLowerCase();
-        // categories stored as comma-separated e.g. "carinderia,cafe"
-        const cats = rawCat.split(',').map(c => c.trim());
-        const match = cats.some(c => c === val || c.includes(val));
-        el.style.display = match ? '' : 'none';
+    const val = document.getElementById('catFilt').value.toLowerCase();
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const cat = (el.dataset.category || '').toLowerCase();
+        el.style.display = (!val || cat.includes(val)) ? '' : 'none';
     });
-
-    // Update no-results message if all hidden
-    const grid = document.getElementById('estGrid');
-    if (grid) {
-        const visible = Array.from(items).filter(el => el.style.display !== 'none');
-        let noMsg = grid.querySelector('.filter-no-results');
-        if (visible.length === 0 && val) {
-            if (!noMsg) {
-                noMsg = document.createElement('p');
-                noMsg.className = 'no-est-msg filter-no-results';
-                grid.appendChild(noMsg);
-            }
-            noMsg.textContent = `No establishments found for "${sel.options[sel.selectedIndex].text}".`;
-        } else if (noMsg) {
-            noMsg.remove();
-        }
-    }
 }
 
 // ============================================
@@ -500,8 +469,8 @@ function initSearch() {
         inp.value = '';
         this.classList.remove('on');
         drop.classList.remove('active');
-        // Re-apply category filter (don't blindly show all if a category is selected)
-        applyFilter();
+        // Re-show all est cards
+        document.querySelectorAll('.food-est-item').forEach(el => el.style.display = '');
     });
 }
 

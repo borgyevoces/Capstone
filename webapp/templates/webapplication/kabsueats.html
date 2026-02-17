@@ -38,8 +38,8 @@
 
     <div class="nav-right">
         {% if user.is_authenticated %}
-            <a href="{% url 'order_history' %}" class="nib nav-orders-link"><i class="fas fa-receipt"></i> My Orders</a>
-            <a href="{% url 'view_cart' %}" class="nib nav-cart-link">
+            <a href="{% url 'order_history' %}" class="nib"><i class="fas fa-receipt"></i> My Orders</a>
+            <a href="{% url 'view_cart' %}" class="nib">
                 <i class="fas fa-shopping-cart"></i> Cart
                 <span class="cart-badge" id="cartBadge">{{ cart_count|default:"0" }}</span>
             </a>

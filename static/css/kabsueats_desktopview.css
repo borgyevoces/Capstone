@@ -43,13 +43,6 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 .nib:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
 .login-btn { background: var(--g900); color: white !important; border-radius: 8px !important; }
 .login-btn:hover { background: var(--red) !important; border-color: var(--red) !important; color: white !important; }
-
-/* My Orders & Cart nav links */
-.nav-orders-link { position: relative; }
-.nav-orders-link:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
-.nav-cart-link { position: relative; }
-.nav-cart-link:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
-
 .cart-badge { background: var(--red); color: #fff; border-radius: 50%; min-width: 20px; height: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; }
 .pav { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#1f2937,#374151); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--g200); color: #f9fafb; transition: .2s; overflow: hidden; }
 .pav:hover { border-color: var(--red); transform: scale(1.05); }
@@ -241,7 +234,6 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 #catFilt { -webkit-appearance: none; appearance: none; background: #fff; border: 2px solid var(--g300); border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--g900); outline: none; padding: 13px 44px; min-width: 280px; box-shadow: var(--sh1); transition: .3s; font-family: 'Poppins', sans-serif; }
 #catFilt:hover { border-color: var(--red); }
 #catFilt:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(183,28,28,.08); }
-#catFilt.active-filter { border-color: var(--red); background: #fff5f5; color: var(--red); box-shadow: 0 0 0 4px rgba(183,28,28,.08); }
 
 /* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
