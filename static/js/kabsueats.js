@@ -571,6 +571,9 @@ function closeSet() {
     document.body.style.overflow = '';
 }
 
+// ============================================
+// PROFILE IMAGE — preview + real-time AJAX save
+// ============================================
 function previewProfileImg(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -582,102 +585,282 @@ function previewProfileImg(input) {
     }
 }
 
-// ============================================
-// SEARCH — live dropdown using /api/search-menu/
-// ============================================
-function initSearch() {
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
-    const drop = document.getElementById('searchDropdown');
-    if (!inp) return;
+function saveProfile() {
+    const input = document.getElementById('profileImgInput');
+    const btn   = document.getElementById('saveProfileBtn');
 
-    let timer;
+    if (!input || !input.files || !input.files[0]) {
+        showToast('Please choose a profile picture first.', 'warning');
+        return;
+    }
 
-    inp.addEventListener('input', function () {
-        clr.classList.toggle('on', this.value.length > 0);
-        clearTimeout(timer);
-        const q = this.value.trim();
-        if (q.length < 2) { drop.classList.remove('active'); return; }
-        timer = setTimeout(() => performSearch(q), 280);
-    });
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
-    clr.addEventListener('click', function () {
-        inp.value = '';
-        this.classList.remove('on');
-        drop.classList.remove('active');
-        // Re-show all est cards
-        document.querySelectorAll('.food-est-item').forEach(el => el.style.display = '');
+    const fd = new FormData();
+    fd.append('profile_picture', input.files[0]);
+    fd.append('csrfmiddlewaretoken', getCsrf());
+
+    fetch(URLS.updateProfile, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const newUrl = data.profile_picture_url;
+
+            // ① Update preview inside modal
+            document.getElementById('profilePreview').innerHTML =
+                `<img src="${newUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ② Update navbar avatar instantly
+            const nav = document.getElementById('pavBtn');
+            if (nav) nav.innerHTML =
+                `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ③ Update dropdown header avatar instantly
+            const da = document.querySelector('.pd-av');
+            if (da) da.innerHTML =
+                `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            showToast('Profile picture updated!', 'success');
+            closeSet();
+        } else {
+            showToast(data.errors || 'Could not update profile.', 'error');
+        }
+    })
+    .catch(() => showToast('Network error. Please try again.', 'error'))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
     });
 }
 
-function performSearch(q) {
-    const drop = document.getElementById('searchDropdown');
-    const content = document.getElementById('searchDropdownContent');
+// ============================================
+// SEARCH — real-time dropdown (establishments + menus)
+// ============================================
+let searchTimer = null;
+let searchAbort = null;   // AbortController for in-flight requests
+let searchFocused = false;
+let dropSelected = -1;    // keyboard nav index
 
-    // Filter establishment cards in DOM
-    document.querySelectorAll('.food-est-item').forEach(el => {
-        const name = (el.dataset.name || '').toLowerCase();
-        const cat = (el.dataset.category || '').toLowerCase();
-        el.style.display = (name.includes(q.toLowerCase()) || cat.includes(q.toLowerCase())) ? '' : 'none';
+function initSearch() {
+    const inp  = document.getElementById('hSearch');
+    const clr  = document.getElementById('hClr');
+    const drop = document.getElementById('searchDropdown');
+    if (!inp) return;
+
+    // ── Input: debounce 260ms ──
+    inp.addEventListener('input', function () {
+        const q = this.value.trim();
+        clr.classList.toggle('on', q.length > 0);
+        dropSelected = -1;
+        clearTimeout(searchTimer);
+
+        if (q.length < 2) {
+            closeDrop();
+            filterEstCards('');   // restore all cards
+            return;
+        }
+
+        // Show skeleton immediately
+        showDropSkeleton();
+        filterEstCards(q);        // filter DOM cards in real-time
+
+        searchTimer = setTimeout(() => fetchSearchResults(q), 260);
     });
 
-    // Hit search API — returns { success, menus: [...], establishments: [...] }
-    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`)
+    // ── Clear button ──
+    clr.addEventListener('click', function () {
+        inp.value = '';
+        this.classList.remove('on');
+        closeDrop();
+        filterEstCards('');
+        inp.focus();
+    });
+
+    // ── Focus: show dropdown if query exists ──
+    inp.addEventListener('focus', function () {
+        searchFocused = true;
+        if (this.value.trim().length >= 2) {
+            fetchSearchResults(this.value.trim());
+        }
+    });
+
+    // ── Keyboard navigation ──
+    inp.addEventListener('keydown', function (e) {
+        const items = document.querySelectorAll('.search-dropdown-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            dropSelected = Math.min(dropSelected + 1, items.length - 1);
+            highlightDropItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            dropSelected = Math.max(dropSelected - 1, -1);
+            highlightDropItem(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (dropSelected >= 0 && items[dropSelected]) {
+                items[dropSelected].click();
+            }
+        } else if (e.key === 'Escape') {
+            closeDrop();
+        }
+    });
+
+    // ── Hint pills — clicking a pill searches for it ──
+    document.querySelectorAll('.hs-hint-pill').forEach(pill => {
+        pill.addEventListener('click', function (e) {
+            // Only intercept if it's a plain span (not an anchor to a real page)
+            if (this.tagName === 'A') return;
+            e.preventDefault();
+            const text = this.textContent.trim().replace(/^[^\w]+/, '');
+            inp.value = text;
+            clr.classList.add('on');
+            filterEstCards(text);
+            fetchSearchResults(text);
+            inp.focus();
+        });
+    });
+}
+
+function highlightDropItem(items) {
+    items.forEach((el, i) => {
+        el.style.background = i === dropSelected ? 'var(--g50)' : '';
+    });
+    if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
+}
+
+function closeDrop() {
+    const drop = document.getElementById('searchDropdown');
+    if (drop) drop.classList.remove('active');
+    dropSelected = -1;
+}
+
+// ── Filter DOM establishment cards instantly ──
+function filterEstCards(q) {
+    const ql = q.toLowerCase();
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        if (!ql) { el.style.display = ''; return; }
+        const name = (el.dataset.name     || '').toLowerCase();
+        const cat  = (el.dataset.category || '').toLowerCase();
+        el.style.display = (name.includes(ql) || cat.includes(ql)) ? '' : 'none';
+    });
+}
+
+// ── Skeleton while loading ──
+function showDropSkeleton() {
+    const drop    = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
+    content.innerHTML = `
+        <div style="padding:14px 16px;">
+            <div style="height:11px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:6px;margin-bottom:10px;width:40%"></div>
+            ${[1,2,3].map(() => `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
+                <div style="flex:1;">
+                    <div style="height:12px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;margin-bottom:6px;width:65%"></div>
+                    <div style="height:10px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;width:45%"></div>
+                </div>
+            </div>`).join('')}
+        </div>`;
+    drop.classList.add('active');
+}
+
+// ── Main API fetch ──
+function fetchSearchResults(q) {
+    // Cancel any pending request
+    if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
+    searchAbort = new AbortController();
+
+    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
         .then(r => r.json())
-        .then(data => {
-            let html = '';
-            // Backend returns key 'menus' with nested 'establishment' object
-            const items = data.menus || [];
-            const ests = data.establishments || [];
+        .then(data => renderSearchDrop(data, q))
+        .catch(err => {
+            if (err.name !== 'AbortError') closeDrop();
+        });
+}
 
-            if (items.length > 0) {
-                html += `<div class="search-dropdown-section"><div class="search-dropdown-title"><i class="fas fa-hamburger"></i> Menu Items</div>`;
-                items.slice(0, 6).forEach(item => {
-                    const estId = item.establishment ? item.establishment.id : '';
-                    const estName = item.establishment ? item.establishment.name : '';
-                    html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${estId}/'">
-                        <div class="search-dropdown-item-icon"><i class="fas fa-utensils"></i></div>
-                        <div>
-                            <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span>₱${parseFloat(item.price).toFixed(2)}</span>
-                                <span>•</span>
-                                <span>${escHtml(estName)}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-            }
+// ── Render results ──
+function renderSearchDrop(data, q) {
+    const drop    = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
+    dropSelected  = -1;
 
-            if (ests.length > 0) {
-                html += `<div class="search-dropdown-section"><div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
-                ests.slice(0, 4).forEach(est => {
-                    const stColor = est.status === 'Open' ? '#10b981' : '#ef4444';
-                    html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
-                        <div class="search-dropdown-item-icon"><i class="fas fa-store"></i></div>
-                        <div>
-                            <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span style="color:${stColor}">${est.status}</span>
-                                <span>•</span>
-                                <span>${escHtml(est.category)}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-            }
+    const items = data.menus          || [];
+    const ests  = data.establishments || [];
+    let html = '';
 
-            if (html) {
-                content.innerHTML = html;
-                drop.classList.add('active');
-            } else {
-                content.innerHTML = `<div class="search-no-results"><i class="fas fa-search"></i> No results for "${escHtml(q)}"</div>`;
-                drop.classList.add('active');
-            }
-        })
-        .catch(() => drop.classList.remove('active'));
+    // ── Menu Items section ──
+    if (items.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
+        items.slice(0, 6).forEach(item => {
+            const estId   = item.establishment ? item.establishment.id   : '';
+            const estName = item.establishment ? item.establishment.name : '';
+            // API returns image_url, not image
+            const imgSrc  = item.image_url
+                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+                : `<i class="fas fa-utensils"></i>`;
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgSrc}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
+                    <div class="search-dropdown-item-meta">
+                        <span style="color:#B71C1C;font-weight:700;">₱${parseFloat(item.price).toFixed(2)}</span>
+                        <span>•</span>
+                        <i class="fas fa-store" style="font-size:9px;"></i>
+                        <span>${highlightMatch(escHtml(estName), q)}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // ── Establishments section ──
+    if (ests.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
+        ests.slice(0, 4).forEach(est => {
+            const isOpen   = est.status === 'Open';
+            const stColor  = isOpen ? '#10b981' : '#ef4444';
+            const stDot    = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
+            const estImgSrc = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+                : `<i class="fas fa-store"></i>`;
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImgSrc}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
+                    <div class="search-dropdown-item-meta">
+                        ${stDot}
+                        <span style="color:${stColor};font-weight:600;">${est.status}</span>
+                        <span>•</span>
+                        <span>${escHtml(est.category)}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // ── No results ──
+    if (!html) {
+        html = `<div class="search-no-results">
+            <i class="fas fa-search" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
+            <div style="font-weight:600;color:#374151;margin-bottom:4px;">No results for "${escHtml(q)}"</div>
+            <div style="font-size:11px;color:#9ca3af;">Try a different keyword or browse below</div>
+        </div>`;
+    }
+
+    content.innerHTML = html;
+    drop.classList.add('active');
 }
 
 function highlightMatch(text, q) {
@@ -717,8 +900,7 @@ document.addEventListener('click', e => {
         if (pd) pd.classList.remove('show');
     }
     if (!e.target.closest('.hsw')) {
-        const drop = document.getElementById('searchDropdown');
-        if (drop) drop.classList.remove('active');
+        closeDrop();
     }
     // Close layer panel when clicking outside
     if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {

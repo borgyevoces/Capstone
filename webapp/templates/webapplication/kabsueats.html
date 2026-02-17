@@ -397,10 +397,10 @@
     <div class="sbox">
         <span class="scls" onclick="closeSet()">&times;</span>
         <div class="stitle">Update Profile</div>
-        <form id="profileUpdateForm" method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data">
+        <form id="profileUpdateForm" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="fg" style="text-align:center">
-                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff;overflow:hidden;" id="profilePreview">
+                <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;overflow:hidden;border:3px solid var(--g200);" id="profilePreview">
                     {% if user.profile.profile_image %}
                         <img src="{{ user.profile.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;">
                     {% else %}
@@ -410,17 +410,16 @@
             </div>
             <div class="fg">
                 <label>Change Profile Picture:</label>
-                <input type="file" name="profile_image" accept="image/*" id="profileImgInput" onchange="previewProfileImg(this)">
+                <input type="file" name="profile_picture" accept="image/*" id="profileImgInput" onchange="previewProfileImg(this)">
             </div>
             <div class="fg">
                 <label>Email Address:</label>
                 <input type="email" value="{{ user.email }}" readonly style="background:#f3f4f6;cursor:not-allowed">
             </div>
-            <div style="margin-top:16px">
-                <button type="submit" class="svbtn"><i class="fas fa-save"></i> Save Changes</button>
-            </div>
-            <div style="margin-top:20px;padding-top:20px;border-top:2px solid #e5e7eb;text-align:center">
-                <a href="{% url 'user_logout' %}" class="lgbtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <div style="margin-top:20px;text-align:center">
+                <button type="button" class="svbtn" id="saveProfileBtn" onclick="saveProfile()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
             </div>
         </form>
     </div>
@@ -432,15 +431,16 @@
 <!-- Django data for JS -->
 <script>
     const URLS = {
-        bestsellers:  "{% url 'get_bestsellers' %}",
-        addToCart:    "{% url 'add_to_cart' %}",
-        cartCount:    "{% url 'get_cart_count' %}",
-        nearbyEst:    "{% url 'get_nearby_establishments' %}",
-        searchMenu:   "{% url 'search_menu_items' %}",
-        estDetail:    "/food_establishment/",  // append {id}/
-        createCash:   "{% url 'create_cash_order' %}",
-        createBuyNow: "{% url 'create_buynow_payment' %}",
-        login:        "{% url 'user_login_register' %}",
+        bestsellers:   "{% url 'get_bestsellers' %}",
+        addToCart:     "{% url 'add_to_cart' %}",
+        cartCount:     "{% url 'get_cart_count' %}",
+        nearbyEst:     "{% url 'get_nearby_establishments' %}",
+        searchMenu:    "{% url 'search_menu_items' %}",
+        estDetail:     "/food_establishment/",  // append {id}/
+        createCash:    "{% url 'create_cash_order' %}",
+        createBuyNow:  "{% url 'create_buynow_payment' %}",
+        login:         "{% url 'user_login_register' %}",
+        updateProfile: "{% url 'update_profile' %}",
     };
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
     const CVSU = {

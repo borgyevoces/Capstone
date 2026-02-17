@@ -62,7 +62,7 @@
         box-shadow: var(--sh1);
     }
     .brand { font-family: 'Pacifico', cursive; font-size: 22px; color: var(--g900); text-decoration: none; }
-    .nav-right { display: flex; align-items: center; gap: 6px; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
     .nib {
         padding: 7px 10px; border-radius: 7px; font-size: 12px; font-weight: 600;
         color: var(--g700); text-decoration: none; display: inline-flex;
@@ -389,8 +389,8 @@
     .fg label { display: block; font-size: 12px; font-weight: 600; color: var(--g700); margin-bottom: 5px; }
     .fg input { width: 100%; padding: 10px 12px; border: 2px solid var(--g200); border-radius: 8px; font-size: 13px; font-family: 'Poppins',sans-serif; outline: none; }
     .fg input:focus { border-color: var(--red); }
-    .svbtn { background: linear-gradient(135deg,#10b981,#059669); color: #fff; padding: 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Poppins',sans-serif; display: flex; align-items: center; gap: 7px; width: 100%; justify-content: center; }
-    .lgbtn { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; font-family: 'Poppins',sans-serif; width: 100%; }
+    .svbtn { background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; padding: 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Poppins',sans-serif; display: flex; align-items: center; gap: 7px; width: 100%; justify-content: center; }
+    .svbtn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(183,28,28,.3); }
 
     /* ---------- FOOTER ---------- */
     .footer { background: var(--g900); color: #d1d5db; margin-top: 32px; padding: 36px 0 0; }

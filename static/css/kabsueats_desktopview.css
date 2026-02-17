@@ -38,7 +38,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 28px; background: #fff; border-bottom: 1px solid var(--g200); position: sticky; top: 0; z-index: 1100; box-shadow: var(--sh1); }
 .brand { font-family: 'Pacifico', cursive; font-size: 28px; color: var(--g900); text-decoration: none; }
-.nav-right { display: flex; align-items: center; gap: 10px; }
+.nav-right { display: flex; align-items: center; gap: 18px; }
 .nib { padding: 9px 15px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--g700); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: .2s; font-family: 'Poppins', sans-serif; }
 .nib:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
 .login-btn { background: var(--g900); color: white !important; border-radius: 8px !important; }
@@ -388,8 +388,8 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .fg label { display: block; font-size: 13px; font-weight: 600; color: var(--g700); margin-bottom: 6px; }
 .fg input { width: 100%; padding: 10px 14px; border: 2px solid var(--g200); border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; outline: none; transition: .2s; }
 .fg input:focus { border-color: var(--red); }
-.svbtn { background: linear-gradient(135deg,#10b981,#059669); color: #fff; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; gap: 8px; transition: .25s; }
-.svbtn:hover { transform: translateY(-2px); }
+.svbtn { background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: .25s; width: 100%; }
+.svbtn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(183,28,28,.35); }
 .lgbtn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: .25s; border: none; cursor: pointer; font-family: 'Poppins', sans-serif; }
 .lgbtn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(220,38,38,.35); }
 
