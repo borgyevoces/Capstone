@@ -364,6 +364,27 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
     .est-grid { grid-template-columns: 1fr; }
 }
 .leaflet-container { font-family: 'Poppins', sans-serif !important; }
+
+/* Map pulse animation for open establishments */
+@keyframes mapPulse {
+    0%   { transform: scale(1);   opacity: 0.8; }
+    70%  { transform: scale(1.9); opacity: 0;   }
+    100% { transform: scale(1.9); opacity: 0;   }
+}
+
+/* Leaflet popup override */
+.kabsueats-popup .leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    padding: 12px !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,.22) !important;
+    font-family: 'Poppins', sans-serif !important;
+    overflow: hidden;
+}
+.kabsueats-popup .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
+}
+.kabsueats-popup .leaflet-popup-tip-container { margin-top: -1px; }
 /* ============================================ */
 /* FIX: Ensure Establishment Cards are Clickable */
 /* ============================================ */

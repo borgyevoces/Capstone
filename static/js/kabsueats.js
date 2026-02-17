@@ -213,121 +213,177 @@ function setView(v) {
 }
 
 // ============================================
-// LEAFLET MAP — satellite default, all establishments, real-time
+// LEAFLET MAP — pinned locations, satellite, real-time
 // ============================================
 const TILES = {
-    street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',                                            opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
-    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opt: { attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, AEA, GIS User Community', maxZoom: 20 } },
-    topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                                              opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
-    dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',                                opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
+    street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                 opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
+    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                 opt: { attribution: 'Tiles &copy; Esri &mdash; Esri, i-cubed, USDA, AEA, GIS User Community', maxZoom: 20 } },
+    topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                 opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
+    dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                 opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
 };
 
 let mapPollTimer = null;
+// Live status cache updated by API — keyed by establishment id
+let liveStatusCache = {};
 
 function initMap() {
     setTimeout(() => {
-        // ── Default: satellite, max zoom (19) ──
-        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 19 });
+        // ── Satellite default, zoom 19 (street-level detail) ──
+        mapInst = L.map('esMap', {
+            center: [CVSU.lat, CVSU.lng],
+            zoom: 19,
+            zoomControl: true,
+            scrollWheelZoom: true
+        });
         curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
 
         // 500m radius circle
         L.circle([CVSU.lat, CVSU.lng], {
-            color: '#B71C1C', fillColor: 'rgba(183,28,28,0.08)',
-            fillOpacity: 0.35, weight: 2, radius: RADIUS, dashArray: '6 4'
+            color: '#B71C1C', fillColor: 'rgba(183,28,28,0.06)',
+            fillOpacity: 0.3, weight: 2, radius: RADIUS, dashArray: '6 4'
         }).addTo(mapInst);
 
         // CvSU center marker
         const cvIco = L.divIcon({
-            html: `<div style="background:#B71C1C;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(183,28,28,.5);border:3px solid #fff"><i class="fas fa-university"></i></div>`,
-            className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+            html: `<div style="background:#B71C1C;color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 12px rgba(183,28,28,.6);border:3px solid #fff;"><i class="fas fa-university"></i></div>`,
+            className: '', iconSize: [38, 38], iconAnchor: [19, 19]
         });
         L.marker([CVSU.lat, CVSU.lng], { icon: cvIco }).addTo(mapInst)
-            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;">📍 CvSU-Bacoor (Center)</div>');
+            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:4px;">📍 CvSU-Bacoor Campus</div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
 
-        // Initial load then poll every 30 s for real-time updates
-        fetchMapEstablishments();
-        mapPollTimer = setInterval(fetchMapEstablishments, 30000);
+        // ── Step 1: Immediately render all known pinned establishments from EST_ALL_DATA ──
+        renderFromLocalData();
+
+        // ── Step 2: Fetch live status from API, then re-render with updated statuses ──
+        refreshEstablishmentStatuses();
+
+        // ── Step 3: Poll every 30 s for real-time open/closed status updates ──
+        mapPollTimer = setInterval(refreshEstablishmentStatuses, 30000);
 
         mapInst.invalidateSize();
     }, 150);
 }
 
-function fetchMapEstablishments() {
-    // Use 50 km radius to capture ALL registered establishments regardless of location
+// Render markers immediately from server-rendered EST_ALL_DATA (exact pinned coords)
+function renderFromLocalData() {
+    if (typeof EST_ALL_DATA === 'undefined') return;
+    const list = Object.entries(EST_ALL_DATA).map(([id, d]) => ({
+        id: parseInt(id),
+        name: d.name,
+        address: d.address,
+        image: d.image,
+        status: liveStatusCache[id] || d.status || '',
+        latitude: d.lat,
+        longitude: d.lng,
+        distance: 0
+    })).filter(e => e.latitude && e.longitude);
+    esMapData = list;
+    renderMarkers(esMapData);
+}
+
+// Hit the API to get fresh status — use wide radius to catch all establishments
+function refreshEstablishmentStatuses() {
     const url = `${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=50000`;
     fetch(url)
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                // Merge API data with server-rendered EST_ALL_DATA for status + image
-                const merged = data.establishments.map(e => {
-                    const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
-                    return {
-                        ...e,
-                        status:  local.status  || e.status || '',
-                        image:   local.image   || '',
-                        address: local.address || e.address || '',
-                        name:    local.name    || e.name    || ''
-                    };
-                });
-                // Also add any establishments in EST_ALL_DATA that might be missing from API
-                if (typeof EST_ALL_DATA !== 'undefined') {
-                    const apiIds = new Set(data.establishments.map(e => e.id));
-                    Object.entries(EST_ALL_DATA).forEach(([id, d]) => {
-                        if (!apiIds.has(parseInt(id)) && d.lat && d.lng) {
-                            merged.push({ id: parseInt(id), ...d, latitude: d.lat, longitude: d.lng, distance: 0 });
-                        }
-                    });
-                }
-                esMapData = merged;
-                renderMarkers(esMapData);
-            }
+            if (!data.success) return;
+            // Cache fresh statuses from API
+            data.establishments.forEach(e => {
+                if (e.status) liveStatusCache[e.id] = e.status.toLowerCase();
+            });
+            // Re-render with live statuses merged into EST_ALL_DATA
+            renderFromLocalData();
         })
-        .catch(() => {});
+        .catch(() => {
+            // API failed — still show markers with last known status
+            renderFromLocalData();
+        });
 }
+
+// Compatibility alias used by switchView when map already initialized
+function fetchMapEstablishments() { refreshEstablishmentStatuses(); }
 
 function renderMarkers(data) {
     if (!mkLayer) return;
     mkLayer.clearLayers();
     data.forEach(e => {
         if (!e.latitude || !e.longitude) return;
-        const st  = (e.status || '').toLowerCase();
-        const bg  = st === 'open' ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
-        const ring = st === 'open' ? '#d1fae5' : st === 'closed' ? '#fee2e2' : '#e5e7eb';
 
-        // Build marker icon — show establishment image thumbnail if available
-        const imgHtml = e.image
-            ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
-            : `<i class="fas fa-utensils"></i>`;
-        const ico = L.divIcon({
-            html: `<div style="background:${bg};color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);border:3px solid #fff;overflow:hidden;">${imgHtml}</div>
-                   <div style="width:10px;height:10px;background:${bg};border-radius:50%;border:2px solid ${ring};position:absolute;bottom:-2px;right:-2px;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>`,
-            className: '', iconSize: [38, 38], iconAnchor: [19, 19]
-        });
+        const st    = (e.status || '').toLowerCase();
+        const isOpen = st === 'open';
+        const bg    = isOpen ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
+        const glow  = isOpen ? '0 0 0 6px rgba(16,185,129,0.25),0 3px 12px rgba(0,0,0,.4)'
+                              : '0 3px 12px rgba(0,0,0,.35)';
 
-        const dist = e.distance < 1000 ? `${Math.round(e.distance)}m` : `${(e.distance/1000).toFixed(2)}km`;
-        const distRow = e.distance > 0 ? `<div class="mpop-dist" style="margin-top:6px"><i class="fas fa-route"></i> ${dist} from CvSU-Bacoor</div>` : '';
-        const statusLabel = st ? cap(st) : 'Unknown';
-        const imgPreview = e.image
-            ? `<img src="${e.image}" style="width:100%;height:60px;object-fit:cover;border-radius:7px;margin-bottom:8px;" onerror="this.remove()">`
+        // Pulse ring only for open establishments
+        const pulse = isOpen
+            ? `<div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(16,185,129,0.5);animation:mapPulse 2s ease-out infinite;pointer-events:none;"></div>`
             : '';
 
-        const popup = `<div class="mpop">
-            ${imgPreview}
-            <div class="mpop-name">${escHtml(e.name)}</div>
-            <div class="mpop-cat">${escHtml(e.address || '')}</div>
-            <span class="mpop-st ${st}"><i class="fas fa-circle" style="font-size:7px"></i> ${statusLabel}</span>
-            ${distRow}
-            <button class="mpop-btn" onclick="window.location.href='${URLS.estDetail}${e.id}/'">
-                <i class="fas fa-eye"></i> View Details
-            </button>
+        // Use establishment image as marker face if available
+        const face = e.image
+            ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                    onerror="this.outerHTML='<i class=\\'fas fa-utensils\\' style=\\'font-size:16px;\\'></i>'">`
+            : `<i class="fas fa-utensils" style="font-size:16px;"></i>`;
+
+        const ico = L.divIcon({
+            html: `<div style="position:relative;width:42px;height:42px;">
+                       ${pulse}
+                       <div style="width:42px;height:42px;border-radius:50%;background:${bg};
+                                   color:#fff;display:flex;align-items:center;justify-content:center;
+                                   border:3px solid #fff;overflow:hidden;box-shadow:${glow};
+                                   position:relative;z-index:1;">
+                           ${face}
+                       </div>
+                   </div>`,
+            className: '', iconSize: [42, 42], iconAnchor: [21, 21]
+        });
+
+        // Distance row — only if we have it
+        const distRow = (e.distance && e.distance > 0)
+            ? `<div style="font-size:11px;color:#6b7280;display:flex;align-items:center;gap:5px;margin-top:4px;">
+                   <i class="fas fa-route" style="color:#B71C1C;"></i>
+                   ${e.distance < 1000 ? Math.round(e.distance)+'m' : (e.distance/1000).toFixed(2)+'km'} from CvSU-Bacoor
+               </div>` : '';
+
+        const statusColor = isOpen ? '#10b981' : st === 'closed' ? '#ef4444' : '#9ca3af';
+        const statusDot   = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusColor};margin-right:4px;"></span>`;
+        const statusLabel = st ? cap(st) : 'Unknown';
+
+        const imgBanner = e.image
+            ? `<img src="${e.image}" style="width:100%;height:72px;object-fit:cover;border-radius:8px 8px 0 0;display:block;margin:-12px -12px 10px;width:calc(100% + 24px);" onerror="this.remove()">`
+            : '';
+
+        const popup = `
+        <div style="font-family:Poppins,sans-serif;min-width:190px;padding:0;">
+            ${imgBanner}
+            <div style="padding: ${e.image ? '0' : '0'};">
+                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;">${escHtml(e.name)}</div>
+                <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">${escHtml(e.address || '')}</div>
+                <div style="font-size:11px;font-weight:700;color:${statusColor};margin-bottom:${distRow ? '4px' : '10px'};">
+                    ${statusDot}${statusLabel}
+                </div>
+                ${distRow}
+                <button onclick="window.location.href='${URLS.estDetail}${e.id}/'"
+                    style="margin-top:10px;width:100%;padding:8px;background:linear-gradient(135deg,#B71C1C,#8B0000);
+                           color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;
+                           cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;
+                           justify-content:center;gap:6px;">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+            </div>
         </div>`;
 
         L.marker([parseFloat(e.latitude), parseFloat(e.longitude)], { icon: ico })
             .addTo(mkLayer)
-            .bindPopup(popup, { maxWidth: 230 });
+            .bindPopup(popup, { maxWidth: 230, className: 'kabsueats-popup' });
     });
 }
 
