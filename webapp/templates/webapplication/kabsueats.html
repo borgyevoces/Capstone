@@ -104,6 +104,12 @@
             <div class="search-dropdown" id="searchDropdown">
                 <div id="searchDropdownContent"></div>
             </div>
+            <div class="hs-hints">
+                <span><i class="fas fa-store"></i> Restaurants</span>
+                <span><i class="fas fa-utensils"></i> Dishes</span>
+                <span><i class="fas fa-tag"></i> Cuisines</span>
+                <span><i class="fas fa-map-marker-alt"></i> Near CvSU-Bacoor</span>
+            </div>
         </div>
     </div>
 
@@ -112,7 +118,7 @@
         <div class="bs-title-row">
             <h2 class="bs-title">
                 <i class="fas fa-fire"></i>
-                Top-rated items from all our partner establishments - Updated in real-time!
+                Top-rated items from all our partner establishments
             </h2>
         </div>
 
@@ -253,6 +259,19 @@
                         {% for cat in est.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         {% if not est.categories.all %}Uncategorized{% endif %}
                     </span>
+                    {% if est.amenities.all %}
+                    <div class="est-amenities-row">
+                        <span class="amenities-label"><i class="fas fa-concierge-bell"></i> Amenities:</span>
+                        <div class="amenity-tags">
+                            {% for amenity in est.amenities.all|slice:":3" %}
+                            <span class="amenity-tag">{{ amenity.name }}</span>
+                            {% endfor %}
+                            {% if est.amenities.count > 3 %}
+                            <span class="amenity-tag amenity-more">+{{ est.amenities.count|add:"-3" }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i>
                     {% if est.distance_meters %}
@@ -269,19 +288,6 @@
                     <i class="fas fa-credit-card" style="color:#B71C1C"></i>
                     {{ est.payment_methods|default:"Cash" }}
                 </div>
-                {% if est.amenities.all %}
-                <div class="emr est-amenities" style="padding-bottom:10px">
-                    <i class="fas fa-concierge-bell" style="color:#B71C1C;flex-shrink:0;margin-top:2px"></i>
-                    <div class="amenity-tags">
-                        {% for amenity in est.amenities.all|slice:":3" %}
-                        <span class="amenity-tag">{{ amenity.name }}</span>
-                        {% endfor %}
-                        {% if est.amenities.count > 3 %}
-                        <span class="amenity-tag amenity-more">+{{ est.amenities.count|add:"-3" }} more</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
             </a>
             {% empty %}
             <p class="no-est-msg">No food establishments found.</p>

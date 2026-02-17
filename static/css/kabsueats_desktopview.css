@@ -83,6 +83,12 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hs-clr.on { display: block; }
 .hs-clr:hover { color: var(--g700); }
 
+/* Search hint pills */
+.hs-hints { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.hs-hints span { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--g600); background: var(--g100); border: 1px solid var(--g200); border-radius: 20px; padding: 4px 12px; cursor: pointer; transition: .2s; }
+.hs-hints span:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
+.hs-hints span i { font-size: 11px; color: var(--red); }
+
 /* Search Dropdown */
 .search-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); border: 1px solid var(--g200); z-index: 1200; display: none; overflow: hidden; text-align: left; }
 .search-dropdown.active { display: block; }
@@ -104,7 +110,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .bs-title-row { margin-bottom: 22px; padding: 28px 0 4px; }
 .bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; gap: 10px; margin: 0; }
 .bs-title i { color: #ff6b35; font-size: 19px; }
-.bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 
 /* Dropdown */
 .ddw { position: relative; display: inline-block; }
@@ -155,7 +161,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 .bsc { min-width: 218px; max-width: 218px; background: #fff; border-radius: 13px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; position: relative; border: 1.5px solid var(--g200); flex-shrink: 0; }
 .bsc:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(183,28,28,.14); border-color: var(--red); }
-.bsc-img { position: relative; width: 100%; height: 130px; overflow: hidden; }
+.bsc-img { position: relative; width: 100%; height: 100px; overflow: hidden; }
 .bsc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
 .bsc:hover .bsc-img img { transform: scale(1.08); }
 .bsc-badge { position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 10px rgba(255,107,53,.4); z-index: 5; }
@@ -252,7 +258,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .sk { background: linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shim 1.5s infinite; border-radius: 6px; }
-.sk-img { width: 100%; height: 130px; border-radius: 0; }
+.sk-img { width: 100%; height: 100px; border-radius: 0; }
 .sk-ln { height: 14px; margin: 10px 13px; }
 .sk-ln.s { width: 55%; }
 .sk-bt { height: 38px; margin: 13px; width: calc(100% - 26px); border-radius: 8px; }
@@ -298,6 +304,9 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 
 /* Amenities */
 .est-amenities { display: flex; align-items: flex-start; gap: 6px; }
+.est-amenities-row { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--g100); }
+.amenities-label { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--g600); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
+.amenities-label i { color: var(--red); font-size: 10px; }
 .amenity-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .amenity-tag { font-size: 10px; font-weight: 600; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
 .amenity-more { background: var(--g100); color: var(--g600); border-color: var(--g200); }
