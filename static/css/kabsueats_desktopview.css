@@ -12,7 +12,7 @@
     --sh1: 0 2px 8px rgba(0,0,0,.08); --sh2: 0 4px 16px rgba(0,0,0,.12);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g800); overflow-x: hidden; min-height: 100vh; }
+body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800); overflow-x: hidden; min-height: 100vh; }
 
 /* ============================================ */
 /* MESSAGES                                     */
@@ -72,7 +72,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* ============================================ */
 /* HERO SEARCH                                  */
 /* ============================================ */
-.hero { padding: 28px 0 20px; text-align: center; }
+.hero { padding: 36px 0 32px; text-align: center; }
 .hsw { position: relative; max-width: 700px; margin: 0 auto; }
 .hs-lbl { font-size: 15px; font-weight: 600; color: var(--g700); margin-bottom: 12px; display: block; }
 .hs-cont { position: relative; }
@@ -101,7 +101,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* BESTSELLERS SECTION                          */
 /* ============================================ */
 .bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 16px; }
-.bs-title-row { margin-bottom: 14px; }
+.bs-title-row { margin-bottom: 18px; padding: 18px 0 4px; }
 .bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; gap: 10px; margin: 0; }
 .bs-title i { color: #ff6b35; font-size: 19px; }
 .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -153,9 +153,9 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* ============================================ */
 /* BESTSELLER CARD — matching screenshot design */
 /* ============================================ */
-.bsc { min-width: 218px; max-width: 218px; background: #fff; border-radius: 13px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.09); transition: .3s; cursor: pointer; position: relative; border: 2px solid transparent; flex-shrink: 0; }
+.bsc { min-width: 218px; max-width: 218px; background: #fff; border-radius: 13px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; position: relative; border: 1.5px solid var(--g200); flex-shrink: 0; }
 .bsc:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(183,28,28,.14); border-color: var(--red); }
-.bsc-img { position: relative; width: 100%; height: 155px; overflow: hidden; }
+.bsc-img { position: relative; width: 100%; height: 130px; overflow: hidden; }
 .bsc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
 .bsc:hover .bsc-img img { transform: scale(1.08); }
 .bsc-badge { position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 10px rgba(255,107,53,.4); z-index: 5; }
@@ -252,7 +252,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* ============================================ */
 @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .sk { background: linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shim 1.5s infinite; border-radius: 6px; }
-.sk-img { width: 100%; height: 155px; border-radius: 0; }
+.sk-img { width: 100%; height: 130px; border-radius: 0; }
 .sk-ln { height: 14px; margin: 10px 13px; }
 .sk-ln.s { width: 55%; }
 .sk-bt { height: 38px; margin: 13px; width: calc(100% - 26px); border-radius: 8px; }
@@ -265,7 +265,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 .sec-title i { color: var(--red); font-size: 28px; animation: pi 2s ease-in-out infinite; }
 @keyframes pi { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.filt-bar { margin: 0 0 24px; }
+.filt-bar { margin: 0 0 36px; }
 .filt-inner { display: flex; align-items: center; gap: 14px; }
 .filt-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: var(--g800); }
 .filt-lbl i { color: var(--red); }
@@ -279,7 +279,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
 .est-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 20px; }
-.estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--sh1); transition: .3s; cursor: pointer; border: 2px solid transparent; position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
+.estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; border: 1.5px solid var(--g200); position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
 .estc:hover { transform: translateY(-5px); box-shadow: var(--sh2); border-color: var(--red); }
 .estc-img { width: 100%; height: 155px; object-fit: cover; display: block; }
 .estc-body { padding: 11px 13px 8px; }
