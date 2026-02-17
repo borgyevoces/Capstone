@@ -962,7 +962,7 @@
 
 {% block extra_nav_buttons %}
 {% if user.is_authenticated %}
-<a onclick="toggleChatPopup(); return false;" href="#" class="nib" style="position: relative; cursor: pointer;">
+<a onclick="toggleChatPopup(); return false;" href="#" class="nib nav-message-btn" style="position: relative; cursor: pointer;">
     <i class="fas fa-comments"></i>
     <span>Message</span>
     <span class="chat-notification-badge" id="chatNotificationBadge" style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;"></span>
@@ -1066,13 +1066,7 @@
                         </div>
                         <div class="contact-info-body">
                             <span class="contact-label">Hours</span>
-                            <span class="contact-value">
-                                <span class="status-badge status-{{ establishment.calculated_status|lower }}"
-                                      id="detailStatusBadge"
-                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                                      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-                                    {% if establishment.calculated_status == 'Open' %}Open Now{% else %}Closed Now{% endif %}
-                                </span>
+                            <div class="hours-row">
                                 <span class="hours-text">
                                     {% if establishment.opening_time and establishment.closing_time %}
                                         {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
@@ -1080,7 +1074,17 @@
                                         Hours not set
                                     {% endif %}
                                 </span>
-                            </span>
+                                <span class="status-badge-small status-{{ establishment.calculated_status|lower }}"
+                                      id="detailStatusBadge"
+                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                    {% if establishment.calculated_status == 'Open' %}
+                                        <i class="fas fa-circle status-dot"></i> Open Now
+                                    {% else %}
+                                        <i class="fas fa-circle status-dot"></i> Closed
+                                    {% endif %}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -1233,7 +1237,31 @@
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
                                oninput="filterMenuItems()">
                     </div>
-                    {# Hidden filters kept functional but UI dropdowns removed #}
+                    <div class="menu-filter-pills">
+                        <div class="filter-pill-group">
+                            <button class="filter-pill active" id="filterAll" onclick="setStockFilter('all', this)">
+                                <i class="fas fa-th"></i> All
+                            </button>
+                            <button class="filter-pill" id="filterAvailable" onclick="setStockFilter('available', this)">
+                                <i class="fas fa-check-circle"></i> Available
+                            </button>
+                            <button class="filter-pill" id="filterOutOfStock" onclick="setStockFilter('outofstock', this)">
+                                <i class="fas fa-times-circle"></i> Out of Stock
+                            </button>
+                        </div>
+                        <div class="filter-pill-group">
+                            <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
+                                <i class="fas fa-sort-amount-up-alt"></i> Price ↑
+                            </button>
+                            <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
+                                <i class="fas fa-sort-amount-down"></i> Price ↓
+                            </button>
+                            <button class="filter-pill" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false">
+                                <i class="fas fa-medal"></i> Best Sellers
+                            </button>
+                        </div>
+                    </div>
+                    {# Hidden selects kept for JS compatibility #}
                     <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">
                         <option value="default">Sort by Price</option>
                         <option value="highest">Highest to Lowest</option>
@@ -2744,6 +2772,40 @@ document.addEventListener('DOMContentLoaded', function() {
         filterMenuItems(); // re-run combined filter
     };
 })();
+</script>
+
+<script>
+// =============================================
+// PILL FILTER HELPERS — stock & price pills
+// =============================================
+window.setStockFilter = function(val, btn) {
+    document.getElementById('stockFilter').value = val;
+    // deactivate all stock pills
+    ['filterAll','filterAvailable','filterOutOfStock'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    if (btn) btn.classList.add('active');
+    filterMenuItems();
+};
+
+window.setPriceFilter = function(val, btn) {
+    const priceEl = document.getElementById('priceFilter');
+    // toggle: clicking same button resets to default
+    if (priceEl.value === val) {
+        priceEl.value = 'default';
+        if (btn) btn.classList.remove('active');
+    } else {
+        priceEl.value = val;
+        // deactivate other price pills
+        ['filterPriceAsc','filterPriceDesc'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        if (btn) btn.classList.add('active');
+    }
+    filterMenuItems();
+};
 </script>
 
 {% endblock %}

@@ -123,7 +123,10 @@
         margin-right: 2px;
         font-size: 1.2em;
     }
-    /* Message button uses base .nib styles - no override needed */
+    /* Message button uses base .nib styles - show on desktop */
+    .nav-message-btn {
+        display: inline-flex !important;
+    }
     .message_owner {
         display: none;
     }
@@ -266,15 +269,53 @@
         font-size: 0.95em;
     }
 
-    .status-open {
-        color: #28a745;
-        font-weight: 700;
+    /* Hours row: time on left, small badge on right */
+    .hours-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
     }
 
-    .status-closed {
-        color: #dc3545;
-        font-weight: 700;
+    .hours-text {
+        font-size: 0.85em;
+        color: #444;
+        font-weight: 500;
     }
+
+    /* Small inline status badge */
+    .status-badge-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 0.72em;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .status-badge-small .status-dot {
+        font-size: 0.6em;
+    }
+
+    .status-badge-small.status-open {
+        background: #e8f5e9;
+        color: #1b5e20;
+        border: 1px solid #a5d6a7;
+    }
+
+    .status-badge-small.status-closed {
+        background: #ffebee;
+        color: #b71c1c;
+        border: 1px solid #ef9a9a;
+    }
+
+    /* Keep old status-open / status-closed for any legacy refs */
+    .status-open  { color: #28a745; font-weight: 700; }
+    .status-closed{ color: #dc3545; font-weight: 700; }
 
     /* Amenities Section */
     .amenities-list {
@@ -321,7 +362,9 @@
     /* ================================================================= */
     .menu-controls {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
         margin-top: 25px;
         margin-bottom: 50px;
     }
@@ -365,10 +408,59 @@
         transition: color 0.2s;
     }
 
-    .menu-search-bar input:focus ~ i,
-    .menu-search-bar:focus-within i {
-        color: #b71c1c;
+    .menu-search-bar:focus-within i { color: #b71c1c; }
+
+    /* Filter pill row */
+    .menu-filter-pills {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
+
+    .filter-pill-group {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .filter-pill-group + .filter-pill-group {
+        padding-left: 10px;
+        border-left: 1.5px solid #e5e7eb;
+    }
+
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 14px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 20px;
+        background: #fff;
+        color: #555;
+        font-size: 0.82em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+
+    .filter-pill:hover {
+        border-color: #b71c1c;
+        color: #b71c1c;
+        background: #fff5f5;
+    }
+
+    .filter-pill.active {
+        background: #b71c1c;
+        color: #fff;
+        border-color: #b71c1c;
+        box-shadow: 0 2px 8px rgba(183,28,28,0.25);
+    }
+
+    .filter-pill i { font-size: 0.85em; }
 
     /* Menu title icon */
     .menu-title-icon {
@@ -442,30 +534,24 @@
 
     /* ============================================ */
     /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
-/* ============================================ */
-/* ✅ BEST SELLER BADGE - Exact match to image */
-/* ============================================ */
+    /* ============================================ */
 .badge-top-seller {
     position: absolute;
-    top: 6px;  /* Reduced from 8px */
-    left: 6px;  /* Reduced from 8px */
+    top: 8px;
+    left: 8px;
     z-index: 10;
-
-    /* Orange like in the image */
-    background: #ff6633;
+    background: linear-gradient(135deg, #ff6633, #e84d1c);
     color: white;
-
-    font-size: 0.45em;  /* Reduced from 0.5em */
+    font-size: 0.72em;
     font-weight: 700;
-    padding: 3px 6px;  /* Reduced from 4px 8px */
-    border-radius: 3px;  /* Reduced from 4px */
-
+    padding: 5px 10px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 2px;  /* Reduced from 3px */
-
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    gap: 4px;
+    box-shadow: 0 3px 8px rgba(232,77,28,0.45);
     white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 
 .badge-top-seller i {
@@ -474,19 +560,17 @@
 }
 
 /* ============================================ */
-/* ✅ AVAILABLE BADGE - Exact match to image    */
+/* ✅ AVAILABLE BADGE - Top Right               */
 /* ============================================ */
 .badge-stock {
     position: absolute;
-    top: 6px;  /* Reduced from 8px */
-    right: 6px;  /* Reduced from 8px */
+    top: 8px;
+    right: 8px;
     z-index: 10;
-
-    font-size: 0.45em;  /* Reduced from 0.5em */
+    font-size: 0.72em;
     font-weight: 700;
-    padding: 3px 6px;  /* Reduced from 4px 8px */
-    border-radius: 3px;  /* Reduced from 4px */
-
+    padding: 5px 10px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 2px;  /* Reduced from 3px */
@@ -494,18 +578,18 @@
     white-space: nowrap;
 }
 
-    /* Available - Green like in the image */
+    /* Available - Green */
     .badge-stock.available {
-    background: #22a844;
+    background: linear-gradient(135deg, #22a844, #1a9038);
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 8px rgba(34,168,68,0.4);
 }
 
     /* Out of Stock - Red */
     .badge-stock.out-of-stock {
-    background: #dc3545;
+    background: linear-gradient(135deg, #dc3545, #c82333);
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 8px rgba(220,53,69,0.4);
 }
 
     .badge-stock i {

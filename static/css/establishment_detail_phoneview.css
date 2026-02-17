@@ -250,6 +250,47 @@
     .contact-location strong { color: #000; }
     .contact-location i { color: darkred; width: 20px; text-align: center; font-size: 0.95em; }
 
+    /* Hours row: time left, badge right */
+    .hours-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .hours-text {
+        font-size: 0.85em;
+        color: #444;
+        font-weight: 500;
+    }
+
+    .status-badge-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 0.72em;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .status-badge-small .status-dot { font-size: 0.6em; }
+
+    .status-badge-small.status-open {
+        background: #e8f5e9;
+        color: #1b5e20;
+        border: 1px solid #a5d6a7;
+    }
+
+    .status-badge-small.status-closed {
+        background: #ffebee;
+        color: #b71c1c;
+        border: 1px solid #ef9a9a;
+    }
+
     .status-open  { color: #28a745; font-weight: 700; }
     .status-closed{ color: #dc3545; font-weight: 700; }
 
@@ -432,30 +473,24 @@
 
     /* ============================================ */
     /* ✅ BEST SELLER BADGE - Top Left (Orange)     */
-/* ============================================ */
-/* ✅ BEST SELLER BADGE - Exact match to image */
-/* ============================================ */
+    /* ============================================ */
 .badge-top-seller {
     position: absolute;
-    top: 6px;  /* Reduced from 8px */
-    left: 6px;  /* Reduced from 8px */
+    top: 8px;
+    left: 8px;
     z-index: 10;
-
-    /* Orange like in the image */
-    background: #ff6633;
+    background: linear-gradient(135deg, #ff6633, #e84d1c);
     color: white;
-
-    font-size: 0.45em;  /* Reduced from 0.5em */
+    font-size: 0.72em;
     font-weight: 700;
-    padding: 3px 6px;  /* Reduced from 4px 8px */
-    border-radius: 3px;  /* Reduced from 4px */
-
+    padding: 5px 10px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 2px;  /* Reduced from 3px */
-
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    gap: 4px;
+    box-shadow: 0 3px 8px rgba(232,77,28,0.45);
     white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 
 .badge-top-seller i {
@@ -464,38 +499,35 @@
 }
 
 /* ============================================ */
-/* ✅ AVAILABLE BADGE - Exact match to image    */
+/* ✅ AVAILABLE BADGE - Top Right               */
 /* ============================================ */
 .badge-stock {
     position: absolute;
-    top: 6px;  /* Reduced from 8px */
-    right: 6px;  /* Reduced from 8px */
+    top: 8px;
+    right: 8px;
     z-index: 10;
-
-    font-size: 0.45em;  /* Reduced from 0.5em */
+    font-size: 0.72em;
     font-weight: 700;
-    padding: 3px 6px;  /* Reduced from 4px 8px */
-    border-radius: 3px;  /* Reduced from 4px */
-
+    padding: 5px 10px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 2px;  /* Reduced from 3px */
-
+    gap: 4px;
     white-space: nowrap;
 }
 
-    /* Available - Green like in the image */
+    /* Available - Green */
     .badge-stock.available {
-    background: #22a844;
+    background: linear-gradient(135deg, #22a844, #1a9038);
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 8px rgba(34,168,68,0.4);
 }
 
     /* Out of Stock - Red */
     .badge-stock.out-of-stock {
-    background: #dc3545;
+    background: linear-gradient(135deg, #dc3545, #c82333);
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 8px rgba(220,53,69,0.4);
 }
 
     .badge-stock i {
@@ -1441,25 +1473,43 @@
         color: #555;
     }
 
-    /* ── Status Badge ── */
-    .status-badge {
-        display: inline-block;
-        padding: 3px 10px;
+    /* ── Status Badge (mobile) ── */
+    .status-badge-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
         border-radius: 20px;
-        font-size: 0.78em;
-        font-weight: 600;
+        font-size: 0.7em;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
-    .status-open {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        color: #155724;
-        border: 1px solid #28a745;
+    .status-badge-small.status-open {
+        background: #e8f5e9;
+        color: #1b5e20;
+        border: 1px solid #a5d6a7;
     }
 
-    .status-closed {
-        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-        color: #721c24;
-        border: 1px solid #dc3545;
+    .status-badge-small.status-closed {
+        background: #ffebee;
+        color: #b71c1c;
+        border: 1px solid #ef9a9a;
+    }
+
+    .hours-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .hours-text {
+        font-size: 0.82em;
+        color: #444;
+        font-weight: 500;
     }
 
     /* ── Menu Section (mobile) ── */
@@ -1479,10 +1529,12 @@
 
     .menu-controls {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
         margin-top: 16px;
         margin-bottom: 24px;
-        padding: 0 4px;
+        padding: 0 2px;
     }
 
     .menu-search-bar {
@@ -1522,6 +1574,57 @@
     }
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
+
+    /* Filter pills (mobile - scrollable row) */
+    .menu-filter-pills {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .menu-filter-pills::-webkit-scrollbar { display: none; }
+
+    .filter-pill-group {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+
+    .filter-pill-group + .filter-pill-group {
+        padding-left: 8px;
+        border-left: 1.5px solid #e5e7eb;
+    }
+
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 11px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 20px;
+        background: #fff;
+        color: #555;
+        font-size: 0.75em;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: inherit;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .filter-pill:active { transform: scale(0.96); }
+
+    .filter-pill.active {
+        background: #b71c1c;
+        color: #fff;
+        border-color: #b71c1c;
+        box-shadow: 0 2px 6px rgba(183,28,28,0.3);
+    }
 
     .menu-filters-group { display: none; }
 
@@ -1589,18 +1692,60 @@
         max-height: 340px;
     }
 
-    /* ── Floating chat button ── */
+    /* ── Hide nav Message button on mobile ── */
+    .nav-message-btn {
+        display: none !important;
+    }
+
+    /* ── Floating chat button (mobile) — circular, bottom-right ── */
     .floating-chat-button {
         display: flex !important;
-        position: fixed;
-        bottom: 20px;
-        right: 16px;
-        z-index: 9000;
+        position: fixed !important;
+        bottom: 24px !important;
+        right: 20px !important;
+        z-index: 9500 !important;
+        width: 58px !important;
+        height: 58px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #b71c1c, #8b0000) !important;
+        color: white !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.4em !important;
+        box-shadow: 0 4px 18px rgba(183,28,28,0.45) !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+
+    .floating-chat-button:active {
+        transform: scale(0.94) !important;
+    }
+
+    .floating-chat-button .chat-notification-badge {
+        position: absolute !important;
+        top: -4px !important;
+        right: -4px !important;
+        background: #fff !important;
+        color: #b71c1c !important;
+        border: 2px solid #b71c1c !important;
+    }
+
+    /* Chat popup - full screen on mobile */
+    .chat-popup-container {
+        position: fixed !important;
+        bottom: 90px !important;
+        right: 12px !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 380px !important;
+        height: 480px !important;
+        border-radius: 16px !important;
+        z-index: 9400 !important;
     }
 
     /* ── Hide message_owner inline btn on mobile ── */
     .message_owner {
-        display: inline-flex;
+        display: none !important;
     }
 }
 
