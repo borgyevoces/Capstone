@@ -1239,27 +1239,17 @@
                     </div>
                     <div class="menu-filter-pills">
                         <div class="filter-pill-group">
-                            <button class="filter-pill active" id="filterAll" onclick="setStockFilter('all', this)">
-                                <i class="fas fa-th"></i> All
-                            </button>
-                            <button class="filter-pill" id="filterAvailable" onclick="setStockFilter('available', this)">
-                                <i class="fas fa-check-circle"></i> Available
-                            </button>
-                            <button class="filter-pill" id="filterOutOfStock" onclick="setStockFilter('outofstock', this)">
-                                <i class="fas fa-times-circle"></i> Out of Stock
-                            </button>
-                        </div>
-                        <div class="filter-pill-group">
                             <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
                                 <i class="fas fa-sort-amount-up-alt"></i> Price ↑
                             </button>
                             <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
                                 <i class="fas fa-sort-amount-down"></i> Price ↓
                             </button>
-                            <button class="filter-pill" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false">
-                                <i class="fas fa-medal"></i> Best Sellers
-                            </button>
                         </div>
+                        <button class="best-seller-circle-btn" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false" title="Best Sellers">
+                            <i class="fas fa-medal"></i>
+                            <span class="best-seller-label">Best Sellers</span>
+                        </button>
                     </div>
                     {# Hidden selects kept for JS compatibility #}
                     <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">
