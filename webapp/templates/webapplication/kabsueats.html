@@ -428,7 +428,10 @@
         login:        "{% url 'user_login_register' %}",
     };
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
-    const CVSU = { lat: 14.4685, lng: 120.9822 };
+    const CVSU = {
+        lat: {{ CVSU_LATITUDE|default:"14.412768" }},
+        lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
+    };
     const RADIUS = 500;
     // Map of establishment id → image URL (for bestseller cards)
     const EST_IMG_MAP = {

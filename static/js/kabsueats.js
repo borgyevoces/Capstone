@@ -247,7 +247,7 @@ function initMap() {
             className: '', iconSize: [38, 38], iconAnchor: [19, 19]
         });
         L.marker([CVSU.lat, CVSU.lng], { icon: cvIco }).addTo(mapInst)
-            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Soldiers Hills IV, Molino VI, Bacoor</span></div>');
+            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
 
