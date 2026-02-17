@@ -4,15 +4,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}KabsuEats{% endblock %}</title>
+    <title>KabsuEats</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}">
-    <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}">
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
@@ -45,7 +43,6 @@
                 <i class="fas fa-shopping-cart"></i> Cart
                 <span class="cart-badge" id="cartBadge">{{ cart_count|default:"0" }}</span>
             </a>
-            {% block extra_nav_buttons %}{% endblock %}
             <div class="pcont" id="pcont">
                 <div class="pav" id="pavBtn" title="Profile">
                     {% if user.profile.profile_image %}
@@ -85,16 +82,9 @@
     </div>
 </header>
 
-<!-- Optional block for child pages to control search/hero visibility -->
-{% block search_visibility_control %}{% endblock %}
-
-<!-- ============================================================ -->
-<!-- MAIN CONTENT — child templates fill {% block content %}      -->
-<!-- ============================================================ -->
 <main class="main">
-    {% block content %}
 
-    <!-- Hero Search (only on home page) -->
+    <!-- Hero Search -->
     <div class="hero">
         <div class="hsw">
             <label class="hs-lbl">Search for Food or Establishments</label>
@@ -105,6 +95,7 @@
                     value="{{ q|default:'' }}" autocomplete="off"/>
                 <i class="fas fa-times hs-clr" id="hClr"></i>
             </div>
+            <!-- Live search dropdown -->
             <div class="search-dropdown" id="searchDropdown">
                 <div id="searchDropdownContent"></div>
             </div>
@@ -121,6 +112,7 @@
         </div>
 
         <div class="bs-controls">
+            <!-- LEFT: dropdown -->
             <div class="ddw" id="ddw">
                 <button class="dd-btn" id="ddBtn" onclick="toggleDD()">
                     <i class="fas fa-trophy"></i>
@@ -138,16 +130,19 @@
                     </div>
                 </div>
             </div>
+            <!-- RIGHT: grid view -->
             <button class="gv-btn" id="gvBtn" onclick="toggleGrid()">
                 <i class="fas fa-th" id="gvIco"></i>
                 <span id="gvLbl">Grid View</span>
             </button>
         </div>
 
+        <!-- CAROUSEL (default) -->
         <div id="carouselWrap">
             <button class="cnav prev" id="cPrev" onclick="cScroll(-1)"><i class="fas fa-chevron-left"></i></button>
             <div class="car-cont">
                 <div class="car-track" id="cTrack">
+                    <!-- Skeleton loaders while fetching -->
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
@@ -158,6 +153,7 @@
             <button class="cnav next" id="cNext" onclick="cScroll(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
 
+        <!-- MAP (hidden by default) -->
         <div id="mapSection">
             <div id="esMap"></div>
             <div class="mts">
@@ -210,13 +206,15 @@
 
                 <div class="estc-body">
                     <div class="star-r">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= est.average_rating %}
-                                <i class="fas fa-star" style="color:#fbbf24;font-size:12px"></i>
-                            {% else %}
-                                <i class="far fa-star" style="color:#fbbf24;font-size:12px"></i>
-                            {% endif %}
-                        {% endfor %}
+                        {% with rating=est.average_rating|floatformat:0 %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= est.average_rating %}
+                                    <i class="fas fa-star" style="color:#fbbf24;font-size:12px"></i>
+                                {% else %}
+                                    <i class="far fa-star" style="color:#fbbf24;font-size:12px"></i>
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
                         <span class="sv">{{ est.average_rating|floatformat:1 }}</span>
                     </div>
                     <div class="rcnt">({{ est.review_count }} Reviews)</div>
@@ -248,7 +246,6 @@
         </div>
     </div>
 
-    {% endblock content %}
 </main>
 
 <!-- FOOTER -->
@@ -314,7 +311,7 @@
                 <h2 class="miname" id="mName"></h2>
                 <p class="midesc" id="mDesc"></p>
                 <div class="mpr">
-                    <span class="mprice" id="mPrice">&#8369;0.00</span>
+                    <span class="mprice" id="mPrice">₱0.00</span>
                     <span class="mstock" id="mStock"><i class="fas fa-box"></i> 0 Items</span>
                 </div>
                 <div class="mestb">
@@ -386,7 +383,7 @@
 <!-- CSRF Token for AJAX -->
 <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
 
-<!-- Django data for JS — available on all pages that extend this template -->
+<!-- Django data for JS -->
 <script>
     const URLS = {
         bestsellers:  "{% url 'get_bestsellers' %}",
@@ -394,7 +391,7 @@
         cartCount:    "{% url 'get_cart_count' %}",
         nearbyEst:    "{% url 'get_nearby_establishments' %}",
         searchMenu:   "{% url 'search_menu_items' %}",
-        estDetail:    "/food_establishment/",
+        estDetail:    "/food_establishment/",  // append {id}/
         createCash:   "{% url 'create_cash_order' %}",
         createBuyNow: "{% url 'create_buynow_payment' %}",
         login:        "{% url 'user_login_register' %}",
@@ -406,9 +403,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="{% static 'js/kabsueats.js' %}"></script>
-
-<!-- Child templates add their own JS here -->
-{% block extra_js %}{% endblock %}
 
 </body>
 </html>
