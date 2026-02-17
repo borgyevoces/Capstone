@@ -1229,14 +1229,9 @@
         {# FULL WIDTH MENU SECTION #}
         <div class="quantity-control">
             <section class="section-card" id="menu-section">
-                <h2><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
 
-                <div class="menu-controls">
-                    <div class="menu-search-bar">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="menuSearchInput" placeholder="Search menu items..."
-                               oninput="filterMenuItems()">
-                    </div>
+                {# Menu Header: filters left, title center #}
+                <div class="menu-header-bar">
                     <div class="menu-filter-pills">
                         <div class="filter-pill-group">
                             <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
@@ -1246,10 +1241,16 @@
                                 <i class="fas fa-sort-amount-down"></i> Price ↓
                             </button>
                         </div>
-                        <button class="best-seller-circle-btn" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false" title="Best Sellers">
-                            <i class="fas fa-medal"></i>
-                            <span class="best-seller-label">Best Sellers</span>
-                        </button>
+                    </div>
+                    <h2 class="menu-title-centered"><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
+                    <div class="menu-header-spacer"></div>
+                </div>
+
+                <div class="menu-controls">
+                    <div class="menu-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="menuSearchInput" placeholder="Search menu items..."
+                               oninput="filterMenuItems()">
                     </div>
                     {# Hidden selects kept for JS compatibility #}
                     <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">

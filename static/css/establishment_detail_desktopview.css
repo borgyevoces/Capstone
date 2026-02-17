@@ -358,15 +358,91 @@
     }
 
     /* ================================================================= */
-    /* MENU FILTERS AND SEARCH STYLES                                    */
+    /* MENU SECTION LAYOUT                                               */
     /* ================================================================= */
+
+    /* Header bar: 3-column grid — pills | title | spacer */
+    .menu-header-bar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .menu-title-centered {
+        font-size: 1.6em;
+        font-weight: 700;
+        color: #333;
+        border-bottom: 2px solid #000;
+        padding-bottom: 1px;
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .menu-title-icon {
+        color: #b71c1c;
+        margin-right: 8px;
+        font-size: 0.85em;
+    }
+
+    .menu-header-spacer {
+        /* mirrors left side for centering */
+    }
+
+    /* Filter pills — left side */
+    .menu-filter-pills {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    .filter-pill-group {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        background: #f5f5f5;
+        border-radius: 24px;
+        padding: 4px 6px;
+    }
+
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 16px;
+        border: none;
+        border-radius: 20px;
+        background: transparent;
+        color: #666;
+        font-size: 0.82em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+
+    .filter-pill:hover {
+        background: #fff;
+        color: #b71c1c;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .filter-pill.active {
+        background: #b71c1c;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(183,28,28,0.3);
+    }
+
+    .filter-pill i { font-size: 0.85em; }
+
+    /* Search bar — centered below header bar */
     .menu-controls {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        margin-top: 25px;
-        margin-bottom: 50px;
+        justify-content: center;
+        margin-bottom: 40px;
     }
 
     .menu-search-bar {
@@ -410,117 +486,8 @@
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
 
-    /* Filter pill row */
-    .menu-filter-pills {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .filter-pill-group {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        background: #f5f5f5;
-        border-radius: 24px;
-        padding: 4px 6px;
-    }
-
-    .filter-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 16px;
-        border: none;
-        border-radius: 20px;
-        background: transparent;
-        color: #666;
-        font-size: 0.82em;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-        font-family: inherit;
-    }
-
-    .filter-pill:hover {
-        background: #fff;
-        color: #b71c1c;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-
-    .filter-pill.active {
-        background: #b71c1c;
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(183,28,28,0.3);
-    }
-
-    .filter-pill i { font-size: 0.85em; }
-
-    /* ── Best Sellers — red circle with label ── */
-    .best-seller-circle-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        font-family: inherit;
-        transition: transform 0.2s;
-    }
-
-    .best-seller-circle-btn:hover { transform: scale(1.07); }
-
-    .best-seller-circle-btn i {
-        width: 46px;
-        height: 46px;
-        background: #f0f0f0;
-        color: #999;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.15em;
-        border: 2px solid transparent;
-        transition: all 0.22s;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .best-seller-circle-btn .best-seller-label {
-        font-size: 0.7em;
-        font-weight: 700;
-        color: #999;
-        letter-spacing: 0.02em;
-        transition: color 0.22s;
-        white-space: nowrap;
-    }
-
-    /* Active / toggled state */
-    .best-seller-circle-btn.active i {
-        background: linear-gradient(135deg, #b71c1c, #8b0000);
-        color: #fff;
-        border-color: #8b0000;
-        box-shadow: 0 4px 14px rgba(183,28,28,0.45);
-    }
-
-    .best-seller-circle-btn.active .best-seller-label {
-        color: #b71c1c;
-    }
-
-    /* Menu title icon */
-    .menu-title-icon {
-        color: #b71c1c;
-        margin-right: 8px;
-        font-size: 0.85em;
-    }
-
-    .menu-filters-group {
-        display: none;
-    }
+    .menu-filters-group { display: none; }
+    .best-seller-circle-btn { display: none; }
 
     /* ========================================================================================= */
     /* 5-COLUMN GRID MENU LAYOUT WITH REDUCED SIZE                                              */
