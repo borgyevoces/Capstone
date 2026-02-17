@@ -190,23 +190,12 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 
 /* ── Top bar ── */
 .map-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-              background: #fff; border-bottom: 1px solid var(--g200); flex-wrap: wrap; }
+              background: #fff; border-bottom: 1px solid var(--g200); }
 .map-hide-btn { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;
                 background: var(--g100); border: 1px solid var(--g200); border-radius: 8px;
                 font-size: 13px; font-weight: 600; color: var(--g700); cursor: pointer;
-                font-family: 'Poppins',sans-serif; transition: .2s; white-space: nowrap;
-                flex-shrink: 0; }
+                font-family: 'Poppins',sans-serif; transition: .2s; white-space: nowrap; }
 .map-hide-btn:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
-
-.map-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.mf-wrap { position: relative; display: inline-flex; align-items: center; }
-.mf-sel { appearance: none; -webkit-appearance: none; padding: 7px 30px 7px 12px;
-           border: 1px solid var(--g300); border-radius: 8px; font-size: 13px; font-weight: 600;
-           color: var(--g700); background: #fff; cursor: pointer; font-family: 'Poppins',sans-serif;
-           outline: none; transition: .2s; min-width: 110px; }
-.mf-sel:hover { border-color: var(--red); }
-.mf-sel:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(183,28,28,.08); }
-.mf-chev { position: absolute; right: 10px; font-size: 10px; color: var(--g600); pointer-events: none; }
 
 /* ── Map wrapper (relative for absolute children) ── */
 .map-wrap { position: relative; }

@@ -234,7 +234,7 @@ let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', sea
 
 function initMap() {
     setTimeout(() => {
-        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 19, zoomControl: true, scrollWheelZoom: true });
+        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16, zoomControl: true, scrollWheelZoom: true });
         curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
 
         L.circle([CVSU.lat, CVSU.lng], {

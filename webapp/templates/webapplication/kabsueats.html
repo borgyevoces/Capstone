@@ -162,61 +162,18 @@
         <!-- MAP (hidden by default) -->
         <div id="mapSection">
 
-            <!-- Top bar: Hide Map + filter dropdowns -->
+            <!-- Top bar: Hide Map only -->
             <div class="map-topbar">
                 <button class="map-hide-btn" onclick="setView('bs')">
                     <i class="fas fa-times"></i> Hide Map
                 </button>
-                <div class="map-filters">
-                    <div class="mf-wrap">
-                        <select id="mfStatus" class="mf-sel" onchange="applyMapFilter()">
-                            <option value="">Status</option>
-                            <option value="open">Open</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                        <i class="fas fa-chevron-down mf-chev"></i>
-                    </div>
-                    <div class="mf-wrap">
-                        <select id="mfAlpha" class="mf-sel" onchange="applyMapFilter()">
-                            <option value="">Alphabetical</option>
-                            <option value="az">A → Z</option>
-                            <option value="za">Z → A</option>
-                        </select>
-                        <i class="fas fa-chevron-down mf-chev"></i>
-                    </div>
-                    <div class="mf-wrap">
-                        <select id="mfDist" class="mf-sel" onchange="applyMapFilter()">
-                            <option value="">Distance</option>
-                            <option value="near">Nearest First</option>
-                            <option value="far">Farthest First</option>
-                        </select>
-                        <i class="fas fa-chevron-down mf-chev"></i>
-                    </div>
-                    <div class="mf-wrap">
-                        <select id="mfRating" class="mf-sel" onchange="applyMapFilter()">
-                            <option value="">Ratings</option>
-                            <option value="high">Highest to Lowest</option>
-                            <option value="low">Lowest to Highest</option>
-                        </select>
-                        <i class="fas fa-chevron-down mf-chev"></i>
-                    </div>
-                    <div class="mf-wrap">
-                        <select id="mfCat" class="mf-sel" onchange="applyMapFilter()">
-                            <option value="">Categories</option>
-                            {% for cat in all_categories %}
-                            <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <i class="fas fa-chevron-down mf-chev"></i>
-                    </div>
-                </div>
             </div>
 
             <!-- Map container -->
             <div class="map-wrap">
                 <div id="esMap"></div>
 
-                <!-- Search inside map -->
+                <!-- Search inside map (top center) -->
                 <div class="map-search-bar">
                     <i class="fas fa-search map-search-ico"></i>
                     <input type="text" id="mapSearch" placeholder="Search establishments..."
@@ -479,7 +436,7 @@
         login:        "{% url 'user_login_register' %}",
     };
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
-    const CVSU = { lat: 14.4352, lng: 120.9668 };
+    const CVSU = { lat: 14.4607, lng: 120.9822 };
     const RADIUS = 500;
     // Map of establishment id → image URL (for bestseller cards)
     const EST_IMG_MAP = {
