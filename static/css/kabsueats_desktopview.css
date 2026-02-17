@@ -238,7 +238,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
 /* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
 .est-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 20px; }
-.estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--sh1); transition: .3s; cursor: pointer; border: 2px solid transparent; position: relative; text-decoration: none; display: block; }
+.estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--sh1); transition: .3s; cursor: pointer; border: 2px solid transparent; position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
 .estc:hover { transform: translateY(-5px); box-shadow: var(--sh2); border-color: var(--red); }
 .estc-img { width: 100%; height: 155px; object-fit: cover; display: block; }
 .estc-body { padding: 11px 13px 8px; }
@@ -363,3 +363,24 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
     .est-grid { grid-template-columns: 1fr; }
 }
 .leaflet-container { font-family: 'Poppins', sans-serif !important; }
+/* ============================================ */
+/* FIX: Ensure Establishment Cards are Clickable */
+/* ============================================ */
+.estb,
+.estb-dot {
+    pointer-events: none !important;
+}
+.emr {
+    pointer-events: none !important;
+}
+.estc-body {
+    pointer-events: none !important;
+}
+.estc-img {
+    pointer-events: none !important;
+}
+.estc,
+.food-est-item {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}

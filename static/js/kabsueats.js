@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initScrollTop();
     fetchBestsellers();
     autoHideMessages();
+    initEstablishmentCards();
 });
 
 // ============================================
@@ -605,4 +606,24 @@ function escapeRe(str) {
 }
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+// ============================================
+// ESTABLISHMENT CARD NAVIGATION — safety net
+// Ensures clicking any part of an establishment
+// card navigates to its detail page.
+// ============================================
+function initEstablishmentCards() {
+    document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
+        const estId = card.getAttribute('data-id');
+        if (!estId) return;
+        const detailUrl = URLS.estDetail + estId + '/';
+
+        card.addEventListener('click', function(e) {
+            // Allow normal anchor navigation — do not prevent default
+            // This is a safety net in case pointer-events were blocked
+            if (!e.defaultPrevented) {
+                window.location.href = detailUrl;
+            }
+        });
+    });
 }

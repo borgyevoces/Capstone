@@ -2342,3 +2342,43 @@
         grid-template-columns: 1fr 1fr;
     }
 }
+/* ============================================ */
+/* FIX: Ensure Establishment Cards are Clickable */
+/* ============================================ */
+.estc,
+.food-est-item {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 1 !important;
+    text-decoration: none !important;
+    display: block !important;
+}
+
+.est-grid {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.est-wrap {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Ensure overlapping badges/elements do not block the card click */
+.estb,
+.estb-dot {
+    pointer-events: none !important;
+}
+
+.emr {
+    pointer-events: none !important;
+}
+
+.estc-body {
+    pointer-events: none !important;
+}
+
+.estc-img {
+    pointer-events: none !important;
+}
