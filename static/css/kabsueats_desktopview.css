@@ -188,15 +188,6 @@ body { font-family: 'Poppins', sans-serif; background: #f4f4f4; color: var(--g80
               box-shadow: var(--sh1); margin-bottom: 28px; }
 #mapSection.on { display: block; }
 
-/* ── Top bar ── */
-.map-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-              background: #fff; border-bottom: 1px solid var(--g200); }
-.map-hide-btn { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;
-                background: var(--g100); border: 1px solid var(--g200); border-radius: 8px;
-                font-size: 13px; font-weight: 600; color: var(--g700); cursor: pointer;
-                font-family: 'Poppins',sans-serif; transition: .2s; white-space: nowrap; }
-.map-hide-btn:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
-
 /* ── Map wrapper (relative for absolute children) ── */
 .map-wrap { position: relative; }
 #esMap { width: 100%; height: 520px; }
