@@ -750,21 +750,20 @@ function saveProfile() {
 }
 
 // ============================================
-// SEARCH — real-time: menus replace bestsellers, establishments sort by match
+// SEARCH — real-time dropdown (establishments + menus)
 // ============================================
 let searchTimer = null;
-let searchAbort = null;
+let searchAbort = null;   // AbortController for in-flight requests
 let searchFocused = false;
-let dropSelected = -1;
-let searchActive = false;          // true while user has a query typed
-let lastSearchMenus = [];          // cached menu results for the "top-rated" section
-let lastSearchEstIds = new Set();  // establishment IDs that have matching menu items
+let dropSelected = -1;    // keyboard nav index
 
 function initSearch() {
     const inp  = document.getElementById('hSearch');
     const clr  = document.getElementById('hClr');
+    const drop = document.getElementById('searchDropdown');
     if (!inp) return;
 
+    // ── Input: debounce 260ms ──
     inp.addEventListener('input', function () {
         const q = this.value.trim();
         clr.classList.toggle('on', q.length > 0);
@@ -773,29 +772,39 @@ function initSearch() {
 
         if (q.length < 2) {
             closeDrop();
-            clearSearchMode();   // restore bestsellers + all establishment cards
+            filterEstCards('');   // restore all cards
             return;
         }
 
+        // Show skeleton immediately
         showDropSkeleton();
-        searchTimer = setTimeout(() => fetchSearchResults(q), 280);
+        filterEstCards(q);        // filter DOM cards in real-time
+
+        searchTimer = setTimeout(() => fetchSearchResults(q), 260);
     });
 
+    // ── Clear button ──
     clr.addEventListener('click', function () {
         inp.value = '';
         this.classList.remove('on');
         closeDrop();
-        clearSearchMode();
+        filterEstCards('');
         inp.focus();
     });
 
+    // ── Focus: show dropdown if query exists ──
     inp.addEventListener('focus', function () {
         searchFocused = true;
-        if (this.value.trim().length >= 2) fetchSearchResults(this.value.trim());
+        if (this.value.trim().length >= 2) {
+            fetchSearchResults(this.value.trim());
+        }
     });
 
+    // ── Keyboard navigation ──
     inp.addEventListener('keydown', function (e) {
         const items = document.querySelectorAll('.search-dropdown-item');
+        if (!items.length) return;
+
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             dropSelected = Math.min(dropSelected + 1, items.length - 1);
@@ -806,19 +815,24 @@ function initSearch() {
             highlightDropItem(items);
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].click();
+            if (dropSelected >= 0 && items[dropSelected]) {
+                items[dropSelected].click();
+            }
         } else if (e.key === 'Escape') {
             closeDrop();
         }
     });
 
+    // ── Hint pills — clicking a pill searches for it ──
     document.querySelectorAll('.hs-hint-pill').forEach(pill => {
         pill.addEventListener('click', function (e) {
+            // Only intercept if it's a plain span (not an anchor to a real page)
             if (this.tagName === 'A') return;
             e.preventDefault();
             const text = this.textContent.trim().replace(/^[^\w]+/, '');
             inp.value = text;
             clr.classList.add('on');
+            filterEstCards(text);
             fetchSearchResults(text);
             inp.focus();
         });
@@ -826,7 +840,9 @@ function initSearch() {
 }
 
 function highlightDropItem(items) {
-    items.forEach((el, i) => el.style.background = i === dropSelected ? 'var(--g50)' : '');
+    items.forEach((el, i) => {
+        el.style.background = i === dropSelected ? 'var(--g50)' : '';
+    });
     if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
 }
 
@@ -836,45 +852,15 @@ function closeDrop() {
     dropSelected = -1;
 }
 
-// ── Called when search is cleared — restore original page state ──
-function clearSearchMode() {
-    searchActive = false;
-    lastSearchMenus = [];
-    lastSearchEstIds.clear();
-
-    // Restore bestsellers section title and carousel
-    const bsTitle = document.querySelector('.bs-title');
-    if (bsTitle) {
-        bsTitle.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
-    }
-    // Hide menu search results, show original carousel
-    const srSec = document.getElementById('srMenuSection');
-    if (srSec) srSec.remove();
-    const cWrap = document.getElementById('carouselWrap');
-    if (cWrap && curView === 'bs') cWrap.style.display = '';
-    const gvBtn = document.getElementById('gvBtn');
-    if (gvBtn) gvBtn.style.display = 'flex';
-
-    // Remove all est match badges & restore sort order
-    document.querySelectorAll('.est-match-badge').forEach(b => b.remove());
-    restoreEstOrder();
+// ── Filter DOM establishment cards instantly ──
+function filterEstCards(q) {
+    const ql = q.toLowerCase();
     document.querySelectorAll('.food-est-item').forEach(el => {
-        el.style.display = '';
-        el.classList.remove('search-est-match', 'search-est-nomatch');
+        if (!ql) { el.style.display = ''; return; }
+        const name = (el.dataset.name     || '').toLowerCase();
+        const cat  = (el.dataset.category || '').toLowerCase();
+        el.style.display = (name.includes(ql) || cat.includes(ql)) ? '' : 'none';
     });
-
-    // Remove no-results notice
-    const noRes = document.getElementById('srNoResults');
-    if (noRes) noRes.remove();
-}
-
-// ── Restore DOM order of establishment cards to original (by data-order) ──
-function restoreEstOrder() {
-    const grid = document.getElementById('estGrid');
-    if (!grid) return;
-    const cards = [...grid.querySelectorAll('.food-est-item')];
-    cards.sort((a, b) => parseInt(a.dataset.order || 0) - parseInt(b.dataset.order || 0));
-    cards.forEach(c => grid.appendChild(c));
 }
 
 // ── Skeleton while loading ──
@@ -898,36 +884,36 @@ function showDropSkeleton() {
 
 // ── Main API fetch ──
 function fetchSearchResults(q) {
+    // Cancel any pending request
     if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
 
     fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
         .then(r => r.json())
-        .then(data => {
-            renderSearchDrop(data, q);
-            applySearchToPage(data, q);
-        })
+        .then(data => renderSearchDrop(data, q))
         .catch(err => {
             if (err.name !== 'AbortError') closeDrop();
         });
 }
 
-// ── Render dropdown ──
+// ── Render results ──
 function renderSearchDrop(data, q) {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
     dropSelected  = -1;
 
-    const menus = data.menus          || [];
+    const items = data.menus          || [];
     const ests  = data.establishments || [];
     let html = '';
 
-    if (menus.length > 0) {
+    // ── Menu Items section ──
+    if (items.length > 0) {
         html += `<div class="search-dropdown-section">
             <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
-        menus.slice(0, 6).forEach(item => {
+        items.slice(0, 6).forEach(item => {
             const estId   = item.establishment ? item.establishment.id   : '';
             const estName = item.establishment ? item.establishment.name : '';
+            // API returns image_url, not image
             const imgSrc  = item.image_url
                 ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
                 : `<i class="fas fa-utensils"></i>`;
@@ -947,6 +933,7 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
+    // ── Establishments section ──
     if (ests.length > 0) {
         html += `<div class="search-dropdown-section">
             <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
@@ -973,6 +960,7 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
+    // ── No results ──
     if (!html) {
         html = `<div class="search-no-results">
             <i class="fas fa-search" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
@@ -983,206 +971,6 @@ function renderSearchDrop(data, q) {
 
     content.innerHTML = html;
     drop.classList.add('active');
-}
-
-// ============================================================
-// APPLY SEARCH TO PAGE — the main page transformation logic
-// ============================================================
-function applySearchToPage(data, q) {
-    searchActive = true;
-    const menus = data.menus          || [];
-    const ests  = data.establishments || [];
-    const hasMenuResults = menus.length > 0;
-    const hasEstResults  = ests.length > 0;
-    const hasAnyResults  = hasMenuResults || hasEstResults;
-
-    // ── Detect intent: is user searching for menu items or establishments? ──
-    // If API returned menus → menu-intent. If only ests → est-intent.
-    const isMenuSearch = hasMenuResults;
-
-    // ── 1. Handle the Bestsellers / Top-rated section ──
-    const bsTitle = document.querySelector('.bs-title');
-    const cWrap   = document.getElementById('carouselWrap');
-    const gvBtn   = document.getElementById('gvBtn');
-
-    if (hasAnyResults) {
-        // Remove old no-results notice if any
-        const noRes = document.getElementById('srNoResults');
-        if (noRes) noRes.remove();
-
-        if (isMenuSearch) {
-            // Hide the bestseller carousel
-            if (cWrap && curView === 'bs') cWrap.style.display = 'none';
-            if (gvBtn) gvBtn.style.display = 'none';
-
-            // Update section title
-            if (bsTitle) {
-                bsTitle.innerHTML = `<i class="fas fa-search"></i> Menu results for "<span style="color:#B71C1C">${escHtml(q)}</span>"`;
-            }
-
-            // Inject / refresh the menu results grid inside the bs-section
-            renderMenuSearchResults(menus, q);
-        } else {
-            // Est-only search: keep bestsellers hidden/shown as was, just sort ests
-            if (bsTitle) {
-                bsTitle.innerHTML = `<i class="fas fa-store"></i> Showing establishments for "<span style="color:#B71C1C">${escHtml(q)}</span>"`;
-            }
-            // Restore carousel to normal if it was hidden
-            const srSec = document.getElementById('srMenuSection');
-            if (srSec) srSec.remove();
-            if (cWrap && curView === 'bs') cWrap.style.display = '';
-            if (gvBtn) gvBtn.style.display = 'flex';
-        }
-    } else {
-        // No results at all
-        if (cWrap && curView === 'bs') cWrap.style.display = 'none';
-        if (gvBtn) gvBtn.style.display = 'none';
-        const srSec = document.getElementById('srMenuSection');
-        if (srSec) srSec.remove();
-        if (bsTitle) {
-            bsTitle.innerHTML = `<i class="fas fa-search"></i> No results for "<span style="color:#B71C1C">${escHtml(q)}</span>"`;
-        }
-        // Show a gentle no-results inside the section
-        const bsSec = document.getElementById('bsSec');
-        if (bsSec && !document.getElementById('srNoResults')) {
-            const div = document.createElement('div');
-            div.id = 'srNoResults';
-            div.style.cssText = 'padding:32px 0;text-align:center;color:#9ca3af;font-size:13px;';
-            div.innerHTML = `<i class="fas fa-bowl-food" style="font-size:28px;display:block;margin-bottom:10px;color:#d1d5db"></i>No menus or establishments matched "<strong>${escHtml(q)}</strong>". Try a different keyword.`;
-            // Insert after bs-controls
-            const bsCtrl = bsSec.querySelector('.bs-controls');
-            if (bsCtrl) bsCtrl.after(div); else bsSec.appendChild(div);
-        }
-    }
-
-    // ── 2. Handle establishment cards — sort & badge ──
-    // Build a set of est IDs that have matching menu items
-    lastSearchMenus = menus;
-    lastSearchEstIds = new Set();
-    menus.forEach(m => { if (m.establishment) lastSearchEstIds.add(m.establishment.id); });
-
-    sortAndBadgeEstablishments(q, ests, lastSearchEstIds, isMenuSearch);
-}
-
-// ── Render the menu grid that replaces the bestseller carousel ──
-function renderMenuSearchResults(menus, q) {
-    // Remove old section if any
-    const old = document.getElementById('srMenuSection');
-    if (old) old.remove();
-
-    const bsSec  = document.getElementById('bsSec');
-    const bsCtrl = bsSec ? bsSec.querySelector('.bs-controls') : null;
-    if (!bsSec) return;
-
-    const div = document.createElement('div');
-    div.id = 'srMenuSection';
-    div.className = 'sr-menu-grid';
-
-    div.innerHTML = menus.slice(0, 12).map(item => {
-        const estId   = item.establishment ? item.establishment.id   : '';
-        const estName = item.establishment ? item.establishment.name : '';
-        const imgSrc  = item.image_url || `https://via.placeholder.com/260x150?text=${encodeURIComponent(item.name)}`;
-        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
-        const estIconHtml = estImg
-            ? `<img src="${escHtml(estImg)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-            : `<i class="fas fa-store" style="font-size:11px;color:#6b7280;"></i>`;
-
-        return `<div class="sr-menu-card" onclick="window.location.href='${URLS.estDetail}${estId}/'">
-            <div class="sr-menu-img">
-                <img src="${escHtml(imgSrc)}" alt="${escHtml(item.name)}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/260x150?text=Food'">
-                <span class="sr-menu-badge"><i class="fas fa-search"></i> Result</span>
-            </div>
-            <div class="sr-menu-body">
-                <div class="sr-menu-name">${highlightMatch(escHtml(item.name), q)}</div>
-                <div class="sr-menu-price">₱${parseFloat(item.price).toFixed(2)}</div>
-                <div class="sr-menu-est">
-                    <div class="sr-menu-eico">${estIconHtml}</div>
-                    <div class="sr-menu-ename">${highlightMatch(escHtml(estName), q)}</div>
-                </div>
-                <button class="sr-menu-btn"><i class="fas fa-eye"></i> View Details</button>
-            </div>
-        </div>`;
-    }).join('');
-
-    // Insert after bs-controls (the dropdown row)
-    if (bsCtrl) bsCtrl.after(div); else bsSec.appendChild(div);
-}
-
-// ── Sort & badge establishment cards ──
-function sortAndBadgeEstablishments(q, estResults, menuEstIds, isMenuSearch) {
-    const grid = document.getElementById('estGrid');
-    if (!grid) return;
-
-    // Remove old badges
-    document.querySelectorAll('.est-match-badge').forEach(b => b.remove());
-
-    const cards = [...grid.querySelectorAll('.food-est-item')];
-
-    // Store original order if not already stored
-    cards.forEach((c, i) => {
-        if (!c.dataset.order) c.dataset.order = i;
-    });
-
-    // Build priority sets
-    // estResults = establishments matching by name/category
-    const nameMatchIds = new Set(estResults.map(e => e.id));
-
-    cards.forEach(card => {
-        const id   = parseInt(card.dataset.id || 0);
-        const name = (card.dataset.name || '').toLowerCase();
-        const cat  = (card.dataset.category || '').toLowerCase();
-        const ql   = q.toLowerCase();
-
-        const matchesByName    = name.includes(ql) || cat.includes(ql);
-        const matchesByMenu    = menuEstIds.has(id);
-        const isAnyMatch       = matchesByName || matchesByMenu;
-
-        card.classList.toggle('search-est-match',   isAnyMatch);
-        card.classList.toggle('search-est-nomatch', !isAnyMatch);
-
-        // Add badge to matching cards
-        if (isAnyMatch) {
-            // Remove old badge if exists
-            const oldBadge = card.querySelector('.est-match-badge');
-            if (oldBadge) oldBadge.remove();
-
-            const badge = document.createElement('div');
-            badge.className = 'est-match-badge';
-
-            if (matchesByMenu && matchesByName) {
-                badge.innerHTML = `<i class="fas fa-utensils"></i> Has menu • Matches name`;
-                badge.classList.add('badge-both');
-            } else if (matchesByMenu) {
-                badge.innerHTML = `<i class="fas fa-utensils"></i> Has "${escHtml(q)}" on menu`;
-                badge.classList.add('badge-menu');
-            } else {
-                badge.innerHTML = `<i class="fas fa-store"></i> Matches search`;
-                badge.classList.add('badge-est');
-            }
-            card.style.position = 'relative';
-            card.appendChild(badge);
-        }
-
-        // Show/hide
-        card.style.display = '';  // show all, just re-sorted
-    });
-
-    // Sort: name/category matches first, then menu matches, then rest — all visible
-    cards.sort((a, b) => {
-        const aId = parseInt(a.dataset.id || 0);
-        const bId = parseInt(b.dataset.id || 0);
-        const aName = (a.dataset.name || '').toLowerCase().includes(q.toLowerCase());
-        const bName = (b.dataset.name || '').toLowerCase().includes(q.toLowerCase());
-        const aMenu = menuEstIds.has(aId);
-        const bMenu = menuEstIds.has(bId);
-
-        const score = x => (x[0] ? 2 : 0) + (x[1] ? 1 : 0);
-        return score([bName, bMenu]) - score([aName, aMenu]);
-    });
-
-    // Re-append in sorted order
-    cards.forEach(c => grid.appendChild(c));
 }
 
 function highlightMatch(text, q) {
