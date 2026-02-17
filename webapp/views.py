@@ -109,11 +109,27 @@ from datetime import datetime, time as dt_time
 
 # ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
 def get_current_status(opening_time, closing_time):
-    """Calculate real-time status"""
+    """
+    Calculate real-time open/closed status using Philippine time (Asia/Manila).
+    CRITICAL FIX: Server runs in UTC (Render.com). Opening/closing times stored
+    in DB are Philippine local time, so we MUST use PH local time here —
+    otherwise status is always 8 hours off (showing Open when actually Closed).
+    Uses zoneinfo (Python 3.9+ stdlib — no extra package needed).
+    """
     if not opening_time or not closing_time:
         return "Closed"
 
-    now = datetime.now().time()
+    try:
+        from zoneinfo import ZoneInfo
+        ph_tz = ZoneInfo('Asia/Manila')
+        now = datetime.now(ph_tz).time()  # Philippine local time (UTC+8)
+    except Exception:
+        # Fallback: use pytz if zoneinfo unavailable for any reason
+        try:
+            import pytz
+            now = datetime.now(pytz.timezone('Asia/Manila')).time()
+        except Exception:
+            now = datetime.now().time()  # last resort
 
     if opening_time <= closing_time:
         # Normal hours (e.g., 8 AM - 10 PM)
@@ -506,8 +522,18 @@ def kabsueats_main_view(request):
     ref_lat = 14.4607
     ref_lon = 120.9822
 
-    # Get current time for status calculation
-    current_time = datetime.now().time()
+    # Get current Philippine time for status calculation
+    # CRITICAL FIX: Server is UTC (Render.com), DB times are in Philippine time (UTC+8)
+    # Using zoneinfo (Python 3.9+ stdlib — no extra package needed)
+    try:
+        from zoneinfo import ZoneInfo
+        current_time = datetime.now(ZoneInfo('Asia/Manila')).time()
+    except Exception:
+        try:
+            import pytz
+            current_time = datetime.now(pytz.timezone('Asia/Manila')).time()
+        except Exception:
+            current_time = datetime.now().time()  # last resort fallback
 
     food_establishments_with_data = []
     for est in food_establishments_queryset:
@@ -6291,63 +6317,31 @@ def get_bestsellers(request):
 @require_POST
 @login_required
 def prepare_buynow_order(request):
-    """
-    Step 1 of Buy Now: Creates a PENDING order and returns its ID.
-    Called by buyNowFromModal() in kabsueats.js.
-    JS then redirects to /buynow/checkout/?order_id=N
-    """
     try:
         menu_item_id = request.POST.get('menu_item_id')
         quantity = int(request.POST.get('quantity', 1))
-
         if not menu_item_id or quantity < 1:
             return JsonResponse({'success': False, 'message': 'Invalid item or quantity.'}, status=400)
-
         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
         establishment = menu_item.food_establishment
-
         if menu_item.quantity < quantity:
-            return JsonResponse({
-                'success': False,
-                'message': f'Only {menu_item.quantity} item(s) available in stock.'
-            }, status=400)
-
+            return JsonResponse({'success': False, 'message': f'Only {menu_item.quantity} item(s) available in stock.'}, status=400)
         total = Decimal(str(menu_item.price)) * quantity
-
         with transaction.atomic():
-            order = Order.objects.create(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING',
-                total_amount=total,
-                gcash_payment_method='pending'
-            )
-            OrderItem.objects.create(
-                order=order,
-                menu_item=menu_item,
-                quantity=quantity,
-                price_at_order=menu_item.price
-            )
-
+            order = Order.objects.create(user=request.user, establishment=establishment, status='PENDING', total_amount=total, gcash_payment_method='pending')
+            OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity, price_at_order=menu_item.price)
         return JsonResponse({'success': True, 'order_id': order.id})
-
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        import traceback; traceback.print_exc()
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @login_required
 def buynow_checkout_view(request):
-    """
-    Step 2 of Buy Now: Shows payment method selection page.
-    User chooses Cash or Online (PayMongo).
-    """
     order_id = request.GET.get('order_id')
     if not order_id:
         messages.error(request, 'No order specified.')
         return redirect('kabsueats_home')
-
     order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
     return render(request, 'webapplication/buynow_checkout.html', {'order': order})
 
@@ -6355,47 +6349,28 @@ def buynow_checkout_view(request):
 @require_POST
 @login_required
 def create_buynow_cash_order(request):
-    """
-    Processes cash payment for a Buy Now order.
-    Reduces stock, creates owner notification, returns success.
-    """
     try:
         order_id = request.POST.get('order_id')
         if not order_id:
             return JsonResponse({'success': False, 'message': 'Order ID is required.'}, status=400)
-
         order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
-
         with transaction.atomic():
             order.status = 'order_received'
             order.gcash_payment_method = 'cash'
             order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
             order.payment_confirmed_at = timezone.now()
             order.save()
-
             for order_item in order.orderitem_set.all():
                 menu_item = order_item.menu_item
                 if menu_item.quantity < order_item.quantity:
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Not enough stock for {menu_item.name}. Available: {menu_item.quantity}'
-                    }, status=400)
+                    return JsonResponse({'success': False, 'message': f'Not enough stock for {menu_item.name}. Available: {menu_item.quantity}'}, status=400)
                 menu_item.quantity -= order_item.quantity
                 menu_item.save()
-
             try:
-                OrderNotification.objects.create(
-                    order=order,
-                    establishment=order.establishment,
-                    notification_type='new_order',
-                    message=f'New cash order #{order.id} from {request.user.username}'
-                )
+                OrderNotification.objects.create(order=order, establishment=order.establishment, notification_type='new_order', message=f'New cash order #{order.id} from {request.user.username}')
             except Exception as notif_err:
                 print(f"WARNING: Notification failed: {notif_err}")
-
         return JsonResponse({'success': True, 'order_id': order.id})
-
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        import traceback; traceback.print_exc()
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
