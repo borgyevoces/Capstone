@@ -958,6 +958,68 @@
         }
     }
 </style>
+
+{# Override notification to appear top-center #}
+<style>
+    /* ── Center-top toast notification ── */
+    .custom-cart-notification {
+        position: fixed !important;
+        top: 20px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        min-width: 320px !important;
+        max-width: 480px !important;
+        width: auto !important;
+        border-radius: 14px !important;
+        padding: 14px 20px !important;
+        background: #fff !important;
+        box-shadow: 0 6px 28px rgba(0,0,0,0.16) !important;
+        border-left: none !important;
+        border-top: 4px solid #28a745 !important;
+        z-index: 99999 !important;
+        animation: toastDropIn 0.3s cubic-bezier(0.34,1.56,0.64,1) !important;
+    }
+    .custom-cart-notification.notification-error { border-top-color: #dc3545 !important; }
+    .custom-cart-notification.notification-warning { border-top-color: #ffc107 !important; }
+    .custom-cart-notification.notification-info { border-top-color: #0d6efd !important; }
+
+    @keyframes toastDropIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.95); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    /* ── Cart badge in nav ── */
+    #cart-count-badge {
+        display: none;
+        position: absolute;
+        top: -7px;
+        right: -9px;
+        background: #B71C1C;
+        color: #fff;
+        border-radius: 50%;
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+        font-weight: 700;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 2px solid #fff;
+        line-height: 1;
+    }
+    #cart-count-badge.show {
+        display: flex !important;
+    }
+    #cart-count-badge.badge-pulse {
+        animation: cartPulse 0.5s ease-in-out;
+    }
+    @keyframes cartPulse {
+        0%,100% { transform: scale(1); }
+        50% { transform: scale(1.25); background: #8b0000; }
+    }
+    .nav-cart-btn { position: relative !important; }
+</style>
 {% endblock %}
 
 {% block extra_nav_buttons %}
@@ -966,6 +1028,15 @@
     <i class="fas fa-comments"></i>
     <span>Message</span>
     <span class="chat-notification-badge" id="chatNotificationBadge" style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;"></span>
+</a>
+{# Cart link with live badge #}
+<a href="/cart/" class="nib nav-cart-btn" style="position: relative; cursor: pointer;">
+    <i class="fas fa-shopping-cart"></i>
+    <span>Cart</span>
+    <span id="cart-count-badge"
+          style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;">
+        {{ cart_count|default:0 }}
+    </span>
 </a>
 {% endif %}
 {% endblock extra_nav_buttons %}
@@ -1230,28 +1301,31 @@
         <div class="quantity-control">
             <section class="section-card" id="menu-section">
 
-                {# Menu Header: filters left, title center #}
-                <div class="menu-header-bar">
-                    <div class="menu-filter-pills">
-                        <div class="filter-pill-group">
-                            <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
-                                <i class="fas fa-sort-amount-up-alt"></i> Price ↑
-                            </button>
-                            <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
-                                <i class="fas fa-sort-amount-down"></i> Price ↓
-                            </button>
-                        </div>
-                    </div>
-                    <h2 class="menu-title-centered"><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
-                    <div class="menu-header-spacer"></div>
-                </div>
+                {# Menu Title #}
+                <h2 class="menu-title-centered"><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
 
+                {# Controls row: [Price pills] [Search] [Best Sellers circle] #}
                 <div class="menu-controls">
+                    <div class="filter-pill-group">
+                        <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
+                            <i class="fas fa-sort-amount-up-alt"></i> Price ↑
+                        </button>
+                        <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
+                            <i class="fas fa-sort-amount-down"></i> Price ↓
+                        </button>
+                    </div>
+
                     <div class="menu-search-bar">
                         <i class="fas fa-search"></i>
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
                                oninput="filterMenuItems()">
                     </div>
+
+                    <button class="best-seller-circle-btn" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false" title="Best Sellers">
+                        <i class="fas fa-medal"></i>
+                        <span class="best-seller-label">Best Sellers</span>
+                    </button>
+
                     {# Hidden selects kept for JS compatibility #}
                     <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">
                         <option value="default">Sort by Price</option>
@@ -2797,6 +2871,43 @@ window.setPriceFilter = function(val, btn) {
     }
     filterMenuItems();
 };
+</script>
+
+<script>
+// ── Cart badge init on page load ──
+(function() {
+    function initCartBadge() {
+        const badge = document.getElementById('cart-count-badge');
+        if (!badge) return;
+        const count = parseInt(badge.textContent.trim()) || 0;
+        if (count > 0) {
+            badge.style.display = 'flex';
+            badge.classList.add('show');
+        }
+    }
+
+    // Override updateCartBadge to also handle the show class
+    const _origUpdate = window.updateCartBadge;
+    window.updateCartBadge = function(count) {
+        const badge = document.getElementById('cart-count-badge');
+        if (badge) {
+            badge.textContent = count;
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.classList.add('show');
+                badge.classList.add('badge-pulse');
+                setTimeout(() => badge.classList.remove('badge-pulse'), 500);
+            } else {
+                badge.style.display = 'none';
+                badge.classList.remove('show');
+            }
+        }
+        // also call original if it exists
+        if (typeof _origUpdate === 'function') _origUpdate(count);
+    };
+
+    document.addEventListener('DOMContentLoaded', initCartBadge);
+})();
 </script>
 
 {% endblock %}
