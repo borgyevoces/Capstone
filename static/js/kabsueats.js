@@ -212,14 +212,15 @@ function setView(v) {
     curView = v;
 }
 
+
 // ============================================
-// LEAFLET MAP — pinned locations, satellite, real-time
+// LEAFLET MAP — screenshot-matching design
 // ============================================
 const TILES = {
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                  opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                 opt: { attribution: 'Tiles &copy; Esri &mdash; Esri, i-cubed, USDA, AEA, GIS User Community', maxZoom: 20 } },
+                 opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 } },
     topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
                  opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
     dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -227,172 +228,194 @@ const TILES = {
 };
 
 let mapPollTimer = null;
-// Live status cache updated by API — keyed by establishment id
 let liveStatusCache = {};
+let userLocMarker = null;
+let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', search: '' };
 
 function initMap() {
     setTimeout(() => {
-        // ── Satellite default, zoom 19 (street-level detail) ──
-        mapInst = L.map('esMap', {
-            center: [CVSU.lat, CVSU.lng],
-            zoom: 19,
-            zoomControl: true,
-            scrollWheelZoom: true
-        });
+        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 19, zoomControl: true, scrollWheelZoom: true });
         curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
 
-        // 500m radius circle
         L.circle([CVSU.lat, CVSU.lng], {
             color: '#B71C1C', fillColor: 'rgba(183,28,28,0.06)',
             fillOpacity: 0.3, weight: 2, radius: RADIUS, dashArray: '6 4'
         }).addTo(mapInst);
 
-        // CvSU center marker
         const cvIco = L.divIcon({
-            html: `<div style="background:#B71C1C;color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 12px rgba(183,28,28,.6);border:3px solid #fff;"><i class="fas fa-university"></i></div>`,
+            html: '<div style="background:#B71C1C;color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 12px rgba(183,28,28,.6);border:3px solid #fff;"><i class="fas fa-university"></i></div>',
             className: '', iconSize: [38, 38], iconAnchor: [19, 19]
         });
         L.marker([CVSU.lat, CVSU.lng], { icon: cvIco }).addTo(mapInst)
-            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:4px;">📍 CvSU-Bacoor Campus</div>');
+            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">CvSU-Bacoor Campus</div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
-
-        // ── Step 1: Immediately render all known pinned establishments from EST_ALL_DATA ──
         renderFromLocalData();
-
-        // ── Step 2: Fetch live status from API, then re-render with updated statuses ──
         refreshEstablishmentStatuses();
-
-        // ── Step 3: Poll every 30 s for real-time open/closed status updates ──
         mapPollTimer = setInterval(refreshEstablishmentStatuses, 30000);
-
         mapInst.invalidateSize();
     }, 150);
 }
 
-// Render markers immediately from server-rendered EST_ALL_DATA (exact pinned coords)
 function renderFromLocalData() {
     if (typeof EST_ALL_DATA === 'undefined') return;
     const list = Object.entries(EST_ALL_DATA).map(([id, d]) => ({
         id: parseInt(id),
-        name: d.name,
-        address: d.address,
-        image: d.image,
+        name: d.name, address: d.address, image: d.image,
         status: liveStatusCache[id] || d.status || '',
-        latitude: d.lat,
-        longitude: d.lng,
-        distance: 0
+        latitude: d.lat, longitude: d.lng,
+        rating: d.rating || 0, distance: 0
     })).filter(e => e.latitude && e.longitude);
     esMapData = list;
-    renderMarkers(esMapData);
+    renderMarkers(applyFiltersToData(esMapData));
 }
 
-// Hit the API to get fresh status — use wide radius to catch all establishments
 function refreshEstablishmentStatuses() {
-    const url = `${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=50000`;
-    fetch(url)
+    fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=50000`)
         .then(r => r.json())
         .then(data => {
-            if (!data.success) return;
-            // Cache fresh statuses from API
-            data.establishments.forEach(e => {
-                if (e.status) liveStatusCache[e.id] = e.status.toLowerCase();
-            });
-            // Re-render with live statuses merged into EST_ALL_DATA
+            if (data.success) {
+                data.establishments.forEach(e => {
+                    if (e.status) liveStatusCache[e.id] = e.status.toLowerCase();
+                    const local = esMapData.find(x => x.id === e.id);
+                    if (local) local.distance = e.distance || 0;
+                });
+            }
             renderFromLocalData();
         })
-        .catch(() => {
-            // API failed — still show markers with last known status
-            renderFromLocalData();
-        });
+        .catch(() => renderFromLocalData());
 }
 
-// Compatibility alias used by switchView when map already initialized
 function fetchMapEstablishments() { refreshEstablishmentStatuses(); }
+
+function applyFiltersToData(data) {
+    let result = [...data];
+    const f = mapFilterState;
+    if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
+    if (f.alpha === 'az') result.sort((a, b) => a.name.localeCompare(b.name));
+    if (f.alpha === 'za') result.sort((a, b) => b.name.localeCompare(a.name));
+    if (f.dist === 'near') result.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    if (f.dist === 'far')  result.sort((a, b) => (b.distance || 0) - (a.distance || 0));
+    if (f.rating === 'high') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    if (f.rating === 'low')  result.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+    if (f.search) {
+        const q = f.search.toLowerCase();
+        result = result.filter(e => e.name.toLowerCase().includes(q) || (e.address || '').toLowerCase().includes(q));
+    }
+    return result;
+}
+
+function applyMapFilter() {
+    mapFilterState.status = document.getElementById('mfStatus').value;
+    mapFilterState.alpha  = document.getElementById('mfAlpha').value;
+    mapFilterState.dist   = document.getElementById('mfDist').value;
+    mapFilterState.rating = document.getElementById('mfRating').value;
+    mapFilterState.cat    = document.getElementById('mfCat').value;
+    renderMarkers(applyFiltersToData(esMapData));
+}
+
+function filterMapMarkers(q) {
+    mapFilterState.search = q.trim();
+    renderMarkers(applyFiltersToData(esMapData));
+}
 
 function renderMarkers(data) {
     if (!mkLayer) return;
     mkLayer.clearLayers();
     data.forEach(e => {
         if (!e.latitude || !e.longitude) return;
-
-        const st    = (e.status || '').toLowerCase();
+        const st = (e.status || '').toLowerCase();
         const isOpen = st === 'open';
-        const bg    = isOpen ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
-        const glow  = isOpen ? '0 0 0 6px rgba(16,185,129,0.25),0 3px 12px rgba(0,0,0,.4)'
-                              : '0 3px 12px rgba(0,0,0,.35)';
-
-        // Pulse ring only for open establishments
+        const borderColor = isOpen ? '#f7931e' : '#ef4444';
+        const bgColor = isOpen ? '#fff' : '#374151';
+        const faceColor = isOpen ? '#374151' : '#fff';
+        const glow = isOpen
+            ? '0 0 0 3px rgba(247,147,30,0.4), 0 3px 14px rgba(0,0,0,.4)'
+            : '0 3px 14px rgba(0,0,0,.35)';
         const pulse = isOpen
-            ? `<div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(16,185,129,0.5);animation:mapPulse 2s ease-out infinite;pointer-events:none;"></div>`
+            ? '<div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(247,147,30,0.5);animation:mapPulse 2s ease-out infinite;pointer-events:none;"></div>'
             : '';
-
-        // Use establishment image as marker face if available
         const face = e.image
-            ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
-                    onerror="this.outerHTML='<i class=\\'fas fa-utensils\\' style=\\'font-size:16px;\\'></i>'">`
-            : `<i class="fas fa-utensils" style="font-size:16px;"></i>`;
-
+            ? '<img src="' + e.image + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.outerHTML=\'<i class=\\\'fas fa-utensils\\\' style=\\\'font-size:15px;color:' + faceColor + ';\\\'>\'+">"'
+            : '<i class="fas fa-utensils" style="font-size:15px;color:' + faceColor + ';"></i>';
         const ico = L.divIcon({
-            html: `<div style="position:relative;width:42px;height:42px;">
-                       ${pulse}
-                       <div style="width:42px;height:42px;border-radius:50%;background:${bg};
-                                   color:#fff;display:flex;align-items:center;justify-content:center;
-                                   border:3px solid #fff;overflow:hidden;box-shadow:${glow};
-                                   position:relative;z-index:1;">
-                           ${face}
-                       </div>
-                   </div>`,
-            className: '', iconSize: [42, 42], iconAnchor: [21, 21]
+            html: '<div style="position:relative;width:44px;height:44px;">' + pulse +
+                  '<div style="width:44px;height:44px;border-radius:50%;background:' + bgColor + ';' +
+                  'display:flex;align-items:center;justify-content:center;' +
+                  'border:3px solid ' + borderColor + ';overflow:hidden;' +
+                  'box-shadow:' + glow + ';position:relative;z-index:1;">' + face + '</div></div>',
+            className: '', iconSize: [44, 44], iconAnchor: [22, 22]
         });
-
-        // Distance row — only if we have it
-        const distRow = (e.distance && e.distance > 0)
-            ? `<div style="font-size:11px;color:#6b7280;display:flex;align-items:center;gap:5px;margin-top:4px;">
-                   <i class="fas fa-route" style="color:#B71C1C;"></i>
-                   ${e.distance < 1000 ? Math.round(e.distance)+'m' : (e.distance/1000).toFixed(2)+'km'} from CvSU-Bacoor
-               </div>` : '';
-
-        const statusColor = isOpen ? '#10b981' : st === 'closed' ? '#ef4444' : '#9ca3af';
-        const statusDot   = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusColor};margin-right:4px;"></span>`;
+        const statusBg = isOpen ? '#d1fae5' : '#fee2e2';
+        const statusFg = isOpen ? '#065f46' : '#991b1b';
+        const statusDot = '<span style="width:6px;height:6px;border-radius:50%;background:' + (isOpen ? '#10b981' : '#ef4444') + ';display:inline-block;margin-right:4px;"></span>';
         const statusLabel = st ? cap(st) : 'Unknown';
-
+        const distRow = (e.distance && e.distance > 0)
+            ? '<div style="font-size:11px;color:#6b7280;display:flex;align-items:center;gap:4px;margin-top:5px;"><i class="fas fa-route" style="color:#B71C1C;font-size:10px;"></i>' +
+              (e.distance < 1000 ? Math.round(e.distance) + 'm' : (e.distance/1000).toFixed(2) + 'km') + ' away</div>' : '';
         const imgBanner = e.image
-            ? `<img src="${e.image}" style="width:100%;height:72px;object-fit:cover;border-radius:8px 8px 0 0;display:block;margin:-12px -12px 10px;width:calc(100% + 24px);" onerror="this.remove()">`
+            ? '<img src="' + e.image + '" style="width:calc(100% + 24px);margin:-12px -12px 10px;height:80px;object-fit:cover;border-radius:8px 8px 0 0;display:block;" onerror="this.remove()">'
             : '';
-
-        const popup = `
-        <div style="font-family:Poppins,sans-serif;min-width:190px;padding:0;">
-            ${imgBanner}
-            <div style="padding: ${e.image ? '0' : '0'};">
-                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;">${escHtml(e.name)}</div>
-                <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">${escHtml(e.address || '')}</div>
-                <div style="font-size:11px;font-weight:700;color:${statusColor};margin-bottom:${distRow ? '4px' : '10px'};">
-                    ${statusDot}${statusLabel}
-                </div>
-                ${distRow}
-                <button onclick="window.location.href='${URLS.estDetail}${e.id}/'"
-                    style="margin-top:10px;width:100%;padding:8px;background:linear-gradient(135deg,#B71C1C,#8B0000);
-                           color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;
-                           cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;
-                           justify-content:center;gap:6px;">
-                    <i class="fas fa-eye"></i> View Details
-                </button>
-            </div>
-        </div>`;
+        const popup =
+            '<div style="font-family:Poppins,sans-serif;min-width:200px;">' +
+            imgBanner +
+            '<div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:2px;">' + escHtml(e.name) + '</div>' +
+            '<div style="font-size:11px;color:#6b7280;margin-bottom:7px;">' + escHtml(e.address || '') + '</div>' +
+            '<div style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;background:' + statusBg + ';color:' + statusFg + ';font-size:11px;font-weight:700;">' +
+            statusDot + statusLabel + '</div>' + distRow +
+            '<button onclick="window.location.href=\'' + URLS.estDetail + e.id + '/\'" ' +
+            'style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#B71C1C,#8B0000);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<i class="fas fa-eye"></i> View Details</button></div>';
 
         L.marker([parseFloat(e.latitude), parseFloat(e.longitude)], { icon: ico })
             .addTo(mkLayer)
-            .bindPopup(popup, { maxWidth: 230, className: 'kabsueats-popup' });
+            .bindPopup(popup, { maxWidth: 240, className: 'kabsueats-popup' });
     });
+}
+
+function toggleLayerPanel() {
+    document.getElementById('mapLayerPanel').classList.toggle('show');
 }
 
 function switchTile(t) {
     if (!mapInst) return;
-    document.querySelectorAll('.mtb').forEach(b => b.classList.remove('on'));
-    document.getElementById('mts-' + t).classList.add('on');
+    document.querySelectorAll('.mlp-opt').forEach(b => b.classList.remove('on'));
+    const btn = document.getElementById('mts-' + t);
+    if (btn) btn.classList.add('on');
     if (curTile) mapInst.removeLayer(curTile);
     curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
+    document.getElementById('mapLayerPanel').classList.remove('show');
+}
+
+function showMyLocation() {
+    const btn = document.getElementById('mapLocBtn');
+    if (!btn || !navigator.geolocation) {
+        showToast('Geolocation not supported.', 'error'); return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            if (userLocMarker) mapInst.removeLayer(userLocMarker);
+            const locIco = L.divIcon({
+                html: '<div style="width:18px;height:18px;background:#3b82f6;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,.3),0 2px 8px rgba(0,0,0,.3);"></div>',
+                className: '', iconSize: [18, 18], iconAnchor: [9, 9]
+            });
+            userLocMarker = L.marker([lat, lng], { icon: locIco }).addTo(mapInst)
+                .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:600;font-size:13px;">You are here</div>')
+                .openPopup();
+            mapInst.flyTo([lat, lng], 17, { animate: true, duration: 1.2 });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+        },
+        () => {
+            showToast('Could not get location. Allow location access.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+        },
+        { timeout: 8000, maximumAge: 30000 }
+    );
 }
 
 // ============================================
@@ -692,6 +715,11 @@ document.addEventListener('click', e => {
     if (!e.target.closest('.hsw')) {
         const drop = document.getElementById('searchDropdown');
         if (drop) drop.classList.remove('active');
+    }
+    // Close layer panel when clicking outside
+    if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
+        const lp = document.getElementById('mapLayerPanel');
+        if (lp) lp.classList.remove('show');
     }
     if (e.target === document.getElementById('bsMod')) closeMod();
     if (e.target === document.getElementById('setMod')) closeSet();
