@@ -82,6 +82,10 @@ function renderBS(data) {
     track.innerHTML = data.map(d => {
         const st = d.establishment.status.toLowerCase(); // "open" or "closed"
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
+        const estImg = EST_IMG_MAP[d.establishment.id] || '';
+        const estIconHtml = estImg
+            ? `<img src="${estImg}" alt="${escHtml(d.establishment.name)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            : `<i class="fas fa-utensils"></i>`;
         return `
         <div class="bsc" onclick="openMod(${d.id})">
             <div class="bsc-img">
@@ -97,7 +101,7 @@ function renderBS(data) {
                     <span><i class="fas fa-boxes"></i> ${d.quantity} left</span>
                 </div>
                 <div class="bsc-est">
-                    <div class="bsc-eico"><i class="fas fa-utensils"></i></div>
+                    <div class="bsc-eico">${estIconHtml}</div>
                     <div class="bsc-einfo">
                         <div class="bsc-ename">${escHtml(d.establishment.name)}</div>
                         <div class="bsc-emeta">

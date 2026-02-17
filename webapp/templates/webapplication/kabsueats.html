@@ -407,6 +407,12 @@
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
     const CVSU = { lat: 14.4352, lng: 120.9668 };
     const RADIUS = 500;
+    // Map of establishment id → image URL (for bestseller cards)
+    const EST_IMG_MAP = {
+        {% for est in food_establishments %}
+        {{ est.id }}: "{% if est.image %}{{ est.image.url }}{% endif %}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
