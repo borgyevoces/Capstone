@@ -264,7 +264,7 @@
                         <span class="amenities-label"><i class="fas fa-concierge-bell"></i> Amenities:</span>
                         <div class="amenity-tags">
                             {% for amenity in est.amenities.all|slice:":3" %}
-                            <span class="amenity-tag">{{ amenity.name }}</span>
+                            <span class="amenity-tag"><i class="fas fa-circle-dot"></i>{{ amenity.name }}</span>
                             {% endfor %}
                             {% if est.amenities.count > 3 %}
                             <span class="amenity-tag amenity-more">+{{ est.amenities.count|add:"-3" }} more</span>
