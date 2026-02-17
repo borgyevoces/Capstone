@@ -227,6 +227,7 @@
             <a href="{% url 'food_establishment_details' est.id %}"
                class="estc food-est-item"
                data-id="{{ est.id }}"
+               data-order="{{ forloop.counter0 }}"
                data-name="{{ est.name|lower }}"
                data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
                data-status="{{ est.calculated_status|lower }}"
