@@ -827,11 +827,11 @@
 
 {% block extra_nav_buttons %}
 {% if user.is_authenticated %}
-<button onclick="toggleChatPopup()" class="nav_button" style="position: relative;">
+<a onclick="toggleChatPopup(); return false;" href="#" class="nib" style="position: relative; cursor: pointer;">
     <i class="fas fa-comments"></i>
     <span>Message</span>
-    <span class="chat-notification-badge" id="chatNotificationBadge">1</span>
-</button>
+    <span class="chat-notification-badge" id="chatNotificationBadge" style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;"></span>
+</a>
 {% endif %}
 {% endblock extra_nav_buttons %}
 
@@ -991,7 +991,7 @@
                         {% with review=user_review review_type=user_review.rating|get_review_type %}
                         <div class="review-item user-highlight {{ review_type }}" data-review-id="{{ review.id }}"
                              data-is-user-review="true" data-rating="{{ review.rating }}">
-                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                            <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
                                  alt="{{ review.user.username }}" class="review-user-pic">
 
                             <div class="review-main">
@@ -1029,7 +1029,7 @@
                         {% with review_type=review.rating|get_review_type %}
                         <div class="review-item {{ review_type }}" data-review-id="{{ review.id }}"
                              data-rating="{{ review.rating }}">
-                            <img src="{% if review.user.userprofile.profile_picture %}{{ review.user.userprofile.profile_picture.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
+                            <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
                                  alt="{{ review.user.username }}" class="review-user-pic">
 
                             <div class="review-main">
@@ -1399,6 +1399,7 @@
     const LOGIN_REGISTER_URL = "{% url 'user_login_register' %}";
     const ESTABLISHMENT_ID = {{ establishment.id|default:'null' }};
     const BASE_URL_ROOT = "{% url 'food_establishment_details' establishment.id %}";
+    const SUBMIT_REVIEW_URL = "{% url 'submit_review' establishment.id %}";
     const CUSTOMER_ID = {{ request.user.id|default:'null' }};
 </script>
 <script src="{% static 'js/establishment_details.js' %}"></script>
@@ -2306,9 +2307,9 @@
                 // Determine URL: edit or create
                 let url;
                 if (currentEditReviewId) {
-                    url = '/review/edit/' + currentEditReviewId + '/';
+                    url = BASE_URL_ROOT + 'edit_review/' + currentEditReviewId + '/';
                 } else {
-                    url = BASE_URL_ROOT; // POST to the same establishment detail page (Django handles review creation)
+                    url = SUBMIT_REVIEW_URL;
                 }
 
                 // Build form data
@@ -2326,14 +2327,19 @@
                     credentials: 'same-origin'
                 })
                 .then(function(response) {
-                    // Even if Django returns a redirect (302) or the full page HTML,
-                    // we handle it client-side realtime. Check status:
-                    if (response.ok || response.redirected) {
-                        return response.text(); // consume body
-                    }
-                    throw new Error('Server error: ' + response.status);
+                    return response.json().catch(function() {
+                        // Fallback: not JSON (redirect/HTML)
+                        return { success: response.ok || response.redirected, _nonJson: true };
+                    });
                 })
-                .then(function(responseText) {
+                .then(function(data) {
+                    if (!data.success) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = currentEditReviewId ? 'Save Changes' : 'Submit Review';
+                        alert(data.error || 'Something went wrong. Please try again.');
+                        return;
+                    }
+
                     // --- SUCCESS: update DOM realtime ---
 
                     if (currentEditReviewId) {
@@ -2341,25 +2347,16 @@
                         updateExistingReviewCard(currentEditReviewId, rating, comment);
                     } else {
                         // NEW: insert card at top
-                        // Try to extract the new review ID from response (if JSON)
-                        let newReviewId = null;
-                        try {
-                            const json = JSON.parse(responseText);
-                            newReviewId = json.review_id || json.id || null;
-                        } catch(e) {
-                            // Response is HTML (redirect page) — extract review id from it
-                            const match = responseText.match(/data-review-id="(\d+)"/);
-                            if (match) newReviewId = match[1];
-                        }
+                        const newReviewId = data.review_id || null;
 
                         // Get current user's profile picture URL
-                        // We grab it from an existing user-highlight card if present, else use placeholder
-                        let profilePicUrl = '{% static "images/placeholder_profile.png" %}';
+                        // We embed it server-side so it's always correct
+                        let profilePicUrl = '{% if request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{% static "images/placeholder_profile.png" %}{% endif %}';
                         const existingUserCard = document.querySelector('.review-item.user-highlight .review-user-pic');
                         if (existingUserCard) profilePicUrl = existingUserCard.getAttribute('src');
 
                         // Get username from the page (from the existing user card or a known element)
-                        let username = '{{ request.user.username }}';
+                        let username = '{{ request.user.username|escapejs }}';
 
                         const card = insertNewReviewCard(rating, comment, profilePicUrl, username);
 
@@ -2423,7 +2420,7 @@
                 if (!reviewId) return;
                 if (!confirm('Are you sure you want to delete your review?')) return;
 
-                fetch('/review/delete/' + reviewId + '/', {
+                fetch(BASE_URL_ROOT + 'delete_review/' + reviewId + '/', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': getCSRFToken(),
@@ -2432,32 +2429,36 @@
                     credentials: 'same-origin'
                 })
                 .then(function(response) {
-                    if (response.ok || response.redirected) {
-                        // Remove the card from DOM realtime
-                        const card = document.querySelector('.review-item[data-review-id="' + reviewId + '"]');
-                        if (card) card.remove();
+                    return response.json().catch(function() {
+                        return { success: response.ok || response.redirected };
+                    });
+                })
+                .then(function(data) {
+                    if (!data.success) return;
+                    // Remove the card from DOM realtime
+                    const card = document.querySelector('.review-item[data-review-id="' + reviewId + '"]');
+                    if (card) card.remove();
 
-                        // Show "Write a Review" button again
-                        const addBtn = document.getElementById('addReviewBtn');
-                        if (addBtn) addBtn.style.display = 'inline-flex';
+                    // Show "Write a Review" button again
+                    const addBtn = document.getElementById('addReviewBtn');
+                    if (addBtn) addBtn.style.display = 'inline-flex';
 
-                        // Hide hint
-                        const hint = document.getElementById('userReviewHint');
-                        if (hint) hint.style.display = 'none';
+                    // Hide hint
+                    const hint = document.getElementById('userReviewHint');
+                    if (hint) hint.style.display = 'none';
 
-                        // If no reviews left, show "Be the first..." message
-                        const remaining = document.querySelectorAll('.review-item');
-                        if (remaining.length === 0) {
-                            let noMsg = document.getElementById('noReviewsMessage');
-                            if (!noMsg) {
-                                noMsg = document.createElement('p');
-                                noMsg.id = 'noReviewsMessage';
-                                noMsg.className = 'text-muted';
-                                noMsg.textContent = 'Be the first to leave a review!';
-                                document.getElementById('allReviewsList').appendChild(noMsg);
-                            }
-                            noMsg.style.display = 'block';
+                    // If no reviews left, show "Be the first..." message
+                    const remaining = document.querySelectorAll('.review-item');
+                    if (remaining.length === 0) {
+                        let noMsg = document.getElementById('noReviewsMessage');
+                        if (!noMsg) {
+                            noMsg = document.createElement('p');
+                            noMsg.id = 'noReviewsMessage';
+                            noMsg.className = 'text-muted';
+                            noMsg.textContent = 'Be the first to leave a review!';
+                            document.getElementById('allReviewsList').appendChild(noMsg);
                         }
+                        noMsg.style.display = 'block';
                     }
                 })
                 .catch(function(err) {

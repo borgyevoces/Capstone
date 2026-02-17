@@ -756,12 +756,17 @@ def delete_review(request, establishment_id, review_id):
 
     if review.user != request.user:
         return HttpResponseForbidden("You are not authorized to delete this review.")
-    establishment_id = review.establishment.id
+    est_id = review.establishment.id
     review.delete()
 
-    cache.delete(f'establishment_{establishment_id}_reviews')
+    cache.delete(f'establishment_{est_id}_reviews')
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if is_ajax:
+        return JsonResponse({'success': True, 'message': 'Review deleted successfully!'})
+
     messages.success(request, 'Review deleted successfully!')
-    return redirect('food_establishment_details', establishment_id=establishment_id)
+    return redirect('food_establishment_details', establishment_id=est_id)
 
 
 def food_establishment_details(request, establishment_id):
@@ -841,16 +846,32 @@ def submit_review(request, establishment_id):
         messages.error(request, "Please log in to submit a review.")
         return redirect('food_establishment_details', establishment_id=establishment_id)
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if request.method == 'POST':
+        # Check if user already submitted a review (for non-AJAX path duplicate guard)
+        existing_review = Review.objects.filter(user=request.user, establishment=establishment).first()
+        if existing_review:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'You have already submitted a review.'}, status=400)
+            messages.error(request, "You have already submitted a review for this establishment.")
+            return redirect('food_establishment_details', establishment_id=establishment_id)
+
         form = ReviewForm(request.POST)
         if form.is_valid():
             review = form.save(commit=False)
             review.user = request.user
             review.establishment = establishment
             review.save()
+            from django.core.cache import cache
+            cache.delete(f'establishment_{establishment_id}_reviews')
+            if is_ajax:
+                return JsonResponse({'success': True, 'review_id': review.id, 'message': 'Review submitted!'})
             messages.success(request, "Your review has been submitted successfully!")
             return redirect('food_establishment_details', establishment_id=establishment_id)
         else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(form.errors)}, status=400)
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"Error in {field}: {error}")
@@ -870,13 +891,21 @@ def edit_review(request, establishment_id, review_id):
     if review.user != request.user:
         return HttpResponseForbidden("You are not authorized to edit this review.")
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if request.method == 'POST':
         form = ReviewForm(request.POST, request.FILES, instance=review)
         if form.is_valid():
             form.save()
+            from django.core.cache import cache
+            cache.delete(f'establishment_{establishment_id}_reviews')
+            if is_ajax:
+                return JsonResponse({'success': True, 'review_id': review.id, 'message': 'Review updated!'})
             messages.success(request, 'Review updated successfully!')
             return redirect('food_establishment_details', establishment_id=establishment_id)
         else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(form.errors)}, status=400)
             all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
             user_review = review
             other_reviews = all_reviews.exclude(id=review.id)

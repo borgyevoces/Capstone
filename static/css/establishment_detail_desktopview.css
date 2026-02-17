@@ -123,9 +123,7 @@
         margin-right: 2px;
         font-size: 1.2em;
     }
-    .nav_button{
-       left: 760px;
-    }
+    /* Message button uses base .nib styles - no override needed */
     .message_owner {
         display: none;
     }
