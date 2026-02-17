@@ -263,12 +263,6 @@
                         {% for cat in est.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         {% if not est.categories.all %}Uncategorized{% endif %}
                     </span>
-                    {% if est.amenities.all %}
-                    <div class="est-amenities-row">
-                        <span class="amenities-label"><i class="fas fa-concierge-bell"></i> Amenities:</span>
-                        <span class="amenities-text">{% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                    </div>
-                    {% endif %}
                 </div>
                 <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i>
                     {% if est.distance_meters %}
@@ -281,10 +275,16 @@
                         Distance unknown
                     {% endif %}
                 </div>
-                <div class="emr" style="padding-bottom:6px">
+                <div class="emr" style="padding-bottom:4px">
                     <i class="fas fa-credit-card" style="color:#B71C1C"></i>
                     {{ est.payment_methods|default:"Cash" }}
                 </div>
+                {% if est.amenities.all %}
+                <div class="emr" style="padding-bottom:10px">
+                    <i class="fas fa-concierge-bell" style="color:#B71C1C"></i>
+                    {% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </div>
+                {% endif %}
             </a>
             {% empty %}
             <p class="no-est-msg">No food establishments found.</p>

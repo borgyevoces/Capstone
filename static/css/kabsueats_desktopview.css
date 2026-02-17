@@ -110,7 +110,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 .bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
 .bs-title-row { margin-bottom: 22px; padding: 28px 0 4px; }
-.bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; gap: 10px; margin: 0; }
+.bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; text-align: center; }
 .bs-title i { color: #ff6b35; font-size: 19px; }
 .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 
@@ -274,15 +274,15 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 @keyframes pi { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
 .filt-bar { margin: 0 0 48px; }
-.filt-inner { display: flex; align-items: center; gap: 14px; }
-.filt-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: var(--g800); }
+.filt-inner { display: flex; align-items: center; gap: 10px; }
+.filt-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--g800); }
 .filt-lbl i { color: var(--red); }
 .selw { position: relative; }
-.selw::before { content: '🏷️'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; z-index: 1; }
-.selw::after { content: '▼'; font-size: 10px; color: var(--g800); position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
-#catFilt { -webkit-appearance: none; appearance: none; background: #fff; border: 2px solid var(--g300); border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--g900); outline: none; padding: 13px 44px; min-width: 280px; box-shadow: var(--sh1); transition: .3s; font-family: 'Poppins', sans-serif; }
+.selw::before { content: '🏷️'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; z-index: 1; }
+.selw::after { content: '▼'; font-size: 9px; color: var(--g800); position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+#catFilt { -webkit-appearance: none; appearance: none; background: #fff; border: 2px solid var(--g300); border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--g900); outline: none; padding: 8px 36px; min-width: 200px; box-shadow: var(--sh1); transition: .3s; font-family: 'Poppins', sans-serif; }
 #catFilt:hover { border-color: var(--red); }
-#catFilt:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(183,28,28,.08); }
+#catFilt:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(183,28,28,.08); }
 
 /* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
@@ -304,11 +304,11 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .rcnt { font-size: 11px; color: var(--g400); margin-top: 2px; }
 .emr { padding: 4px 13px; font-size: 11px; color: var(--g600); }
 
-/* Amenities */
-.est-amenities-row { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--g100); display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
-.amenities-label { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--g600); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; flex-shrink: 0; }
-.amenities-label i { color: var(--red); font-size: 10px; }
-.amenities-text { font-size: 11px; color: var(--g500); line-height: 1.4; }
+/* Amenities — same style as .emr rows */
+.est-amenities-row { margin-top: 0; padding-top: 0; border-top: none; display: flex; align-items: center; }
+.amenities-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 400; color: var(--g600); text-transform: none; letter-spacing: 0; white-space: nowrap; flex-shrink: 0; }
+.amenities-label i { color: #B71C1C; font-size: 11px; }
+.amenities-text { font-size: 11px; color: var(--g600); line-height: 1.4; }
 
 /* ============================================ */
 /* FOOTER                                       */
