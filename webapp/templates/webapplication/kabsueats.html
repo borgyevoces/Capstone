@@ -105,10 +105,14 @@
                 <div id="searchDropdownContent"></div>
             </div>
             <div class="hs-hints">
-                <span><i class="fas fa-store"></i> Restaurants</span>
-                <span><i class="fas fa-utensils"></i> Dishes</span>
-                <span><i class="fas fa-tag"></i> Cuisines</span>
-                <span><i class="fas fa-map-marker-alt"></i> Near CvSU-Bacoor</span>
+                <span class="hs-hint-label"><i class="fas fa-trophy"></i> Top Rated:</span>
+                {% for est in food_establishments|slice:":5" %}
+                <a href="{% url 'food_establishment_details' est.id %}" class="hs-hint-pill">
+                    <i class="fas fa-store"></i> {{ est.name }}
+                </a>
+                {% empty %}
+                <span class="hs-hint-pill"><i class="fas fa-store"></i> No establishments yet</span>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -262,14 +266,7 @@
                     {% if est.amenities.all %}
                     <div class="est-amenities-row">
                         <span class="amenities-label"><i class="fas fa-concierge-bell"></i> Amenities:</span>
-                        <div class="amenity-tags">
-                            {% for amenity in est.amenities.all|slice:":3" %}
-                            <span class="amenity-tag"><i class="fas fa-circle-dot"></i>{{ amenity.name }}</span>
-                            {% endfor %}
-                            {% if est.amenities.count > 3 %}
-                            <span class="amenity-tag amenity-more">+{{ est.amenities.count|add:"-3" }} more</span>
-                            {% endif %}
-                        </div>
+                        <span class="amenities-text">{% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                     </div>
                     {% endif %}
                 </div>

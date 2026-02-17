@@ -305,13 +305,10 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .emr { padding: 4px 13px; font-size: 11px; color: var(--g600); }
 
 /* Amenities */
-.est-amenities-row { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--g100); }
-.amenities-label { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--g600); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+.est-amenities-row { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--g100); display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
+.amenities-label { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--g600); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; flex-shrink: 0; }
 .amenities-label i { color: var(--red); font-size: 10px; }
-.amenity-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-.amenity-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; background: #fff; color: var(--g700); border: 1.5px solid var(--g200); border-radius: 20px; padding: 3px 10px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-.amenity-tag i { color: var(--red); font-size: 10px; }
-.amenity-more { background: var(--g50); color: var(--g500); border-color: var(--g200); font-style: italic; }
+.amenities-text { font-size: 11px; color: var(--g500); line-height: 1.4; }
 
 /* ============================================ */
 /* FOOTER                                       */
