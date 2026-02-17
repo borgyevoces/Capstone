@@ -73,6 +73,11 @@ urlpatterns = [
                   path('payment-status/<str:status>/', views.payment_status, name='payment_status'),
                   path('create-buynow-payment/', views.create_buynow_payment_link, name='create_buynow_payment'),
 
+                  # ✅ NEW: Buy Now 2-step checkout flow (payment method selection)
+                  path('buynow/prepare/', views.prepare_buynow_order, name='prepare_buynow_order'),
+                  path('buynow/checkout/', views.buynow_checkout_view, name='buynow_checkout'),
+                  path('buynow/pay-cash/', views.create_buynow_cash_order, name='create_buynow_cash_order'),
+
                   # Notification API Endpoints
                   path('api/notifications/', views.get_notifications, name='get_notifications'),
                   path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read,

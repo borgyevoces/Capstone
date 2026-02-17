@@ -2085,209 +2085,141 @@ def order_confirmation_view(request, order_id):
     }
     return render(request, 'webapplication/order_confirmation.html', context)
 
-
-@login_required
 @require_POST
+@login_required
 def create_buynow_payment_link(request):
-    """
-    Create PayMongo payment link for immediate Buy Now (single item)
-    ✅ This handles the Buy Now button click and redirects to PayMongo
-    """
-    try:
-        # Log the request for debugging
-        print(f"🛒 Buy Now request from user: {request.user.username}")
+    @require_POST
+    @login_required
+    def prepare_buynow_order(request):
+        """
+        ✅ NEW: Creates a PENDING order for Buy Now flow.
+        Called from kabsueats.js buyNowFromModal().
+        Returns order_id — then JS redirects to buynow_checkout page.
 
-        menu_item_id = request.POST.get('menu_item_id')
-        quantity = int(request.POST.get('quantity', 1))
+        POST params:
+        - menu_item_id
+        - quantity
 
-        print(f"📦 Item ID: {menu_item_id}, Quantity: {quantity}")
-
-        # Validation
-        if not menu_item_id or quantity < 1:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid item or quantity'
-            }, status=400)
-
-        # Get menu item
-        menu_item = get_object_or_404(MenuItem, id=menu_item_id)
-        establishment = menu_item.food_establishment
-
-        print(f"✅ Found item: {menu_item.name} from {establishment.name}")
-
-        # ✅ CHECK STOCK AVAILABILITY
-        if menu_item.quantity < quantity:
-            print(f"❌ Insufficient stock: {menu_item.quantity} < {quantity}")
-            return JsonResponse({
-                'success': False,
-                'message': f'Only {menu_item.quantity} items available in stock'
-            }, status=400)
-
-        # Calculate total
-        item_total = Decimal(str(menu_item.price)) * quantity
-        grand_total = item_total
-        amount_in_centavos = int(grand_total * 100)
-
-        print(f"💰 Total: ₱{grand_total} ({amount_in_centavos} centavos)")
-
-        # ✅ CREATE ORDER WITH PENDING STATUS
-        with transaction.atomic():
-            order = Order.objects.create(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING',
-                total_amount=grand_total,
-                gcash_payment_method='gcash'
-            )
-
-            # Create order item
-            OrderItem.objects.create(
-                order=order,
-                menu_item=menu_item,
-                quantity=quantity,
-                price_at_order=menu_item.price
-            )
-
-        print(f"✅ Created Order #{order.id}")
-
-        # ✅ CHECK IF PAYMONGO IS CONFIGURED
-        if not hasattr(settings, 'PAYMONGO_SECRET_KEY') or not settings.PAYMONGO_SECRET_KEY:
-            print("❌ PAYMONGO_SECRET_KEY not configured")
-            order.delete()
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment service not configured. Please contact support.'
-            }, status=500)
-
-        if not hasattr(settings, 'PAYMONGO_API_URL') or not settings.PAYMONGO_API_URL:
-            print("❌ PAYMONGO_API_URL not configured")
-            order.delete()
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment service not configured. Please contact support.'
-            }, status=500)
-
-        # ✅ PAYMONGO API SETUP
-        auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
-        auth_base64 = base64.b64encode(auth_string.encode()).decode()
-
-        headers = {
-            'Authorization': f'Basic {auth_base64}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-
-        # Build success and cancel URLs
-        success_url = request.build_absolute_uri(
-            reverse('gcash_payment_success')
-        ) + f'?order_id={order.id}&return_to=buynow'
-
-        cancel_url = request.build_absolute_uri(
-            reverse('gcash_payment_cancel')
-        ) + f'?order_id={order.id}&return_to=buynow'
-
-        print(f"🔗 Success URL: {success_url}")
-        print(f"🔗 Cancel URL: {cancel_url}")
-
-        # Description for PayMongo
-        description = f"Buy Now: {menu_item.name} x{quantity} from {establishment.name}"
-
-        # ✅ PAYMENT LINK PAYLOAD
-        payload = {
-            "data": {
-                "attributes": {
-                    "amount": amount_in_centavos,
-                    "description": description[:255],  # PayMongo limit
-                    "remarks": f"Order #{order.id} - KabsuEats Buy Now",
-                    "payment_method_allowed": ["gcash"],
-                    "success_url": success_url,
-                    "failed_url": cancel_url
-                }
-            }
-        }
-
-        print(f"📤 Sending payload to PayMongo...")
-
-        # ✅ CALL PAYMONGO API
-        api_url = f"{settings.PAYMONGO_API_URL}/links"
-
+        Returns JSON: { success: true, order_id: N }
+        """
         try:
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
-            print(f"📥 PayMongo response status: {response.status_code}")
+            menu_item_id = request.POST.get('menu_item_id')
+            quantity = int(request.POST.get('quantity', 1))
 
-        except requests.exceptions.Timeout:
-            print("❌ PayMongo API timeout")
-            order.delete()
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment service timeout. Please try again.'
-            }, status=500)
-        except requests.exceptions.RequestException as e:
-            print(f"❌ PayMongo API error: {e}")
-            order.delete()
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment service error. Please try again.'
-            }, status=500)
+            if not menu_item_id or quantity < 1:
+                return JsonResponse({'success': False, 'message': 'Invalid item or quantity.'}, status=400)
 
-        if response.status_code in [200, 201]:
-            response_data = response.json()
-            checkout_url = response_data['data']['attributes']['checkout_url']
-            reference_number = response_data['data']['id']
+            menu_item = get_object_or_404(MenuItem, id=menu_item_id)
+            establishment = menu_item.food_establishment
 
-            print(f"✅ Payment link created: {checkout_url}")
-            print(f"🔑 Reference: {reference_number}")
+            if menu_item.quantity < quantity:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Only {menu_item.quantity} item(s) available.'
+                }, status=400)
 
-            # Save reference number
-            order.gcash_reference_number = reference_number
-            order.save(update_fields=['gcash_reference_number'])
+            total = Decimal(str(menu_item.price)) * quantity
 
-            return JsonResponse({
-                'success': True,
-                'checkout_url': checkout_url,  # ✅ This is where user gets redirected
-                'order_id': order.id,
-                'reference_number': reference_number,
-                'total_amount': float(grand_total)
-            })
-        else:
-            # Payment link creation failed - delete order
-            print(f"❌ PayMongo error response: {response.text}")
-            order.delete()
+            with transaction.atomic():
+                order = Order.objects.create(
+                    user=request.user,
+                    establishment=establishment,
+                    status='PENDING',
+                    total_amount=total,
+                    gcash_payment_method='pending'  # will be updated when payment chosen
+                )
+                OrderItem.objects.create(
+                    order=order,
+                    menu_item=menu_item,
+                    quantity=quantity,
+                    price_at_order=menu_item.price
+                )
 
-            try:
-                error_data = response.json()
-                error_message = error_data.get('errors', [{}])[0].get('detail', 'Payment service error')
-            except:
-                error_message = 'Payment service error'
+            return JsonResponse({'success': True, 'order_id': order.id})
 
-            return JsonResponse({
-                'success': False,
-                'message': error_message
-            }, status=500)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in prepare_buynow_order: {e}")
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
-    except MenuItem.DoesNotExist:
-        print("❌ MenuItem not found")
-        return JsonResponse({
-            'success': False,
-            'message': 'Item not found'
-        }, status=404)
-    except ValueError as e:
-        print(f"❌ ValueError: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid quantity value'
-        }, status=400)
-    except Exception as e:
-        print(f"❌ Unexpected error in Buy Now payment: {e}")
-        import traceback
-        traceback.print_exc()
+    @login_required
+    def buynow_checkout_view(request):
+        """
+        ✅ NEW: Shows the Buy Now payment selection page.
+        User picks Online (PayMongo) or Cash here.
 
-        return JsonResponse({
-            'success': False,
-            'message': f'Server error: {str(e)}'
-        }, status=500)
+        GET param: order_id
 
+        Returns: Rendered buynow_checkout.html
+        """
+        order_id = request.GET.get('order_id')
+        if not order_id:
+            messages.error(request, 'No order specified.')
+            return redirect('kabsueats_home')
 
+        order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
+
+        context = {
+            'order': order,
+        }
+        return render(request, 'webapplication/buynow_checkout.html', context)
+
+    @require_POST
+    @login_required
+    def create_buynow_cash_order(request):
+        """
+        ✅ NEW: Processes cash payment for a Buy Now order.
+        Mirrors create_cash_order but for buynow_checkout flow.
+
+        POST params:
+        - order_id
+
+        Returns JSON: { success: true, order_id: N }
+        """
+        try:
+            order_id = request.POST.get('order_id')
+            if not order_id:
+                return JsonResponse({'success': False, 'message': 'Order ID is required.'}, status=400)
+
+            order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
+
+            with transaction.atomic():
+                order.status = 'order_received'
+                order.gcash_payment_method = 'cash'
+                order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
+
+                # Reduce stock
+                for order_item in order.orderitem_set.all():
+                    menu_item = order_item.menu_item
+                    if menu_item.quantity < order_item.quantity:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'Not enough stock for {menu_item.name}. Available: {menu_item.quantity}'
+                        }, status=400)
+                    menu_item.quantity -= order_item.quantity
+                    menu_item.save()
+
+                # Notify owner
+                try:
+                    OrderNotification.objects.create(
+                        order=order,
+                        establishment=order.establishment,
+                        notification_type='new_order',
+                        message=f'New cash order #{order.id} from {request.user.username}'
+                    )
+                except Exception as notif_err:
+                    print(f"WARNING: Notification failed: {notif_err}")
+
+            return JsonResponse({'success': True, 'order_id': order.id})
+
+        except Exception as e:
+            import traceback
+            print(f"ERROR in create_buynow_cash_order: {e}")
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 # ===================================================================================================================
 # ===================================================END CLIENT=====================================================
 # ===================================================================================================================

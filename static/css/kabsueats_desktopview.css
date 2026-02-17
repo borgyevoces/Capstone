@@ -375,8 +375,10 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .mar { display: flex; gap: 10px; }
 .macb { flex: 1; padding: 12px; background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; text-decoration: none; }
 .macb:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(183,28,28,.35); }
-.mbnb { flex: 1; padding: 12px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; }
-.mbnb:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(245,158,11,.35); }
+.mbnb { flex: 1; padding: 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; }
+.mbnb:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(22,163,74,.35); }
+.mbnb-green { background: linear-gradient(135deg,#16a34a,#15803d) !important; }
+.mbnb-green:hover { box-shadow: 0 5px 14px rgba(22,163,74,.35) !important; }
 
 /* ============================================ */
 /* PROFILE / SETTINGS MODAL                     */

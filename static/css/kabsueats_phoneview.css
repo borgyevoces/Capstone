@@ -374,8 +374,11 @@
     .mar   { display: flex; gap: 8px; }
     .macb  { flex: 1; padding: 12px; background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Poppins',sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
     .macb:active { transform: scale(.97); }
-    .mbnb  { flex: 1; padding: 12px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Poppins',sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .mbnb  { flex: 1; padding: 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Poppins',sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .mbnb:hover { background: linear-gradient(135deg,#15803d,#166534); }
     .mbnb:active { transform: scale(.97); }
+    .mbnb-green { background: linear-gradient(135deg,#16a34a,#15803d) !important; }
+    .mbnb-green:hover { background: linear-gradient(135deg,#15803d,#166534) !important; }
 
     /* ---------- PROFILE MODAL ---------- */
     .sover { display: none; position: fixed; inset: 0; z-index: 10001; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); align-items: flex-end; justify-content: center; }

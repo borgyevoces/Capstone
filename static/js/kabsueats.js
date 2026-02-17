@@ -20,6 +20,9 @@ function getCsrf() {
     return document.getElementById('csrfToken')?.value || '';
 }
 
+// ── Status Real-time Refresh Timer ──
+let statusRefreshTimer = null;
+
 // ============================================
 // INIT ON DOM READY
 // ============================================
@@ -30,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBestsellers();
     autoHideMessages();
     initEstablishmentCards();
+
+    // ✅ FIX: Start real-time status refresh every 60 seconds
+    statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
 });
 
 // ============================================
@@ -70,6 +76,54 @@ function fetchBestsellers() {
 }
 
 // ============================================
+// ✅ FIX: REFRESH BESTSELLER STATUSES IN REAL-TIME
+// Re-fetches from API and updates open/closed badges without full re-render
+// ============================================
+function refreshBestsellerStatuses() {
+    fetch(URLS.bestsellers)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success || !data.bestsellers.length) return;
+            // Update bsData with fresh status
+            data.bestsellers.forEach(fresh => {
+                const idx = bsData.findIndex(x => x.id === fresh.id);
+                if (idx !== -1) {
+                    bsData[idx].establishment.status = fresh.establishment.status;
+                }
+            });
+            // Update all visible status badges in cards
+            document.querySelectorAll('.bsc').forEach(card => {
+                const onclickAttr = card.getAttribute('onclick') || '';
+                const match = onclickAttr.match(/openMod\((\d+)\)/);
+                if (!match) return;
+                const itemId = parseInt(match[1]);
+                const item = bsData.find(x => x.id === itemId);
+                if (!item) return;
+                const st = (item.establishment.status || 'closed').toLowerCase();
+                const badge = card.querySelector('.sp');
+                if (badge) {
+                    badge.className = `sp ${st}`;
+                    badge.textContent = st.toUpperCase();
+                }
+            });
+            // If modal is open, update its status too
+            if (currentModalItem) {
+                const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
+                if (fresh) {
+                    currentModalItem.establishment.status = fresh.establishment.status;
+                    const st = (fresh.establishment.status || 'closed').toLowerCase();
+                    const stEl = document.getElementById('mEstS');
+                    if (stEl) {
+                        stEl.className = `mests ${st}`;
+                        stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
+                    }
+                }
+            }
+        })
+        .catch(() => {}); // Silent fail for background refresh
+}
+
+// ============================================
 // RENDER BESTSELLER CARDS
 // ============================================
 function renderBS(data) {
@@ -80,7 +134,7 @@ function renderBS(data) {
     }
 
     track.innerHTML = data.map(d => {
-        const st = d.establishment.status.toLowerCase(); // "open" or "closed"
+        const st = (d.establishment.status || 'closed').toLowerCase(); // ✅ FIX: always lowercase, default 'closed'
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
@@ -337,11 +391,11 @@ function renderMarkers(data) {
             ? '0 0 0 3px rgba(247,147,30,0.4), 0 3px 14px rgba(0,0,0,.4)'
             : '0 3px 14px rgba(0,0,0,.35)';
         const pulse = isOpen
-            ? '<div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(247,147,30,0.5);animation:mapPulse 2s ease-out infinite;pointer-events:none;"></div>'
+            ? '<div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:rgba(247,147,30,0.3);animation:pulse 2s infinite;z-index:0;"></div>'
             : '';
         const face = e.image
-            ? '<img src="' + e.image + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.outerHTML=\'<i class=\\\'fas fa-utensils\\\' style=\\\'font-size:15px;color:' + faceColor + ';\\\'>\'+">"'
-            : '<i class="fas fa-utensils" style="font-size:15px;color:' + faceColor + ';"></i>';
+            ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'style=\\'color:${faceColor};font-size:18px;\\'></i>'">`
+            : `<i class="fas fa-store" style="color:${faceColor};font-size:18px;"></i>`;
         const ico = L.divIcon({
             html: '<div style="position:relative;width:44px;height:44px;">' + pulse +
                   '<div style="width:44px;height:44px;border-radius:50%;background:' + bgColor + ';' +
@@ -435,6 +489,7 @@ function applyFilter() {
 
 // ============================================
 // BESTSELLER MODAL — opens with backend data
+// ✅ FIX: Uses fresh real-time status from API
 // ============================================
 function openMod(id) {
     const d = bsData.find(x => x.id === id);
@@ -448,13 +503,37 @@ function openMod(id) {
     document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity} Items`;
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
+
+    // ✅ FIX: Always compute status fresh from the stored bsData (which refreshBestsellerStatuses keeps current)
     const st = (d.establishment.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
     stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
+
     document.getElementById('mqty').value = 1;
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
+
+    // ✅ FIX: Fetch fresh status at modal open time
+    fetch(URLS.bestsellers)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const fresh = data.bestsellers.find(x => x.id === id);
+            if (!fresh) return;
+            // Update stored data
+            const idx = bsData.findIndex(x => x.id === id);
+            if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
+            currentModalItem = bsData[idx] || currentModalItem;
+            // Update modal status badge
+            const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
+            const el = document.getElementById('mEstS');
+            if (el) {
+                el.className = `mests ${freshSt}`;
+                el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
+            }
+        })
+        .catch(() => {}); // Silent — already showing a status
 }
 
 function closeMod() {
@@ -471,11 +550,18 @@ function chgQ(d) {
 
 // ============================================
 // ADD TO CART — POST to /cart/add/
+// ✅ FIX: Properly connected, closes modal on success
 // ============================================
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
     if (!currentModalItem) return;
     const qty = parseInt(document.getElementById('mqty').value) || 1;
+
+    const btn = document.getElementById('addToCartBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    }
 
     fetch(URLS.addToCart, {
         method: 'POST',
@@ -495,39 +581,63 @@ function addToCartFromModal() {
             showToast(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(() => showToast('Network error. Please try again.', 'error'));
+    .catch(() => showToast('Network error. Please try again.', 'error'))
+    .finally(() => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+        }
+    });
 }
 
 // ============================================
-// BUY NOW — POST form data to /create-buynow-payment/
-// (backend uses request.POST not request.body JSON)
+// BUY NOW — Redirects to payment selection page
+// ✅ FIX: Creates order then redirects to buynow checkout page
+//         where user picks Cash or Online Payment
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
     if (!currentModalItem) return;
     const qty = parseInt(document.getElementById('mqty').value) || 1;
 
+    const btn = document.getElementById('buyNowBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
     const formData = new FormData();
     formData.append('menu_item_id', currentModalItem.id);
     formData.append('quantity', qty);
     formData.append('csrfmiddlewaretoken', getCsrf());
 
-    fetch(URLS.createBuyNow, {
+    // ✅ FIX: POST to buynow_prepare (creates order, returns order_id)
+    //         then redirect to buynow_checkout page
+    fetch(URLS.prepareBuyNow, {
         method: 'POST',
         headers: { 'X-CSRFToken': getCsrf() },
         body: formData
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success && data.checkout_url) {
-            window.location.href = data.checkout_url;
-        } else if (data.success && data.redirect_url) {
-            window.location.href = data.redirect_url;
+        if (data.success && data.order_id) {
+            // ✅ Redirect to checkout page with payment method selection
+            window.location.href = URLS.buynowCheckout + '?order_id=' + data.order_id;
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+            }
         }
     })
-    .catch(() => showToast('Network error. Please try again.', 'error'));
+    .catch(() => {
+        showToast('Network error. Please try again.', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+        }
+    });
 }
 
 // ============================================

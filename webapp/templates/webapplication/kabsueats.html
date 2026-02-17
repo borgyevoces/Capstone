@@ -378,7 +378,7 @@
                     <button class="macb" id="addToCartBtn" onclick="addToCartFromModal()">
                         <i class="fas fa-shopping-cart"></i> Add to Cart
                     </button>
-                    <button class="mbnb" id="buyNowBtn" onclick="buyNowFromModal()">
+                    <button class="mbnb mbnb-green" id="buyNowBtn" onclick="buyNowFromModal()">
                         <i class="fas fa-bolt"></i> Buy Now
                     </button>
                     {% else %}
@@ -431,16 +431,18 @@
 <!-- Django data for JS -->
 <script>
     const URLS = {
-        bestsellers:   "{% url 'get_bestsellers' %}",
-        addToCart:     "{% url 'add_to_cart' %}",
-        cartCount:     "{% url 'get_cart_count' %}",
-        nearbyEst:     "{% url 'get_nearby_establishments' %}",
-        searchMenu:    "{% url 'search_menu_items' %}",
-        estDetail:     "/food_establishment/",  // append {id}/
-        createCash:    "{% url 'create_cash_order' %}",
-        createBuyNow:  "{% url 'create_buynow_payment' %}",
-        login:         "{% url 'user_login_register' %}",
-        updateProfile: "{% url 'update_profile' %}",
+        bestsellers:    "{% url 'get_bestsellers' %}",
+        addToCart:      "{% url 'add_to_cart' %}",
+        cartCount:      "{% url 'get_cart_count' %}",
+        nearbyEst:      "{% url 'get_nearby_establishments' %}",
+        searchMenu:     "{% url 'search_menu_items' %}",
+        estDetail:      "/food_establishment/",  // append {id}/
+        createCash:     "{% url 'create_cash_order' %}",
+        createBuyNow:   "{% url 'create_buynow_payment' %}",
+        prepareBuyNow:  "{% url 'prepare_buynow_order' %}",
+        buynowCheckout: "{% url 'buynow_checkout' %}",
+        login:          "{% url 'user_login_register' %}",
+        updateProfile:  "{% url 'update_profile' %}",
     };
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
     const CVSU = {
