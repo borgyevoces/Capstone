@@ -250,43 +250,47 @@ function initMap() {
             .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Soldiers Hills IV, Molino VI, Bacoor</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
-        renderFromLocalData();
-        refreshEstablishmentStatuses();
-        mapPollTimer = setInterval(refreshEstablishmentStatuses, 30000);
+
+        // Load all establishments from API — primary source for coordinates
+        loadAllEstablishments();
+        mapPollTimer = setInterval(loadAllEstablishments, 30000);
         mapInst.invalidateSize();
     }, 150);
 }
 
-function renderFromLocalData() {
-    if (typeof EST_ALL_DATA === 'undefined') return;
-    const list = Object.entries(EST_ALL_DATA).map(([id, d]) => ({
-        id: parseInt(id),
-        name: d.name, address: d.address, image: d.image,
-        status: liveStatusCache[id] || d.status || '',
-        latitude: d.lat, longitude: d.lng,
-        rating: d.rating || 0, distance: 0
-    })).filter(e => e.latitude && e.longitude);
-    esMapData = list;
-    renderMarkers(applyFiltersToData(esMapData));
-}
-
-function refreshEstablishmentStatuses() {
-    fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=50000`)
+// ── API is the ONLY source of lat/lng (guaranteed non-null by backend filter) ──
+// ── EST_ALL_DATA enriches with image + real-time status only ──
+function loadAllEstablishments() {
+    // Use 999km radius — backend already filters lat/lng non-null, this returns ALL registered
+    fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=999999`)
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                data.establishments.forEach(e => {
-                    if (e.status) liveStatusCache[e.id] = e.status.toLowerCase();
-                    const local = esMapData.find(x => x.id === e.id);
-                    if (local) local.distance = e.distance || 0;
-                });
-            }
-            renderFromLocalData();
+            if (!data.success) return;
+            // Merge API coordinates with local image/status data
+            const merged = data.establishments.map(e => {
+                const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
+                return {
+                    id: e.id,
+                    name: local.name || e.name || '',
+                    address: local.address || e.address || '',
+                    image: local.image || '',
+                    // Status: prefer EST_ALL_DATA (server-rendered, real-time) over API (no status field)
+                    status: local.status || liveStatusCache[e.id] || '',
+                    latitude: parseFloat(e.latitude),
+                    longitude: parseFloat(e.longitude),
+                    distance: e.distance || 0
+                };
+            });
+            esMapData = merged;
+            renderMarkers(applyFiltersToData(esMapData));
         })
-        .catch(() => renderFromLocalData());
+        .catch(err => console.error('Map load error:', err));
 }
 
-function fetchMapEstablishments() { refreshEstablishmentStatuses(); }
+// Keep these as aliases for compatibility
+function renderFromLocalData() { loadAllEstablishments(); }
+function refreshEstablishmentStatuses() { loadAllEstablishments(); }
+function fetchMapEstablishments() { loadAllEstablishments(); }
 
 function applyFiltersToData(data) {
     let result = [...data];
