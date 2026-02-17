@@ -609,21 +609,17 @@ function cap(s) {
 }
 // ============================================
 // ESTABLISHMENT CARD NAVIGATION — safety net
-// Ensures clicking any part of an establishment
-// card navigates to its detail page.
+// The <a> tag href already handles navigation.
+// This sets child pointer-events to none so
+// clicks on images/text bubble up to the <a>.
 // ============================================
 function initEstablishmentCards() {
     document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
-        const estId = card.getAttribute('data-id');
-        if (!estId) return;
-        const detailUrl = URLS.estDetail + estId + '/';
-
-        card.addEventListener('click', function(e) {
-            // Allow normal anchor navigation — do not prevent default
-            // This is a safety net in case pointer-events were blocked
-            if (!e.defaultPrevented) {
-                window.location.href = detailUrl;
-            }
+        card.style.pointerEvents = 'auto';
+        card.style.cursor = 'pointer';
+        // Let all child elements pass clicks through to the anchor
+        card.querySelectorAll('*').forEach(function(child) {
+            child.style.pointerEvents = 'none';
         });
     });
 }
