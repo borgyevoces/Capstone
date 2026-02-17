@@ -163,8 +163,8 @@
         <div id="mapSection">
             <div id="esMap"></div>
             <div class="mts">
-                <button class="mtb on" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street</button>
-                <button class="mtb" id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
+                <button class="mtb" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street</button>
+                <button class="mtb on" id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
                 <button class="mtb" id="mts-topo" onclick="switchTile('topo')"><i class="fas fa-mountain"></i> Topo</button>
                 <button class="mtb" id="mts-dark" onclick="switchTile('dark')"><i class="fas fa-moon"></i> Dark</button>
             </div>
@@ -411,6 +411,19 @@
     const EST_IMG_MAP = {
         {% for est in food_establishments %}
         {{ est.id }}: "{% if est.image %}{{ est.image.url }}{% endif %}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    // Full establishment data for map markers (status + image, rendered server-side)
+    const EST_ALL_DATA = {
+        {% for est in food_establishments %}
+        {{ est.id }}: {
+            name: "{{ est.name|escapejs }}",
+            address: "{{ est.address|default:''|escapejs }}",
+            image: "{% if est.image %}{{ est.image.url }}{% endif %}",
+            status: "{{ est.calculated_status|lower }}",
+            lat: {{ est.latitude|default:"null" }},
+            lng: {{ est.longitude|default:"null" }}
+        }{% if not forloop.last %},{% endif %}
         {% endfor %}
     };
 </script>

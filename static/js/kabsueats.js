@@ -191,6 +191,8 @@ function setView(v) {
         dl.textContent = 'Best Sellers';
         db.classList.remove('mapmode');
         db.querySelector('i').className = 'fas fa-trophy';
+        // Stop real-time polling when map is hidden
+        if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
     } else {
         cw.style.display = 'none';
         ms.classList.add('on');
@@ -200,25 +202,33 @@ function setView(v) {
         db.classList.add('mapmode');
         db.querySelector('i').className = 'fas fa-map';
         if (!mapReady) { initMap(); mapReady = true; }
-        else setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
+        else {
+            setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
+            // Restart polling when map becomes visible again
+            fetchMapEstablishments();
+            if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
+        }
     }
     curView = v;
 }
 
 // ============================================
-// LEAFLET MAP — uses /api/establishment/nearby/
+// LEAFLET MAP — satellite default, all establishments, real-time
 // ============================================
 const TILES = {
-    street: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
-    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opt: { attribution: 'Tiles &copy; Esri', maxZoom: 19 } },
-    topo: { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
-    dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
+    street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',                                            opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
+    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opt: { attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, AEA, GIS User Community', maxZoom: 20 } },
+    topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                                              opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
+    dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',                                opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
 };
+
+let mapPollTimer = null;
 
 function initMap() {
     setTimeout(() => {
-        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16 });
-        curTile = L.tileLayer(TILES.street.url, TILES.street.opt).addTo(mapInst);
+        // ── Default: satellite, max zoom (19) ──
+        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 19 });
+        curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
 
         // 500m radius circle
         L.circle([CVSU.lat, CVSU.lng], {
@@ -236,19 +246,42 @@ function initMap() {
 
         mkLayer = L.layerGroup().addTo(mapInst);
 
-        // Load establishments from backend
+        // Initial load then poll every 30 s for real-time updates
         fetchMapEstablishments();
+        mapPollTimer = setInterval(fetchMapEstablishments, 30000);
+
         mapInst.invalidateSize();
     }, 150);
 }
 
 function fetchMapEstablishments() {
-    const url = `${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=${RADIUS}`;
+    // Use 50 km radius to capture ALL registered establishments regardless of location
+    const url = `${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=50000`;
     fetch(url)
         .then(r => r.json())
         .then(data => {
-            if (data.success && data.establishments.length > 0) {
-                esMapData = data.establishments;
+            if (data.success) {
+                // Merge API data with server-rendered EST_ALL_DATA for status + image
+                const merged = data.establishments.map(e => {
+                    const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
+                    return {
+                        ...e,
+                        status:  local.status  || e.status || '',
+                        image:   local.image   || '',
+                        address: local.address || e.address || '',
+                        name:    local.name    || e.name    || ''
+                    };
+                });
+                // Also add any establishments in EST_ALL_DATA that might be missing from API
+                if (typeof EST_ALL_DATA !== 'undefined') {
+                    const apiIds = new Set(data.establishments.map(e => e.id));
+                    Object.entries(EST_ALL_DATA).forEach(([id, d]) => {
+                        if (!apiIds.has(parseInt(id)) && d.lat && d.lng) {
+                            merged.push({ id: parseInt(id), ...d, latitude: d.lat, longitude: d.lng, distance: 0 });
+                        }
+                    });
+                }
+                esMapData = merged;
                 renderMarkers(esMapData);
             }
         })
@@ -259,27 +292,42 @@ function renderMarkers(data) {
     if (!mkLayer) return;
     mkLayer.clearLayers();
     data.forEach(e => {
-        // get_nearby_establishments does NOT return status - default to showing marker
-        const st = (e.status || e.calculated_status || '').toLowerCase();
-        const bg = st === 'open' ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
+        if (!e.latitude || !e.longitude) return;
+        const st  = (e.status || '').toLowerCase();
+        const bg  = st === 'open' ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
+        const ring = st === 'open' ? '#d1fae5' : st === 'closed' ? '#fee2e2' : '#e5e7eb';
+
+        // Build marker icon — show establishment image thumbnail if available
+        const imgHtml = e.image
+            ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            : `<i class="fas fa-utensils"></i>`;
         const ico = L.divIcon({
-            html: `<div style="background:${bg};color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><i class="fas fa-utensils"></i></div>`,
-            className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+            html: `<div style="background:${bg};color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);border:3px solid #fff;overflow:hidden;">${imgHtml}</div>
+                   <div style="width:10px;height:10px;background:${bg};border-radius:50%;border:2px solid ${ring};position:absolute;bottom:-2px;right:-2px;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>`,
+            className: '', iconSize: [38, 38], iconAnchor: [19, 19]
         });
+
         const dist = e.distance < 1000 ? `${Math.round(e.distance)}m` : `${(e.distance/1000).toFixed(2)}km`;
-        const statusHtml = st ? `<span class="mpop-st ${st}"><i class="fas fa-circle" style="font-size:7px"></i> ${cap(st)}</span><br>` : '';
+        const distRow = e.distance > 0 ? `<div class="mpop-dist" style="margin-top:6px"><i class="fas fa-route"></i> ${dist} from CvSU-Bacoor</div>` : '';
+        const statusLabel = st ? cap(st) : 'Unknown';
+        const imgPreview = e.image
+            ? `<img src="${e.image}" style="width:100%;height:60px;object-fit:cover;border-radius:7px;margin-bottom:8px;" onerror="this.remove()">`
+            : '';
+
         const popup = `<div class="mpop">
+            ${imgPreview}
             <div class="mpop-name">${escHtml(e.name)}</div>
             <div class="mpop-cat">${escHtml(e.address || '')}</div>
-            ${statusHtml}
-            <div class="mpop-dist"><i class="fas fa-route"></i> ${dist} from CvSU-Bacoor</div>
+            <span class="mpop-st ${st}"><i class="fas fa-circle" style="font-size:7px"></i> ${statusLabel}</span>
+            ${distRow}
             <button class="mpop-btn" onclick="window.location.href='${URLS.estDetail}${e.id}/'">
                 <i class="fas fa-eye"></i> View Details
             </button>
         </div>`;
+
         L.marker([parseFloat(e.latitude), parseFloat(e.longitude)], { icon: ico })
             .addTo(mkLayer)
-            .bindPopup(popup, { maxWidth: 220 });
+            .bindPopup(popup, { maxWidth: 230 });
     });
 }
 
