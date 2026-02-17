@@ -178,43 +178,80 @@
         display: inline-block;
     }
 
-    /* Contact and Location Section - REDUCED SIZES */
+    /* Contact and Location Section - CARD DESIGN */
     .contact-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;  /* Reduced from 15px */
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
-    .contact-location p {
-        margin: 0;
-        font-size: 0.8em;  /* Reduced from 0.95em */
-        line-height: 1.3;  /* Reduced from 1.4 */
-        padding: 8px;  /* Reduced from 10px */
-        border: 1px solid #f0f0f0;
-        border-radius: 5px;  /* Reduced from 6px */
-        background-color: #f7f7f7;
+    .contact-info-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
+        background: #fafafa;
+        border: 1px solid #efefef;
+        border-radius: 10px;
+        transition: box-shadow 0.2s, border-color 0.2s;
     }
 
-    .contact-location strong {
-        color: #000;
+    .contact-info-card:hover {
+        box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        border-color: #e0e0e0;
     }
 
-    .contact-location i {
-        color: darkred;
-        width: 20px;  /* Reduced from 25px */
-        text-align: center;
-        font-size: 0.95em;  /* Reduced from 1.1em */
+    .contact-icon-wrap {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.95em;
     }
 
-    .status-open {
-        color: #28a745;
+    .contact-icon--address  { background: #fff0f0; color: #b71c1c; }
+    .contact-icon--category { background: #fff8e1; color: #e65100; }
+    .contact-icon--hours    { background: #e8f5e9; color: #2e7d32; }
+    .contact-icon--payment  { background: #e3f2fd; color: #1565c0; }
+
+    .contact-info-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .contact-label {
+        font-size: 0.7em;
         font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #999;
     }
 
-    .status-closed {
-        color: #dc3545;
-        font-weight: 700;
+    .contact-value {
+        font-size: 0.82em;
+        color: #2d2d2d;
+        line-height: 1.45;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
+
+    .hours-text {
+        font-size: 0.9em;
+        color: #555;
+    }
+
+    .contact-location strong { color: #000; }
+    .contact-location i { color: darkred; width: 20px; text-align: center; font-size: 0.95em; }
+
+    .status-open  { color: #28a745; font-weight: 700; }
+    .status-closed{ color: #dc3545; font-weight: 700; }
 
     /* Amenities Section */
     .amenities-list {
@@ -261,70 +298,54 @@
     /* ================================================================= */
     .menu-controls {
         display: flex;
-        flex-wrap: nowrap;
-        gap: 15px;
+        justify-content: center;
         margin-top: 25px;
-        margin-bottom: 60px;
-        align-items: center;
+        margin-bottom: 50px;
     }
 
     .menu-search-bar {
-        flex-grow: 1;
         position: relative;
-        max-width: 300px;
+        width: 100%;
+        max-width: 560px;
     }
 
     .menu-search-bar input {
         width: 100%;
-        height: 40px;
-        padding: 10px 10px 10px 40px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
+        height: 50px;
+        padding: 10px 20px 10px 50px;
+        border: 1.5px solid #ddd;
+        border-radius: 30px;
         font-size: 1em;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        font-family: inherit;
+        color: #333;
+        background: #fafafa;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+        box-sizing: border-box;
     }
 
     .menu-search-bar input:focus {
-        border-color: #000000;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        border-color: #b71c1c;
+        box-shadow: 0 0 0 3px rgba(183,28,28,0.1);
+        background: #fff;
         outline: none;
     }
 
     .menu-search-bar i {
         position: absolute;
-        left: 15px;
+        left: 18px;
         top: 50%;
         transform: translateY(-50%);
-        color: #999;
-    }
-
-    .menu-filters-group {
-        display: flex;
-        gap: 10px;
-        flex-shrink: 0;
-    }
-
-    .menu-filters-group select {
-        padding: 5px 5px;
-        height: 35px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: white;
+        color: #aaa;
         font-size: 1em;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-        min-width: 150px;
-        font-weight: 600;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%20117.8L146.2%20258.6L5.4%20117.8z%22%2F%3E%3C%2Fsvg%3E');
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 10px;
-        padding-right: 30px;
+        pointer-events: none;
+        transition: color 0.2s;
     }
+
+    .menu-search-bar:focus-within i { color: #b71c1c; }
+
+    .menu-title-icon { color: #b71c1c; margin-right: 8px; font-size: 0.85em; }
+    .menu-filters-group { display: none; }
 
     .menu-filters-group select:hover {
         border-color: #000000;
@@ -1304,4 +1325,315 @@
 
 .profile-dropdown-item-icon.signout {
     color: #dc2626 !important;
+}
+/* ================================================================= */
+/* MOBILE-ONLY STYLES (max-width: 1024px)                            */
+/* ================================================================= */
+@media (max-width: 1024px) {
+
+    #food-details-page {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    /* ── Hero ── */
+    .establishment-hero {
+        height: 220px;
+        border-radius: 10px;
+    }
+
+    .hero-overlay {
+        padding: 20px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.8em;
+        font-weight: 800;
+    }
+
+    .average-rating-display {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .rating-number, .review-count-text {
+        font-size: 1em;
+    }
+
+    /* ── Layout Stack ── */
+    .top-info-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    .section-card {
+        padding: 18px 16px;
+        border-radius: 10px;
+    }
+
+    .section-card h2 {
+        font-size: 1.2em;
+        margin-bottom: 20px;
+    }
+
+    /* ── Contact Info Cards (mobile) ── */
+    .contact-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .contact-info-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        background: #fafafa;
+        border: 1px solid #efefef;
+        border-radius: 10px;
+    }
+
+    .contact-icon-wrap {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.88em;
+    }
+
+    .contact-icon--address  { background: #fff0f0; color: #b71c1c; }
+    .contact-icon--category { background: #fff8e1; color: #e65100; }
+    .contact-icon--hours    { background: #e8f5e9; color: #2e7d32; }
+    .contact-icon--payment  { background: #e3f2fd; color: #1565c0; }
+
+    .contact-info-body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .contact-label {
+        font-size: 0.65em;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #999;
+    }
+
+    .contact-value {
+        font-size: 0.8em;
+        color: #2d2d2d;
+        line-height: 1.45;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .hours-text {
+        font-size: 0.88em;
+        color: #555;
+    }
+
+    /* ── Status Badge ── */
+    .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.78em;
+        font-weight: 600;
+    }
+
+    .status-open {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+
+    .status-closed {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border: 1px solid #dc3545;
+    }
+
+    /* ── Menu Section (mobile) ── */
+    #menu-section {
+        padding: 18px 14px;
+    }
+
+    #menu-section h2 {
+        font-size: 1.25em;
+    }
+
+    .menu-title-icon {
+        color: #b71c1c;
+        margin-right: 6px;
+        font-size: 0.85em;
+    }
+
+    .menu-controls {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+        margin-bottom: 24px;
+        padding: 0 4px;
+    }
+
+    .menu-search-bar {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .menu-search-bar input {
+        width: 100%;
+        height: 46px;
+        padding: 10px 18px 10px 46px;
+        border: 1.5px solid #ddd;
+        border-radius: 30px;
+        font-size: 0.95em;
+        background: #fafafa;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: border-color 0.3s, box-shadow 0.3s;
+        box-sizing: border-box;
+    }
+
+    .menu-search-bar input:focus {
+        border-color: #b71c1c;
+        box-shadow: 0 0 0 3px rgba(183,28,28,0.1);
+        background: #fff;
+        outline: none;
+    }
+
+    .menu-search-bar i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-size: 0.95em;
+        pointer-events: none;
+    }
+
+    .menu-search-bar:focus-within i { color: #b71c1c; }
+
+    .menu-filters-group { display: none; }
+
+    /* ── Menu Grid (mobile: 2 col) ── */
+    .menu-list {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .menu-item {
+        border-radius: 10px;
+    }
+
+    .menu-item-image-wrapper {
+        height: 110px;
+    }
+
+    .menu-info {
+        padding: 10px;
+    }
+
+    .menu-name {
+        font-size: 0.82em;
+    }
+
+    .menu-description {
+        font-size: 0.72em;
+    }
+
+    .menu-price {
+        font-size: 0.88em;
+    }
+
+    /* ── Amenities (mobile) ── */
+    .amenities-section.section-card {
+        position: static !important;
+        background-color: white !important;
+        color: #333 !important;
+    }
+
+    .amenities-section h2 {
+        font-size: 1.2em !important;
+        color: #333 !important;
+    }
+
+    .amenities-list {
+        gap: 8px;
+        margin: 0;
+    }
+
+    .amenities-list li {
+        font-size: 0.82em;
+        padding: 6px 12px;
+    }
+
+    /* ── Reviews (mobile) ── */
+    .reviews-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .all-reviews-list-wrapper {
+        max-height: 340px;
+    }
+
+    /* ── Floating chat button ── */
+    .floating-chat-button {
+        display: flex !important;
+        position: fixed;
+        bottom: 20px;
+        right: 16px;
+        z-index: 9000;
+    }
+
+    /* ── Hide message_owner inline btn on mobile ── */
+    .message_owner {
+        display: inline-flex;
+    }
+}
+
+/* ── Extra small phones ── */
+@media (max-width: 480px) {
+    .establishment-hero {
+        height: 180px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.4em;
+    }
+
+    .menu-list {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .menu-item-image-wrapper {
+        height: 95px;
+    }
+
+    .section-card {
+        padding: 14px 12px;
+    }
+
+    .contact-info-card {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .contact-icon-wrap {
+        width: 30px;
+        height: 30px;
+    }
 }

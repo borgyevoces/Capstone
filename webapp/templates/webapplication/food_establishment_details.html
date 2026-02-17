@@ -1029,58 +1029,73 @@
             <section class="section-card contact-location">
                 <h2>Location & Contact</h2>
                 <div class="contact-grid">
-                    <p>
-                        <i class="fas fa-map-marker-alt"></i>
-                        <strong>Address:</strong><br>
-                        {{ establishment.address|default:"Not Available" }}
-                    </p>
 
-                    <p>
-                        <i class="fas fa-store"></i>
-                        <strong>Categories:</strong><br>
-                        {% with cats=establishment.categories.all %}
-                        {% if cats %}
-                            {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                        {% elif establishment.other_category %}
-                            {{ establishment.other_category }}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                        {% endwith %}
-                    </p>
+                    <div class="contact-info-card">
+                        <div class="contact-icon-wrap contact-icon--address">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="contact-info-body">
+                            <span class="contact-label">Address</span>
+                            <span class="contact-value">{{ establishment.address|default:"Not Available" }}</span>
+                        </div>
+                    </div>
 
-                    <p>
-                    <i class="fas fa-clock"></i>
-                    <strong>Hours:</strong><br>
-                    <strong class="status-badge status-{{ establishment.calculated_status|lower }}"
-                          id="detailStatusBadge"
-                          data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
-                          data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
-                        {% if establishment.calculated_status == 'Open' %}
-                            Open Now
-                        {% else %}
-                            Closed Now
-                        {% endif %}
-                    </strong>
-                    <br>
-                    {% if establishment.opening_time and establishment.closing_time %}
-                        <span>
-                            Opening time {{ establishment.opening_time|time:"g:i A" }} / Closing time {{ establishment.closing_time|time:"g:i A" }}
-                        </span>
-                    {% else %}
-                        <span>Hours not set</span>
-                    {% endif %}
-                </p>
+                    <div class="contact-info-card">
+                        <div class="contact-icon-wrap contact-icon--category">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div class="contact-info-body">
+                            <span class="contact-label">Categories</span>
+                            <span class="contact-value">
+                                {% with cats=establishment.categories.all %}
+                                {% if cats %}
+                                    {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% elif establishment.other_category %}
+                                    {{ establishment.other_category }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                                {% endwith %}
+                            </span>
+                        </div>
+                    </div>
 
-                    <p>
-                        <i class="fas fa-money-bill-wave"></i>
-                        <strong>Payment:</strong><br>
-                        {% if establishment.payment_methods %}
-                        {{ establishment.payment_methods }}
-                        {% else %}
-                        N/A
-                        {% endif %}
-                    </p>
+                    <div class="contact-info-card">
+                        <div class="contact-icon-wrap contact-icon--hours">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="contact-info-body">
+                            <span class="contact-label">Hours</span>
+                            <span class="contact-value">
+                                <span class="status-badge status-{{ establishment.calculated_status|lower }}"
+                                      id="detailStatusBadge"
+                                      data-opening-time="{{ establishment.opening_time|time:'H:i' }}"
+                                      data-closing-time="{{ establishment.closing_time|time:'H:i' }}">
+                                    {% if establishment.calculated_status == 'Open' %}Open Now{% else %}Closed Now{% endif %}
+                                </span>
+                                <span class="hours-text">
+                                    {% if establishment.opening_time and establishment.closing_time %}
+                                        {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
+                                    {% else %}
+                                        Hours not set
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-card">
+                        <div class="contact-icon-wrap contact-icon--payment">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="contact-info-body">
+                            <span class="contact-label">Payment</span>
+                            <span class="contact-value">
+                                {% if establishment.payment_methods %}{{ establishment.payment_methods }}{% else %}N/A{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -1210,7 +1225,7 @@
         {# FULL WIDTH MENU SECTION #}
         <div class="quantity-control">
             <section class="section-card" id="menu-section">
-                <h2>Menu</h2>
+                <h2><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
 
                 <div class="menu-controls">
                     <div class="menu-search-bar">
@@ -1218,22 +1233,17 @@
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
                                oninput="filterMenuItems()">
                     </div>
-                    <div class="menu-filters-group">
-                        <select id="priceFilter" onchange="filterMenuItems()">
-                            <option value="default">Sort by Price</option>
-                            <option value="highest">Highest to Lowest</option>
-                            <option value="lowest">Lowest to Highest</option>
-                        </select>
-                        <select id="stockFilter" onchange="filterMenuItems()">
-                            <option value="all">Stock Status</option>
-                            <option value="available">Available</option>
-                            <option value="outofstock">Out of Stock</option>
-                        </select>
-                        <button id="bestSellerFilter" onclick="toggleBestSellerFilter()" type="button"
-                                aria-pressed="false">
-                            <i class="fas fa-medal"></i> Best Sellers
-                        </button>
-                    </div>
+                    {# Hidden filters kept functional but UI dropdowns removed #}
+                    <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">
+                        <option value="default">Sort by Price</option>
+                        <option value="highest">Highest to Lowest</option>
+                        <option value="lowest">Lowest to Highest</option>
+                    </select>
+                    <select id="stockFilter" onchange="filterMenuItems()" style="display:none;">
+                        <option value="all">Stock Status</option>
+                        <option value="available">Available</option>
+                        <option value="outofstock">Out of Stock</option>
+                    </select>
                 </div>
 
                 <div class="menu-list-wrapper">
