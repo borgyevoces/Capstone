@@ -72,9 +72,9 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* HERO SEARCH                                  */
 /* ============================================ */
-.hero { padding: 36px 0 32px; text-align: center; }
+.hero { padding: 36px 0 48px; text-align: center; }
 .hsw { position: relative; max-width: 700px; margin: 0 auto; }
-.hs-lbl { font-size: 15px; font-weight: 600; color: var(--g700); margin-bottom: 12px; display: block; }
+.hs-lbl { display: none; }
 .hs-cont { position: relative; }
 .hs-inp { width: 100%; padding: 16px 50px; font-size: 15px; font-family: 'Poppins', sans-serif; border: 2px solid var(--g200); border-radius: 12px; outline: none; background: #fff; box-shadow: var(--sh1); transition: .3s; }
 .hs-inp:focus { border-color: var(--red); box-shadow: 0 4px 16px rgba(183,28,28,.12); }
@@ -100,8 +100,8 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* BESTSELLERS SECTION                          */
 /* ============================================ */
-.bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 16px; }
-.bs-title-row { margin-bottom: 18px; padding: 18px 0 4px; }
+.bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
+.bs-title-row { margin-bottom: 22px; padding: 28px 0 4px; }
 .bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; gap: 10px; margin: 0; }
 .bs-title i { color: #ff6b35; font-size: 19px; }
 .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -117,7 +117,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .dd-btn.mapmode i { color: #fff !important; }
 .dd-panel { position: absolute; top: calc(100%+6px); left: 0; background: #fff; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.13); min-width: 260px; z-index: 1200; border: 1px solid var(--g200); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: .25s; overflow: hidden; }
 .dd-panel.show { opacity: 1; visibility: visible; transform: translateY(0); }
-.ddo { padding: 14px 16px; display: flex; align-items: flex-start; gap: 14px; cursor: pointer; border-bottom: 1px solid var(--g100); transition: .2s; }
+.ddo { padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; cursor: pointer; border-bottom: 1px solid var(--g100); transition: .2s; }
 .ddo:last-child { border-bottom: none; }
 .ddo:hover { background: var(--g50); }
 .ddo.sel { background: #fff5f5; }
@@ -261,11 +261,11 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* ESTABLISHMENTS SECTION                       */
 /* ============================================ */
-.sec-title { font-size: 26px; font-weight: 700; color: var(--g800); margin: 36px 0 16px; display: flex; align-items: center; gap: 11px; }
+.sec-title { font-size: 26px; font-weight: 700; color: var(--g800); margin: 36px 0 24px; display: flex; align-items: center; gap: 11px; }
 .sec-title i { color: var(--red); font-size: 28px; animation: pi 2s ease-in-out infinite; }
 @keyframes pi { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.filt-bar { margin: 0 0 36px; }
+.filt-bar { margin: 0 0 48px; }
 .filt-inner { display: flex; align-items: center; gap: 14px; }
 .filt-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: var(--g800); }
 .filt-lbl i { color: var(--red); }
@@ -295,6 +295,12 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .sv { color: var(--g600); font-size: 11px; font-weight: 600; margin-left: 3px; }
 .rcnt { font-size: 11px; color: var(--g400); margin-top: 2px; }
 .emr { padding: 4px 13px; font-size: 11px; color: var(--g600); }
+
+/* Amenities */
+.est-amenities { display: flex; align-items: flex-start; gap: 6px; }
+.amenity-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.amenity-tag { font-size: 10px; font-weight: 600; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+.amenity-more { background: var(--g100); color: var(--g600); border-color: var(--g200); }
 
 /* ============================================ */
 /* FOOTER                                       */

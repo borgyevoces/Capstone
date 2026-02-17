@@ -93,8 +93,7 @@
     <!-- Hero Search -->
     <div class="hero">
         <div class="hsw">
-            <label class="hs-lbl">Search for Food or Establishments</label>
-            <div class="hs-cont">
+                <div class="hs-cont">
                 <i class="fas fa-search hs-ico"></i>
                 <input type="text" class="hs-inp" id="hSearch"
                     placeholder="What are you craving today? Search restaurants, dishes, or cuisines..."
@@ -266,10 +265,23 @@
                         Distance unknown
                     {% endif %}
                 </div>
-                <div class="emr" style="padding-bottom:10px">
+                <div class="emr" style="padding-bottom:6px">
                     <i class="fas fa-credit-card" style="color:#B71C1C"></i>
                     {{ est.payment_methods|default:"Cash" }}
                 </div>
+                {% if est.amenities.all %}
+                <div class="emr est-amenities" style="padding-bottom:10px">
+                    <i class="fas fa-concierge-bell" style="color:#B71C1C;flex-shrink:0;margin-top:2px"></i>
+                    <div class="amenity-tags">
+                        {% for amenity in est.amenities.all|slice:":3" %}
+                        <span class="amenity-tag">{{ amenity.name }}</span>
+                        {% endfor %}
+                        {% if est.amenities.count > 3 %}
+                        <span class="amenity-tag amenity-more">+{{ est.amenities.count|add:"-3" }} more</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </a>
             {% empty %}
             <p class="no-est-msg">No food establishments found.</p>
