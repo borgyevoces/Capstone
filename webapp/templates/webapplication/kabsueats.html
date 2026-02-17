@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KabsuEats</title>
+    <title>{% block title %}KabsuEats{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
@@ -12,8 +12,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}">
     <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
+
+{% block search_visibility_control %}{% endblock %}
 
 <!-- Django Messages -->
 {% if messages %}
@@ -80,10 +83,12 @@
             <a href="{% url 'user_login_register' %}" class="nib"><i class="fas fa-sign-in-alt"></i> Login</a>
             <a href="{% url 'user_login_register' %}" class="nib login-btn">Register</a>
         {% endif %}
+        {% block extra_nav_buttons %}{% endblock %}
     </div>
 </header>
 
 <main class="main">
+{% block content %}
 
     <!-- Hero Search -->
     <div class="hero">
@@ -194,6 +199,7 @@
                data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
                data-status="{{ est.calculated_status|lower }}"
                data-rating="{{ est.average_rating|floatformat:1 }}"
+               onclick="window.location.href='{% url 'food_establishment_details' est.id %}'; return true;"
                style="text-decoration:none;cursor:pointer;pointer-events:auto;">
 
                 {% if est.image %}
@@ -247,7 +253,7 @@
             {% endfor %}
         </div>
     </div>
-
+{% endblock content %}
 </main>
 
 <!-- FOOTER -->
@@ -405,6 +411,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="{% static 'js/kabsueats.js' %}"></script>
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>
