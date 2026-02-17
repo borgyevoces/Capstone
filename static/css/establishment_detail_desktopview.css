@@ -379,7 +379,7 @@
         font-size: 0.85em;
     }
 
-    /* Single row: [Price pills] [Search bar grows] [Best Sellers circle] */
+    /* Single row: [Price pills] [Search bar grows] */
     .menu-controls {
         display: flex;
         align-items: center;
@@ -472,57 +472,8 @@
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
 
-    /* Best Sellers circle — right side */
-    .best-seller-circle-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        font-family: inherit;
-        flex-shrink: 0;
-        transition: transform 0.2s;
-    }
-
-    .best-seller-circle-btn:hover { transform: scale(1.07); }
-
-    .best-seller-circle-btn i {
-        width: 46px;
-        height: 46px;
-        background: #f0f0f0;
-        color: #999;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.15em;
-        border: 2px solid transparent;
-        transition: all 0.22s;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .best-seller-circle-btn .best-seller-label {
-        font-size: 0.7em;
-        font-weight: 700;
-        color: #999;
-        letter-spacing: 0.02em;
-        transition: color 0.22s;
-        white-space: nowrap;
-    }
-
-    .best-seller-circle-btn.active i {
-        background: linear-gradient(135deg, #b71c1c, #8b0000);
-        color: #fff;
-        border-color: #8b0000;
-        box-shadow: 0 4px 14px rgba(183,28,28,0.45);
-    }
-
-    .best-seller-circle-btn.active .best-seller-label { color: #b71c1c; }
-
     .menu-filters-group { display: none; }
+    .best-seller-circle-btn { display: none; }
 
     /* ========================================================================================= */
     /* 5-COLUMN GRID MENU LAYOUT WITH REDUCED SIZE                                              */

@@ -989,28 +989,7 @@
         to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
     }
 
-    /* ── Cart badge in nav ── */
-    #cart-count-badge {
-        display: none;
-        position: absolute;
-        top: -7px;
-        right: -9px;
-        background: #B71C1C;
-        color: #fff;
-        border-radius: 50%;
-        min-width: 18px;
-        height: 18px;
-        font-size: 10px;
-        font-weight: 700;
-        align-items: center;
-        justify-content: center;
-        padding: 0 3px;
-        border: 2px solid #fff;
-        line-height: 1;
-    }
-    #cart-count-badge.show {
-        display: flex !important;
-    }
+    /* ── Cart badge pulse animation ── */
     #cart-count-badge.badge-pulse {
         animation: cartPulse 0.5s ease-in-out;
     }
@@ -1018,7 +997,6 @@
         0%,100% { transform: scale(1); }
         50% { transform: scale(1.25); background: #8b0000; }
     }
-    .nav-cart-btn { position: relative !important; }
 </style>
 {% endblock %}
 
@@ -1029,15 +1007,8 @@
     <span>Message</span>
     <span class="chat-notification-badge" id="chatNotificationBadge" style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;"></span>
 </a>
-{# Cart link with live badge #}
-<a href="/cart/" class="nib nav-cart-btn" style="position: relative; cursor: pointer;">
-    <i class="fas fa-shopping-cart"></i>
-    <span>Cart</span>
-    <span id="cart-count-badge"
-          style="position:absolute;top:-7px;right:-9px;background:#B71C1C;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;">
-        {{ cart_count|default:0 }}
-    </span>
-</a>
+{# Hidden span — JS uses this to get initial cart count and inject into base template's cart badge #}
+<span id="cart-count-init" data-count="{{ cart_count|default:0 }}" style="display:none;"></span>
 {% endif %}
 {% endblock extra_nav_buttons %}
 
@@ -1301,10 +1272,10 @@
         <div class="quantity-control">
             <section class="section-card" id="menu-section">
 
-                {# Menu Title #}
+                {# Menu Title — centered #}
                 <h2 class="menu-title-centered"><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
 
-                {# Controls row: [Price pills] [Search] [Best Sellers circle] #}
+                {# Controls row: [Price pills] [Search bar] #}
                 <div class="menu-controls">
                     <div class="filter-pill-group">
                         <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
@@ -1320,11 +1291,6 @@
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
                                oninput="filterMenuItems()">
                     </div>
-
-                    <button class="best-seller-circle-btn" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false" title="Best Sellers">
-                        <i class="fas fa-medal"></i>
-                        <span class="best-seller-label">Best Sellers</span>
-                    </button>
 
                     {# Hidden selects kept for JS compatibility #}
                     <select id="priceFilter" onchange="filterMenuItems()" style="display:none;">
@@ -2874,36 +2840,39 @@ window.setPriceFilter = function(val, btn) {
 </script>
 
 <script>
-// ── Cart badge init on page load ──
+// ── Cart badge — use base template's existing cart badge ──
 (function() {
+    // Find the base template's cart badge (id set by base template)
+    function getCartBadge() {
+        return document.getElementById('cart-count-badge');
+    }
+
     function initCartBadge() {
-        const badge = document.getElementById('cart-count-badge');
+        // Get initial count from the hidden init span
+        const initEl = document.getElementById('cart-count-init');
+        if (!initEl) return;
+        const count = parseInt(initEl.dataset.count) || 0;
+        const badge = getCartBadge();
         if (!badge) return;
-        const count = parseInt(badge.textContent.trim()) || 0;
         if (count > 0) {
+            badge.textContent = count;
             badge.style.display = 'flex';
-            badge.classList.add('show');
         }
     }
 
-    // Override updateCartBadge to also handle the show class
-    const _origUpdate = window.updateCartBadge;
+    // Override updateCartBadge to update base template's badge
     window.updateCartBadge = function(count) {
-        const badge = document.getElementById('cart-count-badge');
+        const badge = getCartBadge();
         if (badge) {
             badge.textContent = count;
             if (count > 0) {
                 badge.style.display = 'flex';
-                badge.classList.add('show');
                 badge.classList.add('badge-pulse');
                 setTimeout(() => badge.classList.remove('badge-pulse'), 500);
             } else {
                 badge.style.display = 'none';
-                badge.classList.remove('show');
             }
         }
-        // also call original if it exists
-        if (typeof _origUpdate === 'function') _origUpdate(count);
     };
 
     document.addEventListener('DOMContentLoaded', initCartBadge);
