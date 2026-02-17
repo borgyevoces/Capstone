@@ -3469,7 +3469,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
-    // Auto-refresh removed — handled by the single interval below
+    // Auto-refresh notifications every 30 seconds
+    setInterval(function() {
+        if (notificationPanel.classList.contains('show')) {
+            loadNotifications();
+        }
+    }, 30000);
 });
 </script>
 
@@ -4367,12 +4372,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // Single notification badge refresh — runs once on load, then every 60 seconds
-    (function startNotifPolling() {
-        function refreshBadge() {
-            const panel = document.getElementById('notificationPanel');
-            // If panel is open, do full load; otherwise just update badge
-            if (panel && panel.classList.contains('open')) return;
+    // Auto-refresh notifications every 30 seconds
+    setInterval(() => {
+        if (!document.getElementById('notificationPanel').classList.contains('open')) {
+            // Just update badge without showing notifications
             fetch('/api/notifications/', {
                 method: 'GET',
                 headers: {
@@ -4382,13 +4385,31 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) updateNotificationBadge(data.unread_count);
+                if (data.success) {
+                    updateNotificationBadge(data.unread_count);
+                }
             })
-            .catch(() => {});
+            .catch(error => console.error('Error updating notification badge:', error));
         }
-        refreshBadge(); // run once on load
-        setInterval(refreshBadge, 60000); // then every 60s
-    })();
+    }, 30000);
+
+    // Load initial notification count on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationBadge(data.unread_count);
+            }
+        })
+        .catch(error => console.error('Error loading initial notifications:', error));
+    });
 
     // ==========================================
     // CHAT PANEL FUNCTIONS (ORIGINAL)
