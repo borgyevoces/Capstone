@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,314 +10,75 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <style>
-        :root {
-            --red:#B71C1C; --red-dark:#8B0000; --red-light:#fee2e2;
-            --orange:#ff6b35; --orange2:#f7931e;
-            --g50:#f9fafb; --g100:#f3f4f6; --g200:#e5e7eb; --g300:#d1d5db;
-            --g400:#9ca3af; --g600:#6b7280; --g700:#374151; --g800:#1f2937; --g900:#111827;
-            --white:#fff;
-            --sh1:0 2px 8px rgba(0,0,0,.08); --sh2:0 4px 16px rgba(0,0,0,.12);
-        }
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Poppins',sans-serif;background:#f4f4f4;color:var(--g800);overflow-x:hidden;min-height:100vh}
-
-        /* ── NAVBAR ── */
-        .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:#fff;border-bottom:1px solid var(--g200);position:sticky;top:0;z-index:1100;box-shadow:var(--sh1)}
-        .brand{font-family:'Pacifico',cursive;font-size:28px;color:var(--g900);text-decoration:none}
-        .nav-links{display:flex;gap:4px}
-        .nav-link{font-size:14px;font-weight:500;color:var(--g700);text-decoration:none;padding:8px 16px;border-radius:8px;transition:.2s}
-        .nav-link:hover{background:var(--g100);color:var(--red)}
-        .nav-right{display:flex;align-items:center;gap:10px}
-        .nib{padding:9px 15px;border-radius:8px;font-size:14px;font-weight:600;color:var(--g700);text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;transition:.2s;font-family:'Poppins',sans-serif}
-        .nib:hover{background:rgba(183,28,28,.08);color:var(--red);border-color:rgba(183,28,28,.15)}
-        .cart-badge{background:var(--red);color:#fff;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
-        .pav{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--g200);color:#f9fafb;transition:.2s}
-        .pav:hover{border-color:var(--red);transform:scale(1.05)}
-        .pav svg{width:22px;height:22px}
-        .pcont{position:relative}
-        .pdrop{position:absolute;top:calc(100%+10px);right:0;background:#fff;min-width:230px;box-shadow:0 8px 28px rgba(0,0,0,.16);z-index:1200;border-radius:14px;overflow:hidden;display:none;border:1px solid var(--g100)}
-        .pdrop.show{display:block}
-        .pd-hdr{background:var(--g900);padding:16px;display:flex;align-items:center;gap:12px}
-        .pd-av{width:44px;height:44px;border-radius:50%;background:var(--g700);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
-        .pd-av svg{width:28px;height:28px}
-        .pd-name{display:block;font-size:14px;font-weight:700;color:#fff}
-        .pd-email{display:block;font-size:12px;color:#9ca3af}
-        .pd-div{height:1px;background:var(--g100)}
-        .pd-item{padding:12px 16px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--g700);font-size:14px;font-weight:500;transition:.15s;cursor:pointer}
-        .pd-item:hover{background:var(--g50)}
-        .pd-item.logout{color:var(--red)}
-        .pd-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
-        .pd-ico.edit{background:#dbeafe;color:#2563eb}
-        .pd-ico.so{background:var(--red-light);color:var(--red)}
-
-        /* ── MAIN ── */
-        .main{max-width:1440px;margin:0 auto;padding:0 28px}
-
-        /* ── HERO SEARCH ── */
-        .hero{padding:28px 0 20px;text-align:center}
-        .hsw{position:relative;max-width:700px;margin:0 auto}
-        .hs-lbl{font-size:15px;font-weight:600;color:var(--g700);margin-bottom:12px;display:block}
-        .hs-cont{position:relative}
-        .hs-inp{width:100%;padding:16px 50px;font-size:15px;font-family:'Poppins',sans-serif;border:2px solid var(--g200);border-radius:12px;outline:none;background:#fff;box-shadow:var(--sh1);transition:.3s}
-        .hs-inp:focus{border-color:var(--red);box-shadow:0 4px 16px rgba(183,28,28,.12)}
-        .hs-ico{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--g400);font-size:17px;pointer-events:none}
-        .hs-clr{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--g400);font-size:17px;cursor:pointer;display:none;transition:.2s}
-        .hs-clr.on{display:block}
-        .hs-clr:hover{color:var(--g700)}
-
-        /* ── BESTSELLERS SECTION ── */
-        .bs-section{background:transparent;padding:0 0 28px;margin:0 0 16px}
-        .bs-title-row{margin-bottom:14px}
-        .bs-title{font-size:17px;font-weight:600;color:var(--g700);display:flex;align-items:center;gap:10px;margin:0}
-        .bs-title i{color:#ff6b35;font-size:19px}
-        .bs-controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-
-        /* dropdown wrapper */
-        .ddw{position:relative;display:inline-block}
-        .dd-btn{padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:2px solid var(--g200);background:#fff;color:var(--g700);display:flex;align-items:center;gap:8px;font-family:'Poppins',sans-serif;transition:.25s}
-        .dd-btn .fa-trophy{color:var(--orange)}
-        .dd-btn .chev{font-size:11px;transition:transform .3s}
-        .dd-btn.open .chev{transform:rotate(180deg)}
-        .dd-btn:hover{border-color:var(--g300);background:var(--g50)}
-        .dd-btn.mapmode{background:var(--red);color:#fff;border-color:var(--red)}
-        .dd-btn.mapmode i{color:#fff !important}
-
-        .dd-panel{position:absolute;top:calc(100%+6px);left:0;background:#fff;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.13);min-width:260px;z-index:1200;border:1px solid var(--g200);opacity:0;visibility:hidden;transform:translateY(-8px);transition:.25s;overflow:hidden}
-        .dd-panel.show{opacity:1;visibility:visible;transform:translateY(0)}
-        .ddo{padding:14px 16px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;border-bottom:1px solid var(--g100);transition:.2s}
-        .ddo:last-child{border-bottom:none}
-        .ddo:hover{background:var(--g50)}
-        .ddo.sel{background:#fff5f5}
-        .ddo-ico{font-size:18px;color:var(--g600);margin-top:2px;flex-shrink:0}
-        .ddo.sel .ddo-ico{color:var(--red)}
-        .ddo-title{font-size:13px;font-weight:700;color:var(--g800);margin-bottom:2px}
-        .ddo-desc{font-size:11px;color:var(--g400);line-height:1.4}
-
-        /* grid view btn */
-        .gv-btn{padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:2px solid var(--g900);background:var(--g900);color:#fff;display:flex;align-items:center;gap:8px;font-family:'Poppins',sans-serif;transition:.25s}
-        .gv-btn:hover{background:var(--red);border-color:var(--red)}
-        .gv-btn.on{background:var(--red);border-color:var(--red)}
-
-        /* ── CAROUSEL ── */
-        #carouselWrap{position:relative;padding:0 52px}
-        .car-cont{overflow:hidden;border-radius:10px}
-        .car-track{display:flex;gap:20px;transition:transform .42s cubic-bezier(.4,0,.2,1);padding:8px 2px 18px;will-change:transform}
-
-        /* GRID MODE */
-        .car-track.gmode{display:grid !important;grid-template-columns:repeat(5,1fr) !important;gap:20px !important;transform:none !important;padding-bottom:10px}
-        .car-track.gmode .bsc{min-width:unset !important;max-width:unset !important;width:100% !important}
-        #carouselWrap.gmode{padding:0}
-        #carouselWrap.gmode .cnav{display:none !important}
-
-        .cnav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid var(--g200);color:var(--g700);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:.25s;box-shadow:var(--sh1);font-size:14px}
-        .cnav:hover{background:var(--red);color:#fff;border-color:var(--red);transform:translateY(-50%) scale(1.08);box-shadow:0 4px 14px rgba(183,28,28,.28)}
-        .cnav.prev{left:2px}
-        .cnav.next{right:2px}
-        .cnav:disabled{opacity:.25;cursor:not-allowed;pointer-events:none}
-
-        /* ── BS CARD ── */
-        .bsc{min-width:218px;max-width:218px;background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.09);transition:.3s;cursor:pointer;position:relative;border:2px solid transparent;flex-shrink:0}
-        .bsc:hover{transform:translateY(-6px);box-shadow:0 12px 28px rgba(183,28,28,.14);border-color:var(--red)}
-        .bsc-img{position:relative;width:100%;height:180px;overflow:hidden}
-        .bsc-img img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
-        .bsc:hover .bsc-img img{transform:scale(1.08)}
-        .bsc-badge{position:absolute;top:10px;left:10px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;box-shadow:0 2px 10px rgba(255,107,53,.4);z-index:5}
-        .bsc-badge i{font-size:10px}
-        .bsc-body{padding:13px 13px 11px}
-        .bsc-name{font-size:15px;font-weight:700;color:var(--g800);margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-        .bsc-price{font-size:19px;font-weight:800;color:var(--red);margin-bottom:7px}
-        .bsc-stats{display:flex;gap:10px;font-size:11px;color:var(--g600);margin-bottom:10px;padding-bottom:9px;border-bottom:1px solid var(--g100)}
-        .bsc-stats span{display:flex;align-items:center;gap:4px}
-        .bsc-stats i{color:var(--red)}
-        .bsc-est{display:flex;align-items:center;gap:8px;background:var(--g50);border-radius:7px;padding:7px 9px;margin-bottom:10px}
-        .bsc-eico{width:30px;height:30px;border-radius:6px;background:#fff;border:1px solid var(--g200);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--g400)}
-        .bsc-einfo{flex:1;min-width:0}
-        .bsc-ename{font-size:11px;font-weight:700;color:var(--g700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-        .bsc-emeta{font-size:10px;color:var(--g400);display:flex;align-items:center;gap:5px}
-        .sp{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;display:inline-flex;align-items:center;gap:3px}
-        .sp::before{content:'';width:5px;height:5px;border-radius:50%;display:inline-block}
-        .sp.open{background:#d1fae5;color:#065f46}
-        .sp.open::before{background:#10b981}
-        .sp.closed{background:#fee2e2;color:#991b1b}
-        .sp.closed::before{background:#ef4444}
-        .bsc-btn{width:100%;padding:10px 14px;background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;transition:.25s;display:flex;align-items:center;justify-content:center;gap:7px}
-        .bsc-btn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(183,28,28,.3)}
-
-        /* ── MAP ── */
-        #mapSection{display:none;background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--sh1);margin-bottom:28px;position:relative}
-        #mapSection.on{display:block}
-        #esMap{width:100%;height:520px}
-        .mts{position:absolute;top:12px;right:12px;z-index:1000;display:flex;flex-direction:column;gap:2px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);border:1px solid var(--g200)}
-        .mtb{padding:9px 16px;font-size:12px;font-weight:600;color:var(--g700);background:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:'Poppins',sans-serif;transition:.2s;border-bottom:1px solid var(--g100);white-space:nowrap}
-        .mtb:last-child{border-bottom:none}
-        .mtb:hover{background:var(--g50);color:var(--red)}
-        .mtb.on{background:var(--red);color:#fff}
-        .mtb.on i{color:#fff}
-        .mtb i{color:var(--g600);font-size:13px}
-        .mleg{position:absolute;bottom:28px;left:12px;z-index:1000;background:#fff;border-radius:8px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-size:12px;color:var(--g700);font-weight:600;display:flex;align-items:center;gap:7px;font-family:'Poppins',sans-serif}
-        .mleg-dot{width:12px;height:12px;border-radius:50%;background:rgba(183,28,28,.3);border:2px solid var(--red);flex-shrink:0}
-
-        .leaflet-popup-content-wrapper{border-radius:10px !important;font-family:'Poppins',sans-serif !important;box-shadow:0 4px 20px rgba(0,0,0,.18) !important}
-        .mpop{min-width:200px}
-        .mpop-name{font-size:14px;font-weight:700;color:var(--g800);margin-bottom:4px}
-        .mpop-cat{font-size:11px;color:var(--g400);margin-bottom:8px}
-        .mpop-st{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;margin-bottom:8px}
-        .mpop-st.open{background:#d1fae5;color:#065f46}
-        .mpop-st.closed{background:#fee2e2;color:#991b1b}
-        .mpop-dist{font-size:11px;color:var(--g600);display:flex;align-items:center;gap:5px}
-        .mpop-btn{width:100%;margin-top:10px;padding:8px;background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:.2s}
-        .mpop-btn:hover{opacity:.9}
-
-        /* ── SKELETON ── */
-        @keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        .sk{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:6px}
-        .sk-img{width:100%;height:180px;border-radius:0}
-        .sk-ln{height:14px;margin:10px 13px}
-        .sk-ln.s{width:55%}
-        .sk-bt{height:38px;margin:13px;width:calc(100% - 26px);border-radius:8px}
-        .sk-card{min-width:218px;max-width:218px;background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
-
-        /* ── ESTABLISHMENTS ── */
-        .sec-title{font-size:26px;font-weight:700;color:var(--g800);margin:36px 0 16px;display:flex;align-items:center;gap:11px}
-        .sec-title i{color:var(--red);font-size:28px;animation:pi 2s ease-in-out infinite}
-        @keyframes pi{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-        .filt-bar{margin:0 0 24px}
-        .filt-inner{display:flex;align-items:center;gap:14px}
-        .filt-lbl{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--g800)}
-        .filt-lbl i{color:var(--red)}
-        .selw{position:relative}
-        .selw::before{content:'🏷️';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;z-index:1}
-        .selw::after{content:'▼';font-size:10px;color:var(--g800);position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none}
-        #catFilt{-webkit-appearance:none;appearance:none;background:#fff;border:2px solid var(--g300);border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;color:var(--g900);outline:none;padding:13px 44px;min-width:280px;box-shadow:var(--sh1);transition:.3s;font-family:'Poppins',sans-serif}
-        #catFilt:hover{border-color:var(--red)}
-        #catFilt:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(183,28,28,.08)}
-        .est-wrap{margin-bottom:40px}
-        .est-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
-        .estc{background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--sh1);transition:.3s;cursor:pointer;border:2px solid transparent;position:relative}
-        .estc:hover{transform:translateY(-5px);box-shadow:var(--sh2);border-color:var(--red)}
-        .estc-img{width:100%;height:155px;object-fit:cover;display:block}
-        .estc-body{padding:11px 13px 8px}
-        .estc-name{font-size:14px;font-weight:700;color:var(--g800);margin:4px 0 2px}
-        .ecat{font-size:11px;color:var(--g400);background:var(--g100);padding:3px 8px;border-radius:4px;display:inline-block;margin:4px 0 0}
-        .estb{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;padding:4px 9px;border-radius:12px;display:flex;align-items:center;gap:4px;text-transform:uppercase}
-        .estb.open{background:#d1fae5;color:#065f46}
-        .estb.closed{background:#fee2e2;color:#991b1b}
-        .estb-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-        .estb.open .estb-dot{background:#10b981}
-        .estb.closed .estb-dot{background:#ef4444}
-        .star-r{display:flex;align-items:center;gap:2px;font-size:12px;color:#fbbf24}
-        .sv{color:var(--g600);font-size:11px;font-weight:600;margin-left:3px}
-        .rcnt{font-size:11px;color:var(--g400);margin-top:2px}
-        .emr{padding:4px 13px;font-size:11px;color:var(--g600)}
-
-        /* ── FOOTER ── */
-        .footer{background:var(--g900);color:#d1d5db;margin-top:40px;padding:50px 0 0}
-        .f-inner{max-width:1200px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:repeat(4,1fr);gap:36px}
-        .fc h3{color:#fff;font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-        .fc h3 i{color:var(--red)}
-        .fc p{font-size:13px;line-height:1.7;color:#9ca3af}
-        .soc-r{display:flex;gap:10px;margin-top:14px}
-        .sob{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.08);color:#d1d5db;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;transition:.2s}
-        .sob:hover{background:var(--red);color:#fff}
-        .fl{list-style:none}
-        .fl li{margin-bottom:9px}
-        .fl a{color:#9ca3af;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:7px;transition:.2s}
-        .fl a:hover{color:#fff}
-        .fl a i{font-size:10px;color:var(--red)}
-        .fbot{border-top:1px solid rgba(255,255,255,.07);text-align:center;padding:20px 28px;margin-top:40px;font-size:13px;color:#6b7280}
-        .fbot a{color:var(--red);text-decoration:none}
-
-        /* ── SCROLL TOP ── */
-        .stb{position:fixed;bottom:28px;right:28px;width:48px;height:48px;background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;border:none;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 14px rgba(183,28,28,.35);transition:.3s;z-index:999}
-        .stb:hover{transform:translateY(-3px)}
-        .stb.on{display:flex}
-
-        /* ── MODALS ── */
-        .mover{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);align-items:center;justify-content:center}
-        .mover.on{display:flex}
-        .mbox{position:relative;background:#fff;border-radius:18px;max-width:780px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.4)}
-        .mcb{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--g600);box-shadow:var(--sh1);z-index:10;transition:.2s}
-        .mcb:hover{background:var(--red);color:#fff}
-        .mbody{display:grid;grid-template-columns:1fr 1fr}
-        .mimg{position:relative;height:380px}
-        .mimg img{width:100%;height:100%;object-fit:cover;border-radius:18px 0 0 18px}
-        .m-bsbadge{position:absolute;top:12px;left:12px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
-        .mdet{padding:26px 24px}
-        .miname{font-size:22px;font-weight:800;color:var(--g800);margin-bottom:10px}
-        .midesc{font-size:13px;color:var(--g600);line-height:1.6;margin-bottom:14px}
-        .mpr{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-        .mprice{font-size:28px;font-weight:800;color:var(--red)}
-        .mstock{font-size:13px;color:var(--g600);display:flex;align-items:center;gap:5px}
-        .mestb{background:var(--g50);border-radius:10px;padding:14px;margin-bottom:16px}
-        .mestn{font-size:14px;font-weight:700;color:var(--g800);margin-bottom:6px;display:flex;align-items:center;gap:7px}
-        .mesta{font-size:12px;color:var(--g500);display:flex;align-items:flex-start;gap:5px;margin-bottom:8px}
-        .mests{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
-        .mests.open{color:#10b981}
-        .mests.closed{color:#ef4444}
-        .qrow{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-        .qlbl{font-size:13px;font-weight:600;color:var(--g700)}
-        .qctrl{display:flex;align-items:center;gap:8px}
-        .qb{width:32px;height:32px;border-radius:8px;background:var(--g100);border:1px solid var(--g200);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--g700);transition:.2s}
-        .qb:hover{background:var(--red);color:#fff;border-color:var(--red)}
-        #mqty{width:50px;text-align:center;border:2px solid var(--g200);border-radius:8px;padding:6px;font-size:14px;font-weight:700;font-family:'Poppins',sans-serif;outline:none}
-        .mar{display:flex;gap:10px}
-        .macb{flex:1;padding:12px;background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;transition:.25s}
-        .macb:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(183,28,28,.35)}
-        .mbnb{flex:1;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;transition:.25s}
-        .mbnb:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(245,158,11,.35)}
-
-        /* settings */
-        .sover{display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center}
-        .sover.on{display:flex}
-        .sbox{background:#fff;border-radius:16px;padding:30px;max-width:460px;width:90%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-        .scls{position:absolute;top:14px;right:18px;font-size:22px;cursor:pointer;color:var(--g400);transition:.2s}
-        .scls:hover{color:var(--red)}
-        .stitle{font-size:20px;font-weight:700;margin-bottom:20px;color:var(--g800)}
-        .fg{margin-bottom:16px}
-        .fg label{display:block;font-size:13px;font-weight:600;color:var(--g700);margin-bottom:6px}
-        .fg input{width:100%;padding:10px 14px;border:2px solid var(--g200);border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;outline:none;transition:.2s}
-        .fg input:focus{border-color:var(--red)}
-        .svbtn{background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:700;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:8px;transition:.25s}
-        .svbtn:hover{transform:translateY(-2px)}
-        .lgbtn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;transition:.25s}
-        .lgbtn:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(220,38,38,.35)}
-
-        /* responsive */
-        @media(max-width:1200px){.car-track.gmode{grid-template-columns:repeat(4,1fr) !important}}
-        @media(max-width:900px){.car-track.gmode{grid-template-columns:repeat(3,1fr) !important}.f-inner{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:768px){header.navbar{padding:10px 16px}.nav-links{display:none}.main{padding:0 16px}#carouselWrap{padding:0 38px}.bsc,.sk-card{min-width:190px;max-width:190px}.bsc-img{height:150px}.car-track.gmode{grid-template-columns:repeat(2,1fr) !important}#esMap{height:380px}.mbody{grid-template-columns:1fr}.mimg{height:220px}.mimg img{border-radius:18px 18px 0 0}.f-inner{grid-template-columns:1fr}.mts{flex-direction:row;top:auto;bottom:12px;right:12px;border-radius:8px}}
-        @media(max-width:480px){.bs-title{font-size:14px}.dd-btn,.gv-btn{padding:8px 12px;font-size:12px}.est-grid{grid-template-columns:1fr}}
-        .leaflet-container{font-family:'Poppins',sans-serif !important}
-    </style>
+    <link rel="stylesheet" href="{% static 'webapplication/css/kabsueats_desktopview.css' %}">
 </head>
 <body>
 
+<!-- Django Messages -->
+{% if messages %}
+<div class="messages-container" id="messagesContainer">
+    {% for message in messages %}
+    <div class="message-alert {{ message.tags }}" id="msg-{{ forloop.counter }}">
+        <span class="message-icon">
+            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+            {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+        </span>
+        <span class="message-text">{{ message }}</span>
+        <button class="message-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <!-- NAVBAR -->
 <header class="navbar">
-    <a href="#" class="brand">KabsuEats</a>
-    <nav class="nav-links">
-        <a href="#" class="nav-link">Home</a>
-        <a href="#" class="nav-link">About</a>
-    </nav>
+    <a href="{% url 'kabsueats_home' %}" class="brand">KabsuEats</a>
+
     <div class="nav-right">
-        <a href="#" class="nib"><i class="fas fa-receipt"></i> My Orders</a>
-        <a href="#" class="nib"><i class="fas fa-shopping-cart"></i> Cart <span class="cart-badge">0</span></a>
-        <div class="pcont" id="pcont">
-            <div class="pav" id="pavBtn" title="Profile">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
-            </div>
-            <div id="pdrop" class="pdrop">
-                <div class="pd-hdr">
-                    <div class="pd-av"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg></div>
-                    <div><span class="pd-name">Juan Dela Cruz</span><span class="pd-email">juan@example.com</span></div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'order_history' %}" class="nib"><i class="fas fa-receipt"></i> My Orders</a>
+            <a href="{% url 'view_cart' %}" class="nib">
+                <i class="fas fa-shopping-cart"></i> Cart
+                <span class="cart-badge" id="cartBadge">{{ cart_count|default:"0" }}</span>
+            </a>
+            <div class="pcont" id="pcont">
+                <div class="pav" id="pavBtn" title="Profile">
+                    {% if user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                    {% endif %}
                 </div>
-                <div class="pd-div"></div>
-                <a href="#" class="pd-item" id="editProf"><span class="pd-ico edit"><i class="fas fa-user-edit"></i></span> Edit Profile</a>
-                <div class="pd-div"></div>
-                <a href="#" class="pd-item logout"><span class="pd-ico so"><i class="fas fa-sign-out-alt"></i></span> Log Out</a>
+                <div id="pdrop" class="pdrop">
+                    <div class="pd-hdr">
+                        <div class="pd-av">
+                            {% if user.profile.profile_image %}
+                                <img src="{{ user.profile.profile_image.url }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="pd-name">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="pd-email">{{ user.email }}</span>
+                        </div>
+                    </div>
+                    <div class="pd-div"></div>
+                    <a href="#" class="pd-item" id="editProf">
+                        <span class="pd-ico edit"><i class="fas fa-user-edit"></i></span> Edit Profile
+                    </a>
+                    <div class="pd-div"></div>
+                    <a href="{% url 'user_logout' %}" class="pd-item logout">
+                        <span class="pd-ico so"><i class="fas fa-sign-out-alt"></i></span> Log Out
+                    </a>
+                </div>
             </div>
-        </div>
+        {% else %}
+            <a href="{% url 'user_login_register' %}" class="nib"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="{% url 'user_login_register' %}" class="nib login-btn">Register</a>
+        {% endif %}
     </div>
 </header>
 
@@ -328,16 +90,20 @@
             <label class="hs-lbl">Search for Food or Establishments</label>
             <div class="hs-cont">
                 <i class="fas fa-search hs-ico"></i>
-                <input type="text" class="hs-inp" id="hSearch" placeholder="What are you craving today? Search restaurants, dishes, or cuisines..." autocomplete="off"/>
+                <input type="text" class="hs-inp" id="hSearch"
+                    placeholder="What are you craving today? Search restaurants, dishes, or cuisines..."
+                    value="{{ q|default:'' }}" autocomplete="off"/>
                 <i class="fas fa-times hs-clr" id="hClr"></i>
+            </div>
+            <!-- Live search dropdown -->
+            <div class="search-dropdown" id="searchDropdown">
+                <div id="searchDropdownContent"></div>
             </div>
         </div>
     </div>
 
     <!-- BESTSELLERS SECTION -->
     <section class="bs-section" id="bsSec">
-
-        <!-- Title -->
         <div class="bs-title-row">
             <h2 class="bs-title">
                 <i class="fas fa-fire"></i>
@@ -345,7 +111,6 @@
             </h2>
         </div>
 
-        <!-- Controls row -->
         <div class="bs-controls">
             <!-- LEFT: dropdown -->
             <div class="ddw" id="ddw">
@@ -365,8 +130,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- RIGHT: grid view (hidden in map mode) -->
+            <!-- RIGHT: grid view -->
             <button class="gv-btn" id="gvBtn" onclick="toggleGrid()">
                 <i class="fas fa-th" id="gvIco"></i>
                 <span id="gvLbl">Grid View</span>
@@ -378,6 +142,7 @@
             <button class="cnav prev" id="cPrev" onclick="cScroll(-1)"><i class="fas fa-chevron-left"></i></button>
             <div class="car-cont">
                 <div class="car-track" id="cTrack">
+                    <!-- Skeleton loaders while fetching -->
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
@@ -399,10 +164,9 @@
             </div>
             <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
         </div>
-
     </section>
 
-    <!-- Establishments -->
+    <!-- Food Establishments -->
     <h2 class="sec-title"><i class="fas fa-store"></i> Food Establishments</h2>
 
     <div class="filt-bar">
@@ -411,17 +175,76 @@
             <div class="selw">
                 <select id="catFilt" onchange="applyFilter()">
                     <option value="">All Categories</option>
-                    <option value="karenderya">Karenderya</option>
-                    <option value="fastfood">Fast Food</option>
-                    <option value="bakery">Bakery</option>
-                    <option value="cafe">Café</option>
-                    <option value="restaurant">Restaurant</option>
+                    {% for cat in all_categories %}
+                    <option value="{{ cat.name|lower }}" {% if request.GET.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
     </div>
 
-    <div class="est-wrap"><div class="est-grid" id="estGrid"></div></div>
+    <div class="est-wrap">
+        <div class="est-grid" id="estGrid">
+            {% for est in food_establishments %}
+            <a href="{% url 'food_establishment_details' est.id %}" class="estc food-est-item"
+               data-id="{{ est.id }}"
+               data-name="{{ est.name|lower }}"
+               data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
+               data-status="{{ est.calculated_status|lower }}"
+               data-rating="{{ est.average_rating|floatformat:1 }}"
+               style="text-decoration:none;">
+
+                {% if est.image %}
+                    <img class="estc-img" src="{{ est.image.url }}" alt="{{ est.name }}" loading="lazy">
+                {% else %}
+                    <img class="estc-img" src="https://via.placeholder.com/400x180?text={{ est.name }}" alt="{{ est.name }}" loading="lazy">
+                {% endif %}
+
+                <span class="estb {% if est.calculated_status == 'Open' %}open{% else %}closed{% endif %}">
+                    <span class="estb-dot"></span>{{ est.calculated_status }}
+                </span>
+
+                <div class="estc-body">
+                    <div class="star-r">
+                        {% with rating=est.average_rating|floatformat:0 %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= est.average_rating %}
+                                    <i class="fas fa-star" style="color:#fbbf24;font-size:12px"></i>
+                                {% else %}
+                                    <i class="far fa-star" style="color:#fbbf24;font-size:12px"></i>
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                        <span class="sv">{{ est.average_rating|floatformat:1 }}</span>
+                    </div>
+                    <div class="rcnt">({{ est.review_count }} Reviews)</div>
+                    <div class="estc-name">{{ est.name }}</div>
+                    <span class="ecat">
+                        {% for cat in est.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% if not est.categories.all %}Uncategorized{% endif %}
+                    </span>
+                </div>
+                <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i>
+                    {% if est.distance_meters %}
+                        {% if est.distance_meters < 1000 %}
+                            {{ est.distance_meters|floatformat:0 }} meters
+                        {% else %}
+                            {{ est.distance|floatformat:2 }} km
+                        {% endif %}
+                    {% else %}
+                        Distance unknown
+                    {% endif %}
+                </div>
+                <div class="emr" style="padding-bottom:10px">
+                    <i class="fas fa-credit-card" style="color:#B71C1C"></i>
+                    {{ est.payment_methods|default:"Cash" }}
+                </div>
+            </a>
+            {% empty %}
+            <p class="no-est-msg">No food establishments found.</p>
+            {% endfor %}
+        </div>
+    </div>
 
 </main>
 
@@ -430,7 +253,7 @@
     <div class="f-inner">
         <div class="fc">
             <h3><i class="fas fa-utensils"></i> KabsuEats</h3>
-            <p>Your trusted food shops platform connecting you with the best local restaurants and food establishments.</p>
+            <p>Your trusted food shops platform connecting you with the best local restaurants and food establishments near CvSU-Bacoor.</p>
             <div class="soc-r">
                 <a href="#" class="sob"><i class="fab fa-facebook-f"></i></a>
                 <a href="#" class="sob"><i class="fab fa-instagram"></i></a>
@@ -441,10 +264,12 @@
         <div class="fc">
             <h3><i class="fas fa-link"></i> Quick Links</h3>
             <ul class="fl">
-                <li><a href="#"><i class="fas fa-chevron-right"></i> About Us</a></li>
-                <li><a href="#"><i class="fas fa-chevron-right"></i> How It Works</a></li>
-                <li><a href="#"><i class="fas fa-chevron-right"></i> Partner With Us</a></li>
-                <li><a href="#"><i class="fas fa-chevron-right"></i> Careers</a></li>
+                <li><a href="{% url 'kabsueats_home' %}"><i class="fas fa-chevron-right"></i> Home</a></li>
+                <li><a href="{% url 'kabsueats_about' %}"><i class="fas fa-chevron-right"></i> About Us</a></li>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'order_history' %}"><i class="fas fa-chevron-right"></i> My Orders</a></li>
+                <li><a href="{% url 'view_cart' %}"><i class="fas fa-chevron-right"></i> My Cart</a></li>
+                {% endif %}
             </ul>
         </div>
         <div class="fc">
@@ -466,12 +291,14 @@
             </ul>
         </div>
     </div>
-    <div class="fbot"><p>&copy; 2025 <a href="#">KabsuEats</a>. All rights reserved. Made with <i class="fas fa-heart" style="color:#B71C1C;"></i> by CvSU-Bacoor Students</p></div>
+    <div class="fbot"><p>&copy; 2025 <a href="{% url 'kabsueats_home' %}">KabsuEats</a>. All rights reserved. Made with <i class="fas fa-heart" style="color:#B71C1C;"></i> by CvSU-Bacoor Students</p></div>
 </footer>
 
 <button class="stb" id="stb"><i class="fas fa-arrow-up"></i></button>
 
-<!-- BESTSELLER MODAL -->
+<!-- ============================================ -->
+<!-- BESTSELLER DETAIL MODAL                      -->
+<!-- ============================================ -->
 <div class="mover" id="bsMod">
     <div class="mbox">
         <button class="mcb" onclick="closeMod()"><i class="fas fa-times"></i></button>
@@ -500,311 +327,82 @@
                         <button class="qb" onclick="chgQ(1)"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
-                <div class="mar">
-                    <button class="macb"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
-                    <button class="mbnb"><i class="fas fa-bolt"></i> Buy Now</button>
+                <div class="mar" id="modalActions">
+                    {% if user.is_authenticated %}
+                    <button class="macb" id="addToCartBtn" onclick="addToCartFromModal()">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                    <button class="mbnb" id="buyNowBtn" onclick="buyNowFromModal()">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
+                    {% else %}
+                    <a href="{% url 'user_login_register' %}" class="macb" style="justify-content:center;text-decoration:none;">
+                        <i class="fas fa-sign-in-alt"></i> Login to Order
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- SETTINGS MODAL -->
+<!-- EDIT PROFILE MODAL -->
 <div class="sover" id="setMod">
     <div class="sbox">
         <span class="scls" onclick="closeSet()">&times;</span>
         <div class="stitle">Update Profile</div>
-        <div class="fg" style="text-align:center">
-            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+        <form id="profileUpdateForm" method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="fg" style="text-align:center">
+                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff;overflow:hidden;" id="profilePreview">
+                    {% if user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;">
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                    {% endif %}
+                </div>
             </div>
-        </div>
-        <div class="fg"><label>Change Profile Picture:</label><input type="file" accept="image/*"></div>
-        <div class="fg"><label>Email Address:</label><input type="email" value="juan@example.com" readonly style="background:#f3f4f6;cursor:not-allowed"></div>
-        <div style="margin-top:16px"><button class="svbtn"><i class="fas fa-save"></i> Save Changes</button></div>
-        <div style="margin-top:20px;padding-top:20px;border-top:2px solid #e5e7eb;text-align:center"><button class="lgbtn"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+            <div class="fg">
+                <label>Change Profile Picture:</label>
+                <input type="file" name="profile_image" accept="image/*" id="profileImgInput" onchange="previewProfileImg(this)">
+            </div>
+            <div class="fg">
+                <label>Email Address:</label>
+                <input type="email" value="{{ user.email }}" readonly style="background:#f3f4f6;cursor:not-allowed">
+            </div>
+            <div style="margin-top:16px">
+                <button type="submit" class="svbtn"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+            <div style="margin-top:20px;padding-top:20px;border-top:2px solid #e5e7eb;text-align:center">
+                <a href="{% url 'user_logout' %}" class="lgbtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </form>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- CSRF Token for AJAX -->
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+<!-- Django data for JS -->
 <script>
-// ── DATA ──
-const BSD = [
-    {id:1,name:"Adobong Manok",    price:75,orders:2,stock:12,img:"https://images.unsplash.com/photo-1604909052743-94e838986d24?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Classic Filipino chicken adobo cooked with vinegar, soy sauce and garlic.",addr:"Near CvSU-Bacoor Gate"},
-    {id:2,name:"Kinalamansiang Baka",price:75,orders:1,stock:12,img:"https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Tender beef cooked with ginger and spices.",addr:"Near CvSU-Bacoor Gate"},
-    {id:3,name:"Chicken Curry",    price:75,orders:0,stock:10,img:"https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Aromatic Filipino-style chicken curry with potatoes and bell peppers.",addr:"Near CvSU-Bacoor Gate"},
-    {id:4,name:"Sisig",            price:60,orders:0,stock:10,img:"https://images.unsplash.com/photo-1570275239925-4af0aa93a0dc?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Sizzling pork sisig seasoned with calamansi and spices.",addr:"Near CvSU-Bacoor Gate"},
-    {id:5,name:"Minudo",           price:75,orders:0,stock:12,img:"https://images.unsplash.com/photo-1544025162-d76594e6e50f?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Rich and hearty pork and liver stew.",addr:"Near CvSU-Bacoor Gate"},
-    {id:6,name:"Kaldereta",        price:75,orders:0,stock:10,img:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=300&fit=crop",est:"ATHILANOS FOOD HUB",cat:"Karenderya",st:"closed",desc:"Spicy beef stew cooked in tomato sauce with liver spread.",addr:"Near CvSU-Bacoor Gate"},
-    {id:7,name:"Lechon Kawali",    price:85,orders:3,stock:8, img:"https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=300&fit=crop",est:"CARINDERIA NI NENA",cat:"Karenderya",st:"open",  desc:"Crispy deep-fried pork belly served with lechon sauce.",addr:"Inside CvSU-Bacoor Campus"},
-    {id:8,name:"Sinigang na Bangus",price:80,orders:2,stock:15,img:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",est:"CARINDERIA NI NENA",cat:"Karenderya",st:"open",  desc:"Sour tamarind soup with milkfish and fresh vegetables.",addr:"Inside CvSU-Bacoor Campus"},
-];
-
-const ESD = [
-    {id:1,name:"Athilanos Food Hub",       cat:"karenderya",st:"closed",rating:4.3,rev:21,dist:"50 meters", pay:"Cash, GCash",   img:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=250&fit=crop",lat:14.4350,lng:120.9670},
-    {id:2,name:"Carinderia ni Nena",        cat:"karenderya",st:"open",  rating:4.7,rev:35,dist:"120 meters",pay:"Cash",           img:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop",lat:14.4358,lng:120.9675},
-    {id:3,name:"Bacoor Burger Place",       cat:"fastfood",  st:"open",  rating:4.1,rev:18,dist:"200 meters",pay:"Cash, GCash, Maya",img:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=250&fit=crop",lat:14.4342,lng:120.9665},
-    {id:4,name:"CvSU Breads & Pastries",    cat:"bakery",    st:"open",  rating:4.5,rev:12,dist:"80 meters", pay:"Cash",           img:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=250&fit=crop",lat:14.4362,lng:120.9680},
-    {id:5,name:"Campus Café",               cat:"cafe",      st:"open",  rating:4.8,rev:44,dist:"30 meters", pay:"Cash, GCash",    img:"https://images.unsplash.com/photo-1511920170033-f8396924c348?w=400&h=250&fit=crop",lat:14.4345,lng:120.9660},
-    {id:6,name:"Pinoy Express Lutong Bahay",cat:"restaurant",st:"closed",rating:3.9,rev:9, dist:"350 meters",pay:"Cash",           img:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=250&fit=crop",lat:14.4335,lng:120.9655},
-];
-
-const CVSU = {lat:14.4352, lng:120.9668};
-const RADIUS = 500;
-
-// ── CAROUSEL ──
-let cidx = 0, isGrid = false;
-const VISIBLE = 5;
-
-function renderBS() {
-    const t = document.getElementById('cTrack');
-    t.innerHTML = BSD.map(d=>`
-        <div class="bsc" onclick="openMod(${d.id})">
-            <div class="bsc-img">
-                <img src="${d.img}" alt="${d.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                <span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>
-            </div>
-            <div class="bsc-body">
-                <div class="bsc-name">${d.name}</div>
-                <div class="bsc-price">₱${d.price.toFixed(2)}</div>
-                <div class="bsc-stats">
-                    <span><i class="fas fa-shopping-bag"></i> ${d.orders} orders</span>
-                    <span><i class="fas fa-boxes"></i> ${d.stock} left</span>
-                </div>
-                <div class="bsc-est">
-                    <div class="bsc-eico"><i class="fas fa-utensils"></i></div>
-                    <div class="bsc-einfo">
-                        <div class="bsc-ename">${d.est}</div>
-                        <div class="bsc-emeta">${d.cat} <span class="sp ${d.st}">${d.st.toUpperCase()}</span></div>
-                    </div>
-                </div>
-                <button class="bsc-btn" onclick="event.stopPropagation();openMod(${d.id})"><i class="fas fa-eye"></i> View Details</button>
-            </div>
-        </div>`).join('');
-    cidx=0; updCar(); updNav();
-}
-
-function cardW(){const c=document.querySelector('.bsc');return c?c.offsetWidth+20:238}
-function maxIdx(){return Math.max(0,BSD.length-VISIBLE)}
-
-function cScroll(d){
-    if(isGrid)return;
-    cidx=Math.max(0,Math.min(cidx+d,maxIdx()));
-    updCar();updNav();
-}
-function updCar(){
-    if(isGrid)return;
-    document.getElementById('cTrack').style.transform=`translateX(-${cidx*cardW()}px)`;
-}
-function updNav(){
-    document.getElementById('cPrev').disabled=cidx<=0;
-    document.getElementById('cNext').disabled=cidx>=maxIdx();
-}
-
-// ── GRID TOGGLE ──
-function toggleGrid(){
-    isGrid=!isGrid;
-    const t=document.getElementById('cTrack');
-    const w=document.getElementById('carouselWrap');
-    const b=document.getElementById('gvBtn');
-    const ico=document.getElementById('gvIco');
-    const lbl=document.getElementById('gvLbl');
-    if(isGrid){
-        t.classList.add('gmode');w.classList.add('gmode');
-        b.classList.add('on');ico.className='fas fa-list';lbl.textContent='List View';
-        t.style.transform='none';
-    }else{
-        t.classList.remove('gmode');w.classList.remove('gmode');
-        b.classList.remove('on');ico.className='fas fa-th';lbl.textContent='Grid View';
-        cidx=0;updCar();updNav();
-    }
-}
-
-// ── VIEW SWITCHER ──
-let curView='bs', mapReady=false;
-
-function toggleDD(){
-    document.getElementById('ddPanel').classList.toggle('show');
-    document.getElementById('ddBtn').classList.toggle('open');
-}
-function closeDD(){
-    document.getElementById('ddPanel').classList.remove('show');
-    document.getElementById('ddBtn').classList.remove('open');
-}
-
-function setView(v){
-    closeDD();
-    const cw=document.getElementById('carouselWrap');
-    const ms=document.getElementById('mapSection');
-    const gv=document.getElementById('gvBtn');
-    const db=document.getElementById('ddBtn');
-    const dl=document.getElementById('ddLabel');
-    const dbs=document.getElementById('ddBS');
-    const dmap=document.getElementById('ddMap');
-
-    if(v==='bs'){
-        cw.style.display='';
-        ms.classList.remove('on');
-        gv.style.display='flex';
-        dbs.classList.add('sel'); dmap.classList.remove('sel');
-        dl.textContent='Best Sellers';
-        db.classList.remove('mapmode');
-        db.querySelector('i').className='fas fa-trophy';
-    } else {
-        cw.style.display='none';
-        ms.classList.add('on');
-        gv.style.display='none';
-        dbs.classList.remove('sel'); dmap.classList.add('sel');
-        dl.textContent='View Map';
-        db.classList.add('mapmode');
-        db.querySelector('i').className='fas fa-map';
-        if(!mapReady){initMap();mapReady=true;}
-        else setTimeout(()=>mapInst&&mapInst.invalidateSize(),120);
-    }
-    curView=v;
-}
-
-// ── LEAFLET MAP ──
-let mapInst=null, curTile=null, mkLayer=null;
-
-const TILES={
-    street:{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opt:{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',maxZoom:19}},
-    satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opt:{attribution:'Tiles &copy; Esri',maxZoom:19}},
-    topo:{url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',opt:{attribution:'Map data &copy; OpenStreetMap, SRTM | &copy; OpenTopoMap',maxZoom:17}},
-    dark:{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',opt:{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:20}}
-};
-
-function initMap(){
-    setTimeout(()=>{
-        mapInst=L.map('esMap',{center:[CVSU.lat,CVSU.lng],zoom:16,zoomControl:true});
-
-        curTile=L.tileLayer(TILES.street.url,TILES.street.opt).addTo(mapInst);
-
-        // 500m radius circle
-        L.circle([CVSU.lat,CVSU.lng],{
-            color:'#B71C1C',fillColor:'rgba(183,28,28,0.08)',
-            fillOpacity:0.35,weight:2,radius:RADIUS,dashArray:'6 4'
-        }).addTo(mapInst);
-
-        // CvSU marker
-        const cvIco=L.divIcon({html:`<div style="background:#B71C1C;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(183,28,28,.5);border:3px solid #fff"><i class="fas fa-university"></i></div>`,className:'',iconSize:[36,36],iconAnchor:[18,18]});
-        L.marker([CVSU.lat,CVSU.lng],{icon:cvIco}).addTo(mapInst)
-            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;">📍 CvSU-Bacoor (Center)</div>');
-
-        mkLayer=L.layerGroup().addTo(mapInst);
-        renderMarkers(ESD);
-        mapInst.invalidateSize();
-    },150);
-}
-
-function renderMarkers(data){
-    if(!mkLayer)return;
-    mkLayer.clearLayers();
-    data.forEach(e=>{
-        const bg=e.st==='open'?'#10b981':'#ef4444';
-        const ico=L.divIcon({html:`<div style="background:${bg};color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><i class="fas fa-utensils"></i></div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]});
-        const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-        const popup=`<div class="mpop">
-            <img src="${e.img}" style="width:100%;height:100px;object-fit:cover;border-radius:8px 8px 0 0;display:block;margin-bottom:8px">
-            <div class="mpop-name">${e.name}</div>
-            <div class="mpop-cat">${cap(e.cat)}</div>
-            <span class="mpop-st ${e.st}"><i class="fas fa-circle" style="font-size:7px"></i> ${cap(e.st)}</span>
-            <div class="mpop-dist"><i class="fas fa-route"></i> ${e.dist} from CvSU-Bacoor</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-top:4px;color:#6b7280"><i class="fas fa-star" style="color:#fbbf24"></i> ${e.rating.toFixed(1)} (${e.rev} reviews)</div>
-            <button class="mpop-btn"><i class="fas fa-eye"></i> View Details</button>
-        </div>`;
-        L.marker([e.lat,e.lng],{icon:ico}).addTo(mkLayer).bindPopup(popup,{maxWidth:220});
-    });
-}
-
-function switchTile(t){
-    if(!mapInst)return;
-    document.querySelectorAll('.mtb').forEach(b=>b.classList.remove('on'));
-    document.getElementById('mts-'+t).classList.add('on');
-    if(curTile)mapInst.removeLayer(curTile);
-    curTile=L.tileLayer(TILES[t].url,TILES[t].opt).addTo(mapInst);
-}
-
-// ── ESTABLISHMENTS ──
-function renderEst(data){
-    const g=document.getElementById('estGrid');
-    if(!data.length){g.innerHTML='<p style="text-align:center;padding:40px;color:#9ca3af">No establishments found.</p>';return;}
-    const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-    g.innerHTML=data.map(e=>{
-        const stars=Array.from({length:5},(_,i)=>i<Math.floor(e.rating)?'<i class="fas fa-star" style="color:#fbbf24;font-size:12px"></i>':'<i class="far fa-star" style="color:#fbbf24;font-size:12px"></i>').join('');
-        return`<div class="estc" data-cat="${e.cat}">
-            <img class="estc-img" src="${e.img}" alt="${e.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x180?text=Est'">
-            <span class="estb ${e.st}"><span class="estb-dot"></span>${cap(e.st)}</span>
-            <div class="estc-body">
-                <div class="star-r">${stars}<span class="sv">${e.rating.toFixed(1)}</span></div>
-                <div class="rcnt">(${e.rev} Reviews)</div>
-                <div class="estc-name">${e.name}</div>
-                <span class="ecat">${cap(e.cat)}</span>
-            </div>
-            <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i> ${e.dist}</div>
-            <div class="emr" style="padding-bottom:10px"><i class="fas fa-credit-card" style="color:#B71C1C"></i> ${e.pay}</div>
-        </div>`;
-    }).join('');
-}
-
-function applyFilter(){
-    const v=document.getElementById('catFilt').value;
-    const f=v?ESD.filter(e=>e.cat===v):ESD;
-    renderEst(f);
-    if(mapInst)renderMarkers(f);
-}
-
-// ── MODAL ──
-function openMod(id){
-    const d=BSD.find(x=>x.id===id);if(!d)return;
-    document.getElementById('mImg').src=d.img;
-    document.getElementById('mName').textContent=d.name;
-    document.getElementById('mDesc').textContent=d.desc;
-    document.getElementById('mPrice').textContent=`₱${d.price.toFixed(2)}`;
-    document.getElementById('mStock').innerHTML=`<i class="fas fa-box"></i> ${d.stock} Items`;
-    document.getElementById('mEstN').textContent=d.est;
-    document.getElementById('mEstA').textContent=d.addr;
-    const s=document.getElementById('mEstS');
-    s.className=`mests ${d.st}`;
-    s.innerHTML=`<i class="fas fa-circle" style="font-size:8px"></i> ${d.st.charAt(0).toUpperCase()+d.st.slice(1)}`;
-    document.getElementById('mqty').value=1;
-    document.getElementById('bsMod').classList.add('on');
-    document.body.style.overflow='hidden';
-}
-function closeMod(){document.getElementById('bsMod').classList.remove('on');document.body.style.overflow='';}
-function chgQ(d){const e=document.getElementById('mqty');e.value=Math.max(1,parseInt(e.value)+d);}
-
-// ── SETTINGS ──
-function openSet(){document.getElementById('setMod').classList.add('on');document.getElementById('pdrop').classList.remove('show');document.body.style.overflow='hidden';}
-function closeSet(){document.getElementById('setMod').classList.remove('on');document.body.style.overflow='';}
-
-// ── PROFILE ──
-document.getElementById('pavBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('pdrop').classList.toggle('show');});
-document.getElementById('editProf').addEventListener('click',e=>{e.preventDefault();openSet();});
-
-// ── SEARCH ──
-document.getElementById('hSearch').addEventListener('input',function(){document.getElementById('hClr').classList.toggle('on',this.value.length>0);});
-document.getElementById('hClr').addEventListener('click',function(){document.getElementById('hSearch').value='';this.classList.remove('on');});
-
-// ── SCROLL TOP ──
-const stb=document.getElementById('stb');
-window.addEventListener('scroll',()=>stb.classList.toggle('on',window.pageYOffset>300));
-stb.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
-
-// ── GLOBAL CLICK ──
-document.addEventListener('click',e=>{
-    if(!e.target.closest('#ddw'))closeDD();
-    if(!e.target.closest('#pcont'))document.getElementById('pdrop').classList.remove('show');
-    if(e.target===document.getElementById('bsMod'))closeMod();
-    if(e.target===document.getElementById('setMod'))closeSet();
-});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMod();closeSet();closeDD();}});
-window.addEventListener('resize',()=>{if(!isGrid)updCar();});
-
-// ── INIT ──
-document.addEventListener('DOMContentLoaded',()=>{
-    setTimeout(()=>{renderBS();renderEst(ESD);},500);
-});
+    const URLS = {
+        bestsellers:  "{% url 'get_bestsellers' %}",
+        addToCart:    "{% url 'add_to_cart' %}",
+        cartCount:    "{% url 'get_cart_count' %}",
+        nearbyEst:    "{% url 'get_nearby_establishments' %}",
+        searchMenu:   "{% url 'search_menu_items' %}",
+        estDetail:    "/food_establishment/",  // append {id}/
+        createCash:   "{% url 'create_cash_order' %}",
+        createBuyNow: "{% url 'create_buynow_payment' %}",
+        login:        "{% url 'user_login_register' %}",
+    };
+    const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    const CVSU = { lat: 14.4352, lng: 120.9668 };
+    const RADIUS = 500;
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'webapplication/js/kabsueats.js' %}"></script>
+
 </body>
 </html>

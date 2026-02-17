@@ -1,3237 +1,608 @@
 // ============================================
-// ✅ REALTIME SEARCH DROPDOWN FUNCTIONALITY
+// KabsuEats.js — All functions connected to Django backend
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    initializeRealtimeSearch();
-});
 
-function initializeRealtimeSearch() {
-    const searchInput = document.getElementById('searchInput');
-    const searchDropdown = document.getElementById('searchDropdown');
-    const searchDropdownContent = document.getElementById('searchDropdownContent');
+// ── CAROUSEL STATE ──
+let cidx = 0, isGrid = false;
+const VISIBLE = 5;
+let bsData = []; // real backend data
 
-    if (!searchInput || !searchDropdown || !searchDropdownContent) {
-        return;
-    }
+// ── MAP STATE ──
+let curView = 'bs', mapReady = false;
+let mapInst = null, curTile = null, mkLayer = null;
+let esMapData = []; // real establishment data for map
 
-    let searchTimeout;
-    let allEstablishments = [];
-    let allMenuItems = [];
+// ── MODAL STATE ──
+let currentModalItem = null;
 
-    // ✅ Gather all establishments data
-    function gatherEstablishmentsData() {
-        const establishments = document.querySelectorAll('.food-establishment-item');
-        allEstablishments = [];
-
-        establishments.forEach(est => {
-            const name = est.dataset.name || '';
-            const id = est.dataset.id || '';
-            const category = est.dataset.category || '';
-            const status = est.dataset.status || '';
-            const rating = est.dataset.rating || '0';
-
-            if (name) {
-                allEstablishments.push({
-                    id: id,
-                    name: name,
-                    category: category,
-                    status: status,
-                    rating: parseFloat(rating),
-                    element: est
-                });
-            }
-        });
-    }
-
-    // ✅ Gather menu items from page (if available)
-    function gatherMenuItemsData() {
-        allMenuItems = [];
-
-        // Check if menu items data is available globally
-        if (typeof window.menuItemsData !== 'undefined') {
-            allMenuItems = window.menuItemsData;
-        }
-    }
-
-    // ✅ Perform realtime search
-    function performRealtimeSearch(query) {
-        if (!query || query.length < 1) {
-            searchDropdown.classList.remove('active');
-            return;
-        }
-
-        const lowerQuery = query.toLowerCase().trim();
-
-        // Search establishments
-        const matchedEstablishments = allEstablishments.filter(est =>
-            est.name.includes(lowerQuery) ||
-            est.category.includes(lowerQuery)
-        ).slice(0, 5);
-
-        // Search menu items (if available)
-        const matchedMenuItems = allMenuItems.filter(item =>
-            item.name.toLowerCase().includes(lowerQuery) ||
-            (item.description && item.description.toLowerCase().includes(lowerQuery))
-        ).slice(0, 5);
-
-        renderSearchResults(matchedEstablishments, matchedMenuItems, lowerQuery);
-    }
-
-    // ✅ Highlight matching text
-    function highlightMatch(text, query) {
-        const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-        return text.replace(regex, '<span class="search-match">$1</span>');
-    }
-
-    // ✅ Escape special characters for regex
-    function escapeRegex(str) {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    // ✅ Render search results
-    function renderSearchResults(establishments, menuItems, query) {
-        let html = '';
-
-        if (establishments.length > 0) {
-            html += `
-                <div class="search-dropdown-section">
-                    <div class="search-dropdown-title">
-                        <i class="fas fa-store"></i>
-                        Establishments
-                    </div>
-            `;
-
-            establishments.forEach(est => {
-                const statusColor = est.status.toLowerCase() === 'open' ? '#10b981' : '#ef4444';
-                const statusIcon = est.status.toLowerCase() === 'open' ? 'check-circle' : 'times-circle';
-
-                html += `
-                    <div class="search-dropdown-item" onclick="goToEstablishment('${est.id}')">
-                        <div class="search-dropdown-item-icon">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <div class="search-dropdown-item-content">
-                            <div class="search-dropdown-item-name">${highlightMatch(est.name, query)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span style="color: ${statusColor};">
-                                    <i class="fas fa-${statusIcon}"></i>
-                                    ${est.status}
-                                </span>
-                                <span>•</span>
-                                <span>${est.category}</span>
-                                <span>•</span>
-                                <span>
-                                    <i class="fas fa-star" style="color: #fbbf24;"></i>
-                                    ${est.rating.toFixed(1)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-        }
-
-        if (menuItems.length > 0) {
-            html += `
-                <div class="search-dropdown-section">
-                    <div class="search-dropdown-title">
-                        <i class="fas fa-hamburger"></i>
-                        Menu Items
-                    </div>
-            `;
-
-            menuItems.forEach(item => {
-                const price = item.price ? `₱${parseFloat(item.price).toFixed(2)}` : '';
-
-                html += `
-                    <div class="search-dropdown-item" onclick="goToMenuItem('${item.establishment_id}', '${item.id}')">
-                        <div class="search-dropdown-item-icon">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <div class="search-dropdown-item-content">
-                            <div class="search-dropdown-item-name">${highlightMatch(item.name, query)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span>${price}</span>
-                                ${item.establishment_name ? `
-                                    <span>•</span>
-                                    <span class="search-dropdown-item-establishment">
-                                        at ${item.establishment_name}
-                                    </span>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-        }
-
-        if (establishments.length === 0 && menuItems.length === 0) {
-            html = `
-                <div class="search-dropdown-empty">
-                    <i class="fas fa-search"></i>
-                    <p>No results found for "${query}"</p>
-                </div>
-            `;
-        }
-
-        searchDropdownContent.innerHTML = html;
-        searchDropdown.classList.add('active');
-    }
-
-    gatherEstablishmentsData();
-    gatherMenuItemsData();
-
-    searchInput.addEventListener('input', function(e) {
-        clearTimeout(searchTimeout);
-        const query = e.target.value;
-
-        searchTimeout = setTimeout(() => {
-            performRealtimeSearch(query);
-        }, 200);
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
-            searchDropdown.classList.remove('active');
-        }
-    });
-
-    searchInput.addEventListener('focus', function() {
-        if (this.value.trim().length > 0) {
-            performRealtimeSearch(this.value);
-        }
-    });
-
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const firstItem = document.querySelector('.search-dropdown-item');
-            if (firstItem) {
-                firstItem.click();
-            }
-        }
-    });
+// ── CSRF Helper ──
+function getCsrf() {
+    return document.getElementById('csrfToken')?.value || '';
 }
 
-window.goToEstablishment = function(establishmentId) {
-    window.location.href = `/establishment/${establishmentId}/`;
-};
-
-window.goToMenuItem = function(establishmentId, menuItemId) {
-    window.location.href = `/establishment/${establishmentId}/?item=${menuItemId}`;
-};
-
-function openPage(evt, pageName) {
-    var i, pagecontent, pagelinks;
-    pagecontent = document.getElementsByClassName("pagecontent");
-    for (i = 0; i < pagecontent.length; i++) {
-        pagecontent[i].style.display = "none";
-    }
-    pagelinks = document.getElementsByClassName("pagelinks");
-    for (i = 0; i < pagelinks.length; i++) {
-        pagelinks[i].className = pagelinks[i].className.replace(" active", "");
-    }
-    document.getElementById(pageName).style.display = "block";
-    evt.currentTarget.className += " active";
-}
-
+// ============================================
+// INIT ON DOM READY
+// ============================================
 document.addEventListener('DOMContentLoaded', function () {
-    const defaultOpen = document.getElementById("defaultOpen");
-    if (defaultOpen) {
-        defaultOpen.click();
-    }
-
-    if (typeof applyFilters === 'function') {
-        applyFilters();
-    }
-
-    if (typeof toggleSearchButton === 'function') {
-        toggleSearchButton();
-    }
-
-    // âœ… Update statuses on page load
-    if (typeof updateEstablishmentStatuses === 'function') {
-        updateEstablishmentStatuses();
-    }
-});
-
-function on() { document.getElementById("overlay").style.display = "block"; }
-function off() { document.getElementById("overlay").style.display = "none"; }
-
-function toggleSearchButton() {
-    const searchInput = document.getElementById("searchInput");
-    const searchButton = document.querySelector(".search_button");
-    if (searchInput && searchButton) {
-        if (searchInput.value.trim().length > 0) {
-            searchButton.disabled = false;
-            searchButton.style.opacity = "1";
-            searchButton.style.cursor = "pointer";
-        } else {
-            searchButton.disabled = true;
-            searchButton.style.opacity = "0.5";
-            searchButton.style.cursor = "not-allowed";
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    const homeButton = document.querySelector(".icon_home");
-    if (homeButton) {
-        homeButton.addEventListener("click", function (event) {
-            event.preventDefault();
-            window.location.href = "/kabsueats/";
-        });
-    }
+    initSearch();
+    initProfile();
+    initScrollTop();
+    fetchBestsellers();
+    autoHideMessages();
 });
 
 // ============================================
-// âœ… FIXED AND IMPROVED applyFilters() FUNCTION
+// AUTO-HIDE MESSAGES
 // ============================================
-function applyFilters() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-    const statusFilter = document.getElementById('statusFilter');
-    const selectedStatus = statusFilter ? statusFilter.value : '';
-
-    const alphabetFilter = document.getElementById('alphabetFilter');
-    const selectedAlphabet = alphabetFilter ? alphabetFilter.value.toLowerCase() : '';
-
-    const distanceFilter = document.getElementById('distanceFilter');
-    const selectedDistanceSort = distanceFilter ? distanceFilter.value : '';
-
-    const ratingsFilter = document.getElementById('ratingsFilter');
-    const selectedRatingsSort = ratingsFilter ? ratingsFilter.value : '';
-
-    const categoryFilter = document.getElementById('categoryFilter');
-    const selectedCategory = categoryFilter ? categoryFilter.value.toLowerCase() : '';
-
-    const currentUrl = new URL(window.location.href);
-    const urlCategory = currentUrl.pathname.includes('karenderya') ? 'karenderya' : currentUrl.pathname.includes('cafe_establishments') ? 'cafe' : '';
-
-    const allItems = Array.from(document.querySelectorAll('.food-establishment-item'));
-    const container = document.querySelector('.nearest_slidescontainer');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-
-    if (!container) {
-        return;
-    }
-
-    let visibleItems = [];
-
-    allItems.forEach(item => {
-        const itemName = item.dataset.name || '';
-        const itemStatus = item.dataset.status || '';
-        const itemCategory = item.dataset.category || '';
-
-        let isVisible = true;
-
-        // Search filter
-        if (searchTerm && !itemName.includes(searchTerm)) {
-            isVisible = false;
-        }
-
-        // âœ… CRITICAL FIX: Status filter now works correctly
-        if (selectedStatus && itemStatus !== selectedStatus) {
-            isVisible = false;
-        }
-
-        // Alphabetical filter
-        if (selectedAlphabet && !itemName.startsWith(selectedAlphabet)) {
-            isVisible = false;
-        }
-
-        // URL category filter
-        if (urlCategory && itemCategory !== urlCategory) {
-            isVisible = false;
-        }
-
-        // Category dropdown filter
-        if (selectedCategory && itemCategory !== selectedCategory) {
-            isVisible = false;
-        }
-
-        if (isVisible) {
-            visibleItems.push(item);
-        }
-    });
-
-    // Apply sorting
-    if (selectedAlphabet) {
-        visibleItems.sort((a, b) => (a.dataset.name || '').localeCompare(b.dataset.name || ''));
-        if (distanceFilter) distanceFilter.value = '';
-        if (ratingsFilter) ratingsFilter.value = '';
-    } else if (selectedDistanceSort === 'nearest') {
-        visibleItems.sort((a, b) => {
-            const distanceA = parseFloat(a.dataset.distance) || Infinity;
-            const distanceB = parseFloat(b.dataset.distance) || Infinity;
-            return distanceA - distanceB;
+function autoHideMessages() {
+    setTimeout(() => {
+        document.querySelectorAll('.message-alert').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.5s';
+            setTimeout(() => el.remove(), 500);
         });
-        if (alphabetFilter) alphabetFilter.value = '';
-        if (ratingsFilter) ratingsFilter.value = '';
-    } else if (selectedDistanceSort === 'farthest') {
-        visibleItems.sort((a, b) => {
-            const distanceA = parseFloat(a.dataset.distance) || -Infinity;
-            const distanceB = parseFloat(b.dataset.distance) || -Infinity;
-            return distanceB - distanceA;
-        });
-        if (alphabetFilter) alphabetFilter.value = '';
-        if (ratingsFilter) ratingsFilter.value = '';
-    } else if (selectedRatingsSort === 'highest') {
-        visibleItems.sort((a, b) => {
-            const ratingA = parseFloat(a.dataset.rating) || 0;
-            const ratingB = parseFloat(b.dataset.rating) || 0;
-            return ratingB - ratingA;
-        });
-        if (alphabetFilter) alphabetFilter.value = '';
-        if (distanceFilter) distanceFilter.value = '';
-    } else if (selectedRatingsSort === 'lowest') {
-        visibleItems.sort((a, b) => {
-            const ratingA = parseFloat(a.dataset.rating) || 0;
-            const ratingB = parseFloat(b.dataset.rating) || 0;
-            return ratingA - ratingB;
-        });
-        if (alphabetFilter) alphabetFilter.value = '';
-        if (distanceFilter) distanceFilter.value = '';
-    }
-
-    // Hide all items first
-    allItems.forEach(item => {
-        item.style.display = 'none';
-    });
-
-    // Show filtered items
-    visibleItems.forEach(item => {
-        item.style.display = '';
-        container.appendChild(item);
-    });
-
-    // Show/hide no results message
-    if (noResultsMessage) {
-        if (visibleItems.length === 0) {
-            noResultsMessage.style.display = 'block';
-        } else {
-            noResultsMessage.style.display = 'none';
-        }
-    }
+    }, 4000);
 }
 
 // ============================================
-// âœ… REAL-TIME STATUS UPDATE FUNCTION
+// FETCH BESTSELLERS FROM BACKEND API
 // ============================================
-function updateEstablishmentStatuses() {
-    const establishments = document.querySelectorAll('.food-establishment-item');
-
-    establishments.forEach(establishment => {
-        const statusIndicator = establishment.querySelector('.status-indicator');
-        if (!statusIndicator) return;
-
-        const openingTime = statusIndicator.dataset.openingTime;
-        const closingTime = statusIndicator.dataset.closingTime;
-
-        if (!openingTime || !closingTime) {
-            establishment.dataset.status = 'Closed';
-            updateStatusDisplay(statusIndicator, 'Closed');
-            return;
-        }
-
-        const now = new Date();
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-        const [openHour, openMin] = openingTime.split(':').map(Number);
-        const [closeHour, closeMin] = closingTime.split(':').map(Number);
-
-        const openMinutes = openHour * 60 + openMin;
-        const closeMinutes = closeHour * 60 + closeMin;
-
-        let isOpen = false;
-
-        if (openMinutes <= closeMinutes) {
-            isOpen = currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
-        } else {
-            isOpen = currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
-        }
-
-        const newStatus = isOpen ? 'Open' : 'Closed';
-        establishment.dataset.status = newStatus;
-        updateStatusDisplay(statusIndicator, newStatus);
-    });
-
-    if (typeof applyFilters === 'function') {
-        applyFilters();
-    }
-}
-
-function updateStatusDisplay(statusIndicator, status) {
-    const statusText = statusIndicator.querySelector('.status-text');
-    const statusDot = statusIndicator.querySelector('.dot');
-
-    if (statusText) {
-        statusText.textContent = status;
-    }
-
-    statusIndicator.classList.remove('open', 'closed');
-    statusIndicator.classList.add(status.toLowerCase());
-
-    if (statusDot) {
-        if (status === 'Open') {
-            statusDot.style.backgroundColor = '#10b981';
-        } else {
-            statusDot.style.backgroundColor = '#ef4444';
-        }
-    }
-}
-
-// âœ… Update statuses every minute
-setInterval(updateEstablishmentStatuses, 60000);
-
-// Logout Modal Logic
-const showLogoutModalButton = document.getElementById('showLogoutModal');
-const logoutModal = document.getElementById('logoutModal');
-const cancelLogoutButton = document.getElementById('cancelLogout');
-
-function showModal() {
-    if (logoutModal) {
-        logoutModal.classList.remove('opacity-0', 'pointer-events-none');
-        logoutModal.classList.add('opacity-100');
-        const modalContent = logoutModal.querySelector('div');
-        if (modalContent) {
-            modalContent.classList.remove('-translate-y-4', 'scale-95');
-            modalContent.classList.add('translate-y-0', 'scale-100');
-        }
-    }
-}
-
-function hideModal() {
-     if (logoutModal) {
-        logoutModal.classList.remove('opacity-100');
-        logoutModal.classList.add('opacity-0', 'pointer-events-none');
-        const modalContent = logoutModal.querySelector('div');
-        if (modalContent) {
-            modalContent.classList.remove('translate-y-0', 'scale-100');
-            modalContent.classList.add('-translate-y-4', 'scale-95');
-        }
-    }
-}
-
-if (showLogoutModalButton) showLogoutModalButton.addEventListener('click', showModal);
-if (cancelLogoutButton) cancelLogoutButton.addEventListener('click', hideModal);
-
-if (logoutModal) {
-    logoutModal.addEventListener('click', (event) => {
-        if (event.target === logoutModal) {
-            hideModal();
-        }
-    });
-}
-
-// Toggle dropdown for user menu
-window.toggleDropdown = function(event) {
-    if (event) event.stopPropagation();
-    const dropdown = document.getElementById("userDropdown");
-    if (dropdown) {
-        dropdown.classList.toggle("show");
-    }
-};
-
-// Close dropdown if clicked outside
-document.addEventListener("click", function(event) {
-    const dropdown = document.getElementById("userDropdown");
-    const profileContainer = document.getElementById("profileContainer");
-    if (dropdown && dropdown.classList.contains("show")) {
-        if (!profileContainer || !profileContainer.contains(event.target)) {
-            dropdown.classList.remove("show");
-        }
-    }
-});
-
-// Open settings modal
-window.openSettingsModal = function(event) {
-    if (event) event.preventDefault();
-    // Close dropdown first
-    const dropdown = document.getElementById("userDropdown");
-    if (dropdown) dropdown.classList.remove("show");
-    // Open modal
-    const modal = document.getElementById("settingsModal");
-    if (modal) {
-        modal.style.display = "flex";
-    }
-};
-
-// Close settings modal
-window.closeSettingsModal = function() {
-    const modal = document.getElementById("settingsModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
-};
-
-// ✅ FIXED: Profile Picture Preview Function
-window.previewProfileImage = function(event) {
-    const input = event.target;
-    const preview = document.getElementById('profileImagePreview');
-    const defaultIcon = document.getElementById('profileIconPreviewDefault');
-
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-            if (preview) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            if (defaultIcon) {
-                defaultIcon.style.display = 'none';
-            }
-        };
-
-        reader.readAsDataURL(input.files[0]);
-    }
-};
-
-// Close modals on clicking outside content
-window.onclick = function(event) {
-    const settingsModal = document.getElementById("settingsModal");
-    if (event.target === settingsModal) {
-        settingsModal.style.display = "none";
-    }
-};
-
-// =========================ULTRA-FAST LOCATION MAP FUNCTIONS (OPTIMIZED)==================================
-document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggleMapBtn");
-    const mapSection = document.getElementById("mapSection");
-
-    if (!toggleBtn || !mapSection) {
-        return;
-    }
-
-    let mapInitialized = false;
-    let map;
-    let markers = [];
-    let userLocation = null;
-    let routingControl = null;
-    let userMarker = null;
-    let watchId = null;
-    let cvsuCircle = null;
-    let locationAccuracyCircle = null;
-    let locationButton = null;
-    let isGettingLocation = false;
-    let cachedLocation = null;
-
-    const CVSU_LAT = 14.4128;
-    const CVSU_LNG = 120.9813;
-    const RADIUS_METERS = 500;
-
-    toggleBtn.addEventListener("click", function () {
-        mapSection.classList.toggle("active");
-        toggleBtn.textContent = mapSection.classList.contains("active") ? "✖ Hide Map" : "🗺️ View Map";
-
-        if (!mapInitialized && mapSection.classList.contains("active")) {
-            if (typeof L === 'undefined') {
-                console.error("Leaflet is not loaded.");
-                return;
-            }
-
-            map = L.map("establishmentsMap", {
-                center: [CVSU_LAT, CVSU_LNG],
-                zoom: 16,
-                maxZoom: 22,
-                minZoom: 10,
-                zoomControl: true
-            });
-
-            const highResSatellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-                attribution: "© Esri World Imagery",
-                maxZoom: 22,
-                maxNativeZoom: 19
-            });
-
-            const enhancedLabels = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png", {
-                attribution: "© CARTO",
-                maxZoom: 22,
-                subdomains: 'abcd',
-                pane: 'shadowPane'
-            });
-
-            const hybridGroup = L.layerGroup([highResSatellite, enhancedLabels]).addTo(map);
-
-            const googleSatellite = L.tileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-                attribution: "© Google Satellite",
-                maxZoom: 22,
-                maxNativeZoom: 20
-            });
-
-            const googleHybrid = L.layerGroup([
-                L.tileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-                    maxZoom: 22,
-                    maxNativeZoom: 20
-                }),
-                L.tileLayer("https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}", {
-                    maxZoom: 22,
-                    maxNativeZoom: 20
-                })
-            ]);
-
-            const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "© OpenStreetMap",
-                maxZoom: 22,
-                maxNativeZoom: 19
-            });
-
-            const terrainLayer = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-                attribution: "© OpenTopoMap",
-                maxZoom: 22,
-                maxNativeZoom: 17
-            });
-
-            L.control.layers({
-                "Hybrid HD (Recommended)": hybridGroup,
-                "Google Hybrid": googleHybrid,
-                "Google Satellite": googleSatellite,
-                "Street Map": streetLayer,
-                "Terrain": terrainLayer
-            }).addTo(map);
-
-            cvsuCircle = L.circle([CVSU_LAT, CVSU_LNG], {
-                color: '#E9A420',
-                fillColor: '#E9A420',
-                fillOpacity: 0.15,
-                radius: RADIUS_METERS,
-                weight: 3,
-                dashArray: '10, 10'
-            }).addTo(map);
-
-            cvsuCircle.bindPopup("<strong>CvSU-Bacoor Campus</strong><br>500m radius zone");
-
-            loadEstablishments();
-
-            const locationButtonContainer = document.createElement("div");
-            locationButtonContainer.style.cssText = `
-                position: absolute;
-                bottom: 30px;
-                right: 10px;
-                z-index: 1000;
-            `;
-
-            locationButton = document.createElement("button");
-            locationButton.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-location-arrow"></i>
-                    <span>Show My Location</span>
-                </div>
-            `;
-            locationButton.style.cssText = `
-                background: linear-gradient(135deg, #E9A420 0%, #d89410 100%);
-                color: white;
-                border: none;
-                padding: 12px 20px;
-                border-radius: 25px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-                box-shadow: 0 4px 15px rgba(233, 164, 32, 0.4);
-                transition: all 0.3s ease;
-                font-family: inherit;
-            `;
-
-            locationButton.onmouseover = function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 6px 20px rgba(233, 164, 32, 0.6)';
-            };
-            locationButton.onmouseout = function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 4px 15px rgba(233, 164, 32, 0.4)';
-            };
-
-            locationButton.addEventListener("click", function() {
-                if (isGettingLocation) {
-                    console.log("Already getting location, please wait...");
-                    return;
-                }
-
-                if (!navigator.geolocation) {
-                    alert("Geolocation is not supported by your browser.");
-                    return;
-                }
-
-                isGettingLocation = true;
-
-                locationButton.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <span>Getting Location...</span>
-                    </div>
-                `;
-                locationButton.disabled = true;
-                locationButton.style.opacity = '0.7';
-
-                if (cachedLocation) {
-                    console.log("⚡ Using cached location for instant display");
-                    showUserLocation(
-                        cachedLocation.lat,
-                        cachedLocation.lng,
-                        cachedLocation.accuracy,
-                        false
-                    );
-                    updateLocationInBackground();
-                    return;
-                }
-
-                const fastOptions = {
-                    enableHighAccuracy: false,
-                    timeout: 3000,
-                    maximumAge: 60000
-                };
-
-                const preciseOptions = {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                };
-
-                let locationShown = false;
-
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const accuracy = position.coords.accuracy;
-
-                        userLocation = [lat, lng];
-                        cachedLocation = { lat, lng, accuracy };
-                        locationShown = true;
-
-                        console.log(`⚡ Fast location: ${lat}, ${lng} (±${accuracy}m)`);
-                        showUserLocation(lat, lng, accuracy, false);
-                        updateLocationInBackground();
-                    },
-                    function(error) {
-                        console.error("Fast location failed:", error.message);
-                        if (!locationShown) {
-                            getPreciseLocation();
-                        }
-                    },
-                    fastOptions
-                );
-
-                function getPreciseLocation() {
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            const accuracy = position.coords.accuracy;
-
-                            userLocation = [lat, lng];
-                            cachedLocation = { lat, lng, accuracy };
-
-                            console.log(`🎯 Precise location: ${lat}, ${lng} (±${accuracy}m)`);
-                            showUserLocation(lat, lng, accuracy, true);
-                        },
-                        function(error) {
-                            console.error("All geolocation attempts failed:", error.message);
-                            handleLocationError(error);
-                        },
-                        preciseOptions
-                    );
-                }
-
-                function updateLocationInBackground() {
-                    navigator.geolocation.getCurrentPosition(
-                        function(precisePosition) {
-                            const lat = precisePosition.coords.latitude;
-                            const lng = precisePosition.coords.longitude;
-                            const accuracy = precisePosition.coords.accuracy;
-
-                            userLocation = [lat, lng];
-                            cachedLocation = { lat, lng, accuracy };
-
-                            console.log(`🎯 Precise location updated: ${lat}, ${lng} (±${accuracy}m)`);
-
-                            if (userMarker) {
-                                showUserLocation(lat, lng, accuracy, true);
-                            }
-                        },
-                        function(error) {
-                            console.log("Background precise location failed:", error.message);
-                        },
-                        preciseOptions
-                    );
-                }
-            });
-
-            function showUserLocation(lat, lng, accuracy, isPrecise) {
-                if (userMarker) {
-                    map.removeLayer(userMarker);
-                }
-                if (locationAccuracyCircle) {
-                    map.removeLayer(locationAccuracyCircle);
-                }
-
-                locationAccuracyCircle = L.circle([lat, lng], {
-                    radius: accuracy,
-                    fillColor: isPrecise ? "#16a34a" : "#3b82f6",
-                    fillOpacity: 0.1,
-                    color: isPrecise ? "#16a34a" : "#3b82f6",
-                    weight: 1
-                }).addTo(map);
-
-                const pulsingIcon = L.divIcon({
-                    html: `<div style="position:relative;">
-                            <div style="position:absolute;width:24px;height:24px;border-radius:50%;
-                                        background:${isPrecise ? '#16a34a' : '#3b82f6'};animation:pulse 2s infinite;
-                                        top:50%;left:50%;transform:translate(-50%,-50%);"></div>
-                            <div style="width:16px;height:16px;border-radius:50%;
-                                        background:${isPrecise ? '#16a34a' : '#3b82f6'};border:3px solid #fff;
-                                        box-shadow:0 2px 8px rgba(${isPrecise ? '22, 163, 74' : '59, 130, 246'}, 0.5);"></div>
-                           </div>
-                           <style>
-                           @keyframes pulse {
-                               0% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-                               50% { opacity:0.3; transform:translate(-50%,-50%) scale(2); }
-                               100% { opacity:0; transform:translate(-50%,-50%) scale(3); }
-                           }
-                           </style>`,
-                    className: "",
-                    iconSize: [24, 24]
-                });
-
-                userMarker = L.marker([lat, lng], { icon: pulsingIcon }).addTo(map);
-
-                const accuracyText = accuracy > 1000 ?
-                    `±${(accuracy/1000).toFixed(1)}km` :
-                    `±${Math.round(accuracy)}m`;
-
-                userMarker.bindPopup(`
-                    <div style="text-align:center;">
-                        <strong style="color:${isPrecise ? '#16a34a' : '#3b82f6'};font-size:15px;">📍 Your Location</strong><br>
-                        <small style="color:#666;">${isPrecise ? '🎯 High Precision' : '⚡ Fast Location'}</small><br>
-                        <small style="color:#888;">Accuracy: ${accuracyText}</small>
-                    </div>
-                `);
-
-                map.flyTo([lat, lng], 19, {
-                    animate: true,
-                    duration: 0.6,
-                    easeLinearity: 0.3
-                });
-
-                locationButton.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-check-circle"></i>
-                        <span>${isPrecise ? '🎯 Precise!' : '⚡ Located!'}</span>
-                    </div>
-                `;
-                locationButton.style.background = `linear-gradient(135deg, ${isPrecise ? '#16a34a' : '#3b82f6'} 0%, ${isPrecise ? '#15803d' : '#2563eb'} 100%)`;
-                locationButton.disabled = false;
-                locationButton.style.opacity = '1';
-                isGettingLocation = false;
-
-                if (isPrecise && !watchId) {
-                    watchId = navigator.geolocation.watchPosition(
-                        function(position) {
-                            const newLat = position.coords.latitude;
-                            const newLng = position.coords.longitude;
-                            const newAccuracy = position.coords.accuracy;
-
-                            userLocation = [newLat, newLng];
-                            cachedLocation = { lat: newLat, lng: newLng, accuracy: newAccuracy };
-
-                            if (userMarker) {
-                                userMarker.setLatLng([newLat, newLng]);
-                            }
-                            if (locationAccuracyCircle) {
-                                locationAccuracyCircle.setLatLng([newLat, newLng]);
-                                locationAccuracyCircle.setRadius(newAccuracy);
-                            }
-                        },
-                        function(error) {
-                            console.error("Watch position error:", error.message);
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 10000,
-                            maximumAge: 5000
-                        }
-                    );
-                }
-            }
-
-            function handleLocationError(error) {
-                let errorMessage = "Unable to get your location.";
-
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage = "📍 Location access denied.\n\nPlease enable location in your browser:\n1. Click the 🔒 lock icon in address bar\n2. Allow location access\n3. Refresh the page";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage = "📍 Location unavailable.\n\nTry:\n• Moving to an area with better signal\n• Enabling GPS on your device\n• Checking device location settings";
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage = "⏱️ Location request timed out.\n\nPlease try again or check your:\n• Internet connection\n• GPS/Location settings";
-                        break;
-                }
-
-                alert(errorMessage);
-
-                locationButton.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-location-arrow"></i>
-                        <span>Show My Location</span>
-                    </div>
-                `;
-                locationButton.disabled = false;
-                locationButton.style.opacity = '1';
-                locationButton.style.background = 'linear-gradient(135deg, #E9A420 0%, #d89410 100%)';
-                isGettingLocation = false;
-            }
-
-            locationButtonContainer.appendChild(locationButton);
-            document.getElementById("establishmentsMap").appendChild(locationButtonContainer);
-
-            const mapSearchContainer = document.createElement("div");
-            const isMobile = window.innerWidth <= 768;
-
-            mapSearchContainer.innerHTML = `
-                <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:800;">
-                    <div style="background:white;border-radius:20px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;gap:6px;align-items:center;">
-                        <div style="position:relative;flex:1;">
-                            <input id="mapSearchInput" type="text" placeholder="Search establishments..."
-                                style="width:${isMobile ? '200px' : '280px'};padding:8px 12px;border:none;border-radius:16px;font-size:14px;outline:none;background:transparent;" />
-                        </div>
-                        <button id="mapSearchBtn"
-                            style="background:#E9A420;color:white;border:none;padding:8px 18px;border-radius:16px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:background 0.2s;"
-                            onmouseover="this.style.background='#d89410'" onmouseout="this.style.background='#E9A420'">
-                            🔍 Search
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById("establishmentsMap").appendChild(mapSearchContainer);
-
-            const searchInput = document.getElementById("mapSearchInput");
-            const searchBtn = document.getElementById("mapSearchBtn");
-
-            function performSearch() {
-                const query = searchInput.value.trim().toLowerCase();
-                if (!query) {
-                    markers.forEach(m => {
-                        if (m.marker._icon) {
-                            m.marker._icon.style.display = '';
-                        }
-                    });
-                    return;
-                }
-
-                let found = false;
-                markers.forEach(m => {
-                    const matches = m.name.includes(query);
-                    if (m.marker._icon) {
-                        m.marker._icon.style.display = matches ? '' : 'none';
-                    }
-                    if (matches && !found) {
-                        map.setView([m.lat, m.lng], 19, {
-                            animate: true,
-                            duration: 0.8
-                        });
-                        m.marker.fire('click');
-                        found = true;
-                    }
-                });
-
-                if (!found) {
-                    alert(`No results found for "${query}"`);
-                }
-            }
-
-            searchBtn.addEventListener("click", performSearch);
-            searchInput.addEventListener("keypress", function(e) {
-                if (e.key === "Enter") {
-                    performSearch();
-                }
-            });
-
-            mapInitialized = true;
-        }
-    });
-
-    function loadEstablishments() {
-        const items = document.querySelectorAll(".food-establishment-item");
-        let bounds = [];
-
-        items.forEach(item => {
-            const name = item.getAttribute("data-name");
-            const lat = parseFloat(item.getAttribute("data-lat"));
-            const lng = parseFloat(item.getAttribute("data-lng"));
-            const imageEl = item.querySelector(".food-image");
-            const image = imageEl ? imageEl.src : "";
-
-            const linkEl = item.querySelector('a[href*="establishment"]');
-            let establishmentId = '';
-            if (linkEl) {
-                const href = linkEl.getAttribute('href');
-                const matches = href.match(/establishment\/(\d+)/);
-                if (matches && matches[1]) {
-                    establishmentId = matches[1];
-                }
-            }
-
-            if (!isNaN(lat) && !isNaN(lng)) {
-                const icon = L.divIcon({
-                    html: `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;border:3px solid #E9A420;box-shadow: 0 3px 10px rgba(0,0,0,0.4);cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                            <img src="${image}" style="width:100%;height:100%;object-fit:cover;">
-                           </div>`,
-                    className: "",
-                    iconSize: [48, 48]
-                });
-
-                const marker = L.marker([lat, lng], { icon }).addTo(map);
-
-                marker.on('click', function() {
-                    let popupText = `<div style="text-align:center;min-width:200px;"><strong style="font-size:15px;color:#111;">${name}</strong>`;
-
-                    if (userLocation) {
-                        const distance = map.distance(userLocation, [lat, lng]);
-                        const meters = Math.round(distance);
-                        const km = (distance / 1000).toFixed(2);
-
-                        if (meters < 1000) {
-                            popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${meters}m from you</span>`;
-                        } else {
-                            popupText += `<br><span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${km}km from you</span>`;
-                        }
-
-                        if (typeof L.Routing !== 'undefined') {
-                            if (routingControl) {
-                                map.removeControl(routingControl);
-                            }
-
-                            routingControl = L.Routing.control({
-                                waypoints: [
-                                    L.latLng(userLocation[0], userLocation[1]),
-                                    L.latLng(lat, lng)
-                                ],
-                                routeWhileDragging: false,
-                                addWaypoints: false,
-                                draggableWaypoints: false,
-                                fitSelectedRoutes: true,
-                                showAlternatives: true,
-                                altLineOptions: {
-                                    styles: [
-                                        { color: '#888', opacity: 0.5, weight: 4 },
-                                        { color: '#ccc', opacity: 0.3, weight: 6 }
-                                    ]
-                                },
-                                lineOptions: {
-                                    styles: [
-                                        { color: '#E9A420', opacity: 0.8, weight: 6 },
-                                        { color: '#fff', opacity: 0.4, weight: 9 }
-                                    ]
-                                },
-                                createMarker: function() { return null; },
-                                show: false
-                            }).on('routesfound', function(e) {
-                                const routes = e.routes;
-                                const mainRoute = routes[0];
-                                const distanceKm = (mainRoute.summary.totalDistance / 1000).toFixed(2);
-                                const timeMin = Math.round(mainRoute.summary.totalTime / 60);
-
-                                const updatedPopupText = `<div style="text-align:center;min-width:200px;">
-                                    <strong style="font-size:15px;color:#111;">${name}</strong><br>
-                                    <span style="font-size:13px;color:#16a34a;font-weight:600;">📍 ${distanceKm} km away</span><br>
-                                    <span style="font-size:12px;color:#666;">🕒 About ${timeMin} minutes</span><br>
-                                    <a href="/food_establishment/${establishmentId}/"
-                                       style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                                       View Details →
-                                    </a></div>`;
-
-                                marker.getPopup().setContent(updatedPopupText);
-                            }).addTo(map);
-                        }
-                    }
-
-                    popupText += `<br><a href="/food_establishment/${establishmentId}/"
-                       style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#E9A420;color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(233,164,32,0.3);">
-                       View Details →
-                    </a></div>`;
-
-                    marker.bindPopup(popupText, {
-                        maxWidth: 300,
-                        className: 'custom-popup'
-                    }).openPopup();
-
-                    map.setView([lat, lng], 19, {
-                        animate: true,
-                        duration: 0.8,
-                        easeLinearity: 0.5
-                    });
-                });
-
-                markers.push({
-                    name: (name || '').toLowerCase(),
-                    marker: marker,
-                    lat: lat,
-                    lng: lng,
-                    id: establishmentId
-                });
-                bounds.push([lat, lng]);
-            }
-        });
-
-        if (bounds.length > 0) {
-            if (userLocation) {
-                bounds.push(userLocation);
-            }
-            map.fitBounds(bounds, { padding: [60, 60] });
-        }
-    }
-});
-
-// ============================================
-// ✅ FIXED: Profile Update Form Handler
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    const profileForm = document.getElementById('profileUpdateForm');
-
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const formData = new FormData(profileForm);
-            const saveButton = profileForm.querySelector('button[type="submit"]');
-
-            // Disable button and show loading state
-            if (saveButton) {
-                saveButton.disabled = true;
-                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            }
-
-            // ✅ FIXED: Direct URL instead of undefined variable
-            fetch('/update_profile/', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Success notification
-                    alert('Profile updated successfully!');
-
-                    // Update all profile images on the page
-                    if (data.profile_picture_url) {
-                        // Update navbar profile icon
-                        const navProfileImg = document.querySelector('.profile-icon-default img');
-                        const navProfileIcon = document.querySelector('.profile-icon-default');
-
-                        if (navProfileImg) {
-                            navProfileImg.src = data.profile_picture_url;
-                            navProfileImg.style.display = 'block';
-                        } else if (navProfileIcon) {
-                            // Replace default icon with image
-                            navProfileIcon.innerHTML = `<img src="${data.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                        }
-
-                        // Update all other profile images
-                        const allProfileImages = document.querySelectorAll('.profile-image, [id^="profileImage"]');
-                        allProfileImages.forEach(img => {
-                            img.src = data.profile_picture_url;
-                        });
-                    }
-
-                    // Close modal
-                    closeSettingsModal();
-
-                    // Reload page to reflect changes everywhere
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-
-                } else {
-                    alert('Error updating profile: ' + (data.errors || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                alert('An unexpected error occurred while updating your profile.');
-            })
-            .finally(() => {
-                // Re-enable button
-                if (saveButton) {
-                    saveButton.disabled = false;
-                    saveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-                }
-            });
-        });
-    }
-});
-
-// =====================================================PAYMENTS================================================
-
-window.addToCart = function(itemId, quantity, csrfToken, buttonElement = null, itemName = 'Item', action = 'add') {
-    return new Promise((resolve, reject) => {
-
-        if (typeof IS_USER_AUTHENTICATED === 'undefined' || !IS_USER_AUTHENTICATED) {
-            if (confirm("You must log in to order. Go to Login page?")) {
-                if(typeof LOGIN_REGISTER_URL !== 'undefined') {
-                    window.location.href = LOGIN_REGISTER_URL;
-                } else {
-                     console.error("LOGIN_REGISTER_URL is not defined.");
-                }
-            }
-            if (buttonElement) {
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = buttonElement.dataset.originalText || '<i class="fas fa-cart-plus"></i> Add to Cart';
-            }
-            return reject(new Error("User not authenticated."));
-        }
-
-        if (buttonElement) {
-            buttonElement.dataset.originalText = buttonElement.innerHTML;
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-        }
-
-        const data = {
-            item_id: itemId,
-            quantity: quantity,
-            action: action
-        };
-
-        if (typeof ADD_TO_CART_URL === 'undefined') {
-            console.error("ADD_TO_CART_URL is not defined.");
-            return reject(new Error("Configuration error."));
-        }
-
-        // ✅ FIXED: Use FormData for Django POST compatibility
-        const formData = new FormData();
-        formData.append('menu_item_id', itemId);
-        formData.append('quantity', quantity);
-        if (action) {
-            formData.append('action', action);
-        }
-
-        fetch(ADD_TO_CART_URL, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (response.status === 409) {
-                return response.json().then(data => {
-                    if (data.error_type === 'DIFFERENT_ESTABLISHMENT') {
-                        if (confirm(data.message)) {
-                            return window.addToCart(itemId, quantity, csrfToken, buttonElement, itemName, 'replace')
-                                .then(resolve)
-                                .catch(reject);
-                        } else {
-                            return Promise.reject(new Error("Cart operation cancelled by user."));
-                        }
-                    } else {
-                         return Promise.reject(new Error(data.message || "An error occurred."));
-                    }
-                });
-            } else if (!response.ok) {
-                return response.json().catch(() => ({ message: 'Server error occurred.' })).then(errorData => {
-                    throw new Error(errorData.message || 'Unknown network error.');
-                });
-            }
-            return response.json();
-        })
+function fetchBestsellers() {
+    fetch(URLS.bestsellers)
+        .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                if (typeof updateCartBadge === 'function') {
-                    updateCartBadge(data.cart_count);
-                }
-
-                // ✅ IMPROVED: Show success message with option to view cart
-                if (confirm(data.message + "\n\nGo to cart now?")) {
-                    if(typeof VIEW_CART_URL !== 'undefined') {
-                        window.location.href = VIEW_CART_URL;
-                    } else {
-                        alert('Added to cart successfully!');
-                    }
-                } else if (buttonElement && buttonElement.dataset.action === 'buy_now') {
-                     if(typeof VIEW_CART_URL !== 'undefined') {
-                        window.location.href = VIEW_CART_URL;
-                     } else {
-                        console.error("VIEW_CART_URL is not defined.");
-                     }
-                }
-
-                resolve();
+            if (data.success && data.bestsellers.length > 0) {
+                bsData = data.bestsellers;
+                renderBS(bsData);
             } else {
-                alert(`Failed to add item to cart: ${data.message}`);
-                reject(new Error(data.message));
+                // Show empty state
+                document.getElementById('cTrack').innerHTML =
+                    '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
+                document.getElementById('cPrev').disabled = true;
+                document.getElementById('cNext').disabled = true;
             }
         })
-        .catch(error => {
-            console.error('Add to Cart Error:', error);
-            if (error.message !== "Cart operation cancelled by user.") {
-                alert(`An error occurred: ${error.message}`);
-            }
-            reject(error);
-        })
-        .finally(() => {
-            const isRedirecting = (typeof VIEW_CART_URL !== 'undefined' && window.location.href.includes(VIEW_CART_URL)) ||
-                                  (typeof LOGIN_REGISTER_URL !== 'undefined' && window.location.href.includes(LOGIN_REGISTER_URL));
-
-            if (buttonElement && !isRedirecting) {
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = buttonElement.dataset.originalText || '<i class="fas fa-cart-plus"></i> Add to Cart';
-            }
+        .catch(() => {
+            document.getElementById('cTrack').innerHTML =
+                '<div style="padding:40px;color:#ef4444;font-size:14px;text-align:center;width:100%"><i class="fas fa-exclamation-circle"></i> Failed to load bestsellers.</div>';
         });
-    });
-};
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
 }
 
-// ==========================================
-// ✅ SCROLL TO TOP BUTTON - COMPLETE FIX
-// ==========================================
-
-(function initScrollToTop() {
-    'use strict';
-
-    let scrollBtn = null;
-    let scrollTimeout = null;
-
-    function throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
+// ============================================
+// RENDER BESTSELLER CARDS
+// ============================================
+function renderBS(data) {
+    const track = document.getElementById('cTrack');
+    if (!data || data.length === 0) {
+        track.innerHTML = '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestsellers available.</div>';
+        return;
     }
 
-    function toggleScrollButton() {
-        if (!scrollBtn) return;
+    track.innerHTML = data.map(d => {
+        const st = d.establishment.status.toLowerCase(); // "open" or "closed"
+        const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
+        return `
+        <div class="bsc" onclick="openMod(${d.id})">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
+                <span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${escHtml(d.name)}</div>
+                <div class="bsc-price">₱${parseFloat(d.price).toFixed(2)}</div>
+                <div class="bsc-stats">
+                    <span><i class="fas fa-shopping-bag"></i> ${d.total_orders} orders</span>
+                    <span><i class="fas fa-boxes"></i> ${d.quantity} left</span>
+                </div>
+                <div class="bsc-est">
+                    <div class="bsc-eico"><i class="fas fa-utensils"></i></div>
+                    <div class="bsc-einfo">
+                        <div class="bsc-ename">${escHtml(d.establishment.name)}</div>
+                        <div class="bsc-emeta">
+                            <span class="sp ${st}">${st.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();openMod(${d.id})">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+            </div>
+        </div>`;
+    }).join('');
 
-        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    cidx = 0;
+    updCar();
+    updNav();
+}
 
-        if (scrollPosition > 300) {
-            scrollBtn.classList.add('show');
-        } else {
-            scrollBtn.classList.remove('show');
-        }
-    }
+// ── Carousel helpers ──
+function cardW() {
+    const c = document.querySelector('.bsc');
+    return c ? c.offsetWidth + 20 : 238;
+}
+function maxIdx() { return Math.max(0, bsData.length - VISIBLE); }
 
-    function scrollToTop(e) {
-        e.preventDefault();
+function cScroll(d) {
+    if (isGrid) return;
+    cidx = Math.max(0, Math.min(cidx + d, maxIdx()));
+    updCar(); updNav();
+}
+function updCar() {
+    if (isGrid) return;
+    document.getElementById('cTrack').style.transform = `translateX(-${cidx * cardW()}px)`;
+}
+function updNav() {
+    document.getElementById('cPrev').disabled = cidx <= 0;
+    document.getElementById('cNext').disabled = cidx >= maxIdx();
+}
 
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    }
-
-    function init() {
-        scrollBtn = document.getElementById('scrollToTopBtn');
-
-        if (!scrollBtn) {
-            console.error('❌ Scroll to top button not found in DOM');
-            return;
-        }
-
-        console.log('✅ Scroll to top button initialized');
-
-        window.addEventListener('scroll', throttle(toggleScrollButton, 100), { passive: true });
-
-        scrollBtn.addEventListener('click', scrollToTop);
-
-        toggleScrollButton();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+// ── GRID TOGGLE ──
+function toggleGrid() {
+    isGrid = !isGrid;
+    const t = document.getElementById('cTrack');
+    const w = document.getElementById('carouselWrap');
+    const b = document.getElementById('gvBtn');
+    const ico = document.getElementById('gvIco');
+    const lbl = document.getElementById('gvLbl');
+    if (isGrid) {
+        t.classList.add('gmode'); w.classList.add('gmode');
+        b.classList.add('on'); ico.className = 'fas fa-list'; lbl.textContent = 'List View';
+        t.style.transform = 'none';
     } else {
-        init();
+        t.classList.remove('gmode'); w.classList.remove('gmode');
+        b.classList.remove('on'); ico.className = 'fas fa-th'; lbl.textContent = 'Grid View';
+        cidx = 0; updCar(); updNav();
     }
-})();/* ==========================================
-   BEST SELLERS JAVASCRIPT - FINAL VERSION
-   With login redirect for unauthenticated users
-   ========================================== */
-
-const BestSellers = {
-    items: [],
-    isLoading: false,
-    scrollContainer: null,
-    scrollPosition: 0,
-
-    init() {
-        console.log('Initializing Best Sellers...');
-        this.scrollContainer = document.getElementById('bestSellersScroll');
-
-        if (!this.scrollContainer) {
-            console.error('Best Sellers scroll container not found');
-            return;
-        }
-
-        this.setupScrollButtons();
-        this.loadBestSellers();
-
-        setInterval(() => this.loadBestSellers(), 300000);
-        setInterval(() => this.updateAllStatuses(), 60000);
-    },
-
-    setupScrollButtons() {
-        const leftBtn = document.getElementById('scrollLeftBtn');
-        const rightBtn = document.getElementById('scrollRightBtn');
-
-        if (!leftBtn || !rightBtn) {
-            console.error('Scroll buttons not found');
-            return;
-        }
-
-        leftBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
-        });
-
-        rightBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
-        });
-
-        this.scrollContainer.addEventListener('scroll', () => {
-            this.updateScrollButtons();
-        });
-
-        this.updateScrollButtons();
-    },
-
-    updateScrollButtons() {
-        const leftBtn = document.getElementById('scrollLeftBtn');
-        const rightBtn = document.getElementById('scrollRightBtn');
-
-        if (!leftBtn || !rightBtn || !this.scrollContainer) return;
-
-        const scrollLeft = this.scrollContainer.scrollLeft;
-        const maxScroll = this.scrollContainer.scrollWidth - this.scrollContainer.clientWidth;
-
-        leftBtn.disabled = scrollLeft <= 0;
-        rightBtn.disabled = scrollLeft >= maxScroll - 1;
-    },
-
-    isEstablishmentOpen(openingTime, closingTime) {
-        if (!openingTime || !closingTime) return false;
-
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-
-        const [openHour, openMin] = openingTime.split(':').map(Number);
-        const [closeHour, closeMin] = closingTime.split(':').map(Number);
-
-        const openingMinutes = openHour * 60 + openMin;
-        const closingMinutes = closeHour * 60 + closeMin;
-
-        if (openingMinutes <= closingMinutes) {
-            return currentTime >= openingMinutes && currentTime <= closingMinutes;
-        } else {
-            return currentTime >= openingMinutes || currentTime <= closingMinutes;
-        }
-    },
-
-    updateAllStatuses() {
-        document.querySelectorAll('.best-seller-card').forEach(card => {
-            const statusBadge = card.querySelector('.establishment-status');
-            if (!statusBadge) return;
-
-            const openingTime = statusBadge.dataset.openingTime;
-            const closingTime = statusBadge.dataset.closingTime;
-
-            const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
-
-            statusBadge.className = `establishment-status ${isOpen ? 'open' : 'closed'}`;
-            statusBadge.textContent = isOpen ? 'Open' : 'Closed';
-        });
-    },
-
-    async loadBestSellers() {
-        if (this.isLoading) return;
-
-        this.isLoading = true;
-        this.showLoading();
-
-        try {
-            const response = await fetch('/api/best-sellers/');
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.success && data.items && data.items.length > 0) {
-                this.items = data.items;
-                this.renderBestSellers();
-            } else {
-                this.showEmptyState();
-            }
-        } catch (error) {
-            console.error('Error loading best sellers:', error);
-            this.showError();
-        } finally {
-            this.isLoading = false;
-        }
-    },
-
-    showLoading() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading best sellers...</p>
-            </div>
-        `;
-    },
-
-    showEmptyState() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="no-best-sellers">
-                <i class="fas fa-box-open"></i>
-                <h3>No Best Sellers Yet</h3>
-                <p>Check back soon for popular items!</p>
-            </div>
-        `;
-    },
-
-    showError() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="no-best-sellers">
-                <i class="fas fa-exclamation-circle"></i>
-                <h3>Unable to Load Best Sellers</h3>
-                <p>Please try again later</p>
-            </div>
-        `;
-    },
-
-    renderBestSellers() {
-        if (!this.scrollContainer || !this.items.length) return;
-
-        this.scrollContainer.innerHTML = this.items.map(item => this.createItemCard(item)).join('');
-
-        this.attachEventListeners();
-
-        setTimeout(() => this.updateScrollButtons(), 100);
-    },
-
-    createItemCard(item) {
-        const establishment = item.establishment;
-
-        const openingTime = establishment.opening_time || '';
-        const closingTime = establishment.closing_time || '';
-
-        const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
-        const isAvailable = item.is_available && isOpen;
-
-        return `
-            <div class="best-seller-card" data-item-id="${item.id}" data-establishment-id="${establishment.id}">
-                ${item.is_top_seller ? `
-                    <div class="best-seller-badge">
-                        <i class="fas fa-star"></i>
-                        Best Seller
-                    </div>
-                ` : ''}
-
-                <img
-                    src="${item.image_url || '/static/images/placeholder-food.jpg'}"
-                    alt="${this.escapeHtml(item.name)}"
-                    class="best-seller-image"
-                    onerror="this.src='/static/images/placeholder-food.jpg'"
-                />
-
-                <div class="best-seller-content">
-                    <h3 class="best-seller-name">${this.escapeHtml(item.name)}</h3>
-                    <div class="best-seller-price">₱${item.price.toFixed(2)}</div>
-
-                    <div class="best-seller-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-shopping-bag"></i>
-                            <strong>${item.total_orders}</strong> orders
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-box"></i>
-                            <strong>${item.quantity}</strong> left
-                        </div>
-                    </div>
-
-                    <div class="best-seller-establishment">
-                        <img
-                            src="${establishment.image_url || '/static/images/placeholder-store.jpg'}"
-                            alt="${this.escapeHtml(establishment.name)}"
-                            class="establishment-logo"
-                            onerror="this.src='/static/images/placeholder-store.jpg'"
-                        />
-                        <div class="establishment-info">
-                            <div class="establishment-name">${this.escapeHtml(establishment.name)}</div>
-                            <div class="establishment-category">
-                                ${this.escapeHtml(establishment.category)} •
-                                <span class="establishment-status ${isOpen ? 'open' : 'closed'}"
-                                      data-opening-time="${openingTime}"
-                                      data-closing-time="${closingTime}">
-                                    ${isOpen ? 'Open' : 'Closed'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="best-seller-actions">
-                        <button class="view-item-btn" data-action="view">
-                            <i class="fas fa-eye"></i>
-                            View Details
-                        </button>
-                        ${isAvailable ? `
-                            <button class="add-to-cart-btn" data-action="add-to-cart" title="Add to Cart">
-                                <i class="fas fa-shopping-cart"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-
-    attachEventListeners() {
-        document.querySelectorAll('.best-seller-card .view-item-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const card = e.target.closest('.best-seller-card');
-                const establishmentId = card.dataset.establishmentId;
-                this.viewEstablishment(establishmentId);
-            });
-        });
-
-        // ✅ ADD TO CART WITH LOGIN CHECK
-        document.querySelectorAll('.best-seller-card .add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-
-                // ✅ CHECK IF USER IS AUTHENTICATED
-                const isAuthenticated = typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED;
-
-                if (!isAuthenticated) {
-                    // ✅ NOT LOGGED IN - REDIRECT TO LOGIN
-                    this.showToast('Please login to add items to cart', 'info');
-                    setTimeout(() => {
-                        window.location.href = '/accounts/login_register/';
-                    }, 1000);
-                    return;
-                }
-
-                // ✅ LOGGED IN - ADD TO CART
-                const card = e.target.closest('.best-seller-card');
-                const itemId = card.dataset.itemId;
-                const establishmentId = card.dataset.establishmentId;
-                this.addToCart(itemId, establishmentId);
-            });
-        });
-
-        document.querySelectorAll('.best-seller-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return;
-                const establishmentId = card.dataset.establishmentId;
-                this.viewEstablishment(establishmentId);
-            });
-        });
-    },
-
-    viewEstablishment(establishmentId) {
-        if (!establishmentId) return;
-        window.location.href = `/food_establishment/${establishmentId}/`;
-    },
-
-    async addToCart(itemId, establishmentId) {
-        if (!itemId || !establishmentId) return;
-
-        try {
-            const response = await fetch('/cart/add/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCsrfToken()
-                },
-                body: JSON.stringify({
-                    menu_item_id: itemId,
-                    establishment_id: establishmentId,
-                    quantity: 1
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.showToast('Item added to cart!', 'success');
-
-                if (typeof updateCartCount === 'function') {
-                    updateCartCount();
-                }
-            } else {
-                this.showToast(data.message || 'Failed to add item to cart', 'error');
-            }
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showToast('Error adding item to cart', 'error');
-        }
-    },
-
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-
-        const bgColor = type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1';
-
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: ${bgColor};
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-            font-weight: 600;
-        `;
-        toast.textContent = message;
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    },
-
-    getCsrfToken() {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('csrftoken='))
-            ?.split('=')[1];
-        return cookieValue || '';
-    },
-
-    escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
-    }
-};
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing Best Sellers...');
-    setTimeout(() => BestSellers.init(), 500);
-});
-
-window.addEventListener('load', function() {
-    if (!BestSellers.scrollContainer) {
-        console.log('Retrying Best Sellers initialization...');
-        BestSellers.init();
-    }
-});
-
-// Animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);/* ==========================================
-   🔥 AUTOMATIC BEST SELLERS SYSTEM
-   Add this to kabsueats.js
-   ========================================== */
-
-const AutomaticBestSellers = {
-    items: [],
-    isLoading: false,
-    scrollContainer: null,
-    updateInterval: null,
-    statusInterval: null,
-
-    // ✅ Initialize the system
-    init() {
-        console.log('🔥 Initializing Automatic Best Sellers System...');
-        this.scrollContainer = document.getElementById('bestSellersScroll');
-
-        if (!this.scrollContainer) {
-            console.error('❌ Best Sellers scroll container not found');
-            return;
-        }
-
-        this.setupScrollButtons();
-        this.loadBestSellers();
-
-        // ✅ Auto-refresh every 5 minutes (300000ms)
-        this.updateInterval = setInterval(() => {
-            console.log('🔄 Auto-refreshing best sellers...');
-            this.loadBestSellers();
-        }, 300000);
-
-        // ✅ Update status every minute (60000ms)
-        this.statusInterval = setInterval(() => {
-            this.updateAllStatuses();
-        }, 60000);
-
-        console.log('✅ Automatic Best Sellers initialized successfully!');
-    },
-
-    // ✅ Setup scroll buttons
-    setupScrollButtons() {
-        const leftBtn = document.getElementById('scrollLeftBtn');
-        const rightBtn = document.getElementById('scrollRightBtn');
-
-        if (!leftBtn || !rightBtn) {
-            console.error('❌ Scroll buttons not found');
-            return;
-        }
-
-        leftBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
-        });
-
-        rightBtn.addEventListener('click', () => {
-            this.scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
-        });
-
-        this.scrollContainer.addEventListener('scroll', () => {
-            this.updateScrollButtons();
-        });
-
-        this.updateScrollButtons();
-    },
-
-    // ✅ Update scroll button states
-    updateScrollButtons() {
-        const leftBtn = document.getElementById('scrollLeftBtn');
-        const rightBtn = document.getElementById('scrollRightBtn');
-
-        if (!leftBtn || !rightBtn || !this.scrollContainer) return;
-
-        const scrollLeft = this.scrollContainer.scrollLeft;
-        const maxScroll = this.scrollContainer.scrollWidth - this.scrollContainer.clientWidth;
-
-        leftBtn.disabled = scrollLeft <= 0;
-        rightBtn.disabled = scrollLeft >= maxScroll - 1;
-    },
-
-    // ✅ Check if establishment is open based on current time
-    isEstablishmentOpen(openingTime, closingTime) {
-        if (!openingTime || !closingTime) return false;
-
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-
-        const [openHour, openMin] = openingTime.split(':').map(Number);
-        const [closeHour, closeMin] = closingTime.split(':').map(Number);
-
-        const openingMinutes = openHour * 60 + openMin;
-        const closingMinutes = closeHour * 60 + closeMin;
-
-        if (openingMinutes <= closingMinutes) {
-            // Normal hours (e.g., 8:00 AM - 10:00 PM)
-            return currentTime >= openingMinutes && currentTime <= closingMinutes;
-        } else {
-            // Overnight hours (e.g., 10:00 PM - 2:00 AM)
-            return currentTime >= openingMinutes || currentTime <= closingMinutes;
-        }
-    },
-
-    // ✅ Update all status badges in real-time
-    updateAllStatuses() {
-        document.querySelectorAll('.best-seller-card').forEach(card => {
-            const statusBadge = card.querySelector('.establishment-status');
-            if (!statusBadge) return;
-
-            const openingTime = statusBadge.dataset.openingTime;
-            const closingTime = statusBadge.dataset.closingTime;
-
-            const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
-
-            statusBadge.className = `establishment-status ${isOpen ? 'open' : 'closed'}`;
-            statusBadge.textContent = isOpen ? 'Open' : 'Closed';
-        });
-    },
-
-    // ✅ Load best sellers from API
-    async loadBestSellers() {
-        if (this.isLoading) return;
-
-        this.isLoading = true;
-        this.showLoading();
-
-        try {
-            const response = await fetch('/api/best-sellers/');
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.success && data.items && data.items.length > 0) {
-                console.log(`✅ Loaded ${data.items.length} best sellers`);
-                this.items = data.items;
-                this.renderBestSellers();
-            } else {
-                console.log('ℹ️ No best sellers found');
-                this.showEmptyState();
-            }
-        } catch (error) {
-            console.error('❌ Error loading best sellers:', error);
-            this.showError();
-        } finally {
-            this.isLoading = false;
-        }
-    },
-
-    // ✅ Show loading state
-    showLoading() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading best sellers...</p>
-            </div>
-        `;
-    },
-
-    // ✅ Show empty state
-    showEmptyState() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="no-best-sellers">
-                <i class="fas fa-box-open"></i>
-                <h3>No Best Sellers Yet</h3>
-                <p>Check back soon for popular items!</p>
-            </div>
-        `;
-    },
-
-    // ✅ Show error state
-    showError() {
-        if (!this.scrollContainer) return;
-
-        this.scrollContainer.innerHTML = `
-            <div class="no-best-sellers">
-                <i class="fas fa-exclamation-circle"></i>
-                <h3>Unable to Load Best Sellers</h3>
-                <p>Please try again later</p>
-            </div>
-        `;
-    },
-
-    // ✅ Render best sellers
-    renderBestSellers() {
-        if (!this.scrollContainer || !this.items.length) return;
-
-        this.scrollContainer.innerHTML = this.items.map(item => this.createItemCard(item)).join('');
-
-        this.attachEventListeners();
-
-        setTimeout(() => this.updateScrollButtons(), 100);
-    },
-
-    // ✅ Create individual item card
-    createItemCard(item) {
-        const establishment = item.establishment;
-
-        const openingTime = establishment.opening_time || '';
-        const closingTime = establishment.closing_time || '';
-
-        const isOpen = this.isEstablishmentOpen(openingTime, closingTime);
-        const isAvailable = item.is_available && isOpen;
-
-        return `
-            <div class="best-seller-card" data-item-id="${item.id}" data-establishment-id="${establishment.id}">
-                ${item.is_top_seller ? `
-                    <div class="best-seller-badge">
-                        <i class="fas fa-star"></i>
-                        Best Seller
-                    </div>
-                ` : ''}
-
-                <img
-                    src="${item.image_url || '/static/images/placeholder-food.jpg'}"
-                    alt="${this.escapeHtml(item.name)}"
-                    class="best-seller-image"
-                    onerror="this.src='/static/images/placeholder-food.jpg'"
-                />
-
-                <div class="best-seller-content">
-                    <h3 class="best-seller-name">${this.escapeHtml(item.name)}</h3>
-                    <div class="best-seller-price">₱${item.price.toFixed(2)}</div>
-
-                    <div class="best-seller-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-shopping-bag"></i>
-                            <strong>${item.total_orders}</strong> orders
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-box"></i>
-                            <strong>${item.quantity}</strong> left
-                        </div>
-                    </div>
-
-                    <div class="best-seller-establishment">
-                        <img
-                            src="${establishment.image_url || '/static/images/placeholder-store.jpg'}"
-                            alt="${this.escapeHtml(establishment.name)}"
-                            class="establishment-logo"
-                            onerror="this.src='/static/images/placeholder-store.jpg'"
-                        />
-                        <div class="establishment-info">
-                            <div class="establishment-name">${this.escapeHtml(establishment.name)}</div>
-                            <div class="establishment-category">
-                                ${this.escapeHtml(establishment.category)} •
-                                <span class="establishment-status ${isOpen ? 'open' : 'closed'}"
-                                      data-opening-time="${openingTime}"
-                                      data-closing-time="${closingTime}">
-                                    ${isOpen ? 'Open' : 'Closed'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="best-seller-actions">
-                        <button class="view-item-btn" data-action="view">
-                            <i class="fas fa-eye"></i>
-                            View Details
-                        </button>
-                        ${isAvailable ? `
-                            <button class="add-to-cart-btn" data-action="add-to-cart" title="Add to Cart">
-                                <i class="fas fa-shopping-cart"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-
-    // ✅ Attach event listeners
-    attachEventListeners() {
-        // View details buttons
-        document.querySelectorAll('.best-seller-card .view-item-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const card = e.target.closest('.best-seller-card');
-                const establishmentId = card.dataset.establishmentId;
-                this.viewEstablishment(establishmentId);
-            });
-        });
-
-        // Add to cart buttons with authentication check
-        document.querySelectorAll('.best-seller-card .add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-
-                // Check if user is authenticated
-                const isAuthenticated = typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED;
-
-                if (!isAuthenticated) {
-                    this.showToast('Please login to add items to cart', 'info');
-                    setTimeout(() => {
-                        window.location.href = '/accounts/login_register/';
-                    }, 1000);
-                    return;
-                }
-
-                const card = e.target.closest('.best-seller-card');
-                const itemId = card.dataset.itemId;
-                const establishmentId = card.dataset.establishmentId;
-                this.addToCart(itemId, establishmentId);
-            });
-        });
-
-        // Card click - view establishment
-        document.querySelectorAll('.best-seller-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return;
-                const establishmentId = card.dataset.establishmentId;
-                this.viewEstablishment(establishmentId);
-            });
-        });
-    },
-
-    // ✅ Navigate to establishment details
-    viewEstablishment(establishmentId) {
-        if (!establishmentId) return;
-        window.location.href = `/food_establishment/${establishmentId}/`;
-    },
-
-    // ✅ Add item to cart - FIXED WITH BETTER ERROR HANDLING
-    async addToCart(itemId, establishmentId) {
-        if (!itemId || !establishmentId) {
-            console.error('❌ Missing itemId or establishmentId');
-            this.showToast('Invalid item or quantity.', 'error');
-            return;
-        }
-
-        console.log('🛒 Adding to cart:', { itemId, establishmentId });
-
-        try {
-            const response = await fetch('/cart/add/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCsrfToken()
-                },
-                body: JSON.stringify({
-                    menu_item_id: itemId,
-                    establishment_id: establishmentId,
-                    quantity: 1
-                })
-            });
-
-            const data = await response.json();
-            console.log('✅ Cart response:', data);
-
-            if (response.ok && data.success) {
-                this.showToast('Item added to cart!', 'success');
-
-                // Update cart count in navbar
-                if (typeof updateCartCount === 'function') {
-                    updateCartCount();
-                } else if (data.cart_count !== undefined) {
-                    // Fallback: update cart badge directly
-                    const cartBadge = document.querySelector('.cart-badge');
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count;
-                        cartBadge.classList.add('show');
-                    }
-                }
-            } else {
-                this.showToast(data.message || 'Failed to add item to cart', 'error');
-            }
-        } catch (error) {
-            console.error('❌ Error adding to cart:', error);
-            this.showToast('Error adding item to cart. Please try again.', 'error');
-        }
-    },
-
-    // ✅ Show toast notification
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-
-        const bgColor = type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1';
-
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: ${bgColor};
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-            font-weight: 600;
-        `;
-        toast.textContent = message;
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    },
-
-    // ✅ Get CSRF token
-    getCsrfToken() {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('csrftoken='))
-            ?.split('=')[1];
-        return cookieValue || '';
-    },
-
-    // ✅ Escape HTML to prevent XSS
-    escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
-    },
-
-    // ✅ Cleanup on page unload
-    destroy() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
-        if (this.statusInterval) {
-            clearInterval(this.statusInterval);
-        }
-    }
-};
-
-// ✅ Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM loaded, initializing Automatic Best Sellers...');
-    setTimeout(() => AutomaticBestSellers.init(), 500);
-});
-
-// ✅ Backup initialization
-window.addEventListener('load', function() {
-    if (!AutomaticBestSellers.scrollContainer) {
-        console.log('🔄 Retrying Automatic Best Sellers initialization...');
-        AutomaticBestSellers.init();
-    }
-});
-
-// ✅ Cleanup on page unload
-window.addEventListener('beforeunload', function() {
-    AutomaticBestSellers.destroy();
-});
-
-// ✅ Add required CSS animations
-const bestSellersStyle = document.createElement('style');
-bestSellersStyle.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(bestSellersStyle);
-// ============================================
-// ✅ LAYOUT TOGGLE FUNCTIONALITY FOR BEST SELLERS
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit for other initializations
-    setTimeout(function() {
-        const layoutSettingsBtn = document.getElementById('layoutSettingsBtn');
-        const bestSellersContainer = document.getElementById('bestSellersContainer');
-        const bestSellersScroll = document.getElementById('bestSellersScroll');
-
-        if (!layoutSettingsBtn || !bestSellersContainer || !bestSellersScroll) {
-            console.log('⚠️ Layout toggle elements not found');
-            return;
-        }
-
-        // Get saved layout preference from localStorage
-        let isGridLayout = localStorage.getItem('bestSellersLayout') === 'grid';
-
-        // Apply initial layout
-        if (isGridLayout) {
-            applyGridLayout();
-        }
-
-        // Layout toggle button click handler
-        layoutSettingsBtn.addEventListener('click', function() {
-            isGridLayout = !isGridLayout;
-
-            if (isGridLayout) {
-                applyGridLayout();
-            } else {
-                applyScrollLayout();
-            }
-
-            // Save preference to localStorage
-            localStorage.setItem('bestSellersLayout', isGridLayout ? 'grid' : 'scroll');
-
-            console.log(`📐 Layout switched to: ${isGridLayout ? 'Grid (5 columns)' : 'Scroll'}`);
-        });
-
-        function applyGridLayout() {
-            // Add grid classes
-            bestSellersScroll.classList.add('grid-layout');
-            bestSellersContainer.classList.add('grid-mode');
-
-            // Update button text and icon
-            layoutSettingsBtn.innerHTML = '<i class="fas fa-grip-lines"></i><span>Scroll View</span>';
-            layoutSettingsBtn.title = 'Switch to Scroll View';
-
-            // Disable scroll buttons
-            const scrollButtons = bestSellersContainer.querySelectorAll('.scroll-btn');
-            scrollButtons.forEach(btn => {
-                btn.style.display = 'none';
-            });
-
-            console.log('✅ Grid layout (5 columns) applied');
-        }
-
-        function applyScrollLayout() {
-            // Remove grid classes
-            bestSellersScroll.classList.remove('grid-layout');
-            bestSellersContainer.classList.remove('grid-mode');
-
-            // Update button text and icon
-            layoutSettingsBtn.innerHTML = '<i class="fas fa-th"></i><span>Grid View</span>';
-            layoutSettingsBtn.title = 'Switch to Grid View';
-
-            // Enable scroll buttons
-            const scrollButtons = bestSellersContainer.querySelectorAll('.scroll-btn');
-            scrollButtons.forEach(btn => {
-                btn.style.display = 'flex';
-            });
-
-            console.log('✅ Scroll layout applied');
-        }
-
-        // Re-apply layout when best sellers are updated
-        const originalRender = window.AutomaticBestSellers?.renderBestSellers;
-        if (originalRender && typeof originalRender === 'function') {
-            window.AutomaticBestSellers.renderBestSellers = function() {
-                originalRender.call(window.AutomaticBestSellers);
-
-                // Reapply layout after rendering
-                setTimeout(() => {
-                    if (isGridLayout) {
-                        applyGridLayout();
-                    } else {
-                        applyScrollLayout();
-                    }
-                }, 150);
-            };
-        }
-
-        // Observer to maintain layout when content changes
-        const bestSellersObserver = new MutationObserver(function(mutations) {
-            const isGridMode = bestSellersContainer?.classList.contains('grid-mode');
-
-            if (isGridMode && bestSellersScroll && !bestSellersScroll.classList.contains('grid-layout')) {
-                bestSellersScroll.classList.add('grid-layout');
-                console.log('🔄 Reapplied grid layout after content change');
-            }
-        });
-
-        // Start observing
-        if (bestSellersScroll) {
-            bestSellersObserver.observe(bestSellersScroll, {
-                childList: true,
-                subtree: false
-            });
-        }
-
-        console.log('🎨 Layout toggle functionality initialized');
-
-        // Apply initial layout based on saved preference
-        if (isGridLayout) {
-            setTimeout(() => applyGridLayout(), 500);
-        }
-    }, 300);
-});
-// ============================================
-// HERO SEARCH BAR FUNCTIONALITY
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    initializeHeroSearch();
-});
-
-function initializeHeroSearch() {
-    const heroSearchInput = document.getElementById('heroSearchInput');
-    const heroSearchClear = document.getElementById('heroSearchClear');
-    const heroSearchDropdown = document.getElementById('heroSearchDropdown');
-    const heroSearchResults = document.getElementById('heroSearchResults');
-
-    if (!heroSearchInput || !heroSearchDropdown || !heroSearchResults) {
-        return;
-    }
-
-    let searchTimeout;
-    let allEstablishments = [];
-    let allMenuItems = [];
-
-    function gatherEstablishmentsData() {
-        const establishments = document.querySelectorAll('.food-establishment-item');
-        allEstablishments = [];
-
-        establishments.forEach(est => {
-            const name = est.dataset.name || '';
-            const id = est.dataset.id || '';
-            const category = est.dataset.category || '';
-            const status = est.dataset.status || '';
-            const rating = est.dataset.rating || '0';
-
-            if (name) {
-                allEstablishments.push({
-                    id: id,
-                    name: name,
-                    category: category,
-                    status: status,
-                    rating: parseFloat(rating),
-                    element: est
-                });
-            }
-        });
-    }
-
-    function gatherMenuItemsData() {
-        allMenuItems = [];
-        if (typeof window.menuItemsData !== 'undefined') {
-            allMenuItems = window.menuItemsData;
-        }
-    }
-
-    function performHeroSearch(query) {
-        if (!query || query.length < 1) {
-            heroSearchDropdown.classList.remove('active');
-            heroSearchClear.classList.remove('active');
-            return;
-        }
-
-        heroSearchClear.classList.add('active');
-        const lowerQuery = query.toLowerCase().trim();
-
-        const matchedEstablishments = allEstablishments.filter(est =>
-            est.name.toLowerCase().includes(lowerQuery) ||
-            est.category.toLowerCase().includes(lowerQuery)
-        ).slice(0, 5);
-
-        const matchedMenuItems = allMenuItems.filter(item =>
-            item.name.toLowerCase().includes(lowerQuery) ||
-            (item.description && item.description.toLowerCase().includes(lowerQuery))
-        ).slice(0, 5);
-
-        renderHeroSearchResults(matchedEstablishments, matchedMenuItems, lowerQuery);
-    }
-
-    function highlightMatch(text, query) {
-        const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-        return text.replace(regex, '<span style="background: #fef3c7; font-weight: 600;">$1</span>');
-    }
-
-    function escapeRegex(str) {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    function renderHeroSearchResults(establishments, menuItems, query) {
-        let html = '';
-
-        if (establishments.length > 0) {
-            html += `<div class="search-dropdown-section">
-                <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
-
-            establishments.forEach(est => {
-                const statusColor = est.status === 'open' ? '#10b981' : '#ef4444';
-                const statusText = est.status === 'open' ? 'Open' : 'Closed';
-                html += `
-                    <div class="search-dropdown-item" onclick="goToEstablishment('${est.id}')">
-                        <div class="search-dropdown-item-icon"><i class="fas fa-store"></i></div>
-                        <div class="search-dropdown-item-content">
-                            <div class="search-dropdown-item-name">${highlightMatch(est.name, query)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span style="color: ${statusColor}; font-weight: 600;">●</span>
-                                <span>${statusText}</span>
-                                <span>•</span>
-                                <span><i class="fas fa-star" style="color: #fbbf24;"></i> ${est.rating.toFixed(1)}</span>
-                                <span>•</span>
-                                <span style="text-transform: capitalize;">${est.category}</span>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            html += `</div>`;
-        }
-
-        if (menuItems.length > 0) {
-            if (establishments.length > 0) html += `<div class="search-dropdown-divider"></div>`;
-            html += `<div class="search-dropdown-section">
-                <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
-
-            menuItems.forEach(item => {
-                html += `
-                    <div class="search-dropdown-item" onclick="goToMenuItem('${item.establishment_id}', '${item.id}')">
-                        <div class="search-dropdown-item-icon"><i class="fas fa-utensils"></i></div>
-                        <div class="search-dropdown-item-content">
-                            <div class="search-dropdown-item-name">${highlightMatch(item.name, query)}</div>
-                            <div class="search-dropdown-item-meta">
-                                <span>₱${parseFloat(item.price).toFixed(2)}</span>
-                                <span>•</span>
-                                <span>${item.establishment_name || 'Unknown'}</span>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            html += `</div>`;
-        }
-
-        if (establishments.length === 0 && menuItems.length === 0) {
-            html = `<div class="search-dropdown-no-results">
-                <i class="fas fa-search"></i>
-                <p style="margin: 8px 0 0 0;">No results found for "<strong>${query}</strong>"</p>
-                <p style="font-size: 11px; margin-top: 4px;">Try searching with different keywords</p>
-            </div>`;
-        }
-
-        heroSearchResults.innerHTML = html;
-        heroSearchDropdown.classList.add('active');
-    }
-
-    heroSearchInput.addEventListener('input', function(e) {
-        clearTimeout(searchTimeout);
-        const query = e.target.value.trim();
-        searchTimeout = setTimeout(() => {
-            gatherEstablishmentsData();
-            gatherMenuItemsData();
-            performHeroSearch(query);
-        }, 300);
-    });
-
-    heroSearchClear.addEventListener('click', function() {
-        heroSearchInput.value = '';
-        heroSearchDropdown.classList.remove('active');
-        heroSearchClear.classList.remove('active');
-        heroSearchInput.focus();
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!heroSearchInput.contains(e.target) && !heroSearchDropdown.contains(e.target)) {
-            heroSearchDropdown.classList.remove('active');
-        }
-    });
-
-    heroSearchInput.addEventListener('focus', function() {
-        if (heroSearchInput.value.trim().length > 0) {
-            heroSearchDropdown.classList.add('active');
-        }
-    });
-
-    heroSearchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const firstItem = document.querySelector('.hero-search-dropdown .search-dropdown-item');
-            if (firstItem) firstItem.click();
-        }
-    });
-
-    gatherEstablishmentsData();
-    gatherMenuItemsData();
 }
 
-function goToEstablishment(establishmentId) {
-    window.location.href = `/food_establishment/${establishmentId}/`;
+// ============================================
+// VIEW SWITCHER: BESTSELLERS ↔ MAP
+// ============================================
+function toggleDD() {
+    document.getElementById('ddPanel').classList.toggle('show');
+    document.getElementById('ddBtn').classList.toggle('open');
+}
+function closeDD() {
+    document.getElementById('ddPanel').classList.remove('show');
+    document.getElementById('ddBtn').classList.remove('open');
 }
 
-function goToMenuItem(establishmentId, menuItemId) {
-    window.location.href = `/food_establishment/${establishmentId}/#menu-item-${menuItemId}`;
-}// ============================================
-// ✅ BESTSELLERS FUNCTIONALITY
-// Add this to your kabsueats.js file
-// ============================================
+function setView(v) {
+    closeDD();
+    const cw = document.getElementById('carouselWrap');
+    const ms = document.getElementById('mapSection');
+    const gv = document.getElementById('gvBtn');
+    const db = document.getElementById('ddBtn');
+    const dl = document.getElementById('ddLabel');
+    const dbs = document.getElementById('ddBS');
+    const dmap = document.getElementById('ddMap');
 
-// Global variables for bestsellers
-let bestsellersData = [];
-let currentBestsellerItem = null;
-let currentCarouselIndex = 0;
-
-// ============================================
-// Initialize Bestsellers on Page Load
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    loadBestsellers();
-    initializeCarouselControls();
-    initializeBestsellersMenuButton();
-});
-
-// ============================================
-// Load Bestsellers from API
-// ============================================
-function loadBestsellers() {
-    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
-
-    if (!carouselTrack) {
-        console.error('Bestsellers carousel track not found');
-        return;
+    if (v === 'bs') {
+        cw.style.display = '';
+        ms.classList.remove('on');
+        gv.style.display = 'flex';
+        dbs.classList.add('sel'); dmap.classList.remove('sel');
+        dl.textContent = 'Best Sellers';
+        db.classList.remove('mapmode');
+        db.querySelector('i').className = 'fas fa-trophy';
+    } else {
+        cw.style.display = 'none';
+        ms.classList.add('on');
+        gv.style.display = 'none';
+        dbs.classList.remove('sel'); dmap.classList.add('sel');
+        dl.textContent = 'View Map';
+        db.classList.add('mapmode');
+        db.querySelector('i').className = 'fas fa-map';
+        if (!mapReady) { initMap(); mapReady = true; }
+        else setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
     }
+    curView = v;
+}
 
-    // Show loading skeleton
-    showLoadingSkeleton();
+// ============================================
+// LEAFLET MAP — uses /api/establishment/nearby/
+// ============================================
+const TILES = {
+    street: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
+    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opt: { attribution: 'Tiles &copy; Esri', maxZoom: 19 } },
+    topo: { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
+    dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
+};
 
-    // Fetch bestsellers from API
-    fetch('/api/bestsellers/')
-        .then(response => response.json())
+function initMap() {
+    setTimeout(() => {
+        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16 });
+        curTile = L.tileLayer(TILES.street.url, TILES.street.opt).addTo(mapInst);
+
+        // 500m radius circle
+        L.circle([CVSU.lat, CVSU.lng], {
+            color: '#B71C1C', fillColor: 'rgba(183,28,28,0.08)',
+            fillOpacity: 0.35, weight: 2, radius: RADIUS, dashArray: '6 4'
+        }).addTo(mapInst);
+
+        // CvSU center marker
+        const cvIco = L.divIcon({
+            html: `<div style="background:#B71C1C;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(183,28,28,.5);border:3px solid #fff"><i class="fas fa-university"></i></div>`,
+            className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+        });
+        L.marker([CVSU.lat, CVSU.lng], { icon: cvIco }).addTo(mapInst)
+            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;">📍 CvSU-Bacoor (Center)</div>');
+
+        mkLayer = L.layerGroup().addTo(mapInst);
+
+        // Load establishments from backend
+        fetchMapEstablishments();
+        mapInst.invalidateSize();
+    }, 150);
+}
+
+function fetchMapEstablishments() {
+    const url = `${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=${RADIUS}`;
+    fetch(url)
+        .then(r => r.json())
         .then(data => {
-            if (data.success && data.bestsellers && data.bestsellers.length > 0) {
-                bestsellersData = data.bestsellers;
-                renderBestsellers(data.bestsellers);
-            } else {
-                showNoBestsellers();
+            if (data.success && data.establishments.length > 0) {
+                esMapData = data.establishments;
+                renderMarkers(esMapData);
             }
         })
-        .catch(error => {
-            console.error('Error loading bestsellers:', error);
-            showErrorMessage();
+        .catch(() => {});
+}
+
+function renderMarkers(data) {
+    if (!mkLayer) return;
+    mkLayer.clearLayers();
+    data.forEach(e => {
+        // get_nearby_establishments does NOT return status - default to showing marker
+        const st = (e.status || e.calculated_status || '').toLowerCase();
+        const bg = st === 'open' ? '#10b981' : st === 'closed' ? '#ef4444' : '#6b7280';
+        const ico = L.divIcon({
+            html: `<div style="background:${bg};color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><i class="fas fa-utensils"></i></div>`,
+            className: '', iconSize: [30, 30], iconAnchor: [15, 15]
         });
-}
-
-// ============================================
-// Render Bestsellers Cards
-// ============================================
-function renderBestsellers(items) {
-    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
-
-    if (!carouselTrack) return;
-
-    // Clear existing content
-    carouselTrack.innerHTML = '';
-
-    // Render each bestseller card
-    items.forEach((item, index) => {
-        const card = createBestsellerCard(item, index);
-        carouselTrack.appendChild(card);
-    });
-
-    // Update carousel controls
-    updateCarouselControls();
-}
-
-// ============================================
-// Create Bestseller Card Element
-// ============================================
-function createBestsellerCard(item, index) {
-    const card = document.createElement('div');
-    card.className = 'bestseller-card';
-    card.setAttribute('data-index', index);
-    card.setAttribute('data-item-id', item.id);
-
-    // Status class
-    const statusClass = item.establishment.status.toLowerCase() === 'open' ? 'open' : 'closed';
-
-    // Default image if none provided
-    const imageUrl = item.image || '/static/images/default-food.jpg';
-
-    card.innerHTML = `
-        <div class="bestseller-card-image">
-            <img src="${imageUrl}" alt="${item.name}"
-                 onerror="this.src='/static/images/default-food.jpg'">
-            <span class="bestseller-badge">
-                <i class="fas fa-fire"></i> Best Seller
-            </span>
-        </div>
-        <div class="bestseller-card-content">
-            <h3 class="bestseller-card-name">${item.name}</h3>
-            <div class="bestseller-card-price">₱${parseFloat(item.price).toFixed(2)}</div>
-            <div class="bestseller-card-info">
-                <span class="bestseller-card-stock">
-                    <i class="fas fa-box"></i> ${item.quantity} Items
-                </span>
-                <span class="bestseller-card-orders">
-                    <i class="fas fa-shopping-bag"></i> ${item.total_orders || 0} orders
-                </span>
-            </div>
-            <div class="bestseller-card-establishment">
-                <div class="establishment-name">
-                    <i class="fas fa-store"></i>
-                    ${item.establishment.name}
-                </div>
-                <div class="establishment-address">
-                    <i class="fas fa-map-marker-alt"></i>
-                    ${item.establishment.address.substring(0, 50)}${item.establishment.address.length > 50 ? '...' : ''}
-                </div>
-                <div class="establishment-status ${statusClass}">
-                    <i class="fas fa-circle"></i>
-                    <span>${item.establishment.status}</span>
-                </div>
-            </div>
-            <button class="bestseller-card-button" onclick="openBestsellerModal(${index})">
+        const dist = e.distance < 1000 ? `${Math.round(e.distance)}m` : `${(e.distance/1000).toFixed(2)}km`;
+        const statusHtml = st ? `<span class="mpop-st ${st}"><i class="fas fa-circle" style="font-size:7px"></i> ${cap(st)}</span><br>` : '';
+        const popup = `<div class="mpop">
+            <div class="mpop-name">${escHtml(e.name)}</div>
+            <div class="mpop-cat">${escHtml(e.address || '')}</div>
+            ${statusHtml}
+            <div class="mpop-dist"><i class="fas fa-route"></i> ${dist} from CvSU-Bacoor</div>
+            <button class="mpop-btn" onclick="window.location.href='${URLS.estDetail}${e.id}/'">
                 <i class="fas fa-eye"></i> View Details
             </button>
-        </div>
-    `;
+        </div>`;
+        L.marker([parseFloat(e.latitude), parseFloat(e.longitude)], { icon: ico })
+            .addTo(mkLayer)
+            .bindPopup(popup, { maxWidth: 220 });
+    });
+}
 
-    return card;
+function switchTile(t) {
+    if (!mapInst) return;
+    document.querySelectorAll('.mtb').forEach(b => b.classList.remove('on'));
+    document.getElementById('mts-' + t).classList.add('on');
+    if (curTile) mapInst.removeLayer(curTile);
+    curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
 }
 
 // ============================================
-// Loading Skeleton
+// CATEGORY FILTER — filters DOM elements
 // ============================================
-function showLoadingSkeleton() {
-    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
-    if (!carouselTrack) return;
-
-    carouselTrack.innerHTML = `
-        <div class="bestseller-card-skeleton">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-badge"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-            <div class="skeleton-button"></div>
-        </div>
-        <div class="bestseller-card-skeleton">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-badge"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-            <div class="skeleton-button"></div>
-        </div>
-        <div class="bestseller-card-skeleton">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-badge"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-            <div class="skeleton-button"></div>
-        </div>
-    `;
+function applyFilter() {
+    const val = document.getElementById('catFilt').value.toLowerCase();
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const cat = (el.dataset.category || '').toLowerCase();
+        el.style.display = (!val || cat.includes(val)) ? '' : 'none';
+    });
 }
 
 // ============================================
-// No Bestsellers Message
+// BESTSELLER MODAL — opens with backend data
 // ============================================
-function showNoBestsellers() {
-    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
-    if (!carouselTrack) return;
-
-    carouselTrack.innerHTML = `
-        <div style="text-align: center; padding: 40px; width: 100%; color: #6b7280;">
-            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-            <p style="font-size: 16px; font-weight: 600;">No bestsellers available at the moment</p>
-            <p style="font-size: 14px;">Check back later for top-rated items!</p>
-        </div>
-    `;
-}
-
-// ============================================
-// Error Message
-// ============================================
-function showErrorMessage() {
-    const carouselTrack = document.getElementById('bestsellersCarouselTrack');
-    if (!carouselTrack) return;
-
-    carouselTrack.innerHTML = `
-        <div style="text-align: center; padding: 40px; width: 100%; color: #ef4444;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
-            <p style="font-size: 16px; font-weight: 600;">Failed to load bestsellers</p>
-            <p style="font-size: 14px;">Please try refreshing the page</p>
-            <button onclick="loadBestsellers()" style="margin-top: 15px; padding: 10px 20px; background: #B71C1C; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                <i class="fas fa-redo"></i> Retry
-            </button>
-        </div>
-    `;
-}
-
-// ============================================
-// Carousel Controls
-// ============================================
-function initializeCarouselControls() {
-    const prevBtn = document.getElementById('carouselPrev');
-    const nextBtn = document.getElementById('carouselNext');
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => moveCarousel(-1));
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => moveCarousel(1));
-    }
-}
-
-function moveCarousel(direction) {
-    const track = document.getElementById('bestsellersCarouselTrack');
-    if (!track) return;
-
-    const cards = track.querySelectorAll('.bestseller-card');
-    const visibleCards = getVisibleCardsCount();
-    const maxIndex = Math.max(0, cards.length - visibleCards);
-
-    currentCarouselIndex = Math.max(0, Math.min(currentCarouselIndex + direction, maxIndex));
-
-    const cardWidth = 280; // min-width of card
-    const gap = 20; // gap between cards
-    const offset = -(currentCarouselIndex * (cardWidth + gap));
-
-    track.style.transform = `translateX(${offset}px)`;
-
-    updateCarouselControls();
-}
-
-function getVisibleCardsCount() {
-    const containerWidth = document.querySelector('.bestsellers-carousel-container')?.offsetWidth || 1200;
-    const cardWidth = 280;
-    const gap = 20;
-    return Math.floor(containerWidth / (cardWidth + gap));
-}
-
-function updateCarouselControls() {
-    const prevBtn = document.getElementById('carouselPrev');
-    const nextBtn = document.getElementById('carouselNext');
-    const track = document.getElementById('bestsellersCarouselTrack');
-
-    if (!prevBtn || !nextBtn || !track) return;
-
-    const cards = track.querySelectorAll('.bestseller-card');
-    const visibleCards = getVisibleCardsCount();
-    const maxIndex = Math.max(0, cards.length - visibleCards);
-
-    prevBtn.disabled = currentCarouselIndex === 0;
-    nextBtn.disabled = currentCarouselIndex >= maxIndex || cards.length <= visibleCards;
-}
-
-// ============================================
-// Bestsellers Menu Button
-// ============================================
-function initializeBestsellersMenuButton() {
-    const menuBtn = document.getElementById('bestsellersMenuBtn');
-
-    if (menuBtn) {
-        menuBtn.addEventListener('click', () => {
-            if (bestsellersData.length > 0) {
-                openBestsellerModal(0);
-            }
-        });
-    }
-}
-
-// ============================================
-// Open Bestseller Modal
-// ============================================
-function openBestsellerModal(index) {
-    if (!bestsellersData[index]) {
-        console.error('Invalid bestseller index:', index);
-        return;
-    }
-
-    currentBestsellerItem = bestsellersData[index];
-
-    const modal = document.getElementById('bestsellerModal');
-    if (!modal) return;
-
-    // Populate modal with item data
-    const item = currentBestsellerItem;
-    const establishment = item.establishment;
-
-    // Set image
-    const modalImage = document.getElementById('modalItemImage');
-    if (modalImage) {
-        modalImage.src = item.image || '/static/images/default-food.jpg';
-        modalImage.alt = item.name;
-    }
-
-    // Set item details
-    document.getElementById('modalItemName').textContent = item.name;
-    document.getElementById('modalItemDescription').textContent = item.description || 'No description available';
-    document.getElementById('modalItemPrice').textContent = `₱${parseFloat(item.price).toFixed(2)}`;
-    document.getElementById('modalItemStock').innerHTML = `<i class="fas fa-box"></i> ${item.quantity} Items`;
-
-    // Set establishment details
-    document.getElementById('modalEstablishmentName').textContent = establishment.name;
-    document.getElementById('modalEstablishmentAddress').textContent = establishment.address;
-
-    // Set establishment status
-    const statusElement = document.getElementById('modalEstablishmentStatus');
-    const statusClass = establishment.status.toLowerCase() === 'open' ? 'open' : 'closed';
-    statusElement.className = `establishment-status ${statusClass}`;
-    statusElement.innerHTML = `
-        <i class="fas fa-circle"></i>
-        <span>${establishment.status}</span>
-    `;
-
-    // Reset quantity
-    document.getElementById('modalQuantity').value = 1;
-
-    // Show modal
-    modal.classList.add('active');
+function openMod(id) {
+    const d = bsData.find(x => x.id === id);
+    if (!d) return;
+    currentModalItem = d;
+    const imgSrc = d.image || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(d.name);
+    document.getElementById('mImg').src = imgSrc;
+    document.getElementById('mName').textContent = d.name;
+    document.getElementById('mDesc').textContent = d.description || '';
+    document.getElementById('mPrice').textContent = `₱${parseFloat(d.price).toFixed(2)}`;
+    document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity} Items`;
+    document.getElementById('mEstN').textContent = d.establishment.name;
+    document.getElementById('mEstA').textContent = d.establishment.address || '';
+    const st = (d.establishment.status || 'closed').toLowerCase();
+    const stEl = document.getElementById('mEstS');
+    stEl.className = `mests ${st}`;
+    stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
+    document.getElementById('mqty').value = 1;
+    document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 }
 
-// ============================================
-// Close Bestseller Modal
-// ============================================
-function closeBestsellerModal() {
-    const modal = document.getElementById('bestsellerModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    currentBestsellerItem = null;
+function closeMod() {
+    document.getElementById('bsMod').classList.remove('on');
+    document.body.style.overflow = '';
+    currentModalItem = null;
+}
+
+function chgQ(d) {
+    const e = document.getElementById('mqty');
+    const max = currentModalItem ? currentModalItem.quantity : 99;
+    e.value = Math.max(1, Math.min(parseInt(e.value) + d, max));
 }
 
 // ============================================
-// Quantity Controls
+// ADD TO CART — POST to /cart/add/
 // ============================================
-function increaseQuantity() {
-    const quantityInput = document.getElementById('modalQuantity');
-    if (!quantityInput || !currentBestsellerItem) return;
+function addToCartFromModal() {
+    if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
+    if (!currentModalItem) return;
+    const qty = parseInt(document.getElementById('mqty').value) || 1;
 
-    const currentQty = parseInt(quantityInput.value);
-    const maxQty = currentBestsellerItem.quantity;
-
-    if (currentQty < maxQty) {
-        quantityInput.value = currentQty + 1;
-    }
-}
-
-function decreaseQuantity() {
-    const quantityInput = document.getElementById('modalQuantity');
-    if (!quantityInput) return;
-
-    const currentQty = parseInt(quantityInput.value);
-
-    if (currentQty > 1) {
-        quantityInput.value = currentQty - 1;
-    }
-}
-
-// ============================================
-// Add to Cart
-// ============================================
-function addBestsellerToCart() {
-    if (!currentBestsellerItem) {
-        showNotification('Please select an item', 'error');
-        return;
-    }
-
-    const quantity = parseInt(document.getElementById('modalQuantity').value);
-
-    // Use your existing add to cart function
-    // Assuming you have an addToCart function in your kabsueats.js
-    const itemData = {
-        menu_item_id: currentBestsellerItem.id,
-        quantity: quantity,
-        establishment_id: currentBestsellerItem.establishment.id
-    };
-
-    fetch('/cart/add/', {
+    fetch(URLS.addToCart, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(itemData)
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ menu_item_id: currentModalItem.id, quantity: qty })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showNotification('Item added to cart!', 'success');
-            closeBestsellerModal();
-
-            // Update cart count if you have this function
-            if (typeof updateCartCount === 'function') {
-                updateCartCount();
-            }
+            closeMod();
+            // backend returns cart_count directly in add_to_cart response
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
+            else updateCartBadge();
+            showToast(data.message || 'Item added to cart!', 'success');
         } else {
-            showNotification(data.message || 'Failed to add to cart', 'error');
+            showToast(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(error => {
-        console.error('Error adding to cart:', error);
-        showNotification('An error occurred', 'error');
+    .catch(() => showToast('Network error. Please try again.', 'error'));
+}
+
+// ============================================
+// BUY NOW — POST form data to /create-buynow-payment/
+// (backend uses request.POST not request.body JSON)
+// ============================================
+function buyNowFromModal() {
+    if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
+    if (!currentModalItem) return;
+    const qty = parseInt(document.getElementById('mqty').value) || 1;
+
+    const formData = new FormData();
+    formData.append('menu_item_id', currentModalItem.id);
+    formData.append('quantity', qty);
+    formData.append('csrfmiddlewaretoken', getCsrf());
+
+    fetch(URLS.createBuyNow, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else if (data.success && data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
+        }
+    })
+    .catch(() => showToast('Network error. Please try again.', 'error'));
+}
+
+// ============================================
+// UPDATE CART BADGE
+// ============================================
+function updateCartBadge() {
+    if (!IS_AUTHENTICATED) return;
+    fetch(URLS.cartCount)
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('cartBadge');
+            // backend returns { success: true, cart_count: N }
+            if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
+        })
+        .catch(() => {});
+}
+
+// ============================================
+// PROFILE DROPDOWN
+// ============================================
+function initProfile() {
+    const pavBtn = document.getElementById('pavBtn');
+    if (!pavBtn) return;
+    pavBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('pdrop').classList.toggle('show');
+    });
+    const editBtn = document.getElementById('editProf');
+    if (editBtn) {
+        editBtn.addEventListener('click', e => { e.preventDefault(); openSet(); });
+    }
+}
+
+function openSet() {
+    document.getElementById('setMod').classList.add('on');
+    document.getElementById('pdrop').classList.remove('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeSet() {
+    document.getElementById('setMod').classList.remove('on');
+    document.body.style.overflow = '';
+}
+
+function previewProfileImg(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('profilePreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// ============================================
+// SEARCH — live dropdown using /api/search-menu/
+// ============================================
+function initSearch() {
+    const inp = document.getElementById('hSearch');
+    const clr = document.getElementById('hClr');
+    const drop = document.getElementById('searchDropdown');
+    if (!inp) return;
+
+    let timer;
+
+    inp.addEventListener('input', function () {
+        clr.classList.toggle('on', this.value.length > 0);
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { drop.classList.remove('active'); return; }
+        timer = setTimeout(() => performSearch(q), 280);
+    });
+
+    clr.addEventListener('click', function () {
+        inp.value = '';
+        this.classList.remove('on');
+        drop.classList.remove('active');
+        // Re-show all est cards
+        document.querySelectorAll('.food-est-item').forEach(el => el.style.display = '');
     });
 }
 
-// ============================================
-// Buy Now
-// ============================================
-function buyBestsellerNow() {
-    if (!currentBestsellerItem) {
-        showNotification('Please select an item', 'error');
-        return;
-    }
+function performSearch(q) {
+    const drop = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
 
-    const quantity = parseInt(document.getElementById('modalQuantity').value);
-
-    // First add to cart, then redirect to checkout
-    const itemData = {
-        menu_item_id: currentBestsellerItem.id,
-        quantity: quantity,
-        establishment_id: currentBestsellerItem.establishment.id
-    };
-
-    fetch('/cart/add/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(itemData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Redirect to cart/checkout page
-            window.location.href = '/cart/';
-        } else {
-            showNotification(data.message || 'Failed to process order', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error processing order:', error);
-        showNotification('An error occurred', 'error');
+    // Filter establishment cards in DOM
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const name = (el.dataset.name || '').toLowerCase();
+        const cat = (el.dataset.category || '').toLowerCase();
+        el.style.display = (name.includes(q.toLowerCase()) || cat.includes(q.toLowerCase())) ? '' : 'none';
     });
-}
 
-// ============================================
-// View Establishment Location
-// ============================================
-function viewEstablishmentLocation() {
-    if (!currentBestsellerItem) return;
+    // Hit search API — returns { success, menus: [...], establishments: [...] }
+    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+            let html = '';
+            // Backend returns key 'menus' with nested 'establishment' object
+            const items = data.menus || [];
+            const ests = data.establishments || [];
 
-    const establishment = currentBestsellerItem.establishment;
-    const sidebar = document.getElementById('viewMapSidebar');
-
-    if (!sidebar) return;
-
-    // Set establishment info
-    document.getElementById('mapEstablishmentName').textContent = establishment.name;
-    document.getElementById('mapEstablishmentAddress').textContent = establishment.address;
-
-    // Initialize map (you'll need to implement this based on your map library)
-    initializeMap(establishment.latitude, establishment.longitude, establishment.name);
-
-    // Show sidebar
-    sidebar.classList.add('active');
-}
-
-function closeMapSidebar() {
-    const sidebar = document.getElementById('viewMapSidebar');
-    if (sidebar) {
-        sidebar.classList.remove('active');
-    }
-}
-
-// ============================================
-// Initialize Map (Placeholder - implement based on your map library)
-// ============================================
-function initializeMap(lat, lng, name) {
-    // This is a placeholder - implement based on your map library (Google Maps, Leaflet, etc.)
-    const mapContainer = document.getElementById('mapContainer');
-
-    if (!mapContainer) return;
-
-    // Example using Google Maps (you need to include Google Maps API)
-    if (typeof google !== 'undefined' && google.maps) {
-        const map = new google.maps.Map(mapContainer, {
-            center: { lat: lat, lng: lng },
-            zoom: 15
-        });
-
-        new google.maps.Marker({
-            position: { lat: lat, lng: lng },
-            map: map,
-            title: name
-        });
-    } else {
-        // Fallback: Show a message or use another map provider
-        mapContainer.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; color: #6b7280;">
-                <div style="text-align: center;">
-                    <i class="fas fa-map-marked-alt" style="font-size: 48px; margin-bottom: 10px;"></i>
-                    <p>Map unavailable</p>
-                    <p style="font-size: 12px;">Lat: ${lat}, Lng: ${lng}</p>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// ============================================
-// Utility Functions
-// ============================================
-
-// Get CSRF Token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+            if (items.length > 0) {
+                html += `<div class="search-dropdown-section"><div class="search-dropdown-title"><i class="fas fa-hamburger"></i> Menu Items</div>`;
+                items.slice(0, 6).forEach(item => {
+                    const estId = item.establishment ? item.establishment.id : '';
+                    const estName = item.establishment ? item.establishment.name : '';
+                    html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+                        <div class="search-dropdown-item-icon"><i class="fas fa-utensils"></i></div>
+                        <div>
+                            <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
+                            <div class="search-dropdown-item-meta">
+                                <span>₱${parseFloat(item.price).toFixed(2)}</span>
+                                <span>•</span>
+                                <span>${escHtml(estName)}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
             }
-        }
-    }
-    return cookieValue;
+
+            if (ests.length > 0) {
+                html += `<div class="search-dropdown-section"><div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
+                ests.slice(0, 4).forEach(est => {
+                    const stColor = est.status === 'Open' ? '#10b981' : '#ef4444';
+                    html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+                        <div class="search-dropdown-item-icon"><i class="fas fa-store"></i></div>
+                        <div>
+                            <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
+                            <div class="search-dropdown-item-meta">
+                                <span style="color:${stColor}">${est.status}</span>
+                                <span>•</span>
+                                <span>${escHtml(est.category)}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            if (html) {
+                content.innerHTML = html;
+                drop.classList.add('active');
+            } else {
+                content.innerHTML = `<div class="search-no-results"><i class="fas fa-search"></i> No results for "${escHtml(q)}"</div>`;
+                drop.classList.add('active');
+            }
+        })
+        .catch(() => drop.classList.remove('active'));
 }
 
-// Show Notification (if not already implemented)
-function showNotification(message, type = 'info') {
-    // Check if you have an existing notification system
-    if (typeof showToast === 'function') {
-        showToast(message, type);
-        return;
-    }
-
-    // Simple notification implementation
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 99999;
-        animation: slideIn 0.3s ease;
-    `;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+function highlightMatch(text, q) {
+    const re = new RegExp(`(${escapeRe(q)})`, 'gi');
+    return text.replace(re, '<span class="search-match">$1</span>');
 }
 
-// Handle window resize for carousel
-window.addEventListener('resize', () => {
-    updateCarouselControls();
+// ============================================
+// SCROLL TO TOP
+// ============================================
+function initScrollTop() {
+    const btn = document.getElementById('stb');
+    window.addEventListener('scroll', () => btn.classList.toggle('on', window.pageYOffset > 300));
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
+// ============================================
+// TOAST NOTIFICATION
+// ============================================
+function showToast(msg, type = 'success') {
+    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#fff;border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 20px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;z-index:99999;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;animation:slideInDown .3s ease;`;
+    t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;"></i><span>${escHtml(msg)}</span>`;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+// ============================================
+// GLOBAL CLICK HANDLERS
+// ============================================
+document.addEventListener('click', e => {
+    if (!e.target.closest('#ddw')) closeDD();
+    if (!e.target.closest('#pcont')) {
+        const pd = document.getElementById('pdrop');
+        if (pd) pd.classList.remove('show');
+    }
+    if (!e.target.closest('.hsw')) {
+        const drop = document.getElementById('searchDropdown');
+        if (drop) drop.classList.remove('active');
+    }
+    if (e.target === document.getElementById('bsMod')) closeMod();
+    if (e.target === document.getElementById('setMod')) closeSet();
 });
 
-// Close modal on Escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeBestsellerModal();
-        closeMapSidebar();
-    }
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeMod(); closeSet(); closeDD(); }
 });
+
+window.addEventListener('resize', () => { if (!isGrid) updCar(); });
+
+// ============================================
+// UTILITIES
+// ============================================
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeRe(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function cap(s) {
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
