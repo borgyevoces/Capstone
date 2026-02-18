@@ -5675,7 +5675,6 @@ def food_establishment_transaction_history(request):
         })
 
 
-@login_required
 def get_establishment_transactions(request):
     """
     API endpoint to get all transactions for the food establishment
@@ -5689,13 +5688,10 @@ def get_establishment_transactions(request):
         # Get the food establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
 
-        # Get all completed orders for this establishment
-        # Include orders with these statuses that represent completed transactions
-        completed_statuses = ['completed', 'to_claim', 'preparing', 'order_received']
-
+        # ✅ FIXED: Only show COMPLETED orders in transaction history
         orders = Order.objects.filter(
             establishment=establishment,
-            status__in=completed_statuses
+            status='completed'
         ).select_related(
             'user', 'establishment'
         ).prefetch_related(
@@ -5749,15 +5745,15 @@ def get_establishment_transactions(request):
             transactions_data.append(transaction_data)
 
         # Calculate statistics
-        # Total revenue (all time)
+        # ✅ Total revenue — only from completed orders
         total_revenue = orders.aggregate(
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
 
-        # Total transactions count
+        # ✅ Total transactions count — only completed
         total_transactions = orders.count()
 
-        # Monthly revenue (current month)
+        # ✅ Monthly revenue (current month) — only completed
         now = timezone.now()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         monthly_revenue = orders.filter(
@@ -5766,9 +5762,9 @@ def get_establishment_transactions(request):
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
 
-        # Success rate (completed vs all orders)
+        # ✅ Success rate: completed orders vs ALL orders
         all_orders_count = Order.objects.filter(establishment=establishment).count()
-        completed_orders_count = orders.filter(status='completed').count()
+        completed_orders_count = orders.count()
 
         if all_orders_count > 0:
             success_rate = round((completed_orders_count / all_orders_count) * 100, 1)
@@ -5803,7 +5799,6 @@ def get_establishment_transactions(request):
             'success': False,
             'message': str(e)
         }, status=500)
-
 
 @login_required
 def get_establishment_transaction_statistics(request):
