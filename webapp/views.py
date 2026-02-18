@@ -840,13 +840,6 @@ def food_establishment_details(request, establishment_id):
     else:
         menu_items = menu_items.order_by('-is_top_seller', 'name')
 
-    cart_count = 0
-    if request.user.is_authenticated:
-        cart_count = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status='PENDING'
-        ).aggregate(total=Sum('quantity'))['total'] or 0
-
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
@@ -857,7 +850,6 @@ def food_establishment_details(request, establishment_id):
         'user_review': user_review,
         'reviews': other_reviews,
         'is_guest': not request.user.is_authenticated,
-        'cart_count': cart_count,
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
@@ -4553,7 +4545,8 @@ def view_cart(request):
 
         context = {
             'carts_data': carts_data,
-            'total_cart_count': total_cart_count
+            'total_cart_count': total_cart_count,
+            'cart_count': total_cart_count
         }
 
         return render(request, 'webapplication/cart.html', context)
@@ -4566,7 +4559,8 @@ def view_cart(request):
         # Return empty cart on error
         context = {
             'carts_data': [],
-            'total_cart_count': 0
+            'total_cart_count': 0,
+            'cart_count': 0
         }
         return render(request, 'webapplication/cart.html', context)
 
@@ -5986,14 +5980,7 @@ def order_history_view(request):
     Display the order history page for the logged-in user
     Template: Client_order_history.html
     """
-    cart_count = 0
-    if request.user.is_authenticated:
-        cart_count = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status='PENDING'
-        ).aggregate(total=Sum('quantity'))['total'] or 0
-
-    return render(request, 'webapplication/Client_order_history.html', {'cart_count': cart_count})
+    return render(request, 'webapplication/Client_order_history.html')
 
 
 @login_required
