@@ -2519,11 +2519,19 @@
         .notification-toggle-btn,
         .chat-toggle-btn,
         .navbar-btn,
-        .navbar-dropdown,
-        .navbar-menu {
+        .navbar-dropdown {
             pointer-events: auto !important;
             position: relative !important;
             z-index: 1051 !important;
+        }
+
+        /* navbar-menu must be absolute so it floats — NOT relative */
+        .navbar-menu {
+            pointer-events: auto !important;
+            position: absolute !important;
+            z-index: 1052 !important;
+            top: 100% !important;
+            right: 0 !important;
         }
 
         /* Ensure main content never overlaps navbar */
