@@ -74,10 +74,11 @@
 
 {% block search_visibility_control %}{% endblock %}
 
-<!-- Django Messages -->
+<!-- Django Messages — customer-facing only (owner_only messages excluded) -->
 {% if messages %}
 <div class="messages-container" id="messagesContainer">
     {% for message in messages %}
+    {% if 'owner_only' not in message.extra_tags %}
     <div class="message-alert {{ message.tags }}" id="msg-{{ forloop.counter }}">
         <span class="message-icon">
             {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
@@ -88,6 +89,7 @@
         <span class="message-text">{{ message }}</span>
         <button class="message-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}

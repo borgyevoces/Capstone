@@ -5018,7 +5018,6 @@ def food_establishment_profile(request):
     except Exception as e:
         return redirect('food_establishment_dashboard')
 
-
 @login_required(login_url='owner_login')
 @require_http_methods(["POST"])
 def deactivate_establishment(request):
@@ -5026,27 +5025,28 @@ def deactivate_establishment(request):
     Toggle active/inactive status of the establishment.
     ✅ If currently active  → deactivate (hide from customers)
     ✅ If currently inactive → reactivate (show to customers again)
+    ✅ Messages tagged 'owner_only' so they only show on owner pages.
     """
     try:
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
         name = establishment.name
 
         if establishment.is_active:
-            # ── Deactivate: hide from KabsuEats ──────────────────────────
             establishment.is_active = False
             establishment.save()
             messages.success(
                 request,
                 f'"{name}" has been deactivated and is now hidden from customers. '
-                f'You can reactivate it anytime from Profile Settings.'
+                f'You can reactivate it anytime from Profile Settings.',
+                extra_tags='owner_only'    # ← hides this from kabsueats.html
             )
         else:
-            # ── Reactivate: show on KabsuEats again ───────────────────────
             establishment.is_active = True
             establishment.save()
             messages.success(
                 request,
-                f'"{name}" has been reactivated and is now visible to customers again!'
+                f'"{name}" has been reactivated and is now visible to customers again!',
+                extra_tags='owner_only'    # ← hides this from kabsueats.html
             )
 
         return redirect('food_establishment_dashboard')
