@@ -3197,23 +3197,29 @@ def toggle_top_seller(request, item_id):
 
     if item.is_top_seller:
         item.top_seller_marked_at = timezone.now()
-        messages.success(request, f"'{item.name}' has been marked as a top seller.")
     else:
         item.top_seller_marked_at = None
-        messages.info(request, f"'{item.name}' has been unmarked as a top seller.")
 
     item.save()
 
-    # Return JSON for AJAX requests
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'is_top_seller': item.is_top_seller,
-            'message': f"'{item.name}' has been {'marked' if item.is_top_seller else 'unmarked'} as a top seller.",
-            'item_id': item_id,
-        })
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-    return redirect(reverse_lazy('food_establishment_dashboard'))
+    # Only add Django session messages for non-AJAX requests (page reloads).
+    # For AJAX requests, the JS handles notifications — skipping this prevents
+    # the messages from leaking onto kabsueats or other pages the user visits next.
+    if not is_ajax:
+        if item.is_top_seller:
+            messages.success(request, f"'{item.name}' has been marked as a top seller.")
+        else:
+            messages.info(request, f"'{item.name}' has been unmarked as a top seller.")
+        return redirect(reverse_lazy('food_establishment_dashboard'))
+
+    return JsonResponse({
+        'success': True,
+        'is_top_seller': item.is_top_seller,
+        'message': f"'{item.name}' has been {'marked' if item.is_top_seller else 'unmarked'} as a top seller.",
+        'item_id': item_id,
+    })
 
 
 @login_required(login_url='owner_login')
