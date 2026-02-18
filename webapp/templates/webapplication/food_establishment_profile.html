@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
-    <title>{{ establishment.name }} - Profile Settings</title>
+    <title>{{ establishment.name }} - Establishment Settings</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
@@ -911,7 +911,7 @@
             </a>
             <a href="{% url 'food_establishment_profile' %}" class="sidebar-item active">
                 <i class="fas fa-cog"></i>
-                <span>Profile Settings</span>
+                <span>Establishment Settings</span>
             </a>
         </div>
 
@@ -926,7 +926,7 @@
     <!-- MAIN CONTENT -->
     <div class="main-container">
         <div class="page-header">
-            <h1 class="page-title">Profile Settings</h1>
+            <h1 class="page-title">Establishment Settings</h1>
         </div>
 
         <!-- PROFILE CARD -->
@@ -1952,23 +1952,47 @@
                 showToast('Geolocation is not supported by your browser.', 'error');
                 return;
             }
+
+            // Show loading feedback on the button
+            const btn = document.querySelector('[onclick="useMyLocation()"]');
+            const originalHTML = btn ? btn.innerHTML : null;
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+                btn.disabled = true;
+            }
+
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
+                    if (btn) {
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                    }
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
                     if (!map) return;
-                    map.flyTo([lat, lng], 17, { duration: 0.8 });
 
                     if (isInsideRadius(lat, lng)) {
+                        // Inside radius: fly to location and place pin
+                        map.flyTo([lat, lng], 18, { duration: 0.8 });
                         placeMarker(lat, lng, true);
+                        showToast('Your location is inside the allowed zone. Pin placed!', 'success');
                     } else {
-                        showToast('Your current location is outside the 500m allowed zone. Pin moved to map view only.', 'error');
+                        // Outside radius: do NOT move the map at all
+                        showToast('Your current location is outside the 500m radius of CvSU-Bacoor. Cannot place pin here.', 'error');
                     }
                 },
-                function() {
-                    showToast('Unable to get your location. Please allow location access.', 'error');
+                function(err) {
+                    if (btn) {
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                    }
+                    if (err.code === err.PERMISSION_DENIED) {
+                        showToast('Location access denied. Please allow location in your browser settings.', 'error');
+                    } else {
+                        showToast('Unable to get your location. Please try again.', 'error');
+                    }
                 },
-                { timeout: 8000, maximumAge: 30000 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
