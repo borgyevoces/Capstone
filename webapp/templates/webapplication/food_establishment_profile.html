@@ -577,7 +577,102 @@
         #map {
             height: 400px;
             border-radius: 8px;
-            margin-top: 15px;
+            margin-top: 10px;
+        }
+
+        /* ── Map Search Bar ── */
+        .map-search-wrap {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .map-search-input {
+            width: 100%;
+            padding: 10px 42px 10px 38px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #fafafa;
+        }
+        .map-search-input:focus {
+            border-color: #B71C1C;
+            background: #fff;
+        }
+        .map-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        .map-search-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .map-search-clear.visible { display: block; }
+
+        /* ── Search Dropdown Results ── */
+        .map-search-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #fff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 9999;
+            max-height: 240px;
+            overflow-y: auto;
+            display: none;
+        }
+        .map-search-results.open { display: block; }
+        .search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: background 0.15s;
+        }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-item:hover { background: #fef2f2; }
+        .search-result-item .sri-icon {
+            margin-top: 2px;
+            color: #B71C1C;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .search-result-item.est-result .sri-icon { color: #1d4ed8; }
+        .search-result-item .sri-name {
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.3;
+        }
+        .search-result-item .sri-sub {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .search-no-results {
+            padding: 14px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
         }
 
         .location-status {
@@ -1104,28 +1199,46 @@
             </div>
 
             <div class="modal-body">
-                <p style="margin-bottom: 10px; color: #6b7280;">
-                    Click anywhere inside the <strong style="color:#B71C1C;">red dashed circle</strong> to pin your establishment.
-                    Pins <strong>outside the 500m radius of CvSU-Bacoor</strong> are not allowed.
+                <p style="margin-bottom:10px;color:#6b7280;font-size:13px;">
+                    Click inside the <strong style="color:#B71C1C;">red dashed circle</strong> to pin your establishment.
+                    Pins outside the <strong>500m radius of CvSU-Bacoor</strong> are not allowed.
                 </p>
-                <!-- Map Legend -->
-                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:#374151;align-items:center;">
-                    <span><span style="display:inline-block;width:14px;height:14px;background:#B71C1C;border-radius:50%;vertical-align:middle;border:2px solid #fff;margin-right:4px;"></span>CvSU Campus</span>
-                    <span><span style="display:inline-block;width:14px;height:14px;background:#ef4444;border-radius:50%;vertical-align:middle;border:2px solid #fff;margin-right:4px;"></span>Your Pin</span>
-                    <span><span style="display:inline-block;width:14px;height:14px;background:#1d4ed8;border-radius:50%;vertical-align:middle;border:2px solid #fff;margin-right:4px;"></span>Registered Establishments</span>
+
+                <!-- Search Bar -->
+                <div class="map-search-wrap" id="mapSearchWrap">
+                    <i class="fas fa-search map-search-icon"></i>
+                    <input type="text"
+                           id="mapSearchInput"
+                           class="map-search-input"
+                           placeholder="Search establishment name or address…"
+                           oninput="handleMapSearch(this.value)"
+                           autocomplete="off">
+                    <button class="map-search-clear" id="mapSearchClear" onclick="clearMapSearch()" title="Clear">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="map-search-results" id="mapSearchResults"></div>
                 </div>
-                <!-- Map Action Buttons -->
-                <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()" style="padding: 8px 14px; font-size: 13px;">
-                        <i class="fas fa-university"></i> Focus on CvSU
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="useMyLocation()" style="padding: 8px 14px; font-size: 13px;">
-                        <i class="fas fa-crosshairs"></i> Use My Location
-                    </button>
-                    <button type="button" class="btn btn-danger" onclick="removePin()" style="padding: 8px 14px; font-size: 13px; background: white; color: #dc2626; border: 2px solid #dc2626;">
-                        <i class="fas fa-times-circle"></i> Remove Pin
-                    </button>
+
+                <!-- Map Legend + Buttons row -->
+                <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+                    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#374151;align-items:center;">
+                        <span><span style="display:inline-block;width:13px;height:13px;background:#B71C1C;border-radius:50%;vertical-align:middle;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);margin-right:4px;"></span>CvSU Campus</span>
+                        <span><span style="display:inline-block;width:13px;height:13px;background:#ef4444;border-radius:50%;vertical-align:middle;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);margin-right:4px;"></span>Your Pin</span>
+                        <span><span style="display:inline-block;width:13px;height:13px;background:#1d4ed8;border-radius:50%;vertical-align:middle;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);margin-right:4px;"></span>Registered Establishments</span>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()" style="padding:7px 12px;font-size:12px;">
+                            <i class="fas fa-university"></i> Focus CvSU
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="useMyLocation()" style="padding:7px 12px;font-size:12px;">
+                            <i class="fas fa-crosshairs"></i> My Location
+                        </button>
+                        <button type="button" onclick="removePin()" style="padding:7px 12px;font-size:12px;background:white;color:#dc2626;border:2px solid #dc2626;border-radius:8px;cursor:pointer;font-weight:600;">
+                            <i class="fas fa-times-circle"></i> Remove Pin
+                        </button>
+                    </div>
                 </div>
+
                 <div id="map"></div>
                 <div class="location-status" id="locationStatus">
                     <i class="fas fa-map-marker-alt"></i>
@@ -1565,9 +1678,12 @@
 
         // ===================================================
         // LOAD ALL REGISTERED ESTABLISHMENTS AS BLUE PINS
+        // Rich popup: name, address, categories, amenities,
+        // open/closed status, distance from CvSU
         // ===================================================
+        let allEstablishmentsData = []; // cache for search
+
         function loadAllEstablishments() {
-            // Remove old markers
             allEstablishmentMarkers.forEach(m => map.removeLayer(m));
             allEstablishmentMarkers = [];
 
@@ -1575,32 +1691,203 @@
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success || !data.establishments) return;
+                    allEstablishmentsData = data.establishments; // cache for search
+
                     data.establishments.forEach(est => {
                         if (!est.latitude || !est.longitude) return;
-
-                        const blueIcon = L.divIcon({
-                            className: '',
-                            html: `<div style="
-                                background:#1d4ed8; border:2px solid #fff; border-radius:50%;
-                                width:16px; height:16px;
-                                box-shadow:0 2px 6px rgba(29,78,216,.55);">
-                            </div>`,
-                            iconSize: [16, 16], iconAnchor: [8, 8]
-                        });
-
-                        const m = L.marker([est.latitude, est.longitude], { icon: blueIcon }).addTo(map);
-                        m.bindPopup(`
-                            <div style="font-family:sans-serif;min-width:160px;">
-                                <strong style="color:#1f2937;font-size:13px;">${est.name}</strong><br>
-                                <span style="color:#6b7280;font-size:11px;">${est.address || ''}</span>
-                                ${est.distance ? `<br><span style="font-size:11px;color:#3b82f6;">📍 ${est.distance}m from CvSU</span>` : ''}
-                            </div>
-                        `);
-                        allEstablishmentMarkers.push(m);
+                        addEstablishmentMarker(est);
                     });
                 })
                 .catch(err => console.error('Error loading establishments:', err));
         }
+
+        function addEstablishmentMarker(est) {
+            const blueIcon = L.divIcon({
+                className: '',
+                html: `<div style="
+                    background:#1d4ed8;border:2.5px solid #fff;border-radius:50%;
+                    width:18px;height:18px;
+                    box-shadow:0 2px 8px rgba(29,78,216,.5);
+                    cursor:pointer;">
+                </div>`,
+                iconSize: [18, 18], iconAnchor: [9, 9]
+            });
+
+            // Build rich popup content
+            const dist   = est.distance ? `<div style="margin-top:6px;font-size:11px;color:#3b82f6;"><i class="fas fa-route"></i> ${est.distance}m from CvSU</div>` : '';
+            const cats   = est.categories ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;"><i class="fas fa-tag"></i> ${est.categories}</div>` : '';
+            const amens  = est.amenities  ? `<div style="margin-top:3px;font-size:11px;color:#6b7280;"><i class="fas fa-concierge-bell"></i> ${est.amenities}</div>` : '';
+            const pay    = est.payment_methods ? `<div style="margin-top:3px;font-size:11px;color:#6b7280;"><i class="fas fa-credit-card"></i> ${est.payment_methods}</div>` : '';
+            const hours  = (est.opening_time && est.closing_time)
+                ? `<div style="margin-top:3px;font-size:11px;color:#6b7280;"><i class="fas fa-clock"></i> ${est.opening_time} – ${est.closing_time}</div>` : '';
+            const isOpen = (est.status || '').toLowerCase() === 'open';
+            const statusBadge = `<span style="
+                display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
+                background:${isOpen ? '#dcfce7' : '#fee2e2'};
+                color:${isOpen ? '#166534' : '#991b1b'};">
+                ${isOpen ? '● Open' : '● Closed'}
+            </span>`;
+
+            const popup = `
+                <div style="font-family:sans-serif;min-width:200px;max-width:240px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+                        <strong style="color:#111827;font-size:13px;line-height:1.3;">${est.name}</strong>
+                        ${statusBadge}
+                    </div>
+                    <div style="font-size:11px;color:#4b5563;line-height:1.4;">
+                        <i class="fas fa-map-marker-alt" style="color:#B71C1C;"></i> ${est.address || 'Address not set'}
+                    </div>
+                    ${cats}${amens}${pay}${hours}${dist}
+                </div>`;
+
+            const m = L.marker([est.latitude, est.longitude], { icon: blueIcon }).addTo(map);
+            m.bindPopup(popup, { maxWidth: 260 });
+            m._estData = est; // attach for search use
+            allEstablishmentMarkers.push(m);
+        }
+
+        // ===================================================
+        // SEARCH — establishment name + address geocoding
+        // ===================================================
+        let searchDebounce = null;
+        let geocodeMarker  = null; // temporary address-search pin
+
+        function handleMapSearch(val) {
+            const clearBtn = document.getElementById('mapSearchClear');
+            const resultsBox = document.getElementById('mapSearchResults');
+
+            clearBtn.classList.toggle('visible', val.length > 0);
+
+            clearTimeout(searchDebounce);
+            if (val.trim().length < 2) {
+                resultsBox.classList.remove('open');
+                resultsBox.innerHTML = '';
+                // Restore all establishment markers
+                allEstablishmentMarkers.forEach(m => map.addLayer ? null : map.removeLayer(m));
+                return;
+            }
+
+            searchDebounce = setTimeout(() => runSearch(val.trim()), 320);
+        }
+
+        function runSearch(query) {
+            const resultsBox = document.getElementById('mapSearchResults');
+            const lq = query.toLowerCase();
+
+            // ── 1. Match registered establishments by name ──────────────
+            const estMatches = allEstablishmentsData.filter(e =>
+                e.name.toLowerCase().includes(lq) ||
+                (e.address || '').toLowerCase().includes(lq)
+            );
+
+            // ── 2. Geocode via Nominatim for address results ─────────────
+            const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=4&countrycodes=ph`;
+
+            fetch(nominatimUrl)
+                .then(r => r.json())
+                .then(geoResults => {
+                    renderSearchResults(estMatches, geoResults, query);
+                })
+                .catch(() => {
+                    renderSearchResults(estMatches, [], query);
+                });
+        }
+
+        function renderSearchResults(estMatches, geoResults, query) {
+            const resultsBox = document.getElementById('mapSearchResults');
+            let html = '';
+
+            // Establishment results first
+            estMatches.slice(0, 4).forEach(est => {
+                const isOpen = (est.status || '').toLowerCase() === 'open';
+                html += `
+                    <div class="search-result-item est-result" onclick="flyToEstablishment(${est.id})">
+                        <i class="fas fa-store sri-icon"></i>
+                        <div>
+                            <div class="sri-name">${highlightMatch(est.name, query)}</div>
+                            <div class="sri-sub">
+                                <span style="color:${isOpen?'#10b981':'#ef4444'};font-weight:600;">${isOpen?'Open':'Closed'}</span>
+                                · ${est.address || ''}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            // Address results (from Nominatim)
+            geoResults.slice(0, 3).forEach(geo => {
+                html += `
+                    <div class="search-result-item" onclick="flyToGeoResult(${geo.lat}, ${geo.lon}, '${escJs(geo.display_name)}')">
+                        <i class="fas fa-map-marker-alt sri-icon"></i>
+                        <div>
+                            <div class="sri-name">${highlightMatch(geo.display_name.split(',')[0], query)}</div>
+                            <div class="sri-sub">${geo.display_name}</div>
+                        </div>
+                    </div>`;
+            });
+
+            if (!html) {
+                html = '<div class="search-no-results"><i class="fas fa-search"></i> No results found.</div>';
+            }
+
+            resultsBox.innerHTML = html;
+            resultsBox.classList.add('open');
+        }
+
+        // Highlight matching text in result labels
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+            return text.replace(re, '<mark style="background:#fef3c7;padding:0 1px;border-radius:2px;">$1</mark>');
+        }
+
+        function escJs(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        // Fly to a registered establishment and open its popup
+        function flyToEstablishment(estId) {
+            const m = allEstablishmentMarkers.find(mk => mk._estData && mk._estData.id === estId);
+            if (!m) return;
+            closeSearchResults();
+            map.flyTo(m.getLatLng(), 18, { duration: 0.7 });
+            setTimeout(() => m.openPopup(), 750);
+        }
+
+        // Fly to geocoded address result
+        function flyToGeoResult(lat, lng, displayName) {
+            closeSearchResults();
+            if (geocodeMarker) { map.removeLayer(geocodeMarker); geocodeMarker = null; }
+
+            const geoIcon = L.divIcon({
+                className: '',
+                html: `<div style="background:#f59e0b;border:2px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 2px 6px rgba(245,158,11,.5);"></div>`,
+                iconSize: [16,16], iconAnchor: [8,8]
+            });
+            geocodeMarker = L.marker([lat, lng], { icon: geoIcon })
+                .addTo(map)
+                .bindPopup(`<div style="font-size:12px;font-family:sans-serif;max-width:200px;">${displayName}</div>`)
+                .openPopup();
+            map.flyTo([lat, lng], 17, { duration: 0.7 });
+        }
+
+        function closeSearchResults() {
+            document.getElementById('mapSearchResults').classList.remove('open');
+        }
+
+        function clearMapSearch() {
+            const input = document.getElementById('mapSearchInput');
+            input.value = '';
+            document.getElementById('mapSearchClear').classList.remove('visible');
+            closeSearchResults();
+            if (geocodeMarker) { map.removeLayer(geocodeMarker); geocodeMarker = null; }
+            input.focus();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('mapSearchWrap');
+            if (wrap && !wrap.contains(e.target)) closeSearchResults();
+        });
 
         // ===================================================
         // MAP CONTROL BUTTONS

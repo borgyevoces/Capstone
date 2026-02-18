@@ -2247,12 +2247,13 @@ def create_buynow_payment_link(request):
 # ===================================================================================================================
 User = get_user_model()
 
-
-@require_http_methods(["GET"])
 def get_nearby_establishments(request):
     """
-    API endpoint to get establishments within 500m radius.
-    Used by the map to show nearby establishments.
+    API endpoint to get establishments within a given radius.
+    Returns full details needed for rich map popups:
+    name, address, coordinates, distance, status,
+    categories (including other_category), amenities
+    (including other_amenity), and payment methods.
     """
     try:
         lat = float(request.GET.get('lat'))
@@ -2260,35 +2261,60 @@ def get_nearby_establishments(request):
         radius_meters = float(request.GET.get('radius', 500))
         current_establishment_id = request.GET.get('establishment_id')
 
-        # Get all establishments with valid coordinates
+        # Get all approved establishments with valid coordinates
         query = FoodEstablishment.objects.filter(
             latitude__isnull=False,
-            longitude__isnull=False
-        )
+            longitude__isnull=False,
+        ).prefetch_related('categories', 'amenities')
 
-        # Exclude current establishment if provided
+        # Exclude the current owner's own establishment from the map pins
         if current_establishment_id:
             query = query.exclude(id=current_establishment_id)
 
-        all_establishments = query
-
-        # Filter by distance using Haversine formula
         nearby_establishments = []
-        for est in all_establishments:
+
+        for est in query:
             distance = calculate_distance(
                 lat, lng,
                 float(est.latitude), float(est.longitude)
             )
 
-            if distance <= radius_meters:
-                nearby_establishments.append({
-                    'id': est.id,
-                    'name': est.name,
-                    'address': est.address,
-                    'latitude': float(est.latitude),
-                    'longitude': float(est.longitude),
-                    'distance': round(distance, 2)
-                })
+            if distance > radius_meters:
+                continue
+
+            # Build categories string (standard + other_category)
+            cat_names = list(est.categories.values_list('name', flat=True))
+            if est.other_category:
+                cat_names.append(est.other_category)
+            categories_str = ', '.join(cat_names) if cat_names else ''
+
+            # Build amenities string (standard + other_amenity)
+            amen_names = list(est.amenities.values_list('name', flat=True))
+            if est.other_amenity:
+                amen_names.append(est.other_amenity)
+            amenities_str = ', '.join(amen_names) if amen_names else ''
+
+            # Opening/closing hours display
+            opening = est.opening_time.strftime('%I:%M %p') if est.opening_time else None
+            closing  = est.closing_time.strftime('%I:%M %p') if est.closing_time else None
+
+            nearby_establishments.append({
+                'id':              est.id,
+                'name':            est.name,
+                'address':         est.address,
+                'latitude':        float(est.latitude),
+                'longitude':       float(est.longitude),
+                'distance':        round(distance, 2),
+                'status':          est.status,           # 'Open' or 'Closed'
+                'categories':      categories_str,
+                'amenities':       amenities_str,
+                'payment_methods': est.payment_methods or '',
+                'opening_time':    opening,
+                'closing_time':    closing,
+            })
+
+        # Sort by distance ascending
+        nearby_establishments.sort(key=lambda x: x['distance'])
 
         return JsonResponse({
             'success': True,
@@ -2306,7 +2332,6 @@ def get_nearby_establishments(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
