@@ -284,7 +284,7 @@
                class="estc food-est-item"
                data-id="{{ est.id }}"
                data-name="{{ est.name|lower }}"
-               data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}"
+               data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %},{% endif %}{{ est.other_category|lower }}{% endif %}"
                data-status="{{ est.calculated_status|lower }}"
                data-rating="{{ est.average_rating|floatformat:1 }}"
                onclick="window.location.href='{% url 'food_establishment_details' est.id %}'; return true;"
@@ -316,8 +316,8 @@
                     <div class="rcnt">({{ est.review_count }} Reviews)</div>
                     <div class="estc-name">{{ est.name }}</div>
                     <span class="ecat">
-                        {% for cat in est.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                        {% if not est.categories.all %}Uncategorized{% endif %}
+                        {% for cat in est.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %}, {% endif %}{{ est.other_category }}{% endif %}
+                        {% if not est.categories.all and not est.other_category %}Uncategorized{% endif %}
                     </span>
                 </div>
                 <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i>
@@ -335,10 +335,10 @@
                     <i class="fas fa-credit-card" style="color:#B71C1C"></i>
                     {{ est.payment_methods|default:"Cash" }}
                 </div>
-                {% if est.amenities.all %}
+                {% if est.amenities.all or est.other_amenity %}
                 <div class="emr" style="padding-bottom:10px">
                     <i class="fas fa-concierge-bell" style="color:#B71C1C"></i>
-                    {% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_amenity %}{% if est.amenities.all %}, {% endif %}{{ est.other_amenity }}{% endif %}
                 </div>
                 {% endif %}
             </a>
@@ -521,7 +521,10 @@
             image: "{% if est.image %}{{ est.image.url }}{% endif %}",
             status: "{{ est.calculated_status|lower }}",
             lat: {{ est.latitude|default:"null" }},
-            lng: {{ est.longitude|default:"null" }}
+            lng: {{ est.longitude|default:"null" }},
+            categories: "{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %},{% endif %}{{ est.other_category|lower|escapejs }}{% endif %}",
+            other_category: "{{ est.other_category|default:''|lower|escapejs }}",
+            other_amenity: "{{ est.other_amenity|default:''|escapejs }}"
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     };

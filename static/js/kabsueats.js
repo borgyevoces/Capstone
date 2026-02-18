@@ -345,7 +345,11 @@ function loadAllEstablishments() {
                     status: local.status || liveStatusCache[e.id] || '',
                     latitude: parseFloat(e.latitude),
                     longitude: parseFloat(e.longitude),
-                    distance: e.distance || 0
+                    distance: e.distance || 0,
+                    // ✅ Include other_category and other_amenity for filtering/display
+                    categories: local.categories || '',
+                    other_category: local.other_category || '',
+                    other_amenity: local.other_amenity || ''
                 };
             });
             esMapData = merged;
@@ -363,6 +367,15 @@ function applyFiltersToData(data) {
     let result = [...data];
     const f = mapFilterState;
     if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
+    // ✅ Filter by category — checks both standard categories AND other_category
+    if (f.cat) {
+        const q = f.cat.toLowerCase();
+        result = result.filter(e => {
+            const cats = (e.categories || '').toLowerCase();
+            const other = (e.other_category || '').toLowerCase();
+            return cats.includes(q) || other.includes(q);
+        });
+    }
     if (f.alpha === 'az') result.sort((a, b) => a.name.localeCompare(b.name));
     if (f.alpha === 'za') result.sort((a, b) => b.name.localeCompare(a.name));
     if (f.dist === 'near') result.sort((a, b) => (a.distance || 0) - (b.distance || 0));
