@@ -752,6 +752,9 @@
         .other-field-feedback.invalid {
             color: #ef4444;
         }
+        .other-field-feedback:not(.valid):not(.invalid) {
+            color: #6b7280;
+        }
         .other-tag-preview {
             margin-top: 8px;
             min-height: 0;
@@ -1252,39 +1255,80 @@
             }
         }
 
+        // ===== AUTO TITLE-CASE =====
+        // Capitalizes the first letter of every word, lowercases the rest.
+        // Runs while the user is still typing (preserves cursor position).
+        function toTitleCase(str) {
+            return str.replace(/\b([a-zA-Z])([a-zA-Z]*)/g, (_, first, rest) =>
+                first.toUpperCase() + rest.toLowerCase()
+            );
+        }
+
+        function autoTitleCase(inputEl) {
+            const pos = inputEl.selectionStart; // save cursor
+            const titled = toTitleCase(inputEl.value);
+            if (inputEl.value !== titled) {
+                inputEl.value = titled;
+                // Restore cursor so it doesn't jump to end while typing
+                try { inputEl.setSelectionRange(pos, pos); } catch(e) {}
+            }
+        }
+
         // ===== VALIDATE OTHER FIELD (category or amenity) =====
-        // Rules:
-        //  - Must contain at least one real "word" (2+ consecutive letters)
-        //  - No pure gibberish: at least 50% of characters must be letters/spaces/hyphens
-        //  - Length between 2 and 60 characters
-        //  - No consecutive special chars like !!!, ???, numbers-only sequences
+        // Rules (stricter than before):
+        //  1. Must be 4–60 characters (trimmed)
+        //  2. Must contain at least one COMPLETE word:
+        //       - Either one word with 4+ letters  (e.g. "Deli" alone is borderline — see rule 3)
+        //       - OR two words each with 2+ letters (e.g. "Free Piano", "Al Fresco")
+        //  3. Single words must have at least 5 letters to be accepted alone
+        //     (prevents "deli", "cafe" etc. which are still ambiguous fragments)
+        //  4. At least 70% of characters must be letters / spaces / hyphens / apostrophes
+        //  5. No 5+ consecutive consonants (gibberish detector)
+        //  6. Not all digits or symbols
         function isValidOtherText(value) {
             const trimmed = value.trim();
-            if (trimmed.length < 2 || trimmed.length > 60) return false;
 
-            // Must have at least one word with 2+ letters
-            if (!/[a-zA-Z]{2,}/.test(trimmed)) return false;
+            // Rule 1 — length
+            if (trimmed.length < 4 || trimmed.length > 60) return false;
 
-            // Calculate ratio of "clean" characters (letters, spaces, hyphens, apostrophes, commas)
-            const cleanChars = (trimmed.match(/[a-zA-Z\s\-',\.]/g) || []).length;
-            const ratio = cleanChars / trimmed.length;
-            if (ratio < 0.6) return false;
-
-            // Reject if it looks like random typing: 4+ consecutive non-vowel consonants
-            if (/[^aeiouAEIOU\s]{5,}/.test(trimmed)) return false;
-
-            // Reject strings that are all digits/symbols
+            // Rule 6 — not all non-letter
             if (/^[\d\W]+$/.test(trimmed)) return false;
+
+            // Rule 5 — gibberish: 5+ consecutive consonants (excluding spaces)
+            if (/[^aeiouAEIOU\s\-]{5,}/.test(trimmed)) return false;
+
+            // Rule 4 — clean character ratio ≥ 70%
+            const cleanChars = (trimmed.match(/[a-zA-Z\s\-']/g) || []).length;
+            if (cleanChars / trimmed.length < 0.7) return false;
+
+            // Extract all words (consecutive letters only)
+            const words = trimmed.match(/[a-zA-Z]+/g) || [];
+            if (words.length === 0) return false;
+
+            // Rule 2 & 3
+            if (words.length === 1) {
+                // Single word must be at least 5 letters (e.g. "Delivery", "Piano", "Disco")
+                // Rejects: "deli" (4), "cafe" (4), "bar" (3)
+                if (words[0].length < 5) return false;
+            } else {
+                // Multiple words: each must be at least 2 letters
+                if (words.some(w => w.length < 2)) return false;
+            }
 
             return true;
         }
 
         function validateOtherField(inputEl, feedbackId, previewId) {
-            const value = inputEl.value;
-            const feedback = document.getElementById(feedbackId);
-            const preview = document.getElementById(previewId);
+            // ── Step 1: auto title-case while typing ──────────────────────
+            autoTitleCase(inputEl);
 
-            if (value.trim() === '') {
+            const value = inputEl.value;
+            const trimmed = value.trim();
+            const feedback = document.getElementById(feedbackId);
+            const preview  = document.getElementById(previewId);
+
+            // Empty — reset
+            if (trimmed === '') {
                 inputEl.classList.remove('input-valid', 'input-invalid');
                 feedback.textContent = '';
                 feedback.className = 'other-field-feedback';
@@ -1292,17 +1336,32 @@
                 return;
             }
 
-            if (isValidOtherText(value)) {
+            // ── Step 2: show "still typing" hint while word is too short ──
+            const words = trimmed.match(/[a-zA-Z]+/g) || [];
+            const isTooShort = (words.length === 1 && words[0].length < 5) ||
+                               (words.length > 1 && words.some(w => w.length < 2));
+
+            if (isTooShort && trimmed.length < 5) {
+                // Neutral — user is still typing, don't show error yet
+                inputEl.classList.remove('input-valid', 'input-invalid');
+                feedback.className = 'other-field-feedback';
+                feedback.innerHTML = '<i class="fas fa-keyboard"></i> Keep typing…';
+                preview.innerHTML = '';
+                return;
+            }
+
+            // ── Step 3: full validation ────────────────────────────────────
+            if (isValidOtherText(trimmed)) {
                 inputEl.classList.remove('input-invalid');
                 inputEl.classList.add('input-valid');
                 feedback.className = 'other-field-feedback valid';
                 feedback.innerHTML = '<i class="fas fa-check-circle"></i> Looks good! This will appear as a tag.';
-                preview.innerHTML = `<span class="amenity-tag preview-tag"><i class="fas fa-check"></i> ${value.trim()}</span>`;
+                preview.innerHTML = `<span class="amenity-tag preview-tag"><i class="fas fa-check"></i> ${trimmed}</span>`;
             } else {
                 inputEl.classList.remove('input-valid');
                 inputEl.classList.add('input-invalid');
                 feedback.className = 'other-field-feedback invalid';
-                feedback.innerHTML = '<i class="fas fa-times-circle"></i> Please enter a proper word or phrase (e.g., "Free Piano", "Delivery").';
+                feedback.innerHTML = '<i class="fas fa-times-circle"></i> Please enter a full word or phrase — e.g. <strong>"Delivery"</strong>, <strong>"Free Piano"</strong>, <strong>"Rooftop Bar"</strong>.';
                 preview.innerHTML = '';
             }
         }
