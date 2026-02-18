@@ -3333,14 +3333,10 @@
                             <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
                                 <i class="fas fa-pen"></i> Edit
                             </button>
-                            <form action="{% url 'toggle_top_seller' item.id %}" method="post"
-                                  style="display: contents;">
-                                {% csrf_token %}
-                                <button type="submit" class="action-btn seller">
-                                    <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark
-                                    {% endif %}
-                                </button>
-                            </form>
+                            <button type="button" class="action-btn seller"
+                                    onclick="openToggleSellerModal('{{ item.id }}', '{{ item.name|escapejs }}', {{ item.is_top_seller|yesno:'true,false' }})">
+                                <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{% endif %}
+                            </button>
                             <button type="button" class="action-btn delete"
                                     onclick="deleteMenuItem('{{ item.id }}', this)">
                                 <i class="fas fa-trash"></i> Delete
@@ -3909,8 +3905,11 @@ function confirmMenuItemDelete() {
     });
 }
 
-document.getElementById('menuItemDeleteModal').addEventListener('click', function(e) {
-    if (e.target === this) closeMenuItemDeleteModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const _delOverlay = document.getElementById('menuItemDeleteModal');
+    if (_delOverlay) _delOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeMenuItemDeleteModal();
+    });
 });
 
 // ====================================================
@@ -3920,42 +3919,14 @@ let _pendingToggleUrl = null;
 let _pendingToggleForm = null;
 let _pendingToggleIsSeller = false;
 
-// Intercept form submit for toggle_top_seller
-document.addEventListener('submit', function(e) {
-    const form = e.target;
-    if (form && form.action && form.action.includes('toggle_top_seller')) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const url = form.action;
-        const menuCard = form.closest('.menu-card');
-        const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
-        const isCurrentlySeller = menuCard ? !!menuCard.querySelector('.badge.bestseller') : false;
-        openToggleSellerModal(itemName, isCurrentlySeller, url, form);
-    }
-}, true); // capture phase so it runs before any bubbling handler
+// Form submit interceptor removed — seller buttons now use onclick directly
 
-function openToggleSellerModal(itemNameOrId, isCurrentlySellerOrName, urlOrIsSeller, form) {
-    // Support two calling conventions:
-    // 1. From server-rendered form intercept: (itemName:str, isCurrentlySeller:bool, url:str, form:elem)
-    // 2. From JS-rendered cards: (itemId:str, itemName:str, isCurrentlySeller:bool)
-    let itemName, isCurrentlySeller;
-
-    if (typeof urlOrIsSeller === 'boolean') {
-        // Convention 2: (itemId, itemName, isCurrentlySeller)
-        const itemId = itemNameOrId;
-        itemName = isCurrentlySellerOrName;
-        isCurrentlySeller = urlOrIsSeller;
-        _pendingToggleUrl = `/owner/dashboard/toggle_top_seller/${itemId}/`;
-        _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-        _pendingToggleIsSeller = isCurrentlySeller;
-    } else {
-        // Convention 1: (itemName, isCurrentlySeller, url, form)
-        itemName = itemNameOrId;
-        isCurrentlySeller = isCurrentlySellerOrName;
-        _pendingToggleUrl = urlOrIsSeller;
-        _pendingToggleForm = form;
-        _pendingToggleIsSeller = isCurrentlySeller;
-    }
+function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
+    // Single convention: (itemId, itemName, isCurrentlySeller)
+    // Used by both server-rendered and JS-rendered cards via onclick
+    _pendingToggleUrl = `/owner/dashboard/toggle_top_seller/${itemId}/`;
+    _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+    _pendingToggleIsSeller = isCurrentlySeller;
 
     const icon    = document.getElementById('toggleSellerIcon');
     const title   = document.getElementById('toggleSellerTitle');
@@ -4028,9 +3999,14 @@ function confirmToggleSeller() {
                         (data.is_top_seller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : '') +
                         (qty > 0 ? `<span class="badge available">Available: ${qty}</span>` : '<span class="badge soldout">Out of Stock</span>');
                 }
-                // Flip button label
-                const sellerBtn = menuCard.querySelector('button[type="submit"].action-btn.seller') || menuCard.querySelector('.action-btn.seller');
-                if (sellerBtn) sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${data.is_top_seller ? 'Unmark' : 'Mark'}`;
+                // Flip button label and update onclick for new state
+                const sellerBtn = menuCard.querySelector('.action-btn.seller');
+                if (sellerBtn) {
+                    sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${data.is_top_seller ? 'Unmark' : 'Mark'}`;
+                    const itemId = menuCard.dataset.itemId;
+                    const itemName = menuCard.querySelector('.menu-name')?.textContent?.trim() || '';
+                    sellerBtn.setAttribute('onclick', `openToggleSellerModal('${itemId}', '${itemName.replace(/'/g, "\\'")}', ${data.is_top_seller})`);
+                }
             }
             const msg = data.is_top_seller ? '⭐ ' + data.message : '✅ ' + data.message;
             showNotification(msg, data.is_top_seller ? 'success' : 'info');
@@ -4045,8 +4021,11 @@ function confirmToggleSeller() {
     });
 }
 
-document.getElementById('toggleSellerModal').addEventListener('click', function(e) {
-    if (e.target === this) closeToggleSellerModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const _togOverlay = document.getElementById('toggleSellerModal');
+    if (_togOverlay) _togOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeToggleSellerModal();
+    });
 });
 </script>
 
