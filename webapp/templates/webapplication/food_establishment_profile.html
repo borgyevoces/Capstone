@@ -270,7 +270,8 @@
 
         /* ===== DANGER ZONE ===== */
         .danger-zone {
-            background: #fff5f5;
+            background: #ffffff;
+            border: 1.5px solid #fecaca;
             border-radius: 12px;
             padding: 30px;
             margin-bottom: 30px;
@@ -314,31 +315,32 @@
         }
 
         .btn-danger {
-            background: white;
-            color: #dc2626;
-            border: 2px solid #dc2626;
+            background: #B71C1C;
+            color: #ffffff;
+            border: 2px solid #B71C1C;
         }
 
         .btn-danger:hover {
-            background: #fef2f2;
-            border-color: #b91c1c;
-            color: #b91c1c;
+            background: #991b1b;
+            border-color: #991b1b;
+            color: #ffffff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+            box-shadow: 0 4px 14px rgba(183, 28, 28, 0.35);
         }
 
+        /* Deactivate button — same red style as delete */
         .btn-warning {
-            background: white;
-            color: #f59e0b;
-            border: 2px solid #f59e0b;
+            background: #B71C1C;
+            color: #ffffff;
+            border: 2px solid #B71C1C;
         }
 
         .btn-warning:hover {
-            background: #fffbeb;
-            border-color: #d97706;
-            color: #d97706;
+            background: #991b1b;
+            border-color: #991b1b;
+            color: #ffffff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+            box-shadow: 0 4px 14px rgba(183, 28, 28, 0.35);
         }
 
         .btn-secondary {
@@ -1774,19 +1776,29 @@
             const resultsBox = document.getElementById('mapSearchResults');
             const lq = query.toLowerCase();
 
-            // ── 1. Match registered establishments by name ──────────────
+            // ── 1. Match registered establishments by name or address ────
             const estMatches = allEstablishmentsData.filter(e =>
                 e.name.toLowerCase().includes(lq) ||
                 (e.address || '').toLowerCase().includes(lq)
             );
 
-            // ── 2. Geocode via Nominatim for address results ─────────────
-            const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=4&countrycodes=ph`;
+            // ── 2. Geocode via Nominatim — FILTER to 500m radius only ────
+            // Add bounding box tightly around CvSU to bias results
+            const nominatimUrl =
+                `https://nominatim.openstreetmap.org/search` +
+                `?q=${encodeURIComponent(query)}` +
+                `&format=json&limit=10&countrycodes=ph` +
+                `&bounded=1` +
+                `&viewbox=${CVSU_LNG - 0.02},${CVSU_LAT + 0.02},${CVSU_LNG + 0.02},${CVSU_LAT - 0.02}`;
 
             fetch(nominatimUrl)
                 .then(r => r.json())
                 .then(geoResults => {
-                    renderSearchResults(estMatches, geoResults, query);
+                    // Keep only results whose coordinates are inside the 500m circle
+                    const filtered = geoResults.filter(geo =>
+                        haversineMeters(CVSU_LAT, CVSU_LNG, parseFloat(geo.lat), parseFloat(geo.lon)) <= CVSU_RADIUS
+                    );
+                    renderSearchResults(estMatches, filtered, query);
                 })
                 .catch(() => {
                     renderSearchResults(estMatches, [], query);
