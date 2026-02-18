@@ -47,20 +47,13 @@ document.addEventListener('DOMContentLoaded', function () {
 // AUTO-HIDE MESSAGES
 // ============================================
 function autoHideMessages() {
-    document.querySelectorAll('.message-alert').forEach((el, i) => {
-        // Stagger each message by 500ms if multiple
-        setTimeout(() => {
-            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    setTimeout(() => {
+        document.querySelectorAll('.message-alert').forEach(el => {
             el.style.opacity = '0';
-            el.style.transform = 'translateY(-10px)';
-            setTimeout(() => {
-                el.remove();
-                // Remove container if empty
-                const container = document.getElementById('messagesContainer');
-                if (container && container.children.length === 0) container.remove();
-            }, 500);
-        }, 3000 + (i * 500));
-    });
+            el.style.transition = 'opacity 0.5s';
+            setTimeout(() => el.remove(), 500);
+        });
+    }, 4000);
 }
 
 // ============================================
@@ -1264,12 +1257,40 @@ function initScrollTop() {
 // ============================================
 function showToast(msg, type = 'success') {
     const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const bgColors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fffbeb', info: '#eff6ff' };
     const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+
+    // Get or create a shared toast container so multiple toasts stack nicely
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;`;
+        document.body.appendChild(container);
+    }
+
     const t = document.createElement('div');
-    t.style.cssText = `position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#fff;border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 20px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;z-index:99999;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;animation:slideInDown .3s ease;`;
-    t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;"></i><span>${escHtml(msg)}</span>`;
-    document.body.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3000);
+    t.style.cssText = `background:${bgColors[type]||'#fff'};border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;max-width:520px;pointer-events:auto;animation:toastSlideIn .35s cubic-bezier(.34,1.56,.64,1);`;
+    t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="flex:1;">${escHtml(msg)}</span>`;
+
+    // Inject keyframes once
+    if (!document.getElementById('toastKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'toastKeyframes';
+        style.textContent = `@keyframes toastSlideIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}`;
+        document.head.appendChild(style);
+    }
+
+    container.appendChild(t);
+    setTimeout(() => {
+        t.style.transition = 'opacity .4s ease, transform .4s ease';
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            t.remove();
+            if (container.children.length === 0) container.remove();
+        }, 400);
+    }, 3000);
 }
 
 // ============================================
