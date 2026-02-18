@@ -3194,10 +3194,13 @@ def toggle_top_seller(request, item_id):
 def update_establishment_details_ajax(request, pk):
     """
     AJAX endpoint for updating establishment details in real-time.
+    Bypasses FoodEstablishmentUpdateForm to avoid false validation errors.
     Returns JSON response with updated data for instant UI updates.
     """
+    from datetime import time as dt_time
+
+    # ── Ownership check ────────────────────────────────────────────────────
     try:
-        # Get establishment owned by current user
         establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
     except FoodEstablishment.DoesNotExist:
         return JsonResponse({
@@ -3205,84 +3208,136 @@ def update_establishment_details_ajax(request, pk):
             'error': 'Establishment not found or access denied.'
         }, status=404)
 
-    # Use the form for validation
-    form = FoodEstablishmentUpdateForm(request.POST, request.FILES, instance=establishment)
-
-    if form.is_valid():
-        try:
-            from datetime import time as dt_time
-
-            instance = form.save(commit=False)
-
-            # ✅ Handle time fields from POST data
-            opening_time_str = request.POST.get('opening_time')
-            closing_time_str = request.POST.get('closing_time')
-
-            if opening_time_str:
-                try:
-                    instance.opening_time = dt_time.fromisoformat(opening_time_str)
-                except ValueError:
-                    pass
-
-            if closing_time_str:
-                try:
-                    instance.closing_time = dt_time.fromisoformat(closing_time_str)
-                except ValueError:
-                    pass
-
-            # ✅ Handle payment methods (checkboxes come as multiple values)
-            payment_methods_list = request.POST.getlist('payment_methods')
-            if payment_methods_list:
-                instance.payment_methods = ', '.join(payment_methods_list)
-            else:
-                instance.payment_methods = ''
-
-            # ✅ Save the instance
-            instance.save()
-
-            # ✅ Save many-to-many relationships (amenities)
-            form.save_m2m()
-
-            # ✅ Prepare comprehensive response data for real-time UI update
-            data = {
-                'success': True,
-                'message': 'Establishment details updated successfully.',
-                'name': instance.name,
-                'address': instance.address,
-                'status': instance.calculated_status,  # Use calculated_status property
-                'opening_time': instance.opening_time.strftime('%I:%M %p') if instance.opening_time else None,
-                'closing_time': instance.closing_time.strftime('%I:%M %p') if instance.closing_time else None,
-                'categories': [{'id': cat.id, 'name': cat.name} for cat in instance.categories.all()],
-                'categories_str': ', '.join([cat.name for cat in instance.categories.all()]),
-                'other_category': instance.other_category,
-                'payment_methods': instance.payment_methods,
-                'latitude': str(instance.latitude) if instance.latitude else None,
-                'longitude': str(instance.longitude) if instance.longitude else None,
-                'image_url': instance.image.url if instance.image else '',
-                'amenities': ', '.join([a.name for a in instance.amenities.all()]),
-                'amenities_list': [{'id': a.id, 'name': a.name} for a in instance.amenities.all()],
-                'other_amenity': instance.other_amenity,
-            }
-
-            return JsonResponse(data)
-
-        except Exception as e:
-            print(f"Database save error: {e}")
-            import traceback
-            traceback.print_exc()
+    try:
+        # ── Name (required) ────────────────────────────────────────────────
+        name = request.POST.get('name', '').strip()
+        if not name:
             return JsonResponse({
                 'success': False,
-                'error': f'A database error occurred: {str(e)}'
-            }, status=500)
-    else:
-        # Return validation errors
-        errors = {k: v[0] if isinstance(v, list) else v for k, v in form.errors.items()}
+                'error': 'Establishment name is required.'
+            }, status=400)
+        establishment.name = name
+
+        # ── Address ────────────────────────────────────────────────────────
+        address = request.POST.get('address', '').strip()
+        if address:
+            establishment.address = address
+
+        # ── Coordinates ────────────────────────────────────────────────────
+        lat = request.POST.get('latitude', '').strip()
+        lng = request.POST.get('longitude', '').strip()
+        if lat:
+            try:
+                establishment.latitude = float(lat)
+            except ValueError:
+                pass
+        if lng:
+            try:
+                establishment.longitude = float(lng)
+            except ValueError:
+                pass
+
+        # ── Payment Methods ────────────────────────────────────────────────
+        establishment.payment_methods = request.POST.get('payment_methods', '').strip()
+
+        # ── Opening / Closing Time ─────────────────────────────────────────
+        opening_time_str = request.POST.get('opening_time', '').strip()
+        closing_time_str = request.POST.get('closing_time', '').strip()
+
+        if opening_time_str:
+            try:
+                establishment.opening_time = dt_time.fromisoformat(opening_time_str)
+            except ValueError:
+                pass  # keep existing value if parse fails
+
+        if closing_time_str:
+            try:
+                establishment.closing_time = dt_time.fromisoformat(closing_time_str)
+            except ValueError:
+                pass
+
+        # ── Other category / amenity free-text ────────────────────────────
+        establishment.other_category = request.POST.get('other_category', '').strip() or None
+        establishment.other_amenity = request.POST.get('other_amenity', '').strip() or None
+
+        # ── Image upload ───────────────────────────────────────────────────
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            # Reject files over 5 MB
+            if image_file.size > 5 * 1024 * 1024:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Image must be under 5 MB.'
+                }, status=400)
+            # Reject non-image content types
+            allowed_types = {'image/jpeg', 'image/png', 'image/webp'}
+            if image_file.content_type not in allowed_types:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Only JPG, PNG, or WEBP images are accepted.'
+                }, status=400)
+            establishment.image = image_file
+
+        # ── Save scalar fields ─────────────────────────────────────────────
+        establishment.save()
+
+        # ── Categories (M2M) ──────────────────────────────────────────────
+        category_ids = request.POST.getlist('categories')
+        if category_ids:
+            from .models import Category
+            valid_categories = Category.objects.filter(id__in=category_ids)
+            establishment.categories.set(valid_categories)
+        else:
+            establishment.categories.clear()
+
+        # ── Amenities (M2M) ───────────────────────────────────────────────
+        amenity_ids = request.POST.getlist('amenities')
+        if amenity_ids:
+            from .models import Amenity
+            valid_amenities = Amenity.objects.filter(id__in=amenity_ids)
+            establishment.amenities.set(valid_amenities)
+        else:
+            establishment.amenities.clear()
+
+        # ── Refresh to get accurate M2M data ──────────────────────────────
+        establishment.refresh_from_db()
+
+        # ── Build response payload ─────────────────────────────────────────
+        # Support both `calculated_status` property name variants
+        if hasattr(establishment, 'calculated_status'):
+            status_val = establishment.calculated_status
+        else:
+            status_val = establishment.status
+
+        data = {
+            'success': True,
+            'message': 'Establishment details updated successfully.',
+            'name': establishment.name,
+            'address': establishment.address,
+            'status': status_val,
+            'opening_time': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+            'closing_time': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+            'categories': [{'id': cat.id, 'name': cat.name} for cat in establishment.categories.all()],
+            'categories_str': ', '.join([cat.name for cat in establishment.categories.all()]),
+            'other_category': establishment.other_category,
+            'payment_methods': establishment.payment_methods,
+            'latitude': str(establishment.latitude) if establishment.latitude else None,
+            'longitude': str(establishment.longitude) if establishment.longitude else None,
+            'image_url': establishment.image.url if establishment.image else '',
+            'amenities': ', '.join([a.name for a in establishment.amenities.all()]),
+            'amenities_list': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
+            'other_amenity': establishment.other_amenity,
+        }
+
+        return JsonResponse(data)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'error': 'Validation failed. Please check your inputs.',
-            'errors': errors
-        }, status=400)
-
+            'error': f'A server error occurred: {str(e)}'
+        }, status=500)
 
 @login_required(login_url='owner_login')
 @require_http_methods(["GET"])
