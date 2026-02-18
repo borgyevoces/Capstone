@@ -3114,218 +3114,6 @@
     </div>
 </template>
 
-<script>
-// Wire up mark-all-read button to main notification function
-document.addEventListener('DOMContentLoaded', function() {
-    const markAllReadBtn = document.getElementById('markAllReadBtn');
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', function() {
-            if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead();
-        });
-    }
-
-    // Intercept ALL Mark/Unmark best seller forms — convert to AJAX
-    document.addEventListener('submit', function(e) {
-        const form = e.target;
-        if (form.action && form.action.includes('toggle_top_seller')) {
-            e.preventDefault();
-            const url = form.action;
-            const itemId = url.split('/toggle_top_seller/')[1]?.replace('/', '');
-            const menuCard = form.closest('.menu-card');
-            const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent || 'this item') : 'this item';
-            const isCurrentlySeller = menuCard ? !!menuCard.querySelector('.badge.bestseller') : false;
-            openToggleSellerModal(itemId, itemName, isCurrentlySeller, url, form);
-        }
-    });
-});
-
-// ====================================================
-// MENU ITEM DELETE MODAL
-// ====================================================
-let _pendingDeleteItemId = null;
-let _pendingDeleteButton = null;
-
-window.deleteMenuItem = function(itemId, button) {
-    _pendingDeleteItemId = itemId;
-    _pendingDeleteButton = button;
-    const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent || 'this item') : 'this item';
-    document.getElementById('menuItemDeleteName').textContent = `"${itemName}"`;
-    document.getElementById('menuItemDeleteModal').classList.add('active');
-};
-
-function closeMenuItemDeleteModal() {
-    document.getElementById('menuItemDeleteModal').classList.remove('active');
-    _pendingDeleteItemId = null;
-    _pendingDeleteButton = null;
-}
-
-function confirmMenuItemDelete() {
-    const itemId = _pendingDeleteItemId;
-    const button = _pendingDeleteButton;
-    if (!itemId) return;
-
-    const confirmBtn = document.getElementById('confirmMenuItemDeleteBtn');
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-
-    fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        closeMenuItemDeleteModal();
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-
-        if (data.success) {
-            const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-            if (menuCard) {
-                menuCard.style.animation = 'fadeOut 0.35s ease forwards';
-                setTimeout(() => {
-                    menuCard.remove();
-                    const remaining = document.querySelectorAll('.menu-card');
-                    if (remaining.length === 0) {
-                        const menuGrid = document.querySelector('.menu-grid');
-                        if (menuGrid) menuGrid.innerHTML = `
-                            <div class="no-items" style="grid-column:1/-1;">
-                                <i class="fas fa-inbox"></i>
-                                <p>No menu items yet. Add your first item to get started!</p>
-                            </div>`;
-                    }
-                }, 350);
-            }
-            showNotification('✅ ' + data.message, 'success');
-        } else {
-            showNotification('❌ ' + (data.message || 'Failed to delete item'), 'error');
-        }
-    })
-    .catch(err => {
-        closeMenuItemDeleteModal();
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-        showNotification('❌ An error occurred while deleting', 'error');
-    });
-}
-
-// Close on backdrop click
-document.getElementById('menuItemDeleteModal').addEventListener('click', function(e) {
-    if (e.target === this) closeMenuItemDeleteModal();
-});
-
-// ====================================================
-// MARK / UNMARK BEST SELLER MODAL
-// ====================================================
-let _pendingToggleUrl = null;
-let _pendingToggleForm = null;
-let _pendingToggleItemId = null;
-let _pendingToggleIsSeller = false;
-
-function openToggleSellerModal(itemId, itemName, isCurrentlySeller, url, form) {
-    _pendingToggleUrl = url;
-    _pendingToggleForm = form;
-    _pendingToggleItemId = itemId;
-    _pendingToggleIsSeller = isCurrentlySeller;
-
-    const icon = document.getElementById('toggleSellerIcon');
-    const title = document.getElementById('toggleSellerTitle');
-    const subtitle = document.getElementById('toggleSellerSubtitle');
-    const warningDiv = document.getElementById('toggleSellerWarning');
-    const warningText = document.getElementById('toggleSellerWarningText');
-    const nameEl = document.getElementById('toggleSellerItemName');
-    const descEl = document.getElementById('toggleSellerDesc');
-    const btn = document.getElementById('confirmToggleSellerBtn');
-    const btnText = document.getElementById('confirmToggleSellerBtnText');
-
-    nameEl.textContent = itemName;
-
-    if (isCurrentlySeller) {
-        icon.style.background = 'linear-gradient(135deg, #6b7280, #374151)';
-        title.textContent = 'Unmark Best Seller?';
-        subtitle.textContent = 'Remove the Best Seller badge';
-        warningDiv.style.borderLeftColor = '#6b7280';
-        warningDiv.style.background = '#f9fafb';
-        warningText.style.color = '#374151';
-        warningText.innerHTML = `<i class="fas fa-award"></i> <strong>${itemName}</strong> will be unmarked as a Best Seller`;
-        descEl.textContent = 'The Best Seller badge will be removed and the item will appear as a regular menu item.';
-        btn.style.background = 'linear-gradient(135deg, #6b7280, #374151)';
-        btnText.textContent = 'Yes, Unmark it';
-        btn.innerHTML = `<i class="fas fa-times-circle"></i> <span id="confirmToggleSellerBtnText">Yes, Unmark it</span>`;
-    } else {
-        icon.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        title.textContent = 'Mark as Best Seller?';
-        subtitle.textContent = 'This will highlight the item for customers';
-        warningDiv.style.borderLeftColor = '#f59e0b';
-        warningDiv.style.background = '#fffbeb';
-        warningText.style.color = '#92400e';
-        warningText.innerHTML = `<i class="fas fa-star"></i> <strong>${itemName}</strong> will be marked as a Best Seller`;
-        descEl.textContent = 'Best Seller items appear with a special badge and are highlighted to customers.';
-        btn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        btn.innerHTML = `<i class="fas fa-award"></i> <span id="confirmToggleSellerBtnText">Yes, Mark it</span>`;
-    }
-
-    document.getElementById('toggleSellerModal').classList.add('active');
-}
-
-function closeToggleSellerModal() {
-    document.getElementById('toggleSellerModal').classList.remove('active');
-}
-
-function confirmToggleSeller() {
-    if (!_pendingToggleUrl) return;
-
-    const btn = document.getElementById('confirmToggleSellerBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-    fetch(_pendingToggleUrl, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        redirect: 'follow'
-    })
-    .then(r => {
-        closeToggleSellerModal();
-        btn.disabled = false;
-        // Toggle was success if we get a redirect (200 after follow)
-        // Update UI immediately
-        const menuCard = _pendingToggleForm ? _pendingToggleForm.closest('.menu-card') : null;
-        if (menuCard) {
-            const badgesContainer = menuCard.querySelector('.badges-container');
-            const nowIsSeller = !_pendingToggleIsSeller;
-            if (badgesContainer) {
-                const qty = parseInt(menuCard.dataset.itemQuantity) || 0;
-                badgesContainer.innerHTML = `
-                    ${nowIsSeller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : ''}
-                    ${qty > 0 ? `<span class="badge available">Available: ${qty}</span>` : '<span class="badge soldout">Out of Stock</span>'}
-                `;
-            }
-            // Update the button label
-            const sellerBtn = _pendingToggleForm ? _pendingToggleForm.querySelector('button[type="submit"]') : null;
-            if (sellerBtn) sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${_pendingToggleIsSeller ? 'Mark' : 'Unmark'}`;
-        }
-        const msg = _pendingToggleIsSeller
-            ? `✅ Item unmarked as Best Seller`
-            : `⭐ Item marked as Best Seller!`;
-        showNotification(msg, _pendingToggleIsSeller ? 'info' : 'success');
-    })
-    .catch(err => {
-        closeToggleSellerModal();
-        btn.disabled = false;
-        showNotification('❌ An error occurred', 'error');
-    });
-}
-
-document.getElementById('toggleSellerModal').addEventListener('click', function(e) {
-    if (e.target === this) closeToggleSellerModal();
-});
-</script>
 
 
 
@@ -3977,6 +3765,202 @@ document.getElementById('toggleSellerModal').addEventListener('click', function(
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
 {% endblock %}
+
+<!-- ============================================================
+     DASHBOARD OVERRIDES — must run AFTER food_establishment_dashboard.js
+     ============================================================ -->
+<script>
+// ====================================================
+// MARK-ALL-READ BUTTON WIRING
+// ====================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function() {
+            if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead();
+        });
+    }
+});
+
+// ====================================================
+// MENU ITEM DELETE — Custom modal (replaces confirm())
+// ====================================================
+let _pendingDeleteItemId = null;
+
+window.deleteMenuItem = function(itemId, button) {
+    _pendingDeleteItemId = itemId;
+    const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+    const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
+    document.getElementById('menuItemDeleteName').textContent = '"' + itemName + '"';
+    document.getElementById('menuItemDeleteModal').classList.add('active');
+};
+
+function closeMenuItemDeleteModal() {
+    document.getElementById('menuItemDeleteModal').classList.remove('active');
+    _pendingDeleteItemId = null;
+}
+
+function confirmMenuItemDelete() {
+    const itemId = _pendingDeleteItemId;
+    if (!itemId) return;
+
+    const confirmBtn = document.getElementById('confirmMenuItemDeleteBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        closeMenuItemDeleteModal();
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+
+        if (data.success) {
+            const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+            if (menuCard) {
+                menuCard.style.animation = 'fadeOut 0.35s ease forwards';
+                setTimeout(() => {
+                    menuCard.remove();
+                    if (!document.querySelectorAll('.menu-card').length) {
+                        const grid = document.querySelector('.menu-grid');
+                        if (grid) grid.innerHTML = `<div class="no-items" style="grid-column:1/-1;"><i class="fas fa-inbox"></i><p>No menu items yet. Add your first item!</p></div>`;
+                    }
+                }, 350);
+            }
+            showNotification('✅ ' + data.message, 'success');
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to delete item'), 'error');
+        }
+    })
+    .catch(() => {
+        closeMenuItemDeleteModal();
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+        showNotification('❌ An error occurred while deleting', 'error');
+    });
+}
+
+document.getElementById('menuItemDeleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMenuItemDeleteModal();
+});
+
+// ====================================================
+// MARK / UNMARK BEST SELLER — Modal + AJAX
+// ====================================================
+let _pendingToggleUrl = null;
+let _pendingToggleForm = null;
+let _pendingToggleIsSeller = false;
+
+// Intercept form submit for toggle_top_seller
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (form && form.action && form.action.includes('toggle_top_seller')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const url = form.action;
+        const menuCard = form.closest('.menu-card');
+        const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
+        const isCurrentlySeller = menuCard ? !!menuCard.querySelector('.badge.bestseller') : false;
+        openToggleSellerModal(itemName, isCurrentlySeller, url, form);
+    }
+}, true); // capture phase so it runs before any bubbling handler
+
+function openToggleSellerModal(itemName, isCurrentlySeller, url, form) {
+    _pendingToggleUrl = url;
+    _pendingToggleForm = form;
+    _pendingToggleIsSeller = isCurrentlySeller;
+
+    const icon    = document.getElementById('toggleSellerIcon');
+    const title   = document.getElementById('toggleSellerTitle');
+    const sub     = document.getElementById('toggleSellerSubtitle');
+    const warnDiv = document.getElementById('toggleSellerWarning');
+    const warnTxt = document.getElementById('toggleSellerWarningText');
+    const desc    = document.getElementById('toggleSellerDesc');
+    const btn     = document.getElementById('confirmToggleSellerBtn');
+
+    if (isCurrentlySeller) {
+        icon.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
+        title.textContent = 'Unmark Best Seller?';
+        sub.textContent   = 'Remove the Best Seller badge from this item';
+        warnDiv.style.cssText = 'border-left:4px solid #6b7280;background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:16px;';
+        warnTxt.innerHTML = '<i class="fas fa-award"></i> <strong>' + itemName + '</strong> will be unmarked as a Best Seller';
+        warnTxt.style.color = '#374151';
+        desc.textContent  = 'The Best Seller badge will be removed. The item will appear as a regular menu item.';
+        btn.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
+        btn.innerHTML = '<i class="fas fa-times-circle"></i> Yes, Unmark it';
+    } else {
+        icon.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+        title.textContent = 'Mark as Best Seller?';
+        sub.textContent   = 'Highlight this item with a Best Seller badge';
+        warnDiv.style.cssText = 'border-left:4px solid #f59e0b;background:#fffbeb;padding:16px;border-radius:8px;margin-bottom:16px;';
+        warnTxt.innerHTML = '<i class="fas fa-star"></i> <strong>' + itemName + '</strong> will be marked as a Best Seller';
+        warnTxt.style.color = '#92400e';
+        desc.textContent  = 'Best Seller items get a special badge and are highlighted to customers browsing your menu.';
+        btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+        btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
+    }
+
+    document.getElementById('toggleSellerModal').classList.add('active');
+}
+
+function closeToggleSellerModal() {
+    document.getElementById('toggleSellerModal').classList.remove('active');
+}
+
+function confirmToggleSeller() {
+    if (!_pendingToggleUrl) return;
+
+    const btn = document.getElementById('confirmToggleSellerBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    fetch(_pendingToggleUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        closeToggleSellerModal();
+        btn.disabled = false;
+
+        if (data.success) {
+            // Update badge on menu card immediately — no page reload needed
+            const menuCard = _pendingToggleForm ? _pendingToggleForm.closest('.menu-card') : null;
+            if (menuCard) {
+                const badgesContainer = menuCard.querySelector('.badges-container');
+                if (badgesContainer) {
+                    const qty = parseInt(menuCard.dataset.itemQuantity) || 0;
+                    badgesContainer.innerHTML =
+                        (data.is_top_seller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : '') +
+                        (qty > 0 ? `<span class="badge available">Available: ${qty}</span>` : '<span class="badge soldout">Out of Stock</span>');
+                }
+                // Flip button label
+                const sellerBtn = _pendingToggleForm.querySelector('button[type="submit"]');
+                if (sellerBtn) sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${data.is_top_seller ? 'Unmark' : 'Mark'}`;
+            }
+            const msg = data.is_top_seller ? '⭐ ' + data.message : '✅ ' + data.message;
+            showNotification(msg, data.is_top_seller ? 'success' : 'info');
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to update'), 'error');
+        }
+    })
+    .catch(() => {
+        closeToggleSellerModal();
+        btn.disabled = false;
+        showNotification('❌ An error occurred', 'error');
+    });
+}
+
+document.getElementById('toggleSellerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeToggleSellerModal();
+});
+</script>
 
 <script src="{% static 'js/status_updater.js' %}"></script>
 
