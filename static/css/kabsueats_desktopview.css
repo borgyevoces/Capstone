@@ -17,7 +17,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* MESSAGES                                     */
 /* ============================================ */
-.messages-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 12px; min-width: 400px; max-width: 600px; pointer-events: none; }
+.messages-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 12px; min-width: 400px; max-width: 600px; pointer-events: none; width: max-content; }
 .message-alert { background-color: white; border-radius: 10px; padding: 16px 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 14px; animation: slideInDown 0.4s cubic-bezier(0.34,1.56,0.64,1); pointer-events: auto; min-height: 56px; border-left: 5px solid; }
 .message-alert.success { border-left-color: #10b981; background-color: #f0fdf4; }
 .message-alert.error { border-left-color: #ef4444; background-color: #fef2f2; }

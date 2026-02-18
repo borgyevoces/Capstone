@@ -47,13 +47,20 @@ document.addEventListener('DOMContentLoaded', function () {
 // AUTO-HIDE MESSAGES
 // ============================================
 function autoHideMessages() {
-    setTimeout(() => {
-        document.querySelectorAll('.message-alert').forEach(el => {
+    document.querySelectorAll('.message-alert').forEach((el, i) => {
+        // Stagger each message by 500ms if multiple
+        setTimeout(() => {
+            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
             el.style.opacity = '0';
-            el.style.transition = 'opacity 0.5s';
-            setTimeout(() => el.remove(), 500);
-        });
-    }, 4000);
+            el.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                el.remove();
+                // Remove container if empty
+                const container = document.getElementById('messagesContainer');
+                if (container && container.children.length === 0) container.remove();
+            }, 500);
+        }, 3000 + (i * 500));
+    });
 }
 
 // ============================================
