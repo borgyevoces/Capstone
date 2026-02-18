@@ -1134,7 +1134,7 @@
         }
 
         .chat-message.sent .chat-message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -1276,7 +1276,7 @@
             min-width: 40px !important;
             max-width: 40px !important;
             flex: 0 0 40px !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border: none;
             border-radius: 50%;
@@ -3719,9 +3719,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                window._allNotifications = data.notifications || [];
+                // Filter out locally-deleted notifications
+                const deleted = getDeletedNotifIds();
+                window._allNotifications = (data.notifications || []).filter(n => !deleted.has(String(n.id)));
                 renderFilteredNotifications(window._currentFilter || 'all');
-                updateNotificationBadge(data.unread_count);
+                // Badge should only count unread that aren't deleted
+                updateNotificationBadge(window._allNotifications.filter(n => n.is_new).length);
             } else {
                 window._allNotifications = [];
                 renderFilteredNotifications('all');
@@ -3846,13 +3849,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return String(text).replace(/[&<>"']/g, c => map[c]);
     }
 
+    // Helper: get/set deleted notification IDs from localStorage
+    function getDeletedNotifIds() {
+        try { return new Set(JSON.parse(localStorage.getItem('_deletedNotifIds') || '[]')); }
+        catch(e) { return new Set(); }
+    }
+    function saveDeletedNotifId(id) {
+        try {
+            const ids = getDeletedNotifIds();
+            ids.add(String(id));
+            localStorage.setItem('_deletedNotifIds', JSON.stringify([...ids]));
+        } catch(e) {}
+    }
+
     window.deleteNotification = function(notificationId) {
         const item = document.querySelector(`[data-nid="${notificationId}"]`);
         if (!item) return;
         item.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
             item.remove();
+            // Remove from memory
             window._allNotifications = (window._allNotifications || []).filter(n => n.id != notificationId);
+            // Save to localStorage so it stays deleted after refresh + polling
+            saveDeletedNotifId(notificationId);
             const list = document.getElementById('notificationList');
             const emptyState = document.getElementById('notificationEmptyState');
             if (list && list.querySelectorAll('.notification-item').length === 0 && emptyState) {
@@ -3862,13 +3881,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
         }, 300);
-        fetch(`/api/notifications/${notificationId}/dismiss/`, {
+        // Mark as read on server (no dismiss endpoint — use mark-read to prevent re-showing as unread)
+        fetch(`/api/notifications/${notificationId}/mark-read/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
-        }).catch(err => console.error('Error deleting notification:', err));
+        }).catch(err => console.error('Error on delete/mark-read:', err));
     };
 
     function markNotificationRead(notificationId) {
+        // Mark in-memory permanently
+        const n = (window._allNotifications || []).find(x => x.id == notificationId);
+        if (n) n.is_new = false;
         fetch(`/api/notifications/${notificationId}/mark-read/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
@@ -3925,11 +3948,15 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                updateNotificationBadge(data.unread_count);
-                // If panel is open, refresh the list to catch new notifications
+                // Filter out deleted IDs before updating
+                const deleted = getDeletedNotifIds();
+                const filtered = (data.notifications || []).filter(n => !deleted.has(String(n.id)));
+                const unreadCount = filtered.filter(n => n.is_new).length;
+                updateNotificationBadge(unreadCount);
+                // If panel is open, refresh the list
                 const panel = document.getElementById('notificationPanel');
                 if (panel && panel.classList.contains('open')) {
-                    window._allNotifications = data.notifications || [];
+                    window._allNotifications = filtered;
                     renderFilteredNotifications(window._currentFilter || 'all');
                 }
             }
@@ -3949,7 +3976,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                updateNotificationBadge(data.unread_count);
+                const deleted = getDeletedNotifIds();
+                const unreadCount = (data.notifications || []).filter(n => !deleted.has(String(n.id)) && n.is_new).length;
+                updateNotificationBadge(unreadCount);
             }
         })
         .catch(error => console.error('Error loading initial notifications:', error));
