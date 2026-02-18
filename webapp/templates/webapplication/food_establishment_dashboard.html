@@ -514,9 +514,9 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -525,8 +525,8 @@
             transition: all 0.2s;
             white-space: nowrap;
         }
-        .mark-all-read-btn i { color: #16a34a; font-size: 12px; }
-        .mark-all-read-btn:hover { background: #dcfce7; border-color: #86efac; }
+        .mark-all-read-btn i { color: #dc2626; font-size: 12px; }
+        .mark-all-read-btn:hover { background: #fecaca; border-color: #f87171; }
         .close-notification-btn { display: none; }
 
         /* Filter Tabs */
@@ -705,9 +705,9 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -716,7 +716,7 @@
             transition: all 0.2s;
         }
         .notification-close-btn { display: none; }
-        .mark-all-read-btn:hover { background: #dcfce7; }
+        .mark-all-read-btn:hover { background: #fecaca; border-color: #f87171; }
 
         .notification-list {
             flex: 1;
@@ -2998,360 +2998,17 @@
 </template>
 
 <script>
-// Notification Panel JavaScript
+// Wire up mark-all-read button to main notification function
 document.addEventListener('DOMContentLoaded', function() {
-    const notificationToggle = document.getElementById('notificationToggle');
-    const notificationPanel = document.getElementById('notificationPanel');
-    const closeNotificationBtn = document.getElementById('closeNotificationBtn');
     const markAllReadBtn = document.getElementById('markAllReadBtn');
-    const notificationList = document.getElementById('notificationList');
-    const notificationLoading = document.getElementById('notificationLoading');
-    const notificationEmptyState = document.getElementById('notificationEmptyState');
-    const notificationBadge = document.querySelector('.notification-badge');
-
-    // Store all loaded notifications globally for filtering
-    window._allNotifications = [];
-    window._currentFilter = 'all';
-
-    // Toggle notification panel
-    if (notificationToggle) {
-        notificationToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notificationPanel.classList.toggle('show');
-            if (notificationPanel.classList.contains('show')) {
-                loadNotifications();
-            }
-        });
-    }
-
-    // Close notification panel
-    if (closeNotificationBtn) {
-        closeNotificationBtn.addEventListener('click', function() {
-            notificationPanel.classList.remove('show');
-        });
-    }
-
-    // Mark all as read
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', function() {
-            markAllNotificationsAsRead();
+            if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead();
         });
     }
-
-    // Close panel when clicking outside
-    document.addEventListener('click', function(e) {
-        if (notificationPanel.classList.contains('show') &&
-            !notificationPanel.contains(e.target) &&
-            !notificationToggle.contains(e.target)) {
-            notificationPanel.classList.remove('show');
-        }
-    });
-
-    // Load notifications from server
-    function loadNotifications() {
-        notificationLoading.style.display = 'flex';
-        notificationEmptyState.style.display = 'none';
-
-        // Clear existing notifications except loading/empty states
-        const existingItems = notificationList.querySelectorAll('.notification-item');
-        existingItems.forEach(item => item.remove());
-
-        fetch('/api/notifications/')
-            .then(response => response.json())
-            .then(data => {
-                notificationLoading.style.display = 'none';
-
-                if (data.notifications && data.notifications.length > 0) {
-                    window._allNotifications = data.notifications;
-                    applyNotificationFilter(window._currentFilter);
-                    updateNotificationBadge(data.unread_count);
-                } else {
-                    window._allNotifications = [];
-                    notificationEmptyState.style.display = 'flex';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading notifications:', error);
-                notificationLoading.style.display = 'none';
-                notificationEmptyState.style.display = 'flex';
-            });
-    }
-
-    // Filter notifications based on tab
-    window.filterNotifications = function(filter) {
-        window._currentFilter = filter;
-        // Update tab active state
-        document.getElementById('notifTabAll').classList.toggle('active', filter === 'all');
-        document.getElementById('notifTabUnread').classList.toggle('active', filter === 'unread');
-        applyNotificationFilter(filter);
-    };
-
-    function applyNotificationFilter(filter) {
-        // Clear existing notification items
-        notificationList.querySelectorAll('.notification-item').forEach(el => el.remove());
-
-        const filtered = filter === 'unread'
-            ? window._allNotifications.filter(n => !n.is_read)
-            : window._allNotifications;
-
-        if (filtered.length > 0) {
-            notificationEmptyState.style.display = 'none';
-            renderNotifications(filtered);
-        } else {
-            notificationEmptyState.style.display = 'flex';
-            notificationEmptyState.querySelector('p').textContent =
-                filter === 'unread' ? 'No unread notifications' : 'No notifications yet';
-        }
-    }
-
-    // Render notifications
-    function renderNotifications(notifications) {
-        const template = document.getElementById('notificationItemTemplate');
-
-        notifications.forEach(notification => {
-            const clone = template.content.cloneNode(true);
-            const item = clone.querySelector('.notification-item');
-
-            // Set notification ID and unread status
-            item.dataset.notificationId = notification.id;
-            if (!notification.is_read) {
-                item.classList.add('unread');
-            }
-
-            // Set email text (main visible line)
-            const emailText = clone.querySelector('.notif-email-text');
-            emailText.textContent = notification.customer_email || 'customer@email.com';
-
-            // Set message
-            const msgEl = clone.querySelector('.notif-msg');
-            msgEl.textContent = notification.message || 'Order has been completed';
-
-            // Set customer information
-            if (notification.customer_name && notification.customer_email) {
-                const customerInitial = clone.querySelector('.notif-pic');
-                const customerName = clone.querySelector('.notif-cust-name');
-                const customerEmail = clone.querySelector('.notif-cust-mail');
-
-                customerInitial.textContent = notification.customer_name.charAt(0).toUpperCase();
-                customerName.textContent = notification.customer_name;
-                customerEmail.textContent = notification.customer_email;
-            } else {
-                clone.querySelector('.customer-block').style.display = 'none';
-            }
-
-            // Set order information
-            if (notification.order_id) {
-                const orderIdText = clone.querySelector('.notif-ord-num');
-                const orderTotalAmount = clone.querySelector('.notif-ord-amt');
-                const refText = clone.querySelector('.ref-text');
-
-                orderIdText.textContent = `Order #${notification.order_id}`;
-                orderTotalAmount.textContent = `₱${parseFloat(notification.total_amount || 0).toFixed(2)}`;
-
-                if (notification.payment_reference) {
-                    refText.textContent = `Ref: ${notification.payment_reference}`;
-                } else {
-                    clone.querySelector('.notif-ref').style.display = 'none';
-                }
-
-                // Render order items
-                const orderItemsContainer = clone.querySelector('.notif-list');
-                orderItemsContainer.innerHTML = '';
-
-                if (notification.order_items && notification.order_items.length > 0) {
-                    notification.order_items.forEach(orderItem => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'notif-prod';
-                        itemDiv.innerHTML = `
-                            <span class="notif-prod-name"><strong>${orderItem.quantity}x</strong> ${orderItem.item_name}</span>
-                            <span class="notif-prod-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
-                        `;
-                        orderItemsContainer.appendChild(itemDiv);
-                    });
-                }
-
-                // Set order status
-                const statusBadge = clone.querySelector('.notif-stat');
-                const statusText = clone.querySelector('.status-text');
-                const status = (notification.order_status || 'pending').toLowerCase();
-                statusBadge.className = `notif-stat ${status}`;
-                statusText.textContent = status.toUpperCase();
-
-                // Update icon based on status
-                const statusIcon = statusBadge.querySelector('i');
-                const statusIcons = {
-                    'completed': 'fa-check-circle',
-                    'paid': 'fa-check-circle',
-                    'pending': 'fa-clock',
-                    'processing': 'fa-spinner',
-                    'cancelled': 'fa-times-circle'
-                };
-                statusIcon.className = `fas ${statusIcons[status] || 'fa-clock'}`;
-            } else {
-                clone.querySelector('.order-block').style.display = 'none';
-            }
-
-            // Set delivery address if exists
-            if (notification.delivery_address) {
-                const addressBlock = clone.querySelector('.address-block');
-                const addressText = clone.querySelector('.address-text');
-                addressBlock.style.display = 'block';
-                addressText.textContent = notification.delivery_address;
-            }
-
-            // Set time ago
-            const timeAgoText = clone.querySelector('.time-ago-text');
-            timeAgoText.textContent = notification.created_at_display || 'Just now';
-
-            // Add click handler to toggle expansion (but not on delete btn)
-            const notifLine = clone.querySelector('.notif-line');
-            notifLine.addEventListener('click', function(e) {
-                if (e.target.closest('.notif-delete-btn')) return;
-                toggleNotification(item.dataset.notificationId);
-            });
-
-            // Append to list
-            notificationList.appendChild(clone);
-        });
-    }
-
-    // Toggle notification expansion
-    function toggleNotification(notificationId) {
-        const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
-        if (!item) return;
-
-        const wasExpanded = item.classList.contains('expanded');
-
-        // Close all notifications
-        document.querySelectorAll('.notification-item.expanded').forEach(el => {
-            el.classList.remove('expanded');
-        });
-
-        // Toggle this one
-        if (!wasExpanded) {
-            item.classList.add('expanded');
-
-            // Mark as read
-            if (item.classList.contains('unread')) {
-                markNotificationAsRead(notificationId);
-                item.classList.remove('unread');
-                // Update in-memory cache
-                const notif = window._allNotifications.find(n => n.id == notificationId);
-                if (notif) notif.is_read = true;
-            }
-        }
-    }
-
-    // Delete notification (remove from UI and server)
-    window.deleteNotification = function(notificationId) {
-        const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
-        if (!item) return;
-
-        item.style.animation = 'slideOut 0.3s ease';
-
-        setTimeout(() => {
-            item.remove();
-
-            // Remove from in-memory store
-            window._allNotifications = window._allNotifications.filter(n => n.id != notificationId);
-
-            // Check if empty
-            const remaining = notificationList.querySelectorAll('.notification-item');
-            if (remaining.length === 0) {
-                notificationEmptyState.style.display = 'flex';
-            }
-
-            // Update badge
-            const unreadCount = window._allNotifications.filter(n => !n.is_read).length;
-            updateNotificationBadge(unreadCount);
-        }, 300);
-
-        // Call dismiss API (reuse dismiss endpoint for delete)
-        fetch(`/api/notifications/${notificationId}/dismiss/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        }).catch(error => console.error('Error deleting notification:', error));
-    };
-
-    // Mark notification as read
-    function markNotificationAsRead(notificationId) {
-        fetch(`/api/notifications/${notificationId}/mark-read/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        }).catch(error => console.error('Error marking notification as read:', error));
-
-        // Update badge
-        const unreadCount = window._allNotifications.filter(n => !n.is_read).length;
-        updateNotificationBadge(unreadCount);
-    }
-
-    // Get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Update notification badge count
-    function updateNotificationBadge(count) {
-        if (notificationBadge) {
-            if (count > 0) {
-                notificationBadge.textContent = count > 99 ? '99+' : count;
-                notificationBadge.style.display = 'block';
-            } else {
-                notificationBadge.style.display = 'none';
-            }
-        }
-    }
-
-    // Get time ago text
-    function getTimeAgo(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
-
-        const intervals = {
-            year: 31536000,
-            month: 2592000,
-            week: 604800,
-            day: 86400,
-            hour: 3600,
-            minute: 60
-        };
-
-        for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-            const interval = Math.floor(seconds / secondsInUnit);
-            if (interval >= 1) {
-                return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-            }
-        }
-
-        return 'Just now';
-    }
-
-    // Auto-refresh notifications every 30 seconds
-    setInterval(function() {
-        if (notificationPanel.classList.contains('show')) {
-            loadNotifications();
-        }
-    }, 30000);
 });
 </script>
+
 
 
 <div class="chat-panel" id="chatPanel">
@@ -4055,254 +3712,183 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadNotifications() {
-        console.log('🔔 Loading notifications...');
         fetch('/api/notifications/', {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
-        .then(response => {
-            console.log('📦 Response status:', response.status);
-            return response.json();
-        })
+        .then(r => r.json())
         .then(data => {
-            console.log('✅ Notifications data received:', data);
             if (data.success) {
-                console.log(`📋 Number of notifications: ${data.notifications.length}`);
-                console.log(`🔔 Unread count: ${data.unread_count}`);
-                window._allNotifications = data.notifications;
-                const filter = window._currentFilter || 'all';
-                const filtered = filter === 'unread'
-                    ? data.notifications.filter(n => n.is_new)
-                    : data.notifications;
-                displayNotifications(filtered);
+                window._allNotifications = data.notifications || [];
+                renderFilteredNotifications(window._currentFilter || 'all');
                 updateNotificationBadge(data.unread_count);
             } else {
-                console.error('❌ API returned success=false:', data);
                 window._allNotifications = [];
-                displayNotifications([]);
+                renderFilteredNotifications('all');
             }
         })
-        .catch(error => {
-            console.error('❌ Error loading notifications:', error);
-            window._allNotifications = [];
-            displayNotifications([]);
-        });
+        .catch(err => { console.error('Error loading notifications:', err); window._allNotifications = []; renderFilteredNotifications('all'); });
     }
 
     window.filterNotifications = function(filter) {
         window._currentFilter = filter;
         document.getElementById('notifTabAll').classList.toggle('active', filter === 'all');
         document.getElementById('notifTabUnread').classList.toggle('active', filter === 'unread');
+        renderFilteredNotifications(filter);
+    };
+
+    function renderFilteredNotifications(filter) {
         const all = window._allNotifications || [];
         const filtered = filter === 'unread' ? all.filter(n => n.is_new) : all;
         displayNotifications(filtered, filter);
-    };
+    }
 
     function displayNotifications(notifications, filter) {
         const notificationList = document.getElementById('notificationList');
         const notificationEmptyState = document.getElementById('notificationEmptyState');
         const notificationLoading = document.getElementById('notificationLoading');
-
-        // Remove existing notification items
         notificationList.querySelectorAll('.notification-item').forEach(el => el.remove());
-
         if (notificationLoading) notificationLoading.style.display = 'none';
-
         if (!notifications || notifications.length === 0) {
             if (notificationEmptyState) {
                 notificationEmptyState.style.display = 'flex';
                 const p = notificationEmptyState.querySelector('p');
-                if (p) p.textContent = (filter === 'unread') ? 'No unread notifications' : 'No notifications yet';
+                if (p) p.textContent = filter === 'unread' ? 'No unread notifications' : 'No notifications yet';
             }
             return;
         }
-
         if (notificationEmptyState) notificationEmptyState.style.display = 'none';
+        notifications.forEach(notif => notificationList.appendChild(createNotificationElement(notif)));
+    }
 
-        const template = document.getElementById('notificationItemTemplate');
+    function createNotificationElement(notif) {
+        const isUnread = notif.is_new ? 'unread' : '';
+        const initial = (notif.customer && notif.customer.name) ? notif.customer.name.charAt(0).toUpperCase() : 'U';
+        const email = (notif.customer && notif.customer.email) ? notif.customer.email : '';
+        const orderId = (notif.order && notif.order.id) ? notif.order.id : 'N/A';
+        const status = notif.order ? (notif.order.status || 'pending').toLowerCase() : 'pending';
+        const statusIcons = { 'paid': 'check-circle', 'completed': 'check-circle', 'pending': 'clock', 'processing': 'spinner', 'cancelled': 'times-circle' };
+        const statusIcon = statusIcons[status] || 'clock';
 
-        notifications.forEach(notif => {
-            const clone = template.content.cloneNode(true);
-            const item = clone.querySelector('.notification-item');
+        const items = (notif.order && notif.order.items) ? notif.order.items.map(item =>
+            `<div class="notif-prod">
+                <span class="notif-prod-name"><strong>${item.quantity}x</strong> ${escapeHtml(item.name)}</span>
+                <span class="notif-prod-price">&#8369;${parseFloat(item.total || item.price || 0).toFixed(2)}</span>
+            </div>`
+        ).join('') : '';
 
-            // ID and unread state
-            item.dataset.notificationId = notif.id;
-            if (notif.is_new) item.classList.add('unread');
+        const wrapper = document.createElement('div');
+        wrapper.className = `notification-item ${isUnread}`;
+        wrapper.dataset.nid = notif.id;
+        wrapper.innerHTML = `
+            <div class="notif-line">
+                <span class="notif-email-text">${escapeHtml(email)}</span>
+                <div class="notif-arrow"><i class="fas fa-chevron-down"></i></div>
+                <button class="notif-delete-btn" title="Delete notification"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="notif-expand">
+                <div class="notif-inner">
+                    ${notif.message ? `<div class="notif-msg">${escapeHtml(notif.message)}</div>` : ''}
+                    <div class="notif-block">
+                        <div class="notif-sec-label">Customer</div>
+                        <div class="notif-cust">
+                            <div class="notif-pic">${initial}</div>
+                            <div class="notif-cust-data">
+                                <div class="notif-cust-name">${escapeHtml(notif.customer ? notif.customer.name : '')}</div>
+                                <div class="notif-cust-mail">${escapeHtml(email)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${notif.order ? `
+                    <div class="notif-block">
+                        <div class="notif-sec-label">Order Details</div>
+                        <div class="notif-ord">
+                            <div class="notif-ord-top">
+                                <span class="notif-ord-num">Order #${escapeHtml(String(orderId))}</span>
+                                <span class="notif-ord-amt">&#8369;${parseFloat(notif.order.total_amount || 0).toFixed(2)}</span>
+                            </div>
+                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `<div class="notif-ref"><i class="fas fa-hashtag"></i> Ref: ${escapeHtml(notif.order.reference_number)}</div>` : ''}
+                            ${items ? `<div class="notif-list">${items}</div>` : ''}
+                            <div class="notif-stat ${status}"><i class="fas fa-${statusIcon}"></i> ${escapeHtml(notif.order.status || 'Pending')}</div>
+                        </div>
+                    </div>` : ''}
+                    <div class="notif-when"><i class="far fa-clock"></i> ${notif.time_ago || 'Just now'}</div>
+                </div>
+            </div>`;
 
-            // --- COLLAPSED ROW: show customer email only (original style) ---
-            const emailText = clone.querySelector('.notif-email-text');
-            const timeAgo = notif.time_ago || formatTimeAgo(notif.created_at);
-
-            // Show customer email as the main collapsed line
-            const email = (notif.customer && notif.customer.email) ? notif.customer.email : 'customer@email.com';
-            emailText.textContent = email;
-
-            // --- EXPANDED: full details ---
-            const msgEl = clone.querySelector('.notif-msg');
-            msgEl.textContent = notif.message || '';
-
-            // Customer block
-            if (notif.customer && notif.customer.email) {
-                const customerInitial = clone.querySelector('.notif-pic');
-                const customerName = clone.querySelector('.notif-cust-name');
-                const customerEmail = clone.querySelector('.notif-cust-mail');
-                customerInitial.textContent = (notif.customer.name || 'U').charAt(0).toUpperCase();
-                customerName.textContent = notif.customer.name || 'Unknown';
-                customerEmail.textContent = notif.customer.email;
-            } else {
-                clone.querySelector('.customer-block').style.display = 'none';
+        wrapper.querySelector('.notif-line').addEventListener('click', function(e) {
+            if (e.target.closest('.notif-delete-btn')) return;
+            const wasExpanded = wrapper.classList.contains('expanded');
+            document.querySelectorAll('.notification-item.expanded').forEach(el => el.classList.remove('expanded'));
+            if (!wasExpanded) {
+                wrapper.classList.add('expanded');
+                if (wrapper.classList.contains('unread')) {
+                    wrapper.classList.remove('unread');
+                    const n = (window._allNotifications || []).find(x => x.id == notif.id);
+                    if (n) n.is_new = false;
+                    markNotificationRead(notif.id);
+                    updateNotificationBadge((window._allNotifications || []).filter(x => x.is_new).length);
+                }
             }
-
-            // Order block
-            if (notif.order) {
-                const orderIdEl = clone.querySelector('.notif-ord-num');
-                const orderAmt = clone.querySelector('.notif-ord-amt');
-                const refText = clone.querySelector('.ref-text');
-                const orderItemsContainer = clone.querySelector('.notif-list');
-                const statusBadge = clone.querySelector('.notif-stat');
-                const statusText = clone.querySelector('.status-text');
-
-                orderIdEl.textContent = `Order #${notif.order.id}`;
-                orderAmt.textContent = `₱${parseFloat(notif.order.total_amount || 0).toFixed(2)}`;
-
-                // Reference
-                if (notif.order.reference_number && notif.order.reference_number !== 'N/A') {
-                    refText.textContent = `Ref: ${notif.order.reference_number}`;
-                } else {
-                    clone.querySelector('.notif-ref').style.display = 'none';
-                }
-
-                // Items
-                orderItemsContainer.innerHTML = '';
-                if (notif.order.items && notif.order.items.length > 0) {
-                    notif.order.items.forEach(orderItem => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'notif-prod';
-                        itemDiv.innerHTML = `
-                            <span class="notif-prod-name"><strong>${orderItem.quantity}x</strong> ${orderItem.name || orderItem.item_name}</span>
-                            <span class="notif-prod-price">₱${parseFloat(orderItem.price).toFixed(2)}</span>
-                        `;
-                        orderItemsContainer.appendChild(itemDiv);
-                    });
-                }
-
-                // Status
-                const status = (notif.order.status || (notif.is_paid ? 'paid' : 'pending')).toLowerCase();
-                statusBadge.className = `notif-stat ${status}`;
-                statusText.textContent = status.toUpperCase();
-                const statusIcons = {
-                    'completed': 'fa-check-circle', 'paid': 'fa-check-circle',
-                    'pending': 'fa-clock', 'processing': 'fa-spinner', 'cancelled': 'fa-times-circle'
-                };
-                statusBadge.querySelector('i').className = `fas ${statusIcons[status] || 'fa-clock'}`;
-            } else {
-                clone.querySelector('.order-block').style.display = 'none';
-            }
-
-            // Time
-            clone.querySelector('.time-ago-text').textContent = timeAgo;
-
-            // Toggle expand on row click (skip delete btn)
-            const notifLine = clone.querySelector('.notif-line');
-            notifLine.addEventListener('click', function(e) {
-                if (e.target.closest('.notif-delete-btn')) return;
-                const currentItem = this.closest('.notification-item');
-                const notifId = currentItem.dataset.notificationId;
-                const wasExpanded = currentItem.classList.contains('expanded');
-                // Collapse all
-                document.querySelectorAll('.notification-item.expanded').forEach(el => el.classList.remove('expanded'));
-                // Expand this one if it wasn't already open
-                if (!wasExpanded) {
-                    currentItem.classList.add('expanded');
-                    if (currentItem.classList.contains('unread')) {
-                        markNotificationRead(notifId);
-                        currentItem.classList.remove('unread');
-                        // Update in-memory cache
-                        const n = (window._allNotifications || []).find(x => x.id == notifId);
-                        if (n) n.is_new = false;
-                        const badge = document.querySelector('.notification-badge');
-                        if (badge) {
-                            const count = Math.max(0, (parseInt(badge.textContent) || 1) - 1);
-                            badge.textContent = count;
-                            if (count === 0) badge.style.display = 'none';
-                        }
-                    }
-                }
-            });
-
-            notificationList.appendChild(clone);
         });
+
+        wrapper.querySelector('.notif-delete-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            window.deleteNotification(notif.id);
+        });
+
+        return wrapper;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, c => map[c]);
     }
 
     window.deleteNotification = function(notificationId) {
-        const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        const item = document.querySelector(`[data-nid="${notificationId}"]`);
         if (!item) return;
-
         item.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
             item.remove();
-            // Remove from memory
             window._allNotifications = (window._allNotifications || []).filter(n => n.id != notificationId);
-            // Check empty
-            const notificationList = document.getElementById('notificationList');
-            const notificationEmptyState = document.getElementById('notificationEmptyState');
-            if (notificationList && notificationList.querySelectorAll('.notification-item').length === 0) {
-                if (notificationEmptyState) notificationEmptyState.style.display = 'flex';
+            const list = document.getElementById('notificationList');
+            const emptyState = document.getElementById('notificationEmptyState');
+            if (list && list.querySelectorAll('.notification-item').length === 0 && emptyState) {
+                emptyState.style.display = 'flex';
+                const p = emptyState.querySelector('p');
+                if (p) p.textContent = (window._currentFilter === 'unread') ? 'No unread notifications' : 'No notifications yet';
             }
-            // Update badge
-            const unreadCount = (window._allNotifications || []).filter(n => n.is_new).length;
-            updateNotificationBadge(unreadCount);
+            updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
         }, 300);
-
-        // API call
         fetch(`/api/notifications/${notificationId}/dismiss/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        }).catch(error => console.error('Error deleting notification:', error));
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        }).catch(err => console.error('Error deleting notification:', err));
     };
 
     function markNotificationRead(notificationId) {
         fetch(`/api/notifications/${notificationId}/mark-read/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadNotifications(); // Reload to update UI
-            }
-        })
-        .catch(error => {
-            console.error('Error marking notification as read:', error);
-        });
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        }).catch(err => console.error('Error marking notification as read:', err));
     }
 
     function markAllNotificationsRead() {
         fetch('/api/notifications/mark-all-read/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
-                loadNotifications(); // Reload to update UI
+                (window._allNotifications || []).forEach(n => n.is_new = false);
+                updateNotificationBadge(0);
+                renderFilteredNotifications(window._currentFilter || 'all');
             }
         })
-        .catch(error => {
-            console.error('Error marking all notifications as read:', error);
-        });
+        .catch(err => console.error('Error marking all as read:', err));
     }
 
     function updateNotificationBadge(count) {
@@ -4330,26 +3916,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // Auto-refresh notifications every 30 seconds
+    // Realtime: poll every 15s — update badge, reload panel if open
     setInterval(() => {
-        if (!document.getElementById('notificationPanel').classList.contains('open')) {
-            // Just update badge without showing notifications
-            fetch('/api/notifications/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+        fetch('/api/notifications/', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationBadge(data.unread_count);
+                // If panel is open, refresh the list to catch new notifications
+                const panel = document.getElementById('notificationPanel');
+                if (panel && panel.classList.contains('open')) {
+                    window._allNotifications = data.notifications || [];
+                    renderFilteredNotifications(window._currentFilter || 'all');
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateNotificationBadge(data.unread_count);
-                }
-            })
-            .catch(error => console.error('Error updating notification badge:', error));
-        }
-    }, 30000);
+            }
+        })
+        .catch(err => console.error('Error polling notifications:', err));
+    }, 15000);
 
     // Load initial notification count on page load
     document.addEventListener('DOMContentLoaded', function() {
