@@ -944,14 +944,16 @@
     // ========================================
 
     function viewOrderDetails(orderId) {
-        console.log('👁️ Viewing order details:', orderId);
-        window.location.href = `/order/confirmation/${orderId}/`;
-    }
+    console.log('👁️ Viewing order details:', orderId);
+    // Go to cart page
+    window.location.href = `/cart/`;
+}
 
-    function payOrder(orderId) {
-        console.log('💳 Paying for order:', orderId);
-        window.location.href = `/paymongo_checkout/?order_id=${orderId}`;
-    }
+function payOrder(orderId) {
+    console.log('💳 Paying for order:', orderId);
+    // Go to cart page — payment method section (Online/Cash) is already visible there
+    window.location.href = `/cart/`;
+}
 
     function trackOrder(orderId) {
         console.log('📍 Tracking order:', orderId);
