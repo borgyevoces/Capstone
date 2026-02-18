@@ -5886,63 +5886,70 @@ def search_menu_items(request):
                 'error': 'No search query provided'
             })
 
-        # Search menu items
+        # ── Search menu items ──
+        # Pull opening/closing_time so we can compute real-time Open/Closed status
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
             food_establishment__isnull=False,
-        ).exclude(food_establishment__status='Disabled').select_related('food_establishment').values(
+        ).exclude(
+            food_establishment__status='Disabled'
+        ).select_related('food_establishment').values(
             'id',
             'name',
             'description',
             'price',
             'image',
+            'quantity',
             'food_establishment__id',
-            'food_establishment__name'
+            'food_establishment__name',
+            'food_establishment__opening_time',
+            'food_establishment__closing_time',
         )[:20]
 
-        # Format menu items data
         menus_data = []
         for item in menu_items:
+            # Compute real-time status using the same helper used by bestsellers
+            est_status = get_current_status(
+                item['food_establishment__opening_time'],
+                item['food_establishment__closing_time']
+            )
+            # Build correct image URL
+            image_field = item['image']
+            image_url = None
+            if image_field:
+                s = str(image_field)
+                image_url = s if s.startswith('http') else '/media/' + s
+
             menus_data.append({
                 'id': item['id'],
                 'name': item['name'],
-                'description': item['description'],
+                'description': item['description'] or '',
                 'price': float(item['price']),
-                'image_url': item['image'] if item['image'] else None,
+                'image_url': image_url,
+                'quantity': item['quantity'],
                 'establishment': {
                     'id': item['food_establishment__id'],
-                    'name': item['food_establishment__name']
+                    'name': item['food_establishment__name'],
+                    'status': est_status,
                 }
             })
 
-        # Search establishments
+        # ── Search establishments ──
+        # Exclude only 'Disabled' — real status values are 'Open' / 'Disabled'
         establishments = FoodEstablishment.objects.filter(
             Q(name__icontains=query) | Q(categories__name__icontains=query),
         ).exclude(status='Disabled').prefetch_related('categories').distinct()[:10]
 
-        # Format establishments data
         establishments_data = []
         for est in establishments:
-            # Get categories as string
             categories_names = ', '.join([cat.name for cat in est.categories.all()])
-
-            # Determine if open
-            now = timezone.localtime(timezone.now()).time()
-            opening = est.opening_time
-            closing = est.closing_time
-
-            is_open = False
-            if opening and closing:
-                if opening < closing:
-                    is_open = opening <= now <= closing
-                else:  # overnight establishment
-                    is_open = now >= opening or now <= closing
+            est_status = get_current_status(est.opening_time, est.closing_time)
 
             establishments_data.append({
                 'id': est.id,
                 'name': est.name,
                 'category': categories_names if categories_names else 'Other',
-                'status': 'Open' if is_open else 'Closed'
+                'status': est_status,
             })
 
         return JsonResponse({
