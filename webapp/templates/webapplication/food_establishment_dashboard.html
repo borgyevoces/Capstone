@@ -840,7 +840,7 @@
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -880,7 +880,7 @@
         }
 
         .chat-unread-badge {
-            background: var(--primary, #667eea);
+            background: #dc2626;
             color: white;
             border-radius: 12px;
             padding: 2px 8px;
@@ -2932,12 +2932,12 @@
         <!-- ONE LINE: Email + Arrow ONLY -->
         <div class="notif-line">
             <span class="notif-email-text"></span>
-            <button class="notif-delete-btn" title="Delete notification" onclick="event.stopPropagation(); deleteNotification(this.closest('.notification-item').dataset.notificationId)">
-                <i class="fas fa-trash"></i>
-            </button>
             <div class="notif-arrow">
                 <i class="fas fa-chevron-down"></i>
             </div>
+            <button class="notif-delete-btn" title="Delete notification" onclick="event.stopPropagation(); deleteNotification(this.closest('.notification-item').dataset.notificationId)">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
 
         <!-- EXPANDABLE: All Details (Hidden by default) -->
@@ -3359,6 +3359,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3><i class="fas fa-comments"></i> Messages</h3>
         <button class="chat-close-btn" onclick="toggleChatPanel()">
             <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <!-- Chat Filter Tabs -->
+    <div class="notif-filter-tabs" style="background:#fff;">
+        <button class="notif-filter-tab active" id="chatTabAll" onclick="filterConversations('all')">
+            <i class="fas fa-list" style="margin-right:4px;"></i> All
+        </button>
+        <button class="notif-filter-tab" id="chatTabUnread" onclick="filterConversations('unread')">
+            <i class="fas fa-circle" style="margin-right:4px;font-size:8px;"></i> Unread
         </button>
     </div>
     <div class="chat-conversations-list" id="conversationsList">
@@ -4123,27 +4132,13 @@ document.addEventListener('DOMContentLoaded', function() {
             item.dataset.notificationId = notif.id;
             if (notif.is_new) item.classList.add('unread');
 
-            // --- COLLAPSED ROW: show order summary + time ---
+            // --- COLLAPSED ROW: show customer email only (original style) ---
             const emailText = clone.querySelector('.notif-email-text');
             const timeAgo = notif.time_ago || formatTimeAgo(notif.created_at);
 
-            // Build a compact one-line summary
-            if (notif.order) {
-                const orderId = `#${notif.order.id}`;
-                const amt = `₱${parseFloat(notif.order.total_amount || 0).toFixed(2)}`;
-                const email = (notif.customer && notif.customer.email) ? notif.customer.email : '';
-                emailText.innerHTML = `
-                    <span style="font-weight:700;color:#dc2626;">${orderId}</span>
-                    <span style="color:#374151;margin:0 4px;">·</span>
-                    <span style="color:#6b7280;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;display:inline-block;vertical-align:middle;">${email}</span>
-                    <span style="color:#9ca3af;font-size:11px;margin-left:auto;white-space:nowrap;">· ${timeAgo}</span>
-                `;
-            } else {
-                emailText.innerHTML = `
-                    <span style="color:#374151;">${notif.message || 'Notification'}</span>
-                    <span style="color:#9ca3af;font-size:11px;margin-left:auto;white-space:nowrap;">· ${timeAgo}</span>
-                `;
-            }
+            // Show customer email as the main collapsed line
+            const email = (notif.customer && notif.customer.email) ? notif.customer.email : 'customer@email.com';
+            emailText.textContent = email;
 
             // --- EXPANDED: full details ---
             const msgEl = clone.querySelector('.notif-msg');
@@ -4382,39 +4377,54 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/owner/chat/conversations/${establishmentId}/`)
             .then(response => response.json())
             .then(data => {
-                const list = document.getElementById('conversationsList');
-
-                if (data.conversations && data.conversations.length > 0) {
-                    list.innerHTML = data.conversations.map(conv => {
-                        const safeName = conv.customer_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
-                        return `
-                        <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${safeName}')">
-                            <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
-                            <div class="chat-conversation-info">
-                                <div class="chat-conversation-name">${conv.customer_name}</div>
-                                <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
-                            </div>
-                            <div class="chat-conversation-time">${conv.time || ''}</div>
-                            ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
-                        </div>
-                    `}).join('');
-
-                    const totalUnread = data.conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
-                    updateChatBadge(totalUnread);
-                } else {
-                    list.innerHTML = `
-                        <div class="chat-empty-state">
-                            <i class="fas fa-inbox"></i>
-                            <p>No conversations yet</p>
-                        </div>
-                    `;
-                    updateChatBadge(0);
-                }
+                window._allConversations = data.conversations || [];
+                const filter = window._currentChatFilter || 'all';
+                renderConversations(window._allConversations, filter);
             })
             .catch(error => {
                 console.error('Error loading conversations:', error);
             });
+    }
+
+    window.filterConversations = function(filter) {
+        window._currentChatFilter = filter;
+        document.getElementById('chatTabAll').classList.toggle('active', filter === 'all');
+        document.getElementById('chatTabUnread').classList.toggle('active', filter === 'unread');
+        renderConversations(window._allConversations || [], filter);
+    };
+
+    function renderConversations(conversations, filter) {
+        const list = document.getElementById('conversationsList');
+        const filtered = filter === 'unread'
+            ? conversations.filter(c => c.unread_count > 0)
+            : conversations;
+
+        if (filtered && filtered.length > 0) {
+            list.innerHTML = filtered.map(conv => {
+                const safeName = conv.customer_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return `
+                <div class="chat-conversation-item" onclick="openConversation(${conv.customer_id}, '${safeName}')">
+                    <div class="chat-avatar">${conv.customer_name.charAt(0).toUpperCase()}</div>
+                    <div class="chat-conversation-info">
+                        <div class="chat-conversation-name">${conv.customer_name}</div>
+                        <div class="chat-conversation-preview">${conv.last_message || 'No messages yet'}</div>
+                    </div>
+                    <div class="chat-conversation-time">${conv.time || ''}</div>
+                    ${conv.unread_count > 0 ? `<div class="chat-unread-badge">${conv.unread_count}</div>` : ''}
+                </div>
+            `}).join('');
+
+            const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+            updateChatBadge(totalUnread);
+        } else {
+            list.innerHTML = `
+                <div class="chat-empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>${filter === 'unread' ? 'No unread messages' : 'No conversations yet'}</p>
+                </div>
+            `;
+            if (filter !== 'unread') updateChatBadge(0);
+        }
     }
 
     function openConversation(customerId, customerName) {
