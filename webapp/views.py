@@ -5886,13 +5886,18 @@ def search_menu_items(request):
                 'error': 'No search query provided'
             })
 
+        # ── Step 1: Get IDs of active establishments ──
+        # Filter status directly on FoodEstablishment (works fine)
+        # Then use those IDs to filter MenuItem (avoids cross-FK status lookup error)
+        active_est_ids = list(
+            FoodEstablishment.objects.exclude(status='Disabled')
+            .values_list('id', flat=True)
+        )
+
         # ── Search menu items ──
-        # Pull opening/closing_time so we can compute real-time Open/Closed status
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
-            food_establishment__isnull=False,
-        ).exclude(
-            food_establishment__status='Disabled'
+            food_establishment__id__in=active_est_ids,
         ).select_related('food_establishment').values(
             'id',
             'name',
@@ -5908,12 +5913,10 @@ def search_menu_items(request):
 
         menus_data = []
         for item in menu_items:
-            # Compute real-time status using the same helper used by bestsellers
             est_status = get_current_status(
                 item['food_establishment__opening_time'],
                 item['food_establishment__closing_time']
             )
-            # Build correct image URL
             image_field = item['image']
             image_url = None
             if image_field:
@@ -5935,10 +5938,10 @@ def search_menu_items(request):
             })
 
         # ── Search establishments ──
-        # Exclude only 'Disabled' — real status values are 'Open' / 'Disabled'
         establishments = FoodEstablishment.objects.filter(
             Q(name__icontains=query) | Q(categories__name__icontains=query),
-        ).exclude(status='Disabled').prefetch_related('categories').distinct()[:10]
+            id__in=active_est_ids,
+        ).prefetch_related('categories').distinct()[:10]
 
         establishments_data = []
         for est in establishments:
