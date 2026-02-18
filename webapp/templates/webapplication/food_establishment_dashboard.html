@@ -747,6 +747,61 @@
         }
 
         /* ==========================================
+           DASHBOARD ALERTS - UPPER CENTER
+           ========================================== */
+        #dashboardAlertContainer {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            width: auto;
+            max-width: 480px;
+        }
+        #dashboardAlertContainer .dash-alert {
+            pointer-events: all;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+            min-width: 300px;
+            max-width: 480px;
+            border-left: 4px solid;
+            background: #fff;
+            animation: dashAlertIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes dashAlertIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes dashAlertOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to   { opacity: 0; transform: translateY(-14px) scale(0.95); }
+        }
+        #dashboardAlertContainer .dash-alert.success { color: #166534; border-left-color: #16a34a; }
+        #dashboardAlertContainer .dash-alert.error   { color: #991b1b; border-left-color: #dc2626; }
+        #dashboardAlertContainer .dash-alert.info    { color: #1e40af; border-left-color: #3b82f6; }
+        #dashboardAlertContainer .dash-alert.warning { color: #92400e; border-left-color: #f59e0b; }
+        #dashboardAlertContainer .dash-alert .alert-icon { font-size: 18px; flex-shrink: 0; }
+        #dashboardAlertContainer .dash-alert .alert-msg  { flex: 1; color: #111827; }
+        #dashboardAlertContainer .dash-alert .alert-close-btn {
+            background: none; border: none; color: #9ca3af; cursor: pointer;
+            font-size: 16px; padding: 0; width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: background 0.15s;
+        }
+        #dashboardAlertContainer .dash-alert .alert-close-btn:hover { background: #f3f4f6; color: #374151; }
+
+        /* ==========================================
            CHAT PANEL STYLES
            ========================================== */
 
@@ -2710,12 +2765,12 @@
             <button class="notification-toggle-btn" onclick="toggleNotificationPanel()" id="notificationToggleBtn"
                     title="Notifications">
                 <i class="fas fa-bell"></i>
-                <span class="notification-badge" id="notificationBadge">0</span>
+                <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
             </button>
 
             <button class="chat-toggle-btn" onclick="toggleChatPanel()" id="chatToggleBtn" title="Messages">
                 <i class="fas fa-envelope"></i>
-                <span class="chat-badge" id="chatBadge">0</span>
+                <span class="chat-badge" id="chatBadge" style="display:none;">0</span>
             </button>
 
             <div class="navbar-dropdown">
@@ -4051,6 +4106,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('chatPanel').classList.remove('open');
         document.getElementById('chatWindow').classList.add('open');
 
+        // Clear this conversation's unread count from badge immediately
+        if (window._allConversations) {
+            const conv = window._allConversations.find(c => c.customer_id == customerId);
+            if (conv) conv.unread_count = 0;
+            const totalUnread = window._allConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+            updateChatBadge(totalUnread);
+        }
+
         loadMessages(customerId);
         connectWebSocket(customerId);
     }
@@ -4375,9 +4438,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateChatBadge(count) {
         const badge = document.getElementById('chatBadge');
+        if (!badge) return;
         if (count > 0) {
             badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = 'block';
+            badge.style.display = 'flex';
         } else {
             badge.style.display = 'none';
         }
@@ -4728,6 +4792,44 @@ document.addEventListener('keydown', function(e) {
 <button id="scrollToTopBtn" class="scroll-to-top" style="z-index: 10000;">
     <i class="fas fa-arrow-up"></i>
 </button>
+
+<!-- Dashboard Alert Container - Upper Center -->
+<div id="dashboardAlertContainer"></div>
+
+<script>
+// Override showNotification to show at upper center of dashboard
+window.showNotification = function(message, type = 'success') {
+    const container = document.getElementById('dashboardAlertContainer');
+    if (!container) return;
+
+    const iconMap = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'info': 'info-circle',
+        'warning': 'exclamation-triangle'
+    };
+
+    const alert = document.createElement('div');
+    alert.className = `dash-alert ${type}`;
+    alert.innerHTML = `
+        <i class="fas fa-${iconMap[type] || 'info-circle'} alert-icon"></i>
+        <span class="alert-msg">${message}</span>
+        <button class="alert-close-btn" title="Close"><i class="fas fa-times"></i></button>
+    `;
+
+    alert.querySelector('.alert-close-btn').addEventListener('click', () => removeDashAlert(alert));
+    container.appendChild(alert);
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => removeDashAlert(alert), 4000);
+};
+
+function removeDashAlert(el) {
+    if (!el || !el.parentNode) return;
+    el.style.animation = 'dashAlertOut 0.3s ease forwards';
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 300);
+}
+</script>
 </body>
 
 <!-- ========================================== -->
