@@ -2901,6 +2901,68 @@
 </div>
 
 <!-- Delete Establishment Confirmation Modal -->
+<!-- MENU ITEM DELETE CONFIRMATION MODAL -->
+<div class="delete-modal-overlay" id="menuItemDeleteModal">
+    <div class="delete-modal">
+        <div class="delete-modal-header">
+            <div class="delete-modal-icon">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <div class="delete-modal-title">
+                <h3>Delete Menu Item?</h3>
+                <p>This action cannot be undone</p>
+            </div>
+        </div>
+        <div class="delete-modal-body">
+            <div class="delete-warning">
+                <p><i class="fas fa-info-circle"></i> You are about to permanently delete <strong id="menuItemDeleteName"></strong></p>
+            </div>
+            <div class="delete-consequences">
+                <p style="margin:0;color:#6b7280;font-size:14px;">This menu item will be removed from your menu and will no longer be visible to customers.</p>
+            </div>
+        </div>
+        <div class="delete-modal-actions">
+            <button class="btn-cancel" onclick="closeMenuItemDeleteModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn-delete" onclick="confirmMenuItemDelete()" id="confirmMenuItemDeleteBtn">
+                <i class="fas fa-trash-alt"></i> Yes, Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MARK/UNMARK BEST SELLER CONFIRMATION MODAL -->
+<div class="delete-modal-overlay" id="toggleSellerModal">
+    <div class="delete-modal">
+        <div class="delete-modal-header">
+            <div class="delete-modal-icon" id="toggleSellerIcon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="fas fa-award"></i>
+            </div>
+            <div class="delete-modal-title">
+                <h3 id="toggleSellerTitle">Mark as Best Seller?</h3>
+                <p id="toggleSellerSubtitle">This will highlight the item for customers</p>
+            </div>
+        </div>
+        <div class="delete-modal-body">
+            <div class="delete-warning" id="toggleSellerWarning" style="border-left-color:#f59e0b;background:#fffbeb;">
+                <p style="color:#92400e;" id="toggleSellerWarningText"><i class="fas fa-star"></i> <strong id="toggleSellerItemName"></strong> will be marked as a Best Seller</p>
+            </div>
+            <div class="delete-consequences">
+                <p style="margin:0;color:#6b7280;font-size:14px;" id="toggleSellerDesc">Best Seller items appear with a special badge and are highlighted to customers.</p>
+            </div>
+        </div>
+        <div class="delete-modal-actions">
+            <button class="btn-cancel" onclick="closeToggleSellerModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn-delete" onclick="confirmToggleSeller()" id="confirmToggleSellerBtn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                <i class="fas fa-award"></i> <span id="confirmToggleSellerBtnText">Yes, Mark it</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="delete-modal-overlay" id="deleteModal">
     <div class="delete-modal">
         <div class="delete-modal-header">
@@ -3061,6 +3123,207 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead();
         });
     }
+
+    // Intercept ALL Mark/Unmark best seller forms — convert to AJAX
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form.action && form.action.includes('toggle_top_seller')) {
+            e.preventDefault();
+            const url = form.action;
+            const itemId = url.split('/toggle_top_seller/')[1]?.replace('/', '');
+            const menuCard = form.closest('.menu-card');
+            const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent || 'this item') : 'this item';
+            const isCurrentlySeller = menuCard ? !!menuCard.querySelector('.badge.bestseller') : false;
+            openToggleSellerModal(itemId, itemName, isCurrentlySeller, url, form);
+        }
+    });
+});
+
+// ====================================================
+// MENU ITEM DELETE MODAL
+// ====================================================
+let _pendingDeleteItemId = null;
+let _pendingDeleteButton = null;
+
+window.deleteMenuItem = function(itemId, button) {
+    _pendingDeleteItemId = itemId;
+    _pendingDeleteButton = button;
+    const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+    const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent || 'this item') : 'this item';
+    document.getElementById('menuItemDeleteName').textContent = `"${itemName}"`;
+    document.getElementById('menuItemDeleteModal').classList.add('active');
+};
+
+function closeMenuItemDeleteModal() {
+    document.getElementById('menuItemDeleteModal').classList.remove('active');
+    _pendingDeleteItemId = null;
+    _pendingDeleteButton = null;
+}
+
+function confirmMenuItemDelete() {
+    const itemId = _pendingDeleteItemId;
+    const button = _pendingDeleteButton;
+    if (!itemId) return;
+
+    const confirmBtn = document.getElementById('confirmMenuItemDeleteBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        closeMenuItemDeleteModal();
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+
+        if (data.success) {
+            const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+            if (menuCard) {
+                menuCard.style.animation = 'fadeOut 0.35s ease forwards';
+                setTimeout(() => {
+                    menuCard.remove();
+                    const remaining = document.querySelectorAll('.menu-card');
+                    if (remaining.length === 0) {
+                        const menuGrid = document.querySelector('.menu-grid');
+                        if (menuGrid) menuGrid.innerHTML = `
+                            <div class="no-items" style="grid-column:1/-1;">
+                                <i class="fas fa-inbox"></i>
+                                <p>No menu items yet. Add your first item to get started!</p>
+                            </div>`;
+                    }
+                }, 350);
+            }
+            showNotification('✅ ' + data.message, 'success');
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to delete item'), 'error');
+        }
+    })
+    .catch(err => {
+        closeMenuItemDeleteModal();
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
+        showNotification('❌ An error occurred while deleting', 'error');
+    });
+}
+
+// Close on backdrop click
+document.getElementById('menuItemDeleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMenuItemDeleteModal();
+});
+
+// ====================================================
+// MARK / UNMARK BEST SELLER MODAL
+// ====================================================
+let _pendingToggleUrl = null;
+let _pendingToggleForm = null;
+let _pendingToggleItemId = null;
+let _pendingToggleIsSeller = false;
+
+function openToggleSellerModal(itemId, itemName, isCurrentlySeller, url, form) {
+    _pendingToggleUrl = url;
+    _pendingToggleForm = form;
+    _pendingToggleItemId = itemId;
+    _pendingToggleIsSeller = isCurrentlySeller;
+
+    const icon = document.getElementById('toggleSellerIcon');
+    const title = document.getElementById('toggleSellerTitle');
+    const subtitle = document.getElementById('toggleSellerSubtitle');
+    const warningDiv = document.getElementById('toggleSellerWarning');
+    const warningText = document.getElementById('toggleSellerWarningText');
+    const nameEl = document.getElementById('toggleSellerItemName');
+    const descEl = document.getElementById('toggleSellerDesc');
+    const btn = document.getElementById('confirmToggleSellerBtn');
+    const btnText = document.getElementById('confirmToggleSellerBtnText');
+
+    nameEl.textContent = itemName;
+
+    if (isCurrentlySeller) {
+        icon.style.background = 'linear-gradient(135deg, #6b7280, #374151)';
+        title.textContent = 'Unmark Best Seller?';
+        subtitle.textContent = 'Remove the Best Seller badge';
+        warningDiv.style.borderLeftColor = '#6b7280';
+        warningDiv.style.background = '#f9fafb';
+        warningText.style.color = '#374151';
+        warningText.innerHTML = `<i class="fas fa-award"></i> <strong>${itemName}</strong> will be unmarked as a Best Seller`;
+        descEl.textContent = 'The Best Seller badge will be removed and the item will appear as a regular menu item.';
+        btn.style.background = 'linear-gradient(135deg, #6b7280, #374151)';
+        btnText.textContent = 'Yes, Unmark it';
+        btn.innerHTML = `<i class="fas fa-times-circle"></i> <span id="confirmToggleSellerBtnText">Yes, Unmark it</span>`;
+    } else {
+        icon.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        title.textContent = 'Mark as Best Seller?';
+        subtitle.textContent = 'This will highlight the item for customers';
+        warningDiv.style.borderLeftColor = '#f59e0b';
+        warningDiv.style.background = '#fffbeb';
+        warningText.style.color = '#92400e';
+        warningText.innerHTML = `<i class="fas fa-star"></i> <strong>${itemName}</strong> will be marked as a Best Seller`;
+        descEl.textContent = 'Best Seller items appear with a special badge and are highlighted to customers.';
+        btn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        btn.innerHTML = `<i class="fas fa-award"></i> <span id="confirmToggleSellerBtnText">Yes, Mark it</span>`;
+    }
+
+    document.getElementById('toggleSellerModal').classList.add('active');
+}
+
+function closeToggleSellerModal() {
+    document.getElementById('toggleSellerModal').classList.remove('active');
+}
+
+function confirmToggleSeller() {
+    if (!_pendingToggleUrl) return;
+
+    const btn = document.getElementById('confirmToggleSellerBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    fetch(_pendingToggleUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        redirect: 'follow'
+    })
+    .then(r => {
+        closeToggleSellerModal();
+        btn.disabled = false;
+        // Toggle was success if we get a redirect (200 after follow)
+        // Update UI immediately
+        const menuCard = _pendingToggleForm ? _pendingToggleForm.closest('.menu-card') : null;
+        if (menuCard) {
+            const badgesContainer = menuCard.querySelector('.badges-container');
+            const nowIsSeller = !_pendingToggleIsSeller;
+            if (badgesContainer) {
+                const qty = parseInt(menuCard.dataset.itemQuantity) || 0;
+                badgesContainer.innerHTML = `
+                    ${nowIsSeller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : ''}
+                    ${qty > 0 ? `<span class="badge available">Available: ${qty}</span>` : '<span class="badge soldout">Out of Stock</span>'}
+                `;
+            }
+            // Update the button label
+            const sellerBtn = _pendingToggleForm ? _pendingToggleForm.querySelector('button[type="submit"]') : null;
+            if (sellerBtn) sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${_pendingToggleIsSeller ? 'Mark' : 'Unmark'}`;
+        }
+        const msg = _pendingToggleIsSeller
+            ? `✅ Item unmarked as Best Seller`
+            : `⭐ Item marked as Best Seller!`;
+        showNotification(msg, _pendingToggleIsSeller ? 'info' : 'success');
+    })
+    .catch(err => {
+        closeToggleSellerModal();
+        btn.disabled = false;
+        showNotification('❌ An error occurred', 'error');
+    });
+}
+
+document.getElementById('toggleSellerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeToggleSellerModal();
 });
 </script>
 
