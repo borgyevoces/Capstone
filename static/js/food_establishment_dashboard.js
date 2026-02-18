@@ -1785,7 +1785,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ==========================================
-// NEW FEATURES - ORDERS TABLE, TRANSACTION HISTORY, SALES REPORT
+// NEW FEATURES - ORDERS TABLE, TRANSACTION HISTORY
 // ==========================================
 
 // Global variables for new features
@@ -1797,126 +1797,7 @@ let salesChart = null;
 // LOAD ORDERS TABLE (FOR FOOD SHOPS)
 // ==========================================
 // ==========================================
-// SALES REPORT MODAL
 // ==========================================
-function openSalesReportModal() {
-    const modal = document.getElementById('salesReportModal');
-    if (modal) {
-        modal.classList.add('active');
-        loadSalesReport();
-    }
-}
-
-function closeSalesReportModal() {
-    const modal = document.getElementById('salesReportModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-function loadSalesReport() {
-    const period = document.getElementById('reportPeriod')?.value || 'week';
-    let url = `/api/food-establishment/sales-report/?period=${period}`;
-
-    if (period === 'custom') {
-        const startDate = document.getElementById('reportStartDate')?.value;
-        const endDate = document.getElementById('reportEndDate')?.value;
-        if (startDate && endDate) {
-            url += `&start_date=${startDate}&end_date=${endDate}`;
-        }
-    }
-
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateSalesReportUI(data.report);
-        } else {
-            showNotification(data.message || 'Failed to load sales report', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error loading sales report:', error);
-        showNotification('Failed to load sales report', 'error');
-    });
-}
-
-function updateSalesReportUI(report) {
-    // Update summary cards
-    const revenueEl = document.getElementById('totalRevenue');
-    const ordersEl = document.getElementById('totalOrders');
-    const averageEl = document.getElementById('averageOrder');
-    const itemsEl = document.getElementById('itemsSold');
-
-    if (revenueEl) revenueEl.textContent = `₱${parseFloat(report.total_revenue).toFixed(2)}`;
-    if (ordersEl) ordersEl.textContent = report.total_orders;
-    if (averageEl) averageEl.textContent = `₱${parseFloat(report.average_order).toFixed(2)}`;
-    if (itemsEl) itemsEl.textContent = report.items_sold;
-
-    // Update chart
-    if (report.daily_sales) {
-        updateSalesChart(report.daily_sales);
-    }
-
-    // Update top selling items
-    if (report.top_items) {
-        updateTopSellingItems(report.top_items);
-    }
-}
-
-function updateSalesChart(dailySales) {
-    const canvas = document.getElementById('salesChart');
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-
-    // Destroy existing chart if it exists
-    if (salesChart) {
-        salesChart.destroy();
-    }
-
-    salesChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dailySales.map(d => d.date),
-            datasets: [{
-                label: 'Sales (₱)',
-                data: dailySales.map(d => d.amount),
-                borderColor: '#f02849',
-                backgroundColor: 'rgba(240, 40, 73, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
 function updateTopSellingItems(items) {
     const container = document.getElementById('topSellingItems');
 
@@ -1943,36 +1824,6 @@ function updateTopSellingItems(items) {
     `).join('');
 }
 
-function applyReportFilters() {
-    loadSalesReport();
-}
-
-function updateSalesReport() {
-    const period = document.getElementById('reportPeriod')?.value;
-    const customRangeGroup = document.getElementById('customDateRangeGroup');
-    const customRangeGroup2 = document.getElementById('customDateRangeGroup2');
-
-    if (period === 'custom') {
-        if (customRangeGroup) customRangeGroup.style.display = 'flex';
-        if (customRangeGroup2) customRangeGroup2.style.display = 'flex';
-    } else {
-        if (customRangeGroup) customRangeGroup.style.display = 'none';
-        if (customRangeGroup2) customRangeGroup2.style.display = 'none';
-        loadSalesReport();
-    }
-}
-
-function exportSalesReportPDF() {
-    const period = document.getElementById('reportPeriod')?.value || 'week';
-    window.open(`/api/food-establishment/sales-report/pdf/?period=${period}`, '_blank');
-    showNotification('Generating PDF report...', 'info');
-}
-
-function exportSalesReportExcel() {
-    const period = document.getElementById('reportPeriod')?.value || 'week';
-    window.location.href = `/api/food-establishment/sales-report/excel/?period=${period}`;
-    showNotification('Downloading Excel report...', 'success');
-}
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -2001,12 +1852,4 @@ function escapeHtml(text) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     // Close modal when clicking outside
-    const salesModal = document.getElementById('salesReportModal');
-    if (salesModal) {
-        salesModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeSalesReportModal();
-            }
-        });
-    }
 });
