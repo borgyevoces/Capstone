@@ -7,6 +7,11 @@ let cidx = 0, isGrid = false;
 const VISIBLE = 5;
 let bsData = []; // real backend data
 
+// ── SEARCH MODE STATE ──
+// Tracks current search state to restore UI when cleared
+let searchMode = 'none'; // 'none' | 'menu' | 'establishment'
+let lastSearchQuery = '';
+
 // ── MAP STATE ──
 let curView = 'bs', mapReady = false;
 let mapInst = null, curTile = null, mkLayer = null;
@@ -180,7 +185,12 @@ function cardW() {
     const c = document.querySelector('.bsc');
     return c ? c.offsetWidth + 20 : 238;
 }
-function maxIdx() { return Math.max(0, bsData.length - VISIBLE); }
+function maxIdx() {
+    // In search mode, use actual rendered card count; otherwise use bsData length
+    const track = document.getElementById('cTrack');
+    const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
+    return Math.max(0, cardCount - VISIBLE);
+}
 
 function cScroll(d) {
     if (isGrid) return;
@@ -773,6 +783,7 @@ function initSearch() {
         if (q.length < 2) {
             closeDrop();
             filterEstCards('');   // restore all cards
+            restoreNormalView();  // restore bestsellers
             return;
         }
 
@@ -789,6 +800,7 @@ function initSearch() {
         this.classList.remove('on');
         closeDrop();
         filterEstCards('');
+        restoreNormalView();
         inp.focus();
     });
 
@@ -888,12 +900,265 @@ function fetchSearchResults(q) {
     if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
 
+    lastSearchQuery = q;
+
     fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
         .then(r => r.json())
-        .then(data => renderSearchDrop(data, q))
+        .then(data => {
+            renderSearchDrop(data, q);
+            applySearchToPage(data, q);
+        })
         .catch(err => {
             if (err.name !== 'AbortError') closeDrop();
         });
+}
+
+// ============================================
+// SMART SEARCH: Apply search results to the page
+// – Menu search:        replace bestsellers with matching menu items
+//                       + sort establishment cards by match count
+// – Est search only:    replace bestsellers with matching establishments
+//                       + filter establishment cards
+// – Clear:              restore everything to normal
+// ============================================
+
+function applySearchToPage(data, q) {
+    const menuItems = data.menus          || [];
+    const estItems  = data.establishments || [];
+
+    if (menuItems.length > 0) {
+        // ── MENU MODE ──
+        searchMode = 'menu';
+        renderMenuSearchInBS(menuItems, q);
+        sortEstCardsByMenuMatch(menuItems, q);
+    } else if (estItems.length > 0) {
+        // ── ESTABLISHMENT MODE ──
+        searchMode = 'establishment';
+        renderEstSearchInBS(estItems, q);
+        // filterEstCards already called from input handler
+    } else {
+        // ── NO RESULTS ──
+        searchMode = 'empty';
+        showBSSearchEmpty(q);
+        // keep est cards filtered as-is
+    }
+}
+
+function restoreNormalView() {
+    if (searchMode === 'none') return;
+    searchMode = 'none';
+    lastSearchQuery = '';
+
+    // Restore BS title
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
+
+    // Re-render actual bestsellers
+    if (bsData.length > 0) {
+        renderBS(bsData);
+    } else {
+        fetchBestsellers();
+    }
+
+    // Remove all match indicators from est cards
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    // Restore establishment card order (re-append in original DOM order)
+    const grid = document.getElementById('estGrid');
+    if (grid) {
+        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+        cards.sort((a, b) => {
+            const oa = parseInt(a.dataset.originalOrder || 9999);
+            const ob = parseInt(b.dataset.originalOrder || 9999);
+            return oa - ob;
+        });
+        cards.forEach(c => grid.appendChild(c));
+    }
+}
+
+// ── Show menu items in the bestseller carousel area ──
+function renderMenuSearchInBS(items, q) {
+    // Update section title
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> Menu results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    // Remove grid mode if active so carousel layout shows
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = items.map(item => {
+        const estId   = item.establishment ? item.establishment.id   : '';
+        const estName = item.establishment ? item.establishment.name : '';
+        const estStatus = item.establishment ? (item.establishment.status || 'closed').toLowerCase() : 'closed';
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
+        const imgSrc  = item.image_url || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(item.name);
+        const estIconHtml = estImg
+            ? `<img src="${estImg}" alt="${escHtml(estName)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            : `<i class="fas fa-utensils"></i>`;
+
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(item.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
+                <span class="bsc-badge bsc-badge-search"><i class="fas fa-search"></i> Search Result</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
+                <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
+                <div class="bsc-est">
+                    <div class="bsc-eico">${estIconHtml}</div>
+                    <div class="bsc-einfo">
+                        <div class="bsc-ename">${highlightMatch(escHtml(estName), q)}</div>
+                        <div class="bsc-emeta">
+                            <span class="sp ${estStatus}">${estStatus.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${estId}/'">
+                    <i class="fas fa-store"></i> Visit Store
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ── Show establishments in the bestseller area (when searching est names) ──
+function renderEstSearchInBS(ests, q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-store"></i> Establishments matching "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = ests.map(est => {
+        const isOpen = est.status === 'Open';
+        const stClass = isOpen ? 'open' : 'closed';
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
+        const imgSrc  = estImg || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(est.name);
+
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(est.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Restaurant'">
+                <span class="bsc-badge bsc-badge-est"><i class="fas fa-store"></i> Establishment</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
+                <div class="bsc-price" style="color:#6b7280;font-size:12px;">${escHtml(est.category || 'Food')}</div>
+                <div class="bsc-est">
+                    <div class="bsc-einfo" style="padding-left:0">
+                        <div class="bsc-emeta">
+                            <span class="sp ${stClass}">${est.status || 'UNKNOWN'}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${est.id}/'">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ── Show empty state in BS area ──
+function showBSSearchEmpty(q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> No results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (track) {
+        track.innerHTML = `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">
+            <i class="fas fa-search" style="font-size:28px;margin-bottom:12px;display:block;color:#d1d5db;"></i>
+            No items or restaurants match "<strong style="color:#374151;">${escHtml(q)}</strong>".<br>
+            <span style="font-size:12px;margin-top:6px;display:block;">Try a different keyword.</span>
+        </div>`;
+    }
+}
+
+// ── Sort establishment cards by how many menu items match the search ──
+// Items with matches bubble to top; badge shows match count
+function sortEstCardsByMenuMatch(menuItems, q) {
+    const grid = document.getElementById('estGrid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+    // Save original order once
+    cards.forEach((card, i) => {
+        if (!card.dataset.originalOrder) card.dataset.originalOrder = i;
+    });
+
+    // Build a map: estId → count of matching menu items
+    const matchMap = {};
+    menuItems.forEach(item => {
+        if (item.establishment) {
+            const id = item.establishment.id;
+            matchMap[id] = (matchMap[id] || 0) + 1;
+        }
+    });
+
+    // Remove old badges
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    // Add badge and sort
+    cards.forEach(card => {
+        const id = parseInt(card.dataset.id);
+        const count = matchMap[id] || 0;
+
+        if (count > 0) {
+            // Add a match badge
+            const badge = document.createElement('div');
+            badge.className = 'est-match-badge';
+            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
+            // Insert after the status badge
+            const body = card.querySelector('.estc-body');
+            if (body) body.insertBefore(badge, body.firstChild);
+            card.dataset.matchCount = count;
+            card.style.display = '';
+        } else {
+            card.dataset.matchCount = 0;
+            // Don't hide — just push to bottom; still visible for context
+        }
+    });
+
+    // Sort: more matches = earlier; 0 matches = after
+    cards.sort((a, b) => {
+        const ma = parseInt(a.dataset.matchCount || 0);
+        const mb = parseInt(b.dataset.matchCount || 0);
+        if (mb !== ma) return mb - ma;
+        return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
+    });
+
+    // Re-append in new order
+    cards.forEach(card => grid.appendChild(card));
 }
 
 // ── Render results ──
