@@ -780,7 +780,7 @@ function initSearch() {
         dropSelected = -1;
         clearTimeout(searchTimer);
 
-        if (q.length < 2) {
+        if (q.length < 1) {
             closeDrop();
             filterEstCards('');   // restore all cards
             restoreNormalView();  // restore bestsellers
@@ -807,7 +807,7 @@ function initSearch() {
     // ── Focus: show dropdown if query exists ──
     inp.addEventListener('focus', function () {
         searchFocused = true;
-        if (this.value.trim().length >= 2) {
+        if (this.value.trim().length >= 1) {
             fetchSearchResults(this.value.trim());
         }
     });
