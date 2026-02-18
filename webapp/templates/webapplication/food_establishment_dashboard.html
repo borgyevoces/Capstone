@@ -17,6 +17,27 @@
     <link rel="stylesheet" href="{% static 'css/owner_dashboard_styless.css' %}">
     <style>
         /* ==========================================
+           CRITICAL NAVBAR Z-INDEX FIX
+           Must load after external CSS to override
+           ========================================== */
+        nav.navbar {
+            z-index: 1050 !important;
+            position: fixed !important;
+        }
+        nav.navbar .navbar-actions,
+        nav.navbar .notification-toggle-btn,
+        nav.navbar .chat-toggle-btn,
+        nav.navbar .navbar-btn,
+        nav.navbar .navbar-dropdown {
+            z-index: 1051 !important;
+            position: relative !important;
+            pointer-events: auto !important;
+        }
+        .main-content, .page-container {
+            z-index: 0 !important;
+            position: relative !important;
+        }
+        /* ==========================================
            COLLAPSIBLE NOTIFICATION - EMAIL ONLY VIEW
            Default: Email lang nakikita, click arrow to expand
            ========================================== */
@@ -2489,6 +2510,26 @@
         .navbar {
             left: 260px !important;
             width: calc(100% - 260px) !important;
+            z-index: 1050 !important;
+            position: fixed !important;
+        }
+
+        .navbar-actions,
+        .navbar-actions *,
+        .notification-toggle-btn,
+        .chat-toggle-btn,
+        .navbar-btn,
+        .navbar-dropdown,
+        .navbar-menu {
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 1051 !important;
+        }
+
+        /* Ensure main content never overlaps navbar */
+        .main-content {
+            position: relative !important;
+            z-index: 0 !important;
         }
 
         .sidebar.collapsed ~ .navbar {
