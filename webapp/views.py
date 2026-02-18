@@ -477,6 +477,7 @@ def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
     ✅ FIXED: Real-time status calculation on every page load
+    ✅ FIXED: Only shows is_active=True establishments
     """
     from datetime import datetime
 
@@ -488,7 +489,9 @@ def kabsueats_main_view(request):
     # Fetch all categories for the dropdown filter
     all_categories = Category.objects.all().order_by('name')
 
-    food_establishments_queryset = FoodEstablishment.objects.all()
+    # ✅ CHANGED: was FoodEstablishment.objects.all()
+    # Now excludes deactivated establishments from customer view
+    food_establishments_queryset = FoodEstablishment.objects.filter(is_active=True)
 
     current_category = None
 
@@ -546,13 +549,11 @@ def kabsueats_main_view(request):
         # ✅ CRITICAL FIX: Calculate fresh status on every request
         if est.opening_time and est.closing_time:
             if est.opening_time <= est.closing_time:
-                # Normal hours (e.g., 8 AM - 10 PM same day)
                 if est.opening_time <= current_time <= est.closing_time:
                     est.calculated_status = "Open"
                 else:
                     est.calculated_status = "Closed"
             else:
-                # Overnight hours (e.g., 10 PM - 2 AM next day)
                 if current_time >= est.opening_time or current_time <= est.closing_time:
                     est.calculated_status = "Open"
                 else:
@@ -590,7 +591,6 @@ def kabsueats_main_view(request):
         'cart_count': cart_count,
     }
     return render(request, 'webapplication/kabsueats.html', context)
-
 
 @login_required(login_url='user_login_register')
 def search_food_establishments(request):
@@ -2246,14 +2246,11 @@ def create_buynow_payment_link(request):
 # =================================================== OWNER ========================================================
 # ===================================================================================================================
 User = get_user_model()
-
 def get_nearby_establishments(request):
     """
     API endpoint to get establishments within a given radius.
-    Returns full details needed for rich map popups:
-    name, address, coordinates, distance, status,
-    categories (including other_category), amenities
-    (including other_amenity), and payment methods.
+    ✅ FIXED: Only returns is_active=True establishments
+    ✅ FIXED: Returns full details for rich map popups
     """
     try:
         lat = float(request.GET.get('lat'))
@@ -2261,13 +2258,14 @@ def get_nearby_establishments(request):
         radius_meters = float(request.GET.get('radius', 500))
         current_establishment_id = request.GET.get('establishment_id')
 
-        # Get all approved establishments with valid coordinates
+        # ✅ CHANGED: added is_active=True + prefetch related for efficiency
         query = FoodEstablishment.objects.filter(
             latitude__isnull=False,
             longitude__isnull=False,
+            is_active=True,
         ).prefetch_related('categories', 'amenities')
 
-        # Exclude the current owner's own establishment from the map pins
+        # Exclude the current owner's own establishment from map pins
         if current_establishment_id:
             query = query.exclude(id=current_establishment_id)
 
@@ -2282,19 +2280,19 @@ def get_nearby_establishments(request):
             if distance > radius_meters:
                 continue
 
-            # Build categories string (standard + other_category)
+            # ✅ Build categories string (standard + other_category)
             cat_names = list(est.categories.values_list('name', flat=True))
             if est.other_category:
                 cat_names.append(est.other_category)
             categories_str = ', '.join(cat_names) if cat_names else ''
 
-            # Build amenities string (standard + other_amenity)
+            # ✅ Build amenities string (standard + other_amenity)
             amen_names = list(est.amenities.values_list('name', flat=True))
             if est.other_amenity:
                 amen_names.append(est.other_amenity)
             amenities_str = ', '.join(amen_names) if amen_names else ''
 
-            # Opening/closing hours display
+            # ✅ Opening/closing hours display
             opening = est.opening_time.strftime('%I:%M %p') if est.opening_time else None
             closing  = est.closing_time.strftime('%I:%M %p') if est.closing_time else None
 
@@ -2305,7 +2303,7 @@ def get_nearby_establishments(request):
                 'latitude':        float(est.latitude),
                 'longitude':       float(est.longitude),
                 'distance':        round(distance, 2),
-                'status':          est.status,           # 'Open' or 'Closed'
+                'status':          est.status,
                 'categories':      categories_str,
                 'amenities':       amenities_str,
                 'payment_methods': est.payment_methods or '',
@@ -5025,37 +5023,40 @@ def food_establishment_profile(request):
 @require_http_methods(["POST"])
 def deactivate_establishment(request):
     """
-    Deactivate the food establishment owned by the current user.
-    This will hide the establishment from customer searches but keep all data intact.
+    Toggle active/inactive status of the establishment.
+    ✅ If currently active  → deactivate (hide from customers)
+    ✅ If currently inactive → reactivate (show to customers again)
     """
     try:
-        # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        name = establishment.name
 
-        establishment_name = establishment.name
-
-        # Set the establishment as inactive
-        # NOTE: You need to add 'is_active' field to your FoodEstablishment model if it doesn't exist:
-        # is_active = models.BooleanField(default=True)
-        establishment.is_active = False
-        establishment.save()
-
-        # Redirect to dashboard with success message
-        from django.contrib import messages
-        messages.success(request,
-                         f'{establishment_name} has been deactivated successfully. You can reactivate it anytime.')
+        if establishment.is_active:
+            # ── Deactivate: hide from KabsuEats ──────────────────────────
+            establishment.is_active = False
+            establishment.save()
+            messages.success(
+                request,
+                f'"{name}" has been deactivated and is now hidden from customers. '
+                f'You can reactivate it anytime from Profile Settings.'
+            )
+        else:
+            # ── Reactivate: show on KabsuEats again ───────────────────────
+            establishment.is_active = True
+            establishment.save()
+            messages.success(
+                request,
+                f'"{name}" has been reactivated and is now visible to customers again!'
+            )
 
         return redirect('food_establishment_dashboard')
 
     except FoodEstablishment.DoesNotExist:
-        from django.contrib import messages
         messages.error(request, 'No establishment found for this account.')
         return redirect('owner_login')
     except Exception as e:
-        from django.contrib import messages
         messages.error(request, f'An error occurred: {str(e)}')
         return redirect('food_establishment_dashboard')
-
 
 @login_required
 def get_establishment_profile(request):
@@ -5107,7 +5108,6 @@ def get_establishment_profile(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 @login_required
 @require_http_methods(["GET"])

@@ -73,6 +73,10 @@ class FoodEstablishment(models.Model):
     is_approved = models.BooleanField(default=False)
     name = models.CharField(max_length=255)
     address = models.TextField()
+    is_active = models.BooleanField(
+        default=True,
+        help_text="If False, hidden from customers."
+    )
     opening_time = models.TimeField(
         help_text="Time when establishment opens (e.g., 08:00 AM)",
         null=True,
