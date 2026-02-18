@@ -5951,8 +5951,9 @@ def get_establishment_transaction_statistics(request):
 # ==========================================
 def search_menu_items(request):
     """
-    API endpoint for real-time menu search
-    Returns menu items and establishments that match the search query
+    API endpoint for real-time menu search.
+    Returns menu items and establishments matching the search query.
+    ✅ FIXED: Excludes items/establishments where is_active=False.
     """
     try:
         query = request.GET.get('q', '').strip()
@@ -5963,15 +5964,16 @@ def search_menu_items(request):
                 'error': 'No search query provided'
             })
 
-        # ── Step 1: Get IDs of active establishments ──
-        # Filter status directly on FoodEstablishment (works fine)
-        # Then use those IDs to filter MenuItem (avoids cross-FK status lookup error)
+        # ── Step 1: Get IDs of visible establishments ────────────────────
+        # Exclude admin-suspended (status='Disabled') AND owner-deactivated (is_active=False)
         active_est_ids = list(
-            FoodEstablishment.objects.exclude(status='Disabled')
+            FoodEstablishment.objects
+            .exclude(status='Disabled')
+            .filter(is_active=True)          # ✅ also exclude owner-deactivated
             .values_list('id', flat=True)
         )
 
-        # ── Search menu items ──
+        # ── Search menu items ────────────────────────────────────────────
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
             food_establishment__id__in=active_est_ids,
@@ -6001,20 +6003,20 @@ def search_menu_items(request):
                 image_url = s if s.startswith('http') else '/media/' + s
 
             menus_data.append({
-                'id': item['id'],
-                'name': item['name'],
+                'id':          item['id'],
+                'name':        item['name'],
                 'description': item['description'] or '',
-                'price': float(item['price']),
-                'image_url': image_url,
-                'quantity': item['quantity'],
+                'price':       float(item['price']),
+                'image_url':   image_url,
+                'quantity':    item['quantity'],
                 'establishment': {
-                    'id': item['food_establishment__id'],
-                    'name': item['food_establishment__name'],
+                    'id':     item['food_establishment__id'],
+                    'name':   item['food_establishment__name'],
                     'status': est_status,
                 }
             })
 
-        # ── Search establishments ──
+        # ── Search establishments ────────────────────────────────────────
         establishments = FoodEstablishment.objects.filter(
             Q(name__icontains=query) | Q(categories__name__icontains=query),
             id__in=active_est_ids,
@@ -6026,17 +6028,17 @@ def search_menu_items(request):
             est_status = get_current_status(est.opening_time, est.closing_time)
 
             establishments_data.append({
-                'id': est.id,
-                'name': est.name,
+                'id':       est.id,
+                'name':     est.name,
                 'category': categories_names if categories_names else 'Other',
-                'status': est_status,
+                'status':   est_status,
             })
 
         return JsonResponse({
             'success': True,
-            'menus': menus_data,
+            'menus':          menus_data,
             'establishments': establishments_data,
-            'query': query
+            'query':          query
         })
 
     except Exception as e:
@@ -6047,7 +6049,6 @@ def search_menu_items(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 @login_required
 def order_history_view(request):
@@ -6354,45 +6355,43 @@ def create_admin_user(request):
             'type': type(e).__name__
         }, status=500)
 
-
-@require_http_methods(["GET"])
 def get_bestsellers(request):
     """
-    Get all top seller items across all establishments
-    Returns real-time bestseller data with establishment info
+    Get all top seller items across all establishments.
+    Returns real-time bestseller data with establishment info.
+    ✅ FIXED: Excludes items from deactivated (is_active=False) establishments.
     """
     try:
-        # Get all menu items marked as top sellers with available stock
         bestsellers = MenuItem.objects.filter(
             is_top_seller=True,
-            quantity__gt=0  # Only show items that are in stock
+            quantity__gt=0,                          # in stock only
+            food_establishment__is_active=True,      # ✅ hide deactivated
         ).select_related(
             'food_establishment'
         ).annotate(
             total_orders=Count('orderitem')
-        ).order_by('-top_seller_marked_at', '-total_orders')[:20]  # Get top 20 bestsellers
+        ).order_by('-top_seller_marked_at', '-total_orders')[:20]
 
         bestsellers_data = []
         for item in bestsellers:
             establishment = item.food_establishment
 
-            # Calculate establishment status
             status = get_current_status(establishment.opening_time, establishment.closing_time)
 
             bestsellers_data.append({
-                'id': item.id,
-                'name': item.name,
+                'id':          item.id,
+                'name':        item.name,
                 'description': item.description,
-                'price': float(item.price),
-                'image': item.image.url if item.image else None,
-                'quantity': item.quantity,
+                'price':       float(item.price),
+                'image':       item.image.url if item.image else None,
+                'quantity':    item.quantity,
                 'total_orders': item.total_orders,
                 'establishment': {
-                    'id': establishment.id,
-                    'name': establishment.name,
-                    'address': establishment.address,
-                    'status': status,
-                    'latitude': establishment.latitude,
+                    'id':        establishment.id,
+                    'name':      establishment.name,
+                    'address':   establishment.address,
+                    'status':    status,
+                    'latitude':  establishment.latitude,
                     'longitude': establishment.longitude,
                 }
             })
@@ -6408,7 +6407,6 @@ def get_bestsellers(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 # ============================================================
 # BUY NOW — 2-STEP CHECKOUT FLOW
 # ============================================================
