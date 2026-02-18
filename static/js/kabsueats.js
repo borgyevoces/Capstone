@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', function () {
     autoHideMessages();
     initEstablishmentCards();
 
+    // ✅ FIX: Load correct cart count on every page load (realtime from backend)
+    updateCartBadge();
+
     // ✅ FIX: Start real-time status refresh every 60 seconds
     statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
 });
