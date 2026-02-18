@@ -5980,8 +5980,16 @@ def order_history_view(request):
     Display the order history page for the logged-in user
     Template: Client_order_history.html
     """
-    return render(request, 'webapplication/Client_order_history.html')
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='PENDING'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
 
+    return render(request, 'webapplication/Client_order_history.html', {
+        'cart_count': cart_count,
+    })
 
 @login_required
 def get_user_transaction_history(request):
