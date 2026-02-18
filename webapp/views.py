@@ -5889,10 +5889,8 @@ def search_menu_items(request):
         # Search menu items
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
-            quantity__gt=0,
             food_establishment__isnull=False,
-            food_establishment__is_active=True  # ✅ FIXED: Use is_active instead of status
-        ).select_related('food_establishment').values(
+        ).exclude(food_establishment__status='Disabled').select_related('food_establishment').values(
             'id',
             'name',
             'description',
@@ -5920,8 +5918,7 @@ def search_menu_items(request):
         # Search establishments
         establishments = FoodEstablishment.objects.filter(
             Q(name__icontains=query) | Q(categories__name__icontains=query),
-            status='Active'
-        ).prefetch_related('categories').distinct()[:10]
+        ).exclude(status='Disabled').prefetch_related('categories').distinct()[:10]
 
         # Format establishments data
         establishments_data = []
