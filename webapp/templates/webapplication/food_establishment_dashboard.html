@@ -33,6 +33,14 @@
             position: relative !important;
             pointer-events: auto !important;
         }
+        /* Dropdown must FLOAT above page, not push content down */
+        nav.navbar .navbar-menu {
+            position: absolute !important;
+            top: 100% !important;
+            right: 0 !important;
+            z-index: 1052 !important;
+            pointer-events: auto !important;
+        }
         .main-content, .page-container {
             z-index: 0 !important;
             position: relative !important;
@@ -2260,8 +2268,7 @@
         .notification-toggle-btn,
         .chat-toggle-btn,
         .navbar-btn,
-        .navbar-dropdown,
-        .navbar-menu {
+        .navbar-dropdown {
             pointer-events: auto !important;
             position: relative !important;
             z-index: 1051 !important;
@@ -4918,56 +4925,6 @@ document.addEventListener('keydown', function(e) {
     <i class="fas fa-arrow-up"></i>
 </button>
 </body>
-<!-- ========================================== -->
-
-        <!-- Summary Cards -->
-        <div class="sales-summary-cards">
-            <div class="summary-card">
-                <div class="summary-card-icon revenue">
-                    <i class="fas fa-peso-sign"></i>
-                </div>
-                <div class="summary-card-label">Total Revenue</div>
-                <div class="summary-card-value" id="totalRevenue">₱0.00</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon orders">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="summary-card-label">Total Orders</div>
-                <div class="summary-card-value" id="totalOrders">0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon average">
-                    <i class="fas fa-calculator"></i>
-                </div>
-                <div class="summary-card-label">Average Order</div>
-                <div class="summary-card-value" id="averageOrder">₱0.00</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon items">
-                    <i class="fas fa-utensils"></i>
-                </div>
-                <div class="summary-card-label">Items Sold</div>
-                <div class="summary-card-value" id="itemsSold">0</div>
-            </div>
-        </div>
-
-        <!-- Chart -->
-        <div class="chart-container">
-            <h3 class="chart-title">Sales Trend</h3>
-            <canvas id="salesChart" height="100"></canvas>
-        </div>
-
-        <!-- Top Selling Items -->
-        <div class="chart-container">
-            <h3 class="chart-title">Top Selling Items</h3>
-            <div id="topSellingItems">
-                <div style="text-align: center; padding: 20px; color: #6b7280;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
-                    <p style="margin-top: 12px;">Loading data...</p>
-                </div>
-            </div>
-        </div>
 
 <!-- ========================================== -->
 <!-- PAYMENT SUCCESS PAGE - BACK TO DASHBOARD BUTTON -->
