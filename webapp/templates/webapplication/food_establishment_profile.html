@@ -738,6 +738,43 @@
             color: #1f2937;
         }
 
+        /* ===== OTHER FIELD VALIDATION ===== */
+        .other-field-feedback {
+            font-size: 12px;
+            margin-top: 5px;
+            min-height: 18px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .other-field-feedback.valid {
+            color: #10b981;
+        }
+        .other-field-feedback.invalid {
+            color: #ef4444;
+        }
+        .other-tag-preview {
+            margin-top: 8px;
+            min-height: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .preview-tag {
+            animation: tagPop 0.2s ease;
+        }
+        @keyframes tagPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .edit-input.input-valid {
+            border-color: #10b981 !important;
+            background: #f0fdf4 !important;
+        }
+        .edit-input.input-invalid {
+            border-color: #ef4444 !important;
+            background: #fef2f2 !important;
+        }
+
         /* ===== MAP MARKER STYLES ===== */
         .nearby-establishment-marker {
             background-color: #6b7280;
@@ -818,10 +855,9 @@
                     <span class="detail-label">Category</span>
                     <span class="detail-value" id="display-category">
                         {% if establishment.categories.all %}
-                            {{ establishment.categories.all|join:", " }}
-                            {% if establishment.other_category %}
-                                , Other: {{ establishment.other_category }}
-                            {% endif %}
+                            {{ establishment.categories.all|join:", " }}{% if establishment.other_category %}, {{ establishment.other_category }}{% endif %}
+                        {% elif establishment.other_category %}
+                            {{ establishment.other_category }}
                         {% else %}
                             Not set
                         {% endif %}
@@ -851,7 +887,7 @@
                 <div class="amenities-section">
                     <span class="detail-label">Amenities</span>
                     <div class="amenities-grid" id="display-amenities">
-                        {% if establishment.amenities.all %}
+                        {% if establishment.amenities.all or establishment.other_amenity %}
                             {% for amenity in establishment.amenities.all %}
                                 <span class="amenity-tag">
                                     <i class="fas fa-check"></i>
@@ -861,7 +897,7 @@
                             {% if establishment.other_amenity %}
                                 <span class="amenity-tag">
                                     <i class="fas fa-check"></i>
-                                    Other: {{ establishment.other_amenity }}
+                                    {{ establishment.other_amenity }}
                                 </span>
                             {% endif %}
                         {% else %}
@@ -955,7 +991,15 @@
                                    id="other_category"
                                    name="other_category"
                                    placeholder="e.g., Vegan Restaurant, Dessert Shop, Food Truck"
-                                   value="{{ establishment.other_category|default:'' }}">
+                                   value="{{ establishment.other_category|default:'' }}"
+                                   oninput="validateOtherField(this, 'otherCategoryFeedback', 'otherCategoryPreview')"
+                                   autocomplete="off">
+                            <div id="otherCategoryFeedback" class="other-field-feedback"></div>
+                            <div id="otherCategoryPreview" class="other-tag-preview">
+                                {% if establishment.other_category %}
+                                    <span class="amenity-tag preview-tag"><i class="fas fa-check"></i> {{ establishment.other_category }}</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
@@ -1009,7 +1053,15 @@
                                    id="other_amenity"
                                    name="other_amenity"
                                    placeholder="e.g., Pet-Friendly, Live Music, Rooftop Seating"
-                                   value="{{ establishment.other_amenity|default:'' }}">
+                                   value="{{ establishment.other_amenity|default:'' }}"
+                                   oninput="validateOtherField(this, 'otherAmenityFeedback', 'otherAmenityPreview')"
+                                   autocomplete="off">
+                            <div id="otherAmenityFeedback" class="other-field-feedback"></div>
+                            <div id="otherAmenityPreview" class="other-tag-preview">
+                                {% if establishment.other_amenity %}
+                                    <span class="amenity-tag preview-tag"><i class="fas fa-check"></i> {{ establishment.other_amenity }}</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
@@ -1175,7 +1227,12 @@
                 container.classList.add('show');
             } else {
                 container.classList.remove('show');
-                document.getElementById('other_category').value = '';
+                const input = document.getElementById('other_category');
+                input.value = '';
+                input.classList.remove('input-valid', 'input-invalid');
+                document.getElementById('otherCategoryFeedback').textContent = '';
+                document.getElementById('otherCategoryFeedback').className = 'other-field-feedback';
+                document.getElementById('otherCategoryPreview').innerHTML = '';
             }
         }
 
@@ -1186,7 +1243,67 @@
                 container.classList.add('show');
             } else {
                 container.classList.remove('show');
-                document.getElementById('other_amenity').value = '';
+                const input = document.getElementById('other_amenity');
+                input.value = '';
+                input.classList.remove('input-valid', 'input-invalid');
+                document.getElementById('otherAmenityFeedback').textContent = '';
+                document.getElementById('otherAmenityFeedback').className = 'other-field-feedback';
+                document.getElementById('otherAmenityPreview').innerHTML = '';
+            }
+        }
+
+        // ===== VALIDATE OTHER FIELD (category or amenity) =====
+        // Rules:
+        //  - Must contain at least one real "word" (2+ consecutive letters)
+        //  - No pure gibberish: at least 50% of characters must be letters/spaces/hyphens
+        //  - Length between 2 and 60 characters
+        //  - No consecutive special chars like !!!, ???, numbers-only sequences
+        function isValidOtherText(value) {
+            const trimmed = value.trim();
+            if (trimmed.length < 2 || trimmed.length > 60) return false;
+
+            // Must have at least one word with 2+ letters
+            if (!/[a-zA-Z]{2,}/.test(trimmed)) return false;
+
+            // Calculate ratio of "clean" characters (letters, spaces, hyphens, apostrophes, commas)
+            const cleanChars = (trimmed.match(/[a-zA-Z\s\-',\.]/g) || []).length;
+            const ratio = cleanChars / trimmed.length;
+            if (ratio < 0.6) return false;
+
+            // Reject if it looks like random typing: 4+ consecutive non-vowel consonants
+            if (/[^aeiouAEIOU\s]{5,}/.test(trimmed)) return false;
+
+            // Reject strings that are all digits/symbols
+            if (/^[\d\W]+$/.test(trimmed)) return false;
+
+            return true;
+        }
+
+        function validateOtherField(inputEl, feedbackId, previewId) {
+            const value = inputEl.value;
+            const feedback = document.getElementById(feedbackId);
+            const preview = document.getElementById(previewId);
+
+            if (value.trim() === '') {
+                inputEl.classList.remove('input-valid', 'input-invalid');
+                feedback.textContent = '';
+                feedback.className = 'other-field-feedback';
+                preview.innerHTML = '';
+                return;
+            }
+
+            if (isValidOtherText(value)) {
+                inputEl.classList.remove('input-invalid');
+                inputEl.classList.add('input-valid');
+                feedback.className = 'other-field-feedback valid';
+                feedback.innerHTML = '<i class="fas fa-check-circle"></i> Looks good! This will appear as a tag.';
+                preview.innerHTML = `<span class="amenity-tag preview-tag"><i class="fas fa-check"></i> ${value.trim()}</span>`;
+            } else {
+                inputEl.classList.remove('input-valid');
+                inputEl.classList.add('input-invalid');
+                feedback.className = 'other-field-feedback invalid';
+                feedback.innerHTML = '<i class="fas fa-times-circle"></i> Please enter a proper word or phrase (e.g., "Free Piano", "Delivery").';
+                preview.innerHTML = '';
             }
         }
 
@@ -1500,6 +1617,35 @@
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
+            // ── Validate "Other" fields before submitting ──────────────────
+            const otherCategoryChecked = document.getElementById('cat_other') &&
+                                         document.getElementById('cat_other').checked;
+            const otherAmenityChecked  = document.getElementById('amen_other') &&
+                                         document.getElementById('amen_other').checked;
+
+            const otherCategoryVal = document.getElementById('other_category').value.trim();
+            const otherAmenityVal  = document.getElementById('other_amenity').value.trim();
+
+            if (otherCategoryChecked && otherCategoryVal && !isValidOtherText(otherCategoryVal)) {
+                showToast('Please enter a valid category name (e.g., "Food Truck", "Bakery").', 'error');
+                document.getElementById('other_category').focus();
+                return;
+            }
+
+            if (otherAmenityChecked && otherAmenityVal && !isValidOtherText(otherAmenityVal)) {
+                showToast('Please enter a valid amenity name (e.g., "Free Piano", "Delivery").', 'error');
+                document.getElementById('other_amenity').focus();
+                return;
+            }
+
+            // Clear invalid other_* fields so they don't get sent as garbage
+            if (!otherCategoryChecked || !isValidOtherText(otherCategoryVal)) {
+                document.getElementById('other_category').value = '';
+            }
+            if (!otherAmenityChecked || !isValidOtherText(otherAmenityVal)) {
+                document.getElementById('other_amenity').value = '';
+            }
+
             const formData = new FormData(this);
             const loadingOverlay = document.getElementById('loadingOverlay');
 
@@ -1522,26 +1668,45 @@
                         document.getElementById('headerImage').src = data.image_url;
                     }
 
-                    // Update display values in real-time
-                    document.getElementById('display-name').textContent = data.name;
-                    document.getElementById('display-category').textContent = data.categories_str || 'N/A';
+                    // ── Update categories display (include other_category as tag) ──
+                    let categoryDisplay = data.categories_str || '';
+                    if (data.other_category) {
+                        categoryDisplay = categoryDisplay
+                            ? categoryDisplay + ', ' + data.other_category
+                            : data.other_category;
+                    }
+                    document.getElementById('display-category').textContent = categoryDisplay || 'Not set';
+
+                    // Update other display values
                     document.getElementById('display-payment').textContent = data.payment_methods || 'Not set';
                     document.getElementById('display-opening').textContent = data.opening_time || 'Not set';
                     document.getElementById('display-closing').textContent = data.closing_time || 'Not set';
                     document.getElementById('display-address').textContent = data.address || 'Address not set';
 
-                    // Update amenities
+                    // ── Update amenities display (include other_amenity as tag) ──
                     const amenitiesContainer = document.getElementById('display-amenities');
+                    let amenityTagsHTML = '';
+
                     if (data.amenities_list && data.amenities_list.length > 0) {
-                        amenitiesContainer.innerHTML = data.amenities_list.map(amenity => `
+                        amenityTagsHTML = data.amenities_list.map(amenity => `
                             <span class="amenity-tag">
                                 <i class="fas fa-check"></i>
                                 ${amenity.name}
                             </span>
                         `).join('');
-                    } else {
-                        amenitiesContainer.innerHTML = '<span class="detail-value">No amenities added</span>';
                     }
+
+                    // Append other_amenity as its own tag if valid
+                    if (data.other_amenity) {
+                        amenityTagsHTML += `
+                            <span class="amenity-tag">
+                                <i class="fas fa-check"></i>
+                                ${data.other_amenity}
+                            </span>
+                        `;
+                    }
+
+                    amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';
 
                     // Show success toast
                     showToast('Changes saved successfully!', 'success');
