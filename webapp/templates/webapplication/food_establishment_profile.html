@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
     <style>
         * {
             margin: 0;
@@ -807,10 +809,6 @@
                 <div class="profile-header-overlay">
                     <div class="establishment-info">
                         <h1 id="display-name">{{ establishment.name }}</h1>
-                        <span class="status-badge {{ establishment.calculated_status|lower }}" id="display-status">
-                            <i class="fas fa-circle"></i>
-                            <span>{{ establishment.calculated_status }}</span>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -1051,10 +1049,22 @@
             </div>
 
             <div class="modal-body">
-                <p style="margin-bottom: 15px; color: #6b7280;">
+                <p style="margin-bottom: 10px; color: #6b7280;">
                     Click on the map or drag the marker to set your establishment's location.
                     <strong>Red circle shows 500m radius.</strong> Gray markers show other registered establishments.
                 </p>
+                <!-- Map Action Buttons -->
+                <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="focusOnCvSU()" style="padding: 8px 14px; font-size: 13px;">
+                        <i class="fas fa-university"></i> Focus on CvSU
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="useMyLocation()" style="padding: 8px 14px; font-size: 13px;">
+                        <i class="fas fa-crosshairs"></i> Use My Location
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="removePin()" style="padding: 8px 14px; font-size: 13px; background: white; color: #dc2626; border: 2px solid #dc2626;">
+                        <i class="fas fa-times-circle"></i> Remove Pin
+                    </button>
+                </div>
                 <div id="map"></div>
                 <div class="location-status" id="locationStatus">
                     <i class="fas fa-map-marker-alt"></i>
@@ -1138,9 +1148,11 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
         let map, marker, radiusCircle;
         let nearbyEstablishmentMarkers = [];
+        let allEstablishmentMarkers = [];
         const CVSU_LAT = {{ CVSU_LATITUDE|default:"14.1649" }};
         const CVSU_LNG = {{ CVSU_LONGITUDE|default:"120.9881" }};
         const ESTABLISHMENT_ID = {{ establishment.id }};
@@ -1194,10 +1206,34 @@
                     const lat = parseFloat(document.getElementById('latitude').value) || CVSU_LAT;
                     const lng = parseFloat(document.getElementById('longitude').value) || CVSU_LNG;
 
-                    map = L.map('map').setView([lat, lng], 16);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(map);
+                    map = L.map('map', { zoomControl: true }).setView([lat, lng], 17);
+
+                    // ===== TILE LAYERS =====
+                    const satelliteLayer = L.tileLayer(
+                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        { attribution: 'Tiles © Esri', maxZoom: 20 }
+                    );
+
+                    const streetLayer = L.tileLayer(
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        { attribution: '© OpenStreetMap contributors', maxZoom: 19 }
+                    );
+
+                    const terrainLayer = L.tileLayer(
+                        'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        { attribution: '© OpenTopoMap', maxZoom: 17 }
+                    );
+
+                    // Satellite is default
+                    satelliteLayer.addTo(map);
+
+                    // Layer control
+                    const baseMaps = {
+                        '🛰️ Satellite': satelliteLayer,
+                        '🗺️ Street': streetLayer,
+                        '⛰️ Terrain': terrainLayer
+                    };
+                    L.control.layers(baseMaps, null, { position: 'topright', collapsed: false }).addTo(map);
 
                     // Create custom icon for main marker
                     const redIcon = L.divIcon({
@@ -1219,7 +1255,8 @@
                         weight: 2
                     }).addTo(map);
 
-                    // Load nearby establishments
+                    // Load all registered establishments
+                    loadAllEstablishments();
                     loadNearbyEstablishments(lat, lng);
 
                     marker.on('dragend', function() {
@@ -1239,6 +1276,7 @@
                     map.invalidateSize();
                     const currentLat = parseFloat(document.getElementById('latitude').value) || CVSU_LAT;
                     const currentLng = parseFloat(document.getElementById('longitude').value) || CVSU_LNG;
+                    loadAllEstablishments();
                     loadNearbyEstablishments(currentLat, currentLng);
                 }
             }, 100);
@@ -1250,6 +1288,90 @@
 
         function saveLocation() {
             closeLocationModal();
+        }
+
+        // ===== MAP CONTROL BUTTONS =====
+        function focusOnCvSU() {
+            if (map) {
+                map.setView([CVSU_LAT, CVSU_LNG], 17);
+            }
+        }
+
+        function useMyLocation() {
+            if (!navigator.geolocation) {
+                showToast('Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    if (map) {
+                        map.setView([lat, lng], 17);
+                        if (marker) {
+                            marker.setLatLng([lat, lng]);
+                            radiusCircle.setLatLng([lat, lng]);
+                        }
+                        updateLocationFields(lat, lng);
+                        loadNearbyEstablishments(lat, lng);
+                    }
+                },
+                function(error) {
+                    showToast('Unable to retrieve your location. Please allow location access.', 'error');
+                }
+            );
+        }
+
+        function removePin() {
+            if (map && marker) {
+                map.removeLayer(marker);
+                map.removeLayer(radiusCircle);
+                marker = null;
+                radiusCircle = null;
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                document.getElementById('address').value = '';
+                document.getElementById('locationStatus').innerHTML = `
+                    <i class="fas fa-times-circle" style="color: #ef4444;"></i>
+                    Pin removed. Click on the map to place a new pin.
+                `;
+                showToast('Pin removed. Click on the map to set a new location.', 'success');
+
+                // Re-attach click listener to place new pin
+                map.once('click', function(e) {
+                    const redIcon = L.divIcon({
+                        className: 'my-establishment-marker',
+                        iconSize: [20, 20]
+                    });
+                    marker = L.marker(e.latlng, { draggable: true, icon: redIcon }).addTo(map);
+                    radiusCircle = L.circle(e.latlng, {
+                        radius: 500,
+                        color: '#ef4444',
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.1,
+                        weight: 2
+                    }).addTo(map);
+                    updateLocationFields(e.latlng.lat, e.latlng.lng);
+                    loadNearbyEstablishments(e.latlng.lat, e.latlng.lng);
+
+                    marker.on('dragend', function() {
+                        const pos = marker.getLatLng();
+                        updateLocationFields(pos.lat, pos.lng);
+                        radiusCircle.setLatLng(pos);
+                        loadNearbyEstablishments(pos.lat, pos.lng);
+                    });
+
+                    // restore regular click
+                    map.on('click', function(e2) {
+                        if (marker) {
+                            marker.setLatLng(e2.latlng);
+                            radiusCircle.setLatLng(e2.latlng);
+                            updateLocationFields(e2.latlng.lat, e2.latlng.lng);
+                            loadNearbyEstablishments(e2.latlng.lat, e2.latlng.lng);
+                        }
+                    });
+                });
+            }
         }
 
         function updateLocationFields(lat, lng) {
@@ -1276,9 +1398,50 @@
                 });
         }
 
+        // ===== LOAD ALL REGISTERED ESTABLISHMENTS (REALTIME) =====
+        function loadAllEstablishments() {
+            // Clear existing all-establishment markers
+            allEstablishmentMarkers.forEach(m => map.removeLayer(m));
+            allEstablishmentMarkers = [];
+
+            // Fetch all establishments
+            fetch(`/api/establishment/nearby/?lat=${CVSU_LAT}&lng=${CVSU_LNG}&radius=50000&establishment_id=${ESTABLISHMENT_ID}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.establishments) {
+                        data.establishments.forEach(est => {
+                            const pinIcon = L.divIcon({
+                                className: '',
+                                html: `<div style="
+                                    background: #1e40af;
+                                    border: 2px solid white;
+                                    border-radius: 50%;
+                                    width: 14px;
+                                    height: 14px;
+                                    box-shadow: 0 2px 6px rgba(30,64,175,0.5);
+                                "></div>`,
+                                iconSize: [14, 14],
+                                iconAnchor: [7, 7]
+                            });
+
+                            const m = L.marker([est.latitude, est.longitude], { icon: pinIcon }).addTo(map);
+                            m.bindPopup(`
+                                <div style="font-family: sans-serif; min-width: 150px;">
+                                    <strong style="color:#1f2937;">${est.name}</strong><br>
+                                    <span style="color:#6b7280; font-size:12px;">${est.address || ''}</span><br>
+                                    <span style="font-size:12px; color:#3b82f6;">${est.distance ? est.distance + 'm away' : ''}</span>
+                                </div>
+                            `);
+                            allEstablishmentMarkers.push(m);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading establishments:', error));
+        }
+
         // ===== LOAD NEARBY ESTABLISHMENTS =====
         function loadNearbyEstablishments(lat, lng) {
-            // Clear existing markers
+            // Clear existing nearby markers
             nearbyEstablishmentMarkers.forEach(m => map.removeLayer(m));
             nearbyEstablishmentMarkers = [];
 
@@ -1366,14 +1529,6 @@
                     document.getElementById('display-opening').textContent = data.opening_time || 'Not set';
                     document.getElementById('display-closing').textContent = data.closing_time || 'Not set';
                     document.getElementById('display-address').textContent = data.address || 'Address not set';
-
-                    // Update status
-                    const statusBadge = document.getElementById('display-status');
-                    statusBadge.className = 'status-badge ' + data.status.toLowerCase();
-                    statusBadge.innerHTML = `
-                        <i class="fas fa-circle"></i>
-                        <span>${data.status}</span>
-                    `;
 
                     // Update amenities
                     const amenitiesContainer = document.getElementById('display-amenities');
