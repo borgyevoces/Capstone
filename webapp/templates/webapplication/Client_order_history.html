@@ -721,7 +721,6 @@
 
         console.log('📊 Order counts:', counts);
 
-        // Update count badges
         document.getElementById('count-all').textContent = counts.all;
         document.getElementById('count-order_received').textContent = counts.order_received;
         document.getElementById('count-preparing').textContent = counts.preparing;
@@ -736,13 +735,11 @@
         console.log('🔄 Switching to tab:', status);
         currentFilter = status;
 
-        // Update active tab UI
         document.querySelectorAll('.order-tab').forEach(tab => {
             tab.classList.remove('active');
         });
         document.querySelector(`.order-tab[data-status="${status}"]`).classList.add('active');
 
-        // Filter and display orders
         filterOrders(status);
     }
 
@@ -856,7 +853,6 @@
             'preparing': 'Preparing',
             'to_claim': 'Ready to Claim',
             'completed': 'Completed',
-            // Legacy statuses
             'PENDING': 'To Pay',
             'PAID': 'Paid',
             'CANCELLED': 'Cancelled'
@@ -886,14 +882,14 @@
     function getOrderActions(order) {
         let actions = '';
 
-        // View Details button (always available)
+        // ✅ Details button — goes to cart page
         actions += `
             <button class="order-action-btn btn-view-details" onclick="viewOrderDetails(${order.id})">
                 <i class="fas fa-eye"></i> Details
             </button>
         `;
 
-        // Status-specific actions
+        // ✅ Pay Now button — goes to cart and shows payment method selection immediately
         if (order.status === 'PENDING') {
             actions += `
                 <button class="order-action-btn btn-pay" onclick="payOrder(${order.id})">
@@ -943,17 +939,17 @@
     // ORDER ACTION FUNCTIONS
     // ========================================
 
+    // ✅ Details button → go to cart page
     function viewOrderDetails(orderId) {
-    console.log('👁️ Viewing order details:', orderId);
-    // Go to cart page
-    window.location.href = `/cart/`;
-}
+        console.log('👁️ Viewing order details:', orderId);
+        window.location.href = `/cart/`;
+    }
 
-function payOrder(orderId) {
-    console.log('💳 Paying for order:', orderId);
-    // Go to cart page — payment method section (Online/Cash) is already visible there
-    window.location.href = `/cart/`;
-}
+    // ✅ Pay Now button → go to cart and auto-show payment method selection
+    function payOrder(orderId) {
+        console.log('💳 Paying for order:', orderId);
+        window.location.href = `/cart/?pay=1`;
+    }
 
     function trackOrder(orderId) {
         console.log('📍 Tracking order:', orderId);
