@@ -1827,6 +1827,72 @@
             animation: slideUp 0.3s ease;
         }
 
+        /* Compact style for menu item delete and toggle seller modals */
+        #menuItemDeleteModal .delete-modal,
+        #toggleSellerModal .delete-modal {
+            max-width: 380px;
+            padding: 24px;
+            border-radius: 14px;
+        }
+
+        #menuItemDeleteModal .delete-modal-header,
+        #toggleSellerModal .delete-modal-header {
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        #menuItemDeleteModal .delete-modal-icon,
+        #toggleSellerModal .delete-modal-icon {
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        #menuItemDeleteModal .delete-modal-title h3,
+        #toggleSellerModal .delete-modal-title h3 {
+            font-size: 18px;
+        }
+
+        #menuItemDeleteModal .delete-modal-title p,
+        #toggleSellerModal .delete-modal-title p {
+            font-size: 13px;
+        }
+
+        #menuItemDeleteModal .delete-modal-body,
+        #toggleSellerModal .delete-modal-body {
+            margin-bottom: 16px;
+        }
+
+        #menuItemDeleteModal .delete-warning,
+        #toggleSellerModal .delete-warning {
+            padding: 12px;
+            margin-bottom: 0;
+        }
+
+        #menuItemDeleteModal .delete-warning p,
+        #toggleSellerModal .delete-warning p {
+            font-size: 13px;
+        }
+
+        #menuItemDeleteModal .delete-consequences,
+        #toggleSellerModal .delete-consequences {
+            display: none;
+        }
+
+        #menuItemDeleteModal .delete-modal-actions,
+        #toggleSellerModal .delete-modal-actions {
+            gap: 10px;
+        }
+
+        #menuItemDeleteModal .btn-cancel,
+        #menuItemDeleteModal .btn-delete,
+        #toggleSellerModal .btn-cancel,
+        #toggleSellerModal .btn-delete {
+            padding: 10px 18px;
+            font-size: 14px;
+        }
+
         .delete-modal-header {
             display: flex;
             align-items: center;
@@ -3868,10 +3934,28 @@ document.addEventListener('submit', function(e) {
     }
 }, true); // capture phase so it runs before any bubbling handler
 
-function openToggleSellerModal(itemName, isCurrentlySeller, url, form) {
-    _pendingToggleUrl = url;
-    _pendingToggleForm = form;
-    _pendingToggleIsSeller = isCurrentlySeller;
+function openToggleSellerModal(itemNameOrId, isCurrentlySellerOrName, urlOrIsSeller, form) {
+    // Support two calling conventions:
+    // 1. From server-rendered form intercept: (itemName:str, isCurrentlySeller:bool, url:str, form:elem)
+    // 2. From JS-rendered cards: (itemId:str, itemName:str, isCurrentlySeller:bool)
+    let itemName, isCurrentlySeller;
+
+    if (typeof urlOrIsSeller === 'boolean') {
+        // Convention 2: (itemId, itemName, isCurrentlySeller)
+        const itemId = itemNameOrId;
+        itemName = isCurrentlySellerOrName;
+        isCurrentlySeller = urlOrIsSeller;
+        _pendingToggleUrl = `/owner/dashboard/toggle_top_seller/${itemId}/`;
+        _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+        _pendingToggleIsSeller = isCurrentlySeller;
+    } else {
+        // Convention 1: (itemName, isCurrentlySeller, url, form)
+        itemName = itemNameOrId;
+        isCurrentlySeller = isCurrentlySellerOrName;
+        _pendingToggleUrl = urlOrIsSeller;
+        _pendingToggleForm = form;
+        _pendingToggleIsSeller = isCurrentlySeller;
+    }
 
     const icon    = document.getElementById('toggleSellerIcon');
     const title   = document.getElementById('toggleSellerTitle');
@@ -3931,7 +4015,11 @@ function confirmToggleSeller() {
 
         if (data.success) {
             // Update badge on menu card immediately — no page reload needed
-            const menuCard = _pendingToggleForm ? _pendingToggleForm.closest('.menu-card') : null;
+            const menuCard = _pendingToggleForm
+                ? (_pendingToggleForm.classList && _pendingToggleForm.classList.contains('menu-card')
+                    ? _pendingToggleForm
+                    : _pendingToggleForm.closest('.menu-card'))
+                : null;
             if (menuCard) {
                 const badgesContainer = menuCard.querySelector('.badges-container');
                 if (badgesContainer) {
@@ -3941,7 +4029,7 @@ function confirmToggleSeller() {
                         (qty > 0 ? `<span class="badge available">Available: ${qty}</span>` : '<span class="badge soldout">Out of Stock</span>');
                 }
                 // Flip button label
-                const sellerBtn = _pendingToggleForm.querySelector('button[type="submit"]');
+                const sellerBtn = menuCard.querySelector('button[type="submit"].action-btn.seller') || menuCard.querySelector('.action-btn.seller');
                 if (sellerBtn) sellerBtn.innerHTML = `<i class="fas fa-award"></i> ${data.is_top_seller ? 'Unmark' : 'Mark'}`;
             }
             const msg = data.is_top_seller ? '⭐ ' + data.message : '✅ ' + data.message;

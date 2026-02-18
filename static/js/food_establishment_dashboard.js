@@ -544,12 +544,9 @@ function addMenuItemToGrid(item) {
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
                 </button>
-                <form action="/owner/dashboard/toggle_top_seller/${item.id}/" method="post" style="display: contents;">
-                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
-                    <button type="submit" class="action-btn seller">
-                        <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
-                    </button>
-                </form>
+                <button type="button" class="action-btn seller" onclick="openToggleSellerModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.is_top_seller})">
+                    <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
+                </button>
                 <button type="button" class="action-btn delete" onclick="deleteMenuItem('${item.id}', this)">
                     <i class="fas fa-trash"></i> Delete
                 </button>
@@ -759,22 +756,20 @@ function updateMenuItemInGrid(item) {
 // ==========================================
 // DELETE MENU ITEM
 // ==========================================
+// Note: deleteMenuItem, confirmMenuItemDelete, closeMenuItemDeleteModal,
+// openToggleSellerModal, closeToggleSellerModal, confirmToggleSeller
+// are defined in the inline <script> in the HTML template where they have
+// access to the DOM elements. The HTML inline script uses window.deleteMenuItem
+// to override this stub.
 function deleteMenuItem(itemId, button) {
-    if (!confirm('Are you sure you want to delete this menu item? This action cannot be undone.')) {
-        return;
-    }
-
+    // Stub — overridden by the inline script in food_establishment_dashboard.html
+    if (!confirm('Are you sure you want to delete this menu item? This action cannot be undone.')) return;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-
     const csrfToken = getCookie('csrftoken');
-
     fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(response => response.json())
     .then(data => {
@@ -784,22 +779,15 @@ function deleteMenuItem(itemId, button) {
                 menuCard.style.animation = 'fadeOut 0.3s ease';
                 setTimeout(() => {
                     menuCard.remove();
-
                     const remainingItems = document.querySelectorAll('.menu-card');
                     if (remainingItems.length === 0) {
                         const menuGrid = document.querySelector('.menu-grid');
                         if (menuGrid) {
-                            menuGrid.innerHTML = `
-                                <div class="no-items" style="grid-column: 1/-1;">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>No menu items yet. Add your first item to get started!</p>
-                                </div>
-                            `;
+                            menuGrid.innerHTML = `<div class="no-items" style="grid-column: 1/-1;"><i class="fas fa-inbox"></i><p>No menu items yet. Add your first item to get started!</p></div>`;
                         }
                     }
                 }, 300);
             }
-
             showNotification('✅ ' + data.message, 'success');
         } else {
             showNotification('❌ ' + data.message, 'error');
@@ -807,8 +795,7 @@ function deleteMenuItem(itemId, button) {
             button.innerHTML = '<i class="fas fa-trash"></i> Delete';
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch(() => {
         showNotification('❌ An error occurred', 'error');
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash"></i> Delete';
@@ -1847,9 +1834,4 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==========================================
-// INITIALIZATION FOR NEW FEATURES
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Close modal when clicking outside
-});
+// Modal click-outside handlers are set up in the HTML inline script

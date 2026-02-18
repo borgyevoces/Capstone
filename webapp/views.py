@@ -3184,16 +3184,12 @@ def toggle_establishment_status(request, establishment_id):
 def toggle_top_seller(request, item_id):
     """
     Toggles a specific menu item's 'is_top_seller' status.
-    Supports both AJAX (returns JSON) and regular form POST (redirect).
+    This now allows multiple items to be marked as a top seller.
     """
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-
     item = get_object_or_404(MenuItem, id=item_id)
     establishment_id = request.session.get('food_establishment_id')
 
     if not establishment_id or item.food_establishment.id != int(establishment_id):
-        if is_ajax:
-            return JsonResponse({'success': False, 'message': 'Not authorized.'}, status=403)
         messages.error(request, "You are not authorized to perform this action.")
         return redirect(reverse_lazy('food_establishment_dashboard'))
 
@@ -3201,22 +3197,20 @@ def toggle_top_seller(request, item_id):
 
     if item.is_top_seller:
         item.top_seller_marked_at = timezone.now()
-        msg = f"'{item.name}' has been marked as a top seller."
-        messages.success(request, msg)
+        messages.success(request, f"'{item.name}' has been marked as a top seller.")
     else:
         item.top_seller_marked_at = None
-        msg = f"'{item.name}' has been unmarked as a top seller."
-        messages.info(request, msg)
+        messages.info(request, f"'{item.name}' has been unmarked as a top seller.")
 
     item.save()
 
-    if is_ajax:
+    # Return JSON for AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': True,
-            'message': msg,
             'is_top_seller': item.is_top_seller,
-            'item_id': item.id,
-            'item_name': item.name,
+            'message': f"'{item.name}' has been {'marked' if item.is_top_seller else 'unmarked'} as a top seller.",
+            'item_id': item_id,
         })
 
     return redirect(reverse_lazy('food_establishment_dashboard'))
