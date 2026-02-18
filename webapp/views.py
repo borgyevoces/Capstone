@@ -3067,7 +3067,7 @@ def delete_menu_item(request, item_id):
                 'item_id': item_id
             })
 
-        messages.success(request, f'"{item_name}" has been deleted from your menu.')
+        messages.success(request, f'"{item_name}" has been deleted from your menu.', extra_tags='owner_only')
         return redirect('food_establishment_dashboard')
 
     except Exception as e:
@@ -3079,7 +3079,7 @@ def delete_menu_item(request, item_id):
                 'message': f'An error occurred while deleting: {str(e)}'
             }, status=500)
 
-        messages.error(request, f'An error occurred while deleting the menu item: {str(e)}')
+        messages.error(request, f'An error occurred while deleting the menu item: {str(e)}', extra_tags='owner_only')
         return redirect('food_establishment_dashboard')
 
 
@@ -3184,13 +3184,15 @@ def toggle_establishment_status(request, establishment_id):
 def toggle_top_seller(request, item_id):
     """
     Toggles a specific menu item's 'is_top_seller' status.
-    This now allows multiple items to be marked as a top seller.
+    Returns JSON for AJAX requests; redirects for normal form POSTs.
     """
     item = get_object_or_404(MenuItem, id=item_id)
     establishment_id = request.session.get('food_establishment_id')
 
     if not establishment_id or item.food_establishment.id != int(establishment_id):
-        messages.error(request, "You are not authorized to perform this action.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'Not authorized.'}, status=403)
+        messages.error(request, "You are not authorized to perform this action.", extra_tags='owner_only')
         return redirect(reverse_lazy('food_establishment_dashboard'))
 
     item.is_top_seller = not item.is_top_seller
@@ -3204,22 +3206,22 @@ def toggle_top_seller(request, item_id):
 
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-    # Only add Django session messages for non-AJAX requests (page reloads).
-    # For AJAX requests, the JS handles notifications — skipping this prevents
-    # the messages from leaking onto kabsueats or other pages the user visits next.
-    if not is_ajax:
-        if item.is_top_seller:
-            messages.success(request, f"'{item.name}' has been marked as a top seller.")
-        else:
-            messages.info(request, f"'{item.name}' has been unmarked as a top seller.")
-        return redirect(reverse_lazy('food_establishment_dashboard'))
+    if is_ajax:
+        # AJAX: return JSON only — no Django session messages so nothing leaks to kabsueats
+        return JsonResponse({
+            'success': True,
+            'is_top_seller': item.is_top_seller,
+            'message': f"'{item.name}' has been {'marked' if item.is_top_seller else 'unmarked'} as a top seller.",
+            'item_id': item_id,
+        })
 
-    return JsonResponse({
-        'success': True,
-        'is_top_seller': item.is_top_seller,
-        'message': f"'{item.name}' has been {'marked' if item.is_top_seller else 'unmarked'} as a top seller.",
-        'item_id': item_id,
-    })
+    # Non-AJAX fallback: tag as owner_only so kabsueats filters it out
+    if item.is_top_seller:
+        messages.success(request, f"'{item.name}' has been marked as a top seller.", extra_tags='owner_only')
+    else:
+        messages.info(request, f"'{item.name}' has been unmarked as a top seller.", extra_tags='owner_only')
+
+    return redirect(reverse_lazy('food_establishment_dashboard'))
 
 
 @login_required(login_url='owner_login')
