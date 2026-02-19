@@ -3927,7 +3927,7 @@ let _pendingToggleIsSeller = false;
 function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
     // Single convention: (itemId, itemName, isCurrentlySeller)
     // Used by BOTH server-rendered cards (onclick) and JS-rendered cards (onclick)
-    _pendingToggleUrl = `/owner/dashboard/toggle_top_seller/${itemId}/`;
+    _pendingToggleUrl = `/toggle-top-seller/${itemId}/`;
     _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
     _pendingToggleIsSeller = isCurrentlySeller;
 
