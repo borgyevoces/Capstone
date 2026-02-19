@@ -618,9 +618,8 @@ function addToCartFromModal() {
 
 // ============================================
 // BUY NOW — Adds item to cart then redirects to cart page
-// ✅ Adds to cart and redirects to /cart/?pay=1&est=<id>
-//    so the cart auto-selects the right establishment
-//    and immediately shows payment method options
+// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
+//             so user picks Cash or Online Payment in cart
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -633,7 +632,7 @@ function buyNowFromModal() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
-    // Add item to cart first, then redirect to cart with pay=1 and est id
+    // Add item to cart first, then redirect to cart page with pay=1
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -642,10 +641,8 @@ function buyNowFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Pass est id so cart auto-selects the correct establishment
-            const estId = (currentModalItem.establishment && currentModalItem.establishment.id) ? currentModalItem.establishment.id : '';
-            const redirectUrl = URLS.cart + '?pay=1' + (estId ? '&est=' + estId : '');
-            window.location.href = redirectUrl;
+            // Redirect to cart page with ?pay=1 to auto-show payment options
+            window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
             if (btn) {
