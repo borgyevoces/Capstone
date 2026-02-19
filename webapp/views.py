@@ -531,6 +531,17 @@ def kabsueats_main_view(request):
             current_time = datetime.now().time()
 
     food_establishments_with_data = []
+    try:
+        food_establishments_queryset = list(food_establishments_queryset)
+    except Exception as db_err:
+        import logging
+        logging.getLogger(__name__).error(f"DB connection failed in kabsueats_main_view: {db_err}")
+        return render(request, 'webapplication/kabsueats.html', {
+            'food_establishments': [],
+            'all_categories': [],
+            'db_error': True,
+            'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.',
+        })
     for est in food_establishments_queryset:
         # Calculate distance
         if est.latitude is not None and est.longitude is not None:
@@ -6416,10 +6427,14 @@ def get_bestsellers(request):
         })
 
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"DB error in get_bestsellers: {e}")
         return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+            'success': True,
+            'bestsellers': [],
+            'count': 0,
+            'warning': 'Database temporarily unavailable'
+        })
 # ============================================================
 # BUY NOW — 2-STEP CHECKOUT FLOW
 # ============================================================
