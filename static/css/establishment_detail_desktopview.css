@@ -148,7 +148,7 @@
             "amenities reviews";
         gap: 24px;
         margin-bottom: 28px;
-        align-items: stretch;
+        align-items: start;
     }
 
     .top-info-grid .contact-location   { grid-area: location; }
@@ -174,9 +174,14 @@
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     }
 
-    .menu-section.section-card {
+    .menu-section.section-card,
+    #menu-section {
         box-shadow: none;
         padding: 50px 0;
+    }
+
+    #menu-section .menu-controls {
+        justify-content: center;
     }
 
     .section-card h2 {
