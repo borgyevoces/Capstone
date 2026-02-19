@@ -3934,75 +3934,136 @@ function getCookie(name) {
 }
 
 // ====================================================
-// MARK / UNMARK BEST SELLER — Modal + AJAX
+// BEST SELLER TOGGLE — CLEAN REWRITE
 // ====================================================
-let _pendingToggleUrl = null;
-let _pendingToggleForm = null;
-let _pendingToggleIsSeller = false;
 
+// Stores the item ID currently pending confirmation
+let _activeToggleItemId = null;
 
 function openToggleSellerModal(itemId) {
-    // ✅ DEFINITIVE FIX: Only uses itemId — reads ALL other data from the DOM
-    // This eliminates any argument-order / argument-swap bugs permanently
+    _activeToggleItemId = String(itemId);
 
-    // Find the card using only the item ID
-    _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    _pendingToggleUrl  = `/toggle-top-seller/${itemId}/`;
+    // Find the menu card by data-item-id
+    const card = document.querySelector('[data-item-id="' + _activeToggleItemId + '"]');
 
-    // Read item name from DOM
+    // Get item name from .menu-name inside the card, fallback to data attribute
     let itemName = 'this item';
-    if (_pendingToggleForm) {
-        const nameEl = _pendingToggleForm.querySelector('.menu-name');
-        itemName = (nameEl && nameEl.textContent.trim())
-            ? nameEl.textContent.trim()
-            : (_pendingToggleForm.dataset.itemName || 'this item');
+    if (card) {
+        const nameEl = card.querySelector('.menu-name');
+        if (nameEl) itemName = nameEl.textContent.trim() || itemName;
     }
 
-    // Read current seller status from the badge in the DOM (source of truth)
-    const isCurrentlySeller = _pendingToggleForm
-        ? !!_pendingToggleForm.querySelector('.badge.bestseller')
-        : false;
+    // Determine current state from the DOM badge
+    const isSeller = card ? !!card.querySelector('.badge.bestseller') : false;
 
-    _pendingToggleIsSeller = isCurrentlySeller;
-
-    const icon    = document.getElementById('toggleSellerIcon');
-    const title   = document.getElementById('toggleSellerTitle');
-    const sub     = document.getElementById('toggleSellerSubtitle');
-    const warnDiv = document.getElementById('toggleSellerWarning');
-    const warnTxt = document.getElementById('toggleSellerWarningText');
-    const desc    = document.getElementById('toggleSellerDesc');
-    const btn     = document.getElementById('confirmToggleSellerBtn');
-
-    if (isCurrentlySeller) {
-        icon.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
-        title.textContent = 'Unmark Best Seller?';
-        sub.textContent   = 'Remove the Best Seller badge from this item';
-        warnDiv.style.cssText = 'border-left:4px solid #6b7280;background:#f9fafb;padding:12px;border-radius:8px;';
-        warnTxt.innerHTML = '<i class="fas fa-award"></i> <strong>' + itemName + '</strong> will be unmarked as a Best Seller';
-        warnTxt.style.color = '#374151';
-        desc.textContent  = 'The Best Seller badge will be removed. The item will appear as a regular menu item.';
-        btn.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
-        btn.innerHTML = '<i class="fas fa-times-circle"></i> Yes, Unmark it';
+    // Update modal UI based on current state
+    if (isSeller) {
+        document.getElementById('toggleSellerIcon').style.background = 'linear-gradient(135deg,#6b7280,#374151)';
+        document.getElementById('toggleSellerTitle').textContent = 'Unmark Best Seller?';
+        document.getElementById('toggleSellerSubtitle').textContent = 'Remove the Best Seller badge from this item';
+        document.getElementById('toggleSellerWarning').style.cssText = 'border-left:4px solid #6b7280;background:#f9fafb;padding:12px;border-radius:8px;';
+        document.getElementById('toggleSellerWarningText').innerHTML = '<i class="fas fa-award"></i> <strong>' + itemName + '</strong> will be unmarked as a Best Seller';
+        document.getElementById('toggleSellerWarningText').style.color = '#374151';
+        document.getElementById('toggleSellerDesc').textContent = 'The Best Seller badge will be removed. The item will appear as a regular menu item.';
+        document.getElementById('confirmToggleSellerBtn').style.background = 'linear-gradient(135deg,#6b7280,#374151)';
+        document.getElementById('confirmToggleSellerBtn').innerHTML = '<i class="fas fa-times-circle"></i> Yes, Unmark it';
     } else {
-        icon.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-        title.textContent = 'Mark as Best Seller?';
-        sub.textContent   = 'Highlight this item with a Best Seller badge';
-        warnDiv.style.cssText = 'border-left:4px solid #f59e0b;background:#fffbeb;padding:12px;border-radius:8px;';
-        warnTxt.innerHTML = '<i class="fas fa-star"></i> <strong>' + itemName + '</strong> will be marked as a Best Seller';
-        warnTxt.style.color = '#92400e';
-        desc.textContent  = 'Best Seller items get a special badge and are highlighted to customers browsing your menu.';
-        btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-        btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
+        document.getElementById('toggleSellerIcon').style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+        document.getElementById('toggleSellerTitle').textContent = 'Mark as Best Seller?';
+        document.getElementById('toggleSellerSubtitle').textContent = 'Highlight this item with a Best Seller badge';
+        document.getElementById('toggleSellerWarning').style.cssText = 'border-left:4px solid #f59e0b;background:#fffbeb;padding:12px;border-radius:8px;';
+        document.getElementById('toggleSellerWarningText').innerHTML = '<i class="fas fa-star"></i> <strong>' + itemName + '</strong> will be marked as a Best Seller';
+        document.getElementById('toggleSellerWarningText').style.color = '#92400e';
+        document.getElementById('toggleSellerDesc').textContent = 'Best Seller items get a special badge and are highlighted to customers browsing your menu.';
+        document.getElementById('confirmToggleSellerBtn').style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+        document.getElementById('confirmToggleSellerBtn').innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
     }
 
     document.getElementById('toggleSellerModal').classList.add('active');
 }
+
 function closeToggleSellerModal() {
-    const modal = document.getElementById('toggleSellerModal');
-    if (modal) modal.classList.remove('active');
-    _pendingToggleUrl = null;
-    _pendingToggleForm = null;
-    _pendingToggleIsSeller = false;
+    document.getElementById('toggleSellerModal').classList.remove('active');
+    _activeToggleItemId = null;
+}
+
+function confirmToggleSeller() {
+    if (!_activeToggleItemId) return;
+
+    const itemId  = _activeToggleItemId;
+    const btn     = document.getElementById('confirmToggleSellerBtn');
+    const card    = document.querySelector('[data-item-id="' + itemId + '"]');
+    const csrfToken = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value
+                   || getCookie('csrftoken');
+
+    // Show loading state on button
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    fetch('/toggle-top-seller/' + itemId + '/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function(response) {
+        if (!response.ok) throw new Error('Server error: ' + response.status);
+        return response.json();
+    })
+    .then(function(data) {
+        closeToggleSellerModal();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
+
+        if (data.success) {
+            // --- Realtime DOM update ---
+            if (card) {
+                // 1. Update the badges container
+                const badgesContainer = card.querySelector('.badges-container');
+                if (badgesContainer) {
+                    const qty = parseInt(card.dataset.itemQuantity) || 0;
+                    const bestsellerBadge = data.is_top_seller
+                        ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>'
+                        : '';
+                    const stockBadge = qty > 0
+                        ? '<span class="badge available">Available: ' + qty + '</span>'
+                        : '<span class="badge soldout">Out of Stock</span>';
+                    badgesContainer.innerHTML = bestsellerBadge + stockBadge;
+                }
+
+                // 2. Update the Mark/Unmark button text
+                const sellerBtn = card.querySelector('.action-btn.seller');
+                if (sellerBtn) {
+                    sellerBtn.innerHTML = '<i class="fas fa-award"></i> ' + (data.is_top_seller ? 'Unmark' : 'Mark');
+                }
+
+                // 3. Flash the card so the owner sees the change
+                card.style.transition = 'box-shadow 0.3s ease';
+                card.style.boxShadow = data.is_top_seller
+                    ? '0 0 0 3px #f59e0b'
+                    : '0 0 0 3px #6b7280';
+                setTimeout(function() { card.style.boxShadow = ''; }, 1200);
+            }
+
+            // 4. Update the Top Sellers stat counter
+            if (typeof updateStoreStats === 'function') updateStoreStats();
+
+            // 5. Show success notification
+            const icon = data.is_top_seller ? '⭐' : '✅';
+            showNotification(icon + ' ' + data.message, 'success');
+
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to update. Please try again.'), 'error');
+        }
+    })
+    .catch(function(err) {
+        closeToggleSellerModal();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
+        console.error('Best Seller toggle error:', err);
+        showNotification('❌ Connection error. Please check your internet and try again.', 'error');
+    });
 }
 
 
@@ -5220,65 +5281,6 @@ function removeDashAlert(el) {
     </div>
 </footer>
 <script>
-function confirmToggleSeller() {
-    if (!_pendingToggleUrl) return;
-
-    const btn = document.getElementById('confirmToggleSellerBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-    fetch(_pendingToggleUrl, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-    })
-    .then(function(data) {
-        closeToggleSellerModal();
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-award"></i> Confirm';
-
-        if (data.success) {
-            const menuCard = _pendingToggleForm;
-            if (menuCard) {
-                // Update badges
-                const badgesContainer = menuCard.querySelector('.badges-container');
-                if (badgesContainer) {
-                    const qty = parseInt(menuCard.dataset.itemQuantity) || 0;
-                    badgesContainer.innerHTML =
-                        (data.is_top_seller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : '') +
-                        (qty > 0 ? '<span class="badge available">Available: ' + qty + '</span>' : '<span class="badge soldout">Out of Stock</span>');
-                }
-                // Update button label and onclick for new state
-                const sellerBtn = menuCard.querySelector('.action-btn.seller');
-                if (sellerBtn) {
-                    sellerBtn.innerHTML = '<i class="fas fa-award"></i> ' + (data.is_top_seller ? 'Unmark' : 'Mark');
-                    const itemId = menuCard.dataset.itemId;
-                    sellerBtn.setAttribute('onclick', "openToggleSellerModal('" + itemId + "')");
-                }
-            }
-            // Update stats
-            if (typeof updateStoreStats === 'function') updateStoreStats();
-            showNotification((data.is_top_seller ? '⭐ ' : '✅ ') + data.message, 'success');
-        } else {
-            showNotification('❌ ' + (data.message || 'Failed to update'), 'error');
-        }
-    })
-    .catch(function(err) {
-        closeToggleSellerModal();
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-award"></i> Confirm';
-        console.error('Toggle seller error:', err);
-        showNotification('❌ Failed to update: ' + err.message, 'error');
-    });
-}
-
-
 // ====================================================
 // MARK-ALL-READ BUTTON WIRING
 // ====================================================
