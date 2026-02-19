@@ -3338,7 +3338,7 @@
                                 <i class="fas fa-pen"></i> Edit
                             </button>
                             <button type="button" class="action-btn seller"
-                                    onclick="openToggleSellerModal('{{ item.id }}', '{{ item.name|escapejs }}', {{ item.is_top_seller|yesno:'true,false' }})">
+                                    onclick="openToggleSellerModal('{{ item.id }}')">
                                 <i class="fas fa-award"></i> {% if item.is_top_seller %}Unmark{% else %}Mark{% endif %}
                             </button>
                             <button type="button" class="action-btn delete"
@@ -3941,24 +3941,29 @@ let _pendingToggleForm = null;
 let _pendingToggleIsSeller = false;
 
 
-function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
-    // Single convention: (itemId, itemName, isCurrentlySeller)
-    // Used by BOTH server-rendered cards (onclick) and JS-rendered cards (onclick)
-    _pendingToggleUrl = `/toggle-top-seller/${itemId}/`;
-    _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    _pendingToggleIsSeller = isCurrentlySeller;
+function openToggleSellerModal(itemId) {
+    // ✅ DEFINITIVE FIX: Only uses itemId — reads ALL other data from the DOM
+    // This eliminates any argument-order / argument-swap bugs permanently
 
-    // ✅ FIX: Always read name and seller status from the DOM to prevent argument-swap bugs
+    // Find the card using only the item ID
+    _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+    _pendingToggleUrl  = `/toggle-top-seller/${itemId}/`;
+
+    // Read item name from DOM
+    let itemName = 'this item';
     if (_pendingToggleForm) {
         const nameEl = _pendingToggleForm.querySelector('.menu-name');
-        if (nameEl && nameEl.textContent.trim()) {
-            itemName = nameEl.textContent.trim();
-        } else if (_pendingToggleForm.dataset.itemName) {
-            itemName = _pendingToggleForm.dataset.itemName;
-        }
-        // Read seller status from badge (source of truth)
-        isCurrentlySeller = !!_pendingToggleForm.querySelector('.badge.bestseller');
+        itemName = (nameEl && nameEl.textContent.trim())
+            ? nameEl.textContent.trim()
+            : (_pendingToggleForm.dataset.itemName || 'this item');
     }
+
+    // Read current seller status from the badge in the DOM (source of truth)
+    const isCurrentlySeller = _pendingToggleForm
+        ? !!_pendingToggleForm.querySelector('.badge.bestseller')
+        : false;
+
+    _pendingToggleIsSeller = isCurrentlySeller;
 
     const icon    = document.getElementById('toggleSellerIcon');
     const title   = document.getElementById('toggleSellerTitle');
@@ -5254,8 +5259,7 @@ function confirmToggleSeller() {
                 if (sellerBtn) {
                     sellerBtn.innerHTML = '<i class="fas fa-award"></i> ' + (data.is_top_seller ? 'Unmark' : 'Mark');
                     const itemId = menuCard.dataset.itemId;
-                    const itemName = (menuCard.querySelector('.menu-name')?.textContent?.trim() || '').replace(/'/g, "\'");
-                    sellerBtn.setAttribute('onclick', "openToggleSellerModal('" + itemId + "', '" + itemName + "', " + data.is_top_seller + ")");
+                    sellerBtn.setAttribute('onclick', "openToggleSellerModal('" + itemId + "')");
                 }
             }
             // Update stats

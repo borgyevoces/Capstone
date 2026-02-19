@@ -544,7 +544,7 @@ function addMenuItemToGrid(item) {
                 <button class="action-btn edit" onclick="openEditModal('${item.id}')">
                     <i class="fas fa-pen"></i> Edit
                 </button>
-                <button type="button" class="action-btn seller" onclick="openToggleSellerModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.is_top_seller})">
+                <button type="button" class="action-btn seller" onclick="openToggleSellerModal('${item.id}')">
                     <i class="fas fa-award"></i> ${item.is_top_seller ? 'Unmark' : 'Mark'}
                 </button>
                 <button type="button" class="action-btn delete" onclick="deleteMenuItem('${item.id}', this)">
