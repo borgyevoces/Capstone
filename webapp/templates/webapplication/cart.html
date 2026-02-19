@@ -3,7 +3,6 @@
 {% load custom_filters %}
 {% load static custom_filters webapp_filters %}
 
-{# ✅ ADDED: Hide Search Bar Logic #}
 {% block search_visibility_control %}
 {% with show_search=False %}{% endwith %}
 {% endblock search_visibility_control %}
@@ -32,12 +31,22 @@
             <div class="all-carts-container">
 
                 {% for cart in carts_data %}
-                <div class="establishment-cart-box" data-establishment-id="{{ cart.establishment.id }}">
+                <div class="establishment-cart-box"
+                     data-establishment-id="{{ cart.establishment.id }}"
+                     data-establishment-name="{{ cart.establishment.name }}">
 
                     <!-- Establishment Header -->
                     <div class="cart-establishment-info">
-                        <i class="fas fa-store"></i>
-                        <h2>{{ cart.establishment.name }}</h2>
+                        <div class="est-header-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div class="est-header-text">
+                            <h2>{{ cart.establishment.name }}</h2>
+                            <div class="est-header-meta">
+                                <i class="fas fa-map-marker-alt"></i>
+                                {{ cart.establishment.address|truncatechars:55 }}
+                            </div>
+                        </div>
                         <button type="button"
                                 class="clear-establishment-btn"
                                 onclick="clearEstablishmentCart({{ cart.establishment.id }})"
@@ -69,11 +78,20 @@
                                 <!-- Item Details -->
                                 <div class="item-details">
                                     <h3 class="item-name">{{ item.menu_item.name }}</h3>
-                                    <p class="item-price" data-unit-price="{{ item.menu_item.price }}">₱{{ item.menu_item.price|floatformat:2 }} each</p>
-                                    <p class="item-stock">
-                                        <i class="fas fa-box"></i>
-                                        <span class="stock-count">{{ item.menu_item.quantity }}</span> available
+                                    {% if item.menu_item.description %}
+                                        <p class="item-desc">{{ item.menu_item.description|truncatechars:60 }}</p>
+                                    {% endif %}
+                                    <p class="item-price" data-unit-price="{{ item.menu_item.price }}">
+                                        ₱{{ item.menu_item.price|floatformat:2 }} / item
                                     </p>
+                                    <p class="item-stock">
+                                        <i class="fas fa-box-open"></i>
+                                        <span class="stock-count">{{ item.menu_item.quantity }}</span> left in stock
+                                    </p>
+                                    <span class="order-number-badge">
+                                        <i class="fas fa-receipt"></i>
+                                        Order #{{ cart.order.id }}
+                                    </span>
                                 </div>
 
                                 <!-- Quantity Controls -->
@@ -84,9 +102,7 @@
                                             {% if item.quantity <= 1 %}disabled{% endif %}>
                                         <i class="fas fa-minus"></i>
                                     </button>
-
                                     <span class="quantity-value" data-item-id="{{ item.id }}">{{ item.quantity }}</span>
-
                                     <button type="button"
                                             class="quantity-btn btn-increase"
                                             data-item-id="{{ item.id }}"
@@ -112,6 +128,20 @@
                         {% endfor %}
                     </div>
 
+                    <!-- Cart Box Footer: item count + subtotal -->
+                    <div class="cart-box-footer">
+                        <span>{{ cart.item_count }} item{{ cart.item_count|pluralize }}</span>
+                        <span class="cart-box-footer-total">
+                            ₱{% with total=0 %}
+                                {% for item in cart.items %}
+                                    {% with subtotal=item.total_price %}
+                                    {% endwith %}
+                                {% endfor %}
+                                {{ cart.order.total_amount|floatformat:2 }}
+                            {% endwith %}
+                        </span>
+                    </div>
+
                 </div>
                 {% endfor %}
 
@@ -121,7 +151,11 @@
             <div class="cart-summary-sticky">
                 <div class="cart-summary" id="active-order-summary">
                     <h2 class="summary-title">Order Summary</h2>
-                    <p class="summary-instruction">Click on an establishment to see order details</p>
+                    <p class="summary-subtitle">Select an establishment below</p>
+                    <p class="summary-instruction">
+                        <i class="fas fa-hand-pointer" style="margin-right:6px;color:#B71C1C;"></i>
+                        Click on an establishment card to see order details and checkout
+                    </p>
 
                     <div class="summary-content" style="display: none;">
                         <div class="summary-establishment-name"></div>
@@ -129,6 +163,10 @@
                         <div class="summary-line">
                             <span>Subtotal <span class="summary-item-count"></span></span>
                             <strong class="summary-subtotal">₱0.00</strong>
+                        </div>
+                        <div class="summary-line">
+                            <span>Delivery</span>
+                            <strong style="color:#2E7D32;">Free</strong>
                         </div>
 
                         <div class="summary-divider"></div>
@@ -138,32 +176,34 @@
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                        <!-- ✅ Payment Method Selection (Hidden Initially) -->
-                        <div class="payment-method-section" id="payment-method-section" style="display: none;">
-                            <h3 class="payment-method-title">Choose Payment Method</h3>
+                        <!-- Payment Method Selection (Hidden Initially) -->
+                        <div class="payment-method-section" id="payment-method-section">
+                            <p class="payment-method-title">Choose Payment Method</p>
 
                             <button type="button"
                                     class="btn-payment-method btn-paymongo"
                                     onclick="proceedToPayMongoCheckout(this)">
-                                <i class="fas fa-credit-card"></i>
+                                <i class="fas fa-credit-card icon-main"></i>
                                 <div class="payment-method-info">
                                     <span class="payment-method-name">Online Payment</span>
-                                    <span class="payment-method-desc">Pay via GCash/Card</span>
+                                    <span class="payment-method-desc">GCash, Credit/Debit Card</span>
                                 </div>
+                                <i class="fas fa-chevron-right" style="color:#9ca3af;font-size:11px;"></i>
                             </button>
 
                             <button type="button"
                                     class="btn-payment-method btn-cash"
                                     onclick="proceedToCashPayment(this)">
-                                <i class="fas fa-money-bill-wave"></i>
+                                <i class="fas fa-money-bill-wave icon-main"></i>
                                 <div class="payment-method-info">
-                                    <span class="payment-method-name">Cash Payment</span>
-                                    <span class="payment-method-desc">Pay when you claim</span>
+                                    <span class="payment-method-name">Cash on Claim</span>
+                                    <span class="payment-method-desc">Pay when you pick up</span>
                                 </div>
+                                <i class="fas fa-chevron-right" style="color:#9ca3af;font-size:11px;"></i>
                             </button>
                         </div>
 
-                        <!-- ✅ Initial Checkout Button (Shows Payment Options) -->
+                        <!-- Initial Checkout Button -->
                         <button type="button"
                                 class="btn-checkout-gcash"
                                 id="initial-checkout-btn"
@@ -174,7 +214,7 @@
 
                         <div class="security-badge">
                             <i class="fas fa-shield-alt"></i>
-                            <span>Secure payment via PayMongo</span>
+                            <span>Secured by PayMongo</span>
                         </div>
                     </div>
                 </div>
@@ -189,11 +229,9 @@
     {% else %}
         <!-- Empty Cart State -->
         <div class="empty-cart-message">
-            <div class="empty-cart-icon">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
+            <div class="empty-cart-icon">🛒</div>
             <h2>Your cart is empty</h2>
-            <p>Add items to your cart to get started!</p>
+            <p>Add delicious items from our food establishments!</p>
             <a href="{% url 'kabsueats_home' %}" class="btn-back-to-home">
                 <i class="fas fa-store"></i> Browse Establishments
             </a>
@@ -206,18 +244,33 @@
 
 {% block extra_js %}
 <script>
-    // ✅ Auto-show payment method section when redirected from "Pay Now" button
+    // ✅ Auto-show payment method section when redirected from "Buy Now"
+    // Accepts ?pay=1 and optionally ?est=<establishment_id> to auto-select the right store
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         if (params.get('pay') === '1') {
-            // Step 1: Wait for cart.js to initialize, then click the first establishment
+            const targetEstId = params.get('est'); // optional: specific establishment
+
             setTimeout(function () {
-                const firstEstablishment = document.querySelector('.establishment-cart-box');
-                if (firstEstablishment) {
-                    firstEstablishment.click();
+                let targetBox = null;
+
+                if (targetEstId) {
+                    // Select the specific establishment that was just added
+                    targetBox = document.querySelector(
+                        `.establishment-cart-box[data-establishment-id="${targetEstId}"]`
+                    );
                 }
 
-                // Step 2: After establishment is selected, show payment section directly
+                // Fall back to first establishment if none found
+                if (!targetBox) {
+                    targetBox = document.querySelector('.establishment-cart-box');
+                }
+
+                if (targetBox) {
+                    targetBox.click();
+                }
+
+                // Show payment section after establishment is selected
                 setTimeout(function () {
                     const summaryContent = document.querySelector('.summary-content');
                     const paymentSection = document.getElementById('payment-method-section');
@@ -227,7 +280,6 @@
                     if (paymentSection) paymentSection.style.display = 'flex';
                     if (checkoutBtn) checkoutBtn.style.display = 'none';
 
-                    // Scroll to the payment section smoothly
                     if (paymentSection) {
                         paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
