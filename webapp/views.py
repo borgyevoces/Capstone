@@ -3180,6 +3180,7 @@ def toggle_establishment_status(request, establishment_id):
         return HttpResponseBadRequest("Food establishment not found.")
 
 
+@login_required(login_url='owner_login')
 @require_POST
 def toggle_top_seller(request, item_id):
     """

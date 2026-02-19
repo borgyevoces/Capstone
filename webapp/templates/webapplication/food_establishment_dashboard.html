@@ -3963,10 +3963,12 @@ function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
 
     document.getElementById('toggleSellerModal').classList.add('active');
 }
-
 function closeToggleSellerModal() {
     const modal = document.getElementById('toggleSellerModal');
     if (modal) modal.classList.remove('active');
+    _pendingToggleUrl = null;
+    _pendingToggleForm = null;
+    _pendingToggleIsSeller = false;
 }
 
 
@@ -5324,55 +5326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_t) _t.addEventListener('click', function(e) { if (e.target === this) closeToggleSellerModal(); });
 });
 
-// ====================================================
-// MARK / UNMARK BEST SELLER — Modal + AJAX
-// ====================================================
-let _pendingToggleUrl = null;
-let _pendingToggleForm = null;
-let _pendingToggleIsSeller = false;
-
-
-function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
-    // Single convention: (itemId, itemName, isCurrentlySeller)
-    // Used by BOTH server-rendered cards (onclick) and JS-rendered cards (onclick)
-    _pendingToggleUrl = `/owner/dashboard/toggle_top_seller/${itemId}/`;
-    _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    _pendingToggleIsSeller = isCurrentlySeller;
-
-    const icon    = document.getElementById('toggleSellerIcon');
-    const title   = document.getElementById('toggleSellerTitle');
-    const sub     = document.getElementById('toggleSellerSubtitle');
-    const warnDiv = document.getElementById('toggleSellerWarning');
-    const warnTxt = document.getElementById('toggleSellerWarningText');
-    const desc    = document.getElementById('toggleSellerDesc');
-    const btn     = document.getElementById('confirmToggleSellerBtn');
-
-    if (isCurrentlySeller) {
-        icon.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
-        title.textContent = 'Unmark Best Seller?';
-        sub.textContent   = 'Remove the Best Seller badge from this item';
-        warnDiv.style.cssText = 'border-left:4px solid #6b7280;background:#f9fafb;padding:12px;border-radius:8px;';
-        warnTxt.innerHTML = '<i class="fas fa-award"></i> <strong>' + itemName + '</strong> will be unmarked as a Best Seller';
-        warnTxt.style.color = '#374151';
-        desc.textContent  = 'The Best Seller badge will be removed. The item will appear as a regular menu item.';
-        btn.style.background = 'linear-gradient(135deg,#6b7280,#374151)';
-        btn.innerHTML = '<i class="fas fa-times-circle"></i> Yes, Unmark it';
-    } else {
-        icon.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-        title.textContent = 'Mark as Best Seller?';
-        sub.textContent   = 'Highlight this item with a Best Seller badge';
-        warnDiv.style.cssText = 'border-left:4px solid #f59e0b;background:#fffbeb;padding:12px;border-radius:8px;';
-        warnTxt.innerHTML = '<i class="fas fa-star"></i> <strong>' + itemName + '</strong> will be marked as a Best Seller';
-        warnTxt.style.color = '#92400e';
-        desc.textContent  = 'Best Seller items get a special badge and are highlighted to customers browsing your menu.';
-        btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-        btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
-    }
-
-    document.getElementById('toggleSellerModal').classList.add('active');
-}
-
-
+// duplicate block removed
 </script>
 
 <script src="{% static 'js/status_updater.js' %}"></script>
