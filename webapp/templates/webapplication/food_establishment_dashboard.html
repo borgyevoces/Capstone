@@ -3948,7 +3948,7 @@ function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
     _pendingToggleForm = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
     _pendingToggleIsSeller = isCurrentlySeller;
 
-    // Always read the item name from the DOM to prevent ID/name argument-swap bugs
+    // ✅ FIX: Always read name and seller status from the DOM to prevent argument-swap bugs
     if (_pendingToggleForm) {
         const nameEl = _pendingToggleForm.querySelector('.menu-name');
         if (nameEl && nameEl.textContent.trim()) {
@@ -3956,9 +3956,8 @@ function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
         } else if (_pendingToggleForm.dataset.itemName) {
             itemName = _pendingToggleForm.dataset.itemName;
         }
-        // Also derive current seller status from the DOM badge as the source of truth
-        const hasBestSellerBadge = !!_pendingToggleForm.querySelector('.badge.bestseller');
-        isCurrentlySeller = hasBestSellerBadge;
+        // Read seller status from badge (source of truth)
+        isCurrentlySeller = !!_pendingToggleForm.querySelector('.badge.bestseller');
     }
 
     const icon    = document.getElementById('toggleSellerIcon');
