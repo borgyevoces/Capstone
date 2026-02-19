@@ -617,9 +617,9 @@ function addToCartFromModal() {
 }
 
 // ============================================
-// BUY NOW — Redirects to payment selection page
-// ✅ FIX: Creates order then redirects to buynow checkout page
-//         where user picks Cash or Online Payment
+// BUY NOW — Adds item to cart then redirects to cart page
+// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
+//             so user picks Cash or Online Payment in cart
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -632,23 +632,17 @@ function buyNowFromModal() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
-    const formData = new FormData();
-    formData.append('menu_item_id', currentModalItem.id);
-    formData.append('quantity', qty);
-    formData.append('csrfmiddlewaretoken', getCsrf());
-
-    // ✅ FIX: POST to buynow_prepare (creates order, returns order_id)
-    //         then redirect to buynow_checkout page
-    fetch(URLS.prepareBuyNow, {
+    // Add item to cart first, then redirect to cart page with pay=1
+    fetch(URLS.addToCart, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCsrf() },
-        body: formData
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ menu_item_id: currentModalItem.id, quantity: qty })
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success && data.order_id) {
-            // ✅ Redirect to checkout page with payment method selection
-            window.location.href = URLS.buynowCheckout + '?order_id=' + data.order_id;
+        if (data.success) {
+            // Redirect to cart page with ?pay=1 to auto-show payment options
+            window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
             if (btn) {
