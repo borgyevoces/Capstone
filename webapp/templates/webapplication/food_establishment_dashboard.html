@@ -1807,7 +1807,7 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.7);
-            z-index: 10000;
+            z-index: 99999;
             animation: fadeIn 0.3s ease;
         }
 
@@ -3915,6 +3915,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const _t = document.getElementById('toggleSellerModal');
     if (_t) _t.addEventListener('click', function(e) { if (e.target === this) closeToggleSellerModal(); });
 });
+
+// ====================================================
+// GLOBAL getCookie HELPER (used by confirmToggleSeller & others)
+// ====================================================
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 // ====================================================
 // MARK / UNMARK BEST SELLER — Modal + AJAX
