@@ -1273,9 +1273,9 @@
             <section class="section-card" id="menu-section">
 
                 {# Menu Title — centered #}
-                <h2 class="menu-title-centered"><i class="fas fa-utensils menu-title-icon"></i> Menu</h2>
+                <h2 class="menu-title-centered"><span><i class="fas fa-utensils menu-title-icon"></i> Menu</span></h2>
 
-                {# Controls row: [Price pills] [Search bar] #}
+                {# Controls row: [Price pills] [Best Seller pills] [Search bar] #}
                 <div class="menu-controls">
                     <div class="filter-pill-group">
                         <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
@@ -1284,8 +1284,14 @@
                         <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
                             <i class="fas fa-sort-amount-down"></i> Price ↓
                         </button>
-                        <button class="filter-pill" id="bestSellerFilter" onclick="toggleBestSellerFilter()" aria-pressed="false">
-                            <i class="fas fa-fire"></i> Best Seller
+                    </div>
+
+                    <div class="filter-pill-group">
+                        <button class="filter-pill" id="bestSellerAsc" onclick="setBestSellerSort('asc', this)">
+                            <i class="fas fa-fire"></i> Best Seller ↑
+                        </button>
+                        <button class="filter-pill" id="bestSellerDesc" onclick="setBestSellerSort('desc', this)">
+                            <i class="fas fa-fire"></i> Best Seller ↓
                         </button>
                     </div>
 
@@ -2740,7 +2746,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // MENU FILTERS — search, price sort, stock status, best sellers
 // =============================================
 (function() {
-    let bestSellerActive = false;
+    let bestSellerSort = 'default'; // 'default' | 'asc' | 'desc'
 
     // ---- Main filter/sort runner — called by every control ----
     window.filterMenuItems = function() {
@@ -2759,7 +2765,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const name        = (item.getAttribute('data-item-name') || '').toLowerCase();
             const description = (item.getAttribute('data-item-description') || '').toLowerCase();
             const quantity    = parseInt(item.getAttribute('data-item-quantity') || 0);
-            const isTopSeller = item.getAttribute('data-is-top-seller') === 'true';
 
             let show = true;
 
@@ -2771,9 +2776,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Stock filter
             if (show && stockVal === 'available' && quantity <= 0)   show = false;
             if (show && stockVal === 'outofstock' && quantity > 0)   show = false;
-
-            // Best seller toggle
-            if (show && bestSellerActive && !isTopSeller)            show = false;
 
             item.style.display = show ? '' : 'none';
             if (show) visibleItems.push(item);
@@ -2788,6 +2790,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // Best Seller sort: 'asc' = top sellers first, 'desc' = top sellers last
+        if (bestSellerSort === 'asc' || bestSellerSort === 'desc') {
+            visibleItems.sort(function(a, b) {
+                const aTop = a.getAttribute('data-is-top-seller') === 'true' ? 1 : 0;
+                const bTop = b.getAttribute('data-is-top-seller') === 'true' ? 1 : 0;
+                return bestSellerSort === 'asc' ? (bTop - aTop) : (aTop - bTop);
+            });
+        }
+
         // Re-append in sorted order (hidden items stay where they are, won't show)
         visibleItems.forEach(function(item) {
             menuList.appendChild(item);
@@ -2797,13 +2808,23 @@ document.addEventListener('DOMContentLoaded', function() {
         noMsg.style.display = (visibleItems.length === 0) ? 'block' : 'none';
     };
 
-    // ---- Best Seller toggle button ----
-    window.toggleBestSellerFilter = function() {
-        const btn = document.getElementById('bestSellerFilter');
-        bestSellerActive = !bestSellerActive;
-        btn.classList.toggle('active', bestSellerActive);
-        btn.setAttribute('aria-pressed', bestSellerActive ? 'true' : 'false');
-        filterMenuItems(); // re-run combined filter
+    // ---- Best Seller sort buttons ----
+    window.setBestSellerSort = function(val, btn) {
+        if (bestSellerSort === val) {
+            // clicking active button resets
+            bestSellerSort = 'default';
+            ['bestSellerAsc', 'bestSellerDesc'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+        } else {
+            bestSellerSort = val;
+            ['bestSellerAsc', 'bestSellerDesc'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', el.id === btn.id);
+            });
+        }
+        filterMenuItems();
     };
 })();
 </script>

@@ -142,18 +142,18 @@
     .top-info-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto;
+        grid-template-rows: auto auto;
         grid-template-areas:
             "location reviews"
             "amenities reviews";
         gap: 24px;
         margin-bottom: 28px;
-        align-items: start;
+        align-items: stretch;
     }
 
     .top-info-grid .contact-location   { grid-area: location; }
     .top-info-grid .amenities-section  { grid-area: amenities; }
-    .top-info-grid .reviews-section    { grid-area: reviews; }
+    .top-info-grid .reviews-section    { grid-area: reviews; grid-row: 1 / 3; }
 
     .left-column-stack {
         display: flex;
@@ -365,12 +365,17 @@
         font-size: 1.6em;
         font-weight: 700;
         color: #333;
-        border-bottom: 2px solid #000;
-        padding-bottom: 1px;
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         white-space: nowrap;
         margin-bottom: 28px;
+    }
+
+    .menu-title-centered span {
+        border-bottom: 2px solid #000;
+        padding-bottom: 1px;
     }
 
     .menu-title-icon {
