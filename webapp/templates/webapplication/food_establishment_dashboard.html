@@ -3964,6 +3964,11 @@ function openToggleSellerModal(itemId, itemName, isCurrentlySeller) {
     document.getElementById('toggleSellerModal').classList.add('active');
 }
 
+function closeToggleSellerModal() {
+    const modal = document.getElementById('toggleSellerModal');
+    if (modal) modal.classList.remove('active');
+}
+
 
 </script>
 
@@ -5178,7 +5183,8 @@ function removeDashAlert(el) {
             in the Philippines</p>
     </div>
 </footer>
-</htmlfunction confirmToggleSeller() {
+<script>
+function confirmToggleSeller() {
     if (!_pendingToggleUrl) return;
 
     const btn = document.getElementById('confirmToggleSellerBtn');
