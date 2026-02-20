@@ -591,10 +591,10 @@ def kabsueats_main_view(request):
             order__user=request.user,
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
-    # all_active_est_ids: all active establishment IDs (unfiltered) for the search bar
-    all_active_est_ids = list(FoodEstablishment.objects.filter(is_active=True).values_list('id', flat=True))
+    # active_est_ids: all active establishment IDs (unfiltered) for the search bar
+    active_est_ids = list(FoodEstablishment.objects.filter(is_active=True).values_list('id', flat=True))
     all_menu_items = MenuItem.objects.filter(
-        food_establishment__in=all_active_est_ids,
+        food_establishment__in=active_est_ids,
         food_establishment__is_active=True,
     ).select_related('food_establishment').values(
         'id', 'name', 'is_top_seller',
