@@ -7,7 +7,10 @@ let cidx = 0, isGrid = false;
 const VISIBLE = 5;
 let bsData = []; // real backend data
 
-
+// ── SEARCH MODE STATE ──
+// Tracks current search state to restore UI when cleared
+let searchMode = 'none'; // 'none' | 'menu' | 'establishment'
+let lastSearchQuery = '';
 
 // ── MAP STATE ──
 let curView = 'bs', mapReady = false;
@@ -768,25 +771,22 @@ function saveProfile() {
 
 // ============================================
 // ============================================
-// SEARCH — Smart Autocomplete + Live Page Transitions
-// Connects: dropdown → Bestsellers carousel → Establishment grid
+// SEARCH — Smart Autocomplete with Recent Searches & Trending Hubs
 // ============================================
 
-// ── State ──
-let searchMode     = 'none'; // 'none' | 'menu' | 'establishment' | 'empty'
-let lastSearchQuery = '';
-
+// ── LocalStorage keys & limits ──
 const RECENT_KEY  = 'ke_recent_searches';
 const MAX_RECENT  = 6;
 const DEBOUNCE_MS = 240;
 
+// ── State ──
 let searchTimer   = null;
 let searchAbort   = null;
 let searchFocused = false;
 let dropSelected  = -1;
-let _trendCache   = null;
+let _trendCache   = null;  // cached trending hubs
 
-// ── Recent Searches (localStorage) ──────────────────────────────────────────
+// ── Recent Searches helpers ──
 function getRecents() {
     try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch(e) { return []; }
 }
@@ -794,40 +794,33 @@ function saveRecent(q) {
     if (!q || q.length < 2) return;
     let list = getRecents().filter(r => r.toLowerCase() !== q.toLowerCase());
     list.unshift(q);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT))); } catch(e) {}
+    list = list.slice(0, MAX_RECENT);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch(e) {}
 }
 function removeRecent(q) {
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(getRecents().filter(r => r !== q))); } catch(e) {}
+    const list = getRecents().filter(r => r !== q);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch(e) {}
 }
 function clearAllRecents() {
     try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
 }
 
-// ── Trending cache ────────────────────────────────────────────────────────────
+// ── Trending fetch (cached) ──
 function fetchTrending(cb) {
     if (_trendCache) { cb(_trendCache); return; }
-    const url = (typeof URLS !== 'undefined' && URLS.searchTrending)
-        ? URLS.searchTrending : '/api/search-trending/';
-    fetch(url).then(r => r.ok ? r.json() : null)
-        .then(d => { if (d && d.establishments) { _trendCache = d.establishments; cb(_trendCache); } })
+    const url = (typeof URLS !== 'undefined' && URLS.searchTrending) ? URLS.searchTrending : '/api/search-trending/';
+    fetch(url)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data && data.establishments) { _trendCache = data.establishments; cb(_trendCache); } })
         .catch(() => {});
 }
 
-// ── Text highlighter util ─────────────────────────────────────────────────────
-function hlText(html, q) {
-    if (!q) return html;
-    return html.replace(new RegExp(`(${escapeRe(q)})`, 'gi'),
-        '<mark class="search-match">$1</mark>');
-}
-
-// ============================================
-// MAIN INIT
-// ============================================
+// ── Main init (replaces old initSearch) ──
 function initSearch() {
     const inp  = document.getElementById('hSearch');
     const clr  = document.getElementById('hClr');
     const drop = document.getElementById('searchDropdown');
-    if (!inp) return;
+    if (!inp || !drop) return;
 
     inp.addEventListener('input', function () {
         const q = this.value.trim();
@@ -843,7 +836,7 @@ function initSearch() {
         }
 
         showDropSkeleton();
-        filterEstCards(q);                                      // instant DOM filter
+        filterEstCards(q);
         searchTimer = setTimeout(() => fetchSearchResults(q), DEBOUNCE_MS);
     });
 
@@ -854,7 +847,10 @@ function initSearch() {
         else showIdleDrop();
     });
 
-    inp.addEventListener('blur', () => { searchFocused = false; setTimeout(closeDrop, 180); });
+    inp.addEventListener('blur', function () {
+        searchFocused = false;
+        setTimeout(closeDrop, 180);
+    });
 
     clr.addEventListener('click', function () {
         inp.value = '';
@@ -866,25 +862,24 @@ function initSearch() {
     });
 
     inp.addEventListener('keydown', function (e) {
-        if (!drop) return;
-        const items = drop.querySelectorAll('.search-dropdown-item');
+        const items = drop.querySelectorAll('.search-dropdown-item, .sdrop-recent-pill, .snr-pill');
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             dropSelected = Math.min(dropSelected + 1, items.length - 1);
-            highlightDropItem(items);
+            highlightDropKbd(items);
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             dropSelected = Math.max(dropSelected - 1, -1);
-            highlightDropItem(items);
+            highlightDropKbd(items);
         } else if (e.key === 'Enter') {
             e.preventDefault();
             if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].click();
         } else if (e.key === 'Escape') {
-            closeDrop(); inp.blur();
+            closeDrop();
+            inp.blur();
         }
     });
 
-    // Top-rated hint pills
     document.querySelectorAll('.hs-hint-pill').forEach(pill => {
         pill.addEventListener('click', function (e) {
             if (this.tagName === 'A') return;
@@ -898,14 +893,13 @@ function initSearch() {
         });
     });
 
-    fetchTrending(() => {}); // pre-warm
+    // Pre-warm trending cache
+    fetchTrending(() => {});
 }
 
-function highlightDropItem(items) {
-    items.forEach((el, i) => {
-        el.style.background = i === dropSelected ? 'var(--g50)' : '';
-    });
-    if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
+function highlightDropKbd(items) {
+    items.forEach((el, i) => { el.classList.toggle('kbd-focus', i === dropSelected); });
+    if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].scrollIntoView({ block: 'nearest' });
 }
 
 function closeDrop() {
@@ -914,142 +908,126 @@ function closeDrop() {
     dropSelected = -1;
 }
 
-// ============================================
-// INSTANT DOM FILTER — establishment grid
-// Shows/hides cards + highlights matched name text
-// ============================================
+// ── Filter DOM establishment cards instantly ──
 function filterEstCards(q) {
     const ql = q.toLowerCase();
     document.querySelectorAll('.food-est-item').forEach(el => {
-        // Restore original name text before re-highlighting
-        const nameEl = el.querySelector('.estc-name');
-        if (nameEl && nameEl.dataset.origText) {
-            nameEl.textContent = nameEl.dataset.origText;
-        }
-
-        if (!ql) {
-            el.style.display = '';
-            return;
-        }
-
+        if (!ql) { el.style.display = ''; return; }
         const name = (el.dataset.name     || '').toLowerCase();
         const cat  = (el.dataset.category || '').toLowerCase();
-        const hits = name.includes(ql) || cat.includes(ql);
-
-        el.style.display = hits ? '' : 'none';
-
-        // Highlight matched name in card
-        if (hits && nameEl) {
-            if (!nameEl.dataset.origText) nameEl.dataset.origText = nameEl.textContent;
-            nameEl.innerHTML = hlText(escHtml(nameEl.dataset.origText), q);
-        }
+        el.style.display = (name.includes(ql) || cat.includes(ql)) ? '' : 'none';
     });
 }
 
-// ============================================
-// IDLE DROPDOWN (focus + empty input)
-// Shows: Recent Searches + Trending Hubs
-// ============================================
+// ── Idle panel (shown on focus with empty input) ──
 function showIdleDrop() {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
     if (!drop || !content) return;
 
-    const recents = getRecents();
     let html = '';
 
+    const recents = getRecents();
     if (recents.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title" style="display:flex;align-items:center;justify-content:space-between;">
+        html += `
+        <div class="search-dropdown-section">
+            <div class="search-dropdown-title" style="justify-content:space-between;display:flex;align-items:center;">
                 <span style="display:flex;align-items:center;gap:6px;"><i class="fas fa-history"></i> Recent Searches</span>
-                <span onclick="clearAllRecents();showIdleDrop();"
-                    style="font-size:10px;color:var(--red);cursor:pointer;font-weight:600;padding:2px 8px;border-radius:4px;transition:background .15s;"
-                    onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background=''">Clear all</span>
+                <span style="font-size:10px;color:var(--red);cursor:pointer;font-weight:600;padding:2px 6px;border-radius:4px;transition:background .15s;" onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background=''" onclick="clearAllRecents();showIdleDrop();">Clear all</span>
             </div>
             <div style="padding:4px 12px 10px;display:flex;flex-wrap:wrap;gap:6px;">
                 ${recents.map(r => `
-                <span onclick="searchPillClick(${JSON.stringify(r)})"
-                    style="display:inline-flex;align-items:center;gap:6px;background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--g700);cursor:pointer;transition:all .15s;"
-                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)'"
-                    onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)'">
+                <span style="display:inline-flex;align-items:center;gap:6px;background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--g700);cursor:pointer;transition:background .15s,color .15s;"
+                    onclick="searchPillClick(${JSON.stringify(r)})"
+                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)';this.style.borderColor='rgba(183,28,28,.2)'"
+                    onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)';this.style.borderColor='var(--g200)'">
                     <i class="fas fa-search" style="font-size:9px;opacity:.5;"></i>
                     ${escHtml(r)}
-                    <span onclick="event.stopPropagation();removeAndRefresh(${JSON.stringify(r)})"
-                        style="font-size:10px;color:var(--g400);padding:1px 3px;border-radius:50%;transition:color .15s;"
-                        onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--g400)'">
-                        <i class="fas fa-times"></i></span>
+                    <span onclick="event.stopPropagation();removeAndRefresh(${JSON.stringify(r)})" style="font-size:10px;color:var(--g400);padding:1px 2px;border-radius:50%;"><i class="fas fa-times"></i></span>
                 </span>`).join('')}
             </div>
         </div>`;
     }
 
-    html += `<div class="search-dropdown-section" id="sdropTrending">
-        <div class="search-dropdown-title"><i class="fas fa-fire" style="color:#ef4444;"></i> Trending Food Hubs</div>
-        <div id="sdropTrendRow" style="padding:4px 12px 12px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
-            ${[1,2,3,4,5].map(() =>
-                `<div style="flex-shrink:0;width:72px;display:flex;flex-direction:column;align-items:center;gap:6px;">
-                    <div class="sk" style="width:48px;height:48px;border-radius:14px;"></div>
-                    <div class="sk" style="width:48px;height:9px;border-radius:4px;"></div>
-                </div>`).join('')}
+    html += `
+    <div class="search-dropdown-section" id="sdropTrending">
+        <div class="search-dropdown-title">
+            <i class="fas fa-fire" style="color:#ef4444;"></i> Trending Food Hubs
+        </div>
+        <div id="sdropTrendRow" style="padding:4px 12px 12px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;">
+            ${[1,2,3,4,5].map(() => `
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;">
+                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
+                <div style="height:9px;width:48px;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
+            </div>`).join('')}
         </div>
     </div>`;
+
+    if (!recents.length && !_trendCache) {
+        html = `<div style="padding:20px 16px;text-align:center;color:var(--g400);font-size:13px;">
+            <i class="fas fa-search" style="font-size:22px;display:block;margin-bottom:8px;color:var(--g300);"></i>
+            Start typing to search menus &amp; food hubs
+        </div>`;
+    }
 
     content.innerHTML = html;
     drop.classList.add('active');
 
+    // Async-fill trending hubs
     fetchTrending(ests => {
         const row = document.getElementById('sdropTrendRow');
         if (!row) return;
-        if (!ests || !ests.length) { const s = document.getElementById('sdropTrending'); if (s) s.remove(); return; }
+        if (!ests || !ests.length) {
+            const sec = document.getElementById('sdropTrending');
+            if (sec) sec.remove();
+            return;
+        }
         row.innerHTML = ests.slice(0, 8).map(est => {
-            const isO  = (est.status||'').toLowerCase() === 'open';
-            const sBg  = isO ? '#d1fae5' : '#fee2e2';
-            const sFg  = isO ? '#065f46' : '#991b1b';
-            const img  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"
-                    onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                : `<i class="fas fa-store" style="font-size:18px;"></i>`;
-            const url  = `${URLS.estDetail}${est.id}/`;
-            return `<div onclick="saveRecent(${JSON.stringify(est.name)});window.location.href='${url}'"
-                style="flex-shrink:0;width:72px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;">
-                <div style="width:48px;height:48px;border-radius:14px;background:var(--g100);border:2px solid var(--g200);display:flex;align-items:center;justify-content:center;color:var(--g600);overflow:hidden;transition:border-color .2s,transform .2s;"
-                    onmouseover="this.style.borderColor='var(--red)';this.style.transform='scale(1.08)'"
-                    onmouseout="this.style.borderColor='var(--g200)';this.style.transform=''">${img}</div>
-                <div style="font-size:10px;font-weight:600;color:var(--g700);text-align:center;line-height:1.3;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(est.name)}</div>
-                <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:${sBg};color:${sFg};">${isO?'OPEN':'CLOSED'}</span>
+            const sClass = (est.status || '').toLowerCase() === 'open' ? 'open' : 'closed';
+            const sBg    = sClass === 'open' ? '#d1fae5' : '#fee2e2';
+            const sFg    = sClass === 'open' ? '#065f46' : '#991b1b';
+            const img    = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+                : `<i class="fas fa-store"></i>`;
+            const url = (typeof URLS !== 'undefined' && URLS.estDetail) ? `${URLS.estDetail}${est.id}/` : `/food_establishment/${est.id}/`;
+            return `
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;cursor:pointer;" onclick="saveRecent('${escHtml(est.name).replace(/'/g,'\\x27')}');window.location.href='${url}'">
+                <div style="width:48px;height:48px;border-radius:14px;background:var(--g100);border:2px solid var(--g200);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--g600);overflow:hidden;transition:border-color .2s;"
+                    onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--g200)'">${img}</div>
+                <div style="font-size:10px;font-weight:600;color:var(--g700);text-align:center;line-height:1.3;max-width:72px;word-break:break-word;">${escHtml(est.name)}</div>
+                <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:${sBg};color:${sFg};">${sClass.toUpperCase()}</span>
             </div>`;
         }).join('');
+        row.style.cssText += '-webkit-overflow-scrolling:touch;';
     });
 }
 
-// ============================================
-// SKELETON (shown while API fetches)
-// ============================================
+// ── Skeleton while loading ──
 function showDropSkeleton() {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
     if (!drop || !content) return;
-    content.innerHTML = `<div style="padding:14px 16px;">
-        <div class="sk" style="height:10px;width:32%;border-radius:5px;margin-bottom:14px;"></div>
+    content.innerHTML = `
+    <div style="padding:14px 16px;">
+        <div style="height:11px;width:35%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:6px;margin-bottom:12px;"></div>
         ${[1,2,3].map(() => `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px;">
-            <div class="sk" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
             <div style="flex:1;">
-                <div class="sk" style="height:12px;width:62%;border-radius:4px;margin-bottom:7px;"></div>
-                <div class="sk" style="height:10px;width:40%;border-radius:4px;"></div>
+                <div style="height:12px;width:65%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;margin-bottom:7px;"></div>
+                <div style="height:10px;width:45%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;"></div>
             </div>
-            <div class="sk" style="width:44px;height:14px;border-radius:4px;flex-shrink:0;"></div>
+            <div style="width:42px;height:14px;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;flex-shrink:0;"></div>
         </div>`).join('')}
     </div>`;
     drop.classList.add('active');
 }
 
-// ============================================
-// FETCH from backend
-// ============================================
+// ── Main API fetch ──
 function fetchSearchResults(q) {
     if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
+
     lastSearchQuery = q;
 
     fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
@@ -1061,419 +1039,18 @@ function fetchSearchResults(q) {
         .catch(err => { if (err.name !== 'AbortError') closeDrop(); });
 }
 
-// ============================================
-// APPLY RESULTS TO PAGE — carousel + grid
-// ============================================
-function applySearchToPage(data, q) {
-    // Sort OPEN establishments first in both arrays
-    const openFirst = arr => arr.slice().sort((a, b) => {
-        const aO = ((a.establishment ? a.establishment.status : a.status)||'').toLowerCase()==='open' ? 0 : 1;
-        const bO = ((b.establishment ? b.establishment.status : b.status)||'').toLowerCase()==='open' ? 0 : 1;
-        return aO - bO;
-    });
-
-    const menus = openFirst(data.menus || []);
-    const ests  = openFirst(data.establishments || []);
-
-    if (menus.length > 0) {
-        searchMode = 'menu';
-        renderMenuSearchInBS(menus, q);       // Bestsellers area → menu cards
-        sortEstCardsByMenuMatch(menus, q);    // Est grid → sorted + badged
-    } else if (ests.length > 0) {
-        searchMode = 'establishment';
-        renderEstSearchInBS(ests, q);         // Bestsellers area → est cards
-        // filterEstCards already ran on input
-    } else {
-        searchMode = 'empty';
-        showBSSearchEmpty(q);
-    }
-}
-
-// ============================================
-// RESTORE NORMAL VIEW — smooth fade transitions
-// ============================================
-function restoreNormalView() {
-    if (searchMode === 'none') return;
-    searchMode = 'none';
-    lastSearchQuery = '';
-
-    // ── Restore BS title ──
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) {
-        titleEl.style.transition = 'opacity .2s ease';
-        titleEl.style.opacity = '0';
-        setTimeout(() => {
-            titleEl.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
-            titleEl.style.opacity = '1';
-        }, 180);
-    }
-
-    // ── Fade-out carousel → re-render bestsellers → fade-in ──
-    const track = document.getElementById('cTrack');
-    if (track) {
-        track.style.transition = 'opacity .2s ease';
-        track.style.opacity = '0';
-        setTimeout(() => {
-            if (bsData.length > 0) renderBS(bsData);
-            else fetchBestsellers();
-            requestAnimationFrame(() => { track.style.opacity = '1'; });
-        }, 210);
-    }
-
-    // ── Remove est section sub-label ──
-    setEstSubLabel('');
-
-    // ── Restore establishment cards ──
-    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
-    document.querySelectorAll('.food-est-item').forEach(el => {
-        el.style.display  = '';
-        el.style.opacity  = '1';
-        el.style.transform = '';
-        el.style.transition = '';
-        const nameEl = el.querySelector('.estc-name');
-        if (nameEl && nameEl.dataset.origText) {
-            nameEl.textContent = nameEl.dataset.origText;
-        }
-    });
-
-    // Restore original card order
-    const grid = document.getElementById('estGrid');
-    if (grid) {
-        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-        cards.sort((a, b) =>
-            (parseInt(a.dataset.originalOrder || 9999)) - (parseInt(b.dataset.originalOrder || 9999)));
-        const frag = document.createDocumentFragment();
-        cards.forEach(c => frag.appendChild(c));
-        grid.appendChild(frag);
-    }
-}
-
-// ============================================
-// BESTSELLERS AREA — MENU RESULTS
-// Animated swap: fade-out → new cards slide in
-// ============================================
-function renderMenuSearchInBS(items, q) {
-    // ── Title transition ──
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) {
-        titleEl.style.transition = 'opacity .2s ease';
-        titleEl.style.opacity = '0';
-        setTimeout(() => {
-            titleEl.innerHTML = `<i class="fas fa-search" style="color:var(--red);"></i>
-                ${items.length} menu result${items.length !== 1 ? 's' : ''} for
-                "<strong>${escHtml(q)}</strong>"`;
-            titleEl.style.opacity = '1';
-        }, 180);
-    }
-
-    const track = document.getElementById('cTrack');
-    if (!track) return;
-
-    // Exit grid mode
-    if (isGrid) {
-        track.classList.remove('gmode');
-        const wrap = document.getElementById('carouselWrap');
-        if (wrap) wrap.classList.remove('gmode');
-    }
-
-    // ── Fade-out → render → staggered slide-in ──
-    track.style.transition = 'opacity .2s ease';
-    track.style.opacity = '0';
-
-    setTimeout(() => {
-        track.innerHTML = items.map((item, i) => {
-            const estId     = item.establishment ? item.establishment.id   : '';
-            const estName   = item.establishment ? item.establishment.name : '';
-            const estStatus = item.establishment
-                ? (item.establishment.status || 'closed').toLowerCase() : 'closed';
-            const estImg    = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
-            const imgSrc    = item.image_url
-                || `https://via.placeholder.com/280x180?text=${encodeURIComponent(item.name)}`;
-            const estIcon   = estImg
-                ? `<img src="${estImg}" alt="${escHtml(estName)}"
-                    onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
-                : `<i class="fas fa-utensils"></i>`;
-
-            return `<div class="bsc" onclick="window.location.href='${URLS.estDetail}${estId}/'"
-                style="opacity:0;transform:translateY(14px);transition:opacity .28s ease ${i * 45}ms,transform .28s ease ${i * 45}ms;">
-                <div class="bsc-img">
-                    <img src="${imgSrc}" alt="${escHtml(item.name)}" loading="lazy"
-                        onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                    <span class="bsc-badge bsc-badge-search"><i class="fas fa-search"></i> Menu Match</span>
-                </div>
-                <div class="bsc-body">
-                    <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
-                    <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
-                    <div class="bsc-est">
-                        <div class="bsc-eico">${estIcon}</div>
-                        <div class="bsc-einfo">
-                            <div class="bsc-ename">${highlightMatch(escHtml(estName), q)}</div>
-                            <div class="bsc-emeta">
-                                <span class="sp ${estStatus}">${estStatus.toUpperCase()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="bsc-btn"
-                        onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${estId}/'">
-                        <i class="fas fa-store"></i> Visit Store
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-
-        cidx = 0;
-        track.style.transform = 'translateX(0)';
-        updNav();
-
-        // Trigger card animations
-        requestAnimationFrame(() => {
-            track.style.opacity = '1';
-            track.querySelectorAll('.bsc').forEach(card => {
-                requestAnimationFrame(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                });
-            });
-        });
-    }, 210);
-
-    // ── Est grid sub-label ──
-    setEstSubLabel(`Establishments with "<strong>${escHtml(q)}</strong>" on their menu`);
-}
-
-// ============================================
-// BESTSELLERS AREA — ESTABLISHMENT RESULTS
-// ============================================
-function renderEstSearchInBS(ests, q) {
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) {
-        titleEl.style.transition = 'opacity .2s ease';
-        titleEl.style.opacity = '0';
-        setTimeout(() => {
-            titleEl.innerHTML = `<i class="fas fa-store" style="color:var(--red);"></i>
-                ${ests.length} food hub${ests.length !== 1 ? 's' : ''} matching
-                "<strong>${escHtml(q)}</strong>"`;
-            titleEl.style.opacity = '1';
-        }, 180);
-    }
-
-    const track = document.getElementById('cTrack');
-    if (!track) return;
-
-    if (isGrid) {
-        track.classList.remove('gmode');
-        const wrap = document.getElementById('carouselWrap');
-        if (wrap) wrap.classList.remove('gmode');
-    }
-
-    track.style.transition = 'opacity .2s ease';
-    track.style.opacity = '0';
-
-    setTimeout(() => {
-        track.innerHTML = ests.map((est, i) => {
-            const isOpen  = (est.status || '').toLowerCase() === 'open';
-            const stClass = isOpen ? 'open' : 'closed';
-            const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
-            const imgSrc  = estImg
-                || `https://via.placeholder.com/280x180?text=${encodeURIComponent(est.name)}`;
-
-            return `<div class="bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'"
-                style="opacity:0;transform:translateY(14px);transition:opacity .28s ease ${i * 45}ms,transform .28s ease ${i * 45}ms;">
-                <div class="bsc-img">
-                    <img src="${imgSrc}" alt="${escHtml(est.name)}" loading="lazy"
-                        onerror="this.src='https://via.placeholder.com/280x180?text=Restaurant'">
-                    <span class="bsc-badge bsc-badge-est"><i class="fas fa-store"></i> Food Hub</span>
-                </div>
-                <div class="bsc-body">
-                    <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
-                    <div class="bsc-price" style="color:var(--g600);font-size:12px;">${escHtml(est.category || 'Food')}</div>
-                    <div class="bsc-est">
-                        <div class="bsc-einfo" style="padding-left:0;">
-                            <div class="bsc-emeta">
-                                <span class="sp ${stClass}">${(est.status || 'UNKNOWN').toUpperCase()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="bsc-btn"
-                        onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${est.id}/'">
-                        <i class="fas fa-eye"></i> View Details
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-
-        cidx = 0;
-        track.style.transform = 'translateX(0)';
-        updNav();
-
-        requestAnimationFrame(() => {
-            track.style.opacity = '1';
-            track.querySelectorAll('.bsc').forEach(card => {
-                requestAnimationFrame(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                });
-            });
-        });
-    }, 210);
-
-    setEstSubLabel(`Showing establishments matching "<strong>${escHtml(q)}</strong>"`);
-}
-
-// ============================================
-// EMPTY STATE in carousel area
-// ============================================
-function showBSSearchEmpty(q) {
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) {
-        titleEl.style.transition = 'opacity .2s ease';
-        titleEl.style.opacity = '0';
-        setTimeout(() => {
-            titleEl.innerHTML = `<i class="fas fa-search" style="color:var(--g300);"></i>
-                No results for "<strong>${escHtml(q)}</strong>"`;
-            titleEl.style.opacity = '1';
-        }, 180);
-    }
-
-    const track = document.getElementById('cTrack');
-    if (track) {
-        track.style.transition = 'opacity .2s ease';
-        track.style.opacity = '0';
-        setTimeout(() => {
-            const sugg = [
-                ...getRecents(),
-                ...(_trendCache || []).map(e => e.name)
-            ].filter(n => n.toLowerCase() !== q.toLowerCase()).slice(0, 5);
-
-            track.innerHTML = `<div style="padding:48px 24px;text-align:center;width:100%;color:var(--g400);">
-                <i class="fas fa-search" style="font-size:38px;color:var(--g200);display:block;margin-bottom:16px;"></i>
-                <div style="font-size:16px;font-weight:700;color:var(--g700);margin-bottom:8px;">
-                    No matches for "<strong style="color:var(--g900);">${escHtml(q)}</strong>"
-                </div>
-                <div style="font-size:13px;color:var(--g400);margin-bottom:${sugg.length ? '18px' : '0'};">
-                    Try a different keyword — or browse all establishments below
-                </div>
-                ${sugg.length ? `
-                <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
-                    ${sugg.map(s => `<span onclick="searchPillClick(${JSON.stringify(s)})"
-                        style="background:#fff;border:2px solid var(--g200);border-radius:20px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--g700);cursor:pointer;font-family:'Poppins',sans-serif;transition:all .18s;"
-                        onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)';this.style.borderColor='rgba(183,28,28,.3)'"
-                        onmouseout="this.style.background='#fff';this.style.color='var(--g700)';this.style.borderColor='var(--g200)'">${escHtml(s)}</span>`).join('')}
-                </div>` : ''}
-            </div>`;
-            requestAnimationFrame(() => { track.style.opacity = '1'; });
-        }, 210);
-    }
-
-    setEstSubLabel('');
-}
-
-// ============================================
-// ESTABLISHMENT GRID — sort by match count
-// Matching cards rise to top + staggered fade-in
-// Non-matching cards hidden for focus
-// ============================================
-function sortEstCardsByMenuMatch(menuItems, q) {
-    const grid = document.getElementById('estGrid');
-    if (!grid) return;
-
-    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-
-    // Save original order (once)
-    cards.forEach((card, i) => {
-        if (!card.dataset.originalOrder) card.dataset.originalOrder = i;
-    });
-
-    // Build match map: estId → count
-    const matchMap = {};
-    menuItems.forEach(item => {
-        if (item.establishment) {
-            const id = item.establishment.id;
-            matchMap[id] = (matchMap[id] || 0) + 1;
-        }
-    });
-
-    // Remove old badges
-    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
-
-    // Tag each card + add match badge
-    cards.forEach(card => {
-        const id    = parseInt(card.dataset.id);
-        const count = matchMap[id] || 0;
-        card.dataset.matchCount = count;
-
-        // Restore name first
-        const nameEl = card.querySelector('.estc-name');
-        if (nameEl && nameEl.dataset.origText) {
-            nameEl.textContent = nameEl.dataset.origText;
-        }
-
-        if (count > 0) {
-            card.style.display = '';
-
-            // Highlight name text
-            if (nameEl) {
-                if (!nameEl.dataset.origText) nameEl.dataset.origText = nameEl.textContent;
-                nameEl.innerHTML = hlText(escHtml(nameEl.dataset.origText), q);
-            }
-
-            // Match badge
-            const badge = document.createElement('div');
-            badge.className = 'est-match-badge';
-            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
-            const body = card.querySelector('.estc-body');
-            if (body) body.insertBefore(badge, body.firstChild);
-        } else {
-            // Hide non-matching for a focused search experience
-            card.style.display = 'none';
-        }
-    });
-
-    // Sort: most matches first, preserve original order for ties
-    cards.sort((a, b) => {
-        const ma = parseInt(a.dataset.matchCount || 0);
-        const mb = parseInt(b.dataset.matchCount || 0);
-        if (mb !== ma) return mb - ma;
-        return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
-    });
-
-    // Re-append all in sorted order, then stagger fade-in for visible ones
-    const frag = document.createDocumentFragment();
-    cards.forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(12px)';
-        card.style.transition = '';
-        frag.appendChild(card);
-    });
-    grid.appendChild(frag);
-
-    let delay = 0;
-    cards.forEach(card => {
-        if (parseInt(card.dataset.matchCount || 0) > 0) {
-            setTimeout(() => {
-                card.style.transition = 'opacity .25s ease, transform .25s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, delay);
-            delay += 50;
-        }
-    });
-}
-
-// ============================================
-// LIVE SEARCH DROPDOWN
-// ============================================
+// ── Render live dropdown ──
 function renderSearchDrop(data, q) {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
     if (!drop || !content) return;
     dropSelected = -1;
 
-    // OPEN-first
+    // OPEN-first sort
     const openFirst = arr => arr.slice().sort((a, b) => {
-        const aO = ((a.establishment ? a.establishment.status : a.status)||'').toLowerCase()==='open' ? 0 : 1;
-        const bO = ((b.establishment ? b.establishment.status : b.status)||'').toLowerCase()==='open' ? 0 : 1;
-        return aO - bO;
+        const aS = ((a.establishment ? a.establishment.status : a.status) || '').toLowerCase() === 'open' ? 0 : 1;
+        const bS = ((b.establishment ? b.establishment.status : b.status) || '').toLowerCase() === 'open' ? 0 : 1;
+        return aS - bS;
     });
 
     const items = openFirst(data.menus || []);
@@ -1483,24 +1060,19 @@ function renderSearchDrop(data, q) {
     // ── Menu items ──
     if (items.length > 0) {
         html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title">
-                <i class="fas fa-utensils"></i> Menu Items
-                <span style="background:var(--red);color:#fff;font-size:9px;border-radius:10px;padding:1px 6px;margin-left:4px;">${items.length}</span>
-            </div>`;
+            <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
         items.slice(0, 5).forEach(item => {
             const estId   = item.establishment ? item.establishment.id   : '';
             const estName = item.establishment ? item.establishment.name : '';
             const estSt   = item.establishment ? (item.establishment.status || 'Closed') : 'Closed';
-            const isO     = estSt.toLowerCase() === 'open';
-            const stBg    = isO ? '#d1fae5' : '#fee2e2';
-            const stFg    = isO ? '#065f46' : '#991b1b';
+            const stCls   = estSt.toLowerCase() === 'open' ? 'open' : 'closed';
+            const stBg    = stCls === 'open' ? '#d1fae5' : '#fee2e2';
+            const stFg    = stCls === 'open' ? '#065f46' : '#991b1b';
             const imgHtml = item.image_url
-                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;"
-                    onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
                 : `<i class="fas fa-utensils"></i>`;
-            const url = `${URLS.estDetail}${estId}/`;
-            html += `<div class="search-dropdown-item"
-                onclick="saveRecent(${JSON.stringify(item.name)});window.location.href='${url}'">
+            const url = URLS.estDetail ? `${URLS.estDetail}${estId}/` : `/food_establishment/${estId}/`;
+            html += `<div class="search-dropdown-item" onclick="saveRecent(${JSON.stringify(item.name)});window.location.href='${url}'">
                 <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgHtml}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
@@ -1511,37 +1083,26 @@ function renderSearchDrop(data, q) {
                         <span>${highlightMatch(escHtml(estName), q)}</span>
                     </div>
                 </div>
-                <span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--red);white-space:nowrap;flex-shrink:0;">
-                    ₱${parseFloat(item.price || 0).toFixed(2)}
-                </span>
+                <span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--red);white-space:nowrap;flex-shrink:0;">₱${parseFloat(item.price || 0).toFixed(2)}</span>
             </div>`;
         });
-        if (items.length > 5) {
-            html += `<div style="padding:5px 16px 9px;font-size:11px;color:var(--g400);">
-                +${items.length - 5} more shown in results below ↓</div>`;
-        }
         html += '</div>';
     }
 
     // ── Establishments ──
     if (ests.length > 0) {
         html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title">
-                <i class="fas fa-store"></i> Food Hubs
-                <span style="background:var(--red);color:#fff;font-size:9px;border-radius:10px;padding:1px 6px;margin-left:4px;">${ests.length}</span>
-            </div>`;
+            <div class="search-dropdown-title"><i class="fas fa-store"></i> Food Hubs</div>`;
         ests.slice(0, 4).forEach(est => {
-            const isO    = (est.status || '').toLowerCase() === 'open';
-            const stBg   = isO ? '#d1fae5' : '#fee2e2';
-            const stFg   = isO ? '#065f46' : '#991b1b';
-            const imgHtml = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;"
-                    onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+            const stCls  = (est.status || '').toLowerCase() === 'open' ? 'open' : 'closed';
+            const stBg   = stCls === 'open' ? '#d1fae5' : '#fee2e2';
+            const stFg   = stCls === 'open' ? '#065f46' : '#991b1b';
+            const estImg = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
                 : `<i class="fas fa-store"></i>`;
-            const url = `${URLS.estDetail}${est.id}/`;
-            html += `<div class="search-dropdown-item"
-                onclick="saveRecent(${JSON.stringify(est.name)});window.location.href='${url}'">
-                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgHtml}</div>
+            const url = URLS.estDetail ? `${URLS.estDetail}${est.id}/` : `/food_establishment/${est.id}/`;
+            html += `<div class="search-dropdown-item" onclick="saveRecent(${JSON.stringify(est.name)});window.location.href='${url}'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImg}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
                     <div class="search-dropdown-item-meta">
@@ -1555,31 +1116,23 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
-    // ── No results ──
+    // ── No results with smart suggestions ──
     if (!html) {
-        const sugg = [
-            ...getRecents(),
-            ...(_trendCache || []).map(e => e.name)
-        ].filter(n => n.toLowerCase() !== q.toLowerCase()).slice(0, 6);
-
+        const allNames = [...getRecents(), ...(_trendCache || []).map(e => e.name)]
+            .filter(n => n.toLowerCase() !== q.toLowerCase()).slice(0, 6);
         html = `<div class="search-no-results">
             <i class="fas fa-search" style="font-size:26px;color:var(--g300);display:block;margin-bottom:8px;"></i>
-            <div style="font-weight:600;color:var(--g700);font-size:14px;margin-bottom:4px;">
-                No results for "<strong>${escHtml(q)}</strong>"</div>
-            <div style="font-size:11px;color:var(--g400);margin-bottom:${sugg.length ? '12px' : '0'};">
-                Try a different keyword or browse below.</div>
-            ${sugg.length ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">
-                ${sugg.map(s => `<span onclick="searchPillClick(${JSON.stringify(s)})"
-                    style="background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;color:var(--g700);cursor:pointer;transition:all .15s;"
-                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)'"
-                    onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)'">${escHtml(s)}</span>`).join('')}
+            <div style="font-weight:600;color:var(--g700);margin-bottom:4px;font-size:14px;">No results for "<strong>${escHtml(q)}</strong>"</div>
+            <div style="font-size:11px;color:var(--g400);margin-bottom:${allNames.length ? '12px' : '0'};">Try a different keyword or browse below.</div>
+            ${allNames.length ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">
+                ${allNames.map(s => `<span onclick="searchPillClick(${JSON.stringify(s)})"
+                    style="background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;color:var(--g700);cursor:pointer;"
+                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)'" onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)'">${escHtml(s)}</span>`).join('')}
             </div>` : ''}
         </div>`;
-    } else {
-        // Footer hint
-        html += `<div style="padding:10px 16px;font-size:11px;font-weight:600;color:var(--g600);text-align:center;border-top:1px solid var(--g100);">
-            <i class="fas fa-arrow-down" style="color:var(--red);"></i>
-            Full results updated below on the page
+    } else if (items.length + ests.length >= 4) {
+        html += `<div onclick="closeDrop()" style="display:block;padding:11px 16px;font-size:12px;font-weight:600;color:var(--red);text-align:center;cursor:pointer;border-top:1px solid var(--g100);transition:background .15s;" onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background=''">
+            <i class="fas fa-search"></i> See all results for "<strong>${escHtml(q)}</strong>"
         </div>`;
     }
 
@@ -1587,34 +1140,7 @@ function renderSearchDrop(data, q) {
     drop.classList.add('active');
 }
 
-// ============================================
-// EST SECTION SUB-LABEL (contextual filter info)
-// ============================================
-function setEstSubLabel(html) {
-    let sub = document.getElementById('estSectionSub');
-    if (!html) {
-        if (sub) {
-            sub.style.opacity = '0';
-            setTimeout(() => { if (sub.parentNode) sub.parentNode.removeChild(sub); }, 250);
-        }
-        return;
-    }
-    if (!sub) {
-        sub = document.createElement('div');
-        sub.id = 'estSectionSub';
-        sub.style.cssText = 'font-size:13px;font-weight:500;color:var(--g600);margin:-14px 0 18px;opacity:0;transition:opacity .3s ease;display:flex;align-items:center;gap:7px;';
-        const secTitle = document.querySelector('.sec-title');
-        if (secTitle && secTitle.parentNode) {
-            secTitle.parentNode.insertBefore(sub, secTitle.nextSibling);
-        }
-    }
-    sub.innerHTML = `<i class="fas fa-filter" style="color:var(--red);font-size:11px;"></i>${html}`;
-    requestAnimationFrame(() => { sub.style.opacity = '1'; });
-}
-
-// ============================================
-// PILL CLICK HELPERS
-// ============================================
+// ── Pill click helpers ──
 function searchPillClick(text) {
     const inp = document.getElementById('hSearch');
     const clr = document.getElementById('hClr');
@@ -1736,3 +1262,4 @@ function initEstablishmentCards() {
             child.style.pointerEvents = 'none';
         });
     });
+}
