@@ -124,17 +124,14 @@
     .hs-clr { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--g400); font-size: 15px; cursor: pointer; display: none; transition: .2s; }
     .hs-clr.on { display: block; }
 
-    /* ── Search dropdown (mobile) ── */
+    /* Search dropdown */
     .search-dropdown {
         position: absolute; top: calc(100% + 6px); left: 0; right: 0;
         background: #fff; border-radius: 10px;
         box-shadow: 0 8px 24px rgba(0,0,0,.14);
         border: 1px solid var(--g200); z-index: 1200; display: none;
         overflow: hidden; text-align: left;
-        max-height: 360px; overflow-y: auto;
     }
-    .search-dropdown::-webkit-scrollbar { width: 3px; }
-    .search-dropdown::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
     .search-dropdown.active { display: block; }
     .search-dropdown-section { padding: 6px 0; border-bottom: 1px solid var(--g100); }
     .search-dropdown-section:last-child { border-bottom: none; }
@@ -143,34 +140,9 @@
     .search-dropdown-item:hover { background: var(--g50); }
     .search-dropdown-item-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--g100); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--g600); flex-shrink: 0; }
     .search-dropdown-item-name { font-size: 12px; font-weight: 600; color: var(--g800); margin-bottom: 1px; }
-    .search-match { background: rgba(183,28,28,.12); color: var(--red); border-radius: 2px; padding: 0 2px; font-weight: 700; }
-    .search-dropdown-item-meta { font-size: 10px; color: var(--g400); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .search-match { background: rgba(183,28,28,.12); color: var(--red); border-radius: 2px; padding: 0 2px; }
+    .search-dropdown-item-meta { font-size: 10px; color: var(--g400); display: flex; align-items: center; gap: 4px; }
     .search-no-results { padding: 16px 14px; text-align: center; color: var(--g400); font-size: 12px; }
-
-    /* ── Recent search icon tint ── */
-    .recent-icon { background: linear-gradient(135deg,#eff6ff,#dbeafe) !important; color: #3b82f6 !important; }
-
-    /* ── "Clear all" button inside dropdown title ── */
-    .sd-clear-recent { background: none; border: none; font-family: 'Poppins',sans-serif; font-size: 10px; font-weight: 600; color: #9ca3af; cursor: pointer; padding: 2px 5px; border-radius: 4px; display: flex; align-items: center; gap: 3px; }
-    .sd-clear-recent:hover { color: #ef4444; background: #fef2f2; }
-
-    /* ── Remove single recent item ── */
-    .sd-remove-recent { background: none; border: none; font-size: 11px; color: #d1d5db; cursor: pointer; padding: 3px 5px; border-radius: 4px; flex-shrink: 0; }
-    .sd-remove-recent:hover { color: #ef4444; background: #fef2f2; }
-
-    /* ── Category chips ── */
-    .sd-category-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 10px 10px; }
-    .sd-cat-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 20px; border: 1.5px solid #e5e7eb; background: #f9fafb; font-family: 'Poppins',sans-serif; font-size: 10px; font-weight: 600; color: #374151; cursor: pointer; transition: all .15s; }
-    .sd-cat-chip i { color: #B71C1C; font-size: 9px; }
-    .sd-cat-chip:hover { background: #B71C1C; border-color: #B71C1C; color: #fff; }
-    .sd-cat-chip:hover i { color: #fff; }
-
-    /* ── Menu-match chip ── */
-    .sd-menu-match-chip { display: inline-flex; align-items: center; gap: 3px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; border-radius: 4px; font-size: 9px; font-weight: 700; padding: 1px 5px; margin-left: 3px; font-family: 'Poppins',sans-serif; white-space: nowrap; }
-    .sd-menu-match-chip i { font-size: 8px; color: #d97706; }
-
-    /* ── Suggestion rows ── */
-    .suggestion-item .search-dropdown-item-name { color: #f59e0b !important; }
 
     /* Top Rated pills */
     .hs-hints { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 11px; flex-wrap: wrap; }
@@ -188,26 +160,15 @@
     .hs-hint-pill i { font-size: 10px; color: var(--red); }
 
     /* ---------- BESTSELLERS SECTION ---------- */
-    .bs-section { background: transparent; padding: 0 0 20px; margin: 0 0 16px; will-change: max-height,opacity; }
+    .bs-section { background: transparent; padding: 0 0 20px; margin: 0 0 16px; }
     .bs-title-row { margin-bottom: 16px; padding: 18px 0 4px; }
     .bs-title {
         font-size: 14px; font-weight: 600; color: var(--g700);
         display: flex; align-items: center; justify-content: center;
-        gap: 8px; margin: 0; text-align: center; transition: all .25s ease;
+        gap: 8px; margin: 0; text-align: center;
     }
     .bs-title i { color: var(--orange); font-size: 16px; }
     .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-
-    /* Smart Search badges in BS carousel */
-    .bsc-badge-search { background: linear-gradient(135deg,#3b82f6,#1d4ed8) !important; }
-    .bsc-badge-est    { background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important; }
-
-    /* Establishment match badge */
-    .est-match-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #f59e0b; border-radius: 5px; font-size: 10px; font-weight: 700; padding: 3px 7px; margin-bottom: 5px; font-family: 'Poppins',sans-serif; animation: matchPulse .4s ease; }
-    .est-match-badge i { font-size: 9px; color: #d97706; }
-    @keyframes matchPulse { 0% { transform:scale(.8);opacity:0; } 60% { transform:scale(1.05); } 100% { transform:scale(1);opacity:1; } }
-
-    .food-est-item[data-match-count]:not([data-match-count="0"]) { outline: 2px solid #f59e0b; outline-offset: -2px; }
 
     /* Dropdown button */
     .ddw { position: relative; display: inline-block; }
@@ -376,7 +337,8 @@
     .rcnt  { font-size: 10px; color: var(--g400); margin-top: 1px; }
     .emr   { padding: 3px 10px; font-size: 10px; color: var(--g600); display: flex; align-items: center; gap: 5px; }
 
-    .est-amenities-row { display: none; }
+    /* Amenities plain text — same as .emr */
+    .est-amenities-row { display: none; } /* now handled as .emr directly */
 
     /* Pointer-events fixes */
     .estb, .estb-dot, .emr, .estc-body, .estc-img { pointer-events: none !important; }

@@ -8,13 +8,14 @@ const VISIBLE = 5;
 let bsData = []; // real backend data
 
 // ── SEARCH MODE STATE ──
+// Tracks current search state to restore UI when cleared
 let searchMode = 'none'; // 'none' | 'menu' | 'establishment'
 let lastSearchQuery = '';
 
 // ── MAP STATE ──
 let curView = 'bs', mapReady = false;
 let mapInst = null, curTile = null, mkLayer = null;
-let esMapData = [];
+let esMapData = []; // real establishment data for map
 
 // ── MODAL STATE ──
 let currentModalItem = null;
@@ -37,7 +38,11 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBestsellers();
     autoHideMessages();
     initEstablishmentCards();
+
+    // ✅ FIX: Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
+
+    // ✅ FIX: Start real-time status refresh every 60 seconds
     statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
 });
 
@@ -65,6 +70,7 @@ function fetchBestsellers() {
                 bsData = data.bestsellers;
                 renderBS(bsData);
             } else {
+                // Show empty state
                 document.getElementById('cTrack').innerHTML =
                     '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
                 document.getElementById('cPrev').disabled = true;
@@ -78,19 +84,22 @@ function fetchBestsellers() {
 }
 
 // ============================================
-// REFRESH BESTSELLER STATUSES IN REAL-TIME
+// ✅ FIX: REFRESH BESTSELLER STATUSES IN REAL-TIME
+// Re-fetches from API and updates open/closed badges without full re-render
 // ============================================
 function refreshBestsellerStatuses() {
     fetch(URLS.bestsellers)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.bestsellers.length) return;
+            // Update bsData with fresh status
             data.bestsellers.forEach(fresh => {
                 const idx = bsData.findIndex(x => x.id === fresh.id);
                 if (idx !== -1) {
                     bsData[idx].establishment.status = fresh.establishment.status;
                 }
             });
+            // Update all visible status badges in cards
             document.querySelectorAll('.bsc').forEach(card => {
                 const onclickAttr = card.getAttribute('onclick') || '';
                 const match = onclickAttr.match(/openMod\((\d+)\)/);
@@ -105,6 +114,7 @@ function refreshBestsellerStatuses() {
                     badge.textContent = st.toUpperCase();
                 }
             });
+            // If modal is open, update its status too
             if (currentModalItem) {
                 const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
                 if (fresh) {
@@ -118,7 +128,7 @@ function refreshBestsellerStatuses() {
                 }
             }
         })
-        .catch(() => {});
+        .catch(() => {}); // Silent fail for background refresh
 }
 
 // ============================================
@@ -132,7 +142,7 @@ function renderBS(data) {
     }
 
     track.innerHTML = data.map(d => {
-        const st = (d.establishment.status || 'closed').toLowerCase();
+        const st = (d.establishment.status || 'closed').toLowerCase(); // ✅ FIX: always lowercase, default 'closed'
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
@@ -179,6 +189,7 @@ function cardW() {
     return c ? c.offsetWidth + 20 : 238;
 }
 function maxIdx() {
+    // In search mode, use actual rendered card count; otherwise use bsData length
     const track = document.getElementById('cTrack');
     const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
     return Math.max(0, cardCount - VISIBLE);
@@ -247,6 +258,7 @@ function setView(v) {
         dl.textContent = 'Best Sellers';
         db.classList.remove('mapmode');
         db.querySelector('i').className = 'fas fa-trophy';
+        // Stop real-time polling when map is hidden
         if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
     } else {
         cw.style.display = 'none';
@@ -259,6 +271,7 @@ function setView(v) {
         if (!mapReady) { initMap(); mapReady = true; }
         else {
             setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
+            // Restart polling when map becomes visible again
             fetchMapEstablishments();
             if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
         }
@@ -268,7 +281,7 @@ function setView(v) {
 
 
 // ============================================
-// LEAFLET MAP
+// LEAFLET MAP — screenshot-matching design
 // ============================================
 const TILES = {
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -304,17 +317,23 @@ function initMap() {
             .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
+
+        // Load all establishments from API — primary source for coordinates
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
         mapInst.invalidateSize();
     }, 150);
 }
 
+// ── API is the ONLY source of lat/lng (guaranteed non-null by backend filter) ──
+// ── EST_ALL_DATA enriches with image + real-time status only ──
 function loadAllEstablishments() {
+    // Use 999km radius — backend already filters lat/lng non-null, this returns ALL registered
     fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=999999`)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
+            // Merge API coordinates with local image/status data
             const merged = data.establishments.map(e => {
                 const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
                 return {
@@ -322,10 +341,12 @@ function loadAllEstablishments() {
                     name: local.name || e.name || '',
                     address: local.address || e.address || '',
                     image: local.image || '',
+                    // Status: prefer EST_ALL_DATA (server-rendered, real-time) over API (no status field)
                     status: local.status || liveStatusCache[e.id] || '',
                     latitude: parseFloat(e.latitude),
                     longitude: parseFloat(e.longitude),
                     distance: e.distance || 0,
+                    // ✅ Include other_category and other_amenity for filtering/display
                     categories: local.categories || '',
                     other_category: local.other_category || '',
                     other_amenity: local.other_amenity || ''
@@ -337,6 +358,7 @@ function loadAllEstablishments() {
         .catch(err => console.error('Map load error:', err));
 }
 
+// Keep these as aliases for compatibility
 function renderFromLocalData() { loadAllEstablishments(); }
 function refreshEstablishmentStatuses() { loadAllEstablishments(); }
 function fetchMapEstablishments() { loadAllEstablishments(); }
@@ -345,6 +367,7 @@ function applyFiltersToData(data) {
     let result = [...data];
     const f = mapFilterState;
     if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
+    // ✅ Filter by category — checks both standard categories AND other_category
     if (f.cat) {
         const q = f.cat.toLowerCase();
         result = result.filter(e => {
@@ -480,7 +503,7 @@ function showMyLocation() {
 }
 
 // ============================================
-// CATEGORY FILTER
+// CATEGORY FILTER — filters DOM elements
 // ============================================
 function applyFilter() {
     const val = document.getElementById('catFilt').value.toLowerCase();
@@ -491,7 +514,8 @@ function applyFilter() {
 }
 
 // ============================================
-// BESTSELLER MODAL
+// BESTSELLER MODAL — opens with backend data
+// ✅ FIX: Uses fresh real-time status from API
 // ============================================
 function openMod(id) {
     const d = bsData.find(x => x.id === id);
@@ -506,6 +530,7 @@ function openMod(id) {
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
 
+    // ✅ FIX: Always compute status fresh from the stored bsData (which refreshBestsellerStatuses keeps current)
     const st = (d.establishment.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
@@ -515,15 +540,18 @@ function openMod(id) {
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
+    // ✅ FIX: Fetch fresh status at modal open time
     fetch(URLS.bestsellers)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
             const fresh = data.bestsellers.find(x => x.id === id);
             if (!fresh) return;
+            // Update stored data
             const idx = bsData.findIndex(x => x.id === id);
             if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
             currentModalItem = bsData[idx] || currentModalItem;
+            // Update modal status badge
             const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
             const el = document.getElementById('mEstS');
             if (el) {
@@ -531,7 +559,7 @@ function openMod(id) {
                 el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
             }
         })
-        .catch(() => {});
+        .catch(() => {}); // Silent — already showing a status
 }
 
 function closeMod() {
@@ -547,7 +575,8 @@ function chgQ(d) {
 }
 
 // ============================================
-// ADD TO CART
+// ADD TO CART — POST to /cart/add/
+// ✅ FIX: Properly connected, closes modal on success
 // ============================================
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -569,6 +598,7 @@ function addToCartFromModal() {
     .then(data => {
         if (data.success) {
             closeMod();
+            // backend returns cart_count directly in add_to_cart response
             const badge = document.getElementById('cartBadge');
             if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
             else updateCartBadge();
@@ -587,7 +617,9 @@ function addToCartFromModal() {
 }
 
 // ============================================
-// BUY NOW
+// BUY NOW — Adds item to cart then redirects to cart page
+// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
+//             so user picks Cash or Online Payment in cart
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -600,6 +632,7 @@ function buyNowFromModal() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
+    // Add item to cart first, then redirect to cart page with pay=1
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -608,6 +641,7 @@ function buyNowFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            // Redirect to cart page with ?pay=1 to auto-show payment options
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
@@ -635,6 +669,7 @@ function updateCartBadge() {
         .then(r => r.json())
         .then(data => {
             const badge = document.getElementById('cartBadge');
+            // backend returns { success: true, cart_count: N }
             if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
         })
         .catch(() => {});
@@ -667,7 +702,7 @@ function closeSet() {
 }
 
 // ============================================
-// PROFILE IMAGE
+// PROFILE IMAGE — preview + real-time AJAX save
 // ============================================
 function previewProfileImg(input) {
     if (input.files && input.files[0]) {
@@ -689,6 +724,7 @@ function saveProfile() {
         return;
     }
 
+    // Loading state
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
@@ -705,14 +741,21 @@ function saveProfile() {
     .then(data => {
         if (data.success) {
             const newUrl = data.profile_picture_url;
+
+            // ① Update preview inside modal
             document.getElementById('profilePreview').innerHTML =
                 `<img src="${newUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ② Update navbar avatar instantly
             const nav = document.getElementById('pavBtn');
             if (nav) nav.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ③ Update dropdown header avatar instantly
             const da = document.querySelector('.pd-av');
             if (da) da.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
             showToast('Profile picture updated!', 'success');
             closeSet();
         } else {
@@ -727,67 +770,13 @@ function saveProfile() {
 }
 
 // ============================================
+// SEARCH — real-time dropdown (establishments + menus)
 // ============================================
-// SMART SEARCH — AUTOCOMPLETE SYSTEM
-// ============================================
-// ============================================
+let searchTimer = null;
+let searchAbort = null;   // AbortController for in-flight requests
+let searchFocused = false;
+let dropSelected = -1;    // keyboard nav index
 
-// ── Recent Searches (localStorage, max 6) ──
-const RECENT_KEY   = 'ke_recent_searches';
-const RECENT_LIMIT = 6;
-
-function getRecent() {
-    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
-    catch { return []; }
-}
-function saveRecent(q) {
-    if (!q || q.length < 2) return;
-    let list = getRecent().filter(r => r.toLowerCase() !== q.toLowerCase());
-    list.unshift(q);
-    list = list.slice(0, RECENT_LIMIT);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
-}
-function clearRecent() {
-    try { localStorage.removeItem(RECENT_KEY); } catch {}
-}
-
-// ── State ──
-let searchTimer  = null;
-let searchAbort  = null;
-let searchFocused= false;
-let dropSelected = -1;
-let bsHidden     = false;
-
-// ── Hide/Show Bestsellers section during search ──
-function hideBSSection() {
-    const sec = document.getElementById('bsSec');
-    if (sec && !bsHidden) {
-        sec.style.transition = 'opacity 0.25s ease, max-height 0.35s ease';
-        sec.style.overflow   = 'hidden';
-        sec.style.maxHeight  = sec.scrollHeight + 'px';
-        requestAnimationFrame(() => {
-            sec.style.maxHeight = '0';
-            sec.style.opacity   = '0';
-        });
-        bsHidden = true;
-    }
-}
-function showBSSection() {
-    const sec = document.getElementById('bsSec');
-    if (sec && bsHidden) {
-        sec.style.maxHeight = '2000px';
-        sec.style.opacity   = '1';
-        bsHidden = false;
-        setTimeout(() => {
-            sec.style.overflow  = '';
-            sec.style.maxHeight = '';
-        }, 380);
-    }
-}
-
-// ============================================
-// INIT SEARCH
-// ============================================
 function initSearch() {
     const inp  = document.getElementById('hSearch');
     const clr  = document.getElementById('hClr');
@@ -803,15 +792,15 @@ function initSearch() {
 
         if (q.length < 1) {
             closeDrop();
-            filterEstCards('');
-            restoreNormalView();
-            showBSSection();
+            filterEstCards('');   // restore all cards
+            restoreNormalView();  // restore bestsellers
             return;
         }
 
-        hideBSSection();
+        // Show skeleton immediately
         showDropSkeleton();
-        filterEstCards(q);
+        filterEstCards(q);        // filter DOM cards in real-time
+
         searchTimer = setTimeout(() => fetchSearchResults(q), 260);
     });
 
@@ -822,18 +811,14 @@ function initSearch() {
         closeDrop();
         filterEstCards('');
         restoreNormalView();
-        showBSSection();
         inp.focus();
-        showInitialDrop();
     });
 
-    // ── Focus: show dropdown ──
+    // ── Focus: show dropdown if query exists ──
     inp.addEventListener('focus', function () {
         searchFocused = true;
         if (this.value.trim().length >= 1) {
             fetchSearchResults(this.value.trim());
-        } else {
-            showInitialDrop();
         }
     });
 
@@ -854,24 +839,21 @@ function initSearch() {
             e.preventDefault();
             if (dropSelected >= 0 && items[dropSelected]) {
                 items[dropSelected].click();
-            } else if (this.value.trim()) {
-                saveRecent(this.value.trim());
-                fetchSearchResults(this.value.trim());
             }
         } else if (e.key === 'Escape') {
             closeDrop();
         }
     });
 
-    // ── Hint pills ──
+    // ── Hint pills — clicking a pill searches for it ──
     document.querySelectorAll('.hs-hint-pill').forEach(pill => {
         pill.addEventListener('click', function (e) {
+            // Only intercept if it's a plain span (not an anchor to a real page)
             if (this.tagName === 'A') return;
             e.preventDefault();
             const text = this.textContent.trim().replace(/^[^\w]+/, '');
             inp.value = text;
             clr.classList.add('on');
-            hideBSSection();
             filterEstCards(text);
             fetchSearchResults(text);
             inp.focus();
@@ -922,156 +904,12 @@ function showDropSkeleton() {
     drop.classList.add('active');
 }
 
-// ============================================
-// INITIAL DROPDOWN (on focus, empty input)
-// Shows: Recent Searches + Categories + All Establishments
-// ============================================
-function showInitialDrop() {
-    if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
-    searchAbort = new AbortController();
-
-    fetch(`${URLS.searchMenu}?q=`, { signal: searchAbort.signal })
-        .then(r => r.json())
-        .then(data => renderInitialDrop(data))
-        .catch(() => {});
-}
-
-function renderInitialDrop(data) {
-    const drop    = document.getElementById('searchDropdown');
-    const content = document.getElementById('searchDropdownContent');
-    if (!drop || !content) return;
-
-    const recent     = getRecent();
-    const ests       = data.establishments || [];
-    const categories = data.categories     || [];
-    let html = '';
-
-    // ── Recent Searches ──
-    if (recent.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title" style="justify-content:space-between;">
-                <span><i class="fas fa-history"></i> Recent Searches</span>
-                <button class="sd-clear-recent" onclick="handleClearRecent(event)">
-                    <i class="fas fa-trash-alt"></i> Clear all
-                </button>
-            </div>`;
-        recent.forEach(r => {
-            const escaped = escHtml(r).replace(/'/g, "\\'");
-            html += `<div class="search-dropdown-item recent-item"
-                        onclick="handleRecentClick(event,'${escaped}')">
-                <div class="search-dropdown-item-icon recent-icon">
-                    <i class="fas fa-history"></i>
-                </div>
-                <div style="min-width:0;flex:1;">
-                    <div class="search-dropdown-item-name">${escHtml(r)}</div>
-                </div>
-                <button class="sd-remove-recent" title="Remove"
-                        onclick="handleRemoveRecent(event,'${escaped}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>`;
-        });
-        html += '</div>';
-    }
-
-    // ── Categories quick chips ──
-    if (categories.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title"><i class="fas fa-tags"></i> Browse Categories</div>
-            <div class="sd-category-chips">`;
-        categories.forEach(cat => {
-            const escaped = escHtml(cat).replace(/'/g, "\\'");
-            html += `<button class="sd-cat-chip" onclick="handleCatChip(event,'${escaped}')">
-                <i class="fas fa-tag"></i> ${escHtml(cat)}
-            </button>`;
-        });
-        html += '</div></div>';
-    }
-
-    // ── All Establishments ──
-    if (ests.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title"><i class="fas fa-store"></i> All Establishments</div>`;
-        ests.slice(0, 8).forEach(est => {
-            const isOpen  = est.status === 'Open';
-            const stColor = isOpen ? '#10b981' : '#ef4444';
-            const stDot   = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
-            const imgHtml = est.image_url
-                ? `<img src="${escHtml(est.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                : `<i class="fas fa-store"></i>`;
-            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
-                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgHtml}</div>
-                <div style="min-width:0;flex:1;">
-                    <div class="search-dropdown-item-name">${escHtml(est.name)}</div>
-                    <div class="search-dropdown-item-meta">
-                        ${stDot}
-                        <span style="color:${stColor};font-weight:600;">${est.status}</span>
-                        <span>•</span>
-                        <span>${escHtml(est.category)}</span>
-                    </div>
-                </div>
-            </div>`;
-        });
-        if (ests.length > 8) {
-            html += `<div style="padding:8px 16px 10px;font-size:11px;color:var(--g400);text-align:center;">
-                +${ests.length - 8} more — start typing to search
-            </div>`;
-        }
-        html += '</div>';
-    }
-
-    if (!html) {
-        html = `<div class="search-no-results">
-            <i class="fas fa-utensils" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
-            <div style="font-weight:600;color:#374151;">Start typing to search food or restaurants</div>
-        </div>`;
-    }
-
-    content.innerHTML = html;
-    drop.classList.add('active');
-}
-
-// ── Recent search handlers ──
-function handleRecentClick(e, q) {
-    e.stopPropagation();
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
-    if (!inp) return;
-    inp.value = q;
-    clr.classList.add('on');
-    hideBSSection();
-    filterEstCards(q);
-    fetchSearchResults(q);
-}
-function handleRemoveRecent(e, q) {
-    e.stopPropagation();
-    let list = getRecent().filter(r => r.toLowerCase() !== q.toLowerCase());
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
-    showInitialDrop();
-}
-function handleClearRecent(e) {
-    e.stopPropagation();
-    clearRecent();
-    showInitialDrop();
-}
-function handleCatChip(e, cat) {
-    e.stopPropagation();
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
-    if (!inp) return;
-    inp.value = cat;
-    clr.classList.add('on');
-    hideBSSection();
-    filterEstCards(cat);
-    fetchSearchResults(cat);
-}
-
-// ============================================
-// MAIN API FETCH
-// ============================================
+// ── Main API fetch ──
 function fetchSearchResults(q) {
+    // Cancel any pending request
     if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
+
     lastSearchQuery = q;
 
     fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
@@ -1086,44 +924,56 @@ function fetchSearchResults(q) {
 }
 
 // ============================================
-// APPLY RESULTS TO PAGE
+// SMART SEARCH: Apply search results to the page
+// – Menu search:        replace bestsellers with matching menu items
+//                       + sort establishment cards by match count
+// – Est search only:    replace bestsellers with matching establishments
+//                       + filter establishment cards
+// – Clear:              restore everything to normal
 // ============================================
+
 function applySearchToPage(data, q) {
     const menuItems = data.menus          || [];
     const estItems  = data.establishments || [];
 
     if (menuItems.length > 0) {
+        // ── MENU MODE ──
         searchMode = 'menu';
         renderMenuSearchInBS(menuItems, q);
         sortEstCardsByMenuMatch(menuItems, q);
     } else if (estItems.length > 0) {
+        // ── ESTABLISHMENT MODE ──
         searchMode = 'establishment';
         renderEstSearchInBS(estItems, q);
+        // filterEstCards already called from input handler
     } else {
+        // ── NO RESULTS ──
         searchMode = 'empty';
         showBSSearchEmpty(q);
+        // keep est cards filtered as-is
     }
 }
 
-// ============================================
-// RESTORE NORMAL VIEW
-// ============================================
 function restoreNormalView() {
     if (searchMode === 'none') return;
     searchMode = 'none';
     lastSearchQuery = '';
 
+    // Restore BS title
     const titleEl = document.getElementById('bsTitle');
     if (titleEl) titleEl.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
 
+    // Re-render actual bestsellers
     if (bsData.length > 0) {
         renderBS(bsData);
     } else {
         fetchBestsellers();
     }
 
+    // Remove all match indicators from est cards
     document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
 
+    // Restore establishment card order (re-append in original DOM order)
     const grid = document.getElementById('estGrid');
     if (grid) {
         const cards = Array.from(grid.querySelectorAll('.food-est-item'));
@@ -1136,16 +986,16 @@ function restoreNormalView() {
     }
 }
 
-// ============================================
-// RENDER MENU SEARCH IN BS CAROUSEL
-// ============================================
+// ── Show menu items in the bestseller carousel area ──
 function renderMenuSearchInBS(items, q) {
+    // Update section title
     const titleEl = document.getElementById('bsTitle');
     if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> Menu results for "<strong>${escHtml(q)}</strong>"`;
 
     const track = document.getElementById('cTrack');
     if (!track) return;
 
+    // Remove grid mode if active so carousel layout shows
     if (isGrid) {
         track.classList.remove('gmode');
         const wrap = document.getElementById('carouselWrap');
@@ -1153,14 +1003,15 @@ function renderMenuSearchInBS(items, q) {
     }
 
     track.innerHTML = items.map(item => {
-        const estId     = item.establishment ? item.establishment.id   : '';
-        const estName   = item.establishment ? item.establishment.name : '';
+        const estId   = item.establishment ? item.establishment.id   : '';
+        const estName = item.establishment ? item.establishment.name : '';
         const estStatus = item.establishment ? (item.establishment.status || 'closed').toLowerCase() : 'closed';
-        const estImg    = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
-        const imgSrc    = item.image_url || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(item.name);
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
+        const imgSrc  = item.image_url || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(item.name);
         const estIconHtml = estImg
             ? `<img src="${estImg}" alt="${escHtml(estName)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
             : `<i class="fas fa-utensils"></i>`;
+
         return `
         <div class="bsc" onclick="window.location.href='${URLS.estDetail}${estId}/'">
             <div class="bsc-img">
@@ -1195,9 +1046,7 @@ function renderMenuSearchInBS(items, q) {
     }
 }
 
-// ============================================
-// RENDER ESTABLISHMENT SEARCH IN BS CAROUSEL
-// ============================================
+// ── Show establishments in the bestseller area (when searching est names) ──
 function renderEstSearchInBS(ests, q) {
     const titleEl = document.getElementById('bsTitle');
     if (titleEl) titleEl.innerHTML = `<i class="fas fa-store"></i> Establishments matching "<strong>${escHtml(q)}</strong>"`;
@@ -1212,18 +1061,10 @@ function renderEstSearchInBS(ests, q) {
     }
 
     track.innerHTML = ests.map(est => {
-        const isOpen  = est.status === 'Open';
+        const isOpen = est.status === 'Open';
         const stClass = isOpen ? 'open' : 'closed';
-        const estImg  = est.image_url || (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
         const imgSrc  = estImg || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(est.name);
-
-        const matchBadge = (est.menu_match_count > 0)
-            ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#92400e;
-                            border:1px solid #f59e0b;border-radius:5px;font-size:10px;font-weight:700;
-                            padding:2px 7px;margin-bottom:6px;">
-                   <i class="fas fa-utensils"></i> ${est.menu_match_count} menu match${est.menu_match_count > 1 ? 'es' : ''}
-               </span><br>`
-            : '';
 
         return `
         <div class="bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
@@ -1233,7 +1074,6 @@ function renderEstSearchInBS(ests, q) {
                 <span class="bsc-badge bsc-badge-est"><i class="fas fa-store"></i> Establishment</span>
             </div>
             <div class="bsc-body">
-                ${matchBadge}
                 <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
                 <div class="bsc-price" style="color:#6b7280;font-size:12px;">${escHtml(est.category || 'Food')}</div>
                 <div class="bsc-est">
@@ -1258,9 +1098,7 @@ function renderEstSearchInBS(ests, q) {
     }
 }
 
-// ============================================
-// EMPTY STATE IN BS AREA
-// ============================================
+// ── Show empty state in BS area ──
 function showBSSearchEmpty(q) {
     const titleEl = document.getElementById('bsTitle');
     if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> No results for "<strong>${escHtml(q)}</strong>"`;
@@ -1270,14 +1108,13 @@ function showBSSearchEmpty(q) {
         track.innerHTML = `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">
             <i class="fas fa-search" style="font-size:28px;margin-bottom:12px;display:block;color:#d1d5db;"></i>
             No items or restaurants match "<strong style="color:#374151;">${escHtml(q)}</strong>".<br>
-            <span style="font-size:12px;margin-top:6px;display:block;">Try a different keyword or browse below.</span>
+            <span style="font-size:12px;margin-top:6px;display:block;">Try a different keyword.</span>
         </div>`;
     }
 }
 
-// ============================================
-// SORT ESTABLISHMENT CARDS BY MENU MATCH COUNT
-// ============================================
+// ── Sort establishment cards by how many menu items match the search ──
+// Items with matches bubble to top; badge shows match count
 function sortEstCardsByMenuMatch(menuItems, q) {
     const grid = document.getElementById('estGrid');
     if (!grid) return;
@@ -1289,7 +1126,7 @@ function sortEstCardsByMenuMatch(menuItems, q) {
         if (!card.dataset.originalOrder) card.dataset.originalOrder = i;
     });
 
-    // Build map: estId → count
+    // Build a map: estId → count of matching menu items
     const matchMap = {};
     menuItems.forEach(item => {
         if (item.establishment) {
@@ -1301,23 +1138,28 @@ function sortEstCardsByMenuMatch(menuItems, q) {
     // Remove old badges
     document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
 
-    // Add badge and set matchCount
+    // Add badge and sort
     cards.forEach(card => {
-        const id    = parseInt(card.dataset.id);
+        const id = parseInt(card.dataset.id);
         const count = matchMap[id] || 0;
-        card.dataset.matchCount = count;
 
         if (count > 0) {
+            // Add a match badge
             const badge = document.createElement('div');
             badge.className = 'est-match-badge';
             badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
+            // Insert after the status badge
             const body = card.querySelector('.estc-body');
             if (body) body.insertBefore(badge, body.firstChild);
+            card.dataset.matchCount = count;
             card.style.display = '';
+        } else {
+            card.dataset.matchCount = 0;
+            // Don't hide — just push to bottom; still visible for context
         }
     });
 
-    // Sort: more matches → top
+    // Sort: more matches = earlier; 0 matches = after
     cards.sort((a, b) => {
         const ma = parseInt(a.dataset.matchCount || 0);
         const mb = parseInt(b.dataset.matchCount || 0);
@@ -1325,35 +1167,32 @@ function sortEstCardsByMenuMatch(menuItems, q) {
         return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
     });
 
+    // Re-append in new order
     cards.forEach(card => grid.appendChild(card));
 }
 
-// ============================================
-// RENDER LIVE SEARCH DROPDOWN (while typing)
-// ============================================
+// ── Render results ──
 function renderSearchDrop(data, q) {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
     dropSelected  = -1;
 
-    const items       = data.menus          || [];
-    const ests        = data.establishments || [];
-    const categories  = data.categories     || [];
-    const suggestions = data.suggestions    || [];
+    const items = data.menus          || [];
+    const ests  = data.establishments || [];
     let html = '';
 
-    // ── Menu Items ──
+    // ── Menu Items section ──
     if (items.length > 0) {
         html += `<div class="search-dropdown-section">
             <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
         items.slice(0, 6).forEach(item => {
             const estId   = item.establishment ? item.establishment.id   : '';
             const estName = item.establishment ? item.establishment.name : '';
+            // API returns image_url, not image
             const imgSrc  = item.image_url
                 ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
                 : `<i class="fas fa-utensils"></i>`;
-            const qEsc = escHtml(q).replace(/'/g, "\\'");
-            html += `<div class="search-dropdown-item" onclick="saveRecentAndGo(event,'${qEsc}','${URLS.estDetail}${estId}/')">
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${estId}/'">
                 <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgSrc}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
@@ -1369,28 +1208,18 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
-    // ── Establishments ──
+    // ── Establishments section ──
     if (ests.length > 0) {
         html += `<div class="search-dropdown-section">
             <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
-        ests.slice(0, 5).forEach(est => {
+        ests.slice(0, 4).forEach(est => {
             const isOpen   = est.status === 'Open';
             const stColor  = isOpen ? '#10b981' : '#ef4444';
             const stDot    = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
-            const estImgSrc = est.image_url
-                ? `<img src="${escHtml(est.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                : ((typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-                    ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                    : `<i class="fas fa-store"></i>`);
-
-            const matchChip = (est.menu_match_count > 0)
-                ? `<span class="sd-menu-match-chip">
-                       <i class="fas fa-utensils"></i> ${est.menu_match_count} menu item${est.menu_match_count > 1 ? 's' : ''}
-                   </span>`
-                : '';
-
-            const qEsc = escHtml(q).replace(/'/g, "\\'");
-            html += `<div class="search-dropdown-item" onclick="saveRecentAndGo(event,'${qEsc}','${URLS.estDetail}${est.id}/')">
+            const estImgSrc = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+                : `<i class="fas fa-store"></i>`;
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
                 <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImgSrc}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
@@ -1399,7 +1228,6 @@ function renderSearchDrop(data, q) {
                         <span style="color:${stColor};font-weight:600;">${est.status}</span>
                         <span>•</span>
                         <span>${escHtml(est.category)}</span>
-                        ${matchChip}
                     </div>
                 </div>
             </div>`;
@@ -1407,43 +1235,7 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
-    // ── Categories ──
-    if (categories.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title"><i class="fas fa-tags"></i> Categories</div>
-            <div class="sd-category-chips" style="padding:4px 12px 10px;">`;
-        categories.forEach(cat => {
-            const escaped = escHtml(cat).replace(/'/g, "\\'");
-            html += `<button class="sd-cat-chip" onclick="handleCatChip(event,'${escaped}')">
-                <i class="fas fa-tag"></i> ${highlightMatch(escHtml(cat), q)}
-            </button>`;
-        });
-        html += '</div></div>';
-    }
-
-    // ── Suggestions (anti "No Results") ──
-    if (!items.length && !ests.length && suggestions.length > 0) {
-        html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title" style="color:#f59e0b;">
-                <i class="fas fa-lightbulb"></i> Did you mean…
-            </div>`;
-        suggestions.forEach(s => {
-            const escaped = escHtml(s.text).replace(/'/g, "\\'");
-            html += `<div class="search-dropdown-item suggestion-item"
-                        onclick="handleSuggestionClick(event,'${escaped}')">
-                <div class="search-dropdown-item-icon" style="background:#fffbeb;color:#f59e0b;">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div style="min-width:0;flex:1;">
-                    <div class="search-dropdown-item-name">${escHtml(s.text)}</div>
-                    <div class="search-dropdown-item-meta"><span>${escHtml(s.sub)}</span></div>
-                </div>
-            </div>`;
-        });
-        html += '</div>';
-    }
-
-    // ── True no results ──
+    // ── No results ──
     if (!html) {
         html = `<div class="search-no-results">
             <i class="fas fa-search" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
@@ -1454,25 +1246,6 @@ function renderSearchDrop(data, q) {
 
     content.innerHTML = html;
     drop.classList.add('active');
-}
-
-// ── Helper: save to recent then navigate ──
-function saveRecentAndGo(e, q, url) {
-    saveRecent(q);
-    window.location.href = url;
-}
-
-// ── Helper: click suggestion → re-search ──
-function handleSuggestionClick(e, text) {
-    e.stopPropagation();
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
-    if (!inp) return;
-    inp.value = text;
-    clr.classList.add('on');
-    hideBSSection();
-    filterEstCards(text);
-    fetchSearchResults(text);
 }
 
 function highlightMatch(text, q) {
@@ -1493,10 +1266,11 @@ function initScrollTop() {
 // TOAST NOTIFICATION
 // ============================================
 function showToast(msg, type = 'success') {
-    const colors   = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
     const bgColors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fffbeb', info: '#eff6ff' };
-    const icons    = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+    const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
 
+    // Get or create a shared toast container so multiple toasts stack nicely
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');
@@ -1509,6 +1283,7 @@ function showToast(msg, type = 'success') {
     t.style.cssText = `background:${bgColors[type]||'#fff'};border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;max-width:520px;pointer-events:auto;animation:toastSlideIn .35s cubic-bezier(.34,1.56,.64,1);`;
     t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="flex:1;">${escHtml(msg)}</span>`;
 
+    // Inject keyframes once
     if (!document.getElementById('toastKeyframes')) {
         const style = document.createElement('style');
         style.id = 'toastKeyframes';
@@ -1540,6 +1315,7 @@ document.addEventListener('click', e => {
     if (!e.target.closest('.hsw')) {
         closeDrop();
     }
+    // Close layer panel when clicking outside
     if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
         const lp = document.getElementById('mapLayerPanel');
         if (lp) lp.classList.remove('show');
@@ -1566,14 +1342,17 @@ function escapeRe(str) {
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
-
 // ============================================
-// ESTABLISHMENT CARD NAVIGATION
+// ESTABLISHMENT CARD NAVIGATION — safety net
+// The <a> tag href already handles navigation.
+// This sets child pointer-events to none so
+// clicks on images/text bubble up to the <a>.
 // ============================================
 function initEstablishmentCards() {
     document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
         card.style.pointerEvents = 'auto';
         card.style.cursor = 'pointer';
+        // Let all child elements pass clicks through to the anchor
         card.querySelectorAll('*').forEach(function(child) {
             child.style.pointerEvents = 'none';
         });
