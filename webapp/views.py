@@ -5838,49 +5838,55 @@ def get_establishment_transaction_statistics(request):
 # ==========================================
 def search_menu_items(request):
     """
-    Smart multi-model search API.
-    GET /api/search-menu/?q=<query>
-
-    – Returns menu items + establishments matching the query.
-    – Results are sorted OPEN-first in both categories.
-    – Empty query returns empty lists (idle dropdown handled client-side).
+    API endpoint for real-time menu search.
+    Returns menu items and establishments matching the search query.
+    ✅ FIXED: Excludes items/establishments where is_active=False.
     """
     try:
         query = request.GET.get('q', '').strip()
 
         if not query:
-            return JsonResponse({'success': True, 'menus': [], 'establishments': [], 'query': ''})
+            return JsonResponse({
+                'success': False,
+                'error': 'No search query provided'
+            })
 
-        # ── Active establishments only ─────────────────────────────────
-        active_ests = (
+        # ── Step 1: Get IDs of visible establishments ────────────────────
+        # Exclude admin-suspended (status='Disabled') AND owner-deactivated (is_active=False)
+        active_est_ids = list(
             FoodEstablishment.objects
             .exclude(status='Disabled')
-            .filter(is_active=True)
+            .filter(is_active=True)          # ✅ also exclude owner-deactivated
+            .values_list('id', flat=True)
         )
-        active_est_ids = list(active_ests.values_list('id', flat=True))
 
-        # ── Menu search ────────────────────────────────────────────────
-        menu_qs = MenuItem.objects.filter(
+        # ── Search menu items ────────────────────────────────────────────
+        menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
             food_establishment__id__in=active_est_ids,
         ).select_related('food_establishment').values(
-            'id', 'name', 'description', 'price', 'image', 'quantity',
+            'id',
+            'name',
+            'description',
+            'price',
+            'image',
+            'quantity',
             'food_establishment__id',
             'food_establishment__name',
             'food_establishment__opening_time',
             'food_establishment__closing_time',
-        )[:24]
+        )[:20]
 
         menus_data = []
-        for item in menu_qs:
+        for item in menu_items:
             est_status = get_current_status(
                 item['food_establishment__opening_time'],
                 item['food_establishment__closing_time']
             )
-            img = item['image']
+            image_field = item['image']
             image_url = None
-            if img:
-                s = str(img)
+            if image_field:
+                s = str(image_field)
                 image_url = s if s.startswith('http') else '/media/' + s
 
             menus_data.append({
@@ -5890,7 +5896,6 @@ def search_menu_items(request):
                 'price':       float(item['price']),
                 'image_url':   image_url,
                 'quantity':    item['quantity'],
-                '_open_rank':  0 if est_status == 'Open' else 1,
                 'establishment': {
                     'id':     item['food_establishment__id'],
                     'name':   item['food_establishment__name'],
@@ -5898,113 +5903,39 @@ def search_menu_items(request):
                 }
             })
 
-        # OPEN-first, then alpha
-        menus_data.sort(key=lambda x: (x['_open_rank'], x['name'].lower()))
-        for m in menus_data:
-            m.pop('_open_rank', None)
-        menus_data = menus_data[:12]
-
-        # ── Establishment search ───────────────────────────────────────
-        est_qs = active_ests.filter(
-            Q(name__icontains=query) | Q(categories__name__icontains=query)
-        ).prefetch_related('categories').distinct()[:16]
+        # ── Search establishments ────────────────────────────────────────
+        establishments = FoodEstablishment.objects.filter(
+            Q(name__icontains=query) | Q(categories__name__icontains=query),
+            id__in=active_est_ids,
+        ).prefetch_related('categories').distinct()[:10]
 
         establishments_data = []
-        for est in est_qs:
-            cat_names = ', '.join([c.name for c in est.categories.all()])
+        for est in establishments:
+            categories_names = ', '.join([cat.name for cat in est.categories.all()])
             est_status = get_current_status(est.opening_time, est.closing_time)
+
             establishments_data.append({
-                'id':         est.id,
-                'name':       est.name,
-                'category':   cat_names if cat_names else 'Other',
-                'status':     est_status,
-                '_open_rank': 0 if est_status == 'Open' else 1,
+                'id':       est.id,
+                'name':     est.name,
+                'category': categories_names if categories_names else 'Other',
+                'status':   est_status,
             })
 
-        # OPEN-first, then alpha
-        establishments_data.sort(key=lambda x: (x['_open_rank'], x['name'].lower()))
-        for e in establishments_data:
-            e.pop('_open_rank', None)
-        establishments_data = establishments_data[:8]
-
         return JsonResponse({
-            'success':        True,
+            'success': True,
             'menus':          menus_data,
             'establishments': establishments_data,
-            'query':          query,
+            'query':          query
         })
 
-    except Exception as exc:
+    except Exception as e:
         import traceback
+        print(f"Error in search_menu_items: {e}")
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
-
-
-def get_trending_establishments(request):
-    """
-    GET /api/search-trending/
-
-    Returns top ~10 active establishments ranked by:
-      1. Currently OPEN  (Open before Closed)
-      2. Order volume    (last 30 days)
-      3. Menu item count
-      4. Alphabetical
-
-    Used by the smart-search idle panel ("Trending Food Hubs").
-    """
-    try:
-        from datetime import datetime, timedelta
-        from django.utils import timezone
-
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-
-        ests = (
-            FoodEstablishment.objects
-            .exclude(status='Disabled')
-            .filter(is_active=True)
-            .prefetch_related('categories')
-            .annotate(
-                recent_orders=Count(
-                    'order',
-                    filter=Q(order__created_at__gte=thirty_days_ago),
-                    distinct=True,
-                ),
-                menu_count=Count('menuitem', distinct=True),
-            )
-        )
-
-        result = []
-        for est in ests:
-            cat_names = ', '.join([c.name for c in est.categories.all()])
-            est_status = get_current_status(est.opening_time, est.closing_time)
-            result.append({
-                'id':           est.id,
-                'name':         est.name,
-                'category':     cat_names if cat_names else 'Other',
-                'status':       est_status,
-                'order_count':  est.recent_orders,
-                '_open_rank':   0 if est_status == 'Open' else 1,
-                '_ord':         est.recent_orders,
-                '_menu':        est.menu_count,
-            })
-
-        result.sort(key=lambda x: (x['_open_rank'], -x['_ord'], -x['_menu'], x['name'].lower()))
-
-        for r in result:
-            r.pop('_open_rank', None)
-            r.pop('_ord', None)
-            r.pop('_menu', None)
-
         return JsonResponse({
-            'success':        True,
-            'establishments': result[:10],
-        })
-
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
-
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 def order_history_view(request):
