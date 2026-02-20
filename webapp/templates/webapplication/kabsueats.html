@@ -25,25 +25,29 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
-        color: #92400e;
-        border: 1px solid #f59e0b;
-        border-radius: 6px;
+        background: #fff7ed;
+        color: #c2410c;
+        border: 1.5px solid #fdba74;
+        border-radius: 20px;
         font-size: 11px;
         font-weight: 700;
-        padding: 4px 9px;
-        margin-bottom: 6px;
+        padding: 3px 10px 3px 8px;
+        margin-bottom: 7px;
         font-family: 'Poppins', sans-serif;
-        animation: matchPulse 0.4s ease;
+        box-shadow: 0 1px 6px rgba(234,88,12,.12);
+        animation: matchPop .35s cubic-bezier(.34,1.56,.64,1);
         pointer-events: none;
+        white-space: nowrap;
     }
     .est-match-badge i {
         font-size: 10px;
-        color: #d97706;
+        color: #ea580c;
     }
-    @keyframes matchPulse {
-        0%   { transform: scale(0.8); opacity: 0; }
-        60%  { transform: scale(1.05); }
+    .est-match-badge span { letter-spacing: 0.1px; }
+
+    @keyframes matchPop {
+        0%   { transform: scale(0.7); opacity: 0; }
+        70%  { transform: scale(1.06); }
         100% { transform: scale(1); opacity: 1; }
     }
 
@@ -57,7 +61,13 @@
         outline: 2px solid #f59e0b;
         outline-offset: -2px;
     }
-    </style>
+
+    /* ── Searchbar animation ── */
+    @keyframes matchPulse {
+        0%   { transform: scale(0.8); opacity: 0; }
+        60%  { transform: scale(1.05); }
+        100% { transform: scale(1); opacity: 1; }
+    }</style>
 </head>
 <body>
 
@@ -143,9 +153,9 @@
                 <div class="hs-cont">
                 <i class="fas fa-search hs-ico"></i>
                 <input type="text" class="hs-inp" id="hSearch"
-                    placeholder="What are you craving today? Search restaurants, dishes, or cuisines..."
+                    placeholder="Search restaurants, dishes, or cuisines..."
                     value="{{ q|default:'' }}" autocomplete="off"/>
-                <i class="fas fa-times hs-clr" id="hClr"></i>
+                <button type="button" class="hs-clr" id="hClr" aria-label="Clear search"><i class="fas fa-times"></i></button>
             </div>
             <!-- Live search dropdown removed -->
             <div class="hs-hints">

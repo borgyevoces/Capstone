@@ -76,15 +76,16 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* HERO SEARCH                                  */
 /* ============================================ */
 .hero { padding: 36px 0 48px; text-align: center; }
-.hsw { position: relative; max-width: 700px; margin: 0 auto; }
+.hsw { position: relative; max-width: 680px; margin: 0 auto; }
 .hs-lbl { display: none; }
-.hs-cont { position: relative; }
-.hs-inp { width: 100%; padding: 16px 50px; font-size: 15px; font-family: 'Poppins', sans-serif; border: 2px solid var(--g200); border-radius: 12px; outline: none; background: #fff; box-shadow: var(--sh1); transition: .3s; }
-.hs-inp:focus { border-color: var(--red); box-shadow: 0 4px 16px rgba(183,28,28,.12); }
-.hs-ico { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--g400); font-size: 17px; pointer-events: none; }
-.hs-clr { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--g400); font-size: 17px; cursor: pointer; display: none; transition: .2s; }
-.hs-clr.on { display: block; }
-.hs-clr:hover { color: var(--g700); }
+.hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,.09); transition: border-color .25s, box-shadow .25s; overflow: hidden; }
+.hs-cont:focus-within { border-color: var(--red); box-shadow: 0 4px 24px rgba(183,28,28,.15); }
+.hs-inp { flex: 1; padding: 15px 14px 15px 52px; font-size: 15px; font-family: 'Poppins', sans-serif; border: none; outline: none; background: transparent; color: var(--g800); }
+.hs-inp::placeholder { color: var(--g400); }
+.hs-ico { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 16px; pointer-events: none; transition: color .2s; }
+.hs-clr { flex-shrink: 0; margin-right: 8px; width: 30px; height: 30px; border-radius: 50%; background: var(--g100); display: none; align-items: center; justify-content: center; color: var(--g500); font-size: 13px; cursor: pointer; transition: background .2s, color .2s; border: none; }
+.hs-clr.on { display: flex; }
+.hs-clr:hover { background: var(--red-light); color: var(--red); }
 
 /* Search top-rated pills */
 .hs-hints { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }

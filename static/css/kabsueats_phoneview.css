@@ -112,17 +112,38 @@
     .hero { padding: 22px 0 32px; text-align: center; }
     .hsw  { position: relative; max-width: 100%; margin: 0 auto; }
     .hs-lbl { display: none; }
-    .hs-cont { position: relative; }
-    .hs-inp {
-        width: 100%; padding: 13px 44px; font-size: 14px;
-        font-family: 'Poppins', sans-serif; border: 2px solid var(--g200);
-        border-radius: 12px; outline: none; background: #fff;
-        box-shadow: var(--sh1); transition: .3s;
+    .hs-cont {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border-radius: 50px;
+        border: 2px solid var(--g200);
+        box-shadow: 0 4px 18px rgba(0,0,0,.08);
+        transition: border-color .25s, box-shadow .25s;
+        overflow: hidden;
     }
-    .hs-inp:focus { border-color: var(--red); box-shadow: 0 4px 14px rgba(183,28,28,.12); }
-    .hs-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--g400); font-size: 15px; pointer-events: none; }
-    .hs-clr { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--g400); font-size: 15px; cursor: pointer; display: none; transition: .2s; }
-    .hs-clr.on { display: block; }
+    .hs-cont:focus-within {
+        border-color: var(--red);
+        box-shadow: 0 4px 18px rgba(183,28,28,.12);
+    }
+    .hs-inp {
+        width: 100%; padding: 14px 44px 14px 44px; font-size: 14px;
+        font-family: 'Poppins', sans-serif; border: none;
+        border-radius: 12px; outline: none; background: transparent;
+        color: #1f2937; transition: .25s;
+    }
+    .hs-inp::placeholder { color: #9ca3af; }
+    .hs-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 15px; pointer-events: none; }
+    .hs-clr {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        width: 26px; height: 26px; border-radius: 50%;
+        background: var(--g100); color: var(--g500); font-size: 12px;
+        cursor: pointer; display: none; align-items: center; justify-content: center;
+        transition: background .2s, color .2s; flex-shrink: 0;
+    }
+    .hs-clr.on { display: flex; }
+    .hs-clr:hover { background: var(--red-light); color: var(--red); }
 
     /* Search dropdown */
     .search-dropdown {

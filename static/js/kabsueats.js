@@ -725,7 +725,7 @@ function addMatchBadge(card, count, query) {
     if (!body) return;
     const badge = document.createElement('div');
     badge.className = 'est-match-badge';
-    badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu item${count > 1 ? 's' : ''} match "${escHtml(query)}"`;
+    badge.innerHTML = `<i class="fas fa-utensils"></i><strong>${count}</strong>&nbsp;item${count > 1 ? 's' : ''} match <em>"${escHtml(query)}"</em>`;
     body.insertBefore(badge, body.firstChild);
 }
 
@@ -795,25 +795,14 @@ function resetSearch() {
     // Restore establishment grid
     const grid = document.getElementById('estGrid');
     if (grid) {
-        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-
-        // Remove all match badges
-        cards.forEach(card => {
+        // Remove all match badges and show all cards
+        grid.querySelectorAll('.food-est-item').forEach(card => {
             removeMatchBadge(card);
             card.style.display = '';
         });
 
-        // Restore original DOM order by data-id or just by removing and re-adding by original order
-        // We can rely on the fact that the HTML order is the original server-side sorted order
-        // Just re-sort by distance (the original sort key) using the data attributes or just reset display
-        // Since original order is preserved in the DOM position, we just need to ensure they're all shown.
-        // To restore sort order: re-append in original order (they were sorted before JS re-ordered them)
-        // We track original order by index
-        if (!grid._originalOrder) {
-            // First time: save original order
-            grid._originalOrder = cards.map(c => c);
-        } else {
-            // Restore original order
+        // Restore original DOM order using saved reference
+        if (grid._originalOrder && grid._originalOrder.length > 0) {
             grid._originalOrder.forEach(c => grid.appendChild(c));
         }
     }
