@@ -5938,7 +5938,7 @@ def search_menu_items(request):
             'food_establishment__opening_time',
             'food_establishment__closing_time',
             'food_establishment__address',            # ← ADDED: shown in modal
-        ).order_by('-is_top_seller', 'name')[:100]
+        )[:25]
 
         menus_data = []
         for item in menu_items:
