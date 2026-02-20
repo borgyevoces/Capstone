@@ -8,14 +8,14 @@ const VISIBLE = 5;
 let bsData = []; // real backend data
 
 // ── SEARCH MODE STATE ──
-// 'none' | 'menu' | 'establishment' | 'empty'
-let searchMode = 'none';
+// Tracks current search state to restore UI when cleared
+let searchMode = 'none'; // 'none' | 'menu' | 'establishment'
 let lastSearchQuery = '';
 
 // ── MAP STATE ──
 let curView = 'bs', mapReady = false;
 let mapInst = null, curTile = null, mkLayer = null;
-let esMapData = [];
+let esMapData = []; // real establishment data for map
 
 // ── MODAL STATE ──
 let currentModalItem = null;
@@ -38,7 +38,11 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBestsellers();
     autoHideMessages();
     initEstablishmentCards();
+
+    // ✅ FIX: Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
+
+    // ✅ FIX: Start real-time status refresh every 60 seconds
     statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
 });
 
@@ -66,6 +70,7 @@ function fetchBestsellers() {
                 bsData = data.bestsellers;
                 renderBS(bsData);
             } else {
+                // Show empty state
                 document.getElementById('cTrack').innerHTML =
                     '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
                 document.getElementById('cPrev').disabled = true;
@@ -79,17 +84,22 @@ function fetchBestsellers() {
 }
 
 // ============================================
-// REFRESH BESTSELLER STATUSES IN REAL-TIME
+// ✅ FIX: REFRESH BESTSELLER STATUSES IN REAL-TIME
+// Re-fetches from API and updates open/closed badges without full re-render
 // ============================================
 function refreshBestsellerStatuses() {
     fetch(URLS.bestsellers)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.bestsellers.length) return;
+            // Update bsData with fresh status
             data.bestsellers.forEach(fresh => {
                 const idx = bsData.findIndex(x => x.id === fresh.id);
-                if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
+                if (idx !== -1) {
+                    bsData[idx].establishment.status = fresh.establishment.status;
+                }
             });
+            // Update all visible status badges in cards
             document.querySelectorAll('.bsc').forEach(card => {
                 const onclickAttr = card.getAttribute('onclick') || '';
                 const match = onclickAttr.match(/openMod\((\d+)\)/);
@@ -104,6 +114,7 @@ function refreshBestsellerStatuses() {
                     badge.textContent = st.toUpperCase();
                 }
             });
+            // If modal is open, update its status too
             if (currentModalItem) {
                 const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
                 if (fresh) {
@@ -117,7 +128,7 @@ function refreshBestsellerStatuses() {
                 }
             }
         })
-        .catch(() => {});
+        .catch(() => {}); // Silent fail for background refresh
 }
 
 // ============================================
@@ -131,7 +142,7 @@ function renderBS(data) {
     }
 
     track.innerHTML = data.map(d => {
-        const st = (d.establishment.status || 'closed').toLowerCase();
+        const st = (d.establishment.status || 'closed').toLowerCase(); // ✅ FIX: always lowercase, default 'closed'
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
@@ -146,7 +157,7 @@ function renderBS(data) {
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${escHtml(d.name)}</div>
-                <div class="bsc-price">&#8369;${parseFloat(d.price).toFixed(2)}</div>
+                <div class="bsc-price">₱${parseFloat(d.price).toFixed(2)}</div>
                 <div class="bsc-stats">
                     <span><i class="fas fa-shopping-bag"></i> ${d.total_orders} orders</span>
                     <span><i class="fas fa-boxes"></i> ${d.quantity} left</span>
@@ -178,6 +189,7 @@ function cardW() {
     return c ? c.offsetWidth + 20 : 238;
 }
 function maxIdx() {
+    // In search mode, use actual rendered card count; otherwise use bsData length
     const track = document.getElementById('cTrack');
     const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
     return Math.max(0, cardCount - VISIBLE);
@@ -217,7 +229,7 @@ function toggleGrid() {
 }
 
 // ============================================
-// VIEW SWITCHER: BESTSELLERS <-> MAP
+// VIEW SWITCHER: BESTSELLERS ↔ MAP
 // ============================================
 function toggleDD() {
     document.getElementById('ddPanel').classList.toggle('show');
@@ -246,6 +258,7 @@ function setView(v) {
         dl.textContent = 'Best Sellers';
         db.classList.remove('mapmode');
         db.querySelector('i').className = 'fas fa-trophy';
+        // Stop real-time polling when map is hidden
         if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
     } else {
         cw.style.display = 'none';
@@ -258,6 +271,7 @@ function setView(v) {
         if (!mapReady) { initMap(); mapReady = true; }
         else {
             setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
+            // Restart polling when map becomes visible again
             fetchMapEstablishments();
             if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
         }
@@ -267,7 +281,7 @@ function setView(v) {
 
 
 // ============================================
-// LEAFLET MAP
+// LEAFLET MAP — screenshot-matching design
 // ============================================
 const TILES = {
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -300,21 +314,26 @@ function initMap() {
             className: '', iconSize: [38, 38], iconAnchor: [19, 19]
         });
         L.marker([CVSU.lat, CVSU.lng], { icon: cvIco }).addTo(mapInst)
-            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
+            .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
 
+        // Load all establishments from API — primary source for coordinates
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
         mapInst.invalidateSize();
     }, 150);
 }
 
+// ── API is the ONLY source of lat/lng (guaranteed non-null by backend filter) ──
+// ── EST_ALL_DATA enriches with image + real-time status only ──
 function loadAllEstablishments() {
+    // Use 999km radius — backend already filters lat/lng non-null, this returns ALL registered
     fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=999999`)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
+            // Merge API coordinates with local image/status data
             const merged = data.establishments.map(e => {
                 const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
                 return {
@@ -322,10 +341,12 @@ function loadAllEstablishments() {
                     name: local.name || e.name || '',
                     address: local.address || e.address || '',
                     image: local.image || '',
+                    // Status: prefer EST_ALL_DATA (server-rendered, real-time) over API (no status field)
                     status: local.status || liveStatusCache[e.id] || '',
                     latitude: parseFloat(e.latitude),
                     longitude: parseFloat(e.longitude),
                     distance: e.distance || 0,
+                    // ✅ Include other_category and other_amenity for filtering/display
                     categories: local.categories || '',
                     other_category: local.other_category || '',
                     other_amenity: local.other_amenity || ''
@@ -337,6 +358,7 @@ function loadAllEstablishments() {
         .catch(err => console.error('Map load error:', err));
 }
 
+// Keep these as aliases for compatibility
 function renderFromLocalData() { loadAllEstablishments(); }
 function refreshEstablishmentStatuses() { loadAllEstablishments(); }
 function fetchMapEstablishments() { loadAllEstablishments(); }
@@ -345,6 +367,7 @@ function applyFiltersToData(data) {
     let result = [...data];
     const f = mapFilterState;
     if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
+    // ✅ Filter by category — checks both standard categories AND other_category
     if (f.cat) {
         const q = f.cat.toLowerCase();
         result = result.filter(e => {
@@ -480,7 +503,7 @@ function showMyLocation() {
 }
 
 // ============================================
-// CATEGORY FILTER
+// CATEGORY FILTER — filters DOM elements
 // ============================================
 function applyFilter() {
     const val = document.getElementById('catFilt').value.toLowerCase();
@@ -491,7 +514,8 @@ function applyFilter() {
 }
 
 // ============================================
-// BESTSELLER MODAL
+// BESTSELLER MODAL — opens with backend data
+// ✅ FIX: Uses fresh real-time status from API
 // ============================================
 function openMod(id) {
     const d = bsData.find(x => x.id === id);
@@ -501,11 +525,12 @@ function openMod(id) {
     document.getElementById('mImg').src = imgSrc;
     document.getElementById('mName').textContent = d.name;
     document.getElementById('mDesc').textContent = d.description || '';
-    document.getElementById('mPrice').textContent = `\u20B1${parseFloat(d.price).toFixed(2)}`;
+    document.getElementById('mPrice').textContent = `₱${parseFloat(d.price).toFixed(2)}`;
     document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity} Items`;
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
 
+    // ✅ FIX: Always compute status fresh from the stored bsData (which refreshBestsellerStatuses keeps current)
     const st = (d.establishment.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
@@ -515,15 +540,18 @@ function openMod(id) {
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
+    // ✅ FIX: Fetch fresh status at modal open time
     fetch(URLS.bestsellers)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
             const fresh = data.bestsellers.find(x => x.id === id);
             if (!fresh) return;
+            // Update stored data
             const idx = bsData.findIndex(x => x.id === id);
             if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
             currentModalItem = bsData[idx] || currentModalItem;
+            // Update modal status badge
             const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
             const el = document.getElementById('mEstS');
             if (el) {
@@ -531,55 +559,66 @@ function openMod(id) {
                 el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
             }
         })
-        .catch(() => {});
+        .catch(() => {}); // Silent — already showing a status
+}
+
+function closeMod() {
+    document.getElementById('bsMod').classList.remove('on');
+    document.body.style.overflow = '';
+    currentModalItem = null;
 }
 
 // ─────────────────────────────────────────────
-// OPEN MODAL FROM MENU SEARCH RESULTS
-// Handles both bestseller and non-bestseller items
+// OPEN MODAL FOR SEARCHED MENU ITEMS
+// If item exists in bsData, use that (has full data + real-time status).
+// Otherwise construct from search result data stored in card's data-item attr.
+// Called with: openMenuSearchMod(itemId, cardElement)
 // ─────────────────────────────────────────────
 function openMenuSearchMod(itemId, cardEl) {
-    // If it's a live bestseller, use the richer openMod function
-    const bsItem = bsData.find(x => x.id === itemId);
-    if (bsItem) {
+    // Prefer bsData entry (has real-time status updates)
+    const bsEntry = bsData.find(x => x.id === itemId);
+    if (bsEntry) {
         openMod(itemId);
         return;
     }
-
-    // Otherwise read item data from the card's data-item attribute
-    let item;
+    // Read item data from card's data-item attribute
+    let d = {};
     try {
-        item = JSON.parse(cardEl.getAttribute('data-item') || '{}');
-    } catch(e) {
-        return;
-    }
-    if (!item.id) return;
+        const card = (cardEl && cardEl.classList && cardEl.classList.contains('bsc'))
+            ? cardEl
+            : (cardEl && cardEl.closest ? cardEl.closest('.bsc') : null);
+        if (card && card.dataset.item) {
+            d = JSON.parse(card.dataset.item);
+        }
+    } catch(e) {}
 
+    const est = d.establishment || {};
     currentModalItem = {
-        id:          item.id,
-        name:        item.name,
-        description: item.description || '',
-        price:       item.price,
-        image:       item.image_url || '',
-        quantity:    item.quantity || 0,
+        id:          d.id || itemId,
+        name:        d.name || '',
+        description: d.description || '',
+        price:       d.price || 0,
+        image:       d.image_url || null,
+        quantity:    d.quantity || 0,
+        is_top_seller: true,
         establishment: {
-            id:      item.est_id || '',
-            name:    item.est_name || '',
-            address: item.est_address || '',
-            status:  item.est_status || 'Closed'
+            id:      est.id || '',
+            name:    est.name || '',
+            address: est.address || '',
+            status:  est.status || 'closed',
         }
     };
 
-    const imgSrc = item.image_url || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(item.name || 'Item');
+    const imgSrc = d.image_url || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(d.name || 'Item');
     document.getElementById('mImg').src = imgSrc;
-    document.getElementById('mName').textContent = item.name || '';
-    document.getElementById('mDesc').textContent = item.description || '';
-    document.getElementById('mPrice').textContent = `\u20B1${parseFloat(item.price || 0).toFixed(2)}`;
-    document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${item.quantity || 0} Items`;
-    document.getElementById('mEstN').textContent = item.est_name || '';
-    document.getElementById('mEstA').textContent = item.est_address || '';
+    document.getElementById('mName').textContent = d.name || '';
+    document.getElementById('mDesc').textContent = d.description || '';
+    document.getElementById('mPrice').textContent = `₱${parseFloat(d.price || 0).toFixed(2)}`;
+    document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity || 0} Items`;
+    document.getElementById('mEstN').textContent = est.name || '';
+    document.getElementById('mEstA').textContent = est.address || '';
 
-    const st = (item.est_status || 'closed').toLowerCase();
+    const st = (est.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
     stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
@@ -589,12 +628,6 @@ function openMenuSearchMod(itemId, cardEl) {
     document.body.style.overflow = 'hidden';
 }
 
-function closeMod() {
-    document.getElementById('bsMod').classList.remove('on');
-    document.body.style.overflow = '';
-    currentModalItem = null;
-}
-
 function chgQ(d) {
     const e = document.getElementById('mqty');
     const max = currentModalItem ? currentModalItem.quantity : 99;
@@ -602,7 +635,8 @@ function chgQ(d) {
 }
 
 // ============================================
-// ADD TO CART
+// ADD TO CART — POST to /cart/add/
+// ✅ FIX: Properly connected, closes modal on success
 // ============================================
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -624,6 +658,7 @@ function addToCartFromModal() {
     .then(data => {
         if (data.success) {
             closeMod();
+            // backend returns cart_count directly in add_to_cart response
             const badge = document.getElementById('cartBadge');
             if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
             else updateCartBadge();
@@ -642,7 +677,9 @@ function addToCartFromModal() {
 }
 
 // ============================================
-// BUY NOW
+// BUY NOW — Adds item to cart then redirects to cart page
+// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
+//             so user picks Cash or Online Payment in cart
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -655,6 +692,7 @@ function buyNowFromModal() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
+    // Add item to cart first, then redirect to cart page with pay=1
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -663,15 +701,22 @@ function buyNowFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            // Redirect to cart page with ?pay=1 to auto-show payment options
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+            }
         }
     })
     .catch(() => {
         showToast('Network error. Please try again.', 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+        }
     });
 }
 
@@ -684,6 +729,7 @@ function updateCartBadge() {
         .then(r => r.json())
         .then(data => {
             const badge = document.getElementById('cartBadge');
+            // backend returns { success: true, cart_count: N }
             if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
         })
         .catch(() => {});
@@ -716,7 +762,7 @@ function closeSet() {
 }
 
 // ============================================
-// PROFILE IMAGE
+// PROFILE IMAGE — preview + real-time AJAX save
 // ============================================
 function previewProfileImg(input) {
     if (input.files && input.files[0]) {
@@ -738,8 +784,9 @@ function saveProfile() {
         return;
     }
 
+    // Loading state
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
     const fd = new FormData();
     fd.append('profile_picture', input.files[0]);
@@ -754,14 +801,21 @@ function saveProfile() {
     .then(data => {
         if (data.success) {
             const newUrl = data.profile_picture_url;
+
+            // ① Update preview inside modal
             document.getElementById('profilePreview').innerHTML =
                 `<img src="${newUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ② Update navbar avatar instantly
             const nav = document.getElementById('pavBtn');
             if (nav) nav.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
+            // ③ Update dropdown header avatar instantly
             const da = document.querySelector('.pd-av');
             if (da) da.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+
             showToast('Profile picture updated!', 'success');
             closeSet();
         } else {
@@ -779,21 +833,14 @@ function saveProfile() {
 // ============================================
 // SMART SEARCH SYSTEM
 // ─────────────────────────────────────────────
-// MENU QUERY:
-//   - BS section stays VISIBLE, carousel = matched menu cards
-//   - Best seller items: orange badge, open modal on click
-//   - Regular menu items: red "Menu Item" badge, open modal on click
-//   - Est cards below: matched ones rise to top with "This shop has what
-//     you are looking for!" badge and amber ring; unmatched cards HIDDEN
-//
-// EST / CATEGORY QUERY:
-//   - BS section DISAPPEARS (hidden with animation)
-//   - Est cards filter to only matching shops
-//
-// CLEAR:
-//   - Everything snaps back to default state instantly
+// FOCUS (empty)   → Initial dropdown: Recent + Category chips + All Establishments
+// TYPING (menu)   → Dropdown shows menu items; BS carousel fills with menu results;
+//                   Establishment cards sort by match count + amber badge + ring
+// TYPING (est/cat)→ Dropdown shows ests; BS carousel fills with establishment cards
+// CLEAR / DELETE  → Everything reverts to original instantly
 // ============================================
 
+// ── Recent Searches (localStorage) ──
 const RECENT_KEY   = 'ke_recent_searches';
 const RECENT_LIMIT = 8;
 function getRecent() {
@@ -816,6 +863,9 @@ let bsHidden     = false;
 
 // ─────────────────────────────────────────────
 // BS SECTION — smooth hide / show animation
+// Only used when user types but BEFORE API returns.
+// Once results arrive, the section stays visible and
+// the carousel content is simply swapped.
 // ─────────────────────────────────────────────
 function hideBSSection() {
     const sec = document.getElementById('bsSec');
@@ -861,10 +911,13 @@ function initSearch() {
 
         if (!q) {
             closeDrop();
-            restoreNormalView();
+            restoreNormalView();   // snap everything back
+            showBSSection();
             return;
         }
 
+        // Optimistic instant: filter est cards + show skeleton
+        filterEstCardsByText(q);
         showDropSkeleton();
         searchTimer = setTimeout(() => doSearch(q), 240);
     });
@@ -875,6 +928,7 @@ function initSearch() {
         this.classList.remove('on');
         closeDrop();
         restoreNormalView();
+        showBSSection();
         inp.focus();
         showInitialDrop();
     });
@@ -914,7 +968,7 @@ function initSearch() {
             e.preventDefault();
             const text = this.textContent.trim().replace(/^[^\w]+/, '').trim();
             inp.value = text; clr.classList.add('on');
-            doSearch(text); inp.focus();
+            filterEstCardsByText(text); doSearch(text); inp.focus();
         });
     });
 }
@@ -923,6 +977,19 @@ function closeDrop() {
     const d = document.getElementById('searchDropdown');
     if (d) d.classList.remove('active');
     dropSelected = -1;
+}
+
+// ─────────────────────────────────────────────
+// INSTANT DOM FILTER (runs on every keypress)
+// ─────────────────────────────────────────────
+function filterEstCardsByText(q) {
+    const ql = (q || '').toLowerCase();
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        if (!ql) { el.style.display = ''; return; }
+        const name = (el.dataset.name || el.querySelector('.estc-name')?.textContent || '').toLowerCase();
+        const cat  = (el.dataset.category || '').toLowerCase();
+        el.style.display = (name.includes(ql) || cat.includes(ql)) ? '' : 'none';
+    });
 }
 
 // ─────────────────────────────────────────────
@@ -947,6 +1014,7 @@ function showDropSkeleton() {
 
 // ─────────────────────────────────────────────
 // INITIAL DROPDOWN (focus, empty input)
+// Recent Searches | Category Chips | All Establishments
 // ─────────────────────────────────────────────
 function showInitialDrop() {
     if (searchAbort) { try { searchAbort.abort(); } catch(e){} }
@@ -1025,7 +1093,7 @@ function renderInitialDrop(data) {
 }
 
 // ─────────────────────────────────────────────
-// MAIN SEARCH — fetch API + render dropdown + update page
+// MAIN SEARCH — fetch + update dropdown + page
 // ─────────────────────────────────────────────
 function doSearch(q) {
     if (!q) return;
@@ -1044,40 +1112,34 @@ function doSearch(q) {
 
 // ─────────────────────────────────────────────
 // APPLY RESULTS TO PAGE
+// Menus:   → fill BS carousel with menu cards + sort est cards
+// Est/Cat: → fill BS carousel with est cards (bestsellers temporarily hidden)
+// None:    → show no-result state in carousel
 // ─────────────────────────────────────────────
 function applyResultsToPage(data, q) {
     const menus = data.menus          || [];
     const ests  = data.establishments || [];
 
+    // Always make BS section visible (carousel will have new content)
+    showBSSection();
+
     if (menus.length) {
-        // MENU SEARCH: keep BS section visible with menu items in carousel;
-        // sort/hide establishment cards below based on match
         searchMode = 'menu';
-        showBSSection();
         fillCarouselWithMenuItems(menus, q);
-        sortAndFilterEstCardsByMatch(menus);
-
+        sortEstCardsByMatch(menus);
     } else if (ests.length) {
-        // EST/CATEGORY SEARCH: hide BS section; filter est cards
         searchMode = 'establishment';
-        hideBSSection();
-        filterEstCardsByEstSearch(ests);
+        fillCarouselWithEstablishments(ests, q);
         clearEstBadges();
-
     } else {
-        // NO RESULTS
         searchMode = 'empty';
-        showBSSection();
         showNoResultsCarousel(q);
         clearEstBadges();
-        document.querySelectorAll('.food-est-item').forEach(el => el.style.display = '');
     }
 }
 
 // ─────────────────────────────────────────────
 // CAROUSEL: fill with MENU ITEMS
-// Best sellers -> orange badge + modal
-// Regular items -> red "Menu Item" badge + modal
 // ─────────────────────────────────────────────
 function fillCarouselWithMenuItems(items, q) {
     const titleEl = document.getElementById('bsTitle');
@@ -1085,7 +1147,7 @@ function fillCarouselWithMenuItems(items, q) {
         `<i class="fas fa-utensils" style="color:#B71C1C;"></i>
          Menu results for <em class="srch-em">"${escHtml(q)}"</em>`;
 
-    // Force carousel mode (not grid) during search
+    // Force list mode during search
     if (isGrid) {
         document.getElementById('cTrack')?.classList.remove('gmode');
         document.getElementById('carouselWrap')?.classList.remove('gmode');
@@ -1095,70 +1157,59 @@ function fillCarouselWithMenuItems(items, q) {
     if (!track) return;
 
     track.innerHTML = items.map(item => {
-        const eid        = item.establishment?.id      || '';
-        const enm        = item.establishment?.name    || '';
-        const eaddr      = item.establishment?.address || '';
-        const estStatus  = (item.establishment?.status || 'Closed');
-        const estCls     = estStatus.toLowerCase();
-        const eimg       = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[eid]) || '';
-        const iSrc       = item.image_url || `https://via.placeholder.com/280x180?text=${encodeURIComponent(item.name)}`;
-        const isBestSeller = !!item.is_top_seller;
-
-        // Safely encode item data for the modal
-        const safeData = {
-            id:          item.id,
-            name:        item.name         || '',
-            description: item.description  || '',
-            price:       item.price        || 0,
-            image_url:   item.image_url    || '',
-            quantity:    item.quantity     || 0,
-            est_id:      eid,
-            est_name:    enm,
-            est_address: eaddr,
-            est_status:  estStatus
-        };
-        const itemDataAttr = JSON.stringify(safeData).replace(/"/g, '&quot;');
-
+        const eid  = item.establishment?.id   || '';
+        const enm  = item.establishment?.name || '';
+        const est  = (item.establishment?.status || 'closed').toLowerCase();
+        const eimg = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[eid]) || '';
+        const iSrc = item.image_url || `https://via.placeholder.com/280x180?text=${encodeURIComponent(item.name)}`;
         const icon = eimg
             ? `<img src="${eimg}" alt="${escHtml(enm)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
             : `<i class="fas fa-utensils"></i>`;
 
-        // Badge: orange star for bestsellers, red fork for regular
-        const badge = isBestSeller
+        // ── Badge & click behavior depend on is_top_seller ──
+        const isBS = !!item.is_top_seller;
+        const badgeHtml = isBS
             ? `<span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>`
             : `<span class="bsc-badge srch-badge srch-badge--menu"><i class="fas fa-utensils"></i> Menu Item</span>`;
 
-        // Stats: bestsellers show order count; regular items show stock only
-        const stats = isBestSeller
+        // Store item data as a data attribute to avoid inline JSON issues
+        const clickFn = isBS
+            ? `openMenuSearchMod(${item.id},this)`
+            : `window.location.href='${URLS.estDetail}${eid}/'`;
+        const btnFn = isBS
+            ? `event.stopPropagation();openMenuSearchMod(${item.id},this.closest('.bsc'))`
+            : `event.stopPropagation();window.location.href='${URLS.estDetail}${eid}/'`;
+        const btnLabel = isBS ? `<i class="fas fa-eye"></i> View Details` : `<i class="fas fa-store"></i> Visit Store`;
+
+        // Stats row — show if top seller (has order data) or always show quantity
+        const statsHtml = isBS
             ? `<div class="bsc-stats">
                    <span><i class="fas fa-shopping-bag"></i> ${item.total_orders || 0} orders</span>
                    <span><i class="fas fa-boxes"></i> ${item.quantity} left</span>
                </div>`
             : `<div class="bsc-stats">
-                   <span><i class="fas fa-boxes"></i> ${item.quantity} in stock</span>
+                   <span><i class="fas fa-boxes"></i> ${item.quantity} left</span>
                </div>`;
 
-        return `<div class="bsc srch-bsc" data-item="${itemDataAttr}"
-                    onclick="openMenuSearchMod(${item.id}, this)">
+        return `<div class="bsc srch-bsc" data-item='${escHtml(JSON.stringify(item))}' onclick="${clickFn}">
             <div class="bsc-img">
                 <img src="${iSrc}" alt="${escHtml(item.name)}" loading="lazy"
                      onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                ${badge}
+                ${badgeHtml}
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
-                <div class="bsc-price">&#8369;${parseFloat(item.price).toFixed(2)}</div>
-                ${stats}
+                <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
+                ${statsHtml}
                 <div class="bsc-est">
                     <div class="bsc-eico">${icon}</div>
                     <div class="bsc-einfo">
                         <div class="bsc-ename">${escHtml(enm)}</div>
-                        <div class="bsc-emeta"><span class="sp ${estCls}">${estCls.toUpperCase()}</span></div>
+                        <div class="bsc-emeta"><span class="sp ${est}">${est.toUpperCase()}</span></div>
                     </div>
                 </div>
-                <button class="bsc-btn"
-                    onclick="event.stopPropagation();openMenuSearchMod(${item.id},this.closest('.bsc'))">
-                    <i class="fas fa-eye"></i> View Details
+                <button class="bsc-btn" onclick="${btnFn}">
+                    ${btnLabel}
                 </button>
             </div>
         </div>`;
@@ -1247,15 +1298,15 @@ function showNoResultsCarousel(q) {
 }
 
 // ─────────────────────────────────────────────
-// SORT + FILTER ESTABLISHMENT CARDS FOR MENU SEARCH
-// Cards with menu matches rise to top + get amber badge + ring.
-// Cards with no matches are HIDDEN.
+// SORT ESTABLISHMENT CARDS BY MENU MATCH COUNT
+// Cards with more menu matches bubble to top.
+// Each matched card gets an amber badge + amber ring.
 // ─────────────────────────────────────────────
-function sortAndFilterEstCardsByMatch(menuItems) {
+function sortEstCardsByMatch(menuItems) {
     const grid = document.getElementById('estGrid');
     if (!grid) return;
 
-    // Build match map { estId -> count }
+    // Build match map  { estId → count }
     const matchMap = {};
     menuItems.forEach(item => {
         if (item.establishment?.id) {
@@ -1265,70 +1316,39 @@ function sortAndFilterEstCardsByMatch(menuItems) {
     });
 
     const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+    // Clear old badges + rings
     clearEstBadges(cards);
 
+    // Apply new badges + rings
     cards.forEach(card => {
         const id    = parseInt(card.dataset.id);
         const count = matchMap[id] || 0;
         card.dataset.matchCount = count;
 
         if (count > 0) {
-            // Matched: visible, amber ring, descriptive badge
-            card.style.display       = '';
+            card.style.display       = '';   // ensure visible even if filtered
             card.style.outline       = '2px solid #f59e0b';
             card.style.outlineOffset = '-2px';
 
             const badge = document.createElement('div');
             badge.className = 'est-match-badge';
-            badge.innerHTML = `<i class="fas fa-check-circle"></i> This shop has what you are looking for!`;
+            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
             const body = card.querySelector('.estc-body');
             if (body) body.insertBefore(badge, body.firstChild);
-        } else {
-            // No match: hide
-            card.style.display = 'none';
         }
     });
 
-    // Re-sort matched cards: most matches first
-    const matched = cards.filter(c => parseInt(c.dataset.matchCount || 0) > 0);
-    matched.sort((a, b) => {
+    // Sort: highest match → top; then preserve original order
+    cards.sort((a, b) => {
         const ma = parseInt(a.dataset.matchCount || 0);
         const mb = parseInt(b.dataset.matchCount || 0);
         if (mb !== ma) return mb - ma;
         return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
     });
-    matched.forEach(c => grid.appendChild(c));
-
-    // Show/hide no-match message
-    const noMatchMsg = document.getElementById('estNoMatchMsg');
-    if (matched.length === 0) {
-        if (!noMatchMsg) {
-            const msg = document.createElement('p');
-            msg.id = 'estNoMatchMsg';
-            msg.className = 'no-est-msg';
-            msg.style.cssText = 'grid-column:1/-1;text-align:center;padding:40px;color:#9ca3af;';
-            msg.innerHTML = '<i class="fas fa-store" style="font-size:28px;display:block;margin-bottom:8px;color:#e5e7eb;"></i>No nearby establishments carry this item yet.';
-            grid.appendChild(msg);
-        }
-    } else {
-        if (noMatchMsg) noMatchMsg.remove();
-    }
+    cards.forEach(c => grid.appendChild(c));
 }
 
-// ─────────────────────────────────────────────
-// FILTER EST CARDS FOR EST/CATEGORY SEARCH
-// ─────────────────────────────────────────────
-function filterEstCardsByEstSearch(ests) {
-    const matchIds = new Set(ests.map(e => e.id));
-    document.querySelectorAll('.food-est-item').forEach(card => {
-        const id = parseInt(card.dataset.id);
-        card.style.display = matchIds.has(id) ? '' : 'none';
-    });
-}
-
-// ─────────────────────────────────────────────
-// CLEAR EST BADGES + RINGS
-// ─────────────────────────────────────────────
 function clearEstBadges(cards) {
     const list = cards || Array.from(document.querySelectorAll('.food-est-item'));
     list.forEach(card => {
@@ -1337,8 +1357,6 @@ function clearEstBadges(cards) {
         card.style.outline       = '';
         card.style.outlineOffset = '';
     });
-    const noMatchMsg = document.getElementById('estNoMatchMsg');
-    if (noMatchMsg) noMatchMsg.remove();
 }
 
 // ─────────────────────────────────────────────
@@ -1353,9 +1371,6 @@ function restoreNormalView() {
     const titleEl = document.getElementById('bsTitle');
     if (titleEl) titleEl.innerHTML =
         '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
-
-    // Ensure BS section is visible
-    showBSSection();
 
     // Restore bestseller carousel
     if (bsData && bsData.length) renderBS(bsData);
@@ -1377,7 +1392,8 @@ function restoreNormalView() {
 }
 
 // ─────────────────────────────────────────────
-// LIVE DROPDOWN (while typing)
+// LIVE DROPDOWN  (while typing)
+// Menu Items | Establishments | Categories | Suggestions
 // ─────────────────────────────────────────────
 function renderLiveDropdown(data, q) {
     const drop = document.getElementById('searchDropdown');
@@ -1405,24 +1421,20 @@ function renderLiveDropdown(data, q) {
                 ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
                 : `<i class="fas fa-utensils"></i>`;
             const qs = escHtml(q).replace(/'/g, "\\'");
-            const bsChip = item.is_top_seller
-                ? `<span class="sd-bestseller-chip"><i class="fas fa-star"></i> Best Seller</span>`
-                : '';
             html += `<div class="sd-row" onclick="saveRecentAndGo(event,'${qs}','${URLS.estDetail}${eid}/')">
                 <div class="sd-ico sd-ico--menu" style="overflow:hidden;">${imgH}</div>
                 <div class="sd-row-text">
                     <span class="sd-row-name">${highlightMatch(escHtml(item.name), q)}</span>
                     <span class="sd-row-meta">
-                        <strong style="color:#B71C1C;">&#8369;${parseFloat(item.price).toFixed(2)}</strong>
+                        <strong style="color:#B71C1C;">₱${parseFloat(item.price).toFixed(2)}</strong>
                         <span class="sd-dot">•</span>
                         <i class="fas fa-store" style="font-size:9px;"></i> ${highlightMatch(escHtml(enm), q)}
-                        ${bsChip}
                     </span>
                 </div>
                 <i class="fas fa-chevron-right sd-chev"></i>
             </div>`;
         });
-        if (menus.length > 6) html += `<div class="sd-more">+${menus.length - 6} more — see results in carousel below</div>`;
+        if (menus.length > 6) html += `<div class="sd-more">+${menus.length - 6} more — see results in carousel ↓</div>`;
         html += '</div>';
     }
 
@@ -1471,10 +1483,10 @@ function renderLiveDropdown(data, q) {
         html += '</div></div>';
     }
 
-    // ── Did you mean... ──
+    // ── Did you mean… ──
     if (!menus.length && !ests.length && suggs.length) {
         html += `<div class="sd-section">
-            <div class="sd-title" style="color:#f59e0b;"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:5px;"></i>Did you mean...</div>`;
+            <div class="sd-title" style="color:#f59e0b;"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:5px;"></i>Did you mean…</div>`;
         suggs.forEach(s => {
             const safe = escHtml(s.text).replace(/'/g, "\\'");
             html += `<div class="sd-row" onclick="handleSuggestionClick(event,'${safe}')">
@@ -1499,7 +1511,7 @@ function renderLiveDropdown(data, q) {
 }
 
 // ─────────────────────────────────────────────
-// INLINE EVENT HANDLERS
+// INLINE EVENT HANDLERS (called from rendered HTML)
 // ─────────────────────────────────────────────
 function handleRecentClick(e, q) {
     e.stopPropagation();
@@ -1507,7 +1519,7 @@ function handleRecentClick(e, q) {
     const clr = document.getElementById('hClr');
     if (!inp) return;
     inp.value = q; clr.classList.add('on');
-    doSearch(q);
+    filterEstCardsByText(q); doSearch(q);
 }
 function handleRemoveRecent(e, q) {
     e.stopPropagation();
@@ -1529,7 +1541,7 @@ function handleCatChip(e, cat) {
     const clr = document.getElementById('hClr');
     if (!inp) return;
     inp.value = cat; clr.classList.add('on');
-    doSearch(cat); inp.focus();
+    filterEstCardsByText(cat); doSearch(cat); inp.focus();
 }
 function saveRecentAndGo(e, q, url) { saveRecent(q); window.location.href = url; }
 function handleSuggestionClick(e, text) {
@@ -1538,7 +1550,7 @@ function handleSuggestionClick(e, text) {
     const clr = document.getElementById('hClr');
     if (!inp) return;
     inp.value = text; clr.classList.add('on');
-    doSearch(text);
+    filterEstCardsByText(text); doSearch(text);
 }
 
 function highlightMatch(text, q) {
@@ -1561,10 +1573,11 @@ function initScrollTop() {
 // TOAST NOTIFICATION
 // ============================================
 function showToast(msg, type = 'success') {
-    const colors   = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
     const bgColors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fffbeb', info: '#eff6ff' };
-    const icons    = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+    const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
 
+    // Get or create a shared toast container so multiple toasts stack nicely
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');
@@ -1577,6 +1590,7 @@ function showToast(msg, type = 'success') {
     t.style.cssText = `background:${bgColors[type]||'#fff'};border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;max-width:520px;pointer-events:auto;animation:toastSlideIn .35s cubic-bezier(.34,1.56,.64,1);`;
     t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="flex:1;">${escHtml(msg)}</span>`;
 
+    // Inject keyframes once
     if (!document.getElementById('toastKeyframes')) {
         const style = document.createElement('style');
         style.id = 'toastKeyframes';
@@ -1597,7 +1611,7 @@ function showToast(msg, type = 'success') {
 }
 
 // ============================================
-// GLOBAL CLICK / KEY HANDLERS
+// GLOBAL CLICK HANDLERS
 // ============================================
 document.addEventListener('click', e => {
     if (!e.target.closest('#ddw')) closeDD();
@@ -1605,7 +1619,10 @@ document.addEventListener('click', e => {
         const pd = document.getElementById('pdrop');
         if (pd) pd.classList.remove('show');
     }
-    if (!e.target.closest('.hsw')) closeDrop();
+    if (!e.target.closest('.hsw')) {
+        closeDrop();
+    }
+    // Close layer panel when clicking outside
     if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
         const lp = document.getElementById('mapLayerPanel');
         if (lp) lp.classList.remove('show');
@@ -1632,14 +1649,17 @@ function escapeRe(str) {
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
-
 // ============================================
 // ESTABLISHMENT CARD NAVIGATION — safety net
+// The <a> tag href already handles navigation.
+// This sets child pointer-events to none so
+// clicks on images/text bubble up to the <a>.
 // ============================================
 function initEstablishmentCards() {
     document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
         card.style.pointerEvents = 'auto';
         card.style.cursor = 'pointer';
+        // Let all child elements pass clicks through to the anchor
         card.querySelectorAll('*').forEach(function(child) {
             child.style.pointerEvents = 'none';
         });

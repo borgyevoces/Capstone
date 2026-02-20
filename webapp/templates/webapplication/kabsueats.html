@@ -15,29 +15,58 @@
     {% block extra_css %}{% endblock %}
 
     <style>
-    /* ── BS section smooth hide/show (JS controls max-height) ── */
-    #bsSec { overflow: visible; }
+    /* ── Smart Search: Menu Search Badge in BS carousel ── */
+    .bsc-badge-search {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+    }
+    .bsc-badge-est {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
+    }
 
-    /* ── BS title smooth transition ── */
-    .bs-title { transition: opacity .2s ease; }
+    /* ── Establishment match badge ── */
+    .est-match-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        border: 1px solid #f59e0b;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 9px;
+        margin-bottom: 6px;
+        font-family: 'Poppins', sans-serif;
+        animation: matchPulse 0.4s ease;
+    }
+    .est-match-badge i {
+        font-size: 10px;
+        color: #d97706;
+    }
+    @keyframes matchPulse {
+        0%   { transform: scale(0.8); opacity: 0; }
+        60%  { transform: scale(1.05); }
+        100% { transform: scale(1); opacity: 1; }
+    }
 
     /* ── Highlight matched text in dropdown ── */
     .search-match {
-        background: rgba(183,28,28,.12);
-        color: #B71C1C;
+        background: #fef08a;
+        color: #854d0e;
         border-radius: 3px;
         padding: 0 2px;
         font-weight: 700;
     }
 
-    /* ── No-match message when no est carries the searched item ── */
-    #estNoMatchMsg {
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 48px 24px;
-        color: #9ca3af;
-        font-size: 14px;
-        font-family: 'Poppins', sans-serif;
+    /* ── BS title transition ── */
+    .bs-title {
+        transition: all 0.25s ease;
+    }
+
+    /* ── Est cards with matches get a subtle highlight ring ── */
+    .food-est-item[data-match-count]:not([data-match-count="0"]) {
+        outline: 2px solid #f59e0b;
+        outline-offset: -2px;
     }
     </style>
 </head>
@@ -499,11 +528,6 @@
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     };
-
-    // ── ALL_MENU_DATA: server-side pre-fetched menu items for instant search awareness ──
-    // Passed from views.py kabsueats_main_view; used by JS to detect top-sellers
-    // in search results without extra API calls.
-    const ALL_MENU_DATA = {{ all_menu_data_json|safe|default:"[]" }};
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>

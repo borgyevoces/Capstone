@@ -591,25 +591,7 @@ def kabsueats_main_view(request):
             order__user=request.user,
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
-    all_menu_items = MenuItem.objects.filter(
-        food_establishment__in=active_est_ids,
-        food_establishment__is_active=True,
-    ).select_related('food_establishment').values(
-        'id', 'name', 'is_top_seller',
-        'food_establishment__id',
-        'food_establishment__name',
-    )
 
-    all_menu_data = [
-        {
-            'id': m['id'],
-            'name': m['name'],
-            'is_top_seller': m['is_top_seller'],
-            'est_id': m['food_establishment__id'],
-            'est_name': m['food_establishment__name'],
-        }
-        for m in all_menu_items
-    ]
     context = {
         'food_establishments': food_establishments_sorted,
         'category': {'name': current_category.name} if current_category else None,
@@ -618,9 +600,6 @@ def kabsueats_main_view(request):
         'alpha_filter': alpha_filter,
         'q': search_query,
         'cart_count': cart_count,
-        'all_menu_data_json': json.dumps(all_menu_data),  # passed to JS as ALL_MENU_DATA
-        'CVSU_LATITUDE': '14.412768',
-        'CVSU_LONGITUDE': '120.981348',
     }
     return render(request, 'webapplication/kabsueats.html', context)
 
@@ -5864,19 +5843,20 @@ def search_menu_items(request):
     GET /api/search-menu/?q=<query>
 
     Behaviour:
-      - q is EMPTY  -> returns all active establishments + all categories
+      • q is EMPTY  → returns all active establishments + all categories
                        (used for the "on focus" dropdown before user types)
-      - q has text  -> returns matching Menu items, Establishments, and
+      • q has text  → returns matching Menu items, Establishments, and
                        Categories; each establishment result carries a
-                       'menu_match_count' so the front-end can sort cards;
-                       each menu item now carries 'is_top_seller' so the
-                       front-end can render the orange Best Seller badge
-                       and open the detail modal for those items.
+                       'menu_match_count' so the front-end can show the
+                       "N menu matches" badge and sort cards accordingly.
+                       Each menu item now also carries 'is_top_seller' so
+                       the front-end can render the Best Seller badge and
+                       open the detail modal for those items.
     """
     try:
         query = request.GET.get('q', '').strip()
 
-        # ── Active establishment IDs ──────────────────────────────────────
+        # ── Active establishment IDs ─────────────────────────────────────
         active_est_qs = (
             FoodEstablishment.objects
             .exclude(status='Disabled')
@@ -5899,6 +5879,7 @@ def search_menu_items(request):
                     'image_url': est.image.url if est.image else None,
                 })
 
+            # All distinct categories
             categories = list(
                 Category.objects
                 .filter(foodestablishment__in=active_est_qs)
@@ -5916,10 +5897,10 @@ def search_menu_items(request):
                 'query':          '',
             })
 
-        # ── ACTIVE EST IDs list ───────────────────────────────────────────
+        # ── ACTIVE EST IDs list (for filtering menus) ────────────────────
         active_est_ids = list(active_est_qs.values_list('id', flat=True))
 
-        # ── 1. MENU ITEMS ──────────────────────────────────────────────────
+        # ── 1. MENU ITEMS ─────────────────────────────────────────────────
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
             food_establishment__id__in=active_est_ids,
@@ -5930,12 +5911,12 @@ def search_menu_items(request):
             'price',
             'image',
             'quantity',
-            'is_top_seller',                          # ← ADDED: drives badge & modal logic
+            'is_top_seller',                            # ← ADDED: needed for Best Seller badge in search results
             'food_establishment__id',
             'food_establishment__name',
             'food_establishment__opening_time',
             'food_establishment__closing_time',
-            'food_establishment__address',            # ← ADDED: shown in modal
+            'food_establishment__address',              # ← ADDED: shown inside the modal establishment block
         )[:25]
 
         menus_data = []
@@ -5957,7 +5938,7 @@ def search_menu_items(request):
                 'price':         float(item['price']),
                 'image_url':     image_url,
                 'quantity':      item['quantity'],
-                'is_top_seller': item['is_top_seller'],     # ← ADDED
+                'is_top_seller': item['is_top_seller'],  # ← ADDED
                 'establishment': {
                     'id':      item['food_establishment__id'],
                     'name':    item['food_establishment__name'],
@@ -5966,7 +5947,9 @@ def search_menu_items(request):
                 },
             })
 
-        # ── 2. ESTABLISHMENTS ──────────────────────────────────────────────
+        # ── 2. ESTABLISHMENTS ─────────────────────────────────────────────
+        # Also annotate with the number of menu items matching the query
+        # so the front-end can render the "N menu matches" indicator.
         from django.db.models import Count, Q as DQ
 
         matched_est_ids_from_menus = list({
@@ -6004,7 +5987,8 @@ def search_menu_items(request):
                 'menu_match_count': menu_match_map.get(est.id, 0),
             })
 
-        # Add establishments that only appear via menu matches
+        # Also add establishments that only appear via menu matches
+        # (they have menu matches but didn't match by name/category)
         already_ids = {e['id'] for e in establishments_data}
         for eid in matched_est_ids_from_menus:
             if eid in already_ids:
@@ -6024,12 +6008,12 @@ def search_menu_items(request):
             except FoodEstablishment.DoesNotExist:
                 pass
 
-        # Sort: establishments with menu matches first, then alphabetical
+        # Sort: establishments with menu matches first (descending), then alphabetical
         establishments_data.sort(
             key=lambda e: (-e['menu_match_count'], e['name'].lower())
         )
 
-        # ── 3. CATEGORIES ──────────────────────────────────────────────────
+        # ── 3. CATEGORIES ─────────────────────────────────────────────────
         categories = list(
             Category.objects
             .filter(
@@ -6041,8 +6025,11 @@ def search_menu_items(request):
         )
 
         # ── 4. SUGGESTIONS (anti "No results") ───────────────────────────
+        # If nothing found at all, return the 5 closest-named items
+        # so the user always gets something useful.
         suggestions = []
         if not menus_data and not establishments_data and not categories:
+            # Fuzzy fallback: split query into words and try each word
             words = query.split()
             for word in words[:3]:
                 if len(word) < 2:
