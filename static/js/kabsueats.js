@@ -568,66 +568,6 @@ function closeMod() {
     currentModalItem = null;
 }
 
-// ─────────────────────────────────────────────
-// OPEN MODAL FOR SEARCHED MENU ITEMS
-// If item exists in bsData, use that (has full data + real-time status).
-// Otherwise construct from search result data stored in card's data-item attr.
-// Called with: openMenuSearchMod(itemId, cardElement)
-// ─────────────────────────────────────────────
-function openMenuSearchMod(itemId, cardEl) {
-    // Prefer bsData entry (has real-time status updates)
-    const bsEntry = bsData.find(x => x.id === itemId);
-    if (bsEntry) {
-        openMod(itemId);
-        return;
-    }
-    // Read item data from card's data-item attribute
-    let d = {};
-    try {
-        const card = (cardEl && cardEl.classList && cardEl.classList.contains('bsc'))
-            ? cardEl
-            : (cardEl && cardEl.closest ? cardEl.closest('.bsc') : null);
-        if (card && card.dataset.item) {
-            d = JSON.parse(card.dataset.item);
-        }
-    } catch(e) {}
-
-    const est = d.establishment || {};
-    currentModalItem = {
-        id:          d.id || itemId,
-        name:        d.name || '',
-        description: d.description || '',
-        price:       d.price || 0,
-        image:       d.image_url || null,
-        quantity:    d.quantity || 0,
-        is_top_seller: true,
-        establishment: {
-            id:      est.id || '',
-            name:    est.name || '',
-            address: est.address || '',
-            status:  est.status || 'closed',
-        }
-    };
-
-    const imgSrc = d.image_url || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(d.name || 'Item');
-    document.getElementById('mImg').src = imgSrc;
-    document.getElementById('mName').textContent = d.name || '';
-    document.getElementById('mDesc').textContent = d.description || '';
-    document.getElementById('mPrice').textContent = `₱${parseFloat(d.price || 0).toFixed(2)}`;
-    document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity || 0} Items`;
-    document.getElementById('mEstN').textContent = est.name || '';
-    document.getElementById('mEstA').textContent = est.address || '';
-
-    const st = (est.status || 'closed').toLowerCase();
-    const stEl = document.getElementById('mEstS');
-    stEl.className = `mests ${st}`;
-    stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
-
-    document.getElementById('mqty').value = 1;
-    document.getElementById('bsMod').classList.add('on');
-    document.body.style.overflow = 'hidden';
-}
-
 function chgQ(d) {
     const e = document.getElementById('mqty');
     const max = currentModalItem ? currentModalItem.quantity : 99;
@@ -1165,42 +1105,15 @@ function fillCarouselWithMenuItems(items, q) {
         const icon = eimg
             ? `<img src="${eimg}" alt="${escHtml(enm)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
             : `<i class="fas fa-utensils"></i>`;
-
-        // ── Badge & click behavior depend on is_top_seller ──
-        const isBS = !!item.is_top_seller;
-        const badgeHtml = isBS
-            ? `<span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>`
-            : `<span class="bsc-badge srch-badge srch-badge--menu"><i class="fas fa-utensils"></i> Menu Item</span>`;
-
-        // Store item data as a data attribute to avoid inline JSON issues
-        const clickFn = isBS
-            ? `openMenuSearchMod(${item.id},this)`
-            : `window.location.href='${URLS.estDetail}${eid}/'`;
-        const btnFn = isBS
-            ? `event.stopPropagation();openMenuSearchMod(${item.id},this.closest('.bsc'))`
-            : `event.stopPropagation();window.location.href='${URLS.estDetail}${eid}/'`;
-        const btnLabel = isBS ? `<i class="fas fa-eye"></i> View Details` : `<i class="fas fa-store"></i> Visit Store`;
-
-        // Stats row — show if top seller (has order data) or always show quantity
-        const statsHtml = isBS
-            ? `<div class="bsc-stats">
-                   <span><i class="fas fa-shopping-bag"></i> ${item.total_orders || 0} orders</span>
-                   <span><i class="fas fa-boxes"></i> ${item.quantity} left</span>
-               </div>`
-            : `<div class="bsc-stats">
-                   <span><i class="fas fa-boxes"></i> ${item.quantity} left</span>
-               </div>`;
-
-        return `<div class="bsc srch-bsc" data-item='${escHtml(JSON.stringify(item))}' onclick="${clickFn}">
+        return `<div class="bsc srch-bsc" onclick="window.location.href='${URLS.estDetail}${eid}/'">
             <div class="bsc-img">
                 <img src="${iSrc}" alt="${escHtml(item.name)}" loading="lazy"
                      onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                ${badgeHtml}
+                <span class="bsc-badge srch-badge srch-badge--menu"><i class="fas fa-utensils"></i> Menu Item</span>
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
                 <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
-                ${statsHtml}
                 <div class="bsc-est">
                     <div class="bsc-eico">${icon}</div>
                     <div class="bsc-einfo">
@@ -1208,8 +1121,8 @@ function fillCarouselWithMenuItems(items, q) {
                         <div class="bsc-emeta"><span class="sp ${est}">${est.toUpperCase()}</span></div>
                     </div>
                 </div>
-                <button class="bsc-btn" onclick="${btnFn}">
-                    ${btnLabel}
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${eid}/'">
+                    <i class="fas fa-store"></i> Visit Store
                 </button>
             </div>
         </div>`;
