@@ -1051,11 +1051,11 @@ function applyResultsToPage(data, q) {
 
     if (menus.length) {
         // MENU SEARCH: keep BS section visible with menu items in carousel;
-        // sort/hide establishment cards below based on match
+        // sort establishment cards — matched ones rise to top, unmatched hidden
         searchMode = 'menu';
         showBSSection();
         fillCarouselWithMenuItems(menus, q);
-        sortAndFilterEstCardsByMatch(menus);
+        sortAndFilterEstCardsByMatch(menus, ests);
 
     } else if (ests.length) {
         // EST/CATEGORY SEARCH: hide BS section; filter est cards
@@ -1251,11 +1251,11 @@ function showNoResultsCarousel(q) {
 // Cards with menu matches rise to top + get amber badge + ring.
 // Cards with no matches are HIDDEN.
 // ─────────────────────────────────────────────
-function sortAndFilterEstCardsByMatch(menuItems) {
+function sortAndFilterEstCardsByMatch(menuItems, apiEsts) {
     const grid = document.getElementById('estGrid');
     if (!grid) return;
 
-    // Build match map { estId -> count }
+    // Build match map { estId -> count } from menu items
     const matchMap = {};
     menuItems.forEach(item => {
         if (item.establishment?.id) {
@@ -1263,6 +1263,15 @@ function sortAndFilterEstCardsByMatch(menuItems) {
             matchMap[id] = (matchMap[id] || 0) + 1;
         }
     });
+
+    // Also absorb menu_match_count from API establishments (covers items beyond the first 25)
+    if (apiEsts && apiEsts.length) {
+        apiEsts.forEach(est => {
+            if (est.menu_match_count > 0) {
+                matchMap[est.id] = Math.max(matchMap[est.id] || 0, est.menu_match_count);
+            }
+        });
+    }
 
     const cards = Array.from(grid.querySelectorAll('.food-est-item'));
     clearEstBadges(cards);
@@ -1280,7 +1289,7 @@ function sortAndFilterEstCardsByMatch(menuItems) {
 
             const badge = document.createElement('div');
             badge.className = 'est-match-badge';
-            badge.innerHTML = `<i class="fas fa-check-circle"></i> This shop has what you are looking for!`;
+            badge.innerHTML = `<i class="fas fa-check-circle"></i> ${count} matching item${count > 1 ? 's' : ''} in this shop!`;
             const body = card.querySelector('.estc-body');
             if (body) body.insertBefore(badge, body.firstChild);
         } else {
