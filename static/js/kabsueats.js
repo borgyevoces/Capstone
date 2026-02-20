@@ -741,6 +741,8 @@ function clearAllRecents(e) {
     const inp = document.getElementById('hSearch');
     if (inp && !inp.value.trim()) showAsdDefault();
 }
+
+function rebuildAsdRows() {
     asdRows = Array.from(document.querySelectorAll('#asd .asd-row'));
     asdFocusIdx = -1;
 }
