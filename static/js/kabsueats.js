@@ -770,58 +770,20 @@ function saveProfile() {
 }
 
 // ============================================
+// SEARCH — real-time dropdown (establishments + menus)
 // ============================================
-// SEARCH — Smart Autocomplete with Recent Searches & Trending Hubs
-// ============================================
-
-// ── LocalStorage keys & limits ──
-const RECENT_KEY  = 'ke_recent_searches';
-const MAX_RECENT  = 6;
-const DEBOUNCE_MS = 240;
-
-// ── State ──
-let searchTimer   = null;
-let searchAbort   = null;
+let searchTimer = null;
+let searchAbort = null;   // AbortController for in-flight requests
 let searchFocused = false;
-let dropSelected  = -1;
-let _trendCache   = null;  // cached trending hubs
+let dropSelected = -1;    // keyboard nav index
 
-// ── Recent Searches helpers ──
-function getRecents() {
-    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch(e) { return []; }
-}
-function saveRecent(q) {
-    if (!q || q.length < 2) return;
-    let list = getRecents().filter(r => r.toLowerCase() !== q.toLowerCase());
-    list.unshift(q);
-    list = list.slice(0, MAX_RECENT);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch(e) {}
-}
-function removeRecent(q) {
-    const list = getRecents().filter(r => r !== q);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch(e) {}
-}
-function clearAllRecents() {
-    try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
-}
-
-// ── Trending fetch (cached) ──
-function fetchTrending(cb) {
-    if (_trendCache) { cb(_trendCache); return; }
-    const url = (typeof URLS !== 'undefined' && URLS.searchTrending) ? URLS.searchTrending : '/api/search-trending/';
-    fetch(url)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data && data.establishments) { _trendCache = data.establishments; cb(_trendCache); } })
-        .catch(() => {});
-}
-
-// ── Main init (replaces old initSearch) ──
 function initSearch() {
     const inp  = document.getElementById('hSearch');
     const clr  = document.getElementById('hClr');
     const drop = document.getElementById('searchDropdown');
-    if (!inp || !drop) return;
+    if (!inp) return;
 
+    // ── Input: debounce 260ms ──
     inp.addEventListener('input', function () {
         const q = this.value.trim();
         clr.classList.toggle('on', q.length > 0);
@@ -829,29 +791,20 @@ function initSearch() {
         clearTimeout(searchTimer);
 
         if (q.length < 1) {
-            filterEstCards('');
-            restoreNormalView();
-            showIdleDrop();
+            closeDrop();
+            filterEstCards('');   // restore all cards
+            restoreNormalView();  // restore bestsellers
             return;
         }
 
+        // Show skeleton immediately
         showDropSkeleton();
-        filterEstCards(q);
-        searchTimer = setTimeout(() => fetchSearchResults(q), DEBOUNCE_MS);
+        filterEstCards(q);        // filter DOM cards in real-time
+
+        searchTimer = setTimeout(() => fetchSearchResults(q), 260);
     });
 
-    inp.addEventListener('focus', function () {
-        searchFocused = true;
-        const q = this.value.trim();
-        if (q.length >= 1) fetchSearchResults(q);
-        else showIdleDrop();
-    });
-
-    inp.addEventListener('blur', function () {
-        searchFocused = false;
-        setTimeout(closeDrop, 180);
-    });
-
+    // ── Clear button ──
     clr.addEventListener('click', function () {
         inp.value = '';
         this.classList.remove('on');
@@ -861,27 +814,41 @@ function initSearch() {
         inp.focus();
     });
 
-    inp.addEventListener('keydown', function (e) {
-        const items = drop.querySelectorAll('.search-dropdown-item, .sdrop-recent-pill, .snr-pill');
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            dropSelected = Math.min(dropSelected + 1, items.length - 1);
-            highlightDropKbd(items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            dropSelected = Math.max(dropSelected - 1, -1);
-            highlightDropKbd(items);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].click();
-        } else if (e.key === 'Escape') {
-            closeDrop();
-            inp.blur();
+    // ── Focus: show dropdown if query exists ──
+    inp.addEventListener('focus', function () {
+        searchFocused = true;
+        if (this.value.trim().length >= 1) {
+            fetchSearchResults(this.value.trim());
         }
     });
 
+    // ── Keyboard navigation ──
+    inp.addEventListener('keydown', function (e) {
+        const items = document.querySelectorAll('.search-dropdown-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            dropSelected = Math.min(dropSelected + 1, items.length - 1);
+            highlightDropItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            dropSelected = Math.max(dropSelected - 1, -1);
+            highlightDropItem(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (dropSelected >= 0 && items[dropSelected]) {
+                items[dropSelected].click();
+            }
+        } else if (e.key === 'Escape') {
+            closeDrop();
+        }
+    });
+
+    // ── Hint pills — clicking a pill searches for it ──
     document.querySelectorAll('.hs-hint-pill').forEach(pill => {
         pill.addEventListener('click', function (e) {
+            // Only intercept if it's a plain span (not an anchor to a real page)
             if (this.tagName === 'A') return;
             e.preventDefault();
             const text = this.textContent.trim().replace(/^[^\w]+/, '');
@@ -892,14 +859,13 @@ function initSearch() {
             inp.focus();
         });
     });
-
-    // Pre-warm trending cache
-    fetchTrending(() => {});
 }
 
-function highlightDropKbd(items) {
-    items.forEach((el, i) => { el.classList.toggle('kbd-focus', i === dropSelected); });
-    if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].scrollIntoView({ block: 'nearest' });
+function highlightDropItem(items) {
+    items.forEach((el, i) => {
+        el.style.background = i === dropSelected ? 'var(--g50)' : '';
+    });
+    if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
 }
 
 function closeDrop() {
@@ -919,196 +885,349 @@ function filterEstCards(q) {
     });
 }
 
-// ── Idle panel (shown on focus with empty input) ──
-function showIdleDrop() {
-    const drop    = document.getElementById('searchDropdown');
-    const content = document.getElementById('searchDropdownContent');
-    if (!drop || !content) return;
-
-    let html = '';
-
-    const recents = getRecents();
-    if (recents.length > 0) {
-        html += `
-        <div class="search-dropdown-section">
-            <div class="search-dropdown-title" style="justify-content:space-between;display:flex;align-items:center;">
-                <span style="display:flex;align-items:center;gap:6px;"><i class="fas fa-history"></i> Recent Searches</span>
-                <span style="font-size:10px;color:var(--red);cursor:pointer;font-weight:600;padding:2px 6px;border-radius:4px;transition:background .15s;" onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background=''" onclick="clearAllRecents();showIdleDrop();">Clear all</span>
-            </div>
-            <div style="padding:4px 12px 10px;display:flex;flex-wrap:wrap;gap:6px;">
-                ${recents.map(r => `
-                <span style="display:inline-flex;align-items:center;gap:6px;background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--g700);cursor:pointer;transition:background .15s,color .15s;"
-                    onclick="searchPillClick(${JSON.stringify(r)})"
-                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)';this.style.borderColor='rgba(183,28,28,.2)'"
-                    onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)';this.style.borderColor='var(--g200)'">
-                    <i class="fas fa-search" style="font-size:9px;opacity:.5;"></i>
-                    ${escHtml(r)}
-                    <span onclick="event.stopPropagation();removeAndRefresh(${JSON.stringify(r)})" style="font-size:10px;color:var(--g400);padding:1px 2px;border-radius:50%;"><i class="fas fa-times"></i></span>
-                </span>`).join('')}
-            </div>
-        </div>`;
-    }
-
-    html += `
-    <div class="search-dropdown-section" id="sdropTrending">
-        <div class="search-dropdown-title">
-            <i class="fas fa-fire" style="color:#ef4444;"></i> Trending Food Hubs
-        </div>
-        <div id="sdropTrendRow" style="padding:4px 12px 12px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;">
-            ${[1,2,3,4,5].map(() => `
-            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;">
-                <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
-                <div style="height:9px;width:48px;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
-            </div>`).join('')}
-        </div>
-    </div>`;
-
-    if (!recents.length && !_trendCache) {
-        html = `<div style="padding:20px 16px;text-align:center;color:var(--g400);font-size:13px;">
-            <i class="fas fa-search" style="font-size:22px;display:block;margin-bottom:8px;color:var(--g300);"></i>
-            Start typing to search menus &amp; food hubs
-        </div>`;
-    }
-
-    content.innerHTML = html;
-    drop.classList.add('active');
-
-    // Async-fill trending hubs
-    fetchTrending(ests => {
-        const row = document.getElementById('sdropTrendRow');
-        if (!row) return;
-        if (!ests || !ests.length) {
-            const sec = document.getElementById('sdropTrending');
-            if (sec) sec.remove();
-            return;
-        }
-        row.innerHTML = ests.slice(0, 8).map(est => {
-            const sClass = (est.status || '').toLowerCase() === 'open' ? 'open' : 'closed';
-            const sBg    = sClass === 'open' ? '#d1fae5' : '#fee2e2';
-            const sFg    = sClass === 'open' ? '#065f46' : '#991b1b';
-            const img    = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                : `<i class="fas fa-store"></i>`;
-            const url = (typeof URLS !== 'undefined' && URLS.estDetail) ? `${URLS.estDetail}${est.id}/` : `/food_establishment/${est.id}/`;
-            return `
-            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;cursor:pointer;" onclick="saveRecent('${escHtml(est.name).replace(/'/g,'\\x27')}');window.location.href='${url}'">
-                <div style="width:48px;height:48px;border-radius:14px;background:var(--g100);border:2px solid var(--g200);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--g600);overflow:hidden;transition:border-color .2s;"
-                    onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--g200)'">${img}</div>
-                <div style="font-size:10px;font-weight:600;color:var(--g700);text-align:center;line-height:1.3;max-width:72px;word-break:break-word;">${escHtml(est.name)}</div>
-                <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:${sBg};color:${sFg};">${sClass.toUpperCase()}</span>
-            </div>`;
-        }).join('');
-        row.style.cssText += '-webkit-overflow-scrolling:touch;';
-    });
-}
-
 // ── Skeleton while loading ──
 function showDropSkeleton() {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
-    if (!drop || !content) return;
     content.innerHTML = `
-    <div style="padding:14px 16px;">
-        <div style="height:11px;width:35%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:6px;margin-bottom:12px;"></div>
-        ${[1,2,3].map(() => `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <div style="width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
-            <div style="flex:1;">
-                <div style="height:12px;width:65%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;margin-bottom:7px;"></div>
-                <div style="height:10px;width:45%;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;"></div>
-            </div>
-            <div style="width:42px;height:14px;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;flex-shrink:0;"></div>
-        </div>`).join('')}
-    </div>`;
+        <div style="padding:14px 16px;">
+            <div style="height:11px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:6px;margin-bottom:10px;width:40%"></div>
+            ${[1,2,3].map(() => `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
+                <div style="flex:1;">
+                    <div style="height:12px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;margin-bottom:6px;width:65%"></div>
+                    <div style="height:10px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;width:45%"></div>
+                </div>
+            </div>`).join('')}
+        </div>`;
     drop.classList.add('active');
 }
 
 // ── Main API fetch ──
 function fetchSearchResults(q) {
+    // Cancel any pending request
     if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
 
     lastSearchQuery = q;
 
     fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
-        .then(r => r.ok ? r.json() : { menus: [], establishments: [] })
+        .then(r => r.json())
         .then(data => {
             renderSearchDrop(data, q);
             applySearchToPage(data, q);
         })
-        .catch(err => { if (err.name !== 'AbortError') closeDrop(); });
+        .catch(err => {
+            if (err.name !== 'AbortError') closeDrop();
+        });
 }
 
-// ── Render live dropdown ──
+// ============================================
+// SMART SEARCH: Apply search results to the page
+// – Menu search:        replace bestsellers with matching menu items
+//                       + sort establishment cards by match count
+// – Est search only:    replace bestsellers with matching establishments
+//                       + filter establishment cards
+// – Clear:              restore everything to normal
+// ============================================
+
+function applySearchToPage(data, q) {
+    const menuItems = data.menus          || [];
+    const estItems  = data.establishments || [];
+
+    if (menuItems.length > 0) {
+        // ── MENU MODE ──
+        searchMode = 'menu';
+        renderMenuSearchInBS(menuItems, q);
+        sortEstCardsByMenuMatch(menuItems, q);
+    } else if (estItems.length > 0) {
+        // ── ESTABLISHMENT MODE ──
+        searchMode = 'establishment';
+        renderEstSearchInBS(estItems, q);
+        // filterEstCards already called from input handler
+    } else {
+        // ── NO RESULTS ──
+        searchMode = 'empty';
+        showBSSearchEmpty(q);
+        // keep est cards filtered as-is
+    }
+}
+
+function restoreNormalView() {
+    if (searchMode === 'none') return;
+    searchMode = 'none';
+    lastSearchQuery = '';
+
+    // Restore BS title
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
+
+    // Re-render actual bestsellers
+    if (bsData.length > 0) {
+        renderBS(bsData);
+    } else {
+        fetchBestsellers();
+    }
+
+    // Remove all match indicators from est cards
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    // Restore establishment card order (re-append in original DOM order)
+    const grid = document.getElementById('estGrid');
+    if (grid) {
+        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+        cards.sort((a, b) => {
+            const oa = parseInt(a.dataset.originalOrder || 9999);
+            const ob = parseInt(b.dataset.originalOrder || 9999);
+            return oa - ob;
+        });
+        cards.forEach(c => grid.appendChild(c));
+    }
+}
+
+// ── Show menu items in the bestseller carousel area ──
+function renderMenuSearchInBS(items, q) {
+    // Update section title
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> Menu results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    // Remove grid mode if active so carousel layout shows
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = items.map(item => {
+        const estId   = item.establishment ? item.establishment.id   : '';
+        const estName = item.establishment ? item.establishment.name : '';
+        const estStatus = item.establishment ? (item.establishment.status || 'closed').toLowerCase() : 'closed';
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
+        const imgSrc  = item.image_url || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(item.name);
+        const estIconHtml = estImg
+            ? `<img src="${estImg}" alt="${escHtml(estName)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            : `<i class="fas fa-utensils"></i>`;
+
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(item.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
+                <span class="bsc-badge bsc-badge-search"><i class="fas fa-search"></i> Search Result</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
+                <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
+                <div class="bsc-est">
+                    <div class="bsc-eico">${estIconHtml}</div>
+                    <div class="bsc-einfo">
+                        <div class="bsc-ename">${highlightMatch(escHtml(estName), q)}</div>
+                        <div class="bsc-emeta">
+                            <span class="sp ${estStatus}">${estStatus.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${estId}/'">
+                    <i class="fas fa-store"></i> Visit Store
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ── Show establishments in the bestseller area (when searching est names) ──
+function renderEstSearchInBS(ests, q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-store"></i> Establishments matching "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = ests.map(est => {
+        const isOpen = est.status === 'Open';
+        const stClass = isOpen ? 'open' : 'closed';
+        const estImg  = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
+        const imgSrc  = estImg || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(est.name);
+
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(est.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Restaurant'">
+                <span class="bsc-badge bsc-badge-est"><i class="fas fa-store"></i> Establishment</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
+                <div class="bsc-price" style="color:#6b7280;font-size:12px;">${escHtml(est.category || 'Food')}</div>
+                <div class="bsc-est">
+                    <div class="bsc-einfo" style="padding-left:0">
+                        <div class="bsc-emeta">
+                            <span class="sp ${stClass}">${est.status || 'UNKNOWN'}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${est.id}/'">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ── Show empty state in BS area ──
+function showBSSearchEmpty(q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> No results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (track) {
+        track.innerHTML = `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">
+            <i class="fas fa-search" style="font-size:28px;margin-bottom:12px;display:block;color:#d1d5db;"></i>
+            No items or restaurants match "<strong style="color:#374151;">${escHtml(q)}</strong>".<br>
+            <span style="font-size:12px;margin-top:6px;display:block;">Try a different keyword.</span>
+        </div>`;
+    }
+}
+
+// ── Sort establishment cards by how many menu items match the search ──
+// Items with matches bubble to top; badge shows match count
+function sortEstCardsByMenuMatch(menuItems, q) {
+    const grid = document.getElementById('estGrid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+    // Save original order once
+    cards.forEach((card, i) => {
+        if (!card.dataset.originalOrder) card.dataset.originalOrder = i;
+    });
+
+    // Build a map: estId → count of matching menu items
+    const matchMap = {};
+    menuItems.forEach(item => {
+        if (item.establishment) {
+            const id = item.establishment.id;
+            matchMap[id] = (matchMap[id] || 0) + 1;
+        }
+    });
+
+    // Remove old badges
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    // Add badge and sort
+    cards.forEach(card => {
+        const id = parseInt(card.dataset.id);
+        const count = matchMap[id] || 0;
+
+        if (count > 0) {
+            // Add a match badge
+            const badge = document.createElement('div');
+            badge.className = 'est-match-badge';
+            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
+            // Insert after the status badge
+            const body = card.querySelector('.estc-body');
+            if (body) body.insertBefore(badge, body.firstChild);
+            card.dataset.matchCount = count;
+            card.style.display = '';
+        } else {
+            card.dataset.matchCount = 0;
+            // Don't hide — just push to bottom; still visible for context
+        }
+    });
+
+    // Sort: more matches = earlier; 0 matches = after
+    cards.sort((a, b) => {
+        const ma = parseInt(a.dataset.matchCount || 0);
+        const mb = parseInt(b.dataset.matchCount || 0);
+        if (mb !== ma) return mb - ma;
+        return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
+    });
+
+    // Re-append in new order
+    cards.forEach(card => grid.appendChild(card));
+}
+
+// ── Render results ──
 function renderSearchDrop(data, q) {
     const drop    = document.getElementById('searchDropdown');
     const content = document.getElementById('searchDropdownContent');
-    if (!drop || !content) return;
-    dropSelected = -1;
+    dropSelected  = -1;
 
-    // OPEN-first sort
-    const openFirst = arr => arr.slice().sort((a, b) => {
-        const aS = ((a.establishment ? a.establishment.status : a.status) || '').toLowerCase() === 'open' ? 0 : 1;
-        const bS = ((b.establishment ? b.establishment.status : b.status) || '').toLowerCase() === 'open' ? 0 : 1;
-        return aS - bS;
-    });
-
-    const items = openFirst(data.menus || []);
-    const ests  = openFirst(data.establishments || []);
+    const items = data.menus          || [];
+    const ests  = data.establishments || [];
     let html = '';
 
-    // ── Menu items ──
+    // ── Menu Items section ──
     if (items.length > 0) {
         html += `<div class="search-dropdown-section">
             <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
-        items.slice(0, 5).forEach(item => {
+        items.slice(0, 6).forEach(item => {
             const estId   = item.establishment ? item.establishment.id   : '';
             const estName = item.establishment ? item.establishment.name : '';
-            const estSt   = item.establishment ? (item.establishment.status || 'Closed') : 'Closed';
-            const stCls   = estSt.toLowerCase() === 'open' ? 'open' : 'closed';
-            const stBg    = stCls === 'open' ? '#d1fae5' : '#fee2e2';
-            const stFg    = stCls === 'open' ? '#065f46' : '#991b1b';
-            const imgHtml = item.image_url
-                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            // API returns image_url, not image
+            const imgSrc  = item.image_url
+                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
                 : `<i class="fas fa-utensils"></i>`;
-            const url = URLS.estDetail ? `${URLS.estDetail}${estId}/` : `/food_establishment/${estId}/`;
-            html += `<div class="search-dropdown-item" onclick="saveRecent(${JSON.stringify(item.name)});window.location.href='${url}'">
-                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgHtml}</div>
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgSrc}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
                     <div class="search-dropdown-item-meta">
-                        <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:${stBg};color:${stFg};">${estSt}</span>
+                        <span style="color:#B71C1C;font-weight:700;">₱${parseFloat(item.price).toFixed(2)}</span>
                         <span>•</span>
                         <i class="fas fa-store" style="font-size:9px;"></i>
                         <span>${highlightMatch(escHtml(estName), q)}</span>
                     </div>
                 </div>
-                <span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--red);white-space:nowrap;flex-shrink:0;">₱${parseFloat(item.price || 0).toFixed(2)}</span>
             </div>`;
         });
         html += '</div>';
     }
 
-    // ── Establishments ──
+    // ── Establishments section ──
     if (ests.length > 0) {
         html += `<div class="search-dropdown-section">
-            <div class="search-dropdown-title"><i class="fas fa-store"></i> Food Hubs</div>`;
+            <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
         ests.slice(0, 4).forEach(est => {
-            const stCls  = (est.status || '').toLowerCase() === 'open' ? 'open' : 'closed';
-            const stBg   = stCls === 'open' ? '#d1fae5' : '#fee2e2';
-            const stFg   = stCls === 'open' ? '#065f46' : '#991b1b';
-            const estImg = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+            const isOpen   = est.status === 'Open';
+            const stColor  = isOpen ? '#10b981' : '#ef4444';
+            const stDot    = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
+            const estImgSrc = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
                 : `<i class="fas fa-store"></i>`;
-            const url = URLS.estDetail ? `${URLS.estDetail}${est.id}/` : `/food_establishment/${est.id}/`;
-            html += `<div class="search-dropdown-item" onclick="saveRecent(${JSON.stringify(est.name)});window.location.href='${url}'">
-                <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImg}</div>
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImgSrc}</div>
                 <div style="min-width:0;flex:1;">
                     <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
                     <div class="search-dropdown-item-meta">
-                        <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:${stBg};color:${stFg};">${est.status || 'Unknown'}</span>
+                        ${stDot}
+                        <span style="color:${stColor};font-weight:600;">${est.status}</span>
                         <span>•</span>
-                        <span>${escHtml(est.category || 'Food')}</span>
+                        <span>${escHtml(est.category)}</span>
                     </div>
                 </div>
             </div>`;
@@ -1116,42 +1235,18 @@ function renderSearchDrop(data, q) {
         html += '</div>';
     }
 
-    // ── No results with smart suggestions ──
+    // ── No results ──
     if (!html) {
-        const allNames = [...getRecents(), ...(_trendCache || []).map(e => e.name)]
-            .filter(n => n.toLowerCase() !== q.toLowerCase()).slice(0, 6);
         html = `<div class="search-no-results">
-            <i class="fas fa-search" style="font-size:26px;color:var(--g300);display:block;margin-bottom:8px;"></i>
-            <div style="font-weight:600;color:var(--g700);margin-bottom:4px;font-size:14px;">No results for "<strong>${escHtml(q)}</strong>"</div>
-            <div style="font-size:11px;color:var(--g400);margin-bottom:${allNames.length ? '12px' : '0'};">Try a different keyword or browse below.</div>
-            ${allNames.length ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">
-                ${allNames.map(s => `<span onclick="searchPillClick(${JSON.stringify(s)})"
-                    style="background:var(--g100);border:1px solid var(--g200);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;color:var(--g700);cursor:pointer;"
-                    onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)'" onmouseout="this.style.background='var(--g100)';this.style.color='var(--g700)'">${escHtml(s)}</span>`).join('')}
-            </div>` : ''}
-        </div>`;
-    } else if (items.length + ests.length >= 4) {
-        html += `<div onclick="closeDrop()" style="display:block;padding:11px 16px;font-size:12px;font-weight:600;color:var(--red);text-align:center;cursor:pointer;border-top:1px solid var(--g100);transition:background .15s;" onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background=''">
-            <i class="fas fa-search"></i> See all results for "<strong>${escHtml(q)}</strong>"
+            <i class="fas fa-search" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
+            <div style="font-weight:600;color:#374151;margin-bottom:4px;">No results for "${escHtml(q)}"</div>
+            <div style="font-size:11px;color:#9ca3af;">Try a different keyword or browse below</div>
         </div>`;
     }
 
     content.innerHTML = html;
     drop.classList.add('active');
 }
-
-// ── Pill click helpers ──
-function searchPillClick(text) {
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
-    if (!inp) return;
-    inp.value = text;
-    if (clr) clr.classList.add('on');
-    filterEstCards(text);
-    fetchSearchResults(text);
-    inp.focus();
-}
-function removeAndRefresh(text) { removeRecent(text); showIdleDrop(); }
 
 function highlightMatch(text, q) {
     const re = new RegExp(`(${escapeRe(q)})`, 'gi');
