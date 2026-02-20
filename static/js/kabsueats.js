@@ -575,17 +575,21 @@ function showAsdDefault() {
     const data = (typeof SUGGEST_DATA !== 'undefined') ? SUGGEST_DATA : { establishments: [], categories: [] };
     let html = '';
 
-    // Recent searches from localStorage (if available)
+    // Recent searches from localStorage
     let recents = [];
     try { recents = JSON.parse(localStorage.getItem('kse_recent') || '[]'); } catch(e) {}
+
     if (recents.length > 0) {
         html += `<div class="asd-section">
-            <div class="asd-section-title"><i class="fas fa-history"></i> Recent Searches</div>`;
-        recents.slice(0, 3).forEach(r => {
+            <div class="asd-section-title-row">
+                <div class="asd-section-title"><i class="fas fa-history"></i> Recent Searches</div>
+                <button class="asd-clear-all" onclick="clearAllRecents(event)">Clear all</button>
+            </div>`;
+        recents.slice(0, 5).forEach((r, idx) => {
             html += `<div class="asd-row" data-type="recent" data-val="${escHtml(r)}" onclick="pickAsd('${escHtml(r)}','recent')">
                 <div class="asd-ico hist"><i class="fas fa-history"></i></div>
                 <div class="asd-text"><div class="asd-name">${escHtml(r)}</div></div>
-                <i class="fas fa-arrow-up-left asd-arrow" style="transform:rotate(45deg)"></i>
+                <button class="asd-del" title="Remove" onclick="deleteRecent(event,${idx})" tabindex="-1"><i class="fas fa-times"></i></button>
             </div>`;
         });
         html += `</div>`;
@@ -627,7 +631,8 @@ function showAsdDefault() {
     if (!html) { closeAsd(); return; }
     inner.innerHTML = html;
     asd.classList.add('open');
-    document.getElementById('hsHints') && (document.getElementById('hsHints').style.opacity = '0');
+    const hints = document.getElementById('hsHints');
+    if (hints) hints.style.opacity = '0';
     rebuildAsdRows();
 }
 
@@ -714,7 +719,28 @@ function showAsdForQuery(q) {
     rebuildAsdRows();
 }
 
-function rebuildAsdRows() {
+// ── Delete a single recent search ──
+function deleteRecent(e, idx) {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+        let recents = JSON.parse(localStorage.getItem('kse_recent') || '[]');
+        recents.splice(idx, 1);
+        localStorage.setItem('kse_recent', JSON.stringify(recents));
+    } catch(err) {}
+    // Re-render the dropdown
+    const inp = document.getElementById('hSearch');
+    if (inp && !inp.value.trim()) showAsdDefault();
+}
+
+// ── Clear all recent searches ──
+function clearAllRecents(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    try { localStorage.setItem('kse_recent', '[]'); } catch(err) {}
+    const inp = document.getElementById('hSearch');
+    if (inp && !inp.value.trim()) showAsdDefault();
+}
     asdRows = Array.from(document.querySelectorAll('#asd .asd-row'));
     asdFocusIdx = -1;
 }

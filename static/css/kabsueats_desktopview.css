@@ -76,7 +76,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* HERO SEARCH                                  */
 /* ============================================ */
 .hero { padding: 36px 0 48px; text-align: center; }
-.hsw { position: relative; max-width: 680px; margin: 0 auto; }
+.hsw { position: relative; max-width: 680px; margin: 0 auto; z-index: 1200; isolation: isolate; }
 .hs-lbl { display: none; }
 .hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,.09); transition: border-color .25s, box-shadow .25s; overflow: hidden; }
 .hs-cont:focus-within { border-color: var(--red); box-shadow: 0 4px 24px rgba(183,28,28,.15); }
@@ -97,15 +97,19 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hs-hint-pill i { font-size: 11px; color: var(--red); }
 
 /* ── Advanced Search Dropdown ── */
-.asd { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 1300; display: none; }
+.asd { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 9999; display: none; }
 .asd.open { display: block; }
-.asd-inner { background: #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.14); border: 1px solid var(--g200); overflow: hidden; text-align: left; animation: asdIn .18s ease; }
+.asd-inner { background: #fff; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.18); border: 1px solid var(--g200); overflow: hidden; text-align: left; animation: asdIn .18s ease; max-height: 480px; overflow-y: auto; }
 @keyframes asdIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 .asd-section { padding: 6px 0; }
 .asd-section + .asd-section { border-top: 1px solid var(--g100); }
 .asd-section-title { padding: 8px 16px 4px; font-size: 10px; font-weight: 800; color: var(--g400); text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px; }
 .asd-section-title i { font-size: 10px; }
-.asd-row { padding: 9px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background .12s; border-radius: 0; }
+.asd-section-title-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 4px; }
+.asd-section-title-row .asd-section-title { padding: 0; }
+.asd-clear-all { font-size: 10px; font-weight: 700; color: var(--red); cursor: pointer; background: none; border: none; font-family: 'Poppins', sans-serif; padding: 2px 6px; border-radius: 4px; transition: background .15s; }
+.asd-clear-all:hover { background: var(--red-light); }
+.asd-row { padding: 9px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background .12s; }
 .asd-row:hover, .asd-row.focused { background: #fef2f2; }
 .asd-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
 .asd-ico.est { background: var(--red-light); color: var(--red); }
@@ -120,6 +124,8 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .asd-badge.open { background: #dcfce7; color: #15803d; }
 .asd-badge.closed { background: #fee2e2; color: #b91c1c; }
 .asd-arrow { color: var(--g300); font-size: 11px; flex-shrink: 0; }
+.asd-del { width: 24px; height: 24px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center; color: var(--g300); font-size: 11px; cursor: pointer; transition: background .15s, color .15s; flex-shrink: 0; font-family: 'Poppins', sans-serif; }
+.asd-del:hover { background: var(--red-light); color: var(--red); }
 .asd-empty { padding: 20px 16px; text-align: center; color: var(--g400); font-size: 13px; }
 .asd-empty i { display: block; font-size: 22px; margin-bottom: 6px; color: var(--g300); }
 .asd-footer { padding: 10px 16px; border-top: 1px solid var(--g100); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--g400); }
