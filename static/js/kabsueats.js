@@ -1050,22 +1050,27 @@ function applyResultsToPage(data, q) {
     const ests  = data.establishments || [];
 
     if (menus.length) {
-        // MENU SEARCH: keep BS section visible with menu items in carousel;
-        // sort establishment cards — matched ones rise to top, unmatched hidden
+        // ── MENU SEARCH ─────────────────────────────────────────────────────
+        // 1. BS carousel: show ALL matching menu items (bestsellers first)
+        // 2. Est grid: sort shops that carry this item to top with indicator badge
+        //    hide shops that do NOT carry the item
         searchMode = 'menu';
         showBSSection();
         fillCarouselWithMenuItems(menus, q);
         sortAndFilterEstCardsByMatch(menus, ests);
 
     } else if (ests.length) {
-        // EST/CATEGORY SEARCH: hide BS section; filter est cards
+        // ── ESTABLISHMENT SEARCH ─────────────────────────────────────────────
+        // 1. BS carousel: replaced with matching establishment cards
+        // 2. Est grid: only show matching shops
         searchMode = 'establishment';
-        hideBSSection();
+        showBSSection();
+        fillCarouselWithEstablishments(ests, q);
         filterEstCardsByEstSearch(ests);
         clearEstBadges();
 
     } else {
-        // NO RESULTS
+        // ── NO RESULTS ───────────────────────────────────────────────────────
         searchMode = 'empty';
         showBSSection();
         showNoResultsCarousel(q);
@@ -1248,23 +1253,23 @@ function showNoResultsCarousel(q) {
 
 // ─────────────────────────────────────────────
 // SORT + FILTER ESTABLISHMENT CARDS FOR MENU SEARCH
-// Cards with menu matches rise to top + get amber badge + ring.
-// Cards with no matches are HIDDEN.
+// Matched cards rise to top with amber ring + item-count badge.
+// Non-matching cards are hidden so user sees only relevant shops.
 // ─────────────────────────────────────────────
 function sortAndFilterEstCardsByMatch(menuItems, apiEsts) {
     const grid = document.getElementById('estGrid');
     if (!grid) return;
 
-    // Build match map { estId -> count } from menu items
+    // Build matchMap { estId -> count } from returned menu items
     const matchMap = {};
     menuItems.forEach(item => {
-        if (item.establishment?.id) {
+        if (item.establishment && item.establishment.id) {
             const id = item.establishment.id;
             matchMap[id] = (matchMap[id] || 0) + 1;
         }
     });
-
-    // Also absorb menu_match_count from API establishments (covers items beyond the first 25)
+    // Merge menu_match_count from the API establishments list
+    // (covers shops whose items may be beyond the 100-item cap)
     if (apiEsts && apiEsts.length) {
         apiEsts.forEach(est => {
             if (est.menu_match_count > 0) {
@@ -1282,23 +1287,21 @@ function sortAndFilterEstCardsByMatch(menuItems, apiEsts) {
         card.dataset.matchCount = count;
 
         if (count > 0) {
-            // Matched: visible, amber ring, descriptive badge
             card.style.display       = '';
-            card.style.outline       = '2px solid #f59e0b';
+            card.style.outline       = '2.5px solid #f59e0b';
             card.style.outlineOffset = '-2px';
 
             const badge = document.createElement('div');
             badge.className = 'est-match-badge';
-            badge.innerHTML = `<i class="fas fa-check-circle"></i> ${count} matching item${count > 1 ? 's' : ''} in this shop!`;
+            badge.innerHTML = '<i class="fas fa-utensils"></i> ' + count + ' matching item' + (count > 1 ? 's' : '') + ' available here';
             const body = card.querySelector('.estc-body');
             if (body) body.insertBefore(badge, body.firstChild);
         } else {
-            // No match: hide
             card.style.display = 'none';
         }
     });
 
-    // Re-sort matched cards: most matches first
+    // Re-sort matched cards: most matches first, then original order
     const matched = cards.filter(c => parseInt(c.dataset.matchCount || 0) > 0);
     matched.sort((a, b) => {
         const ma = parseInt(a.dataset.matchCount || 0);
@@ -1308,7 +1311,7 @@ function sortAndFilterEstCardsByMatch(menuItems, apiEsts) {
     });
     matched.forEach(c => grid.appendChild(c));
 
-    // Show/hide no-match message
+    // Show/hide no-match fallback message
     const noMatchMsg = document.getElementById('estNoMatchMsg');
     if (matched.length === 0) {
         if (!noMatchMsg) {
@@ -1322,7 +1325,7 @@ function sortAndFilterEstCardsByMatch(menuItems, apiEsts) {
     } else {
         if (noMatchMsg) noMatchMsg.remove();
     }
-}
+}}
 
 // ─────────────────────────────────────────────
 // FILTER EST CARDS FOR EST/CATEGORY SEARCH
@@ -1345,6 +1348,7 @@ function clearEstBadges(cards) {
         card.dataset.matchCount  = 0;
         card.style.outline       = '';
         card.style.outlineOffset = '';
+        card.style.borderRadius  = '';
     });
     const noMatchMsg = document.getElementById('estNoMatchMsg');
     if (noMatchMsg) noMatchMsg.remove();
@@ -1363,21 +1367,34 @@ function restoreNormalView() {
     if (titleEl) titleEl.innerHTML =
         '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
 
-    // Ensure BS section is visible
-    showBSSection();
+    // Force-show BS section (works even if bsHidden is already false)
+    const sec = document.getElementById('bsSec');
+    if (sec) {
+        sec.style.transition  = 'max-height .38s ease, opacity .28s ease';
+        sec.style.maxHeight   = '3000px';
+        sec.style.opacity     = '1';
+        bsHidden = false;
+        setTimeout(() => {
+            sec.style.overflow = sec.style.maxHeight = sec.style.transition = '';
+        }, 420);
+    }
 
     // Restore bestseller carousel
     if (bsData && bsData.length) renderBS(bsData);
     else fetchBestsellers();
 
-    // Remove all match indicators
+    // Remove all match indicators + outlines
     clearEstBadges();
 
     // Restore original card order + visibility
     const grid = document.getElementById('estGrid');
     if (grid) {
         const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-        cards.forEach(c => { c.style.display = ''; });
+        cards.forEach(c => {
+            c.style.display = '';
+            c.style.outline = '';
+            c.style.outlineOffset = '';
+        });
         cards.sort((a, b) =>
             (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0)
         );
