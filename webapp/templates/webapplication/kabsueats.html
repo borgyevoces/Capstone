@@ -158,10 +158,7 @@
                     value="{{ q|default:'' }}" autocomplete="off"/>
                 <i class="fas fa-times hs-clr" id="hClr"></i>
             </div>
-            <!-- Live search dropdown -->
-            <div class="search-dropdown" id="searchDropdown">
-                <div id="searchDropdownContent"></div>
-            </div>
+            <!-- Live search dropdown removed -->
             <div class="hs-hints">
                 <span class="hs-hint-label"><i class="fas fa-trophy"></i> Top Rated:</span>
                 {% for est in food_establishments|slice:":5" %}
@@ -493,7 +490,6 @@
         addToCart:      "{% url 'add_to_cart' %}",
         cartCount:      "{% url 'get_cart_count' %}",
         nearbyEst:      "{% url 'get_nearby_establishments' %}",
-        searchMenu:     "{% url 'search_menu_items' %}",
         estDetail:      "/food_establishment/",  // append {id}/
         createCash:     "{% url 'create_cash_order' %}",
         cart:           "{% url 'view_cart' %}",

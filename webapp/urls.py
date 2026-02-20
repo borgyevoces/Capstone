@@ -106,7 +106,6 @@ urlpatterns = [
                   path('api/establishment/nearby/', views.get_nearby_establishments, name='get_nearby_establishments'),
 
                   # Client Side
-                  path('api/search-menu/', views.search_menu_items, name='search_menu_items'),
                   path('my-purchases/', views.order_history_view, name='order_history'),
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
                   path('api/reorder/<int:order_id>/', views.reorder_items, name='reorder_items'),
