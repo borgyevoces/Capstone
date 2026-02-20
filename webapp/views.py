@@ -5849,6 +5849,9 @@ def search_menu_items(request):
                        Categories; each establishment result carries a
                        'menu_match_count' so the front-end can show the
                        "N menu matches" badge and sort cards accordingly.
+                       Each menu item now also carries 'is_top_seller' so
+                       the front-end can render the Best Seller badge and
+                       open the detail modal for those items.
     """
     try:
         query = request.GET.get('q', '').strip()
@@ -5869,10 +5872,10 @@ def search_menu_items(request):
                 cats = ', '.join(c.name for c in est.categories.all())
                 est_status = get_current_status(est.opening_time, est.closing_time)
                 ests_data.append({
-                    'id':       est.id,
-                    'name':     est.name,
-                    'category': cats or 'Other',
-                    'status':   est_status,
+                    'id':        est.id,
+                    'name':      est.name,
+                    'category':  cats or 'Other',
+                    'status':    est_status,
                     'image_url': est.image.url if est.image else None,
                 })
 
@@ -5886,12 +5889,12 @@ def search_menu_items(request):
             )
 
             return JsonResponse({
-                'success':       True,
-                'empty_query':   True,
-                'menus':         [],
+                'success':        True,
+                'empty_query':    True,
+                'menus':          [],
                 'establishments': ests_data,
-                'categories':    categories,
-                'query':         '',
+                'categories':     categories,
+                'query':          '',
             })
 
         # ── ACTIVE EST IDs list (for filtering menus) ────────────────────
@@ -5908,10 +5911,12 @@ def search_menu_items(request):
             'price',
             'image',
             'quantity',
+            'is_top_seller',                            # ← ADDED: needed for Best Seller badge in search results
             'food_establishment__id',
             'food_establishment__name',
             'food_establishment__opening_time',
             'food_establishment__closing_time',
+            'food_establishment__address',              # ← ADDED: shown inside the modal establishment block
         )[:25]
 
         menus_data = []
@@ -5927,16 +5932,18 @@ def search_menu_items(request):
                 image_url = s if s.startswith('http') else '/media/' + s
 
             menus_data.append({
-                'id':          item['id'],
-                'name':        item['name'],
-                'description': item['description'] or '',
-                'price':       float(item['price']),
-                'image_url':   image_url,
-                'quantity':    item['quantity'],
+                'id':            item['id'],
+                'name':          item['name'],
+                'description':   item['description'] or '',
+                'price':         float(item['price']),
+                'image_url':     image_url,
+                'quantity':      item['quantity'],
+                'is_top_seller': item['is_top_seller'],  # ← ADDED
                 'establishment': {
-                    'id':     item['food_establishment__id'],
-                    'name':   item['food_establishment__name'],
-                    'status': est_status,
+                    'id':      item['food_establishment__id'],
+                    'name':    item['food_establishment__name'],
+                    'address': item['food_establishment__address'] or '',  # ← ADDED
+                    'status':  est_status,
                 },
             })
 
@@ -5972,11 +5979,11 @@ def search_menu_items(request):
                 cats = est.other_category
             est_status = get_current_status(est.opening_time, est.closing_time)
             establishments_data.append({
-                'id':              est.id,
-                'name':            est.name,
-                'category':        cats or 'Other',
-                'status':          est_status,
-                'image_url':       est.image.url if est.image else None,
+                'id':               est.id,
+                'name':             est.name,
+                'category':         cats or 'Other',
+                'status':           est_status,
+                'image_url':        est.image.url if est.image else None,
                 'menu_match_count': menu_match_map.get(est.id, 0),
             })
 
@@ -5991,11 +5998,11 @@ def search_menu_items(request):
                 cats = ', '.join(c.name for c in est.categories.all())
                 est_status = get_current_status(est.opening_time, est.closing_time)
                 establishments_data.append({
-                    'id':              est.id,
-                    'name':            est.name,
-                    'category':        cats or 'Other',
-                    'status':          est_status,
-                    'image_url':       est.image.url if est.image else None,
+                    'id':               est.id,
+                    'name':             est.name,
+                    'category':         cats or 'Other',
+                    'status':           est_status,
+                    'image_url':        est.image.url if est.image else None,
                     'menu_match_count': menu_match_map.get(est.id, 0),
                 })
             except FoodEstablishment.DoesNotExist:
@@ -6065,7 +6072,7 @@ def search_menu_items(request):
         print(f"Error in search_menu_items: {e}")
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-    
+
 @login_required
 def order_history_view(request):
     """
