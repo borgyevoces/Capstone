@@ -523,13 +523,20 @@ function initSmartSearch() {
         clr.classList.toggle('on', q.length > 0);
         asdFocusIdx = -1;
 
+        // ALWAYS cancel pending debounce first
+        clearTimeout(searchDebounceTimer);
+
         if (!q) {
+            // Immediately reset — no delay, no debounce
             resetSearch();
             showAsdDefault();
             return;
         }
+
+        // Show suggestions immediately (no debounce needed — purely local data)
         showAsdForQuery(q);
-        clearTimeout(searchDebounceTimer);
+
+        // Debounce the actual page-level search (API call + DOM changes)
         searchDebounceTimer = setTimeout(() => runSmartSearch(q), 300);
     });
 
@@ -548,6 +555,9 @@ function initSmartSearch() {
             if (asdFocusIdx >= 0 && asdRows[asdFocusIdx]) {
                 e.preventDefault();
                 asdRows[asdFocusIdx].click();
+            } else if (q) {
+                closeAsd();
+                runSmartSearch(q);
             }
         } else if (e.key === 'Escape') {
             closeAsd();
@@ -555,6 +565,7 @@ function initSmartSearch() {
     });
 
     clr.addEventListener('click', function () {
+        clearTimeout(searchDebounceTimer);
         inp.value = '';
         clr.classList.remove('on');
         resetSearch();
@@ -1059,36 +1070,37 @@ function clearNoEstMsg() {
 
 // ── RESET SEARCH — restore everything to original state ──
 function resetSearch() {
-    // Cancel any in-flight menu search fetch immediately
-    searchToken++; // invalidate any pending response
+    // 1. Cancel any pending debounce
+    clearTimeout(searchDebounceTimer);
+
+    // 2. Cancel any in-flight fetch
+    searchToken++;
     if (searchAbortController) { searchAbortController.abort(); searchAbortController = null; }
 
+    const prevMode = searchMode;
     currentSearchQuery = '';
     searchMode = null;
     searchMenuData = [];
 
-    // Restore BS section visibility
+    // 3. Always restore BS section + carousel
     const bsSec = document.getElementById('bsSec');
     if (bsSec) bsSec.style.display = '';
 
-    // Restore carousel wrapper (critical — menu search hides it)
-    if (curView === 'bs') {
-        const cw = document.getElementById('carouselWrap');
-        if (cw) cw.style.display = '';
-    }
+    const cw = document.getElementById('carouselWrap');
+    if (cw && curView === 'bs') cw.style.display = '';
 
-    // Restore BS title
+    // 4. Restore BS title
     const bsTitle = document.getElementById('bsTitle');
     if (bsTitle) bsTitle.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
 
-    // Re-render original bsData (if loaded); if still loading, let fetchBestsellers handle it
+    // 5. Re-render bestsellers (always — covers all modes)
     if (bsData.length > 0) {
         renderBS(bsData, false);
     } else {
         fetchBestsellers();
     }
 
-    // Restore establishment grid
+    // 6. Restore establishment grid — show all, remove badges, restore order
     const grid = document.getElementById('estGrid');
     if (grid) {
         grid.querySelectorAll('.food-est-item').forEach(card => {
@@ -1100,9 +1112,13 @@ function resetSearch() {
         }
     }
 
+    // 7. Restore section title
     restoreSecTitle();
+
+    // 8. Clear any "no results" messages
     clearNoEstMsg();
 
+    // 9. Re-apply category filter if one was active
     const catFilt = document.getElementById('catFilt');
     if (catFilt && catFilt.value) applyFilter();
 }
