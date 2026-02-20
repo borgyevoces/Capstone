@@ -8,14 +8,13 @@ const VISIBLE = 5;
 let bsData = []; // real backend data
 
 // ── SEARCH MODE STATE ──
-// Tracks current search state to restore UI when cleared
 let searchMode = 'none'; // 'none' | 'menu' | 'establishment'
 let lastSearchQuery = '';
 
 // ── MAP STATE ──
 let curView = 'bs', mapReady = false;
 let mapInst = null, curTile = null, mkLayer = null;
-let esMapData = []; // real establishment data for map
+let esMapData = [];
 
 // ── MODAL STATE ──
 let currentModalItem = null;
@@ -38,11 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBestsellers();
     autoHideMessages();
     initEstablishmentCards();
-
-    // ✅ FIX: Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
-
-    // ✅ FIX: Start real-time status refresh every 60 seconds
     statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
 });
 
@@ -70,7 +65,6 @@ function fetchBestsellers() {
                 bsData = data.bestsellers;
                 renderBS(bsData);
             } else {
-                // Show empty state
                 document.getElementById('cTrack').innerHTML =
                     '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
                 document.getElementById('cPrev').disabled = true;
@@ -84,22 +78,19 @@ function fetchBestsellers() {
 }
 
 // ============================================
-// ✅ FIX: REFRESH BESTSELLER STATUSES IN REAL-TIME
-// Re-fetches from API and updates open/closed badges without full re-render
+// REFRESH BESTSELLER STATUSES IN REAL-TIME
 // ============================================
 function refreshBestsellerStatuses() {
     fetch(URLS.bestsellers)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.bestsellers.length) return;
-            // Update bsData with fresh status
             data.bestsellers.forEach(fresh => {
                 const idx = bsData.findIndex(x => x.id === fresh.id);
                 if (idx !== -1) {
                     bsData[idx].establishment.status = fresh.establishment.status;
                 }
             });
-            // Update all visible status badges in cards
             document.querySelectorAll('.bsc').forEach(card => {
                 const onclickAttr = card.getAttribute('onclick') || '';
                 const match = onclickAttr.match(/openMod\((\d+)\)/);
@@ -114,7 +105,6 @@ function refreshBestsellerStatuses() {
                     badge.textContent = st.toUpperCase();
                 }
             });
-            // If modal is open, update its status too
             if (currentModalItem) {
                 const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
                 if (fresh) {
@@ -128,7 +118,7 @@ function refreshBestsellerStatuses() {
                 }
             }
         })
-        .catch(() => {}); // Silent fail for background refresh
+        .catch(() => {});
 }
 
 // ============================================
@@ -142,7 +132,7 @@ function renderBS(data) {
     }
 
     track.innerHTML = data.map(d => {
-        const st = (d.establishment.status || 'closed').toLowerCase(); // ✅ FIX: always lowercase, default 'closed'
+        const st = (d.establishment.status || 'closed').toLowerCase();
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
@@ -189,7 +179,6 @@ function cardW() {
     return c ? c.offsetWidth + 20 : 238;
 }
 function maxIdx() {
-    // In search mode, use actual rendered card count; otherwise use bsData length
     const track = document.getElementById('cTrack');
     const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
     return Math.max(0, cardCount - VISIBLE);
@@ -258,7 +247,6 @@ function setView(v) {
         dl.textContent = 'Best Sellers';
         db.classList.remove('mapmode');
         db.querySelector('i').className = 'fas fa-trophy';
-        // Stop real-time polling when map is hidden
         if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
     } else {
         cw.style.display = 'none';
@@ -271,7 +259,6 @@ function setView(v) {
         if (!mapReady) { initMap(); mapReady = true; }
         else {
             setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
-            // Restart polling when map becomes visible again
             fetchMapEstablishments();
             if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
         }
@@ -281,7 +268,7 @@ function setView(v) {
 
 
 // ============================================
-// LEAFLET MAP — screenshot-matching design
+// LEAFLET MAP
 // ============================================
 const TILES = {
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -317,23 +304,17 @@ function initMap() {
             .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
-
-        // Load all establishments from API — primary source for coordinates
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
         mapInst.invalidateSize();
     }, 150);
 }
 
-// ── API is the ONLY source of lat/lng (guaranteed non-null by backend filter) ──
-// ── EST_ALL_DATA enriches with image + real-time status only ──
 function loadAllEstablishments() {
-    // Use 999km radius — backend already filters lat/lng non-null, this returns ALL registered
     fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=999999`)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            // Merge API coordinates with local image/status data
             const merged = data.establishments.map(e => {
                 const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
                 return {
@@ -341,12 +322,10 @@ function loadAllEstablishments() {
                     name: local.name || e.name || '',
                     address: local.address || e.address || '',
                     image: local.image || '',
-                    // Status: prefer EST_ALL_DATA (server-rendered, real-time) over API (no status field)
                     status: local.status || liveStatusCache[e.id] || '',
                     latitude: parseFloat(e.latitude),
                     longitude: parseFloat(e.longitude),
                     distance: e.distance || 0,
-                    // ✅ Include other_category and other_amenity for filtering/display
                     categories: local.categories || '',
                     other_category: local.other_category || '',
                     other_amenity: local.other_amenity || ''
@@ -358,7 +337,6 @@ function loadAllEstablishments() {
         .catch(err => console.error('Map load error:', err));
 }
 
-// Keep these as aliases for compatibility
 function renderFromLocalData() { loadAllEstablishments(); }
 function refreshEstablishmentStatuses() { loadAllEstablishments(); }
 function fetchMapEstablishments() { loadAllEstablishments(); }
@@ -367,7 +345,6 @@ function applyFiltersToData(data) {
     let result = [...data];
     const f = mapFilterState;
     if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
-    // ✅ Filter by category — checks both standard categories AND other_category
     if (f.cat) {
         const q = f.cat.toLowerCase();
         result = result.filter(e => {
@@ -503,7 +480,7 @@ function showMyLocation() {
 }
 
 // ============================================
-// CATEGORY FILTER — filters DOM elements
+// CATEGORY FILTER
 // ============================================
 function applyFilter() {
     const val = document.getElementById('catFilt').value.toLowerCase();
@@ -514,8 +491,7 @@ function applyFilter() {
 }
 
 // ============================================
-// BESTSELLER MODAL — opens with backend data
-// ✅ FIX: Uses fresh real-time status from API
+// BESTSELLER MODAL
 // ============================================
 function openMod(id) {
     const d = bsData.find(x => x.id === id);
@@ -530,7 +506,6 @@ function openMod(id) {
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
 
-    // ✅ FIX: Always compute status fresh from the stored bsData (which refreshBestsellerStatuses keeps current)
     const st = (d.establishment.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
@@ -540,18 +515,15 @@ function openMod(id) {
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
-    // ✅ FIX: Fetch fresh status at modal open time
     fetch(URLS.bestsellers)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
             const fresh = data.bestsellers.find(x => x.id === id);
             if (!fresh) return;
-            // Update stored data
             const idx = bsData.findIndex(x => x.id === id);
             if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
             currentModalItem = bsData[idx] || currentModalItem;
-            // Update modal status badge
             const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
             const el = document.getElementById('mEstS');
             if (el) {
@@ -559,7 +531,7 @@ function openMod(id) {
                 el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
             }
         })
-        .catch(() => {}); // Silent — already showing a status
+        .catch(() => {});
 }
 
 function closeMod() {
@@ -575,8 +547,7 @@ function chgQ(d) {
 }
 
 // ============================================
-// ADD TO CART — POST to /cart/add/
-// ✅ FIX: Properly connected, closes modal on success
+// ADD TO CART
 // ============================================
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -598,7 +569,6 @@ function addToCartFromModal() {
     .then(data => {
         if (data.success) {
             closeMod();
-            // backend returns cart_count directly in add_to_cart response
             const badge = document.getElementById('cartBadge');
             if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
             else updateCartBadge();
@@ -617,9 +587,7 @@ function addToCartFromModal() {
 }
 
 // ============================================
-// BUY NOW — Adds item to cart then redirects to cart page
-// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
-//             so user picks Cash or Online Payment in cart
+// BUY NOW
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -632,7 +600,6 @@ function buyNowFromModal() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
-    // Add item to cart first, then redirect to cart page with pay=1
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -641,7 +608,6 @@ function buyNowFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Redirect to cart page with ?pay=1 to auto-show payment options
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
@@ -669,7 +635,6 @@ function updateCartBadge() {
         .then(r => r.json())
         .then(data => {
             const badge = document.getElementById('cartBadge');
-            // backend returns { success: true, cart_count: N }
             if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
         })
         .catch(() => {});
@@ -702,7 +667,7 @@ function closeSet() {
 }
 
 // ============================================
-// PROFILE IMAGE — preview + real-time AJAX save
+// PROFILE IMAGE
 // ============================================
 function previewProfileImg(input) {
     if (input.files && input.files[0]) {
@@ -724,7 +689,6 @@ function saveProfile() {
         return;
     }
 
-    // Loading state
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
@@ -741,21 +705,14 @@ function saveProfile() {
     .then(data => {
         if (data.success) {
             const newUrl = data.profile_picture_url;
-
-            // ① Update preview inside modal
             document.getElementById('profilePreview').innerHTML =
                 `<img src="${newUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
-            // ② Update navbar avatar instantly
             const nav = document.getElementById('pavBtn');
             if (nav) nav.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
-            // ③ Update dropdown header avatar instantly
             const da = document.querySelector('.pd-av');
             if (da) da.innerHTML =
                 `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
             showToast('Profile picture updated!', 'success');
             closeSet();
         } else {
@@ -769,20 +726,16 @@ function saveProfile() {
     });
 }
 
-
 // ============================================
-// SMART SEARCH SYSTEM
-// ─────────────────────────────────────────────
-// FOCUS (empty)   → Initial dropdown: Recent + Category chips + All Establishments
-// TYPING (menu)   → Dropdown shows menu items; BS carousel fills with menu results;
-//                   Establishment cards sort by match count + amber badge + ring
-// TYPING (est/cat)→ Dropdown shows ests; BS carousel fills with establishment cards
-// CLEAR / DELETE  → Everything reverts to original instantly
+// ============================================
+// SMART SEARCH — AUTOCOMPLETE SYSTEM
+// ============================================
 // ============================================
 
-// ── Recent Searches (localStorage) ──
+// ── Recent Searches (localStorage, max 6) ──
 const RECENT_KEY   = 'ke_recent_searches';
-const RECENT_LIMIT = 8;
+const RECENT_LIMIT = 6;
+
 function getRecent() {
     try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
     catch { return []; }
@@ -791,75 +744,75 @@ function saveRecent(q) {
     if (!q || q.length < 2) return;
     let list = getRecent().filter(r => r.toLowerCase() !== q.toLowerCase());
     list.unshift(q);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_LIMIT))); } catch {}
+    list = list.slice(0, RECENT_LIMIT);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
 }
-function clearRecent() { try { localStorage.removeItem(RECENT_KEY); } catch {} }
+function clearRecent() {
+    try { localStorage.removeItem(RECENT_KEY); } catch {}
+}
 
 // ── State ──
 let searchTimer  = null;
 let searchAbort  = null;
+let searchFocused= false;
 let dropSelected = -1;
 let bsHidden     = false;
 
-// ─────────────────────────────────────────────
-// BS SECTION — smooth hide / show animation
-// Only used when user types but BEFORE API returns.
-// Once results arrive, the section stays visible and
-// the carousel content is simply swapped.
-// ─────────────────────────────────────────────
+// ── Hide/Show Bestsellers section during search ──
 function hideBSSection() {
     const sec = document.getElementById('bsSec');
-    if (!sec || bsHidden) return;
-    sec.style.transition = 'none';
-    sec.style.overflow   = 'hidden';
-    sec.style.maxHeight  = sec.scrollHeight + 'px';
-    sec.getBoundingClientRect(); // force reflow
-    sec.style.transition = 'max-height .35s ease, opacity .25s ease';
-    sec.style.maxHeight  = '0px';
-    sec.style.opacity    = '0';
-    bsHidden = true;
+    if (sec && !bsHidden) {
+        sec.style.transition = 'opacity 0.25s ease, max-height 0.35s ease';
+        sec.style.overflow   = 'hidden';
+        sec.style.maxHeight  = sec.scrollHeight + 'px';
+        requestAnimationFrame(() => {
+            sec.style.maxHeight = '0';
+            sec.style.opacity   = '0';
+        });
+        bsHidden = true;
+    }
 }
 function showBSSection() {
     const sec = document.getElementById('bsSec');
-    if (!sec || !bsHidden) return;
-    sec.style.transition = 'max-height .38s ease, opacity .28s ease';
-    sec.style.maxHeight  = '3000px';
-    sec.style.opacity    = '1';
-    bsHidden = false;
-    setTimeout(() => {
-        sec.style.overflow = sec.style.maxHeight = sec.style.transition = '';
-    }, 420);
+    if (sec && bsHidden) {
+        sec.style.maxHeight = '2000px';
+        sec.style.opacity   = '1';
+        bsHidden = false;
+        setTimeout(() => {
+            sec.style.overflow  = '';
+            sec.style.maxHeight = '';
+        }, 380);
+    }
 }
 
-// ─────────────────────────────────────────────
+// ============================================
 // INIT SEARCH
-// ─────────────────────────────────────────────
+// ============================================
 function initSearch() {
-    const inp = document.getElementById('hSearch');
-    const clr = document.getElementById('hClr');
+    const inp  = document.getElementById('hSearch');
+    const clr  = document.getElementById('hClr');
+    const drop = document.getElementById('searchDropdown');
     if (!inp) return;
 
-    // Save original card order once
-    document.querySelectorAll('.food-est-item').forEach((c, i) => { c.dataset.originalOrder = i; });
-
-    // ── Typing ──
+    // ── Input: debounce 260ms ──
     inp.addEventListener('input', function () {
         const q = this.value.trim();
         clr.classList.toggle('on', q.length > 0);
         dropSelected = -1;
         clearTimeout(searchTimer);
 
-        if (!q) {
+        if (q.length < 1) {
             closeDrop();
-            restoreNormalView();   // snap everything back
+            filterEstCards('');
+            restoreNormalView();
             showBSSection();
             return;
         }
 
-        // Optimistic instant: filter est cards + show skeleton
-        filterEstCardsByText(q);
+        hideBSSection();
         showDropSkeleton();
-        searchTimer = setTimeout(() => doSearch(q), 240);
+        filterEstCards(q);
+        searchTimer = setTimeout(() => fetchSearchResults(q), 260);
     });
 
     // ── Clear button ──
@@ -867,37 +820,46 @@ function initSearch() {
         inp.value = '';
         this.classList.remove('on');
         closeDrop();
+        filterEstCards('');
         restoreNormalView();
         showBSSection();
         inp.focus();
         showInitialDrop();
     });
 
-    // ── Focus ──
+    // ── Focus: show dropdown ──
     inp.addEventListener('focus', function () {
-        const q = this.value.trim();
-        if (q) doSearch(q);
-        else   showInitialDrop();
+        searchFocused = true;
+        if (this.value.trim().length >= 1) {
+            fetchSearchResults(this.value.trim());
+        } else {
+            showInitialDrop();
+        }
     });
 
-    // ── Keyboard nav ──
+    // ── Keyboard navigation ──
     inp.addEventListener('keydown', function (e) {
-        const items = document.querySelectorAll('#searchDropdownContent .search-dropdown-item');
+        const items = document.querySelectorAll('.search-dropdown-item');
+        if (!items.length) return;
+
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             dropSelected = Math.min(dropSelected + 1, items.length - 1);
-            items.forEach((el, i) => el.style.background = i === dropSelected ? 'var(--g50)' : '');
-            if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
+            highlightDropItem(items);
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             dropSelected = Math.max(dropSelected - 1, -1);
-            items.forEach((el, i) => el.style.background = i === dropSelected ? 'var(--g50)' : '');
+            highlightDropItem(items);
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (dropSelected >= 0 && items[dropSelected]) items[dropSelected].click();
-            else if (this.value.trim()) doSearch(this.value.trim());
+            if (dropSelected >= 0 && items[dropSelected]) {
+                items[dropSelected].click();
+            } else if (this.value.trim()) {
+                saveRecent(this.value.trim());
+                fetchSearchResults(this.value.trim());
+            }
         } else if (e.key === 'Escape') {
-            closeDrop(); this.blur();
+            closeDrop();
         }
     });
 
@@ -906,541 +868,185 @@ function initSearch() {
         pill.addEventListener('click', function (e) {
             if (this.tagName === 'A') return;
             e.preventDefault();
-            const text = this.textContent.trim().replace(/^[^\w]+/, '').trim();
-            inp.value = text; clr.classList.add('on');
-            filterEstCardsByText(text); doSearch(text); inp.focus();
+            const text = this.textContent.trim().replace(/^[^\w]+/, '');
+            inp.value = text;
+            clr.classList.add('on');
+            hideBSSection();
+            filterEstCards(text);
+            fetchSearchResults(text);
+            inp.focus();
         });
     });
 }
 
+function highlightDropItem(items) {
+    items.forEach((el, i) => {
+        el.style.background = i === dropSelected ? 'var(--g50)' : '';
+    });
+    if (dropSelected >= 0) items[dropSelected].scrollIntoView({ block: 'nearest' });
+}
+
 function closeDrop() {
-    const d = document.getElementById('searchDropdown');
-    if (d) d.classList.remove('active');
+    const drop = document.getElementById('searchDropdown');
+    if (drop) drop.classList.remove('active');
     dropSelected = -1;
 }
 
-// ─────────────────────────────────────────────
-// INSTANT DOM FILTER (runs on every keypress)
-// ─────────────────────────────────────────────
-function filterEstCardsByText(q) {
-    const ql = (q || '').toLowerCase();
+// ── Filter DOM establishment cards instantly ──
+function filterEstCards(q) {
+    const ql = q.toLowerCase();
     document.querySelectorAll('.food-est-item').forEach(el => {
         if (!ql) { el.style.display = ''; return; }
-        const name = (el.dataset.name || el.querySelector('.estc-name')?.textContent || '').toLowerCase();
+        const name = (el.dataset.name     || '').toLowerCase();
         const cat  = (el.dataset.category || '').toLowerCase();
         el.style.display = (name.includes(ql) || cat.includes(ql)) ? '' : 'none';
     });
 }
 
-// ─────────────────────────────────────────────
-// SKELETON while API loads
-// ─────────────────────────────────────────────
+// ── Skeleton while loading ──
 function showDropSkeleton() {
-    const drop = document.getElementById('searchDropdown');
-    const cont = document.getElementById('searchDropdownContent');
-    if (!drop || !cont) return;
-    const shimStyle = 'background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;';
-    cont.innerHTML = `<div style="padding:14px 16px 10px;">
-        <div style="height:10px;width:38%;margin-bottom:12px;${shimStyle}"></div>
-        ${[1,2,3,4].map(() => `<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">
-            <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;${shimStyle}"></div>
-            <div style="flex:1;">
-                <div style="height:11px;width:60%;margin-bottom:5px;${shimStyle}"></div>
-                <div style="height:9px;width:42%;${shimStyle}"></div>
-            </div></div>`).join('')}
-    </div>`;
+    const drop    = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
+    content.innerHTML = `
+        <div style="padding:14px 16px;">
+            <div style="height:11px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:6px;margin-bottom:10px;width:40%"></div>
+            ${[1,2,3].map(() => `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;"></div>
+                <div style="flex:1;">
+                    <div style="height:12px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;margin-bottom:6px;width:65%"></div>
+                    <div style="height:10px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:4px;width:45%"></div>
+                </div>
+            </div>`).join('')}
+        </div>`;
     drop.classList.add('active');
 }
 
-// ─────────────────────────────────────────────
-// INITIAL DROPDOWN (focus, empty input)
-// Recent Searches | Category Chips | All Establishments
-// ─────────────────────────────────────────────
+// ============================================
+// INITIAL DROPDOWN (on focus, empty input)
+// Shows: Recent Searches + Categories + All Establishments
+// ============================================
 function showInitialDrop() {
-    if (searchAbort) { try { searchAbort.abort(); } catch(e){} }
+    if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
     searchAbort = new AbortController();
+
     fetch(`${URLS.searchMenu}?q=`, { signal: searchAbort.signal })
-        .then(r => r.json()).then(renderInitialDrop).catch(() => {});
+        .then(r => r.json())
+        .then(data => renderInitialDrop(data))
+        .catch(() => {});
 }
 
 function renderInitialDrop(data) {
-    const drop = document.getElementById('searchDropdown');
-    const cont = document.getElementById('searchDropdownContent');
-    if (!drop || !cont) return;
-    const recent = getRecent();
-    const ests   = data.establishments || [];
-    const cats   = data.categories     || [];
+    const drop    = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
+    if (!drop || !content) return;
+
+    const recent     = getRecent();
+    const ests       = data.establishments || [];
+    const categories = data.categories     || [];
     let html = '';
 
-    // Recent Searches
-    if (recent.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title" style="justify-content:space-between;">
-                <span><i class="fas fa-history" style="color:#6b7280;margin-right:5px;"></i>Recent Searches</span>
-                <button class="sd-clear-btn" onclick="handleClearRecent(event)"><i class="fas fa-trash-alt"></i> Clear all</button>
+    // ── Recent Searches ──
+    if (recent.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title" style="justify-content:space-between;">
+                <span><i class="fas fa-history"></i> Recent Searches</span>
+                <button class="sd-clear-recent" onclick="handleClearRecent(event)">
+                    <i class="fas fa-trash-alt"></i> Clear all
+                </button>
             </div>`;
         recent.forEach(r => {
-            const s = escHtml(r).replace(/'/g, "\\'");
-            html += `<div class="sd-row" onclick="handleRecentClick(event,'${s}')">
-                <div class="sd-ico sd-ico--recent"><i class="fas fa-history"></i></div>
-                <div class="sd-row-text"><span class="sd-row-name">${escHtml(r)}</span></div>
-                <button class="sd-remove-btn" onclick="handleRemoveRecent(event,'${s}')"><i class="fas fa-times"></i></button>
+            const escaped = escHtml(r).replace(/'/g, "\\'");
+            html += `<div class="search-dropdown-item recent-item"
+                        onclick="handleRecentClick(event,'${escaped}')">
+                <div class="search-dropdown-item-icon recent-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${escHtml(r)}</div>
+                </div>
+                <button class="sd-remove-recent" title="Remove"
+                        onclick="handleRemoveRecent(event,'${escaped}')">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>`;
         });
         html += '</div>';
     }
 
-    // Category chips
-    if (cats.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title"><i class="fas fa-tags" style="color:#f59e0b;margin-right:5px;"></i>Browse by Category</div>
-            <div class="sd-chips">`;
-        cats.forEach(c => {
-            const s = escHtml(c).replace(/'/g, "\\'");
-            html += `<button class="sd-chip" onclick="handleCatChip(event,'${s}')"><i class="fas fa-tag"></i> ${escHtml(c)}</button>`;
+    // ── Categories quick chips ──
+    if (categories.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-tags"></i> Browse Categories</div>
+            <div class="sd-category-chips">`;
+        categories.forEach(cat => {
+            const escaped = escHtml(cat).replace(/'/g, "\\'");
+            html += `<button class="sd-cat-chip" onclick="handleCatChip(event,'${escaped}')">
+                <i class="fas fa-tag"></i> ${escHtml(cat)}
+            </button>`;
         });
         html += '</div></div>';
     }
 
-    // All Establishments
-    if (ests.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title"><i class="fas fa-store" style="color:#B71C1C;margin-right:5px;"></i>All Establishments</div>`;
-        ests.slice(0, 10).forEach(est => {
-            const open = est.status === 'Open';
-            const imgH = est.image_url
+    // ── All Establishments ──
+    if (ests.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-store"></i> All Establishments</div>`;
+        ests.slice(0, 8).forEach(est => {
+            const isOpen  = est.status === 'Open';
+            const stColor = isOpen ? '#10b981' : '#ef4444';
+            const stDot   = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
+            const imgHtml = est.image_url
                 ? `<img src="${escHtml(est.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
                 : `<i class="fas fa-store"></i>`;
-            html += `<div class="sd-row" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
-                <div class="sd-ico" style="overflow:hidden;">${imgH}</div>
-                <div class="sd-row-text">
-                    <span class="sd-row-name">${escHtml(est.name)}</span>
-                    <span class="sd-row-meta">
-                        <span class="sd-status ${open ? 'open' : 'closed'}">${est.status}</span>
-                        <span class="sd-dot">•</span>${escHtml(est.category)}
-                    </span>
+            html += `<div class="search-dropdown-item" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgHtml}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${escHtml(est.name)}</div>
+                    <div class="search-dropdown-item-meta">
+                        ${stDot}
+                        <span style="color:${stColor};font-weight:600;">${est.status}</span>
+                        <span>•</span>
+                        <span>${escHtml(est.category)}</span>
+                    </div>
                 </div>
             </div>`;
         });
-        if (ests.length > 10) html += `<div class="sd-more">+${ests.length - 10} more — type to search</div>`;
+        if (ests.length > 8) {
+            html += `<div style="padding:8px 16px 10px;font-size:11px;color:var(--g400);text-align:center;">
+                +${ests.length - 8} more — start typing to search
+            </div>`;
+        }
         html += '</div>';
     }
 
-    if (!html) html = `<div class="sd-empty"><i class="fas fa-utensils"></i><span>Start typing to search food or restaurants</span></div>`;
+    if (!html) {
+        html = `<div class="search-no-results">
+            <i class="fas fa-utensils" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
+            <div style="font-weight:600;color:#374151;">Start typing to search food or restaurants</div>
+        </div>`;
+    }
 
-    cont.innerHTML = html;
+    content.innerHTML = html;
     drop.classList.add('active');
 }
 
-// ─────────────────────────────────────────────
-// MAIN SEARCH — fetch + update dropdown + page
-// ─────────────────────────────────────────────
-function doSearch(q) {
-    if (!q) return;
-    if (searchAbort) { try { searchAbort.abort(); } catch(e){} }
-    searchAbort = new AbortController();
-    lastSearchQuery = q;
-
-    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
-        .then(r => r.json())
-        .then(data => {
-            renderLiveDropdown(data, q);
-            applyResultsToPage(data, q);
-        })
-        .catch(err => { if (err.name !== 'AbortError') closeDrop(); });
-}
-
-// ─────────────────────────────────────────────
-// APPLY RESULTS TO PAGE
-// Menus:   → fill BS carousel with menu cards + sort est cards
-// Est/Cat: → fill BS carousel with est cards (bestsellers temporarily hidden)
-// None:    → show no-result state in carousel
-// ─────────────────────────────────────────────
-function applyResultsToPage(data, q) {
-    const menus = data.menus          || [];
-    const ests  = data.establishments || [];
-
-    // Always make BS section visible (carousel will have new content)
-    showBSSection();
-
-    if (menus.length) {
-        searchMode = 'menu';
-        fillCarouselWithMenuItems(menus, q);
-        sortEstCardsByMatch(menus);
-    } else if (ests.length) {
-        searchMode = 'establishment';
-        fillCarouselWithEstablishments(ests, q);
-        clearEstBadges();
-    } else {
-        searchMode = 'empty';
-        showNoResultsCarousel(q);
-        clearEstBadges();
-    }
-}
-
-// ─────────────────────────────────────────────
-// CAROUSEL: fill with MENU ITEMS
-// ─────────────────────────────────────────────
-function fillCarouselWithMenuItems(items, q) {
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) titleEl.innerHTML =
-        `<i class="fas fa-utensils" style="color:#B71C1C;"></i>
-         Menu results for <em class="srch-em">"${escHtml(q)}"</em>`;
-
-    // Force list mode during search
-    if (isGrid) {
-        document.getElementById('cTrack')?.classList.remove('gmode');
-        document.getElementById('carouselWrap')?.classList.remove('gmode');
-    }
-
-    const track = document.getElementById('cTrack');
-    if (!track) return;
-
-    track.innerHTML = items.map(item => {
-        const eid  = item.establishment?.id   || '';
-        const enm  = item.establishment?.name || '';
-        const est  = (item.establishment?.status || 'closed').toLowerCase();
-        const eimg = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[eid]) || '';
-        const iSrc = item.image_url || `https://via.placeholder.com/280x180?text=${encodeURIComponent(item.name)}`;
-        const icon = eimg
-            ? `<img src="${eimg}" alt="${escHtml(enm)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
-            : `<i class="fas fa-utensils"></i>`;
-        return `<div class="bsc srch-bsc" onclick="window.location.href='${URLS.estDetail}${eid}/'">
-            <div class="bsc-img">
-                <img src="${iSrc}" alt="${escHtml(item.name)}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                <span class="bsc-badge srch-badge srch-badge--menu"><i class="fas fa-utensils"></i> Menu Item</span>
-            </div>
-            <div class="bsc-body">
-                <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
-                <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
-                <div class="bsc-est">
-                    <div class="bsc-eico">${icon}</div>
-                    <div class="bsc-einfo">
-                        <div class="bsc-ename">${escHtml(enm)}</div>
-                        <div class="bsc-emeta"><span class="sp ${est}">${est.toUpperCase()}</span></div>
-                    </div>
-                </div>
-                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${eid}/'">
-                    <i class="fas fa-store"></i> Visit Store
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-
-    cidx = 0;
-    track.style.transform = 'translateX(0)';
-    updNav();
-}
-
-// ─────────────────────────────────────────────
-// CAROUSEL: fill with ESTABLISHMENTS
-// ─────────────────────────────────────────────
-function fillCarouselWithEstablishments(ests, q) {
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) titleEl.innerHTML =
-        `<i class="fas fa-store" style="color:#B71C1C;"></i>
-         Establishments matching <em class="srch-em">"${escHtml(q)}"</em>`;
-
-    if (isGrid) {
-        document.getElementById('cTrack')?.classList.remove('gmode');
-        document.getElementById('carouselWrap')?.classList.remove('gmode');
-    }
-
-    const track = document.getElementById('cTrack');
-    if (!track) return;
-
-    track.innerHTML = ests.map(est => {
-        const open = est.status === 'Open';
-        const iSrc = est.image_url
-            || (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
-            || `https://via.placeholder.com/280x180?text=${encodeURIComponent(est.name)}`;
-        const matchBadge = est.menu_match_count > 0
-            ? `<div class="srch-menu-match">
-                   <i class="fas fa-utensils"></i>
-                   ${est.menu_match_count} menu match${est.menu_match_count > 1 ? 'es' : ''}
-               </div>`
-            : '';
-        return `<div class="bsc srch-bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
-            <div class="bsc-img">
-                <img src="${iSrc}" alt="${escHtml(est.name)}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/280x180?text=Restaurant'">
-                <span class="bsc-badge srch-badge srch-badge--est"><i class="fas fa-store"></i> Establishment</span>
-            </div>
-            <div class="bsc-body">
-                ${matchBadge}
-                <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
-                <div class="bsc-cat">${escHtml(est.category || 'Food')}</div>
-                <div class="bsc-est" style="margin-bottom:8px;">
-                    <div class="bsc-einfo" style="padding-left:0;">
-                        <div class="bsc-emeta">
-                            <span class="sp ${open ? 'open' : 'closed'}">${est.status}</span>
-                        </div>
-                    </div>
-                </div>
-                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${est.id}/'">
-                    <i class="fas fa-eye"></i> View Details
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-
-    cidx = 0;
-    track.style.transform = 'translateX(0)';
-    updNav();
-}
-
-// ─────────────────────────────────────────────
-// CAROUSEL: no results state
-// ─────────────────────────────────────────────
-function showNoResultsCarousel(q) {
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) titleEl.innerHTML =
-        `<i class="fas fa-search" style="color:#9ca3af;"></i>
-         <span style="color:#9ca3af;">No results for "${escHtml(q)}"</span>`;
-    const track = document.getElementById('cTrack');
-    if (track) track.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-             width:100%;padding:48px 24px;text-align:center;">
-            <i class="fas fa-search" style="font-size:32px;color:#e5e7eb;margin-bottom:12px;"></i>
-            <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">
-                No items or restaurants matching "${escHtml(q)}"
-            </div>
-            <div style="font-size:12px;color:#9ca3af;">Try a different keyword or browse below</div>
-        </div>`;
-}
-
-// ─────────────────────────────────────────────
-// SORT ESTABLISHMENT CARDS BY MENU MATCH COUNT
-// Cards with more menu matches bubble to top.
-// Each matched card gets an amber badge + amber ring.
-// ─────────────────────────────────────────────
-function sortEstCardsByMatch(menuItems) {
-    const grid = document.getElementById('estGrid');
-    if (!grid) return;
-
-    // Build match map  { estId → count }
-    const matchMap = {};
-    menuItems.forEach(item => {
-        if (item.establishment?.id) {
-            const id = item.establishment.id;
-            matchMap[id] = (matchMap[id] || 0) + 1;
-        }
-    });
-
-    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-
-    // Clear old badges + rings
-    clearEstBadges(cards);
-
-    // Apply new badges + rings
-    cards.forEach(card => {
-        const id    = parseInt(card.dataset.id);
-        const count = matchMap[id] || 0;
-        card.dataset.matchCount = count;
-
-        if (count > 0) {
-            card.style.display       = '';   // ensure visible even if filtered
-            card.style.outline       = '2px solid #f59e0b';
-            card.style.outlineOffset = '-2px';
-
-            const badge = document.createElement('div');
-            badge.className = 'est-match-badge';
-            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
-            const body = card.querySelector('.estc-body');
-            if (body) body.insertBefore(badge, body.firstChild);
-        }
-    });
-
-    // Sort: highest match → top; then preserve original order
-    cards.sort((a, b) => {
-        const ma = parseInt(a.dataset.matchCount || 0);
-        const mb = parseInt(b.dataset.matchCount || 0);
-        if (mb !== ma) return mb - ma;
-        return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
-    });
-    cards.forEach(c => grid.appendChild(c));
-}
-
-function clearEstBadges(cards) {
-    const list = cards || Array.from(document.querySelectorAll('.food-est-item'));
-    list.forEach(card => {
-        card.querySelector('.est-match-badge')?.remove();
-        card.dataset.matchCount  = 0;
-        card.style.outline       = '';
-        card.style.outlineOffset = '';
-    });
-}
-
-// ─────────────────────────────────────────────
-// RESTORE NORMAL VIEW (on clear)
-// ─────────────────────────────────────────────
-function restoreNormalView() {
-    if (searchMode === 'none') return;
-    searchMode      = 'none';
-    lastSearchQuery = '';
-
-    // Restore BS title
-    const titleEl = document.getElementById('bsTitle');
-    if (titleEl) titleEl.innerHTML =
-        '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
-
-    // Restore bestseller carousel
-    if (bsData && bsData.length) renderBS(bsData);
-    else fetchBestsellers();
-
-    // Remove all match indicators
-    clearEstBadges();
-
-    // Restore original card order + visibility
-    const grid = document.getElementById('estGrid');
-    if (grid) {
-        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
-        cards.forEach(c => { c.style.display = ''; });
-        cards.sort((a, b) =>
-            (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0)
-        );
-        cards.forEach(c => grid.appendChild(c));
-    }
-}
-
-// ─────────────────────────────────────────────
-// LIVE DROPDOWN  (while typing)
-// Menu Items | Establishments | Categories | Suggestions
-// ─────────────────────────────────────────────
-function renderLiveDropdown(data, q) {
-    const drop = document.getElementById('searchDropdown');
-    const cont = document.getElementById('searchDropdownContent');
-    if (!drop || !cont) return;
-    dropSelected = -1;
-
-    const menus  = data.menus          || [];
-    const ests   = data.establishments || [];
-    const cats   = data.categories     || [];
-    const suggs  = data.suggestions    || [];
-    let html = '';
-
-    // ── Menu Items ──
-    if (menus.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title">
-                <i class="fas fa-utensils" style="color:#B71C1C;margin-right:5px;"></i>Menu Items
-                <span class="sd-count">${menus.length}</span>
-            </div>`;
-        menus.slice(0, 6).forEach(item => {
-            const eid  = item.establishment?.id   || '';
-            const enm  = item.establishment?.name || '';
-            const imgH = item.image_url
-                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
-                : `<i class="fas fa-utensils"></i>`;
-            const qs = escHtml(q).replace(/'/g, "\\'");
-            html += `<div class="sd-row" onclick="saveRecentAndGo(event,'${qs}','${URLS.estDetail}${eid}/')">
-                <div class="sd-ico sd-ico--menu" style="overflow:hidden;">${imgH}</div>
-                <div class="sd-row-text">
-                    <span class="sd-row-name">${highlightMatch(escHtml(item.name), q)}</span>
-                    <span class="sd-row-meta">
-                        <strong style="color:#B71C1C;">₱${parseFloat(item.price).toFixed(2)}</strong>
-                        <span class="sd-dot">•</span>
-                        <i class="fas fa-store" style="font-size:9px;"></i> ${highlightMatch(escHtml(enm), q)}
-                    </span>
-                </div>
-                <i class="fas fa-chevron-right sd-chev"></i>
-            </div>`;
-        });
-        if (menus.length > 6) html += `<div class="sd-more">+${menus.length - 6} more — see results in carousel ↓</div>`;
-        html += '</div>';
-    }
-
-    // ── Establishments ──
-    if (ests.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title">
-                <i class="fas fa-store" style="color:#B71C1C;margin-right:5px;"></i>Establishments
-                <span class="sd-count">${ests.length}</span>
-            </div>`;
-        ests.slice(0, 5).forEach(est => {
-            const open    = est.status === 'Open';
-            const localImg = typeof EST_IMG_MAP !== 'undefined' ? EST_IMG_MAP[est.id] : '';
-            const imgSrc  = est.image_url || localImg;
-            const imgH    = imgSrc
-                ? `<img src="${escHtml(imgSrc)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
-                : `<i class="fas fa-store"></i>`;
-            const matchChip = est.menu_match_count > 0
-                ? `<span class="sd-match-chip"><i class="fas fa-utensils"></i> ${est.menu_match_count} item${est.menu_match_count > 1 ? 's' : ''}</span>`
-                : '';
-            const qs = escHtml(q).replace(/'/g, "\\'");
-            html += `<div class="sd-row" onclick="saveRecentAndGo(event,'${qs}','${URLS.estDetail}${est.id}/')">
-                <div class="sd-ico" style="overflow:hidden;">${imgH}</div>
-                <div class="sd-row-text">
-                    <span class="sd-row-name">${highlightMatch(escHtml(est.name), q)}</span>
-                    <span class="sd-row-meta" style="flex-wrap:wrap;gap:4px;">
-                        <span class="sd-status ${open ? 'open' : 'closed'}">${est.status}</span>
-                        <span class="sd-dot">•</span>${escHtml(est.category)}${matchChip}
-                    </span>
-                </div>
-                <i class="fas fa-chevron-right sd-chev"></i>
-            </div>`;
-        });
-        html += '</div>';
-    }
-
-    // ── Categories ──
-    if (cats.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title"><i class="fas fa-tags" style="color:#f59e0b;margin-right:5px;"></i>Categories</div>
-            <div class="sd-chips" style="padding:4px 14px 12px;">`;
-        cats.forEach(c => {
-            const s = escHtml(c).replace(/'/g, "\\'");
-            html += `<button class="sd-chip" onclick="handleCatChip(event,'${s}')"><i class="fas fa-tag"></i> ${highlightMatch(escHtml(c), q)}</button>`;
-        });
-        html += '</div></div>';
-    }
-
-    // ── Did you mean… ──
-    if (!menus.length && !ests.length && suggs.length) {
-        html += `<div class="sd-section">
-            <div class="sd-title" style="color:#f59e0b;"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:5px;"></i>Did you mean…</div>`;
-        suggs.forEach(s => {
-            const safe = escHtml(s.text).replace(/'/g, "\\'");
-            html += `<div class="sd-row" onclick="handleSuggestionClick(event,'${safe}')">
-                <div class="sd-ico sd-ico--suggest"><i class="fas fa-search"></i></div>
-                <div class="sd-row-text">
-                    <span class="sd-row-name" style="color:#b45309;">${escHtml(s.text)}</span>
-                    <span class="sd-row-meta">${escHtml(s.sub || '')}</span>
-                </div>
-            </div>`;
-        });
-        html += '</div>';
-    }
-
-    if (!html) html = `<div class="sd-empty">
-        <i class="fas fa-search"></i>
-        <div style="font-weight:600;color:#374151;margin-bottom:3px;">No results for "${escHtml(q)}"</div>
-        <div style="font-size:11px;color:#9ca3af;">Try a different keyword</div>
-    </div>`;
-
-    cont.innerHTML = html;
-    drop.classList.add('active');
-}
-
-// ─────────────────────────────────────────────
-// INLINE EVENT HANDLERS (called from rendered HTML)
-// ─────────────────────────────────────────────
+// ── Recent search handlers ──
 function handleRecentClick(e, q) {
     e.stopPropagation();
     const inp = document.getElementById('hSearch');
     const clr = document.getElementById('hClr');
     if (!inp) return;
-    inp.value = q; clr.classList.add('on');
-    filterEstCardsByText(q); doSearch(q);
+    inp.value = q;
+    clr.classList.add('on');
+    hideBSSection();
+    filterEstCards(q);
+    fetchSearchResults(q);
 }
 function handleRemoveRecent(e, q) {
     e.stopPropagation();
-    try {
-        localStorage.setItem(RECENT_KEY, JSON.stringify(
-            getRecent().filter(r => r.toLowerCase() !== q.toLowerCase())
-        ));
-    } catch {}
+    let list = getRecent().filter(r => r.toLowerCase() !== q.toLowerCase());
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
     showInitialDrop();
 }
 function handleClearRecent(e) {
@@ -1453,25 +1059,426 @@ function handleCatChip(e, cat) {
     const inp = document.getElementById('hSearch');
     const clr = document.getElementById('hClr');
     if (!inp) return;
-    inp.value = cat; clr.classList.add('on');
-    filterEstCardsByText(cat); doSearch(cat); inp.focus();
+    inp.value = cat;
+    clr.classList.add('on');
+    hideBSSection();
+    filterEstCards(cat);
+    fetchSearchResults(cat);
 }
-function saveRecentAndGo(e, q, url) { saveRecent(q); window.location.href = url; }
+
+// ============================================
+// MAIN API FETCH
+// ============================================
+function fetchSearchResults(q) {
+    if (searchAbort) { try { searchAbort.abort(); } catch(e) {} }
+    searchAbort = new AbortController();
+    lastSearchQuery = q;
+
+    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbort.signal })
+        .then(r => r.json())
+        .then(data => {
+            renderSearchDrop(data, q);
+            applySearchToPage(data, q);
+        })
+        .catch(err => {
+            if (err.name !== 'AbortError') closeDrop();
+        });
+}
+
+// ============================================
+// APPLY RESULTS TO PAGE
+// ============================================
+function applySearchToPage(data, q) {
+    const menuItems = data.menus          || [];
+    const estItems  = data.establishments || [];
+
+    if (menuItems.length > 0) {
+        searchMode = 'menu';
+        renderMenuSearchInBS(menuItems, q);
+        sortEstCardsByMenuMatch(menuItems, q);
+    } else if (estItems.length > 0) {
+        searchMode = 'establishment';
+        renderEstSearchInBS(estItems, q);
+    } else {
+        searchMode = 'empty';
+        showBSSearchEmpty(q);
+    }
+}
+
+// ============================================
+// RESTORE NORMAL VIEW
+// ============================================
+function restoreNormalView() {
+    if (searchMode === 'none') return;
+    searchMode = 'none';
+    lastSearchQuery = '';
+
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
+
+    if (bsData.length > 0) {
+        renderBS(bsData);
+    } else {
+        fetchBestsellers();
+    }
+
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    const grid = document.getElementById('estGrid');
+    if (grid) {
+        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+        cards.sort((a, b) => {
+            const oa = parseInt(a.dataset.originalOrder || 9999);
+            const ob = parseInt(b.dataset.originalOrder || 9999);
+            return oa - ob;
+        });
+        cards.forEach(c => grid.appendChild(c));
+    }
+}
+
+// ============================================
+// RENDER MENU SEARCH IN BS CAROUSEL
+// ============================================
+function renderMenuSearchInBS(items, q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> Menu results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = items.map(item => {
+        const estId     = item.establishment ? item.establishment.id   : '';
+        const estName   = item.establishment ? item.establishment.name : '';
+        const estStatus = item.establishment ? (item.establishment.status || 'closed').toLowerCase() : 'closed';
+        const estImg    = (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[estId]) || '';
+        const imgSrc    = item.image_url || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(item.name);
+        const estIconHtml = estImg
+            ? `<img src="${estImg}" alt="${escHtml(estName)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+            : `<i class="fas fa-utensils"></i>`;
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${estId}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(item.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
+                <span class="bsc-badge bsc-badge-search"><i class="fas fa-search"></i> Search Result</span>
+            </div>
+            <div class="bsc-body">
+                <div class="bsc-name">${highlightMatch(escHtml(item.name), q)}</div>
+                <div class="bsc-price">₱${parseFloat(item.price).toFixed(2)}</div>
+                <div class="bsc-est">
+                    <div class="bsc-eico">${estIconHtml}</div>
+                    <div class="bsc-einfo">
+                        <div class="bsc-ename">${highlightMatch(escHtml(estName), q)}</div>
+                        <div class="bsc-emeta">
+                            <span class="sp ${estStatus}">${estStatus.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${estId}/'">
+                    <i class="fas fa-store"></i> Visit Store
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ============================================
+// RENDER ESTABLISHMENT SEARCH IN BS CAROUSEL
+// ============================================
+function renderEstSearchInBS(ests, q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-store"></i> Establishments matching "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (!track) return;
+
+    if (isGrid) {
+        track.classList.remove('gmode');
+        const wrap = document.getElementById('carouselWrap');
+        if (wrap) wrap.classList.remove('gmode');
+    }
+
+    track.innerHTML = ests.map(est => {
+        const isOpen  = est.status === 'Open';
+        const stClass = isOpen ? 'open' : 'closed';
+        const estImg  = est.image_url || (typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id]) || '';
+        const imgSrc  = estImg || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(est.name);
+
+        const matchBadge = (est.menu_match_count > 0)
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#92400e;
+                            border:1px solid #f59e0b;border-radius:5px;font-size:10px;font-weight:700;
+                            padding:2px 7px;margin-bottom:6px;">
+                   <i class="fas fa-utensils"></i> ${est.menu_match_count} menu match${est.menu_match_count > 1 ? 'es' : ''}
+               </span><br>`
+            : '';
+
+        return `
+        <div class="bsc" onclick="window.location.href='${URLS.estDetail}${est.id}/'">
+            <div class="bsc-img">
+                <img src="${imgSrc}" alt="${escHtml(est.name)}" loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/280x180?text=Restaurant'">
+                <span class="bsc-badge bsc-badge-est"><i class="fas fa-store"></i> Establishment</span>
+            </div>
+            <div class="bsc-body">
+                ${matchBadge}
+                <div class="bsc-name">${highlightMatch(escHtml(est.name), q)}</div>
+                <div class="bsc-price" style="color:#6b7280;font-size:12px;">${escHtml(est.category || 'Food')}</div>
+                <div class="bsc-est">
+                    <div class="bsc-einfo" style="padding-left:0">
+                        <div class="bsc-emeta">
+                            <span class="sp ${stClass}">${est.status || 'UNKNOWN'}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="bsc-btn" onclick="event.stopPropagation();window.location.href='${URLS.estDetail}${est.id}/'">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    cidx = 0;
+    if (!isGrid) {
+        const trackEl = document.getElementById('cTrack');
+        if (trackEl) trackEl.style.transform = 'translateX(0)';
+        updNav();
+    }
+}
+
+// ============================================
+// EMPTY STATE IN BS AREA
+// ============================================
+function showBSSearchEmpty(q) {
+    const titleEl = document.getElementById('bsTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-search"></i> No results for "<strong>${escHtml(q)}</strong>"`;
+
+    const track = document.getElementById('cTrack');
+    if (track) {
+        track.innerHTML = `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">
+            <i class="fas fa-search" style="font-size:28px;margin-bottom:12px;display:block;color:#d1d5db;"></i>
+            No items or restaurants match "<strong style="color:#374151;">${escHtml(q)}</strong>".<br>
+            <span style="font-size:12px;margin-top:6px;display:block;">Try a different keyword or browse below.</span>
+        </div>`;
+    }
+}
+
+// ============================================
+// SORT ESTABLISHMENT CARDS BY MENU MATCH COUNT
+// ============================================
+function sortEstCardsByMenuMatch(menuItems, q) {
+    const grid = document.getElementById('estGrid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+    // Save original order once
+    cards.forEach((card, i) => {
+        if (!card.dataset.originalOrder) card.dataset.originalOrder = i;
+    });
+
+    // Build map: estId → count
+    const matchMap = {};
+    menuItems.forEach(item => {
+        if (item.establishment) {
+            const id = item.establishment.id;
+            matchMap[id] = (matchMap[id] || 0) + 1;
+        }
+    });
+
+    // Remove old badges
+    document.querySelectorAll('.est-match-badge').forEach(el => el.remove());
+
+    // Add badge and set matchCount
+    cards.forEach(card => {
+        const id    = parseInt(card.dataset.id);
+        const count = matchMap[id] || 0;
+        card.dataset.matchCount = count;
+
+        if (count > 0) {
+            const badge = document.createElement('div');
+            badge.className = 'est-match-badge';
+            badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu match${count > 1 ? 'es' : ''}`;
+            const body = card.querySelector('.estc-body');
+            if (body) body.insertBefore(badge, body.firstChild);
+            card.style.display = '';
+        }
+    });
+
+    // Sort: more matches → top
+    cards.sort((a, b) => {
+        const ma = parseInt(a.dataset.matchCount || 0);
+        const mb = parseInt(b.dataset.matchCount || 0);
+        if (mb !== ma) return mb - ma;
+        return (parseInt(a.dataset.originalOrder) || 0) - (parseInt(b.dataset.originalOrder) || 0);
+    });
+
+    cards.forEach(card => grid.appendChild(card));
+}
+
+// ============================================
+// RENDER LIVE SEARCH DROPDOWN (while typing)
+// ============================================
+function renderSearchDrop(data, q) {
+    const drop    = document.getElementById('searchDropdown');
+    const content = document.getElementById('searchDropdownContent');
+    dropSelected  = -1;
+
+    const items       = data.menus          || [];
+    const ests        = data.establishments || [];
+    const categories  = data.categories     || [];
+    const suggestions = data.suggestions    || [];
+    let html = '';
+
+    // ── Menu Items ──
+    if (items.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-utensils"></i> Menu Items</div>`;
+        items.slice(0, 6).forEach(item => {
+            const estId   = item.establishment ? item.establishment.id   : '';
+            const estName = item.establishment ? item.establishment.name : '';
+            const imgSrc  = item.image_url
+                ? `<img src="${escHtml(item.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
+                : `<i class="fas fa-utensils"></i>`;
+            const qEsc = escHtml(q).replace(/'/g, "\\'");
+            html += `<div class="search-dropdown-item" onclick="saveRecentAndGo(event,'${qEsc}','${URLS.estDetail}${estId}/')">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${imgSrc}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${highlightMatch(escHtml(item.name), q)}</div>
+                    <div class="search-dropdown-item-meta">
+                        <span style="color:#B71C1C;font-weight:700;">₱${parseFloat(item.price).toFixed(2)}</span>
+                        <span>•</span>
+                        <i class="fas fa-store" style="font-size:9px;"></i>
+                        <span>${highlightMatch(escHtml(estName), q)}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // ── Establishments ──
+    if (ests.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-store"></i> Establishments</div>`;
+        ests.slice(0, 5).forEach(est => {
+            const isOpen   = est.status === 'Open';
+            const stColor  = isOpen ? '#10b981' : '#ef4444';
+            const stDot    = `<span style="width:6px;height:6px;border-radius:50%;background:${stColor};display:inline-block;flex-shrink:0;"></span>`;
+            const estImgSrc = est.image_url
+                ? `<img src="${escHtml(est.image_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+                : ((typeof EST_IMG_MAP !== 'undefined' && EST_IMG_MAP[est.id])
+                    ? `<img src="${escHtml(EST_IMG_MAP[est.id])}" style="width:100%;height:100%;object-fit:cover;border-radius:7px;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'></i>'">`
+                    : `<i class="fas fa-store"></i>`);
+
+            const matchChip = (est.menu_match_count > 0)
+                ? `<span class="sd-menu-match-chip">
+                       <i class="fas fa-utensils"></i> ${est.menu_match_count} menu item${est.menu_match_count > 1 ? 's' : ''}
+                   </span>`
+                : '';
+
+            const qEsc = escHtml(q).replace(/'/g, "\\'");
+            html += `<div class="search-dropdown-item" onclick="saveRecentAndGo(event,'${qEsc}','${URLS.estDetail}${est.id}/')">
+                <div class="search-dropdown-item-icon" style="overflow:hidden;">${estImgSrc}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${highlightMatch(escHtml(est.name), q)}</div>
+                    <div class="search-dropdown-item-meta">
+                        ${stDot}
+                        <span style="color:${stColor};font-weight:600;">${est.status}</span>
+                        <span>•</span>
+                        <span>${escHtml(est.category)}</span>
+                        ${matchChip}
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // ── Categories ──
+    if (categories.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title"><i class="fas fa-tags"></i> Categories</div>
+            <div class="sd-category-chips" style="padding:4px 12px 10px;">`;
+        categories.forEach(cat => {
+            const escaped = escHtml(cat).replace(/'/g, "\\'");
+            html += `<button class="sd-cat-chip" onclick="handleCatChip(event,'${escaped}')">
+                <i class="fas fa-tag"></i> ${highlightMatch(escHtml(cat), q)}
+            </button>`;
+        });
+        html += '</div></div>';
+    }
+
+    // ── Suggestions (anti "No Results") ──
+    if (!items.length && !ests.length && suggestions.length > 0) {
+        html += `<div class="search-dropdown-section">
+            <div class="search-dropdown-title" style="color:#f59e0b;">
+                <i class="fas fa-lightbulb"></i> Did you mean…
+            </div>`;
+        suggestions.forEach(s => {
+            const escaped = escHtml(s.text).replace(/'/g, "\\'");
+            html += `<div class="search-dropdown-item suggestion-item"
+                        onclick="handleSuggestionClick(event,'${escaped}')">
+                <div class="search-dropdown-item-icon" style="background:#fffbeb;color:#f59e0b;">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div style="min-width:0;flex:1;">
+                    <div class="search-dropdown-item-name">${escHtml(s.text)}</div>
+                    <div class="search-dropdown-item-meta"><span>${escHtml(s.sub)}</span></div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // ── True no results ──
+    if (!html) {
+        html = `<div class="search-no-results">
+            <i class="fas fa-search" style="font-size:22px;margin-bottom:8px;display:block;color:#d1d5db;"></i>
+            <div style="font-weight:600;color:#374151;margin-bottom:4px;">No results for "${escHtml(q)}"</div>
+            <div style="font-size:11px;color:#9ca3af;">Try a different keyword or browse below</div>
+        </div>`;
+    }
+
+    content.innerHTML = html;
+    drop.classList.add('active');
+}
+
+// ── Helper: save to recent then navigate ──
+function saveRecentAndGo(e, q, url) {
+    saveRecent(q);
+    window.location.href = url;
+}
+
+// ── Helper: click suggestion → re-search ──
 function handleSuggestionClick(e, text) {
     e.stopPropagation();
     const inp = document.getElementById('hSearch');
     const clr = document.getElementById('hClr');
     if (!inp) return;
-    inp.value = text; clr.classList.add('on');
-    filterEstCardsByText(text); doSearch(text);
+    inp.value = text;
+    clr.classList.add('on');
+    hideBSSection();
+    filterEstCards(text);
+    fetchSearchResults(text);
 }
 
 function highlightMatch(text, q) {
-    if (!q) return text;
     const re = new RegExp(`(${escapeRe(q)})`, 'gi');
     return text.replace(re, '<span class="search-match">$1</span>');
 }
-
 
 // ============================================
 // SCROLL TO TOP
@@ -1486,11 +1493,10 @@ function initScrollTop() {
 // TOAST NOTIFICATION
 // ============================================
 function showToast(msg, type = 'success') {
-    const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const colors   = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
     const bgColors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fffbeb', info: '#eff6ff' };
-    const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+    const icons    = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
 
-    // Get or create a shared toast container so multiple toasts stack nicely
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');
@@ -1503,7 +1509,6 @@ function showToast(msg, type = 'success') {
     t.style.cssText = `background:${bgColors[type]||'#fff'};border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;max-width:520px;pointer-events:auto;animation:toastSlideIn .35s cubic-bezier(.34,1.56,.64,1);`;
     t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="flex:1;">${escHtml(msg)}</span>`;
 
-    // Inject keyframes once
     if (!document.getElementById('toastKeyframes')) {
         const style = document.createElement('style');
         style.id = 'toastKeyframes';
@@ -1535,7 +1540,6 @@ document.addEventListener('click', e => {
     if (!e.target.closest('.hsw')) {
         closeDrop();
     }
-    // Close layer panel when clicking outside
     if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
         const lp = document.getElementById('mapLayerPanel');
         if (lp) lp.classList.remove('show');
@@ -1562,17 +1566,14 @@ function escapeRe(str) {
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
+
 // ============================================
-// ESTABLISHMENT CARD NAVIGATION — safety net
-// The <a> tag href already handles navigation.
-// This sets child pointer-events to none so
-// clicks on images/text bubble up to the <a>.
+// ESTABLISHMENT CARD NAVIGATION
 // ============================================
 function initEstablishmentCards() {
     document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
         card.style.pointerEvents = 'auto';
         card.style.cursor = 'pointer';
-        // Let all child elements pass clicks through to the anchor
         card.querySelectorAll('*').forEach(function(child) {
             child.style.pointerEvents = 'none';
         });

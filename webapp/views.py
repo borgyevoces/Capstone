@@ -6065,7 +6065,7 @@ def search_menu_items(request):
         print(f"Error in search_menu_items: {e}")
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-    
+
 @login_required
 def order_history_view(request):
     """
