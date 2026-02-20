@@ -7,13 +7,18 @@ let cidx = 0, isGrid = false;
 const VISIBLE = 5;
 let bsData = []; // real backend data
 
-
 let curView = 'bs', mapReady = false;
 let mapInst = null, curTile = null, mkLayer = null;
 let esMapData = []; // real establishment data for map
 
 // ── MODAL STATE ──
 let currentModalItem = null;
+
+// ── SEARCH STATE ──
+let searchDebounceTimer = null;
+let currentSearchQuery = '';
+let searchMode = null; // null | 'menu' | 'establishment' | 'category'
+let searchMenuData = []; // results from search_menu_items API
 
 // ── CSRF Helper ──
 function getCsrf() {
@@ -32,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBestsellers();
     autoHideMessages();
     initEstablishmentCards();
+    initSmartSearch();
 
     // ✅ FIX: Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
@@ -62,9 +68,9 @@ function fetchBestsellers() {
         .then(data => {
             if (data.success && data.bestsellers.length > 0) {
                 bsData = data.bestsellers;
-                renderBS(bsData);
+                // Only render if not in search mode
+                if (!searchMode) renderBS(bsData);
             } else {
-                // Show empty state
                 document.getElementById('cTrack').innerHTML =
                     '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
                 document.getElementById('cPrev').disabled = true;
@@ -78,22 +84,17 @@ function fetchBestsellers() {
 }
 
 // ============================================
-// ✅ FIX: REFRESH BESTSELLER STATUSES IN REAL-TIME
-// Re-fetches from API and updates open/closed badges without full re-render
+// ✅ REFRESH BESTSELLER STATUSES IN REAL-TIME
 // ============================================
 function refreshBestsellerStatuses() {
     fetch(URLS.bestsellers)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.bestsellers.length) return;
-            // Update bsData with fresh status
             data.bestsellers.forEach(fresh => {
                 const idx = bsData.findIndex(x => x.id === fresh.id);
-                if (idx !== -1) {
-                    bsData[idx].establishment.status = fresh.establishment.status;
-                }
+                if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
             });
-            // Update all visible status badges in cards
             document.querySelectorAll('.bsc').forEach(card => {
                 const onclickAttr = card.getAttribute('onclick') || '';
                 const match = onclickAttr.match(/openMod\((\d+)\)/);
@@ -103,57 +104,59 @@ function refreshBestsellerStatuses() {
                 if (!item) return;
                 const st = (item.establishment.status || 'closed').toLowerCase();
                 const badge = card.querySelector('.sp');
-                if (badge) {
-                    badge.className = `sp ${st}`;
-                    badge.textContent = st.toUpperCase();
-                }
+                if (badge) { badge.className = `sp ${st}`; badge.textContent = st.toUpperCase(); }
             });
-            // If modal is open, update its status too
             if (currentModalItem) {
                 const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
                 if (fresh) {
                     currentModalItem.establishment.status = fresh.establishment.status;
                     const st = (fresh.establishment.status || 'closed').toLowerCase();
                     const stEl = document.getElementById('mEstS');
-                    if (stEl) {
-                        stEl.className = `mests ${st}`;
-                        stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
-                    }
+                    if (stEl) { stEl.className = `mests ${st}`; stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`; }
                 }
             }
         })
-        .catch(() => {}); // Silent fail for background refresh
+        .catch(() => {});
 }
 
 // ============================================
-// RENDER BESTSELLER CARDS
+// RENDER BESTSELLER CARDS (original BS or search-menu results)
 // ============================================
-function renderBS(data) {
+function renderBS(data, isSearchResult = false) {
     const track = document.getElementById('cTrack');
     if (!data || data.length === 0) {
-        track.innerHTML = '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestsellers available.</div>';
+        track.innerHTML = '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No results found.</div>';
+        document.getElementById('cPrev').disabled = true;
+        document.getElementById('cNext').disabled = true;
         return;
     }
 
     track.innerHTML = data.map(d => {
-        const st = (d.establishment.status || 'closed').toLowerCase(); // ✅ FIX: always lowercase, default 'closed'
+        const st = (d.establishment.status || 'closed').toLowerCase();
         const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
             ? `<img src="${estImg}" alt="${escHtml(d.establishment.name)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
             : `<i class="fas fa-utensils"></i>`;
+
+        // Badge: "Best Seller" if is_top_seller=true or from original bsData, else "Menu Item" for search results
+        const isBestSeller = d.is_top_seller !== undefined ? d.is_top_seller : true; // original bsData items are all top sellers
+        const badgeHtml = isBestSeller
+            ? `<span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>`
+            : `<span class="bsc-badge" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-utensils"></i> Menu Item</span>`;
+
         return `
         <div class="bsc" onclick="openMod(${d.id})">
             <div class="bsc-img">
                 <img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy"
                      onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
-                <span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>
+                ${badgeHtml}
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${escHtml(d.name)}</div>
                 <div class="bsc-price">₱${parseFloat(d.price).toFixed(2)}</div>
                 <div class="bsc-stats">
-                    <span><i class="fas fa-shopping-bag"></i> ${d.total_orders} orders</span>
+                    <span><i class="fas fa-shopping-bag"></i> ${d.total_orders || 0} orders</span>
                     <span><i class="fas fa-boxes"></i> ${d.quantity} left</span>
                 </div>
                 <div class="bsc-est">
@@ -183,7 +186,6 @@ function cardW() {
     return c ? c.offsetWidth + 20 : 238;
 }
 function maxIdx() {
-    // In search mode, use actual rendered card count; otherwise use bsData length
     const track = document.getElementById('cTrack');
     const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
     return Math.max(0, cardCount - VISIBLE);
@@ -252,7 +254,6 @@ function setView(v) {
         dl.textContent = 'Best Sellers';
         db.classList.remove('mapmode');
         db.querySelector('i').className = 'fas fa-trophy';
-        // Stop real-time polling when map is hidden
         if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
     } else {
         cw.style.display = 'none';
@@ -265,7 +266,6 @@ function setView(v) {
         if (!mapReady) { initMap(); mapReady = true; }
         else {
             setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
-            // Restart polling when map becomes visible again
             fetchMapEstablishments();
             if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
         }
@@ -275,7 +275,7 @@ function setView(v) {
 
 
 // ============================================
-// LEAFLET MAP — screenshot-matching design
+// LEAFLET MAP
 // ============================================
 const TILES = {
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -311,23 +311,17 @@ function initMap() {
             .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;padding:2px 4px;">📍 CvSU-Bacoor Campus<br><span style="font-weight:400;font-size:11px;color:#6b7280;">Bacoor, Cavite</span></div>');
 
         mkLayer = L.layerGroup().addTo(mapInst);
-
-        // Load all establishments from API — primary source for coordinates
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
         mapInst.invalidateSize();
     }, 150);
 }
 
-// ── API is the ONLY source of lat/lng (guaranteed non-null by backend filter) ──
-// ── EST_ALL_DATA enriches with image + real-time status only ──
 function loadAllEstablishments() {
-    // Use 999km radius — backend already filters lat/lng non-null, this returns ALL registered
     fetch(`${URLS.nearbyEst}?lat=${CVSU.lat}&lng=${CVSU.lng}&radius=999999`)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            // Merge API coordinates with local image/status data
             const merged = data.establishments.map(e => {
                 const local = (typeof EST_ALL_DATA !== 'undefined' && EST_ALL_DATA[e.id]) || {};
                 return {
@@ -335,12 +329,10 @@ function loadAllEstablishments() {
                     name: local.name || e.name || '',
                     address: local.address || e.address || '',
                     image: local.image || '',
-                    // Status: prefer EST_ALL_DATA (server-rendered, real-time) over API (no status field)
                     status: local.status || liveStatusCache[e.id] || '',
                     latitude: parseFloat(e.latitude),
                     longitude: parseFloat(e.longitude),
                     distance: e.distance || 0,
-                    // ✅ Include other_category and other_amenity for filtering/display
                     categories: local.categories || '',
                     other_category: local.other_category || '',
                     other_amenity: local.other_amenity || ''
@@ -352,7 +344,6 @@ function loadAllEstablishments() {
         .catch(err => console.error('Map load error:', err));
 }
 
-// Keep these as aliases for compatibility
 function renderFromLocalData() { loadAllEstablishments(); }
 function refreshEstablishmentStatuses() { loadAllEstablishments(); }
 function fetchMapEstablishments() { loadAllEstablishments(); }
@@ -361,7 +352,6 @@ function applyFiltersToData(data) {
     let result = [...data];
     const f = mapFilterState;
     if (f.status) result = result.filter(e => (e.status || '').toLowerCase() === f.status);
-    // ✅ Filter by category — checks both standard categories AND other_category
     if (f.cat) {
         const q = f.cat.toLowerCase();
         result = result.filter(e => {
@@ -467,9 +457,7 @@ function switchTile(t) {
 
 function showMyLocation() {
     const btn = document.getElementById('mapLocBtn');
-    if (!btn || !navigator.geolocation) {
-        showToast('Geolocation not supported.', 'error'); return;
-    }
+    if (!btn || !navigator.geolocation) { showToast('Geolocation not supported.', 'error'); return; }
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
     navigator.geolocation.getCurrentPosition(
@@ -504,19 +492,371 @@ function applyFilter() {
     document.querySelectorAll('.food-est-item').forEach(el => {
         const cat = (el.dataset.category || '').toLowerCase();
         el.style.display = (!val || cat.includes(val)) ? '' : 'none';
+        // Remove any search match badges if user manually filters
+        const existing = el.querySelector('.est-match-badge');
+        if (existing) existing.remove();
     });
 }
 
 // ============================================
+// ── SMART SEARCH ENGINE ──
+// ============================================
+function initSmartSearch() {
+    const inp = document.getElementById('hSearch');
+    const clr = document.getElementById('hClr');
+    if (!inp) return;
+
+    inp.addEventListener('input', function () {
+        const q = this.value.trim();
+        clr.classList.toggle('on', q.length > 0);
+
+        if (!q) {
+            resetSearch();
+            return;
+        }
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => runSmartSearch(q), 280);
+    });
+
+    clr.addEventListener('click', function () {
+        inp.value = '';
+        clr.classList.remove('on');
+        resetSearch();
+        inp.focus();
+    });
+}
+
+// ── Classify what the user is searching for ──
+function classifyQuery(q) {
+    const qLow = q.toLowerCase();
+
+    // Check if it matches a category
+    const allCats = [];
+    document.querySelectorAll('#catFilt option').forEach(o => {
+        if (o.value) allCats.push(o.value.toLowerCase());
+    });
+    const matchesCat = allCats.some(c => c.includes(qLow) || qLow.includes(c));
+    if (matchesCat) return 'category';
+
+    // Check if it matches an establishment name
+    let estMatch = false;
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const name = (el.dataset.name || '').toLowerCase();
+        if (name.includes(qLow)) estMatch = true;
+    });
+    if (estMatch) return 'establishment';
+
+    // Default: search menus
+    return 'menu';
+}
+
+// ── Main search dispatcher ──
+function runSmartSearch(q) {
+    currentSearchQuery = q;
+    const qLow = q.toLowerCase();
+
+    // Determine mode — check both est names and categories first for specificity
+    let mode = 'menu'; // default
+    let estMatchCount = 0;
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const name = (el.dataset.name || '').toLowerCase();
+        if (name.includes(qLow)) estMatchCount++;
+    });
+
+    // Check categories
+    let catMatchCount = 0;
+    document.querySelectorAll('#catFilt option').forEach(o => {
+        if (o.value && o.value.toLowerCase().includes(qLow)) catMatchCount++;
+    });
+    // Also check data-category on est cards
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const cat = (el.dataset.category || '').toLowerCase();
+        if (cat.includes(qLow)) catMatchCount++;
+    });
+
+    if (catMatchCount > 0 && estMatchCount === 0) {
+        mode = 'category';
+    } else if (estMatchCount > 0) {
+        mode = 'establishment';
+    } else {
+        mode = 'menu';
+    }
+
+    searchMode = mode;
+
+    if (mode === 'establishment') {
+        doEstablishmentSearch(qLow);
+    } else if (mode === 'category') {
+        doCategorySearch(qLow);
+    } else {
+        doMenuSearch(q);
+    }
+}
+
+// ── ESTABLISHMENT SEARCH ──
+function doEstablishmentSearch(qLow) {
+    // Hide bestsellers section
+    hideBsSection();
+
+    // Show section title update
+    updateSecTitle('<i class="fas fa-store"></i> Matching Establishments');
+
+    // Filter establishments
+    let hasVisible = false;
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const name = (el.dataset.name || '').toLowerCase();
+        const isMatch = name.includes(qLow);
+        el.style.display = isMatch ? '' : 'none';
+        if (isMatch) { hasVisible = true; removeMatchBadge(el); }
+    });
+
+    if (!hasVisible) showNoEstMsg('No establishments match "' + currentSearchQuery + '"');
+    else clearNoEstMsg();
+}
+
+// ── CATEGORY SEARCH ──
+function doCategorySearch(qLow) {
+    // Hide bestsellers section
+    hideBsSection();
+
+    // Show section title update
+    updateSecTitle('<i class="fas fa-tags"></i> Category: ' + cap(currentSearchQuery));
+
+    // Filter establishments by category
+    let hasVisible = false;
+    document.querySelectorAll('.food-est-item').forEach(el => {
+        const cat = (el.dataset.category || '').toLowerCase();
+        const name = (el.dataset.name || '').toLowerCase();
+        const isMatch = cat.includes(qLow) || name.includes(qLow);
+        el.style.display = isMatch ? '' : 'none';
+        if (isMatch) { hasVisible = true; removeMatchBadge(el); }
+    });
+
+    if (!hasVisible) showNoEstMsg('No establishments found for "' + currentSearchQuery + '"');
+    else clearNoEstMsg();
+}
+
+// ── MENU SEARCH ──
+function doMenuSearch(q) {
+    const qLow = q.toLowerCase();
+
+    // Show bestsellers section (with menu results)
+    showBsSection();
+
+    // Show loading in carousel
+    document.getElementById('cTrack').innerHTML =
+        '<div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>'.repeat(5);
+
+    // Update BS title
+    const bsTitle = document.getElementById('bsTitle');
+    if (bsTitle) bsTitle.innerHTML = `<i class="fas fa-search"></i> Menu results for "${escHtml(q)}"`;
+
+    // Fetch menu items
+    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            searchMenuData = data.items;
+
+            // Merge into allData for modal: combine with bsData (bsData takes precedence for existing items)
+            // Build a combined list: searchMenuData items not in bsData get added temporarily
+            renderBS(searchMenuData, true);
+
+            // Auto-sort establishments: those that have a matching menu item come first
+            // and get a match badge indicator
+            const matchingEstIds = new Set(searchMenuData.map(i => i.establishment.id));
+            const matchCount = {};
+            searchMenuData.forEach(i => {
+                matchCount[i.establishment.id] = (matchCount[i.establishment.id] || 0) + 1;
+            });
+
+            sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow);
+        })
+        .catch(() => {
+            // Fallback: filter bsData by name
+            const filtered = bsData.filter(d => d.name.toLowerCase().includes(qLow));
+            renderBS(filtered, true);
+            if (filtered.length === 0) {
+                document.getElementById('cTrack').innerHTML =
+                    `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No menu items found for "${escHtml(q)}"</div>`;
+            }
+        });
+}
+
+// ── Sort and badge establishments for menu search ──
+function sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow) {
+    const grid = document.getElementById('estGrid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+    // Remove old match badges
+    cards.forEach(c => removeMatchBadge(c));
+
+    // Show all cards
+    cards.forEach(c => { c.style.display = ''; });
+
+    // Sort: matched first
+    cards.sort((a, b) => {
+        const aId = parseInt(a.dataset.id || 0);
+        const bId = parseInt(b.dataset.id || 0);
+        const aMatch = matchingEstIds.has(aId) ? 1 : 0;
+        const bMatch = matchingEstIds.has(bId) ? 1 : 0;
+        if (bMatch !== aMatch) return bMatch - aMatch;
+        // Secondary sort: more matches first
+        return (matchCount[bId] || 0) - (matchCount[aId] || 0);
+    });
+
+    // Re-append in sorted order and add badges
+    cards.forEach(card => {
+        const id = parseInt(card.dataset.id || 0);
+        if (matchingEstIds.has(id)) {
+            const cnt = matchCount[id] || 1;
+            addMatchBadge(card, cnt, qLow);
+        }
+        grid.appendChild(card);
+    });
+}
+
+// ── Add match indicator badge to est card ──
+function addMatchBadge(card, count, query) {
+    removeMatchBadge(card);
+    const body = card.querySelector('.estc-body');
+    if (!body) return;
+    const badge = document.createElement('div');
+    badge.className = 'est-match-badge';
+    badge.innerHTML = `<i class="fas fa-utensils"></i> ${count} menu item${count > 1 ? 's' : ''} match "${escHtml(query)}"`;
+    body.insertBefore(badge, body.firstChild);
+}
+
+function removeMatchBadge(card) {
+    const existing = card.querySelector('.est-match-badge');
+    if (existing) existing.remove();
+}
+
+// ── Show/hide bestsellers section ──
+function showBsSection() {
+    const sec = document.getElementById('bsSec');
+    if (sec) sec.style.display = '';
+    // Only show BS section if we're in BS view (not map)
+    if (curView === 'bs') {
+        const cw = document.getElementById('carouselWrap');
+        if (cw) cw.style.display = '';
+    }
+}
+
+function hideBsSection() {
+    const sec = document.getElementById('bsSec');
+    if (sec) sec.style.display = 'none';
+}
+
+// ── Update the establishments section title ──
+function updateSecTitle(html) {
+    const t = document.querySelector('.sec-title');
+    if (t) t.innerHTML = html;
+}
+
+function restoreSecTitle() {
+    const t = document.querySelector('.sec-title');
+    if (t) t.innerHTML = '<i class="fas fa-store"></i> Food Establishments';
+}
+
+// ── No-est message helpers ──
+function showNoEstMsg(msg) {
+    clearNoEstMsg();
+    const grid = document.getElementById('estGrid');
+    if (!grid) return;
+    const div = document.createElement('p');
+    div.className = 'no-est-msg search-no-est';
+    div.textContent = msg;
+    grid.appendChild(div);
+}
+
+function clearNoEstMsg() {
+    document.querySelectorAll('.search-no-est').forEach(e => e.remove());
+}
+
+// ── RESET SEARCH — restore everything to original state ──
+function resetSearch() {
+    currentSearchQuery = '';
+    searchMode = null;
+    searchMenuData = [];
+
+    // Restore BS section
+    showBsSection();
+
+    // Restore BS title
+    const bsTitle = document.getElementById('bsTitle');
+    if (bsTitle) bsTitle.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
+
+    // Re-render original bsData
+    if (bsData.length > 0) renderBS(bsData, false);
+
+    // Restore establishment grid
+    const grid = document.getElementById('estGrid');
+    if (grid) {
+        const cards = Array.from(grid.querySelectorAll('.food-est-item'));
+
+        // Remove all match badges
+        cards.forEach(card => {
+            removeMatchBadge(card);
+            card.style.display = '';
+        });
+
+        // Restore original DOM order by data-id or just by removing and re-adding by original order
+        // We can rely on the fact that the HTML order is the original server-side sorted order
+        // Just re-sort by distance (the original sort key) using the data attributes or just reset display
+        // Since original order is preserved in the DOM position, we just need to ensure they're all shown.
+        // To restore sort order: re-append in original order (they were sorted before JS re-ordered them)
+        // We track original order by index
+        if (!grid._originalOrder) {
+            // First time: save original order
+            grid._originalOrder = cards.map(c => c);
+        } else {
+            // Restore original order
+            grid._originalOrder.forEach(c => grid.appendChild(c));
+        }
+    }
+
+    // Restore section title
+    restoreSecTitle();
+
+    // Clear no-est messages
+    clearNoEstMsg();
+
+    // Re-apply category filter if active
+    const catFilt = document.getElementById('catFilt');
+    if (catFilt && catFilt.value) applyFilter();
+}
+
+// ── Save original establishment order on DOM ready ──
+document.addEventListener('DOMContentLoaded', function () {
+    const grid = document.getElementById('estGrid');
+    if (grid) {
+        grid._originalOrder = Array.from(grid.querySelectorAll('.food-est-item'));
+    }
+});
+
+// ============================================
 // BESTSELLER MODAL — opens with backend data
-// ✅ FIX: Uses fresh real-time status from API
 // ============================================
 function openMod(id) {
-    const d = bsData.find(x => x.id === id);
+    // Search in bsData first, then searchMenuData
+    let d = bsData.find(x => x.id === id);
+    if (!d) d = searchMenuData.find(x => x.id === id);
     if (!d) return;
+
     currentModalItem = d;
     const imgSrc = d.image || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(d.name);
     document.getElementById('mImg').src = imgSrc;
+
+    // Show/hide Best Seller badge on modal
+    const mBadge = document.querySelector('.m-bsbadge');
+    if (mBadge) {
+        const isBs = d.is_top_seller !== undefined ? d.is_top_seller : true;
+        mBadge.style.display = isBs ? 'flex' : 'none';
+    }
+
     document.getElementById('mName').textContent = d.name;
     document.getElementById('mDesc').textContent = d.description || '';
     document.getElementById('mPrice').textContent = `₱${parseFloat(d.price).toFixed(2)}`;
@@ -524,7 +864,6 @@ function openMod(id) {
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
 
-    // ✅ FIX: Always compute status fresh from the stored bsData (which refreshBestsellerStatuses keeps current)
     const st = (d.establishment.status || 'closed').toLowerCase();
     const stEl = document.getElementById('mEstS');
     stEl.className = `mests ${st}`;
@@ -534,26 +873,21 @@ function openMod(id) {
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
-    // ✅ FIX: Fetch fresh status at modal open time
+    // Fetch fresh status
     fetch(URLS.bestsellers)
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
             const fresh = data.bestsellers.find(x => x.id === id);
             if (!fresh) return;
-            // Update stored data
             const idx = bsData.findIndex(x => x.id === id);
             if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
-            currentModalItem = bsData[idx] || currentModalItem;
-            // Update modal status badge
+            currentModalItem = (idx !== -1 ? bsData[idx] : currentModalItem);
             const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
             const el = document.getElementById('mEstS');
-            if (el) {
-                el.className = `mests ${freshSt}`;
-                el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
-            }
+            if (el) { el.className = `mests ${freshSt}`; el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`; }
         })
-        .catch(() => {}); // Silent — already showing a status
+        .catch(() => {});
 }
 
 function closeMod() {
@@ -569,8 +903,7 @@ function chgQ(d) {
 }
 
 // ============================================
-// ADD TO CART — POST to /cart/add/
-// ✅ FIX: Properly connected, closes modal on success
+// ADD TO CART
 // ============================================
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -578,10 +911,7 @@ function addToCartFromModal() {
     const qty = parseInt(document.getElementById('mqty').value) || 1;
 
     const btn = document.getElementById('addToCartBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-    }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...'; }
 
     fetch(URLS.addToCart, {
         method: 'POST',
@@ -592,7 +922,6 @@ function addToCartFromModal() {
     .then(data => {
         if (data.success) {
             closeMod();
-            // backend returns cart_count directly in add_to_cart response
             const badge = document.getElementById('cartBadge');
             if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
             else updateCartBadge();
@@ -603,17 +932,12 @@ function addToCartFromModal() {
     })
     .catch(() => showToast('Network error. Please try again.', 'error'))
     .finally(() => {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
     });
 }
 
 // ============================================
-// BUY NOW — Adds item to cart then redirects to cart page
-// ✅ UPDATED: Adds to cart and redirects to /cart/?pay=1
-//             so user picks Cash or Online Payment in cart
+// BUY NOW
 // ============================================
 function buyNowFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
@@ -621,12 +945,8 @@ function buyNowFromModal() {
     const qty = parseInt(document.getElementById('mqty').value) || 1;
 
     const btn = document.getElementById('buyNowBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
 
-    // Add item to cart first, then redirect to cart page with pay=1
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -635,22 +955,15 @@ function buyNowFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Redirect to cart page with ?pay=1 to auto-show payment options
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-            }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
         }
     })
     .catch(() => {
         showToast('Network error. Please try again.', 'error');
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
     });
 }
 
@@ -663,7 +976,6 @@ function updateCartBadge() {
         .then(r => r.json())
         .then(data => {
             const badge = document.getElementById('cartBadge');
-            // backend returns { success: true, cart_count: N }
             if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
         })
         .catch(() => {});
@@ -696,7 +1008,7 @@ function closeSet() {
 }
 
 // ============================================
-// PROFILE IMAGE — preview + real-time AJAX save
+// PROFILE IMAGE
 // ============================================
 function previewProfileImg(input) {
     if (input.files && input.files[0]) {
@@ -718,7 +1030,6 @@ function saveProfile() {
         return;
     }
 
-    // Loading state
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
@@ -735,21 +1046,12 @@ function saveProfile() {
     .then(data => {
         if (data.success) {
             const newUrl = data.profile_picture_url;
-
-            // ① Update preview inside modal
             document.getElementById('profilePreview').innerHTML =
                 `<img src="${newUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
-            // ② Update navbar avatar instantly
             const nav = document.getElementById('pavBtn');
-            if (nav) nav.innerHTML =
-                `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
-            // ③ Update dropdown header avatar instantly
+            if (nav) nav.innerHTML = `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
             const da = document.querySelector('.pd-av');
-            if (da) da.innerHTML =
-                `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-
+            if (da) da.innerHTML = `<img src="${newUrl}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
             showToast('Profile picture updated!', 'success');
             closeSet();
         } else {
@@ -780,7 +1082,6 @@ function showToast(msg, type = 'success') {
     const bgColors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fffbeb', info: '#eff6ff' };
     const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
 
-    // Get or create a shared toast container so multiple toasts stack nicely
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');
@@ -793,7 +1094,6 @@ function showToast(msg, type = 'success') {
     t.style.cssText = `background:${bgColors[type]||'#fff'};border-left:5px solid ${colors[type]||colors.info};border-radius:10px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;font-size:14px;font-weight:500;color:#1f2937;min-width:280px;max-width:520px;pointer-events:auto;animation:toastSlideIn .35s cubic-bezier(.34,1.56,.64,1);`;
     t.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="color:${colors[type]};font-size:18px;flex-shrink:0;"></i><span style="flex:1;">${escHtml(msg)}</span>`;
 
-    // Inject keyframes once
     if (!document.getElementById('toastKeyframes')) {
         const style = document.createElement('style');
         style.id = 'toastKeyframes';
@@ -822,7 +1122,6 @@ document.addEventListener('click', e => {
         const pd = document.getElementById('pdrop');
         if (pd) pd.classList.remove('show');
     }
-    // Close layer panel when clicking outside
     if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
         const lp = document.getElementById('mapLayerPanel');
         if (lp) lp.classList.remove('show');
@@ -849,18 +1148,15 @@ function escapeRe(str) {
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
+
 // ============================================
-// ESTABLISHMENT CARD NAVIGATION — safety net
-// The <a> tag href already handles navigation.
-// This sets child pointer-events to none so
-// clicks on images/text bubble up to the <a>.
+// ESTABLISHMENT CARD NAVIGATION
 // ============================================
 function initEstablishmentCards() {
     document.querySelectorAll('.estc.food-est-item').forEach(function(card) {
         card.style.pointerEvents = 'auto';
         card.style.cursor = 'pointer';
-        // Let all child elements pass clicks through to the anchor
-        card.querySelectorAll('*').forEach(function(child) {
+        card.querySelectorAll('*:not(.est-match-badge)').forEach(function(child) {
             child.style.pointerEvents = 'none';
         });
     });

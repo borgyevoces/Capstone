@@ -24,6 +24,7 @@ urlpatterns = [
 
                   # ✅ NEW: Bestsellers API Endpoint
                   path('api/bestsellers/', views.get_bestsellers, name='get_bestsellers'),
+                  path('api/search-menu-items/', views.search_menu_items, name='search_menu_items'),
 
                   # 2. User Authentication & Profile
                   path('accounts/login/', views.user_login_register, name='user_login'),

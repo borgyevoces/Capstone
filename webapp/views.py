@@ -6199,6 +6199,55 @@ def get_bestsellers(request):
             'count': 0,
             'warning': 'Database temporarily unavailable'
         })
+
+def search_menu_items(request):
+    """
+    Search all menu items across all active establishments.
+    Returns items matching the query (by name or description).
+    Used by the hero search bar for real-time menu search.
+    """
+    from django.db.models import Count, Q
+    query = request.GET.get('q', '').strip()
+
+    if not query or len(query) < 2:
+        return JsonResponse({'success': True, 'items': [], 'count': 0})
+
+    try:
+        items = MenuItem.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query),
+            food_establishment__is_active=True,
+            quantity__gt=0,
+        ).select_related('food_establishment').annotate(
+            total_orders=Count('orderitem')
+        ).order_by('-is_top_seller', '-total_orders')[:30]
+
+        items_data = []
+        for item in items:
+            est = item.food_establishment
+            status = get_current_status(est.opening_time, est.closing_time)
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description or '',
+                'price': float(item.price),
+                'image': item.image.url if item.image else None,
+                'quantity': item.quantity,
+                'total_orders': item.total_orders,
+                'is_top_seller': item.is_top_seller,
+                'establishment': {
+                    'id': est.id,
+                    'name': est.name,
+                    'address': est.address or '',
+                    'status': status,
+                },
+            })
+
+        return JsonResponse({'success': True, 'items': items_data, 'count': len(items_data)})
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error in search_menu_items: {e}")
+        return JsonResponse({'success': True, 'items': [], 'count': 0})
 # ============================================================
 # BUY NOW — 2-STEP CHECKOUT FLOW
 # ============================================================

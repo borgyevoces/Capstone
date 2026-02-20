@@ -345,6 +345,25 @@
     .estc, .food-est-item { pointer-events: auto !important; cursor: pointer !important; }
     .est-grid, .est-wrap { position: relative; z-index: 1; }
 
+    /* ── Est match badge (smart search) ── */
+    .est-match-badge {
+        pointer-events: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        border: 1px solid #f59e0b;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 7px;
+        margin-bottom: 5px;
+        font-family: 'Poppins', sans-serif;
+        animation: matchPulse 0.4s ease;
+    }
+    .est-match-badge i { font-size: 9px; color: #d97706; }
+
     /* ---------- BESTSELLER DETAIL MODAL ---------- */
     .mover { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); align-items: flex-end; justify-content: center; }
     .mover.on { display: flex; }
