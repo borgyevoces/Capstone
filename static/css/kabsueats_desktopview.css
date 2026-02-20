@@ -94,9 +94,12 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hs-hint-pill:hover { background: var(--red-light); border-color: var(--red); color: var(--red); box-shadow: 0 2px 8px rgba(183,28,28,.12); }
 .hs-hint-pill i { font-size: 11px; color: var(--red); }
 
-/* Search Dropdown */
-.search-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); border: 1px solid var(--g200); z-index: 1200; display: none; overflow: hidden; text-align: left; }
+/* ── Search Dropdown ── */
+.search-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); border: 1px solid var(--g200); z-index: 1200; display: none; overflow: hidden; text-align: left; max-height: 480px; overflow-y: auto; }
 .search-dropdown.active { display: block; }
+.search-dropdown::-webkit-scrollbar { width: 4px; }
+.search-dropdown::-webkit-scrollbar-track { background: transparent; }
+.search-dropdown::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
 .search-dropdown-section { padding: 8px 0; border-bottom: 1px solid var(--g100); }
 .search-dropdown-section:last-child { border-bottom: none; }
 .search-dropdown-title { padding: 8px 16px 4px; font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
@@ -104,18 +107,55 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .search-dropdown-item:hover { background: var(--g50); }
 .search-dropdown-item-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--g100); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--g600); flex-shrink: 0; }
 .search-dropdown-item-name { font-size: 13px; font-weight: 600; color: var(--g800); margin-bottom: 2px; }
-.search-match { background: rgba(183,28,28,0.12); color: var(--red); border-radius: 2px; padding: 0 2px; }
-.search-dropdown-item-meta { font-size: 11px; color: var(--g400); display: flex; align-items: center; gap: 5px; }
+.search-match { background: rgba(183,28,28,0.12); color: var(--red); border-radius: 2px; padding: 0 2px; font-weight: 700; }
+.search-dropdown-item-meta { font-size: 11px; color: var(--g400); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .search-no-results { padding: 20px 16px; text-align: center; color: var(--g400); font-size: 13px; }
+
+/* ── Recent search icon tint ── */
+.recent-icon { background: linear-gradient(135deg,#eff6ff,#dbeafe) !important; color: #3b82f6 !important; }
+
+/* ── "Clear all" button inside dropdown title ── */
+.sd-clear-recent { background: none; border: none; font-family: 'Poppins',sans-serif; font-size: 10px; font-weight: 600; color: #9ca3af; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color .15s,background .15s; display: flex; align-items: center; gap: 4px; }
+.sd-clear-recent:hover { color: #ef4444; background: #fef2f2; }
+
+/* ── Remove single recent item button ── */
+.sd-remove-recent { background: none; border: none; font-size: 11px; color: #d1d5db; cursor: pointer; padding: 4px 6px; border-radius: 4px; flex-shrink: 0; transition: color .15s,background .15s; }
+.sd-remove-recent:hover { color: #ef4444; background: #fef2f2; }
+
+/* ── Category chips row inside dropdown ── */
+.sd-category-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 14px 12px; }
+.sd-cat-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 20px; border: 1.5px solid #e5e7eb; background: #f9fafb; font-family: 'Poppins',sans-serif; font-size: 11px; font-weight: 600; color: #374151; cursor: pointer; transition: all .15s; }
+.sd-cat-chip i { color: #B71C1C; font-size: 9px; }
+.sd-cat-chip:hover { background: #B71C1C; border-color: #B71C1C; color: #fff; }
+.sd-cat-chip:hover i { color: #fff; }
+
+/* ── Menu-match chip inside establishment dropdown row ── */
+.sd-menu-match-chip { display: inline-flex; align-items: center; gap: 3px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: 4px; font-family: 'Poppins',sans-serif; white-space: nowrap; }
+.sd-menu-match-chip i { font-size: 9px; color: #d97706; }
+
+/* ── "Did you mean" suggestion rows ── */
+.suggestion-item .search-dropdown-item-name { color: #f59e0b !important; }
 
 /* ============================================ */
 /* BESTSELLERS SECTION                          */
 /* ============================================ */
-.bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
+.bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; will-change: max-height,opacity; }
 .bs-title-row { margin-bottom: 22px; padding: 28px 0 4px; }
-.bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; text-align: center; }
+.bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; text-align: center; transition: all .25s ease; }
 .bs-title i { color: #ff6b35; font-size: 19px; }
 .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+
+/* Smart Search: badges in BS carousel */
+.bsc-badge-search { background: linear-gradient(135deg,#3b82f6,#1d4ed8) !important; }
+.bsc-badge-est    { background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important; }
+
+/* Establishment match badge on card */
+.est-match-badge { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #f59e0b; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 4px 9px; margin-bottom: 6px; font-family: 'Poppins',sans-serif; animation: matchPulse 0.4s ease; }
+.est-match-badge i { font-size: 10px; color: #d97706; }
+@keyframes matchPulse { 0% { transform:scale(.8);opacity:0; } 60% { transform:scale(1.05); } 100% { transform:scale(1);opacity:1; } }
+
+/* Ring around cards with menu matches */
+.food-est-item[data-match-count]:not([data-match-count="0"]) { outline: 2px solid #f59e0b; outline-offset: -2px; }
 
 /* Dropdown */
 .ddw { position: relative; display: inline-block; }
@@ -162,7 +202,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .cnav:disabled { opacity: .25; cursor: not-allowed; pointer-events: none; }
 
 /* ============================================ */
-/* BESTSELLER CARD — matching screenshot design */
+/* BESTSELLER CARD                              */
 /* ============================================ */
 .bsc { min-width: 218px; max-width: 218px; background: #fff; border-radius: 13px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; position: relative; border: 1.5px solid var(--g200); flex-shrink: 0; }
 .bsc:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(183,28,28,.14); border-color: var(--red); }
@@ -193,17 +233,15 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .bsc-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(183,28,28,.3); }
 
 /* ============================================ */
-/* MAP SECTION — screenshot-matching design     */
+/* MAP SECTION                                  */
 /* ============================================ */
 #mapSection { display: none; background: #fff; border-radius: 14px; overflow: hidden;
               box-shadow: var(--sh1); margin-bottom: 28px; }
 #mapSection.on { display: block; }
 
-/* ── Map wrapper (relative for absolute children) ── */
 .map-wrap { position: relative; }
 #esMap { width: 100%; height: 520px; }
 
-/* ── Search inside map (top center) ── */
 .map-search-bar { position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
                   z-index: 1000; background: #fff; border-radius: 10px;
                   box-shadow: 0 4px 18px rgba(0,0,0,.18); display: flex; align-items: center;
@@ -213,7 +251,6 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
              color: var(--g800); width: 100%; background: transparent; }
 #mapSearch::placeholder { color: var(--g400); }
 
-/* ── Layer switcher button (top right) ── */
 .map-layer-btn { position: absolute; top: 14px; right: 14px; z-index: 1000;
                  width: 42px; height: 42px; background: #fff; border-radius: 8px;
                  display: flex; align-items: center; justify-content: center;
@@ -239,18 +276,15 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .mlp-opt.on i { color: #fff; }
 .mlp-opt i { font-size: 12px; color: var(--g500); }
 
-/* ── Show My Location button (bottom right, orange) ── */
 .map-loc-btn { position: absolute; bottom: 32px; right: 14px; z-index: 1000;
                display: inline-flex; align-items: center; gap: 8px;
-               padding: 11px 18px; background: #f7931e;
-               background: linear-gradient(135deg, #ff9f20, #f7931e);
+               padding: 11px 18px; background: linear-gradient(135deg,#ff9f20,#f7931e);
                color: #fff; border: none; border-radius: 24px; font-size: 13px;
                font-weight: 700; font-family: 'Poppins',sans-serif; cursor: pointer;
                box-shadow: 0 4px 16px rgba(247,147,30,.45); transition: .25s; }
 .map-loc-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247,147,30,.55); }
 .map-loc-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-/* ── Legend (bottom left) ── */
 .mleg { position: absolute; bottom: 32px; left: 14px; z-index: 1000; background: rgba(255,255,255,.92);
         backdrop-filter: blur(4px); border-radius: 8px; padding: 7px 12px;
         box-shadow: 0 2px 10px rgba(0,0,0,.14); font-size: 12px; color: var(--g700);
@@ -287,7 +321,6 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 #catFilt:hover { border-color: var(--red); }
 #catFilt:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(183,28,28,.08); }
 
-/* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
 .est-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 20px; }
 .estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; border: 1.5px solid var(--g200); position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
@@ -307,7 +340,6 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .rcnt { font-size: 11px; color: var(--g400); margin-top: 2px; }
 .emr { padding: 4px 13px; font-size: 11px; color: var(--g600); }
 
-/* Amenities — same style as .emr rows */
 .est-amenities-row { margin-top: 0; padding-top: 0; border-top: none; display: flex; align-items: center; }
 .amenities-label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 400; color: var(--g600); text-transform: none; letter-spacing: 0; white-space: nowrap; flex-shrink: 0; }
 .amenities-label i { color: #B71C1C; font-size: 11px; }
@@ -347,7 +379,6 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .mbox { position: relative; background: #fff; border-radius: 18px; max-width: 780px; width: 94%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,.4); }
 .mcb { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--g600); box-shadow: var(--sh1); z-index: 10; transition: .2s; }
 .mcb:hover { background: var(--red); color: #fff; }
-/* Modal layout — matching screenshot exactly */
 .mbody { display: grid; grid-template-columns: 1fr 1fr; }
 .mimg { position: relative; height: 380px; }
 .mimg img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px 0 0 18px; }
@@ -364,14 +395,12 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .mests { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
 .mests.open { color: #10b981; }
 .mests.closed { color: #ef4444; }
-/* Quantity controls — matching screenshot */
 .qrow { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
 .qlbl { font-size: 13px; font-weight: 600; color: var(--g700); }
 .qctrl { display: flex; align-items: center; gap: 8px; }
 .qb { width: 32px; height: 32px; border-radius: 8px; background: var(--g100); border: 1px solid var(--g200); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--g700); transition: .2s; }
 .qb:hover { background: var(--g300); color: var(--g800); }
 #mqty { width: 50px; text-align: center; border: 2px solid var(--g200); border-radius: 8px; padding: 6px; font-size: 14px; font-weight: 700; font-family: 'Poppins', sans-serif; outline: none; }
-/* Action buttons — Add to Cart (red) + Buy Now (orange) */
 .mar { display: flex; gap: 10px; }
 .macb { flex: 1; padding: 12px; background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; text-decoration: none; }
 .macb:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(183,28,28,.35); }
@@ -416,6 +445,9 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
     .mimg img { border-radius: 18px 18px 0 0; }
     .f-inner { grid-template-columns: 1fr; }
     .mts { flex-direction: row; top: auto; bottom: 12px; right: 12px; border-radius: 8px; }
+    .search-dropdown { max-height: 360px; }
+    .sd-category-chips { padding: 4px 10px 10px; }
+    .sd-cat-chip { font-size: 10px; padding: 4px 9px; }
 }
 @media (max-width: 480px) {
     .bs-title { font-size: 14px; }
@@ -424,44 +456,21 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 }
 .leaflet-container { font-family: 'Poppins', sans-serif !important; }
 
-/* Map pulse animation for open establishments */
 @keyframes mapPulse {
     0%   { transform: scale(1);   opacity: 0.8; }
     70%  { transform: scale(1.9); opacity: 0;   }
     100% { transform: scale(1.9); opacity: 0;   }
 }
 
-/* Leaflet popup override */
-.kabsueats-popup .leaflet-popup-content-wrapper {
-    border-radius: 12px !important;
-    padding: 12px !important;
-    box-shadow: 0 8px 28px rgba(0,0,0,.22) !important;
-    font-family: 'Poppins', sans-serif !important;
-    overflow: hidden;
-}
-.kabsueats-popup .leaflet-popup-content {
-    margin: 0 !important;
-    width: auto !important;
-}
+.kabsueats-popup .leaflet-popup-content-wrapper { border-radius: 12px !important; padding: 12px !important; box-shadow: 0 8px 28px rgba(0,0,0,.22) !important; font-family: 'Poppins', sans-serif !important; overflow: hidden; }
+.kabsueats-popup .leaflet-popup-content { margin: 0 !important; width: auto !important; }
 .kabsueats-popup .leaflet-popup-tip-container { margin-top: -1px; }
+
 /* ============================================ */
 /* FIX: Ensure Establishment Cards are Clickable */
 /* ============================================ */
-.estb,
-.estb-dot {
-    pointer-events: none !important;
-}
-.emr {
-    pointer-events: none !important;
-}
-.estc-body {
-    pointer-events: none !important;
-}
-.estc-img {
-    pointer-events: none !important;
-}
-.estc,
-.food-est-item {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
+.estb, .estb-dot { pointer-events: none !important; }
+.emr { pointer-events: none !important; }
+.estc-body { pointer-events: none !important; }
+.estc-img { pointer-events: none !important; }
+.estc, .food-est-item { pointer-events: auto !important; cursor: pointer !important; }

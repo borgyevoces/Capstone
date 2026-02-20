@@ -5838,29 +5838,66 @@ def get_establishment_transaction_statistics(request):
 # ==========================================
 def search_menu_items(request):
     """
-    API endpoint for real-time menu search.
-    Returns menu items and establishments matching the search query.
-    ✅ FIXED: Excludes items/establishments where is_active=False.
+    Smart multi-model search API endpoint for KabsuEats autocomplete.
+
+    GET /api/search-menu/?q=<query>
+
+    Behaviour:
+      • q is EMPTY  → returns all active establishments + all categories
+                       (used for the "on focus" dropdown before user types)
+      • q has text  → returns matching Menu items, Establishments, and
+                       Categories; each establishment result carries a
+                       'menu_match_count' so the front-end can show the
+                       "N menu matches" badge and sort cards accordingly.
     """
     try:
         query = request.GET.get('q', '').strip()
 
-        if not query:
-            return JsonResponse({
-                'success': False,
-                'error': 'No search query provided'
-            })
-
-        # ── Step 1: Get IDs of visible establishments ────────────────────
-        # Exclude admin-suspended (status='Disabled') AND owner-deactivated (is_active=False)
-        active_est_ids = list(
+        # ── Active establishment IDs ─────────────────────────────────────
+        active_est_qs = (
             FoodEstablishment.objects
             .exclude(status='Disabled')
-            .filter(is_active=True)          # ✅ also exclude owner-deactivated
-            .values_list('id', flat=True)
+            .filter(is_active=True)
+            .prefetch_related('categories')
         )
 
-        # ── Search menu items ────────────────────────────────────────────
+        # ── EMPTY QUERY: initial focus dropdown ──────────────────────────
+        if not query:
+            all_ests = active_est_qs.order_by('name')[:20]
+            ests_data = []
+            for est in all_ests:
+                cats = ', '.join(c.name for c in est.categories.all())
+                est_status = get_current_status(est.opening_time, est.closing_time)
+                ests_data.append({
+                    'id':       est.id,
+                    'name':     est.name,
+                    'category': cats or 'Other',
+                    'status':   est_status,
+                    'image_url': est.image.url if est.image else None,
+                })
+
+            # All distinct categories
+            categories = list(
+                Category.objects
+                .filter(foodestablishment__in=active_est_qs)
+                .values_list('name', flat=True)
+                .distinct()
+                .order_by('name')[:15]
+            )
+
+            return JsonResponse({
+                'success':       True,
+                'empty_query':   True,
+                'menus':         [],
+                'establishments': ests_data,
+                'categories':    categories,
+                'query':         '',
+            })
+
+        # ── ACTIVE EST IDs list (for filtering menus) ────────────────────
+        active_est_ids = list(active_est_qs.values_list('id', flat=True))
+
+        # ── 1. MENU ITEMS ─────────────────────────────────────────────────
         menu_items = MenuItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query),
             food_establishment__id__in=active_est_ids,
@@ -5875,13 +5912,13 @@ def search_menu_items(request):
             'food_establishment__name',
             'food_establishment__opening_time',
             'food_establishment__closing_time',
-        )[:20]
+        )[:25]
 
         menus_data = []
         for item in menu_items:
             est_status = get_current_status(
                 item['food_establishment__opening_time'],
-                item['food_establishment__closing_time']
+                item['food_establishment__closing_time'],
             )
             image_field = item['image']
             image_url = None
@@ -5900,42 +5937,134 @@ def search_menu_items(request):
                     'id':     item['food_establishment__id'],
                     'name':   item['food_establishment__name'],
                     'status': est_status,
-                }
+                },
             })
 
-        # ── Search establishments ────────────────────────────────────────
-        establishments = FoodEstablishment.objects.filter(
-            Q(name__icontains=query) | Q(categories__name__icontains=query),
-            id__in=active_est_ids,
-        ).prefetch_related('categories').distinct()[:10]
+        # ── 2. ESTABLISHMENTS ─────────────────────────────────────────────
+        # Also annotate with the number of menu items matching the query
+        # so the front-end can render the "N menu matches" indicator.
+        from django.db.models import Count, Q as DQ
+
+        matched_est_ids_from_menus = list({
+            item['food_establishment__id'] for item in menu_items
+        })
+
+        establishments = (
+            active_est_qs
+            .filter(
+                Q(name__icontains=query)
+                | Q(categories__name__icontains=query)
+                | Q(other_category__icontains=query)
+            )
+            .distinct()[:12]
+        )
+
+        # Build menu-match count map per establishment
+        menu_match_map = {}
+        for item in menus_data:
+            eid = item['establishment']['id']
+            menu_match_map[eid] = menu_match_map.get(eid, 0) + 1
 
         establishments_data = []
         for est in establishments:
-            categories_names = ', '.join([cat.name for cat in est.categories.all()])
+            cats = ', '.join(c.name for c in est.categories.all())
+            if not cats and est.other_category:
+                cats = est.other_category
             est_status = get_current_status(est.opening_time, est.closing_time)
-
             establishments_data.append({
-                'id':       est.id,
-                'name':     est.name,
-                'category': categories_names if categories_names else 'Other',
-                'status':   est_status,
+                'id':              est.id,
+                'name':            est.name,
+                'category':        cats or 'Other',
+                'status':          est_status,
+                'image_url':       est.image.url if est.image else None,
+                'menu_match_count': menu_match_map.get(est.id, 0),
             })
 
+        # Also add establishments that only appear via menu matches
+        # (they have menu matches but didn't match by name/category)
+        already_ids = {e['id'] for e in establishments_data}
+        for eid in matched_est_ids_from_menus:
+            if eid in already_ids:
+                continue
+            try:
+                est = active_est_qs.get(id=eid)
+                cats = ', '.join(c.name for c in est.categories.all())
+                est_status = get_current_status(est.opening_time, est.closing_time)
+                establishments_data.append({
+                    'id':              est.id,
+                    'name':            est.name,
+                    'category':        cats or 'Other',
+                    'status':          est_status,
+                    'image_url':       est.image.url if est.image else None,
+                    'menu_match_count': menu_match_map.get(est.id, 0),
+                })
+            except FoodEstablishment.DoesNotExist:
+                pass
+
+        # Sort: establishments with menu matches first (descending), then alphabetical
+        establishments_data.sort(
+            key=lambda e: (-e['menu_match_count'], e['name'].lower())
+        )
+
+        # ── 3. CATEGORIES ─────────────────────────────────────────────────
+        categories = list(
+            Category.objects
+            .filter(
+                name__icontains=query,
+                foodestablishment__in=active_est_qs,
+            )
+            .values_list('name', flat=True)
+            .distinct()[:6]
+        )
+
+        # ── 4. SUGGESTIONS (anti "No results") ───────────────────────────
+        # If nothing found at all, return the 5 closest-named items
+        # so the user always gets something useful.
+        suggestions = []
+        if not menus_data and not establishments_data and not categories:
+            # Fuzzy fallback: split query into words and try each word
+            words = query.split()
+            for word in words[:3]:
+                if len(word) < 2:
+                    continue
+                fallback_items = MenuItem.objects.filter(
+                    name__icontains=word,
+                    food_establishment__id__in=active_est_ids,
+                ).select_related('food_establishment').values(
+                    'name', 'food_establishment__name'
+                )[:3]
+                for fi in fallback_items:
+                    suggestions.append({
+                        'text': fi['name'],
+                        'sub':  fi['food_establishment__name'],
+                    })
+
+                fallback_ests = (
+                    active_est_qs
+                    .filter(name__icontains=word)
+                    .values('name')[:3]
+                )
+                for fe in fallback_ests:
+                    suggestions.append({'text': fe['name'], 'sub': 'Establishment'})
+
+                if suggestions:
+                    break
+
         return JsonResponse({
-            'success': True,
+            'success':        True,
+            'empty_query':    False,
             'menus':          menus_data,
             'establishments': establishments_data,
-            'query':          query
+            'categories':     categories,
+            'suggestions':    suggestions,
+            'query':          query,
         })
 
     except Exception as e:
         import traceback
         print(f"Error in search_menu_items: {e}")
         traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @login_required
 def order_history_view(request):
