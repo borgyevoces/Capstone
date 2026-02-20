@@ -166,7 +166,7 @@
     .search-no-results { padding: 16px 14px; text-align: center; color: var(--g400); font-size: 12px; }
 
     /* Advanced Search Dropdown — mobile */
-    .asd { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 9999; display: none; }
+    .asd { position: fixed; z-index: 9999; display: none; }
     .asd.open { display: block; }
     .asd-inner { background: #fff; border-radius: 14px; box-shadow: 0 10px 32px rgba(0,0,0,.16); border: 1px solid var(--g200); overflow: hidden; text-align: left; animation: asdIn .18s ease; max-height: 420px; overflow-y: auto; }
     .asd-section { padding: 5px 0; }

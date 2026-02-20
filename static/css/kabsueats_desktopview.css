@@ -76,7 +76,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* HERO SEARCH                                  */
 /* ============================================ */
 .hero { padding: 36px 0 48px; text-align: center; }
-.hsw { position: relative; max-width: 680px; margin: 0 auto; z-index: 1200; isolation: isolate; }
+.hsw { position: relative; max-width: 680px; margin: 0 auto; }
 .hs-lbl { display: none; }
 .hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,.09); transition: border-color .25s, box-shadow .25s; overflow: hidden; }
 .hs-cont:focus-within { border-color: var(--red); box-shadow: 0 4px 24px rgba(183,28,28,.15); }
@@ -97,7 +97,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hs-hint-pill i { font-size: 11px; color: var(--red); }
 
 /* ── Advanced Search Dropdown ── */
-.asd { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 9999; display: none; }
+.asd { position: fixed; z-index: 9999; display: none; }
 .asd.open { display: block; }
 .asd-inner { background: #fff; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.18); border: 1px solid var(--g200); overflow: hidden; text-align: left; animation: asdIn .18s ease; max-height: 480px; overflow-y: auto; }
 @keyframes asdIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }

@@ -19,6 +19,8 @@ let searchDebounceTimer = null;
 let currentSearchQuery = '';
 let searchMode = null; // null | 'menu' | 'establishment' | 'category'
 let searchMenuData = []; // results from search_menu_items API
+let searchAbortController = null; // AbortController for in-flight fetch
+let searchToken = 0; // increment each search to discard stale responses
 
 // ── CSRF Helper ──
 function getCsrf() {
@@ -630,6 +632,7 @@ function showAsdDefault() {
 
     if (!html) { closeAsd(); return; }
     inner.innerHTML = html;
+    positionAsd();
     asd.classList.add('open');
     const hints = document.getElementById('hsHints');
     if (hints) hints.style.opacity = '0';
@@ -714,6 +717,7 @@ function showAsdForQuery(q) {
     }
 
     inner.innerHTML = html;
+    positionAsd();
     asd.classList.add('open');
     document.getElementById('hsHints') && (document.getElementById('hsHints').style.opacity = '0');
     rebuildAsdRows();
@@ -745,6 +749,17 @@ function clearAllRecents(e) {
 function rebuildAsdRows() {
     asdRows = Array.from(document.querySelectorAll('#asd .asd-row'));
     asdFocusIdx = -1;
+}
+
+// ── Position the fixed ASD dropdown below the search bar ──
+function positionAsd() {
+    const cont = document.getElementById('hsContEl');
+    const asd  = document.getElementById('asd');
+    if (!cont || !asd) return;
+    const rect = cont.getBoundingClientRect();
+    asd.style.top    = (rect.bottom + 6) + 'px';
+    asd.style.left   = rect.left + 'px';
+    asd.style.width  = rect.width + 'px';
 }
 function highlightAsdRow() {
     asdRows.forEach((r, i) => r.classList.toggle('focused', i === asdFocusIdx));
@@ -903,6 +918,11 @@ function doCategorySearch(qLow) {
 // ── MENU SEARCH ──
 function doMenuSearch(q) {
     const qLow = q.toLowerCase();
+    const myToken = ++searchToken;
+
+    // Abort any in-flight request
+    if (searchAbortController) { searchAbortController.abort(); }
+    searchAbortController = new AbortController();
 
     // Show bestsellers section (with menu results)
     showBsSection();
@@ -916,27 +936,25 @@ function doMenuSearch(q) {
     if (bsTitle) bsTitle.innerHTML = `<i class="fas fa-search"></i> Menu results for "${escHtml(q)}"`;
 
     // Fetch menu items
-    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`)
+    fetch(`${URLS.searchMenu}?q=${encodeURIComponent(q)}`, { signal: searchAbortController.signal })
         .then(r => r.json())
         .then(data => {
+            // Discard if a newer search has started or user cleared search
+            if (myToken !== searchToken || !searchMode) return;
             if (!data.success) return;
             searchMenuData = data.items;
-
-            // Merge into allData for modal: combine with bsData (bsData takes precedence for existing items)
-            // Build a combined list: searchMenuData items not in bsData get added temporarily
             renderBS(searchMenuData, true);
 
-            // Auto-sort establishments: those that have a matching menu item come first
-            // and get a match badge indicator
             const matchingEstIds = new Set(searchMenuData.map(i => i.establishment.id));
             const matchCount = {};
             searchMenuData.forEach(i => {
                 matchCount[i.establishment.id] = (matchCount[i.establishment.id] || 0) + 1;
             });
-
             sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow);
         })
-        .catch(() => {
+        .catch(err => {
+            if (err.name === 'AbortError') return; // Intentionally cancelled — do nothing
+            if (myToken !== searchToken || !searchMode) return;
             // Fallback: filter bsData by name
             const filtered = bsData.filter(d => d.name.toLowerCase().includes(qLow));
             renderBS(filtered, true);
@@ -1041,6 +1059,10 @@ function clearNoEstMsg() {
 
 // ── RESET SEARCH — restore everything to original state ──
 function resetSearch() {
+    // Cancel any in-flight menu search fetch immediately
+    searchToken++; // invalidate any pending response
+    if (searchAbortController) { searchAbortController.abort(); searchAbortController = null; }
+
     currentSearchQuery = '';
     searchMode = null;
     searchMenuData = [];
@@ -1063,32 +1085,24 @@ function resetSearch() {
     if (bsData.length > 0) {
         renderBS(bsData, false);
     } else {
-        // bsData hasn't loaded yet — re-fetch to populate the carousel
         fetchBestsellers();
     }
 
     // Restore establishment grid
     const grid = document.getElementById('estGrid');
     if (grid) {
-        // Remove all match badges and show all cards
         grid.querySelectorAll('.food-est-item').forEach(card => {
             removeMatchBadge(card);
             card.style.display = '';
         });
-
-        // Restore original DOM order using saved reference
         if (grid._originalOrder && grid._originalOrder.length > 0) {
             grid._originalOrder.forEach(c => grid.appendChild(c));
         }
     }
 
-    // Restore section title
     restoreSecTitle();
-
-    // Clear no-est messages
     clearNoEstMsg();
 
-    // Re-apply category filter if active
     const catFilt = document.getElementById('catFilt');
     if (catFilt && catFilt.value) applyFilter();
 }
@@ -1398,7 +1412,17 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeMod(); closeSet(); closeDD(); }
 });
 
-window.addEventListener('resize', () => { if (!isGrid) updCar(); });
+window.addEventListener('resize', () => {
+    if (!isGrid) updCar();
+    const asd = document.getElementById('asd');
+    if (asd && asd.classList.contains('open')) positionAsd();
+});
+
+// Reposition ASD on scroll (since navbar is sticky)
+window.addEventListener('scroll', () => {
+    const asd = document.getElementById('asd');
+    if (asd && asd.classList.contains('open')) positionAsd();
+}, { passive: true });
 
 // ============================================
 // UTILITIES
