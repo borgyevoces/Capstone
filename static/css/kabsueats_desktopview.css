@@ -88,14 +88,44 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hs-clr:hover { background: var(--red-light); color: var(--red); }
 
 /* Search top-rated pills */
-.hs-hints { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.hs-hints { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; transition: opacity .2s; }
+.hs-hints.hidden { opacity: 0; pointer-events: none; }
 .hs-hint-label { font-size: 12px; font-weight: 700; color: var(--g600); display: inline-flex; align-items: center; gap: 5px; margin-right: 2px; }
 .hs-hint-label i { color: #f59e0b; font-size: 12px; }
 .hs-hint-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--g700); background: #fff; border: 1.5px solid var(--g200); border-radius: 20px; padding: 5px 14px; cursor: pointer; transition: .2s; text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,.07); white-space: nowrap; }
 .hs-hint-pill:hover { background: var(--red-light); border-color: var(--red); color: var(--red); box-shadow: 0 2px 8px rgba(183,28,28,.12); }
 .hs-hint-pill i { font-size: 11px; color: var(--red); }
 
-/* Search Dropdown */
+/* ── Advanced Search Dropdown ── */
+.asd { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 1300; display: none; }
+.asd.open { display: block; }
+.asd-inner { background: #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.14); border: 1px solid var(--g200); overflow: hidden; text-align: left; animation: asdIn .18s ease; }
+@keyframes asdIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.asd-section { padding: 6px 0; }
+.asd-section + .asd-section { border-top: 1px solid var(--g100); }
+.asd-section-title { padding: 8px 16px 4px; font-size: 10px; font-weight: 800; color: var(--g400); text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px; }
+.asd-section-title i { font-size: 10px; }
+.asd-row { padding: 9px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background .12s; border-radius: 0; }
+.asd-row:hover, .asd-row.focused { background: #fef2f2; }
+.asd-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.asd-ico.est { background: var(--red-light); color: var(--red); }
+.asd-ico.cat { background: #eff6ff; color: #3b82f6; }
+.asd-ico.menu { background: #f0fdf4; color: #16a34a; }
+.asd-ico.hist { background: var(--g100); color: var(--g600); }
+.asd-text { flex: 1; min-width: 0; }
+.asd-name { font-size: 13px; font-weight: 600; color: var(--g900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asd-name mark { background: rgba(183,28,28,.13); color: var(--red); border-radius: 3px; padding: 0 2px; font-style: normal; font-weight: 700; }
+.asd-meta { font-size: 11px; color: var(--g400); display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+.asd-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+.asd-badge.open { background: #dcfce7; color: #15803d; }
+.asd-badge.closed { background: #fee2e2; color: #b91c1c; }
+.asd-arrow { color: var(--g300); font-size: 11px; flex-shrink: 0; }
+.asd-empty { padding: 20px 16px; text-align: center; color: var(--g400); font-size: 13px; }
+.asd-empty i { display: block; font-size: 22px; margin-bottom: 6px; color: var(--g300); }
+.asd-footer { padding: 10px 16px; border-top: 1px solid var(--g100); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--g400); }
+.asd-footer kbd { background: var(--g100); border: 1px solid var(--g200); border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: monospace; color: var(--g600); }
+
+/* Search Dropdown (legacy, keep for compat) */
 .search-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); border: 1px solid var(--g200); z-index: 1200; display: none; overflow: hidden; text-align: left; }
 .search-dropdown.active { display: block; }
 .search-dropdown-section { padding: 8px 0; border-bottom: 1px solid var(--g100); }

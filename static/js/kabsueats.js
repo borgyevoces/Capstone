@@ -501,29 +501,265 @@ function applyFilter() {
 // ============================================
 // ── SMART SEARCH ENGINE ──
 // ============================================
+
+// ── Advanced Search Dropdown State ──
+let asdFocusIdx = -1;
+let asdRows = [];
+
 function initSmartSearch() {
     const inp = document.getElementById('hSearch');
     const clr = document.getElementById('hClr');
     if (!inp) return;
 
+    inp.addEventListener('focus', function () {
+        const q = this.value.trim();
+        if (!q) showAsdDefault();
+    });
+
     inp.addEventListener('input', function () {
         const q = this.value.trim();
         clr.classList.toggle('on', q.length > 0);
+        asdFocusIdx = -1;
 
         if (!q) {
             resetSearch();
+            showAsdDefault();
             return;
         }
+        showAsdForQuery(q);
         clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = setTimeout(() => runSmartSearch(q), 280);
+        searchDebounceTimer = setTimeout(() => runSmartSearch(q), 300);
+    });
+
+    inp.addEventListener('keydown', function (e) {
+        const asd = document.getElementById('asd');
+        if (!asd || !asd.classList.contains('open')) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            asdFocusIdx = Math.min(asdFocusIdx + 1, asdRows.length - 1);
+            highlightAsdRow();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            asdFocusIdx = Math.max(asdFocusIdx - 1, 0);
+            highlightAsdRow();
+        } else if (e.key === 'Enter') {
+            if (asdFocusIdx >= 0 && asdRows[asdFocusIdx]) {
+                e.preventDefault();
+                asdRows[asdFocusIdx].click();
+            }
+        } else if (e.key === 'Escape') {
+            closeAsd();
+        }
     });
 
     clr.addEventListener('click', function () {
         inp.value = '';
         clr.classList.remove('on');
         resetSearch();
+        showAsdDefault();
         inp.focus();
     });
+
+    // Close ASD on outside click
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.hsw')) closeAsd();
+    });
+}
+
+// ── Show default suggestions (no query) ──
+function showAsdDefault() {
+    const asd = document.getElementById('asd');
+    const inner = document.getElementById('asdInner');
+    if (!asd || !inner) return;
+
+    const data = (typeof SUGGEST_DATA !== 'undefined') ? SUGGEST_DATA : { establishments: [], categories: [] };
+    let html = '';
+
+    // Recent searches from localStorage (if available)
+    let recents = [];
+    try { recents = JSON.parse(localStorage.getItem('kse_recent') || '[]'); } catch(e) {}
+    if (recents.length > 0) {
+        html += `<div class="asd-section">
+            <div class="asd-section-title"><i class="fas fa-history"></i> Recent Searches</div>`;
+        recents.slice(0, 3).forEach(r => {
+            html += `<div class="asd-row" data-type="recent" data-val="${escHtml(r)}" onclick="pickAsd('${escHtml(r)}','recent')">
+                <div class="asd-ico hist"><i class="fas fa-history"></i></div>
+                <div class="asd-text"><div class="asd-name">${escHtml(r)}</div></div>
+                <i class="fas fa-arrow-up-left asd-arrow" style="transform:rotate(45deg)"></i>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Categories
+    if (data.categories.length > 0) {
+        html += `<div class="asd-section">
+            <div class="asd-section-title"><i class="fas fa-tags"></i> Browse by Category</div>`;
+        data.categories.slice(0, 5).forEach(cat => {
+            html += `<div class="asd-row" data-type="cat" data-val="${escHtml(cat)}" onclick="pickAsd('${escHtml(cat)}','cat')">
+                <div class="asd-ico cat"><i class="fas fa-tag"></i></div>
+                <div class="asd-text"><div class="asd-name">${escHtml(cat)}</div></div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Top establishments
+    if (data.establishments.length > 0) {
+        html += `<div class="asd-section">
+            <div class="asd-section-title"><i class="fas fa-store"></i> Popular Establishments</div>`;
+        data.establishments.slice(0, 3).forEach(est => {
+            const stClass = est.status === 'open' ? 'open' : 'closed';
+            const stLabel = est.status === 'open' ? 'Open' : 'Closed';
+            html += `<div class="asd-row" data-type="est" data-id="${est.id}" onclick="window.location.href='${(typeof URLS !== 'undefined' ? URLS.estDetail : '/food_establishment/')}${est.id}/'">
+                <div class="asd-ico est"><i class="fas fa-utensils"></i></div>
+                <div class="asd-text">
+                    <div class="asd-name">${escHtml(est.name)}</div>
+                    <div class="asd-meta">${escHtml(est.category || '')} <span class="asd-badge ${stClass}">${stLabel}</span></div>
+                </div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (!html) { closeAsd(); return; }
+    inner.innerHTML = html;
+    asd.classList.add('open');
+    document.getElementById('hsHints') && (document.getElementById('hsHints').style.opacity = '0');
+    rebuildAsdRows();
+}
+
+// ── Show suggestions for a typed query ──
+function showAsdForQuery(q) {
+    const asd = document.getElementById('asd');
+    const inner = document.getElementById('asdInner');
+    if (!asd || !inner) return;
+
+    const qLow = q.toLowerCase();
+    const data = (typeof SUGGEST_DATA !== 'undefined') ? SUGGEST_DATA : { establishments: [], categories: [] };
+    let html = '';
+    let totalResults = 0;
+
+    // Matching establishments
+    const estMatches = data.establishments.filter(e => e.name.toLowerCase().includes(qLow)).slice(0, 4);
+    if (estMatches.length > 0) {
+        html += `<div class="asd-section">
+            <div class="asd-section-title"><i class="fas fa-store"></i> Establishments</div>`;
+        estMatches.forEach(est => {
+            const stClass = est.status === 'open' ? 'open' : 'closed';
+            const stLabel = est.status === 'open' ? 'Open' : 'Closed';
+            const hl = highlightMatch(est.name, qLow);
+            html += `<div class="asd-row" data-type="est" data-id="${est.id}" onclick="window.location.href='${(typeof URLS !== 'undefined' ? URLS.estDetail : '/food_establishment/')}${est.id}/'">
+                <div class="asd-ico est"><i class="fas fa-utensils"></i></div>
+                <div class="asd-text">
+                    <div class="asd-name">${hl}</div>
+                    <div class="asd-meta">${escHtml(est.category || '')} <span class="asd-badge ${stClass}">${stLabel}</span></div>
+                </div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>`;
+            totalResults++;
+        });
+        html += `</div>`;
+    }
+
+    // Matching categories
+    const catMatches = data.categories.filter(c => c.toLowerCase().includes(qLow)).slice(0, 3);
+    if (catMatches.length > 0) {
+        html += `<div class="asd-section">
+            <div class="asd-section-title"><i class="fas fa-tags"></i> Categories</div>`;
+        catMatches.forEach(cat => {
+            const hl = highlightMatch(cat, qLow);
+            html += `<div class="asd-row" data-type="cat" data-val="${escHtml(cat)}" onclick="pickAsd('${escHtml(cat)}','cat')">
+                <div class="asd-ico cat"><i class="fas fa-tag"></i></div>
+                <div class="asd-text"><div class="asd-name">${hl}</div><div class="asd-meta">Browse all ${escHtml(cat)} restaurants</div></div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>`;
+            totalResults++;
+        });
+        html += `</div>`;
+    }
+
+    // Menu item search row (always show if no establishment match)
+    if (estMatches.length === 0 && catMatches.length === 0) {
+        html += `<div class="asd-section">
+            <div class="asd-row" data-type="menu" data-val="${escHtml(q)}" onclick="pickAsd('${escHtml(q)}','menu')">
+                <div class="asd-ico menu"><i class="fas fa-search"></i></div>
+                <div class="asd-text">
+                    <div class="asd-name">Search menu items for "<strong>${escHtml(q)}</strong>"</div>
+                    <div class="asd-meta">Find dishes across all restaurants</div>
+                </div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>
+        </div>`;
+        totalResults++;
+    } else {
+        // Also offer menu search as last option
+        html += `<div class="asd-section">
+            <div class="asd-row" data-type="menu" data-val="${escHtml(q)}" onclick="pickAsd('${escHtml(q)}','menu')">
+                <div class="asd-ico menu"><i class="fas fa-utensils"></i></div>
+                <div class="asd-text">
+                    <div class="asd-name">Find dishes: "<strong>${escHtml(q)}</strong>"</div>
+                    <div class="asd-meta">Search menu items across all restaurants</div>
+                </div>
+                <i class="fas fa-chevron-right asd-arrow"></i>
+            </div>
+        </div>`;
+    }
+
+    inner.innerHTML = html;
+    asd.classList.add('open');
+    document.getElementById('hsHints') && (document.getElementById('hsHints').style.opacity = '0');
+    rebuildAsdRows();
+}
+
+function rebuildAsdRows() {
+    asdRows = Array.from(document.querySelectorAll('#asd .asd-row'));
+    asdFocusIdx = -1;
+}
+function highlightAsdRow() {
+    asdRows.forEach((r, i) => r.classList.toggle('focused', i === asdFocusIdx));
+    if (asdFocusIdx >= 0 && asdRows[asdFocusIdx]) {
+        asdRows[asdFocusIdx].scrollIntoView({ block: 'nearest' });
+    }
+}
+function highlightMatch(text, query) {
+    const re = new RegExp('(' + escapeRe(query) + ')', 'gi');
+    return escHtml(text).replace(re, '<mark>$1</mark>');
+}
+function closeAsd() {
+    const asd = document.getElementById('asd');
+    if (asd) asd.classList.remove('open');
+    const hints = document.getElementById('hsHints');
+    if (hints) hints.style.opacity = '';
+}
+
+// ── Pick a suggestion from the dropdown ──
+function pickAsd(val, type) {
+    const inp = document.getElementById('hSearch');
+    const clr = document.getElementById('hClr');
+    if (inp) { inp.value = val; clr && clr.classList.add('on'); }
+    closeAsd();
+
+    // Save to recents
+    try {
+        let recents = JSON.parse(localStorage.getItem('kse_recent') || '[]');
+        recents = [val, ...recents.filter(r => r !== val)].slice(0, 6);
+        localStorage.setItem('kse_recent', JSON.stringify(recents));
+    } catch(e) {}
+
+    if (type === 'cat') {
+        // Apply category filter
+        const catFilt = document.getElementById('catFilt');
+        if (catFilt) {
+            const opt = Array.from(catFilt.options).find(o => o.value.toLowerCase() === val.toLowerCase());
+            if (opt) { catFilt.value = opt.value; applyFilter(); }
+            else runSmartSearch(val);
+        } else runSmartSearch(val);
+    } else {
+        runSmartSearch(val);
+    }
 }
 
 // ── Classify what the user is searching for ──
@@ -738,7 +974,6 @@ function removeMatchBadge(card) {
 function showBsSection() {
     const sec = document.getElementById('bsSec');
     if (sec) sec.style.display = '';
-    // Only show BS section if we're in BS view (not map)
     if (curView === 'bs') {
         const cw = document.getElementById('carouselWrap');
         if (cw) cw.style.display = '';
@@ -782,15 +1017,27 @@ function resetSearch() {
     searchMode = null;
     searchMenuData = [];
 
-    // Restore BS section
-    showBsSection();
+    // Restore BS section visibility
+    const bsSec = document.getElementById('bsSec');
+    if (bsSec) bsSec.style.display = '';
+
+    // Restore carousel wrapper (critical — menu search hides it)
+    if (curView === 'bs') {
+        const cw = document.getElementById('carouselWrap');
+        if (cw) cw.style.display = '';
+    }
 
     // Restore BS title
     const bsTitle = document.getElementById('bsTitle');
     if (bsTitle) bsTitle.innerHTML = '<i class="fas fa-fire"></i> Top-rated items from all our partner establishments';
 
-    // Re-render original bsData
-    if (bsData.length > 0) renderBS(bsData, false);
+    // Re-render original bsData (if loaded); if still loading, let fetchBestsellers handle it
+    if (bsData.length > 0) {
+        renderBS(bsData, false);
+    } else {
+        // bsData hasn't loaded yet — re-fetch to populate the carousel
+        fetchBestsellers();
+    }
 
     // Restore establishment grid
     const grid = document.getElementById('estGrid');

@@ -150,15 +150,20 @@
     <!-- Hero Search -->
     <div class="hero">
         <div class="hsw">
-                <div class="hs-cont">
+            <div class="hs-cont" id="hsContEl">
                 <i class="fas fa-search hs-ico"></i>
                 <input type="text" class="hs-inp" id="hSearch"
                     placeholder="Search restaurants, dishes, or cuisines..."
                     value="{{ q|default:'' }}" autocomplete="off"/>
                 <button type="button" class="hs-clr" id="hClr" aria-label="Clear search"><i class="fas fa-times"></i></button>
             </div>
-            <!-- Live search dropdown removed -->
-            <div class="hs-hints">
+
+            <!-- Advanced Search Suggestions Dropdown -->
+            <div class="asd" id="asd">
+                <div class="asd-inner" id="asdInner"></div>
+            </div>
+
+            <div class="hs-hints" id="hsHints">
                 <span class="hs-hint-label"><i class="fas fa-trophy"></i> Top Rated:</span>
                 {% for est in food_establishments|slice:":5" %}
                 <a href="{% url 'food_establishment_details' est.id %}" class="hs-hint-pill">
@@ -170,6 +175,14 @@
             </div>
         </div>
     </div>
+
+    <!-- Suggestion data for JS -->
+    <script>
+    const SUGGEST_DATA = {
+        establishments: [{% for est in food_establishments %}{"id":{{ est.id }},"name":"{{ est.name|escapejs }}","category":"{% for c in est.categories.all %}{{ c.name|escapejs }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %}, {% endif %}{{ est.other_category|escapejs }}{% endif %}","status":"{{ est.calculated_status|lower }}"}{% if not forloop.last %},{% endif %}{% endfor %}],
+        categories: [{% for cat in all_categories %}"{{ cat.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+    };
+    </script>
 
     <!-- BESTSELLERS SECTION -->
     <section class="bs-section" id="bsSec">
