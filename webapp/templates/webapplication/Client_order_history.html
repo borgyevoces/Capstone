@@ -931,16 +931,22 @@
     ========================================== */
     .rating-modal-overlay {
         display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.55);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.55) !important;
+        z-index: 99999 !important;
+        align-items: center !important;
+        justify-content: center !important;
         padding: 16px;
         backdrop-filter: blur(3px);
+        margin: 0 !important;
     }
-    .rating-modal-overlay.open { display: flex; }
+    .rating-modal-overlay.open { display: flex !important; }
 
     .rating-modal {
         background: white;
@@ -1095,16 +1101,22 @@
     ========================================== */
     .thankyou-overlay {
         display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.55);
-        z-index: 10001;
-        align-items: center;
-        justify-content: center;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.55) !important;
+        z-index: 100000 !important;
+        align-items: center !important;
+        justify-content: center !important;
         padding: 16px;
         backdrop-filter: blur(3px);
+        margin: 0 !important;
     }
-    .thankyou-overlay.open { display: flex; }
+    .thankyou-overlay.open { display: flex !important; }
 
     .thankyou-modal {
         background: white;
@@ -1935,6 +1947,16 @@
         const overlay = document.getElementById('ratingModalOverlay');
         overlay.classList.add('open');
         overlay.style.display = 'flex';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.zIndex = '99999';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.background = 'rgba(0,0,0,0.55)';
+        overlay.style.margin = '0';
     }
 
     function closeRatingModal() {
@@ -2040,6 +2062,16 @@
                     const tyOverlay = document.getElementById('thankyouOverlay');
                     tyOverlay.classList.add('open');
                     tyOverlay.style.display = 'flex';
+                    tyOverlay.style.position = 'fixed';
+                    tyOverlay.style.top = '0';
+                    tyOverlay.style.left = '0';
+                    tyOverlay.style.width = '100vw';
+                    tyOverlay.style.height = '100vh';
+                    tyOverlay.style.zIndex = '100000';
+                    tyOverlay.style.alignItems = 'center';
+                    tyOverlay.style.justifyContent = 'center';
+                    tyOverlay.style.background = 'rgba(0,0,0,0.55)';
+                    tyOverlay.style.margin = '0';
                 }, 180);
             } else {
                 btn.disabled = false;
