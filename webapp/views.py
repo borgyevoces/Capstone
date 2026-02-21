@@ -6021,14 +6021,12 @@ def get_order_details(request, order_id):
             item_total = order_item.quantity * item_price
 
             items.append({
-                'id': order_item.menu_item.id,
                 'name': order_item.menu_item.name,
-                'description': order_item.menu_item.description or '',
                 'quantity': order_item.quantity,
                 'price': str(item_price),
                 'total_price': str(item_total),
                 'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
-                'available_stock': order_item.menu_item.quantity,
+                'available_stock': order_item.menu_item.quantity,  # live stock count
             })
 
         order_data = {
