@@ -138,8 +138,17 @@
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                    <!-- ✅ Payment Method Selection (Always Visible) -->
-                        <div class="payment-method-section" id="payment-method-section">
+                        <!-- STEP 1: Checkout Button (visible by default) -->
+                        <button type="button"
+                                class="btn-checkout-main"
+                                id="initial-checkout-btn"
+                                onclick="showPaymentMethodSelection()">
+                            <i class="fas fa-lock"></i>
+                            Proceed to Checkout
+                        </button>
+
+                        <!-- STEP 2: Payment Method Selection (hidden until checkout clicked) -->
+                        <div class="payment-method-section" id="payment-method-section" style="display:none;">
                             <h3 class="payment-method-title">Choose Payment Method</h3>
 
                             <button type="button"
@@ -197,20 +206,21 @@
 
 {% block extra_js %}
 <script>
-    // Auto-scroll to payment section when redirected from "Buy Now" button
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         if (params.get('pay') === '1') {
             setTimeout(function () {
                 const firstEstablishment = document.querySelector('.establishment-cart-box');
-                if (firstEstablishment) {
-                    firstEstablishment.click();
-                }
+                if (firstEstablishment) firstEstablishment.click();
+
                 setTimeout(function () {
                     const paymentSection = document.getElementById('payment-method-section');
+                    const checkoutBtn   = document.getElementById('initial-checkout-btn');
                     if (paymentSection) {
+                        paymentSection.style.display = 'block';
                         paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
+                    if (checkoutBtn) checkoutBtn.style.display = 'none';
                 }, 400);
             }, 300);
         }
