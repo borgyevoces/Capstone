@@ -78,68 +78,22 @@ function initStep1() {
     window.map = map;
     L.control.layers(baseMaps).addTo(map);
 
-    // CvSU center marker - proper landmark building icon
+    // Small subtle CvSU marker
     L.marker(cvsuLatLng, {
         icon: L.divIcon({
-            className: '',
+            className: 'cvsu-marker',
             html: `<div style="
-                position: relative;
-                width: 52px;
-                height: 52px;
-            ">
-                <!-- Outer ring pulse -->
-                <div style="
-                    position: absolute;
-                    top: -6px; left: -6px;
-                    width: 64px; height: 64px;
-                    border-radius: 50%;
-                    background: rgba(255,255,255,0.25);
-                    border: 2px solid rgba(255,255,255,0.6);
-                    animation: cvsuPulse 2s ease-in-out infinite;
-                "></div>
-                <!-- Main circle -->
-                <div style="
-                    width: 52px; height: 52px;
-                    border-radius: 50%;
-                    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-                    border: 3px solid #fff;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">
-                    <!-- University/building SVG icon -->
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
-                    </svg>
-                </div>
-                <!-- Label below -->
-                <div style="
-                    position: absolute;
-                    bottom: -22px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: rgba(15,52,96,0.92);
-                    color: white;
-                    font-size: 9px;
-                    font-weight: 700;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    white-space: nowrap;
-                    letter-spacing: 0.5px;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-                ">CvSU-Bacoor</div>
-            </div>
-            <style>
-                @keyframes cvsuPulse {
-                    0%, 100% { transform: scale(1); opacity: 0.7; }
-                    50% { transform: scale(1.15); opacity: 0.3; }
-                }
-            </style>`,
-            iconSize: [52, 74],
-            iconAnchor: [26, 26]
+                background: #1976D2;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
         })
-    }).addTo(map).bindPopup('<div style="text-align:center;padding:4px 8px;"><strong style="color:#0f3460;">CvSU-Bacoor Campus</strong><br><small style="color:#666;">Cavite State University</small></div>');
+    }).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>');
 
     // Subtle light boundary circle (very transparent)
     L.circle(cvsuLatLng, {
@@ -150,85 +104,47 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // Show existing registered establishments on map with photo markers
+    // Show existing registered establishments on map with building/store icons
     if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
         EXISTING_ESTABLISHMENTS.forEach(est => {
             if (est.latitude && est.longitude) {
-                const isOpen = (est.status || '').toLowerCase() === 'open';
-                const borderColor = isOpen ? '#10b981' : '#ef4444';
-
-                // Build inner content: photo or initial fallback
-                let innerHtml;
-                if (est.image_url) {
-                    innerHtml = `
-                        <img src="${est.image_url}"
-                            style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
-                            onerror="this.style.display='none';this.nextSibling.style.display='flex';">
-                        <div style="display:none;width:100%;height:100%;border-radius:50%;
-                            background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                            font-size:16px;font-weight:700;align-items:center;justify-content:center;">
-                            ${est.name.charAt(0).toUpperCase()}
-                        </div>`;
-                } else {
-                    innerHtml = `
-                        <div style="width:100%;height:100%;border-radius:50%;
-                            background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                            font-size:16px;font-weight:700;display:flex;
-                            align-items:center;justify-content:center;">
-                            ${est.name.charAt(0).toUpperCase()}
-                        </div>`;
-                }
-
                 const estIcon = L.divIcon({
-                    className: '',
-                    html: `<div style="
-                        width:48px;height:48px;border-radius:50%;
-                        border:3px solid ${borderColor};
-                        box-shadow:0 3px 12px rgba(0,0,0,0.4);
-                        overflow:hidden;cursor:pointer;
-                        background:#fff;position:relative;">
-                        ${innerHtml}
+                    className: 'existing-establishment-marker',
+                    html: `
                         <div style="
-                            position:absolute;bottom:-1px;right:-1px;
-                            width:14px;height:14px;border-radius:50%;
-                            background:${isOpen ? '#10b981' : '#ef4444'};
-                            border:2px solid #fff;">
+                            position: relative;
+                            width: 36px;
+                            height: 36px;
+                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+                            border-radius: 8px;
+                            border: 2px solid white;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                        ">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
                         </div>
-                    </div>`,
-                    iconSize: [48, 48],
-                    iconAnchor: [24, 24],
-                    popupAnchor: [0, -28]
+                    `,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                    popupAnchor: [0, -36]
                 });
 
                 const marker = L.marker([est.latitude, est.longitude], {
                     icon: estIcon
                 }).addTo(map);
 
-                // Rich popup with photo banner
-                const popupImg = est.image_url
-                    ? `<div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:8px;">
-                         <img src="${est.image_url}" style="width:100%;height:100%;object-fit:cover;"
-                              onerror="this.parentElement.style.display='none'">
-                       </div>` : '';
-
-                const statusBadge = `<span style="
-                    display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
-                    background:${isOpen ? '#dcfce7' : '#fee2e2'};
-                    color:${isOpen ? '#166534' : '#991b1b'};">
-                    ${isOpen ? '● Open' : '● Closed'}
-                </span>`;
-
+                // Add popup with establishment info
                 marker.bindPopup(`
-                    <div style="font-family:sans-serif;min-width:200px;max-width:230px;">
-                        ${popupImg}
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
-                            <strong style="color:#111827;font-size:13px;line-height:1.3;">${est.name}</strong>
-                            ${statusBadge}
-                        </div>
-                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">
-                            <i style="color:#B71C1C;">📍</i> ${est.address || 'Near CvSU-Bacoor'}
-                        </div>
-                        ${est.category__name ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">🏷️ ${est.category__name}</div>` : ''}
+                    <div style="text-align: center; padding: 5px;">
+                        <strong style="color: #4CAF50; font-size: 14px;">${est.name}</strong><br>
+                        <small style="color: #666;">${est.category__name || 'Restaurant'}</small><br>
+                        <small style="color: #888;">${est.address || ''}</small>
                     </div>
                 `);
             }
