@@ -18,7 +18,7 @@
     }
 
     .order-history-container {
-        max-width: 1400px;
+        max-width: 900px;
         margin: 0 auto;
         padding: 20px 16px;
         min-height: calc(100vh - 200px);
@@ -515,7 +515,7 @@
     /* RESPONSIVE DESIGN */
     /* ========================================== */
 
-    @media (max-width: 1200px) {
+    @media (max-width: 960px) {
         .order-history-container {
             max-width: 100%;
             padding: 20px;
@@ -571,7 +571,253 @@
         }
     }
 
-    @media (max-width: 480px) {
+    /* ==========================================
+       REORDER MODAL
+    ========================================== */
+    .reorder-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .reorder-modal {
+        background: white;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        overflow: hidden;
+        animation: modalSlideIn 0.22s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from { transform: translateY(24px); opacity: 0; }
+        to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .reorder-modal-header {
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .reorder-modal-header-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #B71C1C, #8B0000);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .reorder-modal-header-text {
+        flex: 1;
+    }
+
+    .reorder-modal-header-text h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 2px;
+    }
+
+    .reorder-modal-header-text p {
+        font-size: 12px;
+        color: #718096;
+    }
+
+    #reorderModalTitle {
+        font-size: 13px;
+        font-weight: 600;
+        color: #B71C1C;
+    }
+
+    .reorder-modal-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #a0aec0;
+        cursor: pointer;
+        padding: 4px;
+        line-height: 1;
+        transition: color 0.15s;
+        flex-shrink: 0;
+    }
+
+    .reorder-modal-close:hover { color: #4a5568; }
+
+    .reorder-modal-body {
+        overflow-y: auto;
+        flex: 1;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .reorder-loading {
+        text-align: center;
+        padding: 30px;
+        color: #718096;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .reorder-loading i { font-size: 24px; color: #B71C1C; }
+
+    .reorder-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        background: #fafbfc;
+        transition: all 0.2s;
+    }
+
+    .reorder-item.out-of-stock {
+        opacity: 0.55;
+        background: #f8f8f8;
+        border-color: #e0e0e0;
+    }
+
+    .reorder-item-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #f0f4f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reorder-item-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .reorder-img-placeholder {
+        color: #cbd5e0;
+        font-size: 18px;
+    }
+
+    .reorder-item-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .reorder-item-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2d3748;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .reorder-item-price {
+        font-size: 12px;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .reorder-item-stock {
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .reorder-item-stock.in-stock  { color: #059669; }
+    .reorder-item-stock.no-stock  { color: #dc2626; }
+
+    /* Cart conflict warning */
+    .reorder-conflict-warning {
+        display: none;
+        margin: 0 0 4px;
+        padding: 10px 14px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #92400e;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .reorder-conflict-warning i { color: #f59e0b; margin-top: 1px; flex-shrink: 0; }
+
+    .reorder-modal-footer {
+        padding: 14px 20px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 10px;
+    }
+
+    .reorder-cancel-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        background: white;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .reorder-cancel-btn:hover { background: #f7fafc; border-color: #B71C1C; color: #B71C1C; }
+
+    .reorder-confirm-btn {
+        flex: 2;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: linear-gradient(135deg, #B71C1C, #8B0000);
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+    }
+
+    .reorder-confirm-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, #8B0000, #6B0000);
+        box-shadow: 0 4px 12px rgba(183,28,28,0.3);
+    }
+
+    .reorder-confirm-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
         .order-history-container {
             padding: 16px 12px;
         }
@@ -656,6 +902,52 @@
         </div>
     </div>
 </div>
+
+<!-- ====================================================
+     REORDER MODAL
+===================================================== -->
+<div class="reorder-modal-overlay" id="reorderModal" onclick="handleOverlayClick(event)">
+    <div class="reorder-modal">
+        <!-- Header -->
+        <div class="reorder-modal-header">
+            <div class="reorder-modal-header-icon">
+                <i class="fas fa-redo"></i>
+            </div>
+            <div class="reorder-modal-header-text">
+                <h3>Reorder Items</h3>
+                <p>From <span id="reorderModalTitle">...</span></p>
+            </div>
+            <button class="reorder-modal-close" onclick="closeReorderModal()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Body: item list -->
+        <div class="reorder-modal-body" id="reorderModalBody">
+            <!-- Cart conflict warning (shown if cart has items from different establishment) -->
+            <div class="reorder-conflict-warning" id="reorderConflictWarning" style="display:none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Your cart has items from a different establishment. Adding these items will <strong>replace</strong> your current cart.</span>
+            </div>
+
+            <!-- Items list -->
+            <div id="reorderModalItems">
+                <div class="reorder-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading items...
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="reorder-modal-footer">
+            <button class="reorder-cancel-btn" onclick="closeReorderModal()">Cancel</button>
+            <button class="reorder-confirm-btn" id="reorderConfirmBtn" onclick="confirmReorder()">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -675,6 +967,11 @@
 
         // Auto-refresh every 30 seconds to sync with owner updates
         setInterval(loadOrders, 30000);
+
+        // Close reorder modal on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeReorderModal();
+        });
     });
 
     // ========================================
@@ -949,10 +1246,18 @@
 
     // ── REORDER MODAL: fetch order details and show items with live stock ──
     function showReorderModal(orderId) {
-        // Show modal with loading state
-        document.getElementById('reorderModal').style.display = 'flex';
-        document.getElementById('reorderModalItems').innerHTML = '<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i> Loading items...</div>';
-        document.getElementById('reorderConfirmBtn').dataset.orderId = orderId;
+        const modal = document.getElementById('reorderModal');
+        const itemsContainer = document.getElementById('reorderModalItems');
+        const conflictWarning = document.getElementById('reorderConflictWarning');
+        const confirmBtn = document.getElementById('reorderConfirmBtn');
+
+        // Reset state
+        modal.style.display = 'flex';
+        itemsContainer.innerHTML = '<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i><span>Loading items...</span></div>';
+        conflictWarning.style.display = 'none';
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+        confirmBtn.dataset.orderId = orderId;
 
         fetch(`/api/order/${orderId}/`, {
             headers: { 'X-CSRFToken': getCookie('csrftoken') }
@@ -961,30 +1266,68 @@
         .then(data => {
             if (!data.success) { throw new Error(data.message); }
             const order = data.order;
-            const itemsHtml = order.items.map(item => `
-                <div class="reorder-item ${item.available_stock === 0 ? 'out-of-stock' : ''}">
+
+            // Show establishment name
+            document.getElementById('reorderModalTitle').textContent = order.establishment.name;
+
+            // Check for cart conflict: any item in cart from different establishment
+            const cartEstablishment = getCartEstablishmentId();
+            if (cartEstablishment && cartEstablishment !== order.establishment.id) {
+                conflictWarning.style.display = 'flex';
+            }
+
+            // Count available vs out-of-stock
+            const allOutOfStock = order.items.every(i => i.available_stock === 0);
+            if (allOutOfStock) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-ban"></i> All Items Unavailable';
+            }
+
+            // Render items
+            const itemsHtml = order.items.map(item => {
+                const inStock = item.available_stock > 0;
+                const stockLabel = inStock
+                    ? `<i class="fas fa-check-circle"></i> ${item.available_stock} left`
+                    : `<i class="fas fa-times-circle"></i> Out of stock`;
+                return `
+                <div class="reorder-item ${!inStock ? 'out-of-stock' : ''}">
                     <div class="reorder-item-img">
                         ${item.image
-                            ? `<img src="${item.image}" alt="${item.name}">`
+                            ? `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=reorder-img-placeholder><i class=\\'fas fa-utensils\\'></i></div>'">`
                             : `<div class="reorder-img-placeholder"><i class="fas fa-utensils"></i></div>`}
                     </div>
                     <div class="reorder-item-info">
                         <div class="reorder-item-name">${item.name}</div>
                         <div class="reorder-item-price">₱${parseFloat(item.price).toFixed(2)} &nbsp;×&nbsp; ${item.quantity}</div>
                     </div>
-                    <div class="reorder-item-stock ${item.available_stock > 0 ? 'in-stock' : 'no-stock'}">
-                        ${item.available_stock > 0
-                            ? `<i class="fas fa-check-circle"></i> ${item.available_stock} available`
-                            : `<i class="fas fa-times-circle"></i> Out of stock`}
+                    <div class="reorder-item-stock ${inStock ? 'in-stock' : 'no-stock'}">
+                        ${stockLabel}
                     </div>
-                </div>
-            `).join('');
-            document.getElementById('reorderModalItems').innerHTML = itemsHtml;
-            document.getElementById('reorderModalTitle').textContent = order.establishment.name;
+                </div>`;
+            }).join('');
+
+            itemsContainer.innerHTML = itemsHtml;
         })
         .catch(err => {
-            document.getElementById('reorderModalItems').innerHTML = `<p style="color:#e53935;text-align:center;padding:20px;">${err.message || 'Failed to load items.'}</p>`;
+            itemsContainer.innerHTML = `
+                <div style="text-align:center;padding:24px;color:#e53935;">
+                    <i class="fas fa-exclamation-circle" style="font-size:28px;margin-bottom:10px;display:block;"></i>
+                    ${err.message || 'Failed to load items. Please try again.'}
+                </div>`;
+            confirmBtn.disabled = true;
         });
+    }
+
+    // Helper: read establishment id stored in a data attribute on cart icon (if available),
+    // otherwise fall back to a simple sessionStorage key set by cart logic.
+    function getCartEstablishmentId() {
+        try {
+            return parseInt(sessionStorage.getItem('cartEstablishmentId')) || null;
+        } catch(e) { return null; }
+    }
+
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById('reorderModal')) closeReorderModal();
     }
 
     function closeReorderModal() {
@@ -992,10 +1335,10 @@
     }
 
     function confirmReorder() {
-        const orderId = document.getElementById('reorderConfirmBtn').dataset.orderId;
         const btn = document.getElementById('reorderConfirmBtn');
+        const orderId = btn.dataset.orderId;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding to Cart...';
 
         fetch(`/api/reorder/${orderId}/`, {
             method: 'POST',
@@ -1008,18 +1351,41 @@
         .then(data => {
             if (data.success) {
                 closeReorderModal();
-                window.location.href = '/cart/';
+                // Show a brief toast then redirect to cart
+                showToast('Items added to cart! Redirecting...', 'success');
+                setTimeout(() => { window.location.href = '/cart/'; }, 1000);
             } else {
-                alert(data.message || 'Failed to reorder');
+                showToast(data.message || 'Failed to add items to cart.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-redo"></i> Add to Cart';
+                btn.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
             }
         })
         .catch(() => {
-            alert('An error occurred while reordering');
+            showToast('An error occurred. Please try again.', 'error');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo"></i> Add to Cart';
+            btn.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
         });
+    }
+
+    // ── Simple toast notification ──
+    function showToast(message, type = 'success') {
+        let toast = document.getElementById('reorderToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'reorderToast';
+            toast.style.cssText = `
+                position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+                padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;
+                color:white;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.18);
+                transition:opacity 0.3s;opacity:0;pointer-events:none;
+            `;
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.background = type === 'success' ? '#059669' : '#dc2626';
+        toast.style.opacity = '1';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
     }
 
     function reorder(orderId) { showReorderModal(orderId); }
