@@ -1550,8 +1550,9 @@
 
         // Rate button for completed orders
         if (order.status === 'completed') {
+            const estId = order.establishment_id || '';
             actions += `
-                <button class="order-action-btn btn-rate" onclick="rateOrder(${order.establishment_id})">
+                <button class="order-action-btn btn-rate" onclick="openRatingModal(${estId})">
                     <i class="fas fa-star"></i> Rate
                 </button>
                 <button class="order-action-btn btn-reorder" onclick="showReorderModal(${order.id})">
@@ -1931,11 +1932,15 @@
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
 
-        document.getElementById('ratingModalOverlay').classList.add('open');
+        const overlay = document.getElementById('ratingModalOverlay');
+        overlay.classList.add('open');
+        overlay.style.display = 'flex';
     }
 
     function closeRatingModal() {
-        document.getElementById('ratingModalOverlay').classList.remove('open');
+        const overlay = document.getElementById('ratingModalOverlay');
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
     }
 
     function handleRatingOverlayClick(e) {
@@ -1943,7 +1948,9 @@
     }
 
     function closeThankyouModal() {
-        document.getElementById('thankyouOverlay').classList.remove('open');
+        const overlay = document.getElementById('thankyouOverlay');
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
     }
 
     // Wire star hover/click
@@ -2030,7 +2037,9 @@
             if (data.success) {
                 closeRatingModal();
                 setTimeout(() => {
-                    document.getElementById('thankyouOverlay').classList.add('open');
+                    const tyOverlay = document.getElementById('thankyouOverlay');
+                    tyOverlay.classList.add('open');
+                    tyOverlay.style.display = 'flex';
                 }, 180);
             } else {
                 btn.disabled = false;
