@@ -3404,17 +3404,18 @@ def add_to_cart(request):
             )
 
             if not item_created:
-                # Update existing item quantity
-                new_quantity = order_item.quantity + quantity
-
-                # Check if adding would exceed stock
-                if new_quantity > menu_item.quantity:
+                # ✅ FIX: Replace quantity instead of accumulating.
+                # Stale PENDING orders from previous incomplete sessions were
+                # causing "Cannot add N more. Only 0 items available." errors.
+                # The modal always shows the user's chosen quantity, so we
+                # treat that as the authoritative desired quantity.
+                if quantity > menu_item.quantity:
                     return JsonResponse({
                         'success': False,
-                        'message': f'Cannot add {quantity} more. Only {menu_item.quantity - order_item.quantity} items available.'
+                        'message': f'Only {menu_item.quantity} items available in stock.'
                     }, status=400)
 
-                order_item.quantity = new_quantity
+                order_item.quantity = quantity  # SET, not accumulate
                 order_item.save()
 
             # Update order total
