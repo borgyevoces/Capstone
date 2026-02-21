@@ -42,7 +42,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .nib { padding: 9px 15px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--g700); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: .2s; font-family: 'Poppins', sans-serif; }
 .nib:visited { color: var(--g700); }
 .nib:active, .nib:focus, .nib:focus-visible { background: transparent !important; color: var(--g700) !important; border-color: transparent !important; outline: none !important; box-shadow: none !important; }
-.nib:hover { background: rgba(183,28,28,.08); color: var(--red); border-color: rgba(183,28,28,.15); }
+.nib:hover { background: transparent; color: var(--g700); border-color: transparent; }
 .login-btn { background: var(--g900); color: white !important; border-radius: 8px !important; }
 .login-btn:hover { background: var(--red) !important; border-color: var(--red) !important; color: white !important; }
 .cart-link { position: relative; }
