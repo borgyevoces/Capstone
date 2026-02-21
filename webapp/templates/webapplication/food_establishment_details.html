@@ -150,9 +150,261 @@
 .all-reviews-list-wrapper::-webkit-scrollbar { width: 4px; }
 .all-reviews-list-wrapper::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
 
-/* ============================================================ */
+/* ============================================================
+   REVIEW MODAL — New Design (matches Rate Your Experience style)
+   ============================================================ */
+.review-modal-overlay {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0,0,0,0.55) !important;
+    z-index: 99999 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+.review-modal-overlay.open { display: flex !important; }
 
-.status-badge {
+.review-modal-box {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+    overflow: hidden;
+    animation: reviewSlideIn 0.26s cubic-bezier(0.34,1.4,0.64,1);
+}
+
+@keyframes reviewSlideIn {
+    from { transform: scale(0.88) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.review-modal-header {
+    padding: 20px 22px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f0f4f8;
+}
+.review-modal-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+.review-modal-close-btn {
+    background: #f1f3f5;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 13px;
+    color: #718096;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.review-modal-close-btn:hover { background: #e2e8f0; color: #1a202c; }
+
+.review-modal-body { padding: 22px 22px 4px; }
+
+.review-modal-subtitle {
+    font-size: 14px;
+    color: #718096;
+    margin: 0 0 18px;
+    text-align: center;
+}
+
+.review-stars-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.review-r-star {
+    font-size: 40px;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: color 0.12s, transform 0.12s;
+    line-height: 1;
+}
+.review-r-star.lit {
+    color: #f59e0b;
+    transform: scale(1.12);
+}
+
+.review-label-txt {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f59e0b;
+    min-height: 18px;
+    margin: 0 0 16px;
+    transition: color 0.15s;
+}
+.review-label-txt.error { color: #ef4444; }
+
+.review-comment-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.review-comment-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+}
+.review-comment-group textarea {
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #2d3748;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    min-height: 80px;
+    box-sizing: border-box;
+    width: 100%;
+}
+.review-comment-group textarea:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+}
+
+.review-modal-footer {
+    padding: 14px 22px 18px;
+    display: flex;
+    gap: 10px;
+}
+.review-cancel-btn {
+    flex: 0 0 auto;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    color: #718096;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.review-cancel-btn:hover { background: #f7fafc; color: #4a5568; }
+
+.review-submit-btn {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+.review-submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    box-shadow: 0 4px 12px rgba(245,158,11,0.35);
+}
+.review-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Thank You Modal */
+.review-thankyou-overlay {
+    display: none;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    background: rgba(0,0,0,0.55) !important;
+    z-index: 100000 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+.review-thankyou-overlay.open { display: flex !important; }
+
+.review-thankyou-modal {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 360px;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+    animation: reviewSlideIn 0.3s cubic-bezier(0.34,1.4,0.64,1);
+}
+.review-thankyou-icon {
+    font-size: 66px;
+    color: #22c55e;
+    margin-bottom: 14px;
+    display: block;
+    animation: checkPop2 0.4s cubic-bezier(0.34,1.6,0.64,1);
+}
+@keyframes checkPop2 {
+    from { transform: scale(0.3); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+.review-thankyou-modal h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 10px;
+}
+.review-thankyou-modal p {
+    font-size: 14px;
+    color: #718096;
+    margin: 0 0 24px;
+    line-height: 1.6;
+}
+.review-thankyou-done-btn {
+    padding: 12px 30px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.review-thankyou-done-btn:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 4px 12px rgba(34,197,94,0.35);
+}
+
+@media (max-width: 480px) {
+    .review-modal-box {
+        border-radius: 20px 20px 0 0;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        max-width: 100%;
+    }
+    .review-modal-overlay.open { align-items: flex-end; padding: 0; }
+}
+
+/* ============================================================ */
     display: inline-block;
     padding: 6px 12px;
     border-radius: 20px;
@@ -1394,28 +1646,50 @@
     {# DELETE REVIEW FORM #}
     <form id="delete-review-form" method="post" style="display:none;">{% csrf_token %}</form>
 
-    {# REVIEW MODAL #}
-    <div id="reviewModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeReviewModal()">&times;</span>
-            <h2 id="modalTitle">Write a Review</h2>
+    {# REVIEW MODAL — New Design #}
+    <div id="reviewModal" class="review-modal-overlay" style="display:none;" onclick="handleReviewOverlayClick(event)">
+        <div class="review-modal-box">
+            <div class="review-modal-header">
+                <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:6px;"></i> <span id="modalTitle">Rate Your Experience</span></h3>
+                <button class="review-modal-close-btn" onclick="closeReviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             <form id="reviewForm" method="post" action="">
                 {% csrf_token %}
-                <div class="form-group text-center">
-                    <label>Your Rating:</label>
-                    <div class="modal-stars-container" id="modalStars">
+                <div class="review-modal-body">
+                    <p class="review-modal-subtitle">How was your experience at this establishment?</p>
+                    <div class="review-stars-row" id="modalStars">
                         {% for i in "12345" %}
-                        <i class="far fa-star" data-rating="{{ forloop.counter }}"></i>
+                        <i class="far fa-star review-r-star" data-rating="{{ forloop.counter }}"></i>
                         {% endfor %}
                     </div>
+                    <p class="review-label-txt" id="reviewLabelTxt">&nbsp;</p>
                     <input type="hidden" name="rating" id="ratingInput" value="0">
+                    <div class="review-comment-group">
+                        <label for="comment">Comment <span style="color:#9ca3af;font-weight:400;">(optional)</span></label>
+                        <textarea name="comment" id="comment" placeholder="Tell us about your experience..."></textarea>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="comment">Comment:</label>
-                    <textarea name="comment" id="comment" rows="4" required></textarea>
+                <div class="review-modal-footer">
+                    <button type="button" class="review-cancel-btn" onclick="closeReviewModal()">Cancel</button>
+                    <button type="submit" class="review-submit-btn btn-submit-review" id="reviewSubmitBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Review
+                    </button>
                 </div>
-                <button type="submit" class="btn-submit-review">Submit Review</button>
             </form>
+        </div>
+    </div>
+
+    {# REVIEW THANK YOU MODAL #}
+    <div id="reviewThankyouOverlay" class="review-thankyou-overlay" style="display:none;">
+        <div class="review-thankyou-modal">
+            <i class="fas fa-check-circle review-thankyou-icon"></i>
+            <h3>Thank You!</h3>
+            <p>Your review has been submitted successfully.<br>We appreciate your feedback!</p>
+            <button class="review-thankyou-done-btn" onclick="closeReviewThankyou()">
+                <i class="fas fa-check"></i> Done
+            </button>
         </div>
     </div>
 
@@ -2671,15 +2945,20 @@
 
     // ---- Star visual sync ----
     function syncStarVisuals(rating) {
-        document.querySelectorAll('#modalStars i').forEach(function(star, idx) {
+        const labelMap = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+        document.querySelectorAll('#modalStars .review-r-star').forEach(function(star, idx) {
             if (idx < rating) {
-                star.classList.remove('far');
-                star.classList.add('fas', 'filled');
+                star.className = 'fas fa-star review-r-star lit';
             } else {
-                star.classList.remove('fas', 'filled');
-                star.classList.add('far');
+                star.className = 'far fa-star review-r-star';
             }
         });
+        const lbl = document.getElementById('reviewLabelTxt');
+        if (lbl) {
+            lbl.textContent = rating ? labelMap[rating] : '\u00a0';
+            lbl.style.color = '#f59e0b';
+            lbl.classList.remove('error');
+        }
     }
 
     // ---- Build star HTML for a given rating ----
@@ -2708,36 +2987,58 @@
         const ratingInput  = document.getElementById('ratingInput');
         const commentField = document.getElementById('comment');
         const submitBtn    = document.querySelector('#reviewForm .btn-submit-review');
+        const lbl          = document.getElementById('reviewLabelTxt');
 
         if (reviewId) {
-            currentEditReviewId = reviewId;
+            currentEditReviewId     = reviewId;
             modalTitle.textContent  = 'Edit Your Review';
             ratingInput.value       = existingRating || 0;
             commentField.value      = existingComment || '';
-            submitBtn.textContent   = 'Save Changes';
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
         } else {
             currentEditReviewId     = null;
-            modalTitle.textContent  = 'Write a Review';
+            modalTitle.textContent  = 'Rate Your Experience';
             ratingInput.value       = 0;
             commentField.value      = '';
-            submitBtn.textContent   = 'Submit Review';
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review'; }
         }
 
+        if (lbl) { lbl.textContent = '\u00a0'; lbl.classList.remove('error'); }
         syncStarVisuals(parseInt(ratingInput.value));
-        modal.style.display = 'block';
+
+        modal.style.display       = 'flex';
+        modal.style.position      = 'fixed';
+        modal.style.top           = '0';
+        modal.style.left          = '0';
+        modal.style.width         = '100vw';
+        modal.style.height        = '100vh';
+        modal.style.zIndex        = '99999';
+        modal.style.alignItems    = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.background    = 'rgba(0,0,0,0.55)';
+        modal.style.margin        = '0';
+        modal.classList.add('open');
     };
 
     // ---- Close modal ----
     window.closeReviewModal = function() {
-        document.getElementById('reviewModal').style.display = 'none';
+        const modal = document.getElementById('reviewModal');
+        modal.classList.remove('open');
+        modal.style.display = 'none';
         currentEditReviewId = null;
     };
 
-    // ---- Close on backdrop click ----
-    document.addEventListener('click', function(e) {
-        const modal = document.getElementById('reviewModal');
-        if (modal && e.target === modal) closeReviewModal();
-    });
+    // ---- Handle overlay backdrop click ----
+    window.handleReviewOverlayClick = function(e) {
+        if (e.target.id === 'reviewModal') closeReviewModal();
+    };
+
+    // ---- Close review thank you modal ----
+    window.closeReviewThankyou = function() {
+        const overlay = document.getElementById('reviewThankyouOverlay');
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
+    };
 
     // ---- Insert a NEW review card at the TOP of the list (realtime) ----
     function insertNewReviewCard(rating, comment, profilePicUrl, username) {
@@ -2805,8 +3106,9 @@
         const starsContainer = document.getElementById('modalStars');
         if (!starsContainer) return;
 
-        const stars       = starsContainer.querySelectorAll('i');
+        const stars       = starsContainer.querySelectorAll('.review-r-star');
         const ratingInput = document.getElementById('ratingInput');
+        const labelMap    = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 
         // Star click & hover
         stars.forEach(function(star) {
@@ -2815,7 +3117,12 @@
                 syncStarVisuals(parseInt(ratingInput.value));
             });
             star.addEventListener('mouseenter', function() {
-                syncStarVisuals(parseInt(this.getAttribute('data-rating')));
+                const val = parseInt(this.getAttribute('data-rating'));
+                stars.forEach(function(s, i) {
+                    s.className = i < val ? 'fas fa-star review-r-star lit' : 'far fa-star review-r-star';
+                });
+                const lbl = document.getElementById('reviewLabelTxt');
+                if (lbl) { lbl.textContent = labelMap[val]; lbl.style.color = '#f59e0b'; lbl.classList.remove('error'); }
             });
         });
         starsContainer.addEventListener('mouseleave', function() {
@@ -2833,13 +3140,29 @@
                 const submitBtn = reviewForm.querySelector('.btn-submit-review');
 
                 if (rating === 0) {
-                    alert('Please select a star rating before submitting.');
+                    const lbl = document.getElementById('reviewLabelTxt');
+                    if (lbl) {
+                        lbl.textContent = 'Please select a star rating first!';
+                        lbl.classList.add('error');
+                        lbl.style.color = '#ef4444';
+                        // Shake stars
+                        const row = document.getElementById('modalStars');
+                        if (row && row.animate) {
+                            row.animate([
+                                {transform:'translateX(0)'},{transform:'translateX(-7px)'},
+                                {transform:'translateX(7px)'},{transform:'translateX(-5px)'},
+                                {transform:'translateX(5px)'},{transform:'translateX(0)'}
+                            ], {duration:350, easing:'ease'});
+                        }
+                    } else {
+                        alert('Please select a star rating before submitting.');
+                    }
                     return;
                 }
 
                 // Disable button to prevent double-submit
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Submitting...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
                 // Determine URL: edit or create
                 let url;
@@ -2872,8 +3195,10 @@
                 .then(function(data) {
                     if (!data.success) {
                         submitBtn.disabled = false;
-                        submitBtn.textContent = currentEditReviewId ? 'Save Changes' : 'Submit Review';
-                        alert(data.error || 'Something went wrong. Please try again.');
+                        submitBtn.innerHTML = currentEditReviewId ? '<i class="fas fa-save"></i> Save Changes' : '<i class="fas fa-paper-plane"></i> Submit Review';
+                        const lbl = document.getElementById('reviewLabelTxt');
+                        if (lbl) { lbl.textContent = data.error || 'Something went wrong. Please try again.'; lbl.classList.add('error'); lbl.style.color = '#ef4444'; }
+                        else { alert(data.error || 'Something went wrong. Please try again.'); }
                         return;
                     }
 
@@ -2925,17 +3250,41 @@
                         hint.style.display = 'block';
                     }
 
-                    // Close modal
+                    // Close modal and show thank you
                     closeReviewModal();
+                    setTimeout(function() {
+                        const tyOverlay = document.getElementById('reviewThankyouOverlay');
+                        if (tyOverlay) {
+                            tyOverlay.classList.add('open');
+                            tyOverlay.style.display = 'flex';
+                            tyOverlay.style.position = 'fixed';
+                            tyOverlay.style.top = '0';
+                            tyOverlay.style.left = '0';
+                            tyOverlay.style.width = '100vw';
+                            tyOverlay.style.height = '100vh';
+                            tyOverlay.style.zIndex = '100000';
+                            tyOverlay.style.alignItems = 'center';
+                            tyOverlay.style.justifyContent = 'center';
+                            tyOverlay.style.background = 'rgba(0,0,0,0.55)';
+                            tyOverlay.style.margin = '0';
+                        }
+                    }, 180);
                 })
                 .catch(function(err) {
                     console.error('Review submit error:', err);
                     submitBtn.disabled = false;
-                    submitBtn.textContent = currentEditReviewId ? 'Save Changes' : 'Submit Review';
-                    alert('Something went wrong. Please try again.');
+                    submitBtn.innerHTML = currentEditReviewId ? '<i class="fas fa-save"></i> Save Changes' : '<i class="fas fa-paper-plane"></i> Submit Review';
+                    const lbl = document.getElementById('reviewLabelTxt');
+                    if (lbl) { lbl.textContent = 'Network error. Please try again.'; lbl.classList.add('error'); lbl.style.color = '#ef4444'; }
+                    else { alert('Something went wrong. Please try again.'); }
                 });
             });
         }
+
+        // ESC closes review modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { closeReviewModal(); closeReviewThankyou(); }
+        });
 
         // ---- Edit review button (delegated) ----
         document.addEventListener('click', function(e) {
