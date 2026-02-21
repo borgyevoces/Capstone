@@ -1434,419 +1434,386 @@
         </div>
     </div>
 
-    {# ITEM DETAIL MODAL #}
-    <div id="itemDetailModal" class="modal">
-        <div class="modal-content item-detail-modal-content">
-            <span class="close-btn" onclick="closeItemDetailModal()">&times;</span>
-            <h2 id="itemDetailModalTitle" class="item-name-header">Menu Item Name</h2>
-            <div class="item-details-body">
-                <img id="modalItemImage" src="" alt="Menu Item Image" class="modal-item-image">
-                <p id="modalItemDescription" class="modal-item-description"></p>
+    {# ITEM DETAIL MODAL - NEW DESIGN (matches screenshot: image left, info right) #}
+    <div id="itemDetailModal" class="item-modal-overlay" onclick="handleItemModalOutsideClick(event)">
+        <div class="item-modal-box">
+
+            <!-- Left: Image Panel -->
+            <div class="item-modal-image-panel">
+                <img id="modalItemImage" src="" alt="Menu Item" class="item-modal-image">
+                <span id="modalBestSellerBadge" class="item-modal-bestseller-badge" style="display:none;">
+                    <i class="fas fa-medal"></i> Best Seller
+                </span>
+            </div>
+
+            <!-- Right: Info Panel -->
+            <div class="item-modal-info-panel">
+                <button class="item-modal-close-btn" onclick="closeItemDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <h2 id="itemDetailModalTitle" class="item-modal-name">Menu Item Name</h2>
+                <p id="modalItemDescription" class="item-modal-desc"></p>
 
                 {% if user.is_authenticated %}
-                <p id="modalItemPrice" class="modal-item-price">₱ 0.00</p>
-                <p id="modalItemStock" class="modal-item-stock"></p>
-
-                <div class="quantity-control">
-                    <label for="itemQuantity">Quantity:</label>
-                    <div class="quantity-input-group">
-                        <button type="button" class="btn-quantity-minus" onclick="updateModalQuantity(-1)">-</button>
-                        <input type="number" id="itemQuantity" value="1" min="1" readonly>
-                        <button type="button" class="btn-quantity-plus" onclick="updateModalQuantity(1)">+</button>
-                    </div>
-                    </div>
-                    <!-- ✅ QUANTITY WARNING MESSAGE -->
-                    <div id="quantityWarning" class="quantity-warning">
-                        Maximum quantity reached
-                    </div>
+                <div class="item-modal-price-row">
+                    <span id="modalItemPrice" class="item-modal-price">₱0.00</span>
+                    <span id="modalItemStock" class="item-modal-stock-badge"></span>
                 </div>
 
-                <div class="modal-actions">
-                    <button id="modalAddToCartBtn" class="btn-add-to-cart-modal" onclick="handleModalAddToCart(this)"
-                            data-action="add">
+                <!-- Establishment Info -->
+                <div class="item-modal-establishment-card">
+                    <div class="item-modal-est-header">
+                        <i class="fas fa-store"></i>
+                        <strong>{{ establishment.name }}</strong>
+                    </div>
+                    <div class="item-modal-est-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ establishment.address }}
+                    </div>
+                    <div id="itemModalEstStatus" class="item-modal-est-status"></div>
+                </div>
+
+                <!-- Quantity -->
+                <div class="item-modal-qty-row">
+                    <span class="item-modal-qty-label">Quantity:</span>
+                    <div class="item-modal-qty-group">
+                        <button type="button" class="item-modal-qty-btn" onclick="updateModalQuantity(-1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <input type="number" id="itemQuantity" value="1" min="1" readonly class="item-modal-qty-input">
+                        <button type="button" class="item-modal-qty-btn" onclick="updateModalQuantity(1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="quantityWarning" class="quantity-warning">
+                    ⚠ Maximum quantity reached
+                </div>
+
+                <!-- Actions -->
+                <div class="item-modal-actions">
+                    <button id="modalAddToCartBtn" class="item-modal-btn-cart" onclick="handleModalAddToCart(this)">
                         <i class="fas fa-cart-plus"></i> Add to Cart
                     </button>
-                    <!-- ✅ FIXED BUY NOW BUTTON - REDIRECTS TO PAYMONGO -->
-                    <button id="modalBuyNowBtn" class="btn-buy-now-modal" onclick="handleModalBuyNow(this)">
+                    <button id="modalBuyNowBtn" class="item-modal-btn-buynow" onclick="handleModalBuyNow(this)">
                         <i class="fas fa-bolt"></i> Buy Now
                     </button>
                 </div>
+
                 {% else %}
-                <p class="text-muted text-center">Log in or Sign Up to order.</p>
-                <div class="modal-actions">
-                    <a href="{% url 'user_login_register' %}" class="btn-add-to-cart-modal btn-full-width">
+                <div style="margin-top: 24px;">
+                    <p style="color:#718096;text-align:center;margin-bottom:16px;">Log in or Sign Up to order.</p>
+                    <a href="{% url 'user_login_register' %}" class="item-modal-btn-cart" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
                         <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
                     </a>
                 </div>
                 {% endif %}
             </div>
-            <!-- ✅ HIDDEN FIELDS FOR VALIDATION -->
+
+            <!-- Hidden fields -->
             <input type="hidden" id="modalItemId" value="">
             <input type="hidden" id="modalMaxQuantity" value="0">
         </div>
     </div>
 
-    {# PAYMENT METHOD MODAL #}
-    <div id="paymentMethodModal" class="payment-modal-overlay">
-        <div class="payment-modal-box">
-            <div class="payment-modal-header">
-                <div class="payment-modal-title-row">
-                    <div class="payment-modal-icon">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <div>
-                        <h3 class="payment-modal-title">Choose Payment Method</h3>
-                        <p class="payment-modal-subtitle">Select how you'd like to pay</p>
-                    </div>
-                </div>
-                <button class="payment-modal-close" onclick="closePaymentMethodModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- Order Summary -->
-            <div class="payment-order-summary">
-                <div class="payment-summary-label">Order Summary</div>
-                <div class="payment-summary-row">
-                    <span class="payment-summary-item-name" id="paymentSummaryItemName">Item</span>
-                    <span class="payment-summary-qty">x<span id="paymentSummaryQty">1</span></span>
-                </div>
-                <div class="payment-summary-total-row">
-                    <span>Total</span>
-                    <span class="payment-summary-total" id="paymentSummaryPrice">₱0.00</span>
-                </div>
-            </div>
-
-            <!-- Payment Options -->
-            <div class="payment-options">
-                <div class="payment-method-option selected" data-method="gcash" onclick="selectPaymentMethod('gcash')">
-                    <div class="payment-method-radio">
-                        <div class="payment-method-radio-dot"></div>
-                    </div>
-                    <div class="payment-method-icon gcash-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <div class="payment-method-info">
-                        <div class="payment-method-name">GCash / Online Payment</div>
-                        <div class="payment-method-desc">Pay securely via GCash or card through PayMongo</div>
-                    </div>
-                    <div class="payment-method-badge gcash-badge">Recommended</div>
-                </div>
-
-                <div class="payment-method-option" data-method="cash" onclick="selectPaymentMethod('cash')">
-                    <div class="payment-method-radio">
-                        <div class="payment-method-radio-dot"></div>
-                    </div>
-                    <div class="payment-method-icon cash-icon">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <div class="payment-method-info">
-                        <div class="payment-method-name">Cash on Pickup</div>
-                        <div class="payment-method-desc">Pay with cash when you pick up your order</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="payment-modal-actions">
-                <button class="payment-cancel-btn" onclick="closePaymentMethodModal()">
-                    <i class="fas fa-arrow-left"></i> Back
-                </button>
-                <button class="payment-confirm-btn" id="confirmPaymentBtn" onclick="confirmPaymentAndProceed()">
-                    <i class="fas fa-bolt"></i> Pay with GCash
-                </button>
-            </div>
-        </div>
-    </div>
-
     <style>
-    /* ==========================================
-       PAYMENT METHOD MODAL
-       ========================================== */
-    .payment-modal-overlay {
+    /* ============================================================
+       NEW ITEM DETAIL MODAL — matches screenshot design
+       ============================================================ */
+    .item-modal-overlay {
         display: none;
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6);
-        z-index: 99999;
+        background: rgba(0,0,0,0.55);
+        z-index: 9999;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        backdrop-filter: blur(3px);
+        box-sizing: border-box;
+        backdrop-filter: blur(2px);
     }
-    .payment-modal-overlay.show {
+    .item-modal-overlay.open {
         display: flex;
     }
-    .payment-modal-box {
+
+    .item-modal-box {
         background: white;
         border-radius: 20px;
-        max-width: 480px;
+        max-width: 860px;
         width: 100%;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.25);
-        animation: payModalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        display: flex;
         overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+        animation: itemModalIn 0.28s cubic-bezier(0.34,1.4,0.64,1);
+        max-height: 90vh;
+        position: relative;
     }
-    @keyframes payModalIn {
-        from { transform: scale(0.88) translateY(20px); opacity: 0; }
+    @keyframes itemModalIn {
+        from { transform: scale(0.9) translateY(16px); opacity: 0; }
         to   { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .payment-modal-header {
-        padding: 20px 24px 16px;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        border-bottom: 1px solid #f0f0f0;
+
+    /* --- Image Panel --- */
+    .item-modal-image-panel {
+        flex: 0 0 45%;
+        position: relative;
+        background: #f1f1f1;
+        min-height: 400px;
     }
-    .payment-modal-title-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+    .item-modal-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
-    .payment-modal-icon {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #B71C1C, #ef4444);
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .item-modal-bestseller-badge {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: linear-gradient(135deg, #f97316, #ea580c);
         color: white;
-        font-size: 20px;
-        flex-shrink: 0;
-    }
-    .payment-modal-title {
-        font-size: 17px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
         font-weight: 700;
-        color: #1a202c;
-        margin: 0 0 3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 4px 12px rgba(249,115,22,0.4);
     }
-    .payment-modal-subtitle {
-        font-size: 13px;
-        color: #9ca3af;
-        margin: 0;
+
+    /* --- Info Panel --- */
+    .item-modal-info-panel {
+        flex: 1;
+        padding: 28px 28px 24px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
     }
-    .payment-modal-close {
+    .item-modal-close-btn {
+        position: absolute;
+        top: 14px;
+        right: 14px;
         background: #f3f4f6;
         border: none;
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
+        font-size: 14px;
         color: #6b7280;
         cursor: pointer;
-        font-size: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-        flex-shrink: 0;
+        z-index: 2;
     }
-    .payment-modal-close:hover {
+    .item-modal-close-btn:hover {
         background: #e5e7eb;
-        color: #374151;
+        color: #1f2937;
     }
-
-    /* Order Summary */
-    .payment-order-summary {
-        margin: 16px 24px;
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 14px 16px;
-        border: 1px solid #e2e8f0;
+    .item-modal-name {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 0 40px 6px 0;
+        line-height: 1.3;
     }
-    .payment-summary-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #9ca3af;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-    }
-    .payment-summary-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-    }
-    .payment-summary-item-name {
-        font-weight: 600;
-        color: #374151;
-        font-size: 14px;
-    }
-    .payment-summary-qty {
+    .item-modal-desc {
         font-size: 13px;
         color: #6b7280;
-        background: #e5e7eb;
-        padding: 2px 8px;
-        border-radius: 10px;
+        margin: 0 0 14px;
+        line-height: 1.5;
     }
-    .payment-summary-total-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 8px;
-        border-top: 1px dashed #e2e8f0;
-        font-weight: 700;
-        color: #374151;
-        font-size: 14px;
-    }
-    .payment-summary-total {
-        color: #B71C1C;
-        font-size: 18px;
-        font-weight: 800;
-    }
-
-    /* Payment Options */
-    .payment-options {
-        padding: 0 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .payment-method-option {
-        border: 2px solid #e5e7eb;
-        border-radius: 14px;
-        padding: 14px 16px;
-        cursor: pointer;
+    .item-modal-price-row {
         display: flex;
         align-items: center;
         gap: 12px;
-        transition: all 0.2s ease;
-        position: relative;
+        margin-bottom: 14px;
     }
-    .payment-method-option:hover {
-        border-color: #B71C1C;
-        background: #fff5f5;
+    .item-modal-price {
+        font-size: 26px;
+        font-weight: 800;
+        color: #B71C1C;
     }
-    .payment-method-option.selected {
-        border-color: #B71C1C;
-        background: #fff5f5;
-        box-shadow: 0 0 0 3px rgba(183,28,28,0.08);
-    }
-    .payment-method-radio {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #d1d5db;
-        border-radius: 50%;
+    .item-modal-stock-badge {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
         display: flex;
         align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        transition: all 0.2s;
+        gap: 5px;
     }
-    .payment-method-option.selected .payment-method-radio {
-        border-color: #B71C1C;
-    }
-    .payment-method-radio-dot {
-        width: 10px;
-        height: 10px;
-        background: #B71C1C;
+    .item-modal-stock-badge::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.2s;
+        background: #6b7280;
     }
-    .payment-method-option.selected .payment-method-radio-dot {
-        opacity: 1;
-        transform: scale(1);
-    }
-    .payment-method-icon {
-        width: 44px;
-        height: 44px;
+
+    /* Establishment card */
+    .item-modal-establishment-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+    }
+    .item-modal-est-header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        flex-shrink: 0;
-    }
-    .gcash-icon {
-        background: linear-gradient(135deg, #0066CC, #00a0e9);
-        color: white;
-    }
-    .cash-icon {
-        background: linear-gradient(135deg, #16a34a, #22c55e);
-        color: white;
-    }
-    .payment-method-info { flex: 1; }
-    .payment-method-name {
+        gap: 8px;
         font-weight: 700;
         font-size: 14px;
         color: #1f2937;
-        margin-bottom: 3px;
+        margin-bottom: 5px;
     }
-    .payment-method-desc {
+    .item-modal-est-header i { color: #B71C1C; }
+    .item-modal-est-address {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
         font-size: 12px;
         color: #6b7280;
-        line-height: 1.4;
+        line-height: 1.5;
+        margin-bottom: 6px;
     }
-    .payment-method-badge {
-        font-size: 10px;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 8px;
-        flex-shrink: 0;
-    }
-    .gcash-badge {
-        background: #dbeafe;
-        color: #1d4ed8;
-    }
-
-    /* Actions */
-    .payment-modal-actions {
-        padding: 16px 24px 20px;
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-    }
-    .payment-cancel-btn {
-        flex: 0 0 auto;
-        padding: 13px 18px;
-        border: 2px solid #e5e7eb;
-        background: white;
-        border-radius: 10px;
+    .item-modal-est-address i { color: #9ca3af; margin-top: 2px; flex-shrink: 0; }
+    .item-modal-est-status {
+        font-size: 13px;
         font-weight: 600;
-        font-size: 14px;
-        color: #4b5563;
-        cursor: pointer;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 6px;
     }
-    .payment-cancel-btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+    .item-modal-est-status.open { color: #16a34a; }
+    .item-modal-est-status.closed { color: #dc2626; }
+    .item-modal-est-status::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        display: inline-block;
     }
-    .payment-confirm-btn {
-        flex: 1;
-        padding: 13px 20px;
-        border: none;
-        background: linear-gradient(135deg, #0066CC, #00a0e9);
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 15px;
-        color: white;
+
+    /* Quantity */
+    .item-modal-qty-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+    }
+    .item-modal-qty-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+    }
+    .item-modal-qty-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .item-modal-qty-btn {
+        width: 36px;
+        height: 36px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        border-radius: 50%;
+        font-size: 13px;
+        color: #374151;
         cursor: pointer;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        transition: all 0.2s;
     }
-    .payment-confirm-btn:hover:not(:disabled) {
-        filter: brightness(1.08);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    .item-modal-qty-btn:hover {
+        border-color: #B71C1C;
+        color: #B71C1C;
+        background: #fff5f5;
     }
-    .payment-confirm-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
+    .item-modal-qty-input {
+        width: 48px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 700;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 0;
+        color: #1f2937;
+        -moz-appearance: textfield;
+        background: white;
     }
+    .item-modal-qty-input::-webkit-outer-spin-button,
+    .item-modal-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    @media (max-width: 480px) {
-        .payment-modal-box { border-radius: 16px 16px 0 0; }
-        .payment-modal-overlay { align-items: flex-end; padding: 0; }
+    /* Actions */
+    .item-modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+        padding-top: 16px;
+    }
+    .item-modal-btn-cart {
+        flex: 1;
+        padding: 13px 16px;
+        background: #B71C1C;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: all 0.2s;
+    }
+    .item-modal-btn-cart:hover:not(:disabled) {
+        background: #991515;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(183,28,28,0.3);
+    }
+    .item-modal-btn-cart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .item-modal-btn-buynow {
+        flex: 1;
+        padding: 13px 16px;
+        background: #16a34a;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: all 0.2s;
+    }
+    .item-modal-btn-buynow:hover:not(:disabled) {
+        background: #15803d;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(22,163,74,0.3);
+    }
+    .item-modal-btn-buynow:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Mobile: stack vertically */
+    @media (max-width: 640px) {
+        .item-modal-box { flex-direction: column; max-height: 95vh; border-radius: 16px 16px 0 0; }
+        .item-modal-overlay { align-items: flex-end; padding: 0; }
+        .item-modal-image-panel { flex: 0 0 200px; min-height: 200px; }
+        .item-modal-info-panel { padding: 20px 18px 18px; }
+        .item-modal-name { font-size: 18px; }
+        .item-modal-price { font-size: 22px; }
     }
     </style>
 
@@ -2680,14 +2647,6 @@
                 closeUnsendModal();
             }
         });
-
-        // Close payment method modal on outside click
-        const paymentModal = document.getElementById('paymentMethodModal');
-        if (paymentModal) {
-            paymentModal.addEventListener('click', function(e) {
-                if (e.target === this) closePaymentMethodModal();
-            });
-        }
     });
 
     // Auto-initialize WebSocket
