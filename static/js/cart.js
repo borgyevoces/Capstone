@@ -283,11 +283,17 @@ function selectEstablishment(establishmentId) {
     if (selectedBox) {
         selectedBox.classList.add('active-cart');
 
-        // Store the active order ID (get first item's order ID)
+        // Store the active order ID
         const firstItem = selectedBox.querySelector('.cart-item');
         if (firstItem) {
             window.activeOrderId = firstItem.dataset.orderId;
         }
+
+        // ✅ Always reset: show checkout button, hide payment options
+        const checkoutBtn = document.getElementById('initial-checkout-btn');
+        const paymentSection = document.getElementById('payment-method-section');
+        if (checkoutBtn) checkoutBtn.style.display = 'flex';
+        if (paymentSection) paymentSection.style.display = 'none';
 
         // Update summary
         updateOrderSummary(selectedBox);
