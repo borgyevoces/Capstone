@@ -1463,64 +1463,111 @@
         document.getElementById('reorderModal').style.display = 'none';
     }
 
-    // Main action: mode = 'cart' | 'buy'
+    // ============================================================
+    // REORDER — Add to Cart (realtime) or Buy Now (→ /cart/?pay=1)
+    // Uses the same /cart/add/ endpoint as kabsueats.js
+    // ============================================================
     function doReorder(mode) {
         if (!reorderCurrentOrder) return;
+
         const atcBtn = document.getElementById('reorderAtcBtn');
         const buyBtn = document.getElementById('reorderBuyBtn');
-
         atcBtn.disabled = true;
         buyBtn.disabled = true;
         const activeBtn = mode === 'cart' ? atcBtn : buyBtn;
         activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-        // Build custom quantities from UI
-        const quantities = {};
-        if (reorderCurrentOrder.items) {
-            reorderCurrentOrder.items.forEach((item, idx) => {
+        // Collect items + user-adjusted quantities
+        const itemsToAdd = reorderCurrentOrder.items
+            .map((item, idx) => {
                 const valEl = document.getElementById(`qtyVal-${idx}`);
-                quantities[item.name] = valEl ? parseInt(valEl.textContent) : item.quantity;
-            });
-        }
+                const qty = valEl ? parseInt(valEl.textContent) : item.quantity;
+                return { menu_item_id: item.id, quantity: qty, available: item.available_stock };
+            })
+            .filter(i => i.available > 0); // skip out-of-stock items
 
-        fetch(`/api/reorder/${reorderCurrentOrder.id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ quantities })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                closeReorderModal();
-                if (mode === 'buy') {
-                    showToast('Items added! Redirecting to cart...', 'success');
-                    setTimeout(() => { window.location.href = '/cart/?pay=1'; }, 900);
-                } else {
-                    showToast('Items added to cart!', 'success');
-                    setTimeout(() => { window.location.href = '/cart/'; }, 900);
-                }
-            } else {
-                showToast(data.message || 'Failed to add items.', 'error');
-                atcBtn.disabled = false;
-                buyBtn.disabled = false;
-                atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-                buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-            }
-        })
-        .catch(() => {
-            showToast('An error occurred. Please try again.', 'error');
+        if (itemsToAdd.length === 0) {
+            showReorderToast('All items are out of stock.', 'error');
             atcBtn.disabled = false;
             buyBtn.disabled = false;
             atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
             buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+            return;
+        }
+
+        // Add all items sequentially to cart, then handle result
+        addItemsToCart(itemsToAdd, 0)
+            .then(lastCartCount => {
+                // Update cart badge in realtime — same as kabsueats.js
+                const badge = document.getElementById('cartBadge');
+                if (badge && lastCartCount !== null) {
+                    badge.textContent = lastCartCount;
+                } else {
+                    // Fallback: fetch fresh count
+                    fetch('/cart/count/')
+                        .then(r => r.json())
+                        .then(d => { if (badge) badge.textContent = d.cart_count ?? d.count ?? 0; })
+                        .catch(() => {});
+                }
+
+                closeReorderModal();
+
+                if (mode === 'buy') {
+                    // Buy Now → go directly to cart with payment modal open
+                    window.location.href = '/cart/?pay=1';
+                } else {
+                    // Add to Cart → toast, stay on page
+                    showReorderToast(
+                        `${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''} added to cart!`,
+                        'success'
+                    );
+                }
+            })
+            .catch(errMsg => {
+                showReorderToast(errMsg || 'Could not add items to cart.', 'error');
+                atcBtn.disabled = false;
+                buyBtn.disabled = false;
+                atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+                buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+            });
+    }
+
+    // Recursively add items one by one, returns Promise<lastCartCount>
+    function addItemsToCart(items, idx) {
+        if (idx >= items.length) return Promise.resolve(null);
+        const item = items[idx];
+
+        return fetch('/cart/add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                // Non-fatal: skip this item but keep going
+                console.warn('Could not add item to cart:', data.message);
+                return addItemsToCart(items, idx + 1);
+            }
+            // On last item, return cart count
+            if (idx === items.length - 1) {
+                return data.cart_count !== undefined ? data.cart_count : null;
+            }
+            return addItemsToCart(items, idx + 1);
         });
     }
 
-    // ── Simple toast notification ──
-    function showToast(message, type = 'success') {
+    // ── Toast: use kabsueats.js showToast if loaded, else simple fallback ──
+    function showReorderToast(message, type = 'success') {
+        if (typeof showToast === 'function') {
+            // Use the same rich toast as kabsueats.js
+            showToast(message, type);
+            return;
+        }
+        // Fallback for standalone use
         let toast = document.getElementById('reorderToast');
         if (!toast) {
             toast = document.createElement('div');

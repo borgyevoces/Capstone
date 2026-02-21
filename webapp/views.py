@@ -6042,6 +6042,7 @@ def get_order_details(request, order_id):
             item_total = order_item.quantity * item_price
 
             items.append({
+                'id': order_item.menu_item.id,   # ← needed for /cart/add/ realtime reorder
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
                 'price': str(item_price),
