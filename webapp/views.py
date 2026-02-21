@@ -5932,9 +5932,10 @@ def get_user_transaction_history(request):
 @login_required
 def reorder_items(request, order_id):
     """
-    API endpoint to add all items from a previous order to the cart
+    API endpoint to add all items from a previous order to the cart.
+    Supports optional custom quantities passed as JSON body: { "quantities": { "Item Name": qty } }
 
-    Used by: Client_order_history.html (Reorder button)
+    Used by: Client_order_history.html (Reorder modal)
     Endpoint: /api/reorder/<order_id>/
     Method: POST
     """
@@ -5948,6 +5949,14 @@ def reorder_items(request, order_id):
         from .models import Cart, CartItem
         from django.db import transaction
 
+        # Parse optional custom quantities
+        custom_quantities = {}
+        try:
+            body = json.loads(request.body or '{}')
+            custom_quantities = body.get('quantities', {})
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
         # Get the order and verify it belongs to the user
         order = Order.objects.get(id=order_id, user=request.user)
 
@@ -5960,16 +5969,28 @@ def reorder_items(request, order_id):
         # Add each item from the order to the cart
         with transaction.atomic():
             for order_item in order.orderitem_set.all():
-                # Check if item already exists in cart
-                cart_item, created = CartItem.objects.get_or_create(
+                # Use custom quantity if provided, else fall back to original qty
+                qty = custom_quantities.get(order_item.menu_item.name, order_item.quantity)
+                try:
+                    qty = max(1, int(qty))
+                except (ValueError, TypeError):
+                    qty = order_item.quantity
+
+                # Clamp to available stock
+                available = order_item.menu_item.quantity
+                if available == 0:
+                    continue  # Skip out-of-stock items silently
+                qty = min(qty, available)
+
+                cart_item, item_created = CartItem.objects.get_or_create(
                     cart=cart,
                     menu_item=order_item.menu_item,
-                    defaults={'quantity': order_item.quantity}
+                    defaults={'quantity': qty}
                 )
 
-                if not created:
-                    # If item exists, increase quantity
-                    cart_item.quantity += order_item.quantity
+                if not item_created:
+                    # If item already in cart, update to the new qty
+                    cart_item.quantity = min(cart_item.quantity + qty, available)
                     cart_item.save()
 
         return JsonResponse({
