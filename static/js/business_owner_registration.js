@@ -104,77 +104,47 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // Show existing registered establishments with circular PHOTO markers
+    // Show existing registered establishments on map with building/store icons
     if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
         EXISTING_ESTABLISHMENTS.forEach(est => {
             if (est.latitude && est.longitude) {
-                const isOpen = (est.status || '').toLowerCase() === 'open';
-                const borderColor = isOpen ? '#10b981' : '#ef4444';
-
-                let innerHtml;
-                if (est.image_url) {
-                    innerHtml = `<img src="${est.image_url}"
-                        style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
-                        onerror="this.style.display='none';this.nextSibling.style.display='flex';">
-                        <div style="display:none;width:100%;height:100%;border-radius:50%;
-                            background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                            font-size:16px;font-weight:700;align-items:center;justify-content:center;">
-                            ${est.name.charAt(0).toUpperCase()}
-                        </div>`;
-                } else {
-                    innerHtml = `<div style="width:100%;height:100%;border-radius:50%;
-                        background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                        font-size:16px;font-weight:700;display:flex;
-                        align-items:center;justify-content:center;">
-                        ${est.name.charAt(0).toUpperCase()}
-                    </div>`;
-                }
-
                 const estIcon = L.divIcon({
-                    className: '',
-                    html: `<div style="
-                        width:48px;height:48px;border-radius:50%;
-                        border:3px solid ${borderColor};
-                        box-shadow:0 3px 12px rgba(0,0,0,0.4);
-                        overflow:hidden;cursor:pointer;
-                        background:#fff;position:relative;">
-                        ${innerHtml}
+                    className: 'existing-establishment-marker',
+                    html: `
                         <div style="
-                            position:absolute;bottom:-1px;right:-1px;
-                            width:14px;height:14px;border-radius:50%;
-                            background:${isOpen ? '#10b981' : '#ef4444'};
-                            border:2px solid #fff;">
+                            position: relative;
+                            width: 36px;
+                            height: 36px;
+                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+                            border-radius: 8px;
+                            border: 2px solid white;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                        ">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
                         </div>
-                    </div>`,
-                    iconSize: [48, 48],
-                    iconAnchor: [24, 24],
-                    popupAnchor: [0, -28]
+                    `,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                    popupAnchor: [0, -36]
                 });
 
-                const marker = L.marker([est.latitude, est.longitude], { icon: estIcon }).addTo(map);
+                const marker = L.marker([est.latitude, est.longitude], {
+                    icon: estIcon
+                }).addTo(map);
 
-                const popupImg = est.image_url
-                    ? `<div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:8px;">
-                         <img src="${est.image_url}" style="width:100%;height:100%;object-fit:cover;"
-                              onerror="this.parentElement.style.display='none'">
-                       </div>` : '';
-
-                const statusBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:20px;
-                    font-size:10px;font-weight:700;
-                    background:${isOpen ? '#dcfce7' : '#fee2e2'};
-                    color:${isOpen ? '#166534' : '#991b1b'};">
-                    ${isOpen ? '● Open' : '● Closed'}
-                </span>`;
-
+                // Add popup with establishment info
                 marker.bindPopup(`
-                    <div style="font-family:sans-serif;min-width:200px;max-width:230px;">
-                        ${popupImg}
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
-                            <strong style="color:#111827;font-size:13px;">${est.name}</strong>
-                            ${statusBadge}
-                        </div>
-                        <div style="font-size:11px;color:#6b7280;">📍 ${est.address || 'Near CvSU-Bacoor'}</div>
-                        ${est.category__name ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">🏷️ ${est.category__name}</div>` : ''}
+                    <div style="text-align: center; padding: 5px;">
+                        <strong style="color: #4CAF50; font-size: 14px;">${est.name}</strong><br>
+                        <small style="color: #666;">${est.category__name || 'Restaurant'}</small><br>
+                        <small style="color: #888;">${est.address || ''}</small>
                     </div>
                 `);
             }
@@ -327,22 +297,23 @@ function initStep1() {
     });
 
     function performSearch(query) {
-        autocompleteDropdown.innerHTML = `<div class="autocomplete-loading"><span class="spinner"></span>Searching…</div>`;
+        autocompleteDropdown.innerHTML = `<div class="autocomplete-loading"><span class="spinner"></span>Searching for "<strong>${query}</strong>"…</div>`;
         autocompleteDropdown.classList.add('show');
 
-        // ── 1. Registered KabsuEats establishments (instant, client-side) ────
+        // ── 1. Match registered KabsuEats establishments ─────────────
         let registeredMatches = [];
         if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
             const q = query.toLowerCase();
             registeredMatches = EXISTING_ESTABLISHMENTS
-                .filter(est =>
-                    (est.name && est.name.toLowerCase().includes(q)) ||
-                    (est.address && est.address.toLowerCase().includes(q)) ||
-                    (est.category__name && est.category__name.toLowerCase().includes(q))
-                )
+                .filter(est => {
+                    return (est.name && est.name.toLowerCase().includes(q)) ||
+                           (est.address && est.address.toLowerCase().includes(q)) ||
+                           (est.category__name && est.category__name.toLowerCase().includes(q));
+                })
                 .map(est => ({
                     _type: 'registered',
-                    lat: est.latitude, lon: est.longitude,
+                    lat: est.latitude,
+                    lon: est.longitude,
                     name: est.name,
                     address: est.address || 'Near CvSU-Bacoor',
                     category: est.category__name || '',
@@ -351,89 +322,64 @@ function initStep1() {
                 }));
         }
 
-        // ── 2. Overpass API — searches actual OSM POI names (500m radius only) ──
-        const overpassRadius = 600; // slightly wider than 500 so edge cases show
-        const overpassUrl = `https://overpass-api.de/api/interpreter`;
-        const q = query.toLowerCase().replace(/['"]/g, '');
-        const overpassQuery = `[out:json][timeout:10];
-(
-  node["name"~"${q}",i](around:${overpassRadius},${cvsuLatLngObj.lat},${cvsuLatLngObj.lng});
-  way["name"~"${q}",i](around:${overpassRadius},${cvsuLatLngObj.lat},${cvsuLatLngObj.lng});
-);
-out center 15;`;
+        // ── 2. Nominatim – wide viewbox so all visible map labels are searchable ──
+        const delta = 0.05; // ~5.5km box
+        const viewbox = `${cvsuLatLngObj.lng - delta},${cvsuLatLngObj.lat + delta},${cvsuLatLngObj.lng + delta},${cvsuLatLngObj.lat - delta}`;
+        const nominatimUrl =
+            `https://nominatim.openstreetmap.org/search` +
+            `?format=json` +
+            `&q=${encodeURIComponent(query)}` +
+            `&viewbox=${viewbox}` +
+            `&bounded=0` +
+            `&limit=12` +
+            `&addressdetails=1` +
+            `&extratags=1` +
+            `&namedetails=1`;
 
-        // ── 3. Nominatim — broader fallback, wider bbox ───────────────────────
-        const delta = 0.05;
-        const viewbox = `${cvsuLatLngObj.lng-delta},${cvsuLatLngObj.lat+delta},${cvsuLatLngObj.lng+delta},${cvsuLatLngObj.lat-delta}`;
-        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=0&limit=8&addressdetails=1&namedetails=1`;
+        fetch(nominatimUrl, { headers: { 'Accept-Language': 'en' } })
+        .then(res => res.json())
+        .then(data => {
+            const nominatimResults = data.map(r => {
+                const latlng = L.latLng(parseFloat(r.lat), parseFloat(r.lon));
+                const dist = Math.round(map.distance(latlng, cvsuLatLngObj));
+                const inside = dist <= RADIUS;
+                const shortName = (r.namedetails && r.namedetails.name) || r.display_name.split(',')[0];
+                const shortAddr = r.display_name.split(',').slice(1, 3).join(',').trim();
+                return {
+                    _type: 'place',
+                    lat: parseFloat(r.lat),
+                    lon: parseFloat(r.lon),
+                    name: shortName,
+                    address: shortAddr || r.display_name,
+                    category: r.type || r.class || '',
+                    distance: dist,
+                    inside,
+                };
+            });
 
-        // Run Overpass + Nominatim in parallel
-        Promise.allSettled([
-            fetch(overpassUrl, {
-                method: 'POST',
-                body: overpassQuery,
-                headers: { 'Content-Type': 'text/plain' }
-            }).then(r => r.json()),
-            fetch(nominatimUrl, { headers: { 'Accept-Language': 'en' } }).then(r => r.json())
-        ]).then(([overpassRes, nominatimRes]) => {
-            const placeResults = [];
-            const seenNames = new Set();
+            // Sort: inside zone first, then by distance
+            nominatimResults.sort((a, b) => {
+                if (a.inside && !b.inside) return -1;
+                if (!a.inside && b.inside) return 1;
+                return a.distance - b.distance;
+            });
 
-            // Process Overpass results (most accurate — real OSM place names)
-            if (overpassRes.status === 'fulfilled') {
-                (overpassRes.value.elements || []).forEach(el => {
-                    const lat = el.lat || el.center?.lat;
-                    const lon = el.lon || el.center?.lon;
-                    if (!lat || !lon) return;
-                    const name = el.tags?.name || '';
-                    if (!name) return;
-                    const latlng = L.latLng(lat, lon);
-                    const dist = Math.round(map.distance(latlng, cvsuLatLngObj));
-                    if (dist > RADIUS) return; // STRICT: only inside 500m
-                    if (seenNames.has(name.toLowerCase())) return;
-                    seenNames.add(name.toLowerCase());
-                    placeResults.push({
-                        _type: 'place', lat, lon, name,
-                        address: el.tags?.['addr:street'] || el.tags?.['addr:suburb'] || 'Near CvSU-Bacoor',
-                        category: el.tags?.amenity || el.tags?.shop || el.tags?.leisure || el.tags?.tourism || '',
-                        distance: dist, inside: true,
-                        source: 'overpass'
-                    });
-                });
+            displaySearchResults([...registeredMatches, ...nominatimResults], query);
+        })
+        .catch(err => {
+            console.error('Search error:', err);
+            if (registeredMatches.length > 0) {
+                displaySearchResults(registeredMatches, query);
+            } else {
+                autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Try again.</div>';
             }
-
-            // Process Nominatim results (fallback, also filter to 500m)
-            if (nominatimRes.status === 'fulfilled') {
-                (nominatimRes.value || []).forEach(r => {
-                    const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-                    const latlng = L.latLng(lat, lon);
-                    const dist = Math.round(map.distance(latlng, cvsuLatLngObj));
-                    if (dist > RADIUS) return; // STRICT: only inside 500m
-                    const name = (r.namedetails?.name) || r.display_name.split(',')[0];
-                    if (seenNames.has(name.toLowerCase())) return;
-                    seenNames.add(name.toLowerCase());
-                    const shortAddr = r.display_name.split(',').slice(1,3).join(',').trim();
-                    placeResults.push({
-                        _type: 'place', lat, lon, name,
-                        address: shortAddr || r.display_name,
-                        category: r.type || r.class || '',
-                        distance: dist, inside: true,
-                        source: 'nominatim'
-                    });
-                });
-            }
-
-            // Sort by distance
-            placeResults.sort((a, b) => a.distance - b.distance);
-
-            displaySearchResults([...registeredMatches, ...placeResults]);
         });
     }
 
-    function displaySearchResults(results) {
+    function displaySearchResults(results, query) {
         currentSelectedIndex = -1;
         if (results.length === 0) {
-            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No places found within 500m of CvSU.</div>';
+            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No places found. Try a different search.</div>';
             return;
         }
 
@@ -456,48 +402,40 @@ out center 15;`;
             if (result._type === 'registered') {
                 maybeAddHeader('📋 Registered on KabsuEats', '#e53935');
                 const isOpen = (result.status || '').toLowerCase() === 'open';
-                const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOpen?'#10b981':'#9ca3af'};margin-right:4px;"></span>`;
+                const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOpen ? '#10b981' : '#9ca3af'};margin-right:4px;vertical-align:middle;"></span>`;
                 let thumb;
                 if (result.image_url) {
-                    thumb = `<div style="width:42px;height:42px;border-radius:50%;overflow:hidden;border:2.5px solid ${isOpen?'#10b981':'#ef4444'};flex-shrink:0;">
-                        <img src="${result.image_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.background='#FF6B6B';this.remove();">
-                    </div>`;
+                    thumb = `<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid ${isOpen ? '#10b981' : '#ef4444'};flex-shrink:0;"><img src="${result.image_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.background='#FF6B6B';this.remove();"></div>`;
                 } else {
-                    thumb = `<div style="width:42px;height:42px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#FF6B6B,#FF5252);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;border:2.5px solid ${isOpen?'#10b981':'#ef4444'};">${result.name.charAt(0).toUpperCase()}</div>`;
+                    thumb = `<div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#FF6B6B,#FF5252);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;border:2px solid ${isOpen ? '#10b981' : '#ef4444'};">${result.name.charAt(0).toUpperCase()}</div>`;
                 }
-                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
-                    ${thumb}
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:13px;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${result.name}</div>
-                        <div style="font-size:11px;color:#6b7280;margin-top:1px;">${dot}${isOpen?'Open':'Closed'}${result.category?' · '+result.category:''}</div>
-                        <div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍 ${result.address}</div>
-                    </div>
-                    <div style="font-size:10px;font-weight:700;color:#fff;background:#e53935;padding:2px 6px;border-radius:4px;flex-shrink:0;">KE</div>
-                </div>`;
+                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">${thumb}<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.name}</div><div style="font-size:11px;color:#6b7280;margin-top:1px;">${statusDot}${isOpen ? 'Open' : 'Closed'}${result.category ? ' · ' + result.category : ''}</div><div style="font-size:11px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📍 ${result.address}</div></div><div style="font-size:10px;font-weight:700;color:white;background:#e53935;padding:2px 6px;border-radius:4px;flex-shrink:0;">KE</div></div>`;
 
             } else {
-                maybeAddHeader('📍 Places within 500m of CvSU', '#1976d2');
-                const catIcons = {restaurant:'🍽️',cafe:'☕',fast_food:'🍟',bar:'🍺',convenience:'🏪',
-                    shop:'🛍️',supermarket:'🛒',school:'🏫',church:'⛪',hospital:'🏥',bank:'🏦',
-                    fuel:'⛽',pharmacy:'💊',park:'🌳',townhall:'🏛️',residential:'🏠',hotel:'🏨'};
+                maybeAddHeader('🗺️ Nearby Places', '#1976d2');
+                const catIcons = { restaurant:'🍽️', cafe:'☕', fast_food:'🍟', bar:'🍺', convenience:'🏪', shop:'🛍️', supermarket:'🛒', school:'🏫', church:'⛪', hospital:'🏥', bank:'🏦', fuel:'⛽', pharmacy:'💊', park:'🌳', townhall:'🏛️' };
                 const icon = catIcons[result.category] || '📍';
-                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:42px;height:42px;border-radius:50%;flex-shrink:0;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:21px;border:2px solid #90caf9;">${icon}</div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:13px;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${result.name}</div>
-                        <div style="font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${result.address}</div>
-                    </div>
-                    <div style="font-size:11px;font-weight:600;color:#10b981;flex-shrink:0;">${result.distance}m</div>
-                </div>`;
+                const distLabel = result.inside
+                    ? `<span style="color:#10b981;font-weight:600;font-size:11px;">${result.distance}m</span>`
+                    : `<span style="color:#f59e0b;font-weight:600;font-size:11px;">${result.distance}m ⚠️</span>`;
+                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:${result.inside ? '#e3f2fd' : '#fff8e1'};display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid ${result.inside ? '#90caf9' : '#ffd54f'};">${icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.name}</div><div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.address}</div></div><div style="flex-shrink:0;text-align:right;">${distLabel}</div></div>`;
             }
 
             item.addEventListener('click', () => {
                 const latlng = L.latLng(result.lat, result.lon);
-                placeMarker(latlng);
-                map.flyTo(latlng, 18, { duration: 0.8 });
-                searchInput.value = result.name;
-                clearSearchBtn.classList.add('show');
-                showLocationStatus('📍 Location selected!', 'success');
+                const inside = map.distance(latlng, cvsuLatLngObj) <= RADIUS;
+                if (inside) {
+                    placeMarker(latlng);
+                    map.flyTo(latlng, 18, { duration: 0.8 });
+                    searchInput.value = result.name;
+                    clearSearchBtn.classList.add('show');
+                    showLocationStatus('📍 Location selected!', 'success');
+                } else {
+                    map.flyTo(latlng, 17, { duration: 0.8 });
+                    searchInput.value = result.name;
+                    clearSearchBtn.classList.add('show');
+                    showLocationStatus('⚠️ Outside 500m zone — shown on map but cannot pin here', 'error');
+                }
                 autocompleteDropdown.classList.remove('show');
             });
 
