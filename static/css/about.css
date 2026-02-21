@@ -63,10 +63,7 @@ body {
     box-shadow: 0 5px 18px rgba(0,0,0,0.12) !important;
     transform: translateY(-2px);
 }
-#cart-page-container .establishment-cart-box.active-cart {
-    border-color: #B71C1C !important;
-    box-shadow: 0 4px 20px rgba(183,28,28,0.2) !important;
-}
+#cart-page-container .establishment-cart-box.active-cart { border: none !important; border-color: transparent !important; box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; }
 
 /* ── Establishment Header — solid BLACK ── */
 #cart-page-container .cart-establishment-info {

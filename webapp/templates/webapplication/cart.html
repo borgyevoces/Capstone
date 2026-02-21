@@ -74,6 +74,19 @@ body{background:#ffffff!important}
   .item-quantity-controls{grid-row:2!important;grid-column:1/2!important;justify-self:start!important}
   .item-subtotal-section{grid-row:2!important;grid-column:2!important;justify-self:end!important}
 }
+
+/* KILL ALL BORDERS ON CART BOX - HIGHEST PRIORITY */
+html body #cart-page-container .establishment-cart-box,
+html body #cart-page-container .establishment-cart-box:hover,
+html body #cart-page-container .establishment-cart-box.active-cart,
+html body .establishment-cart-box,
+html body .establishment-cart-box:hover,
+html body .establishment-cart-box.active-cart {
+    border: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+}
 </style>
 {% endblock %}
 
