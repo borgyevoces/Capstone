@@ -87,6 +87,103 @@ html body .establishment-cart-box.active-cart {
     outline: none !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
 }
+
+/* ============================================
+   CONFIRMATION MODAL
+   ============================================ */
+.cart-confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+.cart-confirm-overlay.open {
+    display: flex;
+    animation: ccFadeIn .18s ease;
+}
+@keyframes ccFadeIn {
+    from { opacity:0; }
+    to   { opacity:1; }
+}
+.cart-confirm-box {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+    overflow: hidden;
+    animation: ccSlideUp .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes ccSlideUp {
+    from { transform: translateY(24px) scale(.97); opacity:0; }
+    to   { transform: translateY(0) scale(1);      opacity:1; }
+}
+.cart-confirm-icon-band {
+    padding: 32px 24px 14px;
+    display: flex;
+    justify-content: center;
+}
+.cart-confirm-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+.cart-confirm-icon.icon-remove { background:#fff0f0; color:#B71C1C; }
+.cart-confirm-icon.icon-clear  { background:#fff3e0; color:#e65100; }
+.cart-confirm-text {
+    padding: 0 28px 26px;
+    text-align: center;
+}
+.cart-confirm-text h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 8px;
+}
+.cart-confirm-text p {
+    font-size: 13.5px;
+    color: #666;
+    margin: 0;
+    line-height: 1.55;
+}
+.cart-confirm-item-name {
+    font-weight: 700;
+    color: #111;
+}
+.cart-confirm-actions {
+    display: flex;
+    border-top: 1px solid #f0f0f0;
+}
+.cart-confirm-actions button {
+    flex: 1;
+    padding: 16px 12px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+}
+.cc-cancel-btn {
+    color: #555 !important;
+    border-right: 1px solid #f0f0f0 !important;
+}
+.cc-cancel-btn:hover { background: #f8f8f8 !important; }
+.cc-confirm-btn.btn-danger  { color: #B71C1C !important; }
+.cc-confirm-btn.btn-danger:hover  { background: #fff0f0 !important; }
+.cc-confirm-btn.btn-warning { color: #e65100 !important; }
+.cc-confirm-btn.btn-warning:hover { background: #fff3e0 !important; }
 </style>
 {% endblock %}
 
@@ -278,6 +375,52 @@ html body .establishment-cart-box.active-cart {
 
 </div>
 
+<!-- ============================================================
+     REMOVE ITEM CONFIRMATION MODAL
+     ============================================================ -->
+<div class="cart-confirm-overlay" id="ccRemoveModal">
+    <div class="cart-confirm-box">
+        <div class="cart-confirm-icon-band">
+            <div class="cart-confirm-icon icon-remove">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text">
+            <h3>Remove Item</h3>
+            <p>Remove <span class="cart-confirm-item-name" id="ccRemoveItemName">this item</span> from your cart?</p>
+        </div>
+        <div class="cart-confirm-actions">
+            <button class="cc-cancel-btn"  id="ccRemoveCancelBtn">Keep It</button>
+            <button class="cc-confirm-btn btn-danger" id="ccRemoveConfirmBtn">
+                <i class="fas fa-trash-alt" style="margin-right:5px;font-size:12px;"></i>Yes, Remove
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     CLEAR ESTABLISHMENT CART CONFIRMATION MODAL
+     ============================================================ -->
+<div class="cart-confirm-overlay" id="ccClearModal">
+    <div class="cart-confirm-box">
+        <div class="cart-confirm-icon-band">
+            <div class="cart-confirm-icon icon-clear">
+                <i class="fas fa-trash"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text">
+            <h3>Clear Cart</h3>
+            <p>Remove all items from <span class="cart-confirm-item-name" id="ccClearEstabName">this establishment</span>?<br>This cannot be undone.</p>
+        </div>
+        <div class="cart-confirm-actions">
+            <button class="cc-cancel-btn"  id="ccClearCancelBtn">Cancel</button>
+            <button class="cc-confirm-btn btn-warning" id="ccClearConfirmBtn">
+                <i class="fas fa-trash" style="margin-right:5px;font-size:12px;"></i>Clear All
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -300,6 +443,90 @@ html body .establishment-cart-box.active-cart {
             }, 300);
         }
     });
+
+    // ============================================================
+    // CUSTOM CONFIRM MODAL — replaces browser confirm()
+    // Called by cart.js via window.customConfirm(...)
+    // ============================================================
+    window.customConfirm = function(title, message, confirmText, cancelText, resolve) {
+        // Detect which modal to use based on title keyword
+        const isRemove = title.toLowerCase().includes('remove');
+        const modalId  = isRemove ? 'ccRemoveModal'  : 'ccClearModal';
+        const cnfBtnId = isRemove ? 'ccRemoveConfirmBtn' : 'ccClearConfirmBtn';
+        const cncBtnId = isRemove ? 'ccRemoveCancelBtn'  : 'ccClearCancelBtn';
+
+        const overlay  = document.getElementById(modalId);
+        const cnfBtn   = document.getElementById(cnfBtnId);
+        const cncBtn   = document.getElementById(cncBtnId);
+
+        if (!overlay) { resolve(window.confirm(message)); return; }
+
+        // Populate dynamic text
+        if (isRemove) {
+            // Try to pull item name from the currently hovered/clicked item
+            const nameEl = document.getElementById('ccRemoveItemName');
+            if (nameEl) {
+                // Look for the item name in the page — we pass it via a data attribute trick
+                const itemName = window._pendingRemoveItemName || 'this item';
+                nameEl.textContent = itemName;
+                window._pendingRemoveItemName = null;
+            }
+        } else {
+            const estabEl = document.getElementById('ccClearEstabName');
+            if (estabEl) {
+                const estabName = window._pendingClearEstabName || 'this establishment';
+                estabEl.textContent = estabName;
+                window._pendingClearEstabName = null;
+            }
+        }
+
+        // Update button labels if custom text provided
+        if (confirmText) cnfBtn.childNodes[cnfBtn.childNodes.length - 1].textContent = confirmText;
+        if (cancelText)  cncBtn.textContent = cancelText;
+
+        // Open modal
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        function cleanup() {
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            cnfBtn.removeEventListener('click', onConfirm);
+            cncBtn.removeEventListener('click', onCancel);
+            overlay.removeEventListener('click', onOverlay);
+            document.removeEventListener('keydown', onKey);
+        }
+
+        function onConfirm() { cleanup(); resolve(true); }
+        function onCancel()  { cleanup(); resolve(false); }
+        function onOverlay(e) { if (e.target === overlay) { cleanup(); resolve(false); } }
+        function onKey(e)    { if (e.key === 'Escape') { cleanup(); resolve(false); } }
+
+        cnfBtn.addEventListener('click', onConfirm);
+        cncBtn.addEventListener('click', onCancel);
+        overlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+    };
+
+    // ── Intercept removeItemFromCart to capture item name before modal opens ──
+    document.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.remove-item-btn');
+        if (removeBtn) {
+            const cartItem = removeBtn.closest('.cart-item');
+            if (cartItem) {
+                const nameEl = cartItem.querySelector('.item-name');
+                window._pendingRemoveItemName = nameEl ? nameEl.textContent.trim() : 'this item';
+            }
+        }
+        const clearBtn = e.target.closest('.clear-establishment-btn');
+        if (clearBtn) {
+            const estabBox = clearBtn.closest('.establishment-cart-box');
+            if (estabBox) {
+                const nameEl = estabBox.querySelector('.cart-establishment-info h2');
+                window._pendingClearEstabName = nameEl ? nameEl.textContent.trim() : 'this establishment';
+            }
+        }
+    }, true); // capture phase so it fires before cart.js handlers
 </script>
 <script src="{% static 'js/cart.js' %}"></script>
 {% endblock %}
