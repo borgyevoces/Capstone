@@ -148,7 +148,14 @@
             "amenities reviews";
         gap: 24px;
         margin-bottom: 28px;
-        align-items: start;
+        align-items: stretch;
+    }
+
+    /* Make left cards fill their grid rows so they match reviews card height */
+    .top-info-grid .contact-location,
+    .top-info-grid .amenities-section {
+        display: flex;
+        flex-direction: column;
     }
 
     .top-info-grid .contact-location   { grid-area: location; }
@@ -379,8 +386,7 @@
     }
 
     .menu-title-centered span {
-        border-bottom: 2px solid #000;
-        padding-bottom: 1px;
+        /* no underline */
     }
 
     .menu-title-icon {
