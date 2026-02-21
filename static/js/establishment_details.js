@@ -19,6 +19,12 @@ function getCookie(name) {
 }
 window.getCookie = getCookie;
 
+// ── getCsrf: matches kabsueats.js (reads from hidden #csrfToken input) ──
+function getCsrf() {
+    return document.getElementById('csrfToken')?.value || getCookie('csrftoken') || '';
+}
+window.getCsrf = getCsrf;
+
 // =======================================================
 // CART BADGE UPDATE
 // =======================================================
@@ -187,183 +193,90 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 }
 
 // =======================================================
-// ✅ MODAL BUY NOW — adds to cart then redirects to /cart/
+// ✅ MODAL BUY NOW — exact same pattern as kabsueats.js buyNowFromModal
 // =======================================================
 window.handleModalBuyNow = function(button) {
     console.log('⚡ Buy Now button clicked');
 
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
-        showMessage('Please log in to make a purchase', 'warning');
-        setTimeout(() => { window.location.href = LOGIN_REGISTER_URL || '/accounts/login/'; }, 1500);
+        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
         return;
     }
 
-    const modalItemId = document.getElementById('modalItemId');
-    const itemQuantityInput = document.getElementById('itemQuantity');
-    const modalItemTitle = document.getElementById('itemDetailModalTitle');
-    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+    const itemId = document.getElementById('modalItemId')?.value;
+    const qty = parseInt(document.getElementById('itemQuantity')?.value) || 1;
 
-    if (!modalItemId || !itemQuantityInput) {
-        showMessage('Error: Unable to process purchase', 'error');
-        return;
-    }
+    if (!itemId) { showMessage('Error: Item not found', 'error'); return; }
 
-    const itemId = modalItemId.value;
-    const quantity = parseInt(itemQuantityInput.value) || 1;
-    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
-
-    if (quantity > maxQuantity) {
-        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
-        return;
-    }
-    if (quantity < 1) {
-        showMessage('Please select a valid quantity', 'error');
-        return;
-    }
-
-    // Show loading
     const originalHTML = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
-
-    // Step 1: Add to cart
     fetch('/cart/add/', {
         method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
-        credentials: 'same-origin'
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ menu_item_id: itemId, quantity: qty })
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Failed to add to cart');
-        return response.json();
-    })
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Update cart badge
-            if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
-            showMessage(`${itemName} added! Redirecting to cart...`, 'success');
-            // Step 2: Redirect to cart page where payment buttons are shown
-            setTimeout(() => { window.location.href = '/cart/'; }, 800);
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
+            window.location.href = '/cart/?pay=1';
         } else {
-            throw new Error(data.message || 'Failed to add item to cart');
+            showMessage(data.message || data.error || 'Could not process Buy Now.', 'error');
+            button.disabled = false;
+            button.innerHTML = originalHTML;
         }
     })
-    .catch(error => {
-        console.error('❌ Buy Now error:', error);
-        showMessage('Error: ' + error.message, 'error');
+    .catch(() => {
+        showMessage('Network error. Please try again.', 'error');
         button.disabled = false;
         button.innerHTML = originalHTML;
     });
 };
 
 // =======================================================
-// ✅ MODAL ADD TO CART - WITH QUANTITY VALIDATION
+// ✅ MODAL ADD TO CART — exact same pattern as kabsueats.js addToCartFromModal
 // =======================================================
 window.handleModalAddToCart = function(button) {
     console.log('🛒 Add to Cart button clicked');
 
-    // Check authentication
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
-        showMessage('Please log in to add items to cart', 'warning');
-        setTimeout(() => {
-            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-        }, 1500);
+        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
         return;
     }
 
-    const modalItemId = document.getElementById('modalItemId');
-    const itemQuantityInput = document.getElementById('itemQuantity');
-    const modalItemTitle = document.getElementById('itemDetailModalTitle');
-    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+    const itemId = document.getElementById('modalItemId')?.value;
+    const qty = parseInt(document.getElementById('itemQuantity')?.value) || 1;
 
-    if (!modalItemId || !itemQuantityInput) {
-        console.error('❌ Modal elements not found');
-        showMessage('Error: Unable to add item to cart', 'error');
-        return;
-    }
-
-    const itemId = modalItemId.value;
-    const quantity = parseInt(itemQuantityInput.value) || 1;
-    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
-
-    // ✅ VALIDATE QUANTITY AGAINST STOCK
-    if (quantity > maxQuantity) {
-        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
-        return;
-    }
-
-    if (quantity < 1) {
-        showMessage('Please select a valid quantity', 'error');
-        return;
-    }
-
-    console.log(`🛒 Adding to cart: Item ${itemId}, Quantity ${quantity}`);
+    if (!itemId) { showMessage('Error: Item not found', 'error'); return; }
 
     const originalHTML = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
 
     fetch('/cart/add/', {
         method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ menu_item_id: itemId, quantity: qty })
     })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error('Please log in to add items to cart');
-            }
-            throw new Error('Server error');
-        }
-        return response.json();
-    })
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showMessage(
-                data.message || `${itemName} added to cart!`,
-                'success',
-                {
-                    text: '🛒 View Cart',
-                    onClick: () => { window.location.href = '/cart/'; }
-                }
-            );
-
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
-
-            // Close modal after a brief moment
-            setTimeout(() => {
-                closeItemDetailModal();
-            }, 1200);
+            closeItemDetailModal();
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
+            else if (typeof updateCartBadge === 'function') updateCartBadge();
+            showMessage(data.message || 'Item added to cart!', 'success', {
+                text: '🛒 View Cart',
+                onClick: () => { window.location.href = '/cart/'; }
+            });
         } else {
-            showMessage(data.message || 'Failed to add item', 'error');
+            showMessage(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-
-        if (error.message.includes('log in')) {
-            setTimeout(() => {
-                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-            }, 2000);
-        }
-    })
+    .catch(() => showMessage('Network error. Please try again.', 'error'))
     .finally(() => {
         button.disabled = false;
         button.innerHTML = originalHTML;
@@ -371,89 +284,44 @@ window.handleModalAddToCart = function(button) {
 };
 
 // =======================================================
-// ✅ QUICK ADD TO CART (FROM MENU LIST)
+// ✅ QUICK ADD TO CART (FROM MENU LIST) — JSON + getCsrf pattern
 // =======================================================
 window.handleQuickAddToCart = function(button, event) {
-    if (event) {
-        event.stopPropagation();
-    }
-
+    if (event) event.stopPropagation();
     console.log('🛒 Quick Add to Cart clicked');
 
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
-        showMessage('Please log in to add items to cart', 'warning');
-        setTimeout(() => {
-            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-        }, 1500);
+        window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
         return;
     }
 
     const menuItemId = button.dataset.itemId;
-    const menuItemName = button.dataset.itemName;
-
-    if (!menuItemId) {
-        console.error('❌ No item ID found');
-        showMessage('Error: Item not found', 'error');
-        return;
-    }
+    if (!menuItemId) { showMessage('Error: Item not found', 'error'); return; }
 
     const originalHTML = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', menuItemId);
-    formData.append('quantity', 1);
-
     fetch('/cart/add/', {
         method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ menu_item_id: menuItemId, quantity: 1 })
     })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error('Please log in to add items to cart');
-            }
-            throw new Error('Server error');
-        }
-        return response.json();
-    })
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showMessage(
-                data.message || 'Item added to cart!',
-                'success',
-                {
-                    text: '🛒 View Cart',
-                    onClick: () => {
-                        window.location.href = '/cart/';
-                    }
-                }
-            );
-
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
+            else if (typeof updateCartBadge === 'function') updateCartBadge();
+            showMessage(data.message || 'Item added to cart!', 'success', {
+                text: '🛒 View Cart',
+                onClick: () => { window.location.href = '/cart/'; }
+            });
         } else {
-            showMessage(data.message || 'Failed to add item', 'error');
+            showMessage(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-
-        if (error.message.includes('log in')) {
-            setTimeout(() => {
-                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-            }, 2000);
-        }
-    })
+    .catch(() => showMessage('Network error. Please try again.', 'error'))
     .finally(() => {
         button.disabled = false;
         button.innerHTML = originalHTML;
@@ -463,7 +331,7 @@ window.handleQuickAddToCart = function(button, event) {
 // =======================================================
 // ✅ ITEM DETAIL MODAL - WITH QUANTITY VALIDATION
 // =======================================================
-// mode: 'cart' | 'buynow' — optional, used to visually highlight the intended action
+// mode: 'cart' | 'buynow' — optional, visually highlights intended action button
 window.openItemDetailModal = function(menuItemElement, mode) {
     console.log('🔍 Opening item detail modal, mode:', mode);
 
@@ -538,7 +406,9 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         console.log('✅ Modal opened');
     }
 
-    // Highlight the intended action button based on mode
+    // Highlight the intended action button based on mode (matches kabsueats.js UX)
+    const addToCartBtn = document.getElementById('modalAddToCartBtn');
+    const buyNowBtn = document.getElementById('modalBuyNowBtn');
     if (mode && addToCartBtn && buyNowBtn) {
         addToCartBtn.style.outline = '';
         buyNowBtn.style.outline = '';
