@@ -359,21 +359,6 @@ body {
     color: #667eea;
 }
 
-/* --- ✅ Payment Method Selection Section --- */
-.payment-method-section {
-    margin: 20px 0 0 0;
-    padding: 20px 0 0 0;
-    border-top: 2px solid #f0f0f0;
-}
-
-.payment-method-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0 0 14px 0;
-    text-align: center;
-}
-
 /* --- ✅ Payment Method Buttons --- */
 .btn-payment-method {
     width: 100%;
@@ -481,6 +466,45 @@ body {
     font-size: 0.8rem;
     color: #666;
     white-space: nowrap;
+}
+
+/* --- Proceed to Checkout Button --- */
+.btn-checkout-main {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 24px;
+    margin-top: 20px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-checkout-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-checkout-main:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* --- Payment Method Section (shown after checkout click) --- */
+.payment-method-section {
+    margin: 20px 0 0 0;
+    padding: 20px 0 0 0;
+    border-top: 2px solid #f0f0f0;
 }
 
 /* --- Security Badge --- */
