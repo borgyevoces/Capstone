@@ -199,8 +199,11 @@
 
     .menu-section.section-card,
     #menu-section {
-        box-shadow: none;
-        padding: 50px 0;
+        background-color: white;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+        padding: 40px 30px;
+        margin-bottom: 28px;
     }
 
     #menu-section .menu-controls {
