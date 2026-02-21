@@ -101,9 +101,9 @@
         {% if user.is_authenticated %}
             {% block extra_nav_buttons %}{% endblock %}
             <a href="{% url 'order_history' %}" class="nib"><i class="fas fa-receipt"></i> My Orders</a>
-            <a href="{% url 'view_cart' %}" class="nib cart-link">
+            <a href="{% url 'view_cart' %}" class="nib cart-link" style="position: relative;">
                 <i class="fas fa-shopping-cart"></i> Cart
-                <span class="cart-badge" id="cartBadge">{{ cart_count|default:"0" }}</span>
+                <span class="cart-badge" id="cart-count-badge" style="display:{% if cart_count and cart_count > 0 %}flex{% else %}none{% endif %};">{{ cart_count|default:"0" }}</span>
             </a>
             <div class="pcont" id="pcont">
                 <div class="pav" id="pavBtn" title="Profile">
