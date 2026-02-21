@@ -11,7 +11,70 @@
 {% block title %}Shopping Cart - KabsuEats{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/cart_page.css' %}" />
+<link rel="stylesheet" href="{% static 'css/cart_page.css' %}" />
+<style>
+/* CART OVERRIDE - Inline styles beat any cached external CSS */
+body{background:#f0f0f0!important}
+.cart-establishment-info{background:#ffffff!important;background-image:none!important;padding:18px 24px!important;display:flex!important;align-items:center!important;gap:12px!important;position:relative!important;border-bottom:2px solid #f0f0f0!important}
+.cart-establishment-info i{color:#B71C1C!important;opacity:1!important;font-size:1.4rem!important}
+.cart-establishment-info h2{color:#111!important;font-weight:700!important;margin:0!important;flex:1!important}
+.clear-establishment-btn{background:#f0f0f0!important;border:1px solid #ddd!important;color:#555!important}
+.clear-establishment-btn:hover{background:#B71C1C!important;border-color:#B71C1C!important}
+.establishment-cart-box{background:#fff!important;border:3px solid #e0e0e0!important;border-radius:12px!important;box-shadow:0 2px 10px rgba(0,0,0,.08)!important;overflow:hidden!important}
+.establishment-cart-box.active-cart{border-color:#B71C1C!important;box-shadow:0 4px 20px rgba(183,28,28,.22)!important}
+.establishment-cart-box:hover{box-shadow:0 5px 18px rgba(0,0,0,.13)!important;transform:translateY(-2px)!important}
+.cart-item{background:#fff!important;border-bottom:1px solid #f0f0f0!important;display:flex!important;align-items:center!important;gap:20px!important;padding:20px 24px!important}
+.cart-item:hover{background:#fafafa!important}
+.item-name{color:#111!important;font-weight:700!important}
+.item-price{color:#555!important}
+.item-stock{color:#16a34a!important}
+.item-subtotal{color:#B71C1C!important;font-weight:700!important}
+.remove-item-btn:hover{color:#B71C1C!important;background:#fff0f0!important}
+.quantity-btn{background:#fff!important;border:1.5px solid #ccc!important;color:#111!important;box-shadow:none!important}
+.quantity-btn:hover:not(:disabled){background:#111!important;border-color:#111!important;color:#fff!important}
+.quantity-value{color:#111!important}
+.cart-summary{background:#fff!important;border:1px solid #e5e5e5!important}
+.summary-title{color:#111!important}
+.summary-establishment-name{color:#B71C1C!important;background:#fff5f5!important;border:1px solid #fecaca!important}
+.summary-line{color:#555!important}
+.summary-line strong,.grand-total-line strong{color:#111!important}
+.grand-total-amount{color:#B71C1C!important}
+#initial-checkout-btn,.btn-checkout-main{
+  width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+  padding:16px 24px!important;margin-top:20px!important;font-size:1rem!important;font-weight:700!important;
+  color:#fff!important;background:#B71C1C!important;background-image:none!important;
+  border:none!important;border-radius:10px!important;cursor:pointer!important;
+  box-shadow:0 4px 14px rgba(183,28,28,.3)!important;text-transform:uppercase!important;letter-spacing:.5px!important;
+  box-sizing:border-box!important;outline:none!important;-webkit-appearance:none!important;line-height:normal!important}
+#initial-checkout-btn:hover,.btn-checkout-main:hover{background:#8B0000!important;transform:translateY(-2px)!important;box-shadow:0 6px 20px rgba(183,28,28,.4)!important}
+.payment-method-section{border-top:2px solid #f0f0f0!important;padding-top:20px!important;margin-top:20px!important}
+.payment-method-title{color:#111!important;font-size:.85rem!important;font-weight:700!important;text-transform:uppercase!important;text-align:center!important;margin-bottom:14px!important;letter-spacing:.6px!important}
+.btn-paymongo{border:2px solid #B71C1C!important;background:#fff5f5!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border-radius:10px!important;cursor:pointer!important;margin-bottom:10px!important;transition:all .25s ease!important}
+.btn-paymongo i{color:#B71C1C!important;font-size:1.5rem!important}
+.btn-paymongo:hover:not(:disabled){background:#B71C1C!important;transform:translateY(-2px)!important;box-shadow:0 4px 14px rgba(183,28,28,.3)!important}
+.btn-paymongo:hover:not(:disabled) i,.btn-paymongo:hover:not(:disabled) .payment-method-name,.btn-paymongo:hover:not(:disabled) .payment-method-desc{color:#fff!important}
+.btn-cash{border:2px solid #16a34a!important;background:#f0fdf4!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border-radius:10px!important;cursor:pointer!important;margin-bottom:0!important;transition:all .25s ease!important}
+.btn-cash i{color:#16a34a!important;font-size:1.5rem!important}
+.btn-cash:hover:not(:disabled){background:#16a34a!important;transform:translateY(-2px)!important;box-shadow:0 4px 14px rgba(22,163,74,.3)!important}
+.btn-cash:hover:not(:disabled) i,.btn-cash:hover:not(:disabled) .payment-method-name,.btn-cash:hover:not(:disabled) .payment-method-desc{color:#fff!important}
+.payment-method-info{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:2px!important;flex:1!important;min-width:0!important}
+.payment-method-name{font-weight:700!important;font-size:.95rem!important;color:#111!important;white-space:nowrap!important}
+.payment-method-desc{font-size:.78rem!important;color:#666!important;white-space:nowrap!important}
+.security-badge{background:#f8f8f8!important;color:#888!important;margin-top:16px!important;padding:10px!important;border-radius:8px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;font-size:.8rem!important}
+.security-badge i{color:#16a34a!important}
+.continue-shopping{color:#B71C1C!important;background:#fff!important;border:1.5px solid #e0e0e0!important}
+.continue-shopping:hover{color:#8B0000!important;background:#fff5f5!important;border-color:#B71C1C!important}
+.btn-back-to-home{background:#B71C1C!important;color:#fff!important}
+.btn-back-to-home:hover{background:#8B0000!important}
+@media(max-width:968px){.cart-main-wrapper{grid-template-columns:1fr!important}.cart-summary-sticky{position:static!important}}
+@media(max-width:768px){
+  .cart-item{display:grid!important;grid-template-columns:80px 1fr!important;grid-template-rows:auto auto!important;gap:12px!important;padding:16px!important}
+  .item-image,.item-image-placeholder{width:80px!important;height:80px!important;grid-row:1!important;grid-column:1!important}
+  .item-details{grid-row:1!important;grid-column:2!important}
+  .item-quantity-controls{grid-row:2!important;grid-column:1/2!important;justify-self:start!important}
+  .item-subtotal-section{grid-row:2!important;grid-column:2!important;justify-self:end!important}
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -138,17 +201,8 @@
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                        <!-- STEP 1: Checkout Button (visible by default) -->
-                        <button type="button"
-                                class="btn-checkout-main"
-                                id="initial-checkout-btn"
-                                onclick="showPaymentMethodSelection()">
-                            <i class="fas fa-lock"></i>
-                            Proceed to Checkout
-                        </button>
-
-                        <!-- STEP 2: Payment Method Selection (hidden until checkout clicked) -->
-                        <div class="payment-method-section" id="payment-method-section" style="display:none;">
+                    <!-- ✅ Payment Method Selection (Always Visible) -->
+                        <div class="payment-method-section" id="payment-method-section">
                             <h3 class="payment-method-title">Choose Payment Method</h3>
 
                             <button type="button"
@@ -206,21 +260,20 @@
 
 {% block extra_js %}
 <script>
+    // Auto-scroll to payment section when redirected from "Buy Now" button
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         if (params.get('pay') === '1') {
             setTimeout(function () {
                 const firstEstablishment = document.querySelector('.establishment-cart-box');
-                if (firstEstablishment) firstEstablishment.click();
-
+                if (firstEstablishment) {
+                    firstEstablishment.click();
+                }
                 setTimeout(function () {
                     const paymentSection = document.getElementById('payment-method-section');
-                    const checkoutBtn   = document.getElementById('initial-checkout-btn');
                     if (paymentSection) {
-                        paymentSection.style.display = 'block';
                         paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                    if (checkoutBtn) checkoutBtn.style.display = 'none';
                 }, 400);
             }, 300);
         }
