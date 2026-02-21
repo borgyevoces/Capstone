@@ -585,6 +585,114 @@
             justify-content: center;
         }
     }
+
+    /* ==========================================
+       CUSTOM CONFIRM MODAL
+       ========================================== */
+    .confirm-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(2px);
+    }
+
+    .confirm-modal-overlay.show {
+        display: flex;
+    }
+
+    .confirm-modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 32px 28px 24px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+        animation: confirmPopIn 0.22s ease;
+        text-align: center;
+    }
+
+    @keyframes confirmPopIn {
+        from { transform: scale(0.92); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-modal-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #FEF3C7;
+        color: #D97706;
+        font-size: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .confirm-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 10px;
+    }
+
+    .confirm-modal-message {
+        font-size: 14px;
+        color: #718096;
+        line-height: 1.6;
+        margin-bottom: 28px;
+    }
+
+    .confirm-modal-message strong {
+        color: #2d3748;
+    }
+
+    .confirm-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .confirm-btn-cancel {
+        flex: 1;
+        padding: 11px 20px;
+        border: 2px solid #e2e8f0;
+        background: white;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #4a5568;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .confirm-btn-cancel:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .confirm-btn-ok {
+        flex: 1;
+        padding: 11px 20px;
+        border: none;
+        background: #B71C1C;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .confirm-btn-ok:hover {
+        background: #991515;
+    }
 </style>
 {% endblock %}
 
@@ -648,6 +756,25 @@
         </div>
     </div>
 </main>
+
+<!-- Custom Confirm Modal -->
+<div class="confirm-modal-overlay" id="confirmModal">
+    <div class="confirm-modal-box">
+        <div class="confirm-modal-icon">
+            <i class="fas fa-question"></i>
+        </div>
+        <div class="confirm-modal-title" id="confirmModalTitle">Confirm Action</div>
+        <div class="confirm-modal-message" id="confirmModalMessage">Are you sure?</div>
+        <div class="confirm-modal-actions">
+            <button class="confirm-btn-cancel" onclick="closeConfirmModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="confirm-btn-ok" id="confirmModalOkBtn" onclick="confirmModalOk()">
+                <i class="fas fa-check"></i> Confirm
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Order Details Modal -->
 <div class="order-modal" id="orderModal">
@@ -964,6 +1091,29 @@
     // ==========================================
     // STATUS UPDATES
     // ==========================================
+    // ==========================================
+    // CUSTOM CONFIRM MODAL
+    // ==========================================
+    let confirmCallback = null;
+
+    function showConfirmModal(title, message, okLabel, callback) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').innerHTML = message;
+        document.getElementById('confirmModalOkBtn').innerHTML = `<i class="fas fa-arrow-right"></i> ${okLabel}`;
+        confirmCallback = callback;
+        document.getElementById('confirmModal').classList.add('show');
+    }
+
+    function confirmModalOk() {
+        closeConfirmModal();
+        if (confirmCallback) confirmCallback();
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('show');
+        confirmCallback = null;
+    }
+
     function moveOrder(id) {
         const next = FLOW[currentTab];
         if (!next) {
@@ -971,9 +1121,12 @@
             return;
         }
 
-        if (confirm(`Move order #${id} to ${LABELS[next]}?`)) {
-            updateStatus(id, next);
-        }
+        showConfirmModal(
+            'Move Order',
+            `Move order <strong>#${id}</strong> to <strong>${LABELS[next]}</strong>?`,
+            `Move to ${LABELS[next]}`,
+            () => updateStatus(id, next)
+        );
     }
 
     function bulkMove() {
@@ -983,29 +1136,34 @@
         const ids = Array.from(selectedOrders);
         const count = ids.length;
 
-        if (confirm(`Move ${count} order${count > 1 ? 's' : ''} to ${LABELS[next]}?`)) {
-            Promise.all(ids.map(id =>
-                fetch(`/api/food-establishment/orders/${id}/update-status/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrf()
-                    },
-                    body: JSON.stringify({ status: next })
+        showConfirmModal(
+            'Move Multiple Orders',
+            `Move <strong>${count} order${count > 1 ? 's' : ''}</strong> to <strong>${LABELS[next]}</strong>?`,
+            `Move ${count} to ${LABELS[next]}`,
+            () => {
+                Promise.all(ids.map(id =>
+                    fetch(`/api/food-establishment/orders/${id}/update-status/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrf()
+                        },
+                        body: JSON.stringify({ status: next })
+                    })
+                ))
+                .then(responses => Promise.all(responses.map(r => r.json())))
+                .then(results => {
+                    const successCount = results.filter(r => r.success).length;
+                    selectedOrders.clear();
+                    loadOrders();
+                    showToast(`Successfully moved ${successCount} order${successCount > 1 ? 's' : ''} to ${LABELS[next]}!`);
                 })
-            ))
-            .then(responses => Promise.all(responses.map(r => r.json())))
-            .then(results => {
-                const successCount = results.filter(r => r.success).length;
-                selectedOrders.clear();
-                loadOrders();
-                showToast(`Successfully moved ${successCount} order${successCount > 1 ? 's' : ''} to ${LABELS[next]}!`);
-            })
-            .catch(error => {
-                console.error('Bulk update error:', error);
-                showToast('Error updating orders', 'error');
-            });
-        }
+                .catch(error => {
+                    console.error('Bulk update error:', error);
+                    showToast('Error updating orders', 'error');
+                });
+            }
+        );
     }
 
     function updateStatus(id, status) {
@@ -1106,12 +1264,16 @@
         if (e.target.id === 'orderModal') {
             closeOrderModal();
         }
+        if (e.target.id === 'confirmModal') {
+            closeConfirmModal();
+        }
     });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeOrderModal();
+            closeConfirmModal();
         }
     });
 </script>
