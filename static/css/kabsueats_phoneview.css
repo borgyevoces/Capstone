@@ -69,8 +69,8 @@
         align-items: center; gap: 5px; border: 1px solid transparent; transition: .2s;
     }
     .nib:visited { color: var(--g700); }
-    .nib:active, .nib:focus { background: transparent; color: var(--g700); border-color: transparent; outline: none; box-shadow: none; }
-    .nib:hover { background: rgba(183,28,28,.08); color: var(--red); }
+    .nib:active, .nib:focus, .nib:focus-visible { background: transparent !important; color: var(--g700) !important; border-color: transparent !important; outline: none !important; box-shadow: none !important; }
+    .nib:hover { background: transparent; color: var(--g700); border-color: transparent; }
     .login-btn { background: var(--g900); color: #fff !important; border-radius: 7px !important; font-size: 12px; }
     .login-btn:hover { background: var(--red) !important; }
     .cart-link { position: relative; }
@@ -84,7 +84,7 @@
     }
     .pav:hover { border-color: var(--red); }
     .pav svg { width: 18px; height: 18px; }
-    .pcont { position: relative; }
+    .pcont { position: relative; margin-left: 12px; }
     .pdrop {
         position: absolute; top: calc(100% + 8px); right: 0; background: #fff;
         min-width: 210px; box-shadow: 0 8px 28px rgba(0,0,0,.18);
