@@ -882,14 +882,7 @@
     function getOrderActions(order) {
         let actions = '';
 
-        // ✅ Details button — goes to cart page
-        actions += `
-            <button class="order-action-btn btn-view-details" onclick="viewOrderDetails(${order.id})">
-                <i class="fas fa-eye"></i> Details
-            </button>
-        `;
-
-        // ✅ Pay Now button — goes to cart and shows payment method selection immediately
+        // Pay Now button for PENDING orders
         if (order.status === 'PENDING') {
             actions += `
                 <button class="order-action-btn btn-pay" onclick="payOrder(${order.id})">
@@ -898,20 +891,13 @@
             `;
         }
 
-        if (order.status === 'preparing' || order.status === 'to_claim') {
-            actions += `
-                <button class="order-action-btn btn-track" onclick="trackOrder(${order.id})">
-                    <i class="fas fa-map-marker-alt"></i> Track
-                </button>
-            `;
-        }
-
+        // Rate button for completed orders
         if (order.status === 'completed') {
             actions += `
                 <button class="order-action-btn btn-rate" onclick="rateOrder(${order.establishment_id})">
                     <i class="fas fa-star"></i> Rate
                 </button>
-                <button class="order-action-btn btn-reorder" onclick="reorder(${order.id})">
+                <button class="order-action-btn btn-reorder" onclick="showReorderModal(${order.id})">
                     <i class="fas fa-redo"></i> Reorder
                 </button>
             `;
@@ -961,32 +947,82 @@
         window.location.href = `/food_establishment/${establishmentId}/#reviews`;
     }
 
-    function reorder(orderId) {
-        console.log('🔄 Reordering items from order:', orderId);
-        if (confirm('Add all items from this order to your cart?')) {
-            fetch(`/api/reorder/${orderId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Reorder response:', data);
-                if (data.success) {
-                    alert('Items added to cart!');
-                    window.location.href = '/cart/';
-                } else {
-                    alert(data.message || 'Failed to reorder');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while reordering');
-            });
-        }
+    // ── REORDER MODAL: fetch order details and show items with live stock ──
+    function showReorderModal(orderId) {
+        // Show modal with loading state
+        document.getElementById('reorderModal').style.display = 'flex';
+        document.getElementById('reorderModalItems').innerHTML = '<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i> Loading items...</div>';
+        document.getElementById('reorderConfirmBtn').dataset.orderId = orderId;
+
+        fetch(`/api/order/${orderId}/`, {
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { throw new Error(data.message); }
+            const order = data.order;
+            const itemsHtml = order.items.map(item => `
+                <div class="reorder-item ${item.available_stock === 0 ? 'out-of-stock' : ''}">
+                    <div class="reorder-item-img">
+                        ${item.image
+                            ? `<img src="${item.image}" alt="${item.name}">`
+                            : `<div class="reorder-img-placeholder"><i class="fas fa-utensils"></i></div>`}
+                    </div>
+                    <div class="reorder-item-info">
+                        <div class="reorder-item-name">${item.name}</div>
+                        <div class="reorder-item-price">₱${parseFloat(item.price).toFixed(2)} &nbsp;×&nbsp; ${item.quantity}</div>
+                    </div>
+                    <div class="reorder-item-stock ${item.available_stock > 0 ? 'in-stock' : 'no-stock'}">
+                        ${item.available_stock > 0
+                            ? `<i class="fas fa-check-circle"></i> ${item.available_stock} available`
+                            : `<i class="fas fa-times-circle"></i> Out of stock`}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('reorderModalItems').innerHTML = itemsHtml;
+            document.getElementById('reorderModalTitle').textContent = order.establishment.name;
+        })
+        .catch(err => {
+            document.getElementById('reorderModalItems').innerHTML = `<p style="color:#e53935;text-align:center;padding:20px;">${err.message || 'Failed to load items.'}</p>`;
+        });
     }
+
+    function closeReorderModal() {
+        document.getElementById('reorderModal').style.display = 'none';
+    }
+
+    function confirmReorder() {
+        const orderId = document.getElementById('reorderConfirmBtn').dataset.orderId;
+        const btn = document.getElementById('reorderConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+        fetch(`/api/reorder/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeReorderModal();
+                window.location.href = '/cart/';
+            } else {
+                alert(data.message || 'Failed to reorder');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Add to Cart';
+            }
+        })
+        .catch(() => {
+            alert('An error occurred while reordering');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> Add to Cart';
+        });
+    }
+
+    function reorder(orderId) { showReorderModal(orderId); }
 
     // ========================================
     // UTILITY FUNCTIONS

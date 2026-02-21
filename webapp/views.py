@@ -6026,6 +6026,7 @@ def get_order_details(request, order_id):
                 'price': str(item_price),
                 'total_price': str(item_total),
                 'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
+                'available_stock': order_item.menu_item.quantity,  # live stock count
             })
 
         order_data = {
