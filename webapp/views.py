@@ -2173,14 +2173,6 @@ def get_nearby_establishments(request):
             opening = est.opening_time.strftime('%I:%M %p') if est.opening_time else None
             closing  = est.closing_time.strftime('%I:%M %p') if est.closing_time else None
 
-            # Build absolute image URL
-            image_url = ''
-            if est.image:
-                try:
-                    image_url = request.build_absolute_uri(est.image.url)
-                except Exception:
-                    image_url = ''
-
             nearby_establishments.append({
                 'id':              est.id,
                 'name':            est.name,
@@ -2194,7 +2186,6 @@ def get_nearby_establishments(request):
                 'payment_methods': est.payment_methods or '',
                 'opening_time':    opening,
                 'closing_time':    closing,
-                'image_url':       image_url,
             })
 
         # Sort by distance ascending
@@ -2320,10 +2311,33 @@ def delete_establishment(request):
 
 
 def owner_register_step1_location(request):
-    establishments = FoodEstablishment.objects.values('name', 'address', 'latitude', 'longitude')
+    establishments = FoodEstablishment.objects.filter(
+        is_active=True,
+        latitude__isnull=False,
+        longitude__isnull=False
+    ).select_related().prefetch_related('categories')
 
-    # Convert to list for JSON serialization
-    establishments_list = list(establishments)
+    establishments_list = []
+    for est in establishments:
+        image_url = ''
+        if est.image:
+            try:
+                image_url = request.build_absolute_uri(est.image.url)
+            except Exception:
+                image_url = ''
+
+        cat_names = list(est.categories.values_list('name', flat=True))
+        category_str = ', '.join(cat_names) if cat_names else ''
+
+        establishments_list.append({
+            'name': est.name,
+            'address': est.address,
+            'latitude': float(est.latitude),
+            'longitude': float(est.longitude),
+            'status': est.status or '',
+            'image_url': image_url,
+            'category__name': category_str,
+        })
 
     return render(request, 'webapplication/register_step1_location.html', {
         'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
