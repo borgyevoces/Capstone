@@ -138,8 +138,8 @@
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                        <!-- ✅ Payment Method Selection (Hidden Initially) -->
-                        <div class="payment-method-section" id="payment-method-section" style="display: none;">
+                    <!-- ✅ Payment Method Selection (Always Visible) -->
+                        <div class="payment-method-section" id="payment-method-section">
                             <h3 class="payment-method-title">Choose Payment Method</h3>
 
                             <button type="button"
@@ -162,15 +162,6 @@
                                 </div>
                             </button>
                         </div>
-
-                        <!-- ✅ Initial Checkout Button (Shows Payment Options) -->
-                        <button type="button"
-                                class="btn-checkout-gcash"
-                                id="initial-checkout-btn"
-                                onclick="showPaymentMethodSelection()">
-                            <i class="fas fa-lock"></i>
-                            Proceed to Checkout
-                        </button>
 
                         <div class="security-badge">
                             <i class="fas fa-shield-alt"></i>
@@ -206,32 +197,21 @@
 
 {% block extra_js %}
 <script>
-    // ✅ Auto-show payment method section when redirected from "Pay Now" button
+    // Auto-scroll to payment section when redirected from "Buy Now" button
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         if (params.get('pay') === '1') {
-            // Step 1: Wait for cart.js to initialize, then click the first establishment
             setTimeout(function () {
                 const firstEstablishment = document.querySelector('.establishment-cart-box');
                 if (firstEstablishment) {
                     firstEstablishment.click();
                 }
-
-                // Step 2: After establishment is selected, show payment section directly
                 setTimeout(function () {
-                    const summaryContent = document.querySelector('.summary-content');
                     const paymentSection = document.getElementById('payment-method-section');
-                    const checkoutBtn = document.getElementById('initial-checkout-btn');
-
-                    if (summaryContent) summaryContent.style.display = 'block';
-                    if (paymentSection) paymentSection.style.display = 'flex';
-                    if (checkoutBtn) checkoutBtn.style.display = 'none';
-
-                    // Scroll to the payment section smoothly
                     if (paymentSection) {
                         paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                }, 600);
+                }, 400);
             }, 300);
         }
     });
