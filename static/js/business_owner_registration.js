@@ -78,68 +78,22 @@ function initStep1() {
     window.map = map;
     L.control.layers(baseMaps).addTo(map);
 
-    // CvSU center marker - proper landmark building icon
+    // Small subtle CvSU marker
     L.marker(cvsuLatLng, {
         icon: L.divIcon({
-            className: '',
+            className: 'cvsu-marker',
             html: `<div style="
-                position: relative;
-                width: 52px;
-                height: 52px;
-            ">
-                <!-- Outer ring pulse -->
-                <div style="
-                    position: absolute;
-                    top: -6px; left: -6px;
-                    width: 64px; height: 64px;
-                    border-radius: 50%;
-                    background: rgba(255,255,255,0.25);
-                    border: 2px solid rgba(255,255,255,0.6);
-                    animation: cvsuPulse 2s ease-in-out infinite;
-                "></div>
-                <!-- Main circle -->
-                <div style="
-                    width: 52px; height: 52px;
-                    border-radius: 50%;
-                    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-                    border: 3px solid #fff;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">
-                    <!-- University/building SVG icon -->
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
-                    </svg>
-                </div>
-                <!-- Label below -->
-                <div style="
-                    position: absolute;
-                    bottom: -22px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: rgba(15,52,96,0.92);
-                    color: white;
-                    font-size: 9px;
-                    font-weight: 700;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    white-space: nowrap;
-                    letter-spacing: 0.5px;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-                ">CvSU-Bacoor</div>
-            </div>
-            <style>
-                @keyframes cvsuPulse {
-                    0%, 100% { transform: scale(1); opacity: 0.7; }
-                    50% { transform: scale(1.15); opacity: 0.3; }
-                }
-            </style>`,
-            iconSize: [52, 74],
-            iconAnchor: [26, 26]
+                background: #1976D2;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
         })
-    }).addTo(map).bindPopup('<div style="text-align:center;padding:4px 8px;"><strong style="color:#0f3460;">CvSU-Bacoor Campus</strong><br><small style="color:#666;">Cavite State University</small></div>');
+    }).addTo(map).bindPopup('<b>CvSU-Bacoor Campus</b>');
 
     // Subtle light boundary circle (very transparent)
     L.circle(cvsuLatLng, {
@@ -150,85 +104,47 @@ function initStep1() {
         radius: RADIUS
     }).addTo(map);
 
-    // Show existing registered establishments on map with photo markers
+    // Show existing registered establishments on map with building/store icons
     if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
         EXISTING_ESTABLISHMENTS.forEach(est => {
             if (est.latitude && est.longitude) {
-                const isOpen = (est.status || '').toLowerCase() === 'open';
-                const borderColor = isOpen ? '#10b981' : '#ef4444';
-
-                // Build inner content: photo or initial fallback
-                let innerHtml;
-                if (est.image_url) {
-                    innerHtml = `
-                        <img src="${est.image_url}"
-                            style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
-                            onerror="this.style.display='none';this.nextSibling.style.display='flex';">
-                        <div style="display:none;width:100%;height:100%;border-radius:50%;
-                            background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                            font-size:16px;font-weight:700;align-items:center;justify-content:center;">
-                            ${est.name.charAt(0).toUpperCase()}
-                        </div>`;
-                } else {
-                    innerHtml = `
-                        <div style="width:100%;height:100%;border-radius:50%;
-                            background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
-                            font-size:16px;font-weight:700;display:flex;
-                            align-items:center;justify-content:center;">
-                            ${est.name.charAt(0).toUpperCase()}
-                        </div>`;
-                }
-
                 const estIcon = L.divIcon({
-                    className: '',
-                    html: `<div style="
-                        width:48px;height:48px;border-radius:50%;
-                        border:3px solid ${borderColor};
-                        box-shadow:0 3px 12px rgba(0,0,0,0.4);
-                        overflow:hidden;cursor:pointer;
-                        background:#fff;position:relative;">
-                        ${innerHtml}
+                    className: 'existing-establishment-marker',
+                    html: `
                         <div style="
-                            position:absolute;bottom:-1px;right:-1px;
-                            width:14px;height:14px;border-radius:50%;
-                            background:${isOpen ? '#10b981' : '#ef4444'};
-                            border:2px solid #fff;">
+                            position: relative;
+                            width: 36px;
+                            height: 36px;
+                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+                            border-radius: 8px;
+                            border: 2px solid white;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                        ">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
                         </div>
-                    </div>`,
-                    iconSize: [48, 48],
-                    iconAnchor: [24, 24],
-                    popupAnchor: [0, -28]
+                    `,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                    popupAnchor: [0, -36]
                 });
 
                 const marker = L.marker([est.latitude, est.longitude], {
                     icon: estIcon
                 }).addTo(map);
 
-                // Rich popup with photo banner
-                const popupImg = est.image_url
-                    ? `<div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:8px;">
-                         <img src="${est.image_url}" style="width:100%;height:100%;object-fit:cover;"
-                              onerror="this.parentElement.style.display='none'">
-                       </div>` : '';
-
-                const statusBadge = `<span style="
-                    display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
-                    background:${isOpen ? '#dcfce7' : '#fee2e2'};
-                    color:${isOpen ? '#166534' : '#991b1b'};">
-                    ${isOpen ? '● Open' : '● Closed'}
-                </span>`;
-
+                // Add popup with establishment info
                 marker.bindPopup(`
-                    <div style="font-family:sans-serif;min-width:200px;max-width:230px;">
-                        ${popupImg}
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
-                            <strong style="color:#111827;font-size:13px;line-height:1.3;">${est.name}</strong>
-                            ${statusBadge}
-                        </div>
-                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">
-                            <i style="color:#B71C1C;">📍</i> ${est.address || 'Near CvSU-Bacoor'}
-                        </div>
-                        ${est.category__name ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">🏷️ ${est.category__name}</div>` : ''}
+                    <div style="text-align: center; padding: 5px;">
+                        <strong style="color: #4CAF50; font-size: 14px;">${est.name}</strong><br>
+                        <small style="color: #666;">${est.category__name || 'Restaurant'}</small><br>
+                        <small style="color: #888;">${est.address || ''}</small>
                     </div>
                 `);
             }
@@ -381,118 +297,148 @@ function initStep1() {
     });
 
     function performSearch(query) {
-        autocompleteDropdown.innerHTML = '<div class="autocomplete-loading"><span class="spinner"></span>Searching...</div>';
+        autocompleteDropdown.innerHTML = `<div class="autocomplete-loading"><span class="spinner"></span>Searching for "<strong>${query}</strong>"…</div>`;
         autocompleteDropdown.classList.add('show');
 
-        const viewbox = `${cvsuLatLngObj.lng - 0.01},${cvsuLatLngObj.lat + 0.01},${cvsuLatLngObj.lng + 0.01},${cvsuLatLngObj.lat - 0.01}`;
-
-        // Create a combined results array
-        let allResults = [];
-
-        // First, search in existing establishments from database
+        // ── 1. Match registered KabsuEats establishments ─────────────
+        let registeredMatches = [];
         if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
-            const lowerQuery = query.toLowerCase();
-            const establishmentMatches = EXISTING_ESTABLISHMENTS.filter(est => {
-                const nameMatch = est.name && est.name.toLowerCase().includes(lowerQuery);
-                const addressMatch = est.address && est.address.toLowerCase().includes(lowerQuery);
-                return nameMatch || addressMatch;
-            }).map(est => ({
-                type: 'establishment',
-                lat: est.latitude,
-                lon: est.longitude,
-                display_name: est.name,
-                address: est.address,
-                name: est.name,
-                isEstablishment: true
-            }));
-
-            allResults = [...establishmentMatches];
+            const q = query.toLowerCase();
+            registeredMatches = EXISTING_ESTABLISHMENTS
+                .filter(est => {
+                    return (est.name && est.name.toLowerCase().includes(q)) ||
+                           (est.address && est.address.toLowerCase().includes(q)) ||
+                           (est.category__name && est.category__name.toLowerCase().includes(q));
+                })
+                .map(est => ({
+                    _type: 'registered',
+                    lat: est.latitude,
+                    lon: est.longitude,
+                    name: est.name,
+                    address: est.address || 'Near CvSU-Bacoor',
+                    category: est.category__name || '',
+                    status: est.status || '',
+                    image_url: est.image_url || '',
+                }));
         }
 
-        // Then fetch from Nominatim for general places
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${viewbox}&bounded=1&limit=10&addressdetails=1&extratags=1`)
-            .then(res => res.json())
-            .then(data => {
-                // Filter Nominatim results to only show those within the 500m radius
-                const filteredNominatim = data.filter(result => {
-                    const lat = parseFloat(result.lat);
-                    const lng = parseFloat(result.lon);
-                    const latlng = L.latLng(lat, lng);
-                    const distance = map.distance(latlng, cvsuLatLngObj);
-                    return distance <= RADIUS;
-                }).map(result => ({
-                    ...result,
-                    isEstablishment: false
-                }));
+        // ── 2. Nominatim – wide viewbox so all visible map labels are searchable ──
+        const delta = 0.05; // ~5.5km box
+        const viewbox = `${cvsuLatLngObj.lng - delta},${cvsuLatLngObj.lat + delta},${cvsuLatLngObj.lng + delta},${cvsuLatLngObj.lat - delta}`;
+        const nominatimUrl =
+            `https://nominatim.openstreetmap.org/search` +
+            `?format=json` +
+            `&q=${encodeURIComponent(query)}` +
+            `&viewbox=${viewbox}` +
+            `&bounded=0` +
+            `&limit=12` +
+            `&addressdetails=1` +
+            `&extratags=1` +
+            `&namedetails=1`;
 
-                // Combine both results (establishments first)
-                allResults = [...allResults, ...filteredNominatim];
-                displaySearchResults(allResults);
-            })
-            .catch(err => {
-                console.error('Search error:', err);
-                // Even if Nominatim fails, show establishment results if any
-                if (allResults.length > 0) {
-                    displaySearchResults(allResults);
-                } else {
-                    autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
-                }
+        fetch(nominatimUrl, { headers: { 'Accept-Language': 'en' } })
+        .then(res => res.json())
+        .then(data => {
+            const nominatimResults = data.map(r => {
+                const latlng = L.latLng(parseFloat(r.lat), parseFloat(r.lon));
+                const dist = Math.round(map.distance(latlng, cvsuLatLngObj));
+                const inside = dist <= RADIUS;
+                const shortName = (r.namedetails && r.namedetails.name) || r.display_name.split(',')[0];
+                const shortAddr = r.display_name.split(',').slice(1, 3).join(',').trim();
+                return {
+                    _type: 'place',
+                    lat: parseFloat(r.lat),
+                    lon: parseFloat(r.lon),
+                    name: shortName,
+                    address: shortAddr || r.display_name,
+                    category: r.type || r.class || '',
+                    distance: dist,
+                    inside,
+                };
             });
+
+            // Sort: inside zone first, then by distance
+            nominatimResults.sort((a, b) => {
+                if (a.inside && !b.inside) return -1;
+                if (!a.inside && b.inside) return 1;
+                return a.distance - b.distance;
+            });
+
+            displaySearchResults([...registeredMatches, ...nominatimResults], query);
+        })
+        .catch(err => {
+            console.error('Search error:', err);
+            if (registeredMatches.length > 0) {
+                displaySearchResults(registeredMatches, query);
+            } else {
+                autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Try again.</div>';
+            }
+        });
     }
 
-    function displaySearchResults(results) {
+    function displaySearchResults(results, query) {
         currentSelectedIndex = -1;
         if (results.length === 0) {
-            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found within 500m of CvSU</div>';
+            autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No places found. Try a different search.</div>';
             return;
         }
 
         autocompleteDropdown.innerHTML = '';
-        results.forEach((result) => {
+        let lastSection = null;
+
+        function maybeAddHeader(label, color) {
+            if (lastSection === label) return;
+            lastSection = label;
+            const hdr = document.createElement('div');
+            hdr.style.cssText = `padding:6px 14px 4px;font-size:10px;font-weight:700;letter-spacing:0.8px;color:${color};text-transform:uppercase;background:#fafafa;border-bottom:1px solid #f0f0f0;`;
+            hdr.textContent = label;
+            autocompleteDropdown.appendChild(hdr);
+        }
+
+        results.forEach(result => {
             const item = document.createElement('div');
             item.className = 'autocomplete-item';
 
-            // Different display for establishments vs general places
-            if (result.isEstablishment) {
-                // For registered establishments
-                const name = result.name;
-                const address = result.address || 'Registered Establishment';
+            if (result._type === 'registered') {
+                maybeAddHeader('📋 Registered on KabsuEats', '#e53935');
+                const isOpen = (result.status || '').toLowerCase() === 'open';
+                const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOpen ? '#10b981' : '#9ca3af'};margin-right:4px;vertical-align:middle;"></span>`;
+                let thumb;
+                if (result.image_url) {
+                    thumb = `<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid ${isOpen ? '#10b981' : '#ef4444'};flex-shrink:0;"><img src="${result.image_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.background='#FF6B6B';this.remove();"></div>`;
+                } else {
+                    thumb = `<div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#FF6B6B,#FF5252);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;border:2px solid ${isOpen ? '#10b981' : '#ef4444'};">${result.name.charAt(0).toUpperCase()}</div>`;
+                }
+                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">${thumb}<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.name}</div><div style="font-size:11px;color:#6b7280;margin-top:1px;">${statusDot}${isOpen ? 'Open' : 'Closed'}${result.category ? ' · ' + result.category : ''}</div><div style="font-size:11px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📍 ${result.address}</div></div><div style="font-size:10px;font-weight:700;color:white;background:#e53935;padding:2px 6px;border-radius:4px;flex-shrink:0;">KE</div></div>`;
 
-                item.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="
-                            width: 32px;
-                            height: 32px;
-                            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
-                            border-radius: 6px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            flex-shrink: 0;
-                        ">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                <polyline points="9 22 9 12 15 12 15 22"/>
-                            </svg>
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div class="autocomplete-name">🏪 ${name}</div>
-                            <div class="autocomplete-address">${address}</div>
-                        </div>
-                    </div>
-                `;
             } else {
-                // For general Nominatim results
-                const name = result.display_name.split(',')[0];
-                const address = result.display_name;
-
-                item.innerHTML = `
-                    <div class="autocomplete-name">${name}</div>
-                    <div class="autocomplete-address">${address}</div>
-                `;
+                maybeAddHeader('🗺️ Nearby Places', '#1976d2');
+                const catIcons = { restaurant:'🍽️', cafe:'☕', fast_food:'🍟', bar:'🍺', convenience:'🏪', shop:'🛍️', supermarket:'🛒', school:'🏫', church:'⛪', hospital:'🏥', bank:'🏦', fuel:'⛽', pharmacy:'💊', park:'🌳', townhall:'🏛️' };
+                const icon = catIcons[result.category] || '📍';
+                const distLabel = result.inside
+                    ? `<span style="color:#10b981;font-weight:600;font-size:11px;">${result.distance}m</span>`
+                    : `<span style="color:#f59e0b;font-weight:600;font-size:11px;">${result.distance}m ⚠️</span>`;
+                item.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:${result.inside ? '#e3f2fd' : '#fff8e1'};display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid ${result.inside ? '#90caf9' : '#ffd54f'};">${icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.name}</div><div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${result.address}</div></div><div style="flex-shrink:0;text-align:right;">${distLabel}</div></div>`;
             }
 
-            item.addEventListener('click', () => selectSearchResult(result, result.name || result.display_name.split(',')[0]));
+            item.addEventListener('click', () => {
+                const latlng = L.latLng(result.lat, result.lon);
+                const inside = map.distance(latlng, cvsuLatLngObj) <= RADIUS;
+                if (inside) {
+                    placeMarker(latlng);
+                    map.flyTo(latlng, 18, { duration: 0.8 });
+                    searchInput.value = result.name;
+                    clearSearchBtn.classList.add('show');
+                    showLocationStatus('📍 Location selected!', 'success');
+                } else {
+                    map.flyTo(latlng, 17, { duration: 0.8 });
+                    searchInput.value = result.name;
+                    clearSearchBtn.classList.add('show');
+                    showLocationStatus('⚠️ Outside 500m zone — shown on map but cannot pin here', 'error');
+                }
+                autocompleteDropdown.classList.remove('show');
+            });
+
             autocompleteDropdown.appendChild(item);
         });
     }
