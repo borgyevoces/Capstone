@@ -1372,11 +1372,11 @@
                 {% if item.quantity > 0 %}
                 <div class="item-action-buttons">
                     <button class="btn-add-to-cart quick-add-btn"
-                            onclick="event.stopPropagation(); openItemDetailModal(this.closest('.menu-item'), 'cart');">
+                            onclick="openItemDetailModal(this.closest('.menu-item'), 'cart'); event.stopPropagation();">
                         <i class="fas fa-cart-plus"></i> Add to Cart
                     </button>
                     <button class="btn-buy-now quick-buy-btn"
-                            onclick="event.stopPropagation(); openItemDetailModal(this.closest('.menu-item'), 'buynow');">
+                            onclick="openItemDetailModal(this.closest('.menu-item'), 'buynow'); event.stopPropagation();">
                         <i class="fas fa-money-bill"></i> Buy Now
                     </button>
                 </div>
