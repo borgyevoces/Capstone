@@ -925,6 +925,258 @@
             font-size: 18px;
         }
     }
+
+    /* ==========================================
+       RATING MODAL
+    ========================================== */
+    .rating-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(3px);
+    }
+    .rating-modal-overlay.open { display: flex; }
+
+    .rating-modal {
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+        overflow: hidden;
+        animation: ratingModalIn 0.25s cubic-bezier(0.34,1.4,0.64,1);
+    }
+    @keyframes ratingModalIn {
+        from { transform: scale(0.88) translateY(20px); opacity: 0; }
+        to   { transform: scale(1)    translateY(0);    opacity: 1; }
+    }
+
+    .rating-modal-header {
+        padding: 20px 22px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f0f4f8;
+    }
+    .rating-modal-header h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .rating-modal-close {
+        background: #f1f3f5;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 13px;
+        color: #718096;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+    .rating-modal-close:hover { background: #e2e8f0; color: #1a202c; }
+
+    .rating-modal-body {
+        padding: 20px 22px;
+    }
+    .rating-modal-subtitle {
+        font-size: 14px;
+        color: #718096;
+        margin: 0 0 18px;
+        text-align: center;
+    }
+
+    /* Stars */
+    .rating-stars-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .rating-star {
+        font-size: 38px;
+        color: #d1d5db;
+        cursor: pointer;
+        transition: all 0.15s;
+        -webkit-text-stroke: 1px #d1d5db;
+    }
+    .rating-star.hovered,
+    .rating-star.selected {
+        color: #f59e0b;
+        -webkit-text-stroke: 1px #f59e0b;
+        transform: scale(1.15);
+    }
+
+    .rating-label-text {
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: #f59e0b;
+        min-height: 20px;
+        margin: 0 0 18px;
+    }
+
+    .rating-comment-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .rating-comment-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    .rating-comment-group textarea {
+        padding: 10px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        color: #2d3748;
+        resize: vertical;
+        outline: none;
+        font-family: inherit;
+        transition: border-color 0.15s;
+        min-height: 80px;
+    }
+    .rating-comment-group textarea:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+    }
+
+    .rating-modal-footer {
+        padding: 16px 22px;
+        border-top: 1px solid #f0f4f8;
+        display: flex;
+        gap: 10px;
+    }
+    .rating-cancel-btn {
+        flex: 0 0 auto;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background: white;
+        color: #718096;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .rating-cancel-btn:hover { background: #f7fafc; border-color: #cbd5e0; color: #4a5568; }
+
+    .rating-submit-btn {
+        flex: 1;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+    }
+    .rating-submit-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, #d97706, #b45309);
+        box-shadow: 0 4px 12px rgba(245,158,11,0.35);
+    }
+    .rating-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ==========================================
+       THANK YOU MODAL
+    ========================================== */
+    .thankyou-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(3px);
+    }
+    .thankyou-modal-overlay.open { display: flex; }
+
+    .thankyou-modal {
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 360px;
+        padding: 40px 32px;
+        text-align: center;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+        animation: ratingModalIn 0.3s cubic-bezier(0.34,1.4,0.64,1);
+    }
+    .thankyou-checkmark {
+        font-size: 64px;
+        color: #22c55e;
+        margin-bottom: 16px;
+        animation: checkPop 0.4s cubic-bezier(0.34,1.5,0.64,1);
+    }
+    @keyframes checkPop {
+        from { transform: scale(0.4); opacity: 0; }
+        to   { transform: scale(1);   opacity: 1; }
+    }
+    .thankyou-modal h3 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 0 0 10px;
+    }
+    .thankyou-modal p {
+        font-size: 14px;
+        color: #718096;
+        margin: 0 0 24px;
+        line-height: 1.6;
+    }
+    .thankyou-close-btn {
+        padding: 11px 28px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .thankyou-close-btn:hover {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        box-shadow: 0 4px 12px rgba(34,197,94,0.35);
+    }
+
+
+    @keyframes shakeStars {
+        0%,100% { transform: translateX(0); }
+        20%     { transform: translateX(-6px); }
+        40%     { transform: translateX(6px); }
+        60%     { transform: translateX(-4px); }
+        80%     { transform: translateX(4px); }
+    }
+    @media (max-width: 480px) {
+        .rating-modal { border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; }
+        .rating-modal-overlay.open { align-items: flex-end; padding: 0; }
+    }
 </style>
 {% endblock %}
 
@@ -978,6 +1230,58 @@
             <i class="fas fa-spinner"></i>
             <p>Loading your orders...</p>
         </div>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     RATING MODAL
+===================================================== -->
+<div class="rating-modal-overlay" id="ratingModal" onclick="handleRatingOverlayClick(event)">
+    <div class="rating-modal">
+        <div class="rating-modal-header">
+            <h3><i class="fas fa-star" style="color:#f59e0b;"></i> Rate Your Experience</h3>
+            <button class="rating-modal-close" onclick="closeRatingModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="rating-modal-body">
+            <p class="rating-modal-subtitle">How was your experience at this establishment?</p>
+            <div class="rating-stars-row" id="ratingStarsRow">
+                <i class="far fa-star rating-star" data-rating="1"></i>
+                <i class="far fa-star rating-star" data-rating="2"></i>
+                <i class="far fa-star rating-star" data-rating="3"></i>
+                <i class="far fa-star rating-star" data-rating="4"></i>
+                <i class="far fa-star rating-star" data-rating="5"></i>
+            </div>
+            <p class="rating-label-text" id="ratingLabelText"></p>
+            <div class="rating-comment-group">
+                <label for="ratingComment">Comment <span style="color:#9ca3af;font-weight:400;">(optional)</span></label>
+                <textarea id="ratingComment" rows="3" placeholder="Tell us about your experience..."></textarea>
+            </div>
+        </div>
+        <div class="rating-modal-footer">
+            <button class="rating-cancel-btn" onclick="closeRatingModal()">Cancel</button>
+            <button class="rating-submit-btn" id="ratingSubmitBtn" onclick="submitRating()">
+                <i class="fas fa-paper-plane"></i> Submit Review
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================
+     THANK YOU MODAL
+===================================================== -->
+<div class="thankyou-modal-overlay" id="thankyouModal">
+    <div class="thankyou-modal">
+        <div class="thankyou-checkmark">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h3>Thank You!</h3>
+        <p>Your review has been submitted successfully. We appreciate your feedback!</p>
+        <button class="thankyou-close-btn" onclick="closeThankyouModal()">
+            <i class="fas fa-times"></i> Close
+        </button>
     </div>
 </div>
 
@@ -1314,8 +1618,7 @@
     }
 
     function rateOrder(establishmentId) {
-        console.log('⭐ Rating establishment:', establishmentId);
-        window.location.href = `/food_establishment/${establishmentId}/#reviews`;
+        openRatingModal(establishmentId);
     }
 
     // ========================================
@@ -1622,5 +1925,154 @@
         }
         return cookieValue;
     }
+    // ========================================
+    // RATING MODAL
+    // ========================================
+    let _ratingEstablishmentId = null;
+    let _selectedRating = 0;
+
+    const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+    function openRatingModal(establishmentId) {
+        _ratingEstablishmentId = establishmentId;
+        _selectedRating = 0;
+
+        // Reset stars
+        document.querySelectorAll('.rating-star').forEach(s => {
+            s.classList.remove('selected', 'hovered');
+            s.className = 'far fa-star rating-star';
+        });
+        document.getElementById('ratingLabelText').textContent = '';
+        document.getElementById('ratingComment').value = '';
+
+        const submitBtn = document.getElementById('ratingSubmitBtn');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+
+        document.getElementById('ratingModal').classList.add('open');
+    }
+
+    function closeRatingModal() {
+        document.getElementById('ratingModal').classList.remove('open');
+    }
+
+    function handleRatingOverlayClick(e) {
+        if (e.target === document.getElementById('ratingModal')) closeRatingModal();
+    }
+
+    function closeThankyouModal() {
+        document.getElementById('thankyouModal').classList.remove('open');
+    }
+
+    // Wire up star events after DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('.rating-star');
+        const labelEl = document.getElementById('ratingLabelText');
+
+        stars.forEach(star => {
+            const rating = parseInt(star.dataset.rating);
+
+            star.addEventListener('mouseenter', function() {
+                stars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.className = 'fas fa-star rating-star hovered';
+                    } else {
+                        s.className = 'far fa-star rating-star';
+                    }
+                });
+                labelEl.textContent = RATING_LABELS[rating];
+                labelEl.style.color = '#f59e0b';
+            });
+
+            star.addEventListener('mouseleave', function() {
+                stars.forEach((s, i) => {
+                    if (i < _selectedRating) {
+                        s.className = 'fas fa-star rating-star selected';
+                    } else {
+                        s.className = 'far fa-star rating-star';
+                    }
+                });
+                labelEl.textContent = _selectedRating > 0 ? RATING_LABELS[_selectedRating] : '';
+            });
+
+            star.addEventListener('click', function() {
+                _selectedRating = rating;
+                stars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.className = 'fas fa-star rating-star selected';
+                    } else {
+                        s.className = 'far fa-star rating-star';
+                    }
+                });
+                labelEl.textContent = RATING_LABELS[rating];
+                labelEl.style.color = '#f59e0b';
+            });
+        });
+
+        // Close rating modal on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRatingModal();
+                closeThankyouModal();
+            }
+        });
+    });
+
+    function submitRating() {
+        if (!_selectedRating) {
+            // Shake the stars to indicate selection is needed
+            const row = document.getElementById('ratingStarsRow');
+            row.style.animation = 'none';
+            row.offsetHeight; // reflow
+            row.style.animation = 'shakeStars 0.4s ease';
+            document.getElementById('ratingLabelText').textContent = 'Please select a rating!';
+            document.getElementById('ratingLabelText').style.color = '#ef4444';
+            return;
+        }
+
+        const submitBtn = document.getElementById('ratingSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+        const comment = document.getElementById('ratingComment').value.trim();
+
+        const formData = new FormData();
+        formData.append('rating', _selectedRating);
+        formData.append('comment', comment);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+        fetch(`/food_establishment/${_ratingEstablishmentId}/submit_review/`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeRatingModal();
+                // Small delay for smooth transition
+                setTimeout(() => {
+                    document.getElementById('thankyouModal').classList.add('open');
+                }, 200);
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+                // Show inline error
+                const label = document.getElementById('ratingLabelText');
+                label.textContent = data.error || 'Something went wrong. Please try again.';
+                label.style.color = '#ef4444';
+            }
+        })
+        .catch(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+            const label = document.getElementById('ratingLabelText');
+            label.textContent = 'Network error. Please try again.';
+            label.style.color = '#ef4444';
+        });
+    }
+
+
 </script>
 {% endblock %}
