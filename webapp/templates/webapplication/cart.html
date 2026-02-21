@@ -20,8 +20,8 @@ body{background:#f0f0f0!important}
 .cart-establishment-info h2{color:#111!important;font-weight:700!important;margin:0!important;flex:1!important}
 .clear-establishment-btn{background:#f0f0f0!important;border:1px solid #ddd!important;color:#555!important}
 .clear-establishment-btn:hover{background:#B71C1C!important;border-color:#B71C1C!important}
-.establishment-cart-box{background:#fff!important;border:3px solid #e0e0e0!important;border-radius:12px!important;box-shadow:0 2px 10px rgba(0,0,0,.08)!important;overflow:hidden!important}
-.establishment-cart-box.active-cart{border-color:#B71C1C!important;box-shadow:0 4px 20px rgba(183,28,28,.22)!important}
+.establishment-cart-box{background:#fff!important;border:3px solid transparent!important;border-radius:12px!important;box-shadow:0 2px 10px rgba(0,0,0,.08)!important;overflow:hidden!important}
+.establishment-cart-box.active-cart{border-color:transparent!important;box-shadow:0 0 0 3px #B71C1C!important}
 .establishment-cart-box:hover{box-shadow:0 5px 18px rgba(0,0,0,.13)!important;transform:translateY(-2px)!important}
 .cart-item{background:#fff!important;border-bottom:1px solid #f0f0f0!important;display:flex!important;align-items:center!important;gap:20px!important;padding:20px 24px!important}
 .cart-item:hover{background:#fafafa!important}
@@ -39,7 +39,7 @@ body{background:#f0f0f0!important}
 .summary-line{color:#555!important}
 .summary-line strong,.grand-total-line strong{color:#111!important}
 .grand-total-amount{color:#111!important;font-weight:700!important}
-#initial-checkout-btn,.btn-checkout-main{
+#initial-checkout-btn,.btn-checkout-main,.summary-content #initial-checkout-btn{
   width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;
   padding:16px 24px!important;margin-top:20px!important;font-size:1rem!important;font-weight:700!important;
   color:#fff!important;background:#B71C1C!important;background-image:none!important;
@@ -201,8 +201,17 @@ body{background:#f0f0f0!important}
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                    <!-- ✅ Payment Method Selection (Always Visible) -->
-                        <div class="payment-method-section" id="payment-method-section">
+                        <!-- STEP 1: Checkout Button -->
+                        <button type="button"
+                                class="btn-checkout-main"
+                                id="initial-checkout-btn"
+                                onclick="showPaymentMethodSelection()">
+                            <i class="fas fa-lock"></i>
+                            Proceed to Checkout
+                        </button>
+
+                        <!-- STEP 2: Payment Methods (hidden until checkout clicked) -->
+                        <div class="payment-method-section" id="payment-method-section" style="display:none;">
                             <h3 class="payment-method-title">Choose Payment Method</h3>
 
                             <button type="button"
