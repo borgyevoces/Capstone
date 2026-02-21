@@ -463,8 +463,9 @@ window.handleQuickAddToCart = function(button, event) {
 // =======================================================
 // ✅ ITEM DETAIL MODAL - WITH QUANTITY VALIDATION
 // =======================================================
-window.openItemDetailModal = function(menuItemElement) {
-    console.log('🔍 Opening item detail modal');
+// mode: 'cart' | 'buynow' — optional, used to visually highlight the intended action
+window.openItemDetailModal = function(menuItemElement, mode) {
+    console.log('🔍 Opening item detail modal, mode:', mode);
 
     const itemId = menuItemElement.dataset.itemId;
     const itemName = menuItemElement.dataset.itemName;
@@ -535,6 +536,21 @@ window.openItemDetailModal = function(menuItemElement) {
     if (itemDetailModal) {
         itemDetailModal.classList.add('open');
         console.log('✅ Modal opened');
+    }
+
+    // Highlight the intended action button based on mode
+    if (mode && addToCartBtn && buyNowBtn) {
+        addToCartBtn.style.outline = '';
+        buyNowBtn.style.outline = '';
+        if (mode === 'cart') {
+            addToCartBtn.focus();
+            addToCartBtn.style.outline = '3px solid #2563eb';
+            setTimeout(() => { addToCartBtn.style.outline = ''; }, 1500);
+        } else if (mode === 'buynow') {
+            buyNowBtn.focus();
+            buyNowBtn.style.outline = '3px solid #16a34a';
+            setTimeout(() => { buyNowBtn.style.outline = ''; }, 1500);
+        }
     }
 };
 
