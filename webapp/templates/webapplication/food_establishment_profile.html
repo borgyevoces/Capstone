@@ -1727,15 +1727,46 @@
         }
 
         function addEstablishmentMarker(est) {
-            const blueIcon = L.divIcon({
+            const isOpen = (est.status || '').toLowerCase() === 'open';
+            const borderColor = isOpen ? '#10b981' : '#ef4444';
+            const fallbackBg  = '#1d4ed8';
+
+            // Build the icon: photo if available, else coloured initial circle
+            let innerHtml;
+            if (est.image_url) {
+                innerHtml = `<img src="${est.image_url}"
+                    style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                    onerror="this.style.display='none';this.nextSibling.style.display='flex';">
+                <div style="display:none;width:100%;height:100%;border-radius:50%;
+                    background:${fallbackBg};color:#fff;font-size:14px;font-weight:700;
+                    align-items:center;justify-content:center;">
+                    ${est.name.charAt(0).toUpperCase()}
+                </div>`;
+            } else {
+                innerHtml = `<div style="width:100%;height:100%;border-radius:50%;
+                    background:${fallbackBg};color:#fff;font-size:14px;font-weight:700;
+                    display:flex;align-items:center;justify-content:center;">
+                    ${est.name.charAt(0).toUpperCase()}
+                </div>`;
+            }
+
+            const photoIcon = L.divIcon({
                 className: '',
                 html: `<div style="
-                    background:#1d4ed8;border:2.5px solid #fff;border-radius:50%;
-                    width:18px;height:18px;
-                    box-shadow:0 2px 8px rgba(29,78,216,.5);
-                    cursor:pointer;">
+                    width:46px;height:46px;border-radius:50%;
+                    border:3px solid ${borderColor};
+                    box-shadow:0 3px 10px rgba(0,0,0,0.35);
+                    overflow:hidden;cursor:pointer;
+                    background:#fff;position:relative;">
+                    ${innerHtml}
+                    <div style="
+                        position:absolute;bottom:-2px;right:-2px;
+                        width:13px;height:13px;border-radius:50%;
+                        background:${isOpen ? '#10b981' : '#ef4444'};
+                        border:2px solid #fff;">
+                    </div>
                 </div>`,
-                iconSize: [18, 18], iconAnchor: [9, 9]
+                iconSize: [46, 46], iconAnchor: [23, 23]
             });
 
             // Build rich popup content
@@ -1745,7 +1776,6 @@
             const pay    = est.payment_methods ? `<div style="margin-top:3px;font-size:11px;color:#6b7280;"><i class="fas fa-credit-card"></i> ${est.payment_methods}</div>` : '';
             const hours  = (est.opening_time && est.closing_time)
                 ? `<div style="margin-top:3px;font-size:11px;color:#6b7280;"><i class="fas fa-clock"></i> ${est.opening_time} – ${est.closing_time}</div>` : '';
-            const isOpen = (est.status || '').toLowerCase() === 'open';
             const statusBadge = `<span style="
                 display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
                 background:${isOpen ? '#dcfce7' : '#fee2e2'};
@@ -1753,8 +1783,15 @@
                 ${isOpen ? '● Open' : '● Closed'}
             </span>`;
 
+            // Popup image header
+            const popupImg = est.image_url
+                ? `<div style="width:100%;height:90px;border-radius:8px;overflow:hidden;margin-bottom:8px;">
+                     <img src="${est.image_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.display='none'">
+                   </div>` : '';
+
             const popup = `
-                <div style="font-family:sans-serif;min-width:200px;max-width:240px;">
+                <div style="font-family:sans-serif;min-width:210px;max-width:250px;">
+                    ${popupImg}
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
                         <strong style="color:#111827;font-size:13px;line-height:1.3;">${est.name}</strong>
                         ${statusBadge}
@@ -1765,7 +1802,7 @@
                     ${cats}${amens}${pay}${hours}${dist}
                 </div>`;
 
-            const m = L.marker([est.latitude, est.longitude], { icon: blueIcon }).addTo(map);
+            const m = L.marker([est.latitude, est.longitude], { icon: photoIcon }).addTo(map);
             m.bindPopup(popup, { maxWidth: 260 });
             m._estData = est; // attach for search use
             allEstablishmentMarkers.push(m);
