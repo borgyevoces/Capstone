@@ -187,7 +187,167 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 }
 
 // =======================================================
-// ✅ MODAL BUY NOW - PAYMONGO REDIRECT
+// ✅ PAYMENT METHOD MODAL
+// =======================================================
+window.openPaymentMethodModal = function() {
+    const modal = document.getElementById('paymentMethodModal');
+    if (modal) {
+        modal.classList.add('show');
+        // Default: select GCash/Online
+        selectPaymentMethod('gcash');
+    }
+};
+
+window.closePaymentMethodModal = function() {
+    const modal = document.getElementById('paymentMethodModal');
+    if (modal) modal.classList.remove('show');
+};
+
+window.selectPaymentMethod = function(method) {
+    document.querySelectorAll('.payment-method-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.method === method);
+    });
+    window._selectedPaymentMethod = method;
+
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    if (confirmBtn) {
+        if (method === 'gcash') {
+            confirmBtn.innerHTML = '<i class="fas fa-bolt"></i> Pay with GCash';
+            confirmBtn.style.background = 'linear-gradient(135deg, #0066CC, #00a0e9)';
+        } else {
+            confirmBtn.innerHTML = '<i class="fas fa-money-bill-wave"></i> Place Cash Order';
+            confirmBtn.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+        }
+    }
+};
+
+window.confirmPaymentAndProceed = function() {
+    const method = window._selectedPaymentMethod || 'gcash';
+    closePaymentMethodModal();
+
+    if (method === 'cash') {
+        // Process cash order
+        processCashBuyNow();
+    } else {
+        // Process GCash/PayMongo
+        processGcashBuyNow();
+    }
+};
+
+function processCashBuyNow() {
+    const modalItemId = document.getElementById('modalItemId');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const modalItemTitle = document.getElementById('itemDetailModalTitle');
+
+    const itemId = modalItemId ? modalItemId.value : null;
+    const quantity = parseInt(itemQuantityInput ? itemQuantityInput.value : 1) || 1;
+    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+
+    if (!itemId) return;
+
+    const confirmBtn = document.getElementById('confirmPaymentBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
+    const csrfToken = getCookie('csrftoken');
+
+    // First add to cart, then create cash order
+    const formData = new FormData();
+    formData.append('menu_item_id', itemId);
+    formData.append('quantity', quantity);
+
+    fetch('/cart/add/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Now create cash order
+            return fetch('/payment/create-cash-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ menu_item_id: itemId, quantity: quantity }),
+                credentials: 'same-origin'
+            }).then(r => r.json());
+        }
+        throw new Error(data.message || 'Failed to add to cart');
+    })
+    .then(data => {
+        if (data.success && data.order_id) {
+            showMessage('Cash order placed! Redirecting...', 'success');
+            setTimeout(() => {
+                window.location.href = '/order/confirmation/' + data.order_id + '/';
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to place order');
+        }
+    })
+    .catch(error => {
+        showMessage('Error: ' + error.message, 'error');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            selectPaymentMethod('cash');
+        }
+    });
+}
+
+function processGcashBuyNow() {
+    const modalItemId = document.getElementById('modalItemId');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const modalItemTitle = document.getElementById('itemDetailModalTitle');
+    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+
+    const itemId = modalItemId ? modalItemId.value : null;
+    const quantity = parseInt(itemQuantityInput ? itemQuantityInput.value : 1) || 1;
+    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+
+    if (!itemId) return;
+
+    if (quantity > maxQuantity) {
+        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
+        return;
+    }
+
+    showMessage('Redirecting to GCash payment...', 'info');
+
+    const csrfToken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('menu_item_id', itemId);
+    formData.append('quantity', quantity);
+
+    fetch('/create-buynow-payment/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Payment service error');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.checkout_url) {
+            setTimeout(() => { window.location.href = data.checkout_url; }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to create payment link');
+        }
+    })
+    .catch(error => {
+        showMessage('Error: ' + error.message, 'error');
+    });
+}
+
+// =======================================================
+// ✅ MODAL BUY NOW - OPENS PAYMENT METHOD MODAL
 // =======================================================
 window.handleModalBuyNow = function(button) {
     console.log('⚡ Buy Now button clicked');
@@ -227,57 +387,25 @@ window.handleModalBuyNow = function(button) {
         return;
     }
 
-    console.log(`📦 Processing Buy Now: Item ${itemId}, Quantity ${quantity}`);
+    console.log(`📦 Opening payment method selection: Item ${itemId}, Quantity ${quantity}`);
 
-    // Show loading state
-    const originalHTML = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    // ✅ UPDATE PAYMENT MODAL SUMMARY
+    const paymentItemName = document.getElementById('paymentSummaryItemName');
+    const paymentItemQty = document.getElementById('paymentSummaryQty');
+    const paymentItemPrice = document.getElementById('paymentSummaryPrice');
+    const modalItemPrice = document.getElementById('modalItemPrice');
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
+    if (paymentItemName) paymentItemName.textContent = itemName;
+    if (paymentItemQty) paymentItemQty.textContent = quantity;
+    if (paymentItemPrice && modalItemPrice) {
+        const priceText = modalItemPrice.textContent.replace('₱ ', '').trim();
+        const unitPrice = parseFloat(priceText) || 0;
+        paymentItemPrice.textContent = '₱' + (unitPrice * quantity).toFixed(2);
+    }
 
-    // ✅ CALL BACKEND TO CREATE PAYMONGO PAYMENT LINK
-    fetch('/create-buynow-payment/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Payment service error');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success && data.checkout_url) {
-            console.log('✅ Payment link created:', data.checkout_url);
-
-            // Show redirect message
-            showMessage('Redirecting to PayMongo for payment...', 'info');
-
-            // ✅ REDIRECT TO PAYMONGO CHECKOUT
-            setTimeout(() => {
-                window.location.href = data.checkout_url;
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Failed to create payment link');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Buy Now error:', error);
-        showMessage('Error: ' + error.message, 'error');
-
-        // Restore button
-        button.disabled = false;
-        button.innerHTML = originalHTML;
-    });
+    // Close item modal and open payment modal
+    closeItemDetailModal();
+    openPaymentMethodModal();
 };
 
 // =======================================================
