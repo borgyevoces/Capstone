@@ -2795,6 +2795,113 @@
             font-size: 24px;
         }
 
+        /* ==========================================
+           MODAL CLOSE BUTTON FIX
+           Ensures X button is always visible inside modal
+           ========================================== */
+        .modal-content {
+            position: relative !important;
+        }
+
+        .modal-close {
+            position: absolute !important;
+            top: 14px !important;
+            right: 14px !important;
+            width: 34px !important;
+            height: 34px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: #f3f4f6 !important;
+            border: none !important;
+            border-radius: 50% !important;
+            font-size: 20px !important;
+            color: #374151 !important;
+            cursor: pointer !important;
+            z-index: 10 !important;
+            transition: background 0.2s, color 0.2s !important;
+            line-height: 1 !important;
+        }
+
+        .modal-close:hover {
+            background: #dc2626 !important;
+            color: white !important;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 24px 16px !important;
+                margin: 10px !important;
+                width: calc(100% - 20px) !important;
+                max-height: 90vh !important;
+            }
+
+            .modal-close {
+                top: 10px !important;
+                right: 10px !important;
+            }
+        }
+
+        /* ==========================================
+           MESSAGES: HIDE NAV BUTTON ON MOBILE,
+           SHOW FLOATING CIRCLE BUTTON INSTEAD
+           ========================================== */
+        @media (max-width: 768px) {
+            .chat-toggle-btn {
+                display: none !important;
+            }
+        }
+
+        /* Float button — mobile only */
+        .chat-float-btn {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .chat-float-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 24px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                color: white;
+                font-size: 22px;
+                border: none;
+                cursor: pointer;
+                z-index: 1200;
+                box-shadow: 0 4px 16px rgba(220, 38, 38, 0.45);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+
+            .chat-float-btn:hover,
+            .chat-float-btn:active {
+                transform: scale(1.08);
+                box-shadow: 0 6px 20px rgba(220, 38, 38, 0.55);
+            }
+
+            .chat-float-btn .chat-float-badge {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                background: #f59e0b;
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                font-size: 11px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid white;
+            }
+        }
+
 </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -3210,6 +3317,12 @@
         </div>
     </div>
 </div>
+
+<!-- FLOATING CHAT BUTTON - Mobile Only -->
+<button class="chat-float-btn" id="chatFloatBtn" onclick="toggleChatPanel()" title="Messages" aria-label="Open Messages">
+    <i class="fas fa-comment-dots"></i>
+    <span class="chat-float-badge" id="chatFloatBadge" style="display:none;">0</span>
+</button>
 
 <div class="chat-window" id="chatWindow">
     <div class="chat-window-header">
@@ -5361,7 +5474,28 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_t) _t.addEventListener('click', function(e) { if (e.target === this) closeToggleSellerModal(); });
 });
 
-// duplicate block removed
+// Sync float chat badge with navbar chat badge
+(function syncChatFloatBadge() {
+    const navBadge = document.getElementById('chatBadge');
+    const floatBadge = document.getElementById('chatFloatBadge');
+    if (!navBadge || !floatBadge) return;
+
+    function update() {
+        const text = navBadge.textContent.trim();
+        const hidden = navBadge.style.display === 'none';
+        if (!hidden && text && text !== '0') {
+            floatBadge.textContent = text;
+            floatBadge.style.display = 'flex';
+        } else {
+            floatBadge.style.display = 'none';
+        }
+    }
+
+    // Watch for changes to navBadge
+    const observer = new MutationObserver(update);
+    observer.observe(navBadge, { childList: true, subtree: true, attributes: true });
+    update(); // initial sync
+})();
 </script>
 {% endblock %}
 
