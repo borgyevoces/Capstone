@@ -323,7 +323,7 @@
     color: #0d47a1;
 }
 
-/* Map Height - Reduced for compact view */
+/* Map Height */
 #map {
     height: 450px !important;
     border-radius: 8px;
@@ -374,7 +374,6 @@
     }
 }
 
-/* Moderate width for larger screens - not too wide */
 @media (min-width: 1024px) and (max-width: 1399px) {
     .registration-container {
         max-width: 900px !important;
@@ -385,7 +384,6 @@
     }
 }
 
-/* Slightly wider for very large screens but still controlled */
 @media (min-width: 1400px) {
     .registration-container {
         max-width: 1000px !important;
@@ -394,6 +392,12 @@
     #map {
         height: 500px !important;
     }
+}
+
+/* ── CvSU marker pulse animation ── */
+@keyframes cvsuPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.15); opacity: 0.3; }
 }
     </style>
 </head>
@@ -415,7 +419,6 @@
                 <span id="est-count-number"></span>
             </p>
 
-            <!-- Location Controls -->
             <!-- Search Bar -->
             <div class="search-container">
                 <div class="search-input-wrapper">
@@ -499,6 +502,530 @@
         // All registered establishments to display on map
         const EXISTING_ESTABLISHMENTS = {{ existing_establishments|safe }};
     </script>
+
+    <script>
+    /* ============================================================
+       STEP 1 MAP INIT — inlined so it runs even without the
+       external JS file already loaded for this page.
+       The external business_owner_registration.js will still
+       run its DOMContentLoaded handler; we guard against double-
+       init with a flag.
+       ============================================================ */
+    (function () {
+        // Prevent double-init if external JS also calls initStep1
+        if (window.__step1Inited) return;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.__step1Inited) return;
+            window.__step1Inited = true;
+
+            const nextBtn    = document.getElementById('next-step-btn');
+            const msg        = document.getElementById('validation-message');
+            const cvsuLatLng = [CVSU_COORDS.lat, CVSU_COORDS.lng];
+            const RADIUS     = 500;
+
+            /* ── Tile layers ── */
+            const hybridLayer = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                { attribution: '&copy; Google', maxZoom: 21,
+                  subdomains: ['mt0','mt1','mt2','mt3'] }
+            );
+            const satelliteLayer = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                { attribution: '&copy; Google', maxZoom: 21,
+                  subdomains: ['mt0','mt1','mt2','mt3'] }
+            );
+            const streetLayer = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                  maxZoom: 19 }
+            );
+            const terrainLayer = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+                { attribution: '&copy; Google', maxZoom: 20 }
+            );
+
+            const baseMaps = {
+                "Hybrid (Satellite + Labels)": hybridLayer,
+                "Street Map"                 : streetLayer,
+                "Satellite"                  : satelliteLayer,
+                "Terrain"                    : terrainLayer
+            };
+
+            /* ── Map init — default to Hybrid ── */
+            const map = L.map('map', {
+                layers : [hybridLayer],
+                maxZoom: 21,
+                minZoom: 10
+            }).setView(cvsuLatLng, 16);
+
+            window.map = map;
+            L.control.layers(baseMaps).addTo(map);
+
+            /* ── CvSU centre marker ── */
+            L.marker(cvsuLatLng, {
+                icon: L.divIcon({
+                    className: '',
+                    html: `
+                        <div style="position:relative;width:52px;height:52px;">
+                            <div style="
+                                position:absolute;top:-6px;left:-6px;
+                                width:64px;height:64px;border-radius:50%;
+                                background:rgba(255,255,255,0.25);
+                                border:2px solid rgba(255,255,255,0.6);
+                                animation:cvsuPulse 2s ease-in-out infinite;
+                            "></div>
+                            <div style="
+                                width:52px;height:52px;border-radius:50%;
+                                background:linear-gradient(145deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+                                border:3px solid #fff;
+                                box-shadow:0 4px 16px rgba(0,0,0,0.5),0 0 0 2px rgba(255,255,255,0.3);
+                                display:flex;align-items:center;justify-content:center;
+                            ">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                                </svg>
+                            </div>
+                            <div style="
+                                position:absolute;bottom:-22px;left:50%;
+                                transform:translateX(-50%);
+                                background:rgba(15,52,96,0.92);color:white;
+                                font-size:9px;font-weight:700;
+                                padding:2px 6px;border-radius:4px;
+                                white-space:nowrap;letter-spacing:0.5px;
+                                box-shadow:0 2px 6px rgba(0,0,0,0.4);
+                            ">CvSU-Bacoor</div>
+                        </div>`,
+                    iconSize  : [52, 74],
+                    iconAnchor: [26, 26]
+                })
+            }).addTo(map)
+              .bindPopup(`<div style="text-align:center;padding:4px 8px;">
+                  <strong style="color:#0f3460;">CvSU-Bacoor Campus</strong><br>
+                  <small style="color:#666;">Cavite State University</small>
+              </div>`);
+
+            /* ── RED DASHED boundary circle (matches screenshot) ── */
+            L.circle(cvsuLatLng, {
+                color      : '#e53935',
+                fillColor  : 'transparent',
+                fillOpacity: 0,
+                weight     : 2.5,
+                dashArray  : '10, 8',
+                radius     : RADIUS
+            }).addTo(map);
+
+            /* ── Existing establishment markers ── */
+            if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
+                EXISTING_ESTABLISHMENTS.forEach(function (est) {
+                    if (!est.latitude || !est.longitude) return;
+
+                    const isOpen      = (est.status || '').toLowerCase() === 'open';
+                    const borderColor = isOpen ? '#10b981' : '#ef4444';
+
+                    let innerHtml;
+                    if (est.image_url) {
+                        innerHtml = `
+                            <img src="${est.image_url}"
+                                style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                                onerror="this.style.display='none';this.nextSibling.style.display='flex';">
+                            <div style="display:none;width:100%;height:100%;border-radius:50%;
+                                background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
+                                font-size:16px;font-weight:700;align-items:center;justify-content:center;">
+                                ${est.name.charAt(0).toUpperCase()}
+                            </div>`;
+                    } else {
+                        innerHtml = `
+                            <div style="width:100%;height:100%;border-radius:50%;
+                                background:linear-gradient(135deg,#FF6B6B,#FF5252);color:#fff;
+                                font-size:16px;font-weight:700;display:flex;
+                                align-items:center;justify-content:center;">
+                                ${est.name.charAt(0).toUpperCase()}
+                            </div>`;
+                    }
+
+                    const estIcon = L.divIcon({
+                        className: '',
+                        html: `<div style="
+                            width:48px;height:48px;border-radius:50%;
+                            border:3px solid ${borderColor};
+                            box-shadow:0 3px 12px rgba(0,0,0,0.4);
+                            overflow:hidden;cursor:pointer;
+                            background:#fff;position:relative;">
+                            ${innerHtml}
+                            <div style="
+                                position:absolute;bottom:-1px;right:-1px;
+                                width:14px;height:14px;border-radius:50%;
+                                background:${isOpen ? '#10b981' : '#ef4444'};
+                                border:2px solid #fff;">
+                            </div>
+                        </div>`,
+                        iconSize    : [48, 48],
+                        iconAnchor  : [24, 24],
+                        popupAnchor : [0, -28]
+                    });
+
+                    const marker  = L.marker([est.latitude, est.longitude], { icon: estIcon }).addTo(map);
+                    const popupImg = est.image_url
+                        ? `<div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:8px;">
+                               <img src="${est.image_url}" style="width:100%;height:100%;object-fit:cover;"
+                                    onerror="this.parentElement.style.display='none'">
+                           </div>` : '';
+
+                    const statusBadge = `<span style="
+                        display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
+                        background:${isOpen ? '#dcfce7' : '#fee2e2'};
+                        color:${isOpen ? '#166534' : '#991b1b'};">
+                        ${isOpen ? '● Open' : '● Closed'}
+                    </span>`;
+
+                    marker.bindPopup(`
+                        <div style="font-family:sans-serif;min-width:200px;max-width:230px;">
+                            ${popupImg}
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
+                                <strong style="color:#111827;font-size:13px;line-height:1.3;">${est.name}</strong>
+                                ${statusBadge}
+                            </div>
+                            <div style="font-size:11px;color:#6b7280;margin-top:3px;">
+                                <i style="color:#B71C1C;">📍</i> ${est.address || 'Near CvSU-Bacoor'}
+                            </div>
+                            ${est.category__name ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">🏷️ ${est.category__name}</div>` : ''}
+                        </div>
+                    `);
+                });
+            }
+
+            /* ── Map click handler ── */
+            map.on('click', function (e) {
+                const distance = map.distance(e.latlng, L.latLng(cvsuLatLng));
+                if (distance <= RADIUS) {
+                    placeMarker(e.latlng);
+                } else {
+                    msg.textContent = '❌ Please pin inside the circle (within 500m).';
+                    msg.className   = 'map-validation-message invalid';
+                    nextBtn.disabled = true;
+                }
+            });
+
+            function placeMarker(latlng) {
+                if (window.userMarker) {
+                    window.userMarker.setLatLng(latlng);
+                } else {
+                    window.userMarker = L.marker(latlng, {
+                        draggable: true,
+                        icon: createUserPinIcon()
+                    }).addTo(map);
+
+                    window.userMarker.on('dragend', function (evt) {
+                        const pos  = evt.target.getLatLng();
+                        const dist = map.distance(pos, L.latLng(cvsuLatLng));
+                        if (dist <= RADIUS) {
+                            validatePosition(pos);
+                        } else {
+                            msg.textContent  = '❌ Please pin inside the circle (within 500m).';
+                            msg.className    = 'map-validation-message invalid';
+                            nextBtn.disabled = true;
+                            updateRemovePinButton(false);
+                        }
+                    });
+                }
+                validatePosition(latlng);
+            }
+
+            /* Orange dot pin icon — matches screenshot */
+            function createUserPinIcon() {
+                return L.divIcon({
+                    className: '',
+                    html: `
+                        <div style="position:relative;width:44px;height:44px;">
+                            <div style="
+                                position:absolute;top:-6px;left:-6px;
+                                width:56px;height:56px;border-radius:50%;
+                                background:rgba(255,152,0,0.2);
+                                border:2px solid rgba(255,152,0,0.45);
+                                animation:pinPulse 1.8s ease-in-out infinite;
+                            "></div>
+                            <div style="
+                                width:44px;height:44px;border-radius:50%;
+                                background:linear-gradient(135deg,#FF8C00 0%,#FF6500 100%);
+                                border:3px solid #fff;
+                                box-shadow:0 3px 14px rgba(255,100,0,0.6);
+                                display:flex;align-items:center;justify-content:center;
+                            ">
+                                <div style="width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.85);"></div>
+                            </div>
+                        </div>
+                        <style>
+                            @keyframes pinPulse {
+                                0%,100%{transform:scale(1);opacity:0.5;}
+                                50%{transform:scale(1.3);opacity:0.1;}
+                            }
+                        </style>`,
+                    iconSize  : [44, 44],
+                    iconAnchor: [22, 22]
+                });
+            }
+
+            function validatePosition(pos) {
+                sessionStorage.setItem('latitude',  pos.lat);
+                sessionStorage.setItem('longitude', pos.lng);
+                msg.textContent  = '✓ Location pinned successfully!';
+                msg.className    = 'map-validation-message valid';
+                nextBtn.disabled = false;
+                updateRemovePinButton(true);
+
+                const locationInfo   = document.getElementById('location-info');
+                const locationCoords = document.getElementById('location-coords');
+                if (locationInfo && locationCoords) {
+                    locationCoords.textContent = pos.lat.toFixed(6) + ', ' + pos.lng.toFixed(6);
+                    locationInfo.classList.add('show');
+                }
+            }
+
+            function updateRemovePinButton(hasPinned) {
+                const btn = document.getElementById('remove-pin-btn');
+                if (hasPinned) btn.classList.add('active');
+                else           btn.classList.remove('active');
+            }
+
+            nextBtn.addEventListener('click', function () {
+                window.location.href = '/owner/register/details/';
+            });
+
+            /* ── Search ── */
+            const searchInput         = document.getElementById('location-search');
+            const clearSearchBtn      = document.getElementById('clear-search');
+            const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+            const focusCvsuBtn        = document.getElementById('focus-cvsu-btn');
+            const useCurrentLocationBtn = document.getElementById('use-current-location-btn');
+            const removePinBtn        = document.getElementById('remove-pin-btn');
+            const locationStatus      = document.getElementById('location-status');
+            const cvsuLatLngObj       = L.latLng(CVSU_COORDS.lat, CVSU_COORDS.lng);
+            let   searchTimeout;
+
+            searchInput.addEventListener('input', function (e) {
+                const query = e.target.value.trim();
+                if (query.length > 0) {
+                    clearSearchBtn.classList.add('show');
+                } else {
+                    clearSearchBtn.classList.remove('show');
+                    autocompleteDropdown.classList.remove('show');
+                    autocompleteDropdown.innerHTML = '';
+                    return;
+                }
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    if (query.length >= 2) performSearch(query);
+                }, 300);
+            });
+
+            clearSearchBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                clearSearchBtn.classList.remove('show');
+                autocompleteDropdown.classList.remove('show');
+                autocompleteDropdown.innerHTML = '';
+                searchInput.focus();
+            });
+
+            function performSearch(query) {
+                autocompleteDropdown.innerHTML = '<div class="autocomplete-loading"><span class="spinner"></span>Searching...</div>';
+                autocompleteDropdown.classList.add('show');
+
+                const viewbox    = (cvsuLatLngObj.lng - 0.01) + ',' + (cvsuLatLngObj.lat + 0.01) + ',' +
+                                   (cvsuLatLngObj.lng + 0.01) + ',' + (cvsuLatLngObj.lat - 0.01);
+                let   allResults = [];
+
+                if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
+                    const lq = query.toLowerCase();
+                    allResults = EXISTING_ESTABLISHMENTS.filter(function (est) {
+                        return (est.name    && est.name.toLowerCase().includes(lq)) ||
+                               (est.address && est.address.toLowerCase().includes(lq));
+                    }).map(function (est) {
+                        return { lat: est.latitude, lon: est.longitude,
+                                 display_name: est.name, address: est.address,
+                                 name: est.name, isEstablishment: true };
+                    });
+                }
+
+                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
+                      encodeURIComponent(query) + '&viewbox=' + viewbox +
+                      '&bounded=1&limit=10&addressdetails=1&extratags=1')
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        const filtered = data.filter(function (r) {
+                            const d = map.distance(L.latLng(parseFloat(r.lat), parseFloat(r.lon)), cvsuLatLngObj);
+                            return d <= RADIUS;
+                        }).map(function (r) { return Object.assign({}, r, { isEstablishment: false }); });
+
+                        allResults = allResults.concat(filtered);
+                        displaySearchResults(allResults);
+                    })
+                    .catch(function () {
+                        if (allResults.length > 0) displaySearchResults(allResults);
+                        else autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
+                    });
+            }
+
+            function displaySearchResults(results) {
+                if (results.length === 0) {
+                    autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found within 500m of CvSU</div>';
+                    return;
+                }
+                autocompleteDropdown.innerHTML = '';
+                results.forEach(function (result) {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    if (result.isEstablishment) {
+                        item.innerHTML = `
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div style="width:32px;height:32px;background:linear-gradient(135deg,#FF6B6B,#FF5252);
+                                    border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke-width="1.5">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="autocomplete-name">🏪 ${result.name}</div>
+                                    <div class="autocomplete-address">${result.address || ''}</div>
+                                </div>
+                            </div>`;
+                    } else {
+                        const name = result.display_name.split(',')[0];
+                        item.innerHTML = `
+                            <div class="autocomplete-name">${name}</div>
+                            <div class="autocomplete-address">${result.display_name}</div>`;
+                    }
+                    item.addEventListener('click', function () {
+                        selectSearchResult(result, result.name || result.display_name.split(',')[0]);
+                    });
+                    autocompleteDropdown.appendChild(item);
+                });
+            }
+
+            function selectSearchResult(result, name) {
+                const latlng   = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
+                const distance = map.distance(latlng, cvsuLatLngObj);
+                if (distance <= RADIUS) {
+                    placeMarker(latlng);
+                    map.setView(latlng, 18);
+                    searchInput.value = name;
+                    showLocationStatus('Location selected!', 'success');
+                } else {
+                    showLocationStatus('This location is outside the 500m radius', 'error');
+                    msg.textContent  = '❌ Please select a location within the circle (within 500m).';
+                    msg.className    = 'map-validation-message invalid';
+                }
+                autocompleteDropdown.classList.remove('show');
+            }
+
+            focusCvsuBtn.addEventListener('click', function () {
+                map.setView(cvsuLatLngObj, 16);
+                focusCvsuBtn.disabled = true;
+                setTimeout(function () { focusCvsuBtn.disabled = false; }, 500);
+            });
+
+            useCurrentLocationBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    showLocationStatus('❌ Geolocation not supported by your browser', 'error');
+                    return;
+                }
+                useCurrentLocationBtn.disabled    = true;
+                useCurrentLocationBtn.style.opacity = '0.6';
+                showLocationStatus('🔍 Locating you...', 'loading');
+
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        const lat        = position.coords.latitude;
+                        const lng        = position.coords.longitude;
+                        const accuracy   = position.coords.accuracy;
+                        const userLatLng = L.latLng(lat, lng);
+                        const distance   = map.distance(userLatLng, cvsuLatLngObj);
+
+                        if (distance <= RADIUS) {
+                            placeMarker(userLatLng);
+                            map.setView(userLatLng, 18, { animate: true, duration: 0.5 });
+                            const accuracyText = accuracy < 20 ? '🎯 Very accurate' : accuracy < 50 ? '✅ Good' : '📍 Located';
+                            showLocationStatus(accuracyText + ' (±' + Math.round(accuracy) + 'm)', 'success');
+                            setTimeout(function () {
+                                document.getElementById('location-status').style.display = 'none';
+                            }, 3000);
+                        } else {
+                            const distanceKm = (distance / 1000).toFixed(2);
+                            showLocationStatus('❌ You\'re ' + distanceKm + 'km away (limit: 500m)', 'error');
+                            msg.textContent  = '❌ Your location is ' + Math.round(distance) + 'm from CvSU. Please select within 500m.';
+                            msg.className    = 'map-validation-message invalid';
+                        }
+                        useCurrentLocationBtn.disabled    = false;
+                        useCurrentLocationBtn.style.opacity = '1';
+                    },
+                    function (error) {
+                        var errorMsg = '❌ Unable to get location';
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:   errorMsg = '❌ Location access denied.'; break;
+                            case error.POSITION_UNAVAILABLE: errorMsg = '❌ Location unavailable.'; break;
+                            case error.TIMEOUT:             errorMsg = '⏱️ Location timeout. Please try again.'; break;
+                        }
+                        showLocationStatus(errorMsg, 'error');
+                        useCurrentLocationBtn.disabled    = false;
+                        useCurrentLocationBtn.style.opacity = '1';
+                    },
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                );
+            });
+
+            removePinBtn.addEventListener('click', function () {
+                if (!removePinBtn.classList.contains('active')) return;
+                if (window.userMarker) {
+                    map.removeLayer(window.userMarker);
+                    window.userMarker = null;
+                    sessionStorage.removeItem('latitude');
+                    sessionStorage.removeItem('longitude');
+                    updateRemovePinButton(false);
+                    const locationInfo = document.getElementById('location-info');
+                    if (locationInfo) locationInfo.classList.remove('show');
+                    msg.textContent  = 'Please pin a location on the map.';
+                    msg.className    = 'map-validation-message';
+                    nextBtn.disabled = true;
+                    searchInput.value = '';
+                    clearSearchBtn.classList.remove('show');
+                    showLocationStatus('Pin removed', 'success');
+                    setTimeout(function () { hideLocationStatus(); }, 2000);
+                }
+            });
+
+            function showLocationStatus(message, type) {
+                locationStatus.className    = 'location-status ' + type;
+                locationStatus.style.display = 'block';
+                if (type === 'loading') {
+                    locationStatus.innerHTML = '<span class="spinner"></span>' + message;
+                } else {
+                    locationStatus.textContent = message;
+                }
+            }
+
+            function hideLocationStatus() {
+                setTimeout(function () { locationStatus.style.display = 'none'; }, 3000);
+            }
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.search-container')) {
+                    autocompleteDropdown.classList.remove('show');
+                }
+            });
+
+            /* ── Establishment count badge ── */
+            const estCountEl = document.getElementById('est-count-number');
+            if (estCountEl && typeof EXISTING_ESTABLISHMENTS !== 'undefined') {
+                const count = EXISTING_ESTABLISHMENTS.length;
+                estCountEl.textContent = '📍 ' + count + ' establishment' + (count !== 1 ? 's' : '') + ' currently registered near CvSU';
+                estCountEl.style.color = count > 0 ? '#4CAF50' : '#999';
+            }
+        });
+    })();
+    </script>
+
+    <!-- External JS (Steps 2 & 3 still need it; step 1 init is guarded above) -->
     <script src="{% static 'js/business_owner_registration.js' %}"></script>
 </body>
 </html>
