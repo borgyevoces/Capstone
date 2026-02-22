@@ -2320,15 +2320,49 @@ def delete_establishment(request):
 
 
 def owner_register_step1_location(request):
-    establishments = FoodEstablishment.objects.values('name', 'address', 'latitude', 'longitude')
+    # FIXED: Include image, real-time status (PH timezone), and category
+    # so the map markers show the actual photo and correct Open/Closed badge.
+    establishments_qs = FoodEstablishment.objects.filter(
+        is_active=True,
+        latitude__isnull=False,
+        longitude__isnull=False,
+    ).prefetch_related('categories')
 
-    # Convert to list for JSON serialization
-    establishments_list = list(establishments)
+    establishments_list = []
+    for est in establishments_qs:
+        # Build absolute image URL so the browser can actually fetch it
+        image_url = ''
+        if est.image:
+            try:
+                image_url = request.build_absolute_uri(est.image.url)
+            except Exception:
+                image_url = ''
+
+        # Use the model's @property which already handles PH timezone correctly
+        status = est.status  # returns "Open" or "Closed" in PH time
+
+        # First category name (or empty string)
+        category_name = ''
+        cats = est.categories.all()
+        if cats.exists():
+            category_name = cats.first().name
+        elif est.other_category:
+            category_name = est.other_category
+
+        establishments_list.append({
+            'name':           est.name,
+            'address':        est.address or '',
+            'latitude':       float(est.latitude),
+            'longitude':      float(est.longitude),
+            'image_url':      image_url,      # full absolute URL
+            'status':         status,         # real-time PH timezone Open/Closed
+            'category__name': category_name,
+        })
 
     return render(request, 'webapplication/register_step1_location.html', {
-        'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
-        'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE'),
-        'existing_establishments': json.dumps(establishments_list)
+        'CVSU_LATITUDE':           os.getenv('CVSU_LATITUDE'),
+        'CVSU_LONGITUDE':          os.getenv('CVSU_LONGITUDE'),
+        'existing_establishments': json.dumps(establishments_list),
     })
 
 
