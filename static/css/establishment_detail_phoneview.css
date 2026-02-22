@@ -1359,94 +1359,140 @@
     color: #dc2626 !important;
 }
 /* ================================================================= */
+/* ================================================================= */
 /* MOBILE-ONLY STYLES (max-width: 1024px)                            */
 /* ================================================================= */
 @media (max-width: 1024px) {
 
+    /* ── Page wrapper ── */
     #food-details-page {
         width: 100%;
-        padding: 12px;
+        padding: 0 0 40px;
         box-sizing: border-box;
-        background: #f5f5f5;
+        background: #f4f5f7;
     }
 
-    /* ── Hero ── */
-    .establishment-hero {
-        height: 230px;
-        border-radius: 14px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
-    }
-
+    /* ============================================================
+       HERO — full bleed, taller, richer gradient
+    ============================================================ */
     .hero-wrapper {
-        margin-bottom: 16px;
+        margin-bottom: 0;
+    }
+
+    .establishment-hero {
+        height: 240px;
+        border-radius: 0;
+        box-shadow: none;
+        background-size: cover;
+        background-position: center;
     }
 
     .hero-overlay {
-        padding: 18px 20px;
-        background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.05));
+        padding: 20px 18px 18px;
+        background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.90) 0%,
+            rgba(0,0,0,0.40) 55%,
+            rgba(0,0,0,0.0) 100%
+        );
+        align-items: flex-end;
     }
 
     .hero-content h1 {
-        font-size: 1.7em;
+        font-size: 1.65em;
         font-weight: 800;
-        line-height: 1.2;
+        line-height: 1.15;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
 
     .average-rating-display {
+        display: flex;
+        align-items: center;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 5px;
+        margin-top: 2px;
     }
 
-    .rating-number, .review-count-text {
-        font-size: 1em;
+    .rating-number {
+        font-size: 0.95em;
+        color: #ffc107;
+        font-weight: 700;
+        margin-right: 4px;
     }
 
-    /* ── Layout Stack ── */
+    .star-rating-main .fas.fa-star.filled { font-size: 1em; }
+    .star-rating-main .far.fa-star        { font-size: 1em; color: rgba(255,255,255,0.4); }
+
+    .review-count-text {
+        font-size: 0.82em;
+        opacity: 0.80;
+    }
+
+    /* ============================================================
+       INFO GRID  — stacked cards with a slight gap / divider feel
+    ============================================================ */
     .top-info-grid {
         display: flex !important;
         flex-direction: column !important;
-        gap: 14px !important;
+        gap: 0 !important;
+        background: #f4f5f7;
     }
 
     .section-card {
-        padding: 18px 16px;
-        border-radius: 14px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 16px 14px;
+        border-radius: 0;
+        box-shadow: none;
         background: #fff;
+        margin-bottom: 8px;
     }
+
+    .section-card:last-child { margin-bottom: 0; }
 
     .section-card h2 {
-        font-size: 1.15em;
-        margin-bottom: 18px;
-        border-bottom: none;
+        font-size: 0.78em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #9ca3af;
+        border-bottom: none !important;
+        margin-bottom: 12px;
+        display: block;
     }
 
-    /* ── Contact Info Cards (mobile) ── */
+    /* ============================================================
+       CONTACT / LOCATION — 2-column chip grid
+    ============================================================ */
+    .contact-location.section-card {
+        padding: 14px 14px 12px !important;
+    }
+
     .contact-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
     }
 
     .contact-info-card {
         display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px 14px;
-        background: #fafafa;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 11px;
+        background: #f9fafb;
         border: 1px solid #efefef;
         border-radius: 10px;
+        min-width: 0;
     }
 
     .contact-icon-wrap {
-        width: 34px;
-        height: 34px;
+        width: 30px;
+        height: 30px;
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        font-size: 0.88em;
+        font-size: 0.8em;
     }
 
     .contact-icon--address  { background: #fff0f0; color: #b71c1c; }
@@ -1457,91 +1503,172 @@
     .contact-info-body {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
         flex: 1;
         min-width: 0;
+        overflow: hidden;
     }
 
     .contact-label {
-        font-size: 0.65em;
+        font-size: 0.6em;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #999;
+        color: #aaa;
+        white-space: nowrap;
     }
 
     .contact-value {
-        font-size: 0.8em;
-        color: #2d2d2d;
-        line-height: 1.45;
+        font-size: 0.74em;
+        color: #1f2937;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    /* Hours row */
+    .hours-row {
         display: flex;
-        flex-direction: column;
-        gap: 3px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        flex-wrap: nowrap;
     }
 
     .hours-text {
-        font-size: 0.88em;
-        color: #555;
+        font-size: 0.74em;
+        color: #1f2937;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* ── Status Badge (mobile) ── */
+    /* Status badge */
     .status-badge-small {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
+        gap: 3px;
+        padding: 2px 6px;
         border-radius: 20px;
-        font-size: 0.7em;
+        font-size: 0.6em;
         font-weight: 700;
         white-space: nowrap;
         flex-shrink: 0;
     }
 
-    .status-badge-small.status-open {
-        background: #e8f5e9;
-        color: #1b5e20;
-        border: 1px solid #a5d6a7;
+    .status-badge-small.status-open  { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .status-badge-small.status-closed{ background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+
+    /* ============================================================
+       AMENITIES — horizontally scrollable pill row
+    ============================================================ */
+    .amenities-section.section-card {
+        position: static !important;
+        background: #fff !important;
+        color: #333 !important;
+        padding: 12px 14px 14px !important;
     }
 
-    .status-badge-small.status-closed {
-        background: #ffebee;
-        color: #b71c1c;
-        border: 1px solid #ef9a9a;
+    .amenities-section h2 {
+        font-size: 0.78em !important;
+        color: #9ca3af !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 10px !important;
+        border: none !important;
     }
 
-    .hours-row {
-        display: flex;
+    .amenities-list {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        margin: 0 !important;
+    }
+
+    .amenities-list::-webkit-scrollbar { display: none; }
+
+    .amenities-list li {
+        font-size: 0.76em !important;
+        padding: 5px 12px !important;
+        border-radius: 20px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* ============================================================
+       REVIEWS — compact card
+    ============================================================ */
+    .reviews-section.section-card {
+        padding: 14px 14px !important;
+    }
+
+    .reviews-header-bar {
+        flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        gap: 6px;
-        width: 100%;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
     }
 
-    .hours-text {
-        font-size: 0.82em;
-        color: #444;
-        font-weight: 500;
+    .btn-review {
+        font-size: 0.78em;
+        padding: 0 12px;
+        height: 32px;
+        border-radius: 7px;
     }
 
-    /* ── Menu Section (mobile) ── */
+    .all-reviews-list-wrapper {
+        max-height: 280px;
+        overflow-y: auto;
+    }
+
+    .review-card {
+        padding: 10px 0;
+        gap: 10px;
+    }
+
+    .review-card__avatar img {
+        width: 34px;
+        height: 34px;
+    }
+
+    .review-card__name  { font-size: 0.82em; }
+    .review-card__comment { font-size: 0.78em; }
+    .review-card__date  { font-size: 0.68em; }
+
+    /* ============================================================
+       MENU SECTION
+    ============================================================ */
+    .quantity-control {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
     #menu-section {
-        padding: 16px 12px;
+        padding: 16px 12px 20px;
         background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        border-radius: 0;
+        box-shadow: none;
+        margin-top: 8px;
     }
 
-    /* Header bar on mobile: pills on left, title centered */
     .menu-title-centered {
-        font-size: 1.25em;
+        font-size: 1.05em;
         font-weight: 700;
-        color: #333;
-        padding-bottom: 1px;
+        color: #1f2937;
         display: block;
         text-align: center;
-        white-space: nowrap;
-        margin-bottom: 16px;
-        /* no underline */
+        margin-bottom: 14px;
     }
 
     .menu-title-icon {
@@ -1550,93 +1677,100 @@
         font-size: 0.85em;
     }
 
-    /* Single row: [pills] [search grows] [best-seller] */
+    /* Controls: scrollable single row */
     .menu-controls {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
+        gap: 7px;
+        margin-bottom: 14px;
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
     }
 
-    /* Price pills */
+    .menu-controls::-webkit-scrollbar { display: none; }
+
+    /* Filter pill groups */
     .filter-pill-group {
         display: flex;
-        gap: 4px;
+        gap: 3px;
         flex-shrink: 0;
-        background: #f5f5f5;
+        background: #f3f4f6;
         border-radius: 24px;
-        padding: 3px 5px;
+        padding: 3px 4px;
     }
 
     .filter-pill {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 5px 11px;
+        gap: 3px;
+        padding: 5px 10px;
         border: none;
         border-radius: 20px;
         background: transparent;
-        color: #666;
-        font-size: 0.72em;
+        color: #6b7280;
+        font-size: 0.7em;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
         font-family: inherit;
         flex-shrink: 0;
-        transition: all 0.2s;
+        transition: all 0.18s;
     }
 
-    .filter-pill:active { transform: scale(0.96); }
+    .filter-pill:active { transform: scale(0.95); }
 
     .filter-pill.active {
         background: #b71c1c;
         color: #fff;
-        box-shadow: 0 2px 6px rgba(183,28,28,0.3);
+        box-shadow: 0 2px 6px rgba(183,28,28,0.28);
     }
 
-    /* Search bar — grows */
+    /* Search bar */
     .menu-search-bar {
         position: relative;
         flex: 1;
-        min-width: 120px;
+        min-width: 100px;
+        flex-shrink: 0;
     }
 
     .menu-search-bar input {
         width: 100%;
-        height: 42px;
-        padding: 8px 16px 8px 40px;
-        border: 1.5px solid #ddd;
+        height: 38px;
+        padding: 7px 14px 7px 36px;
+        border: 1.5px solid #e5e7eb;
         border-radius: 30px;
-        font-size: 0.88em;
+        font-size: 0.82em;
         background: #fafafa;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-        transition: border-color 0.3s, box-shadow 0.3s;
+        box-shadow: none;
+        transition: border-color 0.25s, box-shadow 0.25s;
         box-sizing: border-box;
+        font-family: inherit;
+        color: #1f2937;
     }
 
     .menu-search-bar input:focus {
         border-color: #b71c1c;
-        box-shadow: 0 0 0 3px rgba(183,28,28,0.1);
+        box-shadow: 0 0 0 3px rgba(183,28,28,0.09);
         background: #fff;
         outline: none;
     }
 
     .menu-search-bar i {
         position: absolute;
-        left: 14px;
+        left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #aaa;
-        font-size: 0.88em;
+        color: #d1d5db;
+        font-size: 0.82em;
         pointer-events: none;
+        transition: color 0.2s;
     }
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
 
-    /* Best Sellers circle (mobile) */
+    /* Best-seller circle toggle */
     .best-seller-circle-btn {
         display: flex !important;
         flex-direction: column;
@@ -1648,30 +1782,30 @@
         padding: 0;
         font-family: inherit;
         flex-shrink: 0;
-        transition: transform 0.2s;
+        transition: transform 0.18s;
     }
 
-    .best-seller-circle-btn:active { transform: scale(0.92); }
+    .best-seller-circle-btn:active { transform: scale(0.91); }
 
     .best-seller-circle-btn i {
-        width: 40px;
-        height: 40px;
-        background: #f0f0f0;
-        color: #999;
+        width: 38px;
+        height: 38px;
+        background: #f3f4f6;
+        color: #9ca3af;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1em;
+        font-size: 0.95em;
         border: 2px solid transparent;
         transition: all 0.22s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
     }
 
     .best-seller-circle-btn .best-seller-label {
-        font-size: 0.58em;
+        font-size: 0.56em;
         font-weight: 700;
-        color: #999;
+        color: #9ca3af;
         white-space: nowrap;
         transition: color 0.22s;
     }
@@ -1680,164 +1814,158 @@
         background: linear-gradient(135deg, #b71c1c, #8b0000);
         color: #fff;
         border-color: #8b0000;
-        box-shadow: 0 3px 10px rgba(183,28,28,0.45);
+        box-shadow: 0 3px 10px rgba(183,28,28,0.4);
     }
 
     .best-seller-circle-btn.active .best-seller-label { color: #b71c1c; }
 
     .menu-filters-group { display: none; }
 
-    /* ── Menu Grid (mobile: 2 col) ── */
+    /* ── Menu Grid: tight 2-column ── */
     .menu-list {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
+        gap: 10px !important;
     }
 
     .menu-item {
         border-radius: 10px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        overflow: hidden;
     }
 
     .menu-item-image-wrapper {
-        height: 110px;
+        height: 112px;
     }
 
     .menu-info {
-        padding: 10px;
+        padding: 9px 10px 10px;
     }
 
     .menu-name {
-        font-size: 0.82em;
+        font-size: 0.8em !important;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .menu-description {
-        font-size: 0.72em;
+        font-size: 0.7em !important;
+        -webkit-line-clamp: 2;
+        margin: 3px 0 8px;
+        color: #9ca3af;
     }
 
     .menu-price {
-        font-size: 0.88em;
+        font-size: 0.84em !important;
+        font-weight: 800 !important;
+        color: #b71c1c !important;
     }
 
-    /* ── Amenities (mobile) ── */
-    .amenities-section.section-card {
-        position: static !important;
-        background-color: white !important;
-        color: #333 !important;
+    /* Action buttons on card */
+    .item-action-buttons {
+        display: flex;
+        gap: 5px;
     }
 
-    .amenities-section h2 {
-        font-size: 1.2em !important;
-        color: #333 !important;
+    .btn-add-to-cart,
+    .btn-buy-now {
+        font-size: 0.7em !important;
+        padding: 7px 2px !important;
+        border-radius: 6px !important;
+        gap: 3px !important;
     }
 
-    .amenities-list {
-        gap: 8px;
-        margin: 0;
+    /* ── Badges on menu items ── */
+    .badge-top-seller {
+        font-size: 0.65em;
+        padding: 3px 7px;
+        border-radius: 5px;
     }
 
-    .amenities-list li {
-        font-size: 0.82em;
-        padding: 6px 12px;
+    .badge-stock {
+        font-size: 0.6em;
+        padding: 3px 6px;
+        border-radius: 5px;
     }
 
-    /* ── Reviews (mobile) ── */
-    .reviews-header-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
+    /* ============================================================
+       NAV / CHAT
+    ============================================================ */
+    .nav-message-btn  { display: none !important; }
+    .message_owner    { display: none !important; }
 
-    .all-reviews-list-wrapper {
-        max-height: 340px;
-    }
-
-    /* ── Hide nav Message button on mobile ── */
-    .nav-message-btn {
-        display: none !important;
-    }
-
-    /* ── Floating chat button (mobile) — circular, bottom-right ── */
+    /* Floating chat FAB */
     .floating-chat-button {
         display: flex !important;
         position: fixed !important;
-        bottom: 24px !important;
-        right: 20px !important;
+        bottom: 22px !important;
+        right: 18px !important;
         z-index: 9500 !important;
-        width: 58px !important;
-        height: 58px !important;
+        width: 54px !important;
+        height: 54px !important;
         border-radius: 50% !important;
         background: linear-gradient(135deg, #b71c1c, #8b0000) !important;
         color: white !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1.4em !important;
-        box-shadow: 0 4px 18px rgba(183,28,28,0.45) !important;
+        font-size: 1.3em !important;
+        box-shadow: 0 4px 18px rgba(183,28,28,0.42) !important;
         border: none !important;
         cursor: pointer !important;
         transition: transform 0.2s, box-shadow 0.2s !important;
     }
 
-    .floating-chat-button:active {
-        transform: scale(0.94) !important;
-    }
+    .floating-chat-button:active { transform: scale(0.93) !important; }
 
     .floating-chat-button .chat-notification-badge {
         position: absolute !important;
-        top: -4px !important;
-        right: -4px !important;
+        top: -3px !important;
+        right: -3px !important;
         background: #fff !important;
         color: #b71c1c !important;
         border: 2px solid #b71c1c !important;
     }
 
-    /* Chat popup - full screen on mobile */
+    /* Chat popup */
     .chat-popup-container {
         position: fixed !important;
-        bottom: 90px !important;
+        bottom: 86px !important;
         right: 12px !important;
         width: calc(100vw - 24px) !important;
         max-width: 380px !important;
-        height: 480px !important;
+        height: 460px !important;
         border-radius: 16px !important;
         z-index: 9400 !important;
     }
-
-    /* ── Hide message_owner inline btn on mobile ── */
-    .message_owner {
-        display: none !important;
-    }
 }
 
-/* ── Extra small phones ── */
+/* ================================================================= */
+/* EXTRA SMALL PHONES (max-width: 480px)                             */
+/* ================================================================= */
 @media (max-width: 480px) {
-    .establishment-hero {
-        height: 180px;
-    }
 
-    .hero-content h1 {
-        font-size: 1.4em;
+    .establishment-hero { height: 190px; }
+
+    .hero-content h1 { font-size: 1.35em; }
+
+    /* Full-width contact cards on very small screens */
+    .contact-grid {
+        grid-template-columns: 1fr !important;
+        gap: 7px !important;
     }
 
     .menu-list {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        gap: 8px !important;
     }
 
-    .menu-item-image-wrapper {
-        height: 95px;
-    }
+    .menu-item-image-wrapper { height: 95px; }
 
-    .section-card {
-        padding: 14px 12px;
-    }
+    .section-card { padding: 12px 12px; }
 
-    .contact-info-card {
-        padding: 10px 12px;
-        gap: 10px;
-    }
+    .contact-info-card { padding: 9px 10px; gap: 8px; }
 
-    .contact-icon-wrap {
-        width: 30px;
-        height: 30px;
-    }
+    .contact-icon-wrap { width: 28px; height: 28px; }
 }
