@@ -167,76 +167,90 @@
     justify-content: center;
     gap: 8px;
     transition: all 0.3s ease;
-    color: white;
+    color: inherit;
+    backdrop-filter: blur(4px);
 }
 
 /* Focus on CvSU Button */
 .focus-cvsu-btn {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    background: transparent;
+    border: 2px solid #2196F3 !important;
+    color: #2196F3 !important;
+    box-shadow: none;
 }
 
 .focus-cvsu-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    background: rgba(33, 150, 243, 0.12);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
 }
 
 .focus-cvsu-btn:active:not(:disabled) {
     transform: translateY(0);
+    background: rgba(33, 150, 243, 0.18);
 }
 
 .focus-cvsu-btn:disabled {
-    background: #cccccc;
+    background: transparent;
+    border-color: #cccccc !important;
+    color: #cccccc !important;
     cursor: not-allowed;
     opacity: 0.6;
 }
 
 /* Current Location Button */
 .current-location-btn {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    background: transparent;
+    border: 2px solid #4CAF50 !important;
+    color: #4CAF50 !important;
+    box-shadow: none;
 }
 
 .current-location-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    background: rgba(76, 175, 80, 0.12);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
 }
 
 .current-location-btn:active:not(:disabled) {
     transform: translateY(0);
+    background: rgba(76, 175, 80, 0.18);
 }
 
 .current-location-btn:disabled {
-    background: #cccccc;
+    background: transparent;
+    border-color: #cccccc !important;
+    color: #cccccc !important;
     cursor: not-allowed;
     opacity: 0.6;
 }
 
-/* Remove Pin Button - Initially Light/Disabled Look */
+/* Remove Pin Button - Initially transparent/disabled look */
 .remove-pin-btn {
-    background: #e0e0e0;
-    color: #999;
+    background: transparent;
+    border: 2px solid #ccc !important;
+    color: #bbb !important;
     box-shadow: none;
     cursor: not-allowed;
 }
 
 .remove-pin-btn.active {
-    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+    background: transparent;
+    border: 2px solid #f44336 !important;
+    color: #f44336 !important;
+    box-shadow: none;
     cursor: pointer;
 }
 
 .remove-pin-btn.active:hover {
-    background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+    background: rgba(244, 67, 54, 0.12);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
 }
 
 .remove-pin-btn.active:active {
     transform: translateY(0);
+    background: rgba(244, 67, 54, 0.18);
 }
 
 .focus-cvsu-btn svg,

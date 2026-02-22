@@ -2338,8 +2338,9 @@ def owner_register_step1_location(request):
             except Exception:
                 image_url = ''
 
-        # Use the model's @property which already handles PH timezone correctly
-        status = est.status  # returns "Open" or "Closed" in PH time
+        # Use get_current_status() which correctly uses PH timezone (Asia/Manila)
+        # NOT est.status — the model property uses UTC datetime.now() and is 8h off on Render
+        status = get_current_status(est.opening_time, est.closing_time)
 
         # First category name (or empty string)
         category_name = ''
