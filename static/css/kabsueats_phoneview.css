@@ -56,25 +56,45 @@
     /* ---------- NAVBAR ---------- */
     .navbar {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 16px; background: #fff;
+        padding: 0 16px; height: 56px; background: #fff;
         border-bottom: 1px solid var(--g200);
         position: sticky; top: 0; z-index: 1100;
         box-shadow: var(--sh1);
     }
-    .brand { font-family: 'Pacifico', cursive; font-size: 22px; color: var(--g900); text-decoration: none; }
-    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .brand { font-family: 'Pacifico', cursive; font-size: 22px; color: var(--g900); text-decoration: none; flex-shrink: 0; }
+    .nav-right { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+
+    /* Icon-only nav items — text hidden on mobile */
     .nib {
-        padding: 7px 10px; border-radius: 7px; font-size: 12px; font-weight: 600;
-        color: var(--g700); text-decoration: none; display: inline-flex;
-        align-items: center; gap: 5px; border: 1px solid transparent; transition: .2s;
+        width: 40px; height: 40px; border-radius: 50%;
+        font-size: 0;
+        color: var(--g700); text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: none; background: transparent; transition: background .2s, color .2s;
+        position: relative; flex-shrink: 0;
     }
+    .nib i { font-size: 18px; }
     .nib:visited { color: var(--g700); }
-    .nib:active, .nib:focus, .nib:focus-visible { background: transparent !important; color: var(--g700) !important; border-color: transparent !important; outline: none !important; box-shadow: none !important; }
-    .nib:hover { background: transparent; color: var(--g700); border-color: transparent; }
-    .login-btn { background: var(--g900); color: #fff !important; border-radius: 7px !important; font-size: 12px; }
+    .nib:active, .nib:focus, .nib:focus-visible { background: var(--g100) !important; color: var(--g800) !important; outline: none !important; box-shadow: none !important; }
+    .nib:hover { background: var(--g100); color: var(--g800); }
+
+    /* Login / Register keep their text */
+    .login-btn {
+        width: auto; height: 34px; padding: 0 14px;
+        border-radius: 20px !important; font-size: 12px !important; font-weight: 700;
+        background: var(--g900); color: #fff !important;
+    }
+    .login-btn i { font-size: 12px; margin-right: 4px; }
     .login-btn:hover { background: var(--red) !important; }
     .cart-link { position: relative; }
-    .cart-badge { position: absolute; top: -7px; right: -9px; background: var(--red); color: #fff; border-radius: 50%; min-width: 17px; height: 17px; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; border: 2px solid #fff; line-height: 1; }
+    .cart-badge {
+        position: absolute; top: 4px; right: 4px;
+        background: var(--red); color: #fff; border-radius: 50%;
+        min-width: 16px; height: 16px; font-size: 9px; font-weight: 700;
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 0 3px; border: 2px solid #fff; line-height: 1;
+        pointer-events: none;
+    }
     .pav {
         width: 34px; height: 34px; border-radius: 50%;
         background: linear-gradient(135deg,var(--g800),var(--g700));
@@ -84,7 +104,7 @@
     }
     .pav:hover { border-color: var(--red); }
     .pav svg { width: 18px; height: 18px; }
-    .pcont { position: relative; margin-left: 12px; }
+    .pcont { position: relative; margin-left: 4px; }
     .pdrop {
         position: absolute; top: calc(100% + 8px); right: 0; background: #fff;
         min-width: 210px; box-shadow: 0 8px 28px rgba(0,0,0,.18);
@@ -213,13 +233,21 @@
 
     /* ---------- BESTSELLERS SECTION ---------- */
     .bs-section { background: transparent; padding: 0 0 20px; margin: 0 0 16px; }
-    .bs-title-row { margin-bottom: 16px; padding: 18px 0 4px; }
+    .bs-title-row { margin-bottom: 14px; padding: 14px 0 6px; }
     .bs-title {
-        font-size: 14px; font-weight: 600; color: var(--g700);
+        font-size: 16px; font-weight: 800; color: var(--g900);
         display: flex; align-items: center; justify-content: center;
-        gap: 8px; margin: 0; text-align: center;
+        gap: 8px; margin: 0; text-align: center; letter-spacing: -0.3px;
+        line-height: 1.3;
     }
-    .bs-title i { color: var(--orange); font-size: 16px; }
+    /* Fire icon badge */
+    .bs-title i {
+        width: 32px; height: 32px; border-radius: 10px;
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 15px; flex-shrink: 0;
+        box-shadow: 0 3px 8px rgba(255,107,53,.3);
+    }
     .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 
     /* Dropdown button */
