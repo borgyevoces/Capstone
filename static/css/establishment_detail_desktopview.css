@@ -1465,3 +1465,50 @@
 .profile-dropdown-item-icon.signout {
     color: #dc2626 !important;
 }
+/* ================================================================= */
+/* DESKTOP: CHAT POPUP + PROFILE DROPDOWN — RED THEME                */
+/* ================================================================= */
+
+/* ── Profile dropdown header: red instead of purple ── */
+.profile-dropdown-header {
+    background: linear-gradient(135deg, #b71c1c 0%, #7f0000 100%) !important;
+}
+
+.profile-dropdown-item:hover {
+    background: linear-gradient(90deg, rgba(183,28,28,0.06) 0%, rgba(139,0,0,0.04) 100%) !important;
+}
+
+.profile-dropdown-item-icon.edit {
+    color: #b71c1c !important;
+}
+
+/* ── Chat popup header: red ── */
+.chat-popup-header {
+    background: linear-gradient(135deg, #b71c1c 0%, #7f0000 100%) !important;
+}
+
+/* ── Sent chat bubbles: red ── */
+.chat-message.sent .chat-bubble {
+    background: linear-gradient(135deg, #b71c1c 0%, #8b0000 100%) !important;
+    color: white !important;
+}
+
+/* ── Send button: red ── */
+.chat-send-btn {
+    background: linear-gradient(135deg, #b71c1c 0%, #8b0000 100%) !important;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8b0000 0%, #6a0000 100%) !important;
+}
+
+/* ── Input focus: red ── */
+.chat-popup-input:focus {
+    border-color: #b71c1c !important;
+}
+
+/* ── Pinned section accents: red ── */
+.chat-pinned-section-title  { color: #b71c1c !important; }
+.chat-pinned-collapse        { color: #b71c1c !important; }
+.pinned-message-item i       { color: #b71c1c !important; }
+.chat-see-pins-link          { color: #b71c1c !important; }

@@ -1970,82 +1970,263 @@
     .contact-icon-wrap { width: 28px; height: 28px; }
 }
 /* ================================================================= */
-/* MOBILE: OVERRIDE CHAT POPUP TO RED THEME                          */
+/* MOBILE DESIGN IMPROVEMENTS v2                                      */
+/* Hero · Amenities · Reviews · Menu Controls                        */
 /* ================================================================= */
 @media (max-width: 1024px) {
 
-    /* ── Header: red gradient instead of purple ── */
-    .chat-popup-header {
-        background: linear-gradient(135deg, #b71c1c 0%, #7f0000 100%) !important;
-        border-radius: 16px 16px 0 0 !important;
-        cursor: default !important;
-        padding: 13px 15px !important;
+    /* ── Hero: stronger gradient, name always readable ── */
+    .establishment-hero {
+        height: 250px !important;
     }
 
-    .chat-popup-header img {
-        border: 2px solid rgba(255,255,255,0.8) !important;
+    .hero-overlay {
+        background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.93) 0%,
+            rgba(0,0,0,0.55) 42%,
+            rgba(0,0,0,0.08) 80%,
+            transparent      100%
+        ) !important;
+        padding: 0 18px 20px !important;
+        align-items: flex-end !important;
     }
 
-    .chat-popup-header-info h4 {
-        font-size: 0.95rem !important;
+    .hero-content h1 {
+        font-size: 1.6em !important;
+        font-weight: 800 !important;
+        color: #fff !important;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.8) !important;
+        margin-bottom: 4px !important;
+        line-height: 1.15 !important;
+    }
+
+    /* Rating row */
+    .average-rating-display {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 5px !important;
+        margin-top: 3px !important;
+    }
+
+    .rating-number {
+        font-size: 1.05em !important;
+        color: #ffc107 !important;
+        font-weight: 800 !important;
+    }
+
+    .star-rating-main .fas.fa-star.filled {
+        color: #ffc107 !important;
+        font-size: 1em !important;
+    }
+
+    .star-rating-main .far.fa-star {
+        color: rgba(255,255,255,0.30) !important;
+        font-size: 1em !important;
+    }
+
+    .review-count-text {
+        font-size: 0.8em !important;
+        color: rgba(255,255,255,0.75) !important;
+        opacity: 1 !important;
+    }
+
+    /* ── Section headings — red accent ── */
+    .section-card h2,
+    .contact-location h2,
+    .amenities-section h2,
+    .reviews-section h2 {
+        font-size: 0.72em !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.10em !important;
+        color: #b71c1c !important;
+        text-transform: uppercase !important;
+        border-bottom: none !important;
+        margin-bottom: 12px !important;
+        display: block !important;
+    }
+
+    /* ── Amenities pills — red tint ── */
+    .amenities-list {
+        flex-wrap: wrap !important;
+        gap: 7px !important;
+        overflow-x: visible !important;
+    }
+
+    .amenities-list li {
+        background: #fff5f5 !important;
+        color: #b71c1c !important;
+        border: 1.5px solid #fecaca !important;
+        font-size: 0.76em !important;
+        font-weight: 600 !important;
+        padding: 5px 12px !important;
+        border-radius: 20px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        white-space: nowrap !important;
+    }
+
+    .amenities-list li i {
+        color: #b71c1c !important;
+        font-size: 0.85em !important;
+        margin-right: 0 !important;
+    }
+
+    /* ── Reviews header bar ── */
+    .reviews-header-bar {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        flex-wrap: nowrap !important;
+        margin-bottom: 14px !important;
+    }
+
+    /* Styled dropdown */
+    .review-filter-dropdown {
+        height: 34px !important;
+        padding: 0 26px 0 10px !important;
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        font-size: 0.78em !important;
+        font-weight: 600 !important;
+        color: #374151 !important;
+        background: #f9fafb !important;
+        font-family: 'Poppins', sans-serif !important;
+        min-width: 130px !important;
+        -webkit-appearance: none !important;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 width%3D%22292.4%22 height%3D%22292.4%22 viewBox%3D%220 0 292.4 292.4%22%3E%3Cpath fill%3D%22%23B71C1C%22 d%3D%22M287 117.8L146.2 258.6L5.4 117.8z%22/%3E%3C/svg%3E') !important;
+        background-repeat: no-repeat !important;
+        background-position: right 9px center !important;
+        background-size: 8px !important;
+        cursor: pointer !important;
+    }
+
+    .review-filter-dropdown:focus {
+        outline: none !important;
+        border-color: #b71c1c !important;
+        box-shadow: 0 0 0 3px rgba(183,28,28,0.09) !important;
+    }
+
+    /* Write a Review button — solid red */
+    .btn-review {
+        background: linear-gradient(135deg, #b71c1c, #8b0000) !important;
+        color: #fff !important;
+        border: none !important;
+        padding: 0 14px !important;
+        height: 34px !important;
+        border-radius: 8px !important;
+        font-size: 0.78em !important;
         font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        box-shadow: 0 2px 8px rgba(183,28,28,0.3) !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
     }
 
-    .chat-popup-header-info p {
-        font-size: 0.72rem !important;
+    .btn-review:hover {
+        background: linear-gradient(135deg, #8b0000, #6a0000) !important;
     }
 
-    /* ── Sent bubble: red gradient ── */
+    /* Empty review state */
+    .reviews-empty {
+        padding: 28px 16px !important;
+        text-align: center !important;
+        background: #fafafa !important;
+        border-radius: 10px !important;
+        border: 1.5px dashed #e5e7eb !important;
+        margin-top: 8px !important;
+    }
+
+    .reviews-empty i {
+        font-size: 2em !important;
+        color: #d1d5db !important;
+        margin-bottom: 8px !important;
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    .reviews-empty p {
+        font-size: 0.82em !important;
+        color: #9ca3af !important;
+        margin: 0 !important;
+        font-weight: 500 !important;
+    }
+
+    /* ── Menu title ── */
+    .menu-title-centered {
+        font-size: 1em !important;
+        font-weight: 800 !important;
+        color: #1f2937 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        margin-bottom: 14px !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+    }
+
+    .menu-title-icon {
+        color: #b71c1c !important;
+        font-size: 0.9em !important;
+        margin-right: 0 !important;
+    }
+
+    /* ── Menu controls: add padding so pills aren't cut ── */
+    .menu-controls {
+        padding: 4px 2px 6px !important;
+        gap: 8px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .filter-pill-group {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        padding: 3px 5px !important;
+        border-radius: 24px !important;
+    }
+
+    .filter-pill {
+        font-size: 0.72em !important;
+        padding: 5px 11px !important;
+        color: #6b7280 !important;
+        font-weight: 600 !important;
+    }
+
+    .filter-pill.active {
+        background: #b71c1c !important;
+        color: #fff !important;
+        box-shadow: 0 2px 6px rgba(183,28,28,0.3) !important;
+    }
+
+    /* ── Chat mobile — red theme (also covered by previous block) ── */
+    .chat-popup-header {
+        background: linear-gradient(135deg, #b71c1c, #7f0000) !important;
+        border-radius: 16px 16px 0 0 !important;
+    }
+
     .chat-message.sent .chat-bubble {
-        background: linear-gradient(135deg, #b71c1c 0%, #8b0000 100%) !important;
-        color: white !important;
+        background: linear-gradient(135deg, #b71c1c, #8b0000) !important;
     }
 
-    /* ── Send button: red ── */
     .chat-send-btn {
-        background: linear-gradient(135deg, #b71c1c 0%, #8b0000 100%) !important;
-        width: 40px !important;
-        height: 40px !important;
-        flex-shrink: 0 !important;
+        background: linear-gradient(135deg, #b71c1c, #8b0000) !important;
     }
 
-    .chat-send-btn:hover:not(:disabled) {
-        background: linear-gradient(135deg, #8b0000 0%, #6a0000 100%) !important;
-    }
-
-    /* ── Input focus border: red ── */
     .chat-popup-input:focus {
         border-color: #b71c1c !important;
-        background: #fff !important;
     }
+}
 
-    /* ── Pinned section accent: red ── */
-    .chat-pinned-section-title { color: #b71c1c !important; }
-    .chat-pinned-collapse       { color: #b71c1c !important; }
-    .pinned-message-item i      { color: #b71c1c !important; }
-    .chat-see-pins-link         { color: #b71c1c !important; }
-
-    /* ── Input area border: cleaner ── */
-    .chat-popup-input-container {
-        border-radius: 0 0 16px 16px !important;
-        padding: 10px 12px !important;
-    }
-
-    .chat-popup-input {
-        border-radius: 22px !important;
-        font-size: 0.88rem !important;
-        padding: 10px 14px !important;
-    }
-
-    /* ── Messages background: slightly warmer ── */
-    .chat-popup-messages {
-        background: #fafafa !important;
-    }
-
-    /* ── Container rounded corners ── */
-    .chat-popup-container {
-        border-radius: 16px !important;
-        overflow: hidden !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+/* ── 480px: amenities wrap to 2 lines ── */
+@media (max-width: 480px) {
+    .amenities-list {
+        flex-wrap: wrap !important;
     }
 }
