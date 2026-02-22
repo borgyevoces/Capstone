@@ -341,9 +341,9 @@
     .bulk-actions {
         background: white;
         border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 12px 0 0 0;
+        margin-top: 12px;
+        border-top: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -561,7 +561,7 @@
 
         /* Page layout */
         main.main-content {
-            padding: 0 12px 100px;
+            padding: 0 12px 32px;
             margin-top: 12px;
         }
 
@@ -623,17 +623,13 @@
             padding: 0 4px;
         }
 
-        /* Bulk actions: sticky bottom bar */
+        /* Bulk actions: below tabs, not fixed */
         .bulk-actions {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 900;
+            position: static;
             border-radius: 0;
-            margin-bottom: 0;
-            padding: 10px 16px;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
+            margin-top: 10px;
+            padding: 10px 0 0 0;
+            box-shadow: none;
             border-top: 1px solid #e2e8f0;
             gap: 10px;
         }
@@ -736,9 +732,9 @@
             gap: 10px;
         }
 
-        /* Toast above sticky bar */
+        /* Toast */
         .orders-toast {
-            bottom: 72px;
+            bottom: 24px;
             right: 12px;
             left: 12px;
             min-width: unset;
@@ -933,7 +929,7 @@
         <p class="page-subtitle">Track and manage your food orders</p>
     </div>
 
-    <!-- Status Tabs -->
+    <!-- Status Tabs + Bulk Bar combined -->
     <div class="status-tabs-container">
         <div class="status-tabs">
             <div class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
@@ -957,18 +953,18 @@
                 <span class="tab-count" id="count-completed">0</span>
             </div>
         </div>
-    </div>
 
-    <!-- Bulk Actions Bar -->
-    <div class="bulk-actions">
-        <div class="selection-info">
-            <input type="checkbox" class="checkbox" onchange="toggleAllOrders()">
-            <span id="selectionText">0 selected</span>
+        <!-- Bulk Actions Bar (inside tabs container so it sits below tabs) -->
+        <div class="bulk-actions">
+            <div class="selection-info">
+                <input type="checkbox" class="checkbox" onchange="toggleAllOrders()">
+                <span id="selectionText">0 selected</span>
+            </div>
+            <button class="bulk-action-btn" id="bulkBtn" onclick="bulkMove()" disabled>
+                <i class="fas fa-arrow-right"></i>
+                <span id="bulkText">Move to Next Step</span>
+            </button>
         </div>
-        <button class="bulk-action-btn" id="bulkBtn" onclick="bulkMove()" disabled>
-            <i class="fas fa-arrow-right"></i>
-            <span id="bulkText">Move to Next Step</span>
-        </button>
     </div>
 
     <!-- Orders Container -->
