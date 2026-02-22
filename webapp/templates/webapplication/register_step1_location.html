@@ -571,7 +571,7 @@
                 layers : [hybridLayer],
                 maxZoom: 21,
                 minZoom: 10
-            }).setView(cvsuLatLng, 14);
+            }).setView(cvsuLatLng, 13);
 
             window.map = map;
             L.control.layers(baseMaps).addTo(map);
@@ -967,7 +967,7 @@
             }
 
             focusCvsuBtn.addEventListener('click', function () {
-                map.setView(cvsuLatLngObj, 14);
+                map.setView(cvsuLatLngObj, 13);
                 focusCvsuBtn.disabled = true;
                 setTimeout(function () { focusCvsuBtn.disabled = false; }, 500);
             });
