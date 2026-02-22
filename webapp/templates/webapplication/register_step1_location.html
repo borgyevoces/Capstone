@@ -571,7 +571,7 @@
                 layers : [hybridLayer],
                 maxZoom: 21,
                 minZoom: 10
-            }).setView(cvsuLatLng, 16);
+            }).setView(cvsuLatLng, 14);
 
             window.map = map;
             L.control.layers(baseMaps).addTo(map);
@@ -582,11 +582,11 @@
                 icon: L.divIcon({
                     className: '',
                     html: `
-                        <div style="position:relative;width:54px;height:54px;">
+                        <div style="position:relative;width:36px;height:36px;">
                             <!-- Pulse ring -->
                             <div style="
-                                position:absolute;top:-7px;left:-7px;
-                                width:68px;height:68px;border-radius:50%;
+                                position:absolute;top:-5px;left:-5px;
+                                width:46px;height:46px;border-radius:50%;
                                 background:rgba(255,255,255,0.18);
                                 border:2px solid rgba(255,255,255,0.55);
                                 animation:cvsuPulse 2s ease-in-out infinite;
@@ -594,14 +594,14 @@
                             "></div>
                             <!-- Solid black circle -->
                             <div style="
-                                width:54px;height:54px;border-radius:50%;
+                                width:36px;height:36px;border-radius:50%;
                                 background:#111;
                                 border:3px solid #fff;
                                 box-shadow:0 4px 18px rgba(0,0,0,0.65),0 0 0 2px rgba(255,255,255,0.2);
                                 display:flex;align-items:center;justify-content:center;
                             ">
                                 <!-- White museum / university columns icon (matches screenshot) -->
-                                <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
                                     <path d="M12 2L2 7v1h20V7L12 2zm-8 4l8-4 8 4H4z"/>
                                     <rect x="3"  y="9" width="2" height="9"/>
                                     <rect x="7"  y="9" width="2" height="9"/>
@@ -617,14 +617,14 @@
                                 position:absolute;bottom:-23px;left:50%;
                                 transform:translateX(-50%);
                                 background:rgba(10,10,10,0.88);color:#fff;
-                                font-size:9px;font-weight:700;
-                                padding:2px 7px;border-radius:4px;
+                                font-size:8px;font-weight:700;
+                                padding:1px 5px;border-radius:3px;
                                 white-space:nowrap;letter-spacing:0.5px;
                                 box-shadow:0 2px 6px rgba(0,0,0,0.5);
                             ">CvSU-Bacoor</div>
                         </div>`,
-                    iconSize  : [54, 78],
-                    iconAnchor: [27, 27]
+                    iconSize  : [36, 52],
+                    iconAnchor: [18, 18]
                 })
             }).addTo(map)
               .bindPopup(`<div style="text-align:center;padding:4px 8px;">
@@ -669,7 +669,7 @@
                         border-radius:50%;
                         background:linear-gradient(135deg,#FF6B6B,#FF5252);
                         display:flex;align-items:center;justify-content:center;
-                        color:#fff;font-size:20px;font-weight:800;font-family:sans-serif;
+                        color:#fff;font-size:14px;font-weight:800;font-family:sans-serif;
                     ">${initial}</div>`;
                 }
 
@@ -677,7 +677,7 @@
                     className: '',
                     html: `
                     <div style="
-                        position:relative;width:52px;height:52px;
+                        position:relative;width:36px;height:36px;
                         border-radius:50%;
                         border:3px solid ${borderColor};
                         box-shadow:0 3px 14px rgba(0,0,0,0.5);
@@ -692,8 +692,8 @@
                             border:2px solid #fff;z-index:10;
                         "></div>
                     </div>`,
-                    iconSize    : [52, 52],
-                    iconAnchor  : [26, 26],
+                    iconSize    : [36, 36],
+                    iconAnchor  : [18, 18],
                     popupAnchor : [0, -30]
                 });
 
@@ -967,7 +967,7 @@
             }
 
             focusCvsuBtn.addEventListener('click', function () {
-                map.setView(cvsuLatLngObj, 16);
+                map.setView(cvsuLatLngObj, 14);
                 focusCvsuBtn.disabled = true;
                 setTimeout(function () { focusCvsuBtn.disabled = false; }, 500);
             });
