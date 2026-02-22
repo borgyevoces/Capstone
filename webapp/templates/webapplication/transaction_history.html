@@ -762,73 +762,347 @@
        RESPONSIVE DESIGN
     ======================================== */
     @media (max-width: 1024px) {
-        .page-title {
-            font-size: 28px;
-        }
-
-        .stat-value {
-            font-size: 32px;
-        }
+        .page-title { font-size: 22px; }
+        .stat-value  { font-size: 28px; }
     }
 
+    /* ==========================================
+       PHONE VIEW (max-width: 768px)
+       ========================================== */
     @media (max-width: 768px) {
+
+        /* --- Layout --- */
         .page-container {
-            padding: 20px 16px;
-            margin-top: 60px;
+            padding: 0 12px 32px;
+            margin-top: 12px;
         }
 
+        /* --- Header --- */
         .page-header {
-            padding: 24px;
+            padding: 12px 4px 16px;
+            margin-bottom: 14px;
         }
 
-        .page-title {
-            font-size: 24px;
+        .page-title-section {
+            gap: 10px;
         }
 
         .title-icon {
-            width: 48px;
-            height: 48px;
-            font-size: 24px;
+            font-size: 20px;
         }
 
+        .page-title {
+            font-size: 18px;
+        }
+
+        .page-subtitle {
+            font-size: 12px;
+        }
+
+        /* --- Stats: 2×2 grid --- */
         .stats-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
         }
 
+        .stat-card {
+            padding: 8px 10px;
+        }
+
+        .stat-header {
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+        }
+
+        .stat-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+
+        .stat-value {
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+
+        .stat-change {
+            font-size: 8px;
+            padding: 2px 5px;
+        }
+
+        /* --- Transactions content box --- */
         .transactions-content {
-            padding: 24px;
+            padding: 12px;
+            border-radius: 10px;
         }
 
+        /* --- Header row: title + action buttons --- */
         .transactions-header {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .transactions-title {
+            font-size: 15px;
         }
 
         .transactions-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
             width: 100%;
         }
 
-        .btn {
-            width: 100%;
+        .transactions-actions .btn {
+            flex: 1;
+            justify-content: center;
+            padding: 8px 10px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        /* --- Filters: single column, compact --- */
+        .transactions-filters {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 9px 12px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .filter-actions {
+            flex-direction: row;
+            gap: 8px;
+        }
+
+        .filter-actions .btn {
+            flex: 1;
             justify-content: center;
         }
 
-        .transactions-filters {
-            grid-template-columns: 1fr;
-        }
-
+        /* --- TABLE → CARD LIST on mobile --- */
+        /* Hide the table entirely */
         .table-container {
-            overflow-x: scroll;
+            display: none !important;
         }
 
-        .transactions-table {
-            min-width: 800px;
+        /* Show mobile cards instead */
+        .mobile-transaction-list {
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* --- Each transaction as a card --- */
+        .txn-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .txn-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .txn-card-left { display: flex; flex-direction: column; gap: 4px; }
+
+        .txn-card-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: #B71C1C;
+            font-size: 15px;
+        }
+
+        .txn-card-date {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .txn-card-amount {
+            font-size: 18px;
+            font-weight: 800;
+            color: #059669;
+        }
+
+        .txn-card-middle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .txn-card-customer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .txn-card-customer .customer-avatar {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .txn-card-customer .customer-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 140px;
+        }
+
+        .txn-card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .txn-card-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .txn-card-badges .payment-method-badge,
+        .txn-card-badges .transaction-status-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+        }
+
+        .txn-card-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        /* --- Loading / empty states compact --- */
+        .loading-state,
+        .empty-state {
+            padding: 40px 16px;
+        }
+
+        .loading-state i { font-size: 40px; margin-bottom: 14px; }
+        .empty-state i   { font-size: 48px; margin-bottom: 14px; }
+        .empty-state h3  { font-size: 18px; }
+        .empty-state p   { font-size: 13px; }
+
+        /* --- Modal: bottom sheet --- */
+        .modal {
+            align-items: flex-end;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .modal[style*="block"] {
+            display: flex !important;
         }
 
         .modal-content {
-            width: 95%;
-            margin: 10% auto;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 20px 20px 0 0;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: sheetUp 0.28s ease;
         }
+
+        @keyframes sheetUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 16px 20px 28px;
+        }
+
+        .detail-row {
+            padding: 12px 0;
+        }
+
+        .detail-label {
+            font-size: 12px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+        }
+
+        .order-items-title {
+            font-size: 15px;
+        }
+
+        .order-item {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+    }
+
+    /* Extra small phones */
+    @media (max-width: 380px) {
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .stat-value {
+            font-size: 16px;
+        }
+
+        .txn-card-amount {
+            font-size: 15px;
+        }
+
+        .txn-card-customer .customer-name {
+            max-width: 100px;
+        }
+    }
+
+    /* Hide mobile cards on desktop */
+    .mobile-transaction-list {
+        display: none;
     }
 </style>
 {% endblock %}
@@ -1196,7 +1470,51 @@ function displayTransactions(transactions) {
         </div>
     `;
 
-    container.innerHTML = html;
+    // ── Mobile card list (shown on phone, hidden on desktop via CSS) ──
+    let mobileHtml = '<div class="mobile-transaction-list">';
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.created_at);
+        const formattedDate = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+        const formattedTime = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+        const paymentIcons = { gcash:'fa-mobile-alt', paymaya:'fa-wallet', cash:'fa-money-bill-wave', card:'fa-credit-card' };
+        const paymentIcon = paymentIcons[transaction.payment_method.toLowerCase()] || 'fa-credit-card';
+        const customerName = transaction.customer_name || 'Guest';
+        const initials = customerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+        mobileHtml += `
+            <div class="txn-card">
+                <div class="txn-card-top">
+                    <div class="txn-card-left">
+                        <span class="txn-card-id">#${transaction.order_id}</span>
+                        <span class="txn-card-date"><i class="far fa-clock"></i> ${formattedDate}, ${formattedTime}</span>
+                    </div>
+                    <span class="txn-card-amount">&#8369;${parseFloat(transaction.amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div class="txn-card-middle">
+                    <div class="txn-card-customer">
+                        <div class="customer-avatar">${initials}</div>
+                        <span class="customer-name">${customerName}</span>
+                    </div>
+                </div>
+                <div class="txn-card-bottom">
+                    <div class="txn-card-badges">
+                        <span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">
+                            <i class="fas ${paymentIcon}"></i> ${transaction.payment_method_display}
+                        </span>
+                        <span class="transaction-status-badge ${transaction.status.toLowerCase()}">
+                            ${transaction.status}
+                        </span>
+                    </div>
+                    <button class="txn-card-btn" onclick='viewTransaction(${JSON.stringify(transaction).replace(/'/g, "&#39;")})'>
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    mobileHtml += '</div>';
+
+    container.innerHTML = html + mobileHtml;
 }
 
 /**
@@ -1376,7 +1694,7 @@ function viewTransaction(transaction) {
         ${itemsHtml}
     `;
 
-    modal.style.display = 'block';
+    modal.style.display = window.innerWidth <= 768 ? 'flex' : 'block';
 }
 
 /**
