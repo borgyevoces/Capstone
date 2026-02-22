@@ -1105,8 +1105,9 @@
     }
 
     function confirmModalOk() {
+        const cb = confirmCallback; // FIX: save callback BEFORE closeConfirmModal nulls it
         closeConfirmModal();
-        if (confirmCallback) confirmCallback();
+        if (cb) cb();
     }
 
     function closeConfirmModal() {
