@@ -1432,8 +1432,9 @@
                         <div class="review-card review-card--mine" data-review-id="{{ review.id }}"
                              data-is-user-review="true" data-rating="{{ review.rating }}">
                             <div class="review-card__avatar">
-                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                                     alt="{{ review.user.username }}">
+                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{{ review.gravatar_url }}{% endif %}"
+                                     alt="{{ review.user.username }}"
+                                     onerror="this.onerror=null; this.src='{{ review.gravatar_url }}';">
                             </div>
                             <div class="review-card__body">
                                 <div class="review-card__top">
@@ -1474,8 +1475,9 @@
                         {% for review in reviews %}
                         <div class="review-card" data-review-id="{{ review.id }}" data-rating="{{ review.rating }}">
                             <div class="review-card__avatar">
-                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{% static 'images/placeholder_profile.png' %}{% endif %}"
-                                     alt="{{ review.user.username }}">
+                                <img src="{% if review.user.profile.profile_image %}{{ review.user.profile.profile_image.url }}{% else %}{{ review.gravatar_url }}{% endif %}"
+                                     alt="{{ review.user.username }}"
+                                     onerror="this.onerror=null; this.src='{{ review.gravatar_url }}';">
                             </div>
                             <div class="review-card__body">
                                 <div class="review-card__top">
@@ -3213,7 +3215,7 @@
 
                         // Get current user's profile picture URL
                         // We embed it server-side so it's always correct
-                        let profilePicUrl = '{% if request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{% static "images/placeholder_profile.png" %}{% endif %}';
+                        let profilePicUrl = '{% if request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{{ current_user_gravatar }}{% endif %}';
                         const existingUserCard = document.querySelector('.review-card.review-card--mine .review-card__avatar img');
                         if (existingUserCard) profilePicUrl = existingUserCard.getAttribute('src');
 

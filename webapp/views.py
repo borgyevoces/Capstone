@@ -798,6 +798,12 @@ def delete_review(request, establishment_id, review_id):
     return redirect('food_establishment_details', establishment_id=est_id)
 
 
+def get_gravatar_url(email, size=80):
+    """Return Gravatar URL for a given email address."""
+    email_hash = hashlib.md5(email.strip().lower().encode('utf-8')).hexdigest()
+    return f"https://www.gravatar.com/avatar/{email_hash}?s={size}&d=mp"
+
+
 def food_establishment_details(request, establishment_id):
     establishment = get_object_or_404(
         FoodEstablishment.objects.annotate(
@@ -809,7 +815,7 @@ def food_establishment_details(request, establishment_id):
 
     _ = establishment.status
 
-    all_reviews = Review.objects.filter(establishment=establishment).order_by('-created_at')
+    all_reviews = Review.objects.filter(establishment=establishment).select_related('user').order_by('-created_at')
 
     user_review = None
     other_reviews = all_reviews
@@ -818,6 +824,12 @@ def food_establishment_details(request, establishment_id):
         user_review = all_reviews.filter(user=request.user).first()
         if user_review:
             other_reviews = all_reviews.exclude(id=user_review.id)
+
+    # Attach gravatar URL to each review for use in template
+    for review in other_reviews:
+        review.gravatar_url = get_gravatar_url(review.user.email or review.user.username)
+    if user_review:
+        user_review.gravatar_url = get_gravatar_url(request.user.email or request.user.username)
 
     review_form = ReviewForm(instance=user_review) if user_review else ReviewForm()
 
@@ -851,6 +863,10 @@ def food_establishment_details(request, establishment_id):
     else:
         menu_items = menu_items.order_by('-is_top_seller', 'name')
 
+    current_user_gravatar = ''
+    if request.user.is_authenticated:
+        current_user_gravatar = get_gravatar_url(request.user.email or request.user.username)
+
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
@@ -861,6 +877,7 @@ def food_establishment_details(request, establishment_id):
         'user_review': user_review,
         'reviews': other_reviews,
         'is_guest': not request.user.is_authenticated,
+        'current_user_gravatar': current_user_gravatar,
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
