@@ -1388,19 +1388,14 @@
     }
 
     .hero-overlay {
-        padding: 0 18px 20px;
+        padding: 20px 18px 18px;
         background: linear-gradient(
             to top,
-            rgba(0,0,0,0.88) 0%,
-            rgba(0,0,0,0.45) 45%,
+            rgba(0,0,0,0.90) 0%,
+            rgba(0,0,0,0.40) 55%,
             rgba(0,0,0,0.0) 100%
         );
         align-items: flex-end;
-        display: flex;
-    }
-
-    .hero-content {
-        width: 100%;
     }
 
     .hero-content h1 {
@@ -1409,7 +1404,6 @@
         line-height: 1.15;
         margin-bottom: 6px;
         text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        color: #fff;
     }
 
     .average-rating-display {
@@ -1457,10 +1451,10 @@
 
     .section-card h2 {
         font-size: 0.78em;
-        font-weight: 800;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.07em;
-        color: #1f2937;
+        color: #9ca3af;
         border-bottom: none !important;
         margin-bottom: 12px;
         display: block;
@@ -1580,8 +1574,8 @@
 
     .amenities-section h2 {
         font-size: 0.78em !important;
-        color: #1f2937 !important;
-        font-weight: 800 !important;
+        color: #9ca3af !important;
+        font-weight: 700 !important;
         text-transform: uppercase;
         letter-spacing: 0.07em;
         margin-bottom: 10px !important;
@@ -1647,53 +1641,9 @@
         height: 34px;
     }
 
-    .review-card__top {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin-bottom: 5px;
-    }
-
-    .review-card__name {
-        font-size: 0.80em;
-        font-weight: 700;
-        color: #1f2937;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 130px;
-    }
-
-    .review-card__badge {
-        font-size: 0.62em;
-        padding: 2px 6px;
-        border-radius: 8px;
-        flex-shrink: 0;
-    }
-
-    .review-card__stars {
-        display: flex;
-        gap: 1px;
-        align-items: center;
-        flex-shrink: 0;
-    }
-
-    .review-card__stars i { font-size: 0.72em; }
-
-    .review-card__date {
-        font-size: 0.65em;
-        color: #9ca3af;
-        margin-left: auto;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .review-card__comment {
-        font-size: 0.78em;
-        line-height: 1.5;
-        word-break: break-word;
-    }
+    .review-card__name  { font-size: 0.82em; }
+    .review-card__comment { font-size: 0.78em; }
+    .review-card__date  { font-size: 0.68em; }
 
     /* ============================================================
        MENU SECTION
@@ -1714,13 +1664,11 @@
 
     .menu-title-centered {
         font-size: 1.05em;
-        font-weight: 800;
-        color: #333;
+        font-weight: 700;
+        color: #1f2937;
         display: block;
         text-align: center;
         margin-bottom: 14px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
     }
 
     .menu-title-icon {
@@ -1729,93 +1677,88 @@
         font-size: 0.85em;
     }
 
-    /* Controls: stacked — search on top, filter pills below */
+    /* ══════════════════════════════════════════════════════
+       MENU CONTROLS — Search bar on top, both filter pill
+       groups on ONE row below — matches desktop style
+       ══════════════════════════════════════════════════════ */
     .menu-controls {
         display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-        margin-bottom: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
         width: 100%;
-        overflow-x: visible;
+        overflow: visible;
         padding-bottom: 0;
     }
 
     .menu-controls::-webkit-scrollbar { display: none; }
 
-    /* Search bar — full width row */
+    /* Search bar — full width on first row (order 0, 100% width forces line break after) */
     .menu-search-bar {
         position: relative;
         width: 100%;
-        flex-shrink: 0;
+        flex: 0 0 100%;
+        order: 0;
         min-width: unset;
     }
 
     .menu-search-bar input {
         width: 100%;
-        height: 42px;
-        padding: 7px 14px 7px 38px;
-        border: 1.5px solid #e5e7eb;
+        height: 44px;
+        padding: 8px 16px 8px 42px;
+        border: 1.5px solid #ddd;
         border-radius: 30px;
-        font-size: 0.85em;
-        background: #fafafa;
-        box-shadow: none;
-        transition: border-color 0.25s, box-shadow 0.25s;
-        box-sizing: border-box;
+        font-size: 0.88em;
         font-family: inherit;
-        color: #1f2937;
+        color: #333;
+        background: #fafafa;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+        box-sizing: border-box;
     }
 
     .menu-search-bar input:focus {
         border-color: #b71c1c;
-        box-shadow: 0 0 0 3px rgba(183,28,28,0.09);
+        box-shadow: 0 0 0 3px rgba(183,28,28,0.1);
         background: #fff;
         outline: none;
     }
 
     .menu-search-bar i {
         position: absolute;
-        left: 13px;
+        left: 15px;
         top: 50%;
         transform: translateY(-50%);
-        color: #d1d5db;
-        font-size: 0.85em;
+        color: #aaa;
+        font-size: 0.9em;
         pointer-events: none;
         transition: color 0.2s;
     }
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
 
-    /* Filter pills row — below search */
-    .menu-controls-pills-row {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 2px;
-    }
-
-    .menu-controls-pills-row::-webkit-scrollbar { display: none; }
+    /* Both filter pill groups — sit side-by-side on the second row */
     .filter-pill-group {
-        display: flex;
-        gap: 3px;
+        display: inline-flex;
+        gap: 4px;
         flex-shrink: 0;
-        background: #f3f4f6;
+        order: 1;
+        background: #f5f5f5;
         border-radius: 24px;
-        padding: 3px 4px;
+        padding: 4px 6px;
     }
 
     .filter-pill {
         display: inline-flex;
         align-items: center;
-        gap: 3px;
-        padding: 5px 10px;
+        gap: 4px;
+        padding: 6px 12px;
         border: none;
         border-radius: 20px;
         background: transparent;
-        color: #6b7280;
-        font-size: 0.7em;
+        color: #666;
+        font-size: 0.78em;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
@@ -1824,56 +1767,21 @@
         transition: all 0.18s;
     }
 
+    .filter-pill:hover {
+        background: #fff;
+        color: #b71c1c;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
     .filter-pill:active { transform: scale(0.95); }
 
     .filter-pill.active {
         background: #b71c1c;
         color: #fff;
-        box-shadow: 0 2px 6px rgba(183,28,28,0.28);
+        box-shadow: 0 2px 8px rgba(183,28,28,0.3);
     }
 
-    /* Search bar */
-    .menu-search-bar {
-        position: relative;
-        flex: 1;
-        min-width: 100px;
-        flex-shrink: 0;
-    }
-
-    .menu-search-bar input {
-        width: 100%;
-        height: 38px;
-        padding: 7px 14px 7px 36px;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 30px;
-        font-size: 0.82em;
-        background: #fafafa;
-        box-shadow: none;
-        transition: border-color 0.25s, box-shadow 0.25s;
-        box-sizing: border-box;
-        font-family: inherit;
-        color: #1f2937;
-    }
-
-    .menu-search-bar input:focus {
-        border-color: #b71c1c;
-        box-shadow: 0 0 0 3px rgba(183,28,28,0.09);
-        background: #fff;
-        outline: none;
-    }
-
-    .menu-search-bar i {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #d1d5db;
-        font-size: 0.82em;
-        pointer-events: none;
-        transition: color 0.2s;
-    }
-
-    .menu-search-bar:focus-within i { color: #b71c1c; }
+    .filter-pill i { font-size: 0.85em; }
 
     /* Best-seller circle toggle */
     .best-seller-circle-btn {
@@ -1931,19 +1839,6 @@
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
-    }
-
-    #noMenuItemsFound {
-        display: none !important;
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 30px 20px;
-        color: #9ca3af;
-        font-size: 0.9em;
-    }
-
-    #noMenuItemsFound.visible {
-        display: block !important;
     }
 
     .menu-item {
@@ -2014,11 +1909,11 @@
     .nav-message-btn  { display: none !important; }
     .message_owner    { display: none !important; }
 
-    /* Floating chat FAB — raised higher so it clears the scroll-to-top arrow */
+    /* Floating chat FAB */
     .floating-chat-button {
         display: flex !important;
         position: fixed !important;
-        bottom: 80px !important;
+        bottom: 22px !important;
         right: 18px !important;
         z-index: 9500 !important;
         width: 54px !important;
@@ -2150,15 +2045,15 @@
         opacity: 1 !important;
     }
 
-    /* ── Section headings — match desktop dark style ── */
+    /* ── Section headings — red accent ── */
     .section-card h2,
     .contact-location h2,
     .amenities-section h2,
     .reviews-section h2 {
-        font-size: 0.78em !important;
+        font-size: 0.72em !important;
         font-weight: 800 !important;
-        letter-spacing: 0.08em !important;
-        color: #1f2937 !important;
+        letter-spacing: 0.10em !important;
+        color: #b71c1c !important;
         text-transform: uppercase !important;
         border-bottom: none !important;
         margin-bottom: 12px !important;
@@ -2280,13 +2175,13 @@
     .menu-title-centered {
         font-size: 1em !important;
         font-weight: 800 !important;
-        color: #333 !important;
+        color: #1f2937 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 6px !important;
         margin-bottom: 14px !important;
-        letter-spacing: 0.05em !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
     }
 
@@ -2296,33 +2191,42 @@
         margin-right: 0 !important;
     }
 
-    /* ── Menu controls: stacked layout — search on top, filter pills below ── */
+    /* ── Menu controls: ensure search-top / pills-row layout preserved ── */
     .menu-controls {
-        flex-direction: column !important;
-        padding: 0 !important;
-        gap: 10px !important;
+        flex-wrap: wrap !important;
+        flex-direction: row !important;
+        gap: 8px !important;
         margin-bottom: 16px !important;
-        overflow-x: visible !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .menu-search-bar {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        order: 0 !important;
     }
 
     .filter-pill-group {
-        background: #f9fafb !important;
-        border: 1px solid #e5e7eb !important;
-        padding: 3px 5px !important;
+        flex-shrink: 0 !important;
+        order: 1 !important;
+        background: #f5f5f5 !important;
+        border: none !important;
+        padding: 4px 6px !important;
         border-radius: 24px !important;
     }
 
     .filter-pill {
-        font-size: 0.72em !important;
-        padding: 5px 11px !important;
-        color: #6b7280 !important;
+        font-size: 0.78em !important;
+        padding: 6px 12px !important;
+        color: #666 !important;
         font-weight: 600 !important;
     }
 
     .filter-pill.active {
         background: #b71c1c !important;
         color: #fff !important;
-        box-shadow: 0 2px 6px rgba(183,28,28,0.3) !important;
+        box-shadow: 0 2px 8px rgba(183,28,28,0.3) !important;
     }
 
     /* ── Chat mobile — red theme (also covered by previous block) ── */
@@ -2348,33 +2252,5 @@
 @media (max-width: 480px) {
     .amenities-list {
         flex-wrap: wrap !important;
-    }
-}
-
-/* ================================================================= */
-/* SCROLL-TO-TOP BUTTON: ensure it never overlaps chat FAB           */
-/* Works both desktop and mobile                                      */
-/* ================================================================= */
-.scroll-to-top,
-#scrollToTop,
-#backToTop,
-.back-to-top,
-[id*="scroll-top"],
-[class*="scroll-top"],
-[class*="back-to-top"] {
-    bottom: 80px !important;
-    z-index: 9000 !important;
-}
-
-/* Desktop: chat button is hidden, scroll-to-top at default */
-@media (min-width: 1025px) {
-    .scroll-to-top,
-    #scrollToTop,
-    #backToTop,
-    .back-to-top,
-    [id*="scroll-top"],
-    [class*="scroll-top"],
-    [class*="back-to-top"] {
-        bottom: 24px !important;
     }
 }
