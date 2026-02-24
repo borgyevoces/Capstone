@@ -2198,7 +2198,7 @@ body {
 /* Mobile responsiveness for scroll-to-top button */
 @media (max-width: 768px) {
     .scroll-to-top {
-        bottom: 20px;
+        bottom: 90px;
         right: 20px;
         width: 45px;
         height: 45px;
@@ -2208,7 +2208,7 @@ body {
 
 @media (max-width: 480px) {
     .scroll-to-top {
-        bottom: 15px;
+        bottom: 88px;
         right: 15px;
         width: 40px;
         height: 40px;
@@ -3468,4 +3468,35 @@ body.sidebar-collapsed {
     .profile-detail-value {
         font-size: 14px;
     }
+}
+
+/* ==========================================
+   FLOATING CHAT BUTTON — hide when panel open
+   ========================================== */
+
+/* Hide float button when chat panel is open — all breakpoints */
+body:has(#chatPanel.open) #chatFloatBtn,
+body:has(#chatPanel.open) .chat-float-btn {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Also hide when chat window is open */
+body:has(#chatWindow[style*="flex"]) #chatFloatBtn,
+body:has(#chatWindow[style*="flex"]) .chat-float-btn {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* chat-float-btn--hidden class as JS fallback */
+#chatFloatBtn.hidden,
+.chat-float-btn.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }

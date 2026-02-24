@@ -1519,28 +1519,30 @@
 
                 {# Controls row: [Price pills] [Best Seller pills] [Search bar] #}
                 <div class="menu-controls">
-                    <div class="filter-pill-group">
-                        <button class="filter-pill" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
-                            <i class="fas fa-sort-amount-up-alt"></i> Price ↑
-                        </button>
-                        <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
-                            <i class="fas fa-sort-amount-down"></i> Price ↓
-                        </button>
-                    </div>
-
-                    <div class="filter-pill-group">
-                        <button class="filter-pill" id="bestSellerAsc" onclick="setBestSellerSort('asc', this)">
-                            <i class="fas fa-fire"></i> Best Seller ↑
-                        </button>
-                        <button class="filter-pill" id="bestSellerDesc" onclick="setBestSellerSort('desc', this)">
-                            <i class="fas fa-fire"></i> Best Seller ↓
-                        </button>
-                    </div>
-
                     <div class="menu-search-bar">
                         <i class="fas fa-search"></i>
                         <input type="text" id="menuSearchInput" placeholder="Search menu items..."
                                oninput="filterMenuItems()">
+                    </div>
+
+                    <div class="filter-pills-right">
+                        <div class="filter-pill-group">
+                            <button class="filter-pill active" id="filterPriceAsc" onclick="setPriceFilter('lowest', this)">
+                                <i class="fas fa-sort-amount-up-alt"></i> Price ↑
+                            </button>
+                            <button class="filter-pill" id="filterPriceDesc" onclick="setPriceFilter('highest', this)">
+                                <i class="fas fa-sort-amount-down"></i> Price ↓
+                            </button>
+                        </div>
+
+                        <div class="filter-pill-group">
+                            <button class="filter-pill active" id="bestSellerAsc" onclick="setBestSellerSort('asc', this)">
+                                <i class="fas fa-fire"></i> Best Seller ↑
+                            </button>
+                            <button class="filter-pill" id="bestSellerDesc" onclick="setBestSellerSort('desc', this)">
+                                <i class="fas fa-fire"></i> Best Seller ↓
+                            </button>
+                        </div>
                     </div>
 
                     {# Hidden selects kept for JS compatibility #}

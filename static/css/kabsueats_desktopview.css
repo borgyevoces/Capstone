@@ -78,8 +78,8 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .hero { padding: 36px 0 48px; text-align: center; }
 .hsw { position: relative; max-width: 680px; margin: 0 auto; }
 .hs-lbl { display: none; }
-.hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,.09); transition: border-color .25s, box-shadow .25s; overflow: hidden; }
-.hs-cont:focus-within { border-color: var(--red); box-shadow: 0 4px 24px rgba(183,28,28,.15); }
+.hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: none; transition: border-color .25s, box-shadow .25s; overflow: hidden; }
+.hs-cont:focus-within { border-color: var(--red); box-shadow: none; }
 .hs-inp { flex: 1; padding: 15px 14px 15px 52px; font-size: 15px; font-family: 'Poppins', sans-serif; border: none; outline: none; background: transparent; color: var(--g800); }
 .hs-inp::placeholder { color: var(--g400); }
 .hs-ico { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 16px; pointer-events: none; transition: color .2s; }
@@ -175,7 +175,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .ddo-desc { font-size: 11px; color: var(--g400); line-height: 1.4; }
 
 /* Grid View Button */
-.gv-btn { padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 2px solid var(--g900); background: var(--g900); color: #fff; display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: .25s; }
+.gv-btn { padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 2px solid var(--g200); background: transparent; color: var(--g800); display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: .25s; }
 .gv-btn:hover { background: var(--red); border-color: var(--red); }
 .gv-btn.on { background: var(--red); border-color: var(--red); }
 
@@ -327,8 +327,8 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* Establishment cards — matching screenshot */
 .est-wrap { margin-bottom: 40px; }
 .est-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 20px; }
-.estc { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: .3s; cursor: pointer; border: 1.5px solid var(--g200); position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
-.estc:hover { transform: translateY(-5px); box-shadow: var(--sh2); border-color: var(--red); }
+.estc { background: transparent; border-radius: 14px; overflow: hidden; box-shadow: none; transition: .3s; cursor: pointer; border: 1.5px solid var(--g200); position: relative; text-decoration: none; display: block; pointer-events: auto; z-index: 1; }
+.estc:hover { transform: translateY(-5px); box-shadow: none; border-color: var(--red); }
 .estc-img { width: 100%; height: 155px; object-fit: cover; display: block; }
 .estc-body { padding: 11px 13px 8px; }
 .estc-name { font-size: 14px; font-weight: 700; color: var(--g800); margin: 4px 0 2px; }

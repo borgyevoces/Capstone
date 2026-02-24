@@ -16,6 +16,7 @@ function toggleChatPanel() {
     const chatPanel = document.getElementById('chatPanel');
     const chatWindow = document.getElementById('chatWindow');
     const chatToggleBtn = document.getElementById('chatToggleBtn');
+    const chatFloatBtn = document.getElementById('chatFloatBtn');
 
     if (!chatPanel) {
         console.error('Chat panel not found');
@@ -28,10 +29,18 @@ function toggleChatPanel() {
         if (chatToggleBtn) {
             chatToggleBtn.classList.remove('active');
         }
+        // Show floating button when panel closes
+        if (chatFloatBtn) {
+            chatFloatBtn.classList.remove('hidden');
+        }
     } else {
         chatPanel.classList.add('open');
         if (chatToggleBtn) {
             chatToggleBtn.classList.add('active');
+        }
+        // Hide floating button when panel opens
+        if (chatFloatBtn) {
+            chatFloatBtn.classList.add('hidden');
         }
 
         // Load conversations when opening

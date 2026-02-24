@@ -170,10 +170,38 @@
     </style>
 </head>
 <body>
+    <div class="page-wrapper">
 
-    <a href="{% url 'kabsueats_home' %}"><p class="logo-text">KabsuEats</p></a>
+        <!-- Left Branding Panel -->
+        <div class="brand-panel">
+            <div class="brand-panel-content">
+                <div class="brand-icon-circle">🍽</div>
+                <h2 class="brand-panel-title">KabsuEats</h2>
+                <p class="brand-panel-tagline">Manage your food stall — accept reservations, track orders, and grow your campus business.</p>
+                <div class="brand-features">
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">🏪</span>
+                        <span>Manage your stall with ease</span>
+                    </div>
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">📋</span>
+                        <span>View and accept reservations</span>
+                    </div>
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">📊</span>
+                        <span>Track your sales and performance</span>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-panel-deco deco-circle-1"></div>
+            <div class="brand-panel-deco deco-circle-2"></div>
+            <div class="brand-panel-deco deco-circle-3"></div>
+        </div>
 
-    <div class="text_container">
+        <!-- Right Form Panel -->
+        <div class="form-panel">
+            <a href="{% url 'kabsueats_home' %}"><p class="logo-text">KabsuEats</p></a>
+            <div class="text_container">
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}
@@ -229,7 +257,9 @@
                 </p>
             </div>
         </form>
-    </div>
+            </div>
+        </div><!-- end form-panel -->
+    </div><!-- end page-wrapper -->
 
     <script>
         // Password Toggle Functionality

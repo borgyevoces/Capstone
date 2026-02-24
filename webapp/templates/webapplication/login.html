@@ -250,7 +250,8 @@
 
         <div class="container centered-auth-container">
             <div class="welcome-text">
-                <h1>Welcome to KabsuEats</h1>
+                <h1>Login for Students & School Personnel</h1>
+                <p class="welcome-subtitle">Sign in to reserve your meals from campus stalls.</p>
             </div>
 
             {% if messages %}
@@ -362,6 +363,37 @@
             <div class="switch-link">
                 <a href="{% url 'owner_login' %}" class="business-btn">Login Establishment?</a>
             </div>
+        </div>
+
+        <!-- Desktop Right Branding Panel -->
+        <div class="brand-panel">
+            <div class="brand-panel-content">
+                <div class="brand-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+                        <circle cx="24" cy="24" r="24" fill="rgba(230,149,0,0.15)"/>
+                        <text x="24" y="32" font-size="24" text-anchor="middle" fill="#E69500">🍽</text>
+                    </svg>
+                </div>
+                <h2 class="brand-panel-title">KabsuEats</h2>
+                <p class="brand-panel-tagline">Your campus food reservation platform — fast, easy, and always nearby.</p>
+                <div class="brand-features">
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">⚡</span>
+                        <span>Quick reservation from campus stalls</span>
+                    </div>
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">📍</span>
+                        <span>Real-time reservation tracking</span>
+                    </div>
+                    <div class="brand-feature-item">
+                        <span class="brand-feature-icon">🎓</span>
+                        <span>Made for CvSU Bacoor students</span>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-panel-deco deco-circle-1"></div>
+            <div class="brand-panel-deco deco-circle-2"></div>
+            <div class="brand-panel-deco deco-circle-3"></div>
         </div>
     </div>
 

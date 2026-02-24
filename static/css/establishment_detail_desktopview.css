@@ -419,13 +419,30 @@
         font-size: 0.85em;
     }
 
-    /* Single row: [Price pills] [Search bar grows] */
+    /* Single row: [Search bar LEFT] [Pills RIGHT] */
     .menu-controls {
         display: flex;
         align-items: center;
         gap: 14px;
         margin-bottom: 40px;
         width: 100%;
+    }
+
+    /* Search bar on left — grows to fill */
+    .menu-search-bar {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        order: 0;
+    }
+
+    /* Pills grouped on right */
+    .filter-pills-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        margin-left: auto;
     }
 
     /* Price pills group */
@@ -470,12 +487,7 @@
 
     .filter-pill i { font-size: 0.85em; }
 
-    /* Search bar — grows to fill center */
-    .menu-search-bar {
-        position: relative;
-        flex: 1;
-        min-width: 0;
-    }
+    /* Search bar — already defined in layout above */
 
     .menu-search-bar input {
         width: 100%;

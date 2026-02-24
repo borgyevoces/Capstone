@@ -458,17 +458,18 @@
     .menu-item-image-wrapper {
         position: relative;
         width: 100%;
-        height: 140px;  /* Reduced from 180px */
+        height: 160px;
         overflow: hidden;
     }
 
     .menu-item-image {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         border-radius: 0;
         margin-bottom: 0;
         border: none;
+        background: #f9f9f9;
     }
 
     /* ============================================ */
@@ -1388,14 +1389,21 @@
     }
 
     .hero-overlay {
-        padding: 20px 18px 18px;
+        padding: 0 18px 22px !important;
         background: linear-gradient(
             to top,
-            rgba(0,0,0,0.90) 0%,
-            rgba(0,0,0,0.40) 55%,
+            rgba(0,0,0,0.92) 0%,
+            rgba(0,0,0,0.50) 45%,
             rgba(0,0,0,0.0) 100%
-        );
-        align-items: flex-end;
+        ) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        align-items: flex-start !important;
+    }
+
+    .hero-content {
+        width: 100% !important;
     }
 
     .hero-content h1 {
@@ -1601,6 +1609,13 @@
         border-radius: 20px !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
+        background-color: #e6ffed !important;
+        color: #1a5632 !important;
+        border: 1px solid #b7e3c3 !important;
+    }
+
+    .amenities-list li i {
+        color: #0d944c !important;
     }
 
     /* ============================================================
@@ -1663,7 +1678,7 @@
     }
 
     .menu-title-centered {
-        font-size: 1.05em;
+        font-size: 1.25em;
         font-weight: 700;
         color: #1f2937;
         display: block;
@@ -1684,10 +1699,9 @@
        ══════════════════════════════════════════════════════ */
     .menu-controls {
         display: flex;
-        flex-wrap: wrap;          /* allows 2 rows */
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 18px;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
         width: 100%;
         overflow: visible;
         padding: 0;
@@ -1696,7 +1710,6 @@
     /* ── Row 1: Search bar full width ── */
     .menu-search-bar {
         position: relative;
-        flex: 0 0 100%;           /* force full row → pill groups wrap below */
         width: 100%;
         order: 0;
         min-width: unset;
@@ -1737,28 +1750,37 @@
 
     .menu-search-bar:focus-within i { color: #b71c1c; }
 
-    /* ── Row 2: Both pill groups side-by-side ── */
+    /* ── Row 2: filter-pills-right wraps both groups ── */
+    .filter-pills-right {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+
     .filter-pill-group {
         display: inline-flex;
-        gap: 4px;
+        gap: 3px;
         flex-shrink: 0;
-        order: 1;                 /* after search bar */
         background: #f5f5f5;
         border-radius: 24px;
-        padding: 4px 6px;
+        padding: 3px 5px;
         border: none;
     }
 
     .filter-pill {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 6px 14px;
+        gap: 4px;
+        padding: 5px 10px;
         border: none;
         border-radius: 20px;
         background: transparent;
         color: #666;
-        font-size: 0.82em;
+        font-size: 0.76em;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
@@ -1838,7 +1860,7 @@
     .menu-list {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        gap: 12px !important;
     }
 
     #noMenuItemsFound {
@@ -1851,21 +1873,32 @@
     }
 
     .menu-item {
-        border-radius: 10px;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         overflow: hidden;
+        background: #fff;
+        border: 1px solid #f0f0f0;
     }
 
     .menu-item-image-wrapper {
-        height: 112px;
+        height: 160px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .menu-item-image {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        background: #f5f5f5 !important;
     }
 
     .menu-info {
-        padding: 9px 10px 10px;
+        padding: 10px 11px 11px;
     }
 
     .menu-name {
-        font-size: 0.8em !important;
+        font-size: 0.85em !important;
         font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
@@ -1888,17 +1921,19 @@
     /* Action buttons — red theme matching desktop brand */
     .item-action-buttons {
         display: flex;
-        gap: 5px;
-        margin-top: 2px;
+        gap: 4px;
+        margin-top: 6px;
+        width: 100%;
     }
 
     .btn-add-to-cart,
     .btn-buy-now {
         flex: 1;
-        font-size: 0.7em !important;
-        padding: 7px 4px !important;
+        min-width: 0;
+        font-size: 0.68em !important;
+        padding: 7px 2px !important;
         border-radius: 7px !important;
-        gap: 3px !important;
+        gap: 2px !important;
         font-weight: 700 !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -1906,6 +1941,15 @@
         cursor: pointer !important;
         transition: all 0.18s !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-sizing: border-box !important;
+    }
+
+    .btn-add-to-cart i,
+    .btn-buy-now i {
+        flex-shrink: 0 !important;
+        font-size: 0.9em !important;
     }
 
     .btn-add-to-cart {
@@ -1968,7 +2012,7 @@
     .floating-chat-button {
         display: flex !important;
         position: fixed !important;
-        bottom: 22px !important;
+        bottom: 82px !important;
         right: 18px !important;
         z-index: 9500 !important;
         width: 54px !important;
@@ -1986,6 +2030,11 @@
     }
 
     .floating-chat-button:active { transform: scale(0.93) !important; }
+
+    /* Hide floating button when chat popup is open */
+    body:has(#chatPopupContainer.active) #floatingChatButton {
+        display: none !important;
+    }
 
     .floating-chat-button .chat-notification-badge {
         position: absolute !important;
@@ -2026,10 +2075,11 @@
 
     .menu-list {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
+        gap: 10px !important;
     }
 
-    .menu-item-image-wrapper { height: 95px; }
+    .menu-item-image-wrapper { height: 130px !important; }
+    .menu-item-image { object-fit: cover !important; }
 
     .section-card { padding: 12px 12px; }
 
@@ -2057,7 +2107,14 @@
             transparent      100%
         ) !important;
         padding: 0 18px 20px !important;
-        align-items: flex-end !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        align-items: flex-start !important;
+    }
+
+    .hero-content {
+        width: 100% !important;
     }
 
     .hero-content h1 {
@@ -2100,7 +2157,7 @@
         opacity: 1 !important;
     }
 
-    /* ── Section headings — red accent ── */
+    /* ── Section headings — black like desktop ── */
     .section-card h2,
     .contact-location h2,
     .amenities-section h2,
@@ -2108,7 +2165,7 @@
         font-size: 0.72em !important;
         font-weight: 800 !important;
         letter-spacing: 0.10em !important;
-        color: #b71c1c !important;
+        color: #333 !important;
         text-transform: uppercase !important;
         border-bottom: none !important;
         margin-bottom: 12px !important;
@@ -2123,9 +2180,9 @@
     }
 
     .amenities-list li {
-        background: #fff5f5 !important;
-        color: #b71c1c !important;
-        border: 1.5px solid #fecaca !important;
+        background: #e6ffed !important;
+        color: #1a5632 !important;
+        border: 1px solid #b7e3c3 !important;
         font-size: 0.76em !important;
         font-weight: 600 !important;
         padding: 5px 12px !important;
@@ -2137,7 +2194,7 @@
     }
 
     .amenities-list li i {
-        color: #b71c1c !important;
+        color: #0d944c !important;
         font-size: 0.85em !important;
         margin-right: 0 !important;
     }
@@ -2148,9 +2205,30 @@
         flex-direction: row !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 10px !important;
+        gap: 8px !important;
         flex-wrap: nowrap !important;
         margin-bottom: 14px !important;
+    }
+
+    .review-filters {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .review-filters {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .review-filter-dropdown {
+        flex: 1 !important;
+        min-width: 0 !important;
     }
 
     /* Styled dropdown */
@@ -2228,7 +2306,7 @@
 
     /* ── Menu title ── */
     .menu-title-centered {
-        font-size: 1em !important;
+        font-size: 1.3em !important;
         font-weight: 800 !important;
         color: #1f2937 !important;
         display: flex !important;
@@ -2246,13 +2324,11 @@
         margin-right: 0 !important;
     }
 
-    /* ── Menu controls: reinforce search-on-top, filters-below ── */
+    /* ── Menu controls: search on top, pills row below ── */
     .menu-controls {
         display: flex !important;
-        flex-wrap: wrap !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 10px !important;
+        flex-direction: column !important;
+        gap: 12px !important;
         margin-bottom: 16px !important;
         padding: 0 !important;
         overflow: visible !important;
@@ -2260,31 +2336,80 @@
     }
 
     .menu-search-bar {
-        flex: 0 0 100% !important;
         width: 100% !important;
         order: 0 !important;
     }
 
+    .filter-pills-right {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+        overflow: hidden !important;
+    }
+
     .filter-pill-group {
-        flex-shrink: 0 !important;
-        order: 1 !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
         background: #f5f5f5 !important;
         border: none !important;
-        padding: 4px 6px !important;
+        padding: 3px 4px !important;
         border-radius: 24px !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 2px !important;
+        overflow: hidden !important;
     }
 
     .filter-pill {
-        font-size: 0.82em !important;
-        padding: 6px 14px !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        font-size: 0.63em !important;
+        padding: 5px 4px !important;
         color: #666 !important;
         font-weight: 600 !important;
+        gap: 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        justify-content: center !important;
+    }
+
+    .filter-pill i {
+        display: none !important;
     }
 
     .filter-pill.active {
         background: #b71c1c !important;
         color: #fff !important;
         box-shadow: 0 2px 8px rgba(183,28,28,0.3) !important;
+    }
+
+    /* ── Buy/Add buttons — fix for narrow 2-col cards ── */
+    .item-action-buttons {
+        display: flex !important;
+        gap: 4px !important;
+        margin-top: 6px !important;
+        width: 100% !important;
+    }
+
+    .btn-add-to-cart,
+    .btn-buy-now {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        font-size: 0.6em !important;
+        padding: 6px 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .btn-add-to-cart i,
+    .btn-buy-now i {
+        display: none !important;
     }
 
     /* ── Chat mobile — red theme (also covered by previous block) ── */
