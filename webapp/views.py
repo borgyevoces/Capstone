@@ -5993,10 +5993,22 @@ def get_user_transaction_history(request):
                 })
 
             # Build order data
+            # Normalize status so client sees same labels as owner dashboard
+            raw_status = order.status or 'PENDING'
+            client_status_map = {
+                'PAID': 'order_received',    # online payment confirmed
+                'order_received': 'order_received',
+                'preparing': 'preparing',
+                'to_claim': 'to_claim',
+                'completed': 'completed',
+                'PENDING': 'PENDING',        # unpaid, keep as-is so Pay Now button shows
+            }
+            normalized_status = client_status_map.get(raw_status, raw_status.lower())
+
             order_data = {
                 'id': order.id,
                 'order_number': order.gcash_reference_number or f"ORD-{order.id}",
-                'status': order.status,
+                'status': normalized_status,
                 'total_amount': str(order.total_amount),
                 'created_at': order.created_at.isoformat(),
                 'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
