@@ -2141,27 +2141,6 @@ def gcash_payment_cancel(request):
 
 
 @login_required
-def checkout_page(request):
-    """
-    Display the checkout page for a specific pending order.
-    Called from the cart with ?order_id=<id>
-    """
-    order_id = request.GET.get('order_id')
-    if not order_id:
-        return redirect('view_cart')
-
-    order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
-    items = order.orderitem_set.select_related('menu_item').all()
-
-    context = {
-        'order': order,
-        'items': items,
-        'user': request.user,
-    }
-    return render(request, 'webapplication/checkout.html', context)
-
-
-@login_required
 def order_confirmation_view(request, order_id):
     """Display order confirmation"""
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -5130,8 +5109,11 @@ def get_establishment_orders(request):
             }, status=404)
 
         # Get all orders for this establishment with related data
+        # EXCLUDE 'PENDING' orders — those are unpaid cart items, not confirmed orders yet
         orders = Order.objects.filter(
             establishment=establishment
+        ).exclude(
+            status='PENDING'
         ).select_related(
             'user', 'establishment'
         ).prefetch_related(
@@ -5162,8 +5144,9 @@ def get_establishment_orders(request):
             order_status = order.status.lower() if order.status else 'order_received'
 
             # Normalize legacy statuses
+            # 'paid' = confirmed online payment -> show as order_received for owner
+            # 'pending' orders are EXCLUDED above (those are just unpaid cart items)
             status_mapping = {
-                'pending': 'order_received',
                 'paid': 'order_received',
             }
             order_status = status_mapping.get(order_status, order_status)
