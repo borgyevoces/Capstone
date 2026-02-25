@@ -1,157 +1,488 @@
 {% extends "webapplication/kabsueats.html" %}
 {% load static %}
+{% load custom_filters %}
 
-{% block title %}Order Confirmation - KabsuEats{% endblock %}
+{% block title %}Order Confirmed - KabsuEats{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --red: #B71C1C;
+    --red-dark: #7f1212;
+    --red-light: #fff5f5;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --ink: #111111;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --white: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body { background: var(--bg) !important; font-family: 'Inter', -apple-system, sans-serif; }
+
+#confirmation-page {
+    max-width: 680px;
+    margin: 40px auto 60px;
+    padding: 0 20px;
+}
+
+/* ── Success Banner ── */
+.success-banner {
+    background: var(--green);
+    border-radius: 16px;
+    padding: 40px 24px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.success-banner::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 50%;
+}
+.success-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+.success-icon i { font-size: 2.2rem; }
+
+.success-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0 0 8px;
+    letter-spacing: -.3px;
+}
+.success-sub {
+    font-size: 1rem;
+    opacity: .88;
+    margin: 0;
+}
+
+/* ── Order Number Badge ── */
+.order-number-badge {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid var(--border);
+}
+.order-number-label {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.order-number-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--red);
+}
+.order-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.status-paid {
+    background: var(--green-light);
+    color: var(--green);
+    border: 1.5px solid #bbf7d0;
+}
+.status-pending {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1.5px solid #fde68a;
+}
+
+/* ── Card ── */
+.conf-card {
+    background: var(--white);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.conf-card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fafafa;
+}
+.conf-card-header i { color: var(--red); font-size: 1rem; }
+.conf-card-header h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 0;
+}
+
+/* ── Order Items ── */
+.conf-items { padding: 0; }
+
+.conf-item-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.conf-item-row:last-child { border-bottom: none; }
+
+.conf-item-img {
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #f3f4f6;
+}
+.conf-item-img-placeholder {
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex; align-items: center; justify-content: center;
+    color: #ccc; font-size: 1.3rem; flex-shrink: 0;
+}
+.conf-item-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--ink);
+    flex: 1;
+}
+.conf-item-qty {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+.conf-item-price {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--red);
+}
+
+/* ── Summary Lines ── */
+.conf-summary { padding: 16px 20px; }
+
+.conf-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-bottom: 1px solid #f3f4f6;
+}
+.conf-line:last-child { border-bottom: none; }
+.conf-line strong { color: var(--ink); font-weight: 600; }
+
+.conf-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--red-light);
+    border-top: 2px solid #fecaca;
+}
+.conf-total-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.conf-total-amount {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--red);
+}
+
+/* ── Info rows ── */
+.conf-info-body { padding: 6px 20px 14px; }
+
+.conf-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.conf-info-row:last-child { border-bottom: none; }
+.conf-info-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--red-light);
+    color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+}
+.conf-info-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+.conf-info-value { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+
+/* ── What's Next ── */
+.whats-next {
+    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+    border-radius: 14px;
+    border: 1px solid #fecaca;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.whats-next h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.next-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.next-step:last-child { margin-bottom: 0; }
+.next-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+}
+.next-text { font-size: 0.88rem; color: #374151; line-height: 1.5; }
+.next-text strong { color: var(--ink); }
+
+/* ── Action Buttons ── */
+.conf-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.btn-primary-conf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 4px 12px rgba(183,28,28,.25);
+}
+.btn-primary-conf:hover {
+    background: var(--red-dark);
+    transform: translateY(-1px);
+    color: #fff;
+}
+.btn-secondary-conf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s;
+}
+.btn-secondary-conf:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-light);
+}
+
+@media (max-width: 480px) {
+    #confirmation-page { margin-top: 20px; }
+    .success-title { font-size: 1.4rem; }
+    .order-number-badge { flex-wrap: wrap; gap: 10px; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 40px auto; padding: 20px;">
-    <!-- Success Header -->
-    <div style="background: linear-gradient(135deg, #2f8a4a, #1f7a44); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-        <i class="fas fa-check-circle" style="font-size: 64px; margin-bottom: 16px; animation: successPulse 1s ease-in-out;"></i>
-        <h1 style="margin: 0; font-size: 28px;">Order Confirmed!</h1>
-        <p style="margin: 12px 0 0 0; font-size: 16px; opacity: 0.95;">Thank you for your order</p>
+<div id="confirmation-page">
+
+    <!-- Success Banner -->
+    <div class="success-banner">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <h1 class="success-title">Order Received!</h1>
+        <p class="success-sub">Your order has been confirmed and is being prepared.</p>
     </div>
 
-    <!-- Order Details Card -->
-    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-
-        <!-- Order Number -->
-        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;">
-            <p style="margin: 0; color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Order Number</p>
-            <p style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; color: #1a1a1a;">#{{ order.id }}</p>
+    <!-- Order Number -->
+    <div class="order-number-badge">
+        <div>
+            <div class="order-number-label">Order Number</div>
+            <div class="order-number-value">#{{ order.id }}</div>
         </div>
-
-        <!-- Reference Number -->
-        <div style="margin-bottom: 20px; padding: 16px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #1877F2;">
-            <p style="margin: 0; color: #1877F2; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reference Number</p>
-            <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #1a1a1a; word-break: break-all;">{{ order.gcash_reference_number }}</p>
-            <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Keep this for your records</p>
+        <div class="order-status-pill {% if order.status == 'PAID' %}status-paid{% else %}status-pending{% endif %}">
+            <i class="fas {% if order.status == 'PAID' %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+            {% if order.status == 'PAID' %}Paid{% elif order.status == 'PENDING' %}Cash on Pickup{% else %}{{ order.status }}{% endif %}
         </div>
+    </div>
 
-        <!-- From Establishment -->
-        <div style="margin-bottom: 20px;">
-            <p style="margin: 0; color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">From</p>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                {% if order.establishment.image %}
-                <img src="{{ order.establishment.image.url }}" alt="{{ order.establishment.name }}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
-                {% else %}
-                <div style="width: 48px; height: 48px; border-radius: 8px; background: linear-gradient(135deg, #f0f0f0, #e0e0e0); display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-store" style="color: #9ca3af; font-size: 20px;"></i>
-                </div>
-                {% endif %}
-                <div>
-                    <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1a1a1a;">{{ order.establishment.name }}</p>
-                    <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 14px;">{{ order.establishment.address }}</p>
-                </div>
-            </div>
+    <!-- Order Items -->
+    <div class="conf-card">
+        <div class="conf-card-header">
+            <i class="fas fa-store"></i>
+            <h3>{{ order.establishment.name }}</h3>
         </div>
-
-        <!-- Order Items -->
-        <div style="margin-bottom: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px 0; font-weight: 700; font-size: 16px; color: #1a1a1a;">Order Items:</p>
+        <div class="conf-items">
             {% for item in order_items %}
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                <div style="flex: 1;">
-                    <p style="margin: 0; font-weight: 600; font-size: 15px; color: #1a1a1a;">{{ item.menu_item.name }}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">Quantity: {{ item.quantity }}</p>
+            <div class="conf-item-row">
+                {% if item.menu_item.image %}
+                    <img src="{{ item.menu_item.image.url }}"
+                         alt="{{ item.menu_item.name }}"
+                         class="conf-item-img">
+                {% else %}
+                    <div class="conf-item-img-placeholder">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                {% endif %}
+                <div style="flex:1; min-width:0;">
+                    <div class="conf-item-name">{{ item.menu_item.name }}</div>
+                    <div class="conf-item-qty">Qty: {{ item.quantity }} × ₱{{ item.menu_item.price|floatformat:2 }}</div>
                 </div>
-                <div style="text-align: right;">
-                    <p style="margin: 0; font-weight: 700; font-size: 16px; color: #B71C1C;">₱{{ item.total_price|floatformat:2 }}</p>
-                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #9ca3af;">₱{{ item.price_at_order|floatformat:2 }} each</p>
-                </div>
+                <div class="conf-item-price">₱{{ item.total_price|floatformat:2 }}</div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Total Amount -->
-        <div style="padding-top: 20px; border-top: 2px solid #e5e7eb; margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 20px; font-weight: 700; color: #1a1a1a;">TOTAL:</span>
-                <span style="font-size: 28px; font-weight: 800; color: #B71C1C;">₱{{ order.total_amount|floatformat:2 }}</span>
-            </div>
+        <!-- Total -->
+        <div class="conf-total-row">
+            <span class="conf-total-label">Total Paid</span>
+            <span class="conf-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
         </div>
+    </div>
 
-        <!-- Payment Status -->
-        <div style="margin-top: 24px; padding: 16px; background: #FFFBEB; border-radius: 8px; border-left: 4px solid #FBBF24;">
-            <div style="display: flex; align-items: start; gap: 12px;">
-                <i class="fas fa-check-circle" style="color: #2f8a4a; font-size: 20px; margin-top: 2px;"></i>
+    <!-- Order Details -->
+    <div class="conf-card">
+        <div class="conf-card-header">
+            <i class="fas fa-info-circle"></i>
+            <h3>Order Details</h3>
+        </div>
+        <div class="conf-info-body">
+            <div class="conf-info-row">
+                <div class="conf-info-icon"><i class="fas fa-calendar"></i></div>
                 <div>
-                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #92400E;">Payment Confirmed</p>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #92400E;">Your order is now being prepared by {{ order.establishment.name }}.</p>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #b45309;">
-                        <i class="far fa-clock"></i> Confirmed at: {{ order.payment_confirmed_at|date:"M d, Y - g:i A" }}
-                    </p>
+                    <div class="conf-info-label">Date Ordered</div>
+                    <div class="conf-info-value">{{ order.created_at|date:"F d, Y · g:i A" }}</div>
+                </div>
+            </div>
+            <div class="conf-info-row">
+                <div class="conf-info-icon"><i class="fas fa-wallet"></i></div>
+                <div>
+                    <div class="conf-info-label">Payment Method</div>
+                    <div class="conf-info-value">
+                        {% if order.status == 'PAID' %}
+                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> Online Payment (GCash/Card)
+                        {% else %}
+                            <i class="fas fa-money-bill-wave" style="color:#d97706;"></i> Cash on Pickup
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="conf-info-row">
+                <div class="conf-info-icon"><i class="fas fa-user"></i></div>
+                <div>
+                    <div class="conf-info-label">Customer</div>
+                    <div class="conf-info-value">{{ request.user.get_full_name|default:request.user.username }}</div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Order Status Timeline -->
-        <div style="margin-top: 24px; padding: 20px; background: #f9fafb; border-radius: 8px;">
-            <p style="margin: 0 0 16px 0; font-weight: 700; font-size: 15px; color: #1a1a1a;">Order Status</p>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2f8a4a, #1f7a44); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas fa-check" style="color: white; font-size: 14px;"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; font-weight: 600; font-size: 14px; color: #1a1a1a;">Order Placed</p>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">{{ order.created_at|date:"M d, Y - g:i A" }}</p>
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2f8a4a, #1f7a44); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas fa-check" style="color: white; font-size: 14px;"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; font-weight: 600; font-size: 14px; color: #1a1a1a;">Payment Confirmed</p>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">{{ order.payment_confirmed_at|date:"M d, Y - g:i A" }}</p>
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #fbbf24; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse 2s ease-in-out infinite;">
-                        <i class="fas fa-clock" style="color: white; font-size: 14px;"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; font-weight: 600; font-size: 14px; color: #1a1a1a;">Preparing Order</p>
-                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">In progress...</p>
-                    </div>
-                </div>
+    <!-- What's Next -->
+    <div class="whats-next">
+        <h4><i class="fas fa-route"></i> What happens next?</h4>
+        <div class="next-step">
+            <div class="next-num">1</div>
+            <div class="next-text"><strong>Order received</strong> — the establishment has been notified and is now preparing your order.</div>
+        </div>
+        <div class="next-step">
+            <div class="next-num">2</div>
+            <div class="next-text"><strong>Wait for preparation</strong> — you'll receive updates as your order status changes.</div>
+        </div>
+        <div class="next-step">
+            <div class="next-num">3</div>
+            <div class="next-text">
+                {% if order.status == 'PAID' %}
+                    <strong>Pick up your order</strong> — show your order number <strong>#{{ order.id }}</strong> at the establishment.
+                {% else %}
+                    <strong>Pick up & pay</strong> — bring cash and show order number <strong>#{{ order.id }}</strong> at the establishment.
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Action Buttons -->
-    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-        <a href="{% url 'kabsueats_home' %}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: linear-gradient(135deg, #B71C1C, #8c1616); color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(183, 28, 28, 0.3);">
-            <i class="fas fa-home"></i> Back to Home
+    <div class="conf-actions">
+        <a href="{% url 'order_history' %}" class="btn-primary-conf">
+            <i class="fas fa-receipt"></i>
+            View My Orders
         </a>
-        <a href="{% url 'food_establishment_details' order.establishment.id %}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: white; color: #B71C1C; text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600; border: 2px solid #B71C1C; transition: all 0.2s;">
-            <i class="fas fa-store"></i> View Store
+        <a href="{% url 'kabsueats_home' %}" class="btn-secondary-conf">
+            <i class="fas fa-store"></i>
+            Back to Dashboard
         </a>
     </div>
 
-    <!-- Help Section -->
-    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center;">
-        <i class="fas fa-question-circle" style="font-size: 32px; color: #6b7280; margin-bottom: 12px;"></i>
-        <p style="margin: 0 0 8px 0; font-weight: 600; color: #1a1a1a;">Need Help?</p>
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">If you have any questions about your order, please contact {{ order.establishment.name }} directly.</p>
-    </div>
 </div>
-
-<style>
-    @keyframes successPulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
-    }
-
-    a:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-    }
-</style>
 {% endblock %}

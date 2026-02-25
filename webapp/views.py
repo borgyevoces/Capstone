@@ -4533,22 +4533,9 @@ def gcash_payment_success(request):
             except Exception as e:
                 print(f"Email error: {e}")
 
-        # Decide where to redirect
-        return_to = request.GET.get('return_to')
-
-        # ============================================================
-        # 🔥 ITO LANG ANG BINAGO! (Lines 4197-4200)
-        # ============================================================
-        if request.user.is_authenticated and request.user == order.user:
-            messages.success(request, 'Payment successful! Your order has been confirmed.')
-            # ✅ FIXED: Redirect to unified payment_success view with payment_method=online
-            return redirect(f'/payment/success/?order_id={order.id}&payment_method=online')
-        # ============================================================
-
-        if return_to == 'cart':
-            return redirect('view_cart')
-
-        return redirect('payment_status', status='success')
+        # ✅ Redirect to order confirmation — customer sees their order as "received"
+        messages.success(request, '✅ Payment successful! Your order has been placed.')
+        return redirect('order_confirmation', order_id=order.id)
 
     except Order.DoesNotExist:
         messages.error(request, 'Order not found')
@@ -4560,33 +4547,6 @@ def gcash_payment_success(request):
 
 
 @login_required
-@login_required
-def checkout_page(request):
-    """
-    Custom KabsuEats checkout page — shown before redirecting to PayMongo.
-    Accepts ?order_id=X to display a specific order for checkout.
-    """
-    order_id = request.GET.get('order_id')
-    if not order_id:
-        return redirect('view_cart')
-
-    try:
-        order = Order.objects.prefetch_related(
-            'orderitem_set__menu_item'
-        ).get(id=order_id, user=request.user, status='PENDING')
-    except Order.DoesNotExist:
-        return redirect('view_cart')
-
-    order_items = order.orderitem_set.all()
-
-    context = {
-        'order': order,
-        'order_items': order_items,
-        'user': request.user,
-    }
-    return render(request, 'webapplication/checkout.html', context)
-
-
 def view_cart(request):
     """
     Display all cart items grouped by establishment
