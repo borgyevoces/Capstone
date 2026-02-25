@@ -348,7 +348,7 @@ window.updateOrderSummary = updateOrderSummary;
 // =======================================================
 // ✅ NEW: SHOW PAYMENT METHOD SELECTION
 // =======================================================
-function showPaymentMethodSelection() {
+function proceedToCheckout() {
     if (!window.activeOrderId) {
         showMessage('Please select an establishment to checkout', 'warning');
         return;
@@ -364,22 +364,10 @@ function showPaymentMethodSelection() {
         }
     }
 
-    // Hide initial checkout button
-    const initialBtn = document.getElementById('initial-checkout-btn');
-    if (initialBtn) {
-        initialBtn.style.setProperty('display', 'none', 'important');
-    }
-
-    // Show payment method selection
-    const paymentSection = document.getElementById('payment-method-section');
-    if (paymentSection) {
-        paymentSection.style.setProperty('display', 'block', 'important');
-
-        // Smooth scroll to payment options
-        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    // Go directly to checkout page
+    window.location.href = '/checkout/?order_id=' + window.activeOrderId;
 }
-window.showPaymentMethodSelection = showPaymentMethodSelection;
+window.proceedToCheckout = proceedToCheckout;
 
 // =======================================================
 // ✅ NEW: PROCEED TO PAYMONGO (ONLINE PAYMENT)

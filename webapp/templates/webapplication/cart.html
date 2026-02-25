@@ -359,39 +359,14 @@ html body .establishment-cart-box.active-cart {
                             <span class="grand-total-amount">₱0.00</span>
                         </div>
 
-                        <!-- STEP 1: Checkout Button -->
+                        <!-- Checkout Button - goes directly to checkout page -->
                         <button type="button"
                                 class="btn-checkout-main"
                                 id="initial-checkout-btn"
-                                onclick="showPaymentMethodSelection()">
+                                onclick="proceedToCheckout()">
                             <i class="fas fa-lock"></i>
                             Proceed to Checkout
                         </button>
-
-                        <!-- STEP 2: Payment Methods (hidden until checkout clicked) -->
-                        <div class="payment-method-section" id="payment-method-section" style="display:none;">
-                            <h3 class="payment-method-title">Choose Payment Method</h3>
-
-                            <button type="button"
-                                    class="btn-payment-method btn-paymongo"
-                                    onclick="proceedToPayMongoCheckout(this)">
-                                <i class="fas fa-credit-card"></i>
-                                <div class="payment-method-info">
-                                    <span class="payment-method-name">Online Payment</span>
-                                    <span class="payment-method-desc">Pay via GCash/Card</span>
-                                </div>
-                            </button>
-
-                            <button type="button"
-                                    class="btn-payment-method btn-cash"
-                                    onclick="proceedToCashPayment(this)">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <div class="payment-method-info">
-                                    <span class="payment-method-name">Cash Payment</span>
-                                    <span class="payment-method-desc">Pay when you claim</span>
-                                </div>
-                            </button>
-                        </div>
 
                         <div class="security-badge">
                             <i class="fas fa-shield-alt"></i>
@@ -482,12 +457,7 @@ html body .establishment-cart-box.active-cart {
                 if (firstEstablishment) {
                     firstEstablishment.click();
                 }
-                setTimeout(function () {
-                    const paymentSection = document.getElementById('payment-method-section');
-                    if (paymentSection) {
-                        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 400);
+                // Payment method selection removed - checkout goes directly to checkout page
             }, 300);
         }
     });
