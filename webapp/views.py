@@ -1963,30 +1963,47 @@ def create_gcash_payment_link(request):
         if cart_items.count() > 3:
             description += f" and {cart_items.count() - 3} more items"
 
-        # Payment link payload
-        # Include a return indicator so we can redirect the user back to the
-        # appropriate page after PayMongo completes the flow.
-        # For cart checkout, use return_to=cart
+        # Add return_to param for post-payment routing
         success_url = success_url + '&return_to=cart'
         cancel_url = cancel_url + '&return_to=cart'
 
+        # Build line items for checkout session
+        line_items = []
+        for item in cart_items:
+            line_items.append({
+                "currency": "PHP",
+                "amount": int(float(item.menu_item.price) * 100),
+                "description": item.menu_item.name[:255],
+                "name": item.menu_item.name[:255],
+                "quantity": item.quantity,
+            })
+
+        # Use PayMongo Checkout Sessions (supports GCash, Cards, redirect URLs)
         payload = {
             "data": {
                 "attributes": {
-                    "amount": amount_in_centavos,
-                    "description": description,
-                    "remarks": f"Order #{order.id} - KabsuEats",
-                    "payment_method_allowed": ["gcash"],
+                    "billing": {
+                        "name": request.user.get_full_name() or request.user.username,
+                        "email": request.user.email or "",
+                        "phone": getattr(request.user, 'phone_number', '') or "",
+                    },
+                    "line_items": line_items,
+                    "payment_method_types": ["gcash", "card", "paymaya"],
                     "success_url": success_url,
-                    "failed_url": cancel_url
+                    "cancel_url": cancel_url,
+                    "description": description,
+                    "reference_number": f"ORDER-{order.id}",
+                    "metadata": {
+                        "order_id": str(order.id),
+                        "establishment": order.establishment.name,
+                    }
                 }
             }
         }
 
-        # Call PayMongo API
-        api_url = f"{settings.PAYMONGO_API_URL}/links"
+        # Call PayMongo Checkout Sessions API
+        api_url = "https://api.paymongo.com/v1/checkout_sessions"
 
-        # Log payload for debugging
         import logging
         logging.getLogger(__name__).debug('PayMongo payload: %s', json.dumps(payload))
 
@@ -1995,17 +2012,21 @@ def create_gcash_payment_link(request):
         if response.status_code in [200, 201]:
             response_data = response.json()
             checkout_url = response_data['data']['attributes']['checkout_url']
-            reference_number = response_data['data']['id']
+            session_id = response_data['data']['id']
 
-            # Save reference number
-            order.gcash_reference_number = reference_number
-            order.save(update_fields=['gcash_reference_number'])
+            # Save checkout session ID for webhook matching
+            order.gcash_reference_number = session_id
+            if hasattr(order, 'paymongo_checkout_id'):
+                order.paymongo_checkout_id = session_id
+                order.save(update_fields=['gcash_reference_number', 'paymongo_checkout_id'])
+            else:
+                order.save(update_fields=['gcash_reference_number'])
 
             return JsonResponse({
                 'success': True,
                 'checkout_url': checkout_url,
                 'order_id': order.id,
-                'reference_number': reference_number,
+                'reference_number': session_id,
                 'total_amount': float(total_amount)
             })
         else:

@@ -184,13 +184,25 @@ function renderBS(data, isSearchResult = false) {
 
 // ── Carousel helpers ──
 function cardW() {
-    const c = document.querySelector('.bsc');
-    return c ? c.offsetWidth + 20 : 238;
+    const cards = document.querySelectorAll('.bsc');
+    if (cards.length < 2) {
+        const c = cards[0];
+        return c ? c.offsetWidth + parseInt(getComputedStyle(document.getElementById('cTrack')).gap || 20) : 238;
+    }
+    // Measure actual distance between two cards (offsetLeft difference)
+    return cards[1].offsetLeft - cards[0].offsetLeft;
 }
 function maxIdx() {
     const track = document.getElementById('cTrack');
-    const cardCount = track ? track.querySelectorAll('.bsc').length : bsData.length;
-    return Math.max(0, cardCount - VISIBLE);
+    const cont = document.querySelector('.car-cont');
+    const cards = track ? track.querySelectorAll('.bsc') : [];
+    const cardCount = cards.length || (bsData ? bsData.length : 0);
+    if (!cont || !cards.length) return Math.max(0, cardCount - VISIBLE);
+    const cw = cardW();
+    const contWidth = cont.offsetWidth;
+    // How many cards scroll positions before last card hits right edge
+    const vis = Math.floor(contWidth / cw);
+    return Math.max(0, cardCount - vis);
 }
 
 function cScroll(d) {
@@ -200,7 +212,21 @@ function cScroll(d) {
 }
 function updCar() {
     if (isGrid) return;
-    document.getElementById('cTrack').style.transform = `translateX(-${cidx * cardW()}px)`;
+    const track = document.getElementById('cTrack');
+    const cont = document.querySelector('.car-cont');
+    if (!track || !cont) return;
+
+    const cards = track.querySelectorAll('.bsc');
+    const totalCards = cards.length;
+    if (!totalCards) return;
+
+    const cw = cardW();
+    const contWidth = cont.offsetWidth;
+    const totalWidth = cards[totalCards - 1].offsetLeft + cards[totalCards - 1].offsetWidth - cards[0].offsetLeft;
+    const maxScroll = Math.max(0, totalWidth - contWidth);
+    const scroll = Math.min(cidx * cw, maxScroll);
+
+    track.style.transform = `translateX(-${scroll}px)`;
 }
 function updNav() {
     document.getElementById('cPrev').disabled = cidx <= 0;

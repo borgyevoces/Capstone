@@ -40,7 +40,7 @@ body{background:#ffffff!important}
 .summary-line strong,.grand-total-line strong{color:#111!important}
 .grand-total-amount{color:#111!important;font-weight:700!important}
 #initial-checkout-btn,.btn-checkout-main,.summary-content #initial-checkout-btn{
-  width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+  width:100%!important;align-items:center!important;justify-content:center!important;gap:10px!important;
   padding:16px 24px!important;margin-top:20px!important;font-size:1rem!important;font-weight:700!important;
   color:#fff!important;background:#B71C1C!important;background-image:none!important;
   border:none!important;border-radius:10px!important;cursor:pointer!important;
@@ -73,6 +73,37 @@ body{background:#ffffff!important}
   .item-details{grid-row:1!important;grid-column:2!important}
   .item-quantity-controls{grid-row:2!important;grid-column:1/2!important;justify-self:start!important}
   .item-subtotal-section{grid-row:2!important;grid-column:2!important;justify-self:end!important}
+}
+
+/* ── CHECKBOXES ── */
+.item-checkbox-wrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-right: 4px;
+}
+.item-checkbox, .estab-select-all {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #B71C1C;
+    flex-shrink: 0;
+}
+.estab-select-all-wrap {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+}
+.estab-select-all {
+    accent-color: #B71C1C;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.cart-item.item-unchecked {
+    opacity: 0.45;
 }
 
 /* KILL ALL BORDERS ON CART BOX - HIGHEST PRIORITY */
@@ -209,6 +240,13 @@ html body .establishment-cart-box.active-cart {
 
                     <!-- Establishment Header -->
                     <div class="cart-establishment-info">
+                        <label class="estab-select-all-wrap" onclick="event.stopPropagation()">
+                            <input type="checkbox"
+                                   class="estab-select-all"
+                                   data-establishment-id="{{ cart.establishment.id }}"
+                                   checked
+                                   onchange="toggleEstablishmentItems(this)">
+                        </label>
                         <i class="fas fa-store"></i>
                         <h2>{{ cart.establishment.name }}</h2>
                         <button type="button"
@@ -227,6 +265,16 @@ html body .establishment-cart-box.active-cart {
                                  data-order-id="{{ cart.order.id }}"
                                  data-item-id="{{ item.id }}"
                                  data-max-stock="{{ item.menu_item.quantity }}">
+
+                                <!-- Item Checkbox -->
+                                <div class="item-checkbox-wrap" onclick="event.stopPropagation()">
+                                    <input type="checkbox"
+                                           class="item-checkbox"
+                                           data-item-id="{{ item.id }}"
+                                           data-order-id="{{ cart.order.id }}"
+                                           checked
+                                           onchange="onItemCheckboxChange(this)">
+                                </div>
 
                                 <!-- Item Image -->
                                 {% if item.menu_item.image %}

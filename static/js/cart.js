@@ -292,8 +292,8 @@ function selectEstablishment(establishmentId) {
         // ✅ Always reset: show checkout button, hide payment options
         const checkoutBtn = document.getElementById('initial-checkout-btn');
         const paymentSection = document.getElementById('payment-method-section');
-        if (checkoutBtn) checkoutBtn.style.display = 'flex';
-        if (paymentSection) paymentSection.style.display = 'none';
+        if (checkoutBtn) checkoutBtn.style.setProperty('display', 'flex', 'important');
+        if (paymentSection) paymentSection.style.setProperty('display', 'none', 'important');
 
         // Update summary
         updateOrderSummary(selectedBox);
@@ -312,6 +312,10 @@ function updateOrderSummary(cartBox) {
     let itemCount = 0;
 
     items.forEach(item => {
+        // Only count checked items
+        const checkbox = item.querySelector('.item-checkbox');
+        if (checkbox && !checkbox.checked) return;
+
         const priceText = item.querySelector('.item-subtotal').textContent;
         const price = parseFloat(priceText.replace('₱', '').replace(',', ''));
         const quantity = parseInt(item.querySelector('.quantity-value').textContent);
@@ -350,16 +354,26 @@ function showPaymentMethodSelection() {
         return;
     }
 
+    // Check that at least one item is selected
+    const activeBox = document.querySelector('.establishment-cart-box.active-cart');
+    if (activeBox) {
+        const checkedItems = activeBox.querySelectorAll('.item-checkbox:checked');
+        if (checkedItems.length === 0) {
+            showMessage('Please select at least one item to checkout', 'warning');
+            return;
+        }
+    }
+
     // Hide initial checkout button
     const initialBtn = document.getElementById('initial-checkout-btn');
     if (initialBtn) {
-        initialBtn.style.display = 'none';
+        initialBtn.style.setProperty('display', 'none', 'important');
     }
 
     // Show payment method selection
     const paymentSection = document.getElementById('payment-method-section');
     if (paymentSection) {
-        paymentSection.style.display = 'block';
+        paymentSection.style.setProperty('display', 'block', 'important');
 
         // Smooth scroll to payment options
         paymentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -581,3 +595,67 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('✅ Multi-Establishment Cart JS with Payment Method Selection loaded successfully');
+
+// =======================================================
+// ✅ CHECKBOX LOGIC
+// =======================================================
+
+// Called when a single item checkbox changes
+function onItemCheckboxChange(checkbox) {
+    const cartItem = checkbox.closest('.cart-item');
+    if (cartItem) {
+        cartItem.classList.toggle('item-unchecked', !checkbox.checked);
+    }
+
+    // Update the establishment's "Select All" checkbox state
+    const orderId = checkbox.dataset.orderId;
+    const cartBox = checkbox.closest('.establishment-cart-box');
+    if (cartBox) {
+        updateEstabSelectAll(cartBox);
+    }
+
+    // Update order summary if this establishment is active
+    if (cartBox && cartBox.classList.contains('active-cart')) {
+        updateOrderSummary(cartBox);
+    }
+}
+window.onItemCheckboxChange = onItemCheckboxChange;
+
+// Called when establishment "Select All" checkbox changes
+function toggleEstablishmentItems(selectAllCheckbox) {
+    const cartBox = selectAllCheckbox.closest('.establishment-cart-box');
+    if (!cartBox) return;
+
+    const itemCheckboxes = cartBox.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(cb => {
+        cb.checked = selectAllCheckbox.checked;
+        const cartItem = cb.closest('.cart-item');
+        if (cartItem) {
+            cartItem.classList.toggle('item-unchecked', !selectAllCheckbox.checked);
+        }
+    });
+
+    // Update summary if active
+    if (cartBox.classList.contains('active-cart')) {
+        updateOrderSummary(cartBox);
+    }
+}
+window.toggleEstablishmentItems = toggleEstablishmentItems;
+
+// Sync the "Select All" checkbox based on individual item states
+function updateEstabSelectAll(cartBox) {
+    const selectAll = cartBox.querySelector('.estab-select-all');
+    if (!selectAll) return;
+    const allBoxes = cartBox.querySelectorAll('.item-checkbox');
+    const checkedBoxes = cartBox.querySelectorAll('.item-checkbox:checked');
+    selectAll.checked = allBoxes.length === checkedBoxes.length;
+    selectAll.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length;
+}
+
+// Get only checked item IDs for the active cart (used by payment functions)
+function getCheckedItemIds() {
+    const activeBox = document.querySelector('.establishment-cart-box.active-cart');
+    if (!activeBox) return [];
+    const checked = activeBox.querySelectorAll('.item-checkbox:checked');
+    return Array.from(checked).map(cb => cb.dataset.itemId);
+}

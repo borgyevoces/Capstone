@@ -892,9 +892,271 @@
             height: 20px;
             box-shadow: 0 2px 8px rgba(183, 28, 28, 0.4);
         }
-    </style>
+
+        /* ============================================================ */
+        /* PHONE VIEW OVERHAUL — max-width: 768px                       */
+        /* ============================================================ */
+        @media (max-width: 768px) {
+
+            /* Body & layout */
+            body {
+                margin-left: 0 !important;
+                background: #f4f5f7;
+            }
+
+            /* Hide sidebar on mobile */
+            .sidebar { display: none !important; }
+
+            /* Sticky mobile top bar */
+            body::before {
+                content: '';
+                display: block;
+                height: 56px;
+            }
+            .main-container {
+                padding: 16px 16px 80px;
+                max-width: 100%;
+            }
+
+            /* Mobile nav bar */
+            .mobile-topbar {
+                display: flex !important;
+            }
+
+            /* ── Page header ── */
+            .page-header { margin-bottom: 18px; }
+            .page-title {
+                font-size: 20px;
+                font-weight: 700;
+                color: #111827;
+            }
+
+            /* ── Profile card ── */
+            .profile-card {
+                border-radius: 20px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+                margin-bottom: 16px;
+                overflow: hidden;
+            }
+
+            /* Hero image */
+            .profile-header {
+                height: 220px;
+                border-radius: 0;
+            }
+
+            .establishment-image {
+                object-position: center top;
+            }
+
+            /* Overlay text */
+            .profile-header-overlay {
+                padding: 20px 18px;
+                background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+            }
+
+            .establishment-info h1 {
+                font-size: 22px;
+                font-weight: 700;
+                line-height: 1.2;
+                margin-bottom: 8px;
+            }
+
+            /* Edit button — floating pill */
+            .edit-profile-btn {
+                top: 14px;
+                right: 14px;
+                padding: 8px 14px;
+                font-size: 12px;
+                border-radius: 20px;
+                gap: 6px;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            }
+
+            /* ── Details grid — single column on mobile ── */
+            .details-grid {
+                padding: 20px 18px;
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .detail-item {
+                padding: 14px 0;
+                border-bottom: 1px solid #f0f0f0;
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .detail-item:last-child { border-bottom: none; }
+
+            .detail-label {
+                font-size: 11px;
+                min-width: 110px;
+                color: #9ca3af;
+                padding-top: 2px;
+            }
+
+            .detail-value {
+                font-size: 14px;
+                text-align: right;
+                color: #1f2937;
+                font-weight: 500;
+                flex: 1;
+            }
+
+            /* Amenities — full width row */
+            .amenities-section {
+                grid-column: 1 !important;
+                flex-direction: column !important;
+                gap: 10px;
+            }
+
+            .amenities-grid {
+                gap: 8px;
+                margin-top: 8px;
+            }
+
+            .amenity-tag {
+                font-size: 12px;
+                padding: 6px 12px;
+                background: #f3f4f6;
+                border-radius: 16px;
+            }
+
+            /* ── Danger zone ── */
+            .danger-zone {
+                padding: 20px 18px;
+                border-radius: 16px;
+                margin-bottom: 20px;
+            }
+
+            .danger-zone-header {
+                margin-bottom: 16px;
+            }
+
+            .danger-zone-header h3 { font-size: 16px; }
+            .danger-zone-header i { font-size: 18px; }
+
+            .danger-actions {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 13px 16px;
+                font-size: 14px;
+                border-radius: 12px;
+            }
+
+            /* ── Modal improvements ── */
+            .modal-content {
+                width: 95%;
+                max-height: 92vh;
+                border-radius: 20px;
+            }
+
+            .modal-header {
+                padding: 18px 20px;
+            }
+
+            .modal-title { font-size: 18px; }
+
+            .modal-body { padding: 18px 20px; }
+
+            .modal-footer {
+                padding: 14px 20px;
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* ── Toast ── */
+            .toast {
+                right: 12px;
+                left: 12px;
+                bottom: -120px;
+                padding: 14px 18px;
+                border-radius: 14px;
+            }
+
+            .toast.active { bottom: 20px; }
+
+            /* ── Edit inputs ── */
+            .edit-input, .edit-select, .edit-textarea {
+                font-size: 16px !important; /* prevent iOS zoom */
+            }
+
+            /* ── Image upload section ── */
+            .image-upload-section {
+                padding: 16px;
+                border-radius: 12px;
+            }
+
+            /* ── Map ── */
+            #map { height: 260px; border-radius: 12px; }
+
+            /* ── Status badge ── */
+            .status-badge {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+
+        /* Sticky mobile top bar element */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            z-index: 999;
+            align-items: center;
+            padding: 0 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .mobile-topbar-title {
+            font-family: 'Pacifico', cursive;
+            font-size: 20px;
+            color: #111827;
+            flex: 1;
+            text-align: center;
+        }
+
+        .mobile-topbar-back {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #374151;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        </style>
 </head>
 <body>
+    <!-- MOBILE TOP BAR (phone only) -->
+    <div class="mobile-topbar">
+        <button class="mobile-topbar-back" onclick="window.history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <span class="mobile-topbar-title">KabsuEats</span>
+
+    </div>
+
     <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="sidebar-header">

@@ -528,12 +528,36 @@
         }
 
         .order-tabs {
-            padding: 10px;
+            padding: 8px;
+            gap: 6px;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            justify-content: unset;
+        }
+
+        /* "All Orders" spans full width */
+        .order-tab[data-status="all"] {
+            grid-column: 1 / -1;
+            justify-content: center;
         }
 
         .order-tab {
-            padding: 8px 14px;
+            padding: 9px 10px;
+            font-size: 11px;
+            gap: 6px;
+            justify-content: flex-start;
+            border-radius: 8px;
+        }
+
+        .order-tab i {
             font-size: 12px;
+        }
+
+        .order-tab-count {
+            margin-left: auto;
+            min-width: 20px;
+            font-size: 10px;
+            padding: 1px 6px;
         }
 
         .order-card-header {

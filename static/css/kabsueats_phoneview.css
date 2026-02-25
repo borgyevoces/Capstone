@@ -235,18 +235,18 @@
     .bs-section { background: transparent; padding: 0 0 20px; margin: 0 0 16px; }
     .bs-title-row { margin-bottom: 14px; padding: 14px 0 6px; }
     .bs-title {
-        font-size: 15px; font-weight: 400; color: var(--g700);
-        display: flex; align-items: center; justify-content: center;
-        gap: 8px; margin: 0; text-align: center; letter-spacing: 0;
+        font-size: 14px; font-weight: 500; color: var(--g700);
+        display: flex; align-items: center; justify-content: flex-start;
+        gap: 12px; margin: 0; text-align: left; letter-spacing: 0;
         line-height: 1.4;
     }
-    /* Fire icon badge */
+    /* Fire icon — simple, small */
     .bs-title i {
-        width: 32px; height: 32px; border-radius: 10px;
-        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        width: 28px; height: 28px; min-width: 28px; border-radius: 8px;
+        background: #ff6b35;
         display: inline-flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 15px; flex-shrink: 0;
-        box-shadow: 0 3px 8px rgba(255,107,53,.3);
+        color: #fff; font-size: 13px; flex-shrink: 0;
+        box-shadow: none;
     }
     .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 
@@ -290,24 +290,28 @@
     .gv-btn:hover, .gv-btn.on { background: var(--red); border-color: var(--red); }
 
     /* Carousel */
-    #carouselWrap { position: relative; padding: 0 38px; }
+    #carouselWrap { position: relative; padding: 0; }
     .car-cont { overflow: hidden; border-radius: 8px; }
     .car-track { display: flex; gap: 14px; transition: transform .42s cubic-bezier(.4,0,.2,1); padding: 6px 2px 16px; will-change: transform; }
     .car-track.gmode { display: grid !important; grid-template-columns: repeat(2,1fr) !important; gap: 14px !important; transform: none !important; padding-bottom: 8px; }
     .car-track.gmode .bsc { min-width: unset !important; max-width: unset !important; width: 100% !important; }
     #carouselWrap.gmode { padding: 0; }
     #carouselWrap.gmode .cnav { display: none !important; }
+
+    /* Nav buttons — truly transparent circle, centered vertically */
     .cnav {
         position: absolute; top: 50%; transform: translateY(-50%);
-        width: 34px; height: 34px; border-radius: 50%; background: #fff;
-        border: 2px solid var(--g200); color: var(--g700); cursor: pointer;
+        width: 36px; height: 36px; border-radius: 50%;
+        background: transparent;
+        border: 2px solid rgba(0,0,0,0.22);
+        color: rgba(0,0,0,0.45); cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        z-index: 10; transition: .25s; box-shadow: var(--sh1); font-size: 12px;
+        z-index: 10; transition: .2s; box-shadow: none; font-size: 13px;
     }
-    .cnav:hover { background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-50%) scale(1.08); }
-    .cnav.prev { left: 0; }
-    .cnav.next { right: 0; }
-    .cnav:disabled { opacity: .25; cursor: not-allowed; pointer-events: none; }
+    .cnav.prev { left: 4px; }
+    .cnav.next { right: 4px; }
+    .cnav:active { background: var(--red); border-color: var(--red); color: #fff; }
+    .cnav:disabled { opacity: 0; pointer-events: none; }
 
     /* Bestseller cards */
     .bsc { min-width: 170px; max-width: 170px; background: #fff; border-radius: 11px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.1); transition: .3s; cursor: pointer; position: relative; border: 1.5px solid var(--g200); flex-shrink: 0; }
