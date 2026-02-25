@@ -391,59 +391,10 @@ function proceedToPayMongoCheckout(button) {
     }
 
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Payment Link...';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <div class="payment-method-info"><span class="payment-method-name">Loading...</span></div>';
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('order_id', window.activeOrderId);
-
-    fetch('/payment/create-gcash-link/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
-        credentials: 'same-origin'
-    })
-    .then(async response => {
-        // Try to parse JSON body even on non-OK so we can surface upstream details
-        let bodyText = '';
-        try {
-            const cloned = response.clone();
-            bodyText = await cloned.text();
-        } catch (e) {
-            bodyText = '';
-        }
-
-        if (!response.ok) {
-            // Attempt to extract message from JSON body
-            try {
-                const errData = JSON.parse(bodyText || '{}');
-                const upstreamStatus = errData.upstream_status || response.status;
-                const upstreamBody = errData.upstream_body || bodyText;
-                console.error('Checkout upstream error', upstreamStatus, upstreamBody);
-                throw new Error(errData.message || `Server error: ${response.status} ${response.statusText}`);
-            } catch (parseErr) {
-                console.error('Checkout error response (non-JSON):', response.status, bodyText);
-                throw new Error(`Server error: ${response.status} ${response.statusText}`);
-            }
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success && data.checkout_url) {
-            showMessage('Redirecting to PayMongo for payment...', 'info');
-            setTimeout(() => {
-                window.location.href = data.checkout_url;
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Failed to create payment link');
-        }
-    })
-    .catch(error => {
-        console.error('Checkout Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-credit-card"></i><div class="payment-method-info"><span class="payment-method-name">Online Payment</span><span class="payment-method-desc">Pay via GCash/Card</span></div>';
-    });
+    // Redirect to custom KabsuEats checkout page
+    window.location.href = '/checkout/?order_id=' + window.activeOrderId;
 }
 window.proceedToPayMongoCheckout = proceedToPayMongoCheckout;
 

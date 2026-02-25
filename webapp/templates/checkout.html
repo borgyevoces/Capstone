@@ -1,0 +1,717 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Checkout - KabsuEats{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+    --red: #B71C1C;
+    --red-dark: #7f1212;
+    --red-light: #fff5f5;
+    --red-mid: #ef5350;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --ink: #111111;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+    --radius: 14px;
+    --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--bg) !important;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+}
+
+/* ── Page Wrapper ── */
+#checkout-page {
+    max-width: 1100px;
+    margin: 36px auto 60px;
+    padding: 0 20px;
+}
+
+/* ── Breadcrumb ── */
+.checkout-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+}
+.checkout-breadcrumb a {
+    color: var(--red);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity .2s;
+}
+.checkout-breadcrumb a:hover { opacity: .75; }
+.checkout-breadcrumb i { font-size: 0.7rem; }
+
+/* ── Heading ── */
+.checkout-heading {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.checkout-heading span {
+    background: var(--red);
+    color: #fff;
+    font-size: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* ── Two-column layout ── */
+.checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 28px;
+    align-items: start;
+}
+
+/* ── Card base ── */
+.checkout-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.checkout-card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.checkout-card-header h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.checkout-card-header .step-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ── Order Items ── */
+.order-items-list { padding: 0; }
+
+.order-item-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background .15s;
+}
+.order-item-row:last-child { border-bottom: none; }
+.order-item-row:hover { background: #fafafa; }
+
+.order-item-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #f3f4f6;
+}
+.order-item-img-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+.order-item-details { flex: 1; min-width: 0; }
+.order-item-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.order-item-qty {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+.order-item-price {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--red);
+    flex-shrink: 0;
+}
+
+/* ── Establishment pill ── */
+.estab-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.estab-pill i { color: var(--red); }
+
+/* ── Customer Info ── */
+.customer-info-body { padding: 20px 24px; }
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.info-row:last-child { border-bottom: none; }
+.info-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--red-light);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.info-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+.info-value {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* ── Right column: Summary ── */
+.summary-card { position: sticky; top: 90px; }
+
+.summary-body { padding: 20px 24px; }
+
+.summary-estab-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    padding: 10px 14px;
+    background: var(--red-light);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--red);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.summary-estab-name i { color: var(--red); font-size: 0.9rem; }
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 0.92rem;
+    color: var(--muted);
+    border-bottom: 1px solid #f3f4f6;
+}
+.summary-line:last-of-type { border-bottom: none; }
+.summary-line strong { color: var(--ink); font-weight: 600; }
+
+.summary-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 20px;
+    margin-top: 4px;
+    border-top: 2px solid var(--border);
+}
+.summary-total-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.summary-total-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--red);
+}
+
+/* ── Payment Method ── */
+.payment-methods { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+
+.payment-method-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    padding: 0 24px 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+}
+
+.pay-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 18px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: all .25s ease;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+}
+.pay-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+.pay-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.pay-btn-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.pay-btn-text-wrap { flex: 1; }
+.pay-btn-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 2px;
+}
+.pay-btn-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: block;
+}
+.pay-btn-arrow {
+    color: var(--muted);
+    font-size: 0.9rem;
+    transition: transform .2s;
+}
+.pay-btn:hover .pay-btn-arrow { transform: translateX(4px); }
+
+/* Online payment button */
+.pay-btn-online {
+    border-color: #dde3ff;
+    background: #f8f9ff;
+}
+.pay-btn-online .pay-btn-icon {
+    background: #eef0ff;
+    color: #4f46e5;
+}
+.pay-btn-online:hover:not(:disabled) {
+    border-color: #4f46e5;
+    background: #eef0ff;
+    box-shadow: 0 4px 16px rgba(79,70,229,.15);
+}
+.pay-btn-online:hover .pay-btn-name { color: #4f46e5; }
+
+/* Cash payment button */
+.pay-btn-cash {
+    border-color: #d1fae5;
+    background: var(--green-light);
+}
+.pay-btn-cash .pay-btn-icon {
+    background: #d1fae5;
+    color: var(--green);
+}
+.pay-btn-cash:hover:not(:disabled) {
+    border-color: var(--green);
+    background: #dcfce7;
+    box-shadow: 0 4px 16px rgba(22,163,74,.15);
+}
+.pay-btn-cash:hover .pay-btn-name { color: var(--green); }
+
+/* ── Security note ── */
+.security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+.security-note i { color: var(--green); }
+
+/* ── Loading overlay ── */
+.checkout-loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+}
+.checkout-loading-overlay.active { display: flex; }
+.loading-spinner {
+    width: 56px;
+    height: 56px;
+    border: 4px solid #fce7e7;
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+}
+.loading-sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .checkout-grid { grid-template-columns: 1fr; }
+    .summary-card { position: static; }
+}
+@media (max-width: 480px) {
+    .checkout-heading { font-size: 1.5rem; }
+    #checkout-page { padding: 0 14px; margin-top: 20px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="checkout-page">
+
+    <!-- Breadcrumb -->
+    <nav class="checkout-breadcrumb">
+        <a href="{% url 'view_cart' %}"><i class="fas fa-arrow-left"></i> Cart</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Checkout</span>
+    </nav>
+
+    <!-- Heading -->
+    <h1 class="checkout-heading">
+        Complete Your Order
+        <span>Secure</span>
+    </h1>
+
+    <div class="checkout-grid">
+
+        <!-- LEFT: Order Details + Customer Info -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+            <!-- Order Items Card -->
+            <div class="checkout-card">
+                <div class="checkout-card-header">
+                    <div class="step-badge">1</div>
+                    <h3>Order Summary</h3>
+                </div>
+
+                <div class="estab-pill">
+                    <i class="fas fa-store"></i>
+                    {{ order.establishment.name }}
+                </div>
+
+                <div class="order-items-list">
+                    {% for item in order_items %}
+                    <div class="order-item-row">
+                        {% if item.menu_item.image %}
+                            <img src="{{ item.menu_item.image.url }}"
+                                 alt="{{ item.menu_item.name }}"
+                                 class="order-item-img">
+                        {% else %}
+                            <div class="order-item-img-placeholder">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                        {% endif %}
+                        <div class="order-item-details">
+                            <div class="order-item-name">{{ item.menu_item.name }}</div>
+                            <div class="order-item-qty">₱{{ item.menu_item.price|floatformat:2 }} × {{ item.quantity }}</div>
+                        </div>
+                        <div class="order-item-price">₱{{ item.total_price|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Customer Info Card -->
+            <div class="checkout-card">
+                <div class="checkout-card-header">
+                    <div class="step-badge">2</div>
+                    <h3>Customer Information</h3>
+                </div>
+                <div class="customer-info-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-user"></i></div>
+                        <div>
+                            <div class="info-label">Full Name</div>
+                            <div class="info-value">{{ user.get_full_name|default:user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                        <div>
+                            <div class="info-label">Email Address</div>
+                            <div class="info-value">{{ user.email }}</div>
+                        </div>
+                    </div>
+                    {% if user.profile.phone_number %}
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <div>
+                            <div class="info-label">Phone Number</div>
+                            <div class="info-value">{{ user.profile.phone_number }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: Payment Summary -->
+        <div>
+            <div class="checkout-card summary-card">
+                <div class="checkout-card-header">
+                    <div class="step-badge">3</div>
+                    <h3>Payment</h3>
+                </div>
+
+                <div class="summary-body">
+                    <div class="summary-estab-name">
+                        <i class="fas fa-store"></i>
+                        {{ order.establishment.name }}
+                    </div>
+
+                    {% for item in order_items %}
+                    <div class="summary-line">
+                        <span>{{ item.menu_item.name }} × {{ item.quantity }}</span>
+                        <strong>₱{{ item.total_price|floatformat:2 }}</strong>
+                    </div>
+                    {% endfor %}
+
+                    <div class="summary-total-row">
+                        <span class="summary-total-label">Total</span>
+                        <span class="summary-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+
+                <!-- Payment Method Title -->
+                <div class="payment-method-title">Choose Payment Method</div>
+
+                <div class="payment-methods">
+
+                    <!-- Online Payment -->
+                    <button class="pay-btn pay-btn-online"
+                            id="btn-online-pay"
+                            onclick="handleOnlinePayment(this)">
+                        <div class="pay-btn-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="pay-btn-text-wrap">
+                            <span class="pay-btn-name">Online Payment</span>
+                            <span class="pay-btn-desc">GCash, Credit/Debit Card, Maya</span>
+                        </div>
+                        <i class="fas fa-chevron-right pay-btn-arrow"></i>
+                    </button>
+
+                    <!-- Cash Payment -->
+                    <button class="pay-btn pay-btn-cash"
+                            id="btn-cash-pay"
+                            onclick="handleCashPayment(this)">
+                        <div class="pay-btn-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="pay-btn-text-wrap">
+                            <span class="pay-btn-name">Cash on Pickup</span>
+                            <span class="pay-btn-desc">Pay when you claim your order</span>
+                        </div>
+                        <i class="fas fa-chevron-right pay-btn-arrow"></i>
+                    </button>
+
+                </div>
+
+                <div class="security-note">
+                    <i class="fas fa-shield-alt"></i>
+                    Secured by PayMongo
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="checkout-loading-overlay" id="checkoutLoadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+    <div class="loading-sub" id="loadingSubText">Please wait, do not close this page</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ORDER_ID = {{ order.id }};
+const CSRF_TOKEN = '{{ csrf_token }}';
+
+function showLoading(text, sub) {
+    document.getElementById('loadingText').textContent = text || 'Processing...';
+    document.getElementById('loadingSubText').textContent = sub || 'Please wait, do not close this page';
+    document.getElementById('checkoutLoadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('checkoutLoadingOverlay').classList.remove('active');
+}
+
+function disableAllButtons() {
+    document.getElementById('btn-online-pay').disabled = true;
+    document.getElementById('btn-cash-pay').disabled = true;
+}
+
+function enableAllButtons() {
+    document.getElementById('btn-online-pay').disabled = false;
+    document.getElementById('btn-cash-pay').disabled = false;
+}
+
+// ── Online Payment (PayMongo) ──
+function handleOnlinePayment(button) {
+    disableAllButtons();
+    showLoading('Creating Secure Payment Link...', 'Connecting to PayMongo, please wait');
+
+    const formData = new FormData();
+    formData.append('order_id', ORDER_ID);
+
+    fetch('/payment/create-gcash-link/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        credentials: 'same-origin'
+    })
+    .then(async res => {
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid server response'); }
+        if (!res.ok) throw new Error(data.message || `Server error ${res.status}`);
+        return data;
+    })
+    .then(data => {
+        if (data.success && data.checkout_url) {
+            showLoading('Redirecting to PayMongo...', 'You will be redirected to complete your payment');
+            setTimeout(() => { window.location.href = data.checkout_url; }, 800);
+        } else {
+            throw new Error(data.message || 'Failed to create payment link');
+        }
+    })
+    .catch(err => {
+        hideLoading();
+        enableAllButtons();
+        alert('Payment Error: ' + err.message);
+        console.error(err);
+    });
+}
+
+// ── Cash Payment ──
+function handleCashPayment(button) {
+    disableAllButtons();
+    showLoading('Placing Your Order...', 'Confirming your cash on pickup order');
+
+    const formData = new FormData();
+    formData.append('order_id', ORDER_ID);
+
+    fetch('/payment/create-cash-order/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        credentials: 'same-origin'
+    })
+    .then(async res => {
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid server response'); }
+        if (!res.ok) throw new Error(data.message || `Server error ${res.status}`);
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            showLoading('Order Placed!', 'Redirecting to your order confirmation...');
+            setTimeout(() => {
+                window.location.href = '/payment/success/?order_id=' + ORDER_ID + '&payment_method=cash';
+            }, 800);
+        } else {
+            throw new Error(data.message || 'Failed to place order');
+        }
+    })
+    .catch(err => {
+        hideLoading();
+        enableAllButtons();
+        alert('Order Error: ' + err.message);
+        console.error(err);
+    });
+}
+</script>
+{% endblock %}

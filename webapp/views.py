@@ -4560,6 +4560,33 @@ def gcash_payment_success(request):
 
 
 @login_required
+@login_required
+def checkout_page(request):
+    """
+    Custom KabsuEats checkout page — shown before redirecting to PayMongo.
+    Accepts ?order_id=X to display a specific order for checkout.
+    """
+    order_id = request.GET.get('order_id')
+    if not order_id:
+        return redirect('view_cart')
+
+    try:
+        order = Order.objects.prefetch_related(
+            'orderitem_set__menu_item'
+        ).get(id=order_id, user=request.user, status='PENDING')
+    except Order.DoesNotExist:
+        return redirect('view_cart')
+
+    order_items = order.orderitem_set.all()
+
+    context = {
+        'order': order,
+        'order_items': order_items,
+        'user': request.user,
+    }
+    return render(request, 'webapplication/checkout.html', context)
+
+
 def view_cart(request):
     """
     Display all cart items grouped by establishment

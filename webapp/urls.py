@@ -56,6 +56,7 @@ urlpatterns = [
 
                   # 4. Cart & Payments - COMPLETE FIXED ROUTES
                   path('cart/', views.view_cart, name='view_cart'),
+                  path('checkout/', views.checkout_page, name='checkout_page'),
                   path('cart/add/', views.add_to_cart, name='add_to_cart'),
                   path('cart/clear/', views.clear_cart, name='clear_cart'),
                   path('cart/update/', views.update_cart_item, name='update_cart_item'),
