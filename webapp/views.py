@@ -2007,7 +2007,7 @@ def create_gcash_payment_link(request):
         import logging
         logging.getLogger(__name__).debug('PayMongo payload: %s', json.dumps(payload))
 
-        response = _paymongo_session.post(api_url, headers=headers, json=payload, timeout=(5, 15))
+        response = requests.post(api_url, headers=headers, json=payload, timeout=30)
 
         if response.status_code in [200, 201]:
             response_data = response.json()
@@ -4499,71 +4499,9 @@ def mark_all_notifications_read(request):
         }, status=500)
 
 
-# ── Reusable PayMongo session with connection pooling + fast retry ──
-import urllib3
-from requests.adapters import HTTPAdapter
-
-_paymongo_session = requests.Session()
-_paymongo_adapter = HTTPAdapter(
-    pool_connections=4,
-    pool_maxsize=8,
-    max_retries=urllib3.Retry(
-        total=2,
-        backoff_factor=0.3,       # 0.3s, 0.6s between retries
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["GET", "POST"],
-    )
-)
-_paymongo_session.mount("https://", _paymongo_adapter)
-
-
-def _paymongo_headers():
-    auth_b64 = base64.b64encode(f"{settings.PAYMONGO_SECRET_KEY}:".encode()).decode()
-    return {
-        'Authorization': f'Basic {auth_b64}',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
-
-
-def _verify_paymongo_session_paid(session_id):
-    """
-    Verify checkout session status via PayMongo API.
-    Uses shared session with connection pooling for speed.
-    Returns (is_paid: bool, payment_method: str|None)
-    """
-    try:
-        resp = _paymongo_session.get(
-            f"https://api.paymongo.com/v1/checkout_sessions/{session_id}",
-            headers=_paymongo_headers(),
-            timeout=(4, 8),   # (connect, read) — fail fast on network issues
-        )
-        if resp.status_code != 200:
-            print(f"⚠️ PayMongo session {session_id} → HTTP {resp.status_code}")
-            return False, None
-        attrs = resp.json().get('data', {}).get('attributes', {})
-        status = attrs.get('status', '')        # 'active' | 'paid' | 'expired'
-        pay_method = None
-        payments = attrs.get('payments', [])
-        if payments:
-            pay_method = (
-                payments[0]
-                .get('data', {})
-                .get('attributes', {})
-                .get('source', {})
-                .get('type')
-            )
-        return status == 'paid', pay_method
-    except Exception as e:
-        print(f"❌ PayMongo verify error: {e}")
-        return False, None
-
-
 def gcash_payment_success(request):
     """
-    ✅ Verifies payment with PayMongo before marking order as PAID.
-    Always requires real PayMongo confirmation — no shortcuts.
-    Fast: uses connection pooling, (4s connect / 8s read) timeout, 2 quick retries.
+    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS and STOCK REDUCTION
     """
     order_id = request.GET.get('order_id')
 
@@ -4577,72 +4515,59 @@ def gcash_payment_success(request):
             messages.error(request, 'Order not found')
             return redirect('view_cart')
 
-        # Already confirmed — skip straight to confirmation
-        if order.status == 'PAID':
-            messages.success(request, '✅ Payment successful! Your order has been placed.')
-            return redirect('order_confirmation', order_id=order.id)
+        # Update order status if still pending
+        if order.status != 'PAID':
+            with transaction.atomic():
+                # 1. Update order status
+                order.status = 'PAID'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
 
-        session_id = order.gcash_reference_number
-        is_simulated = session_id and session_id.startswith('SIM-')
-
-        if is_simulated:
-            is_paid = True
-            pay_method = order.gcash_payment_method or 'gcash'
-        elif session_id:
-            # Verify with PayMongo — up to 2 quick retries (0.5s apart)
-            is_paid, pay_method = False, None
-            for attempt in range(2):
-                is_paid, pay_method = _verify_paymongo_session_paid(session_id)
-                if is_paid:
-                    break
-                if attempt == 0:
-                    import time
-                    time.sleep(0.5)
-            if not is_paid:
-                print(f"⚠️ PayMongo session {session_id} not confirmed. Order #{order.id}")
-                messages.error(request, 'Payment not yet confirmed. If you already paid, please wait a moment and try again.')
-                return redirect('view_cart')
-        else:
-            print(f"❌ No PayMongo session_id for Order #{order.id}.")
-            messages.error(request, 'Payment could not be verified. Please contact support if you were charged.')
-            return redirect('view_cart')
-
-        # ── Payment verified — process order ──
-        with transaction.atomic():
-            order.status = 'PAID'
-            order.payment_confirmed_at = timezone.now()
-            if pay_method and pay_method != order.gcash_payment_method:
-                order.gcash_payment_method = pay_method
-            order.save()
-
-            try:
-                OrderNotification.objects.create(
-                    establishment=order.establishment,
-                    order=order,
-                    notification_type='new_order',
-                    message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
-                )
-            except Exception as notif_error:
-                print(f"⚠️ Notification error: {notif_error}")
-
-            for order_item in order.orderitem_set.select_related('menu_item'):
-                menu_item = order_item.menu_item
+                # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER
                 try:
-                    menu_item.quantity = max(0, menu_item.quantity - order_item.quantity)
-                    menu_item.save(update_fields=['quantity'])
-                except Exception as stock_err:
-                    print(f"❌ Stock error for {menu_item.name}: {stock_err}")
+                    OrderNotification.objects.create(
+                        establishment=order.establishment,
+                        order=order,
+                        notification_type='new_order',
+                        message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                    )
+                    print(f"✅ Notification created for Order #{order.id}")
+                except Exception as notif_error:
+                    print(f"⚠️ Notification creation error: {notif_error}")
 
-        try:
-            send_order_confirmation_email(order)
-        except Exception as e:
-            print(f"Email error: {e}")
+                # 3. ✅ REDUCE STOCK FOR EACH ORDER ITEM
+                for order_item in order.orderitem_set.select_related('menu_item'):
+                    menu_item = order_item.menu_item
+                    try:
+                        if menu_item.quantity >= order_item.quantity:
+                            # Reduce the quantity
+                            menu_item.quantity -= order_item.quantity
+                            menu_item.save()
+                            print(f"✅ Stock reduced for {menu_item.name}: {order_item.quantity} units")
+                        else:
+                            print(
+                                f"⚠️ Warning: Insufficient stock for {menu_item.name}. Available: {menu_item.quantity}, Ordered: {order_item.quantity}")
+                            # Still process the order but log the issue
+                            menu_item.quantity = 0
+                            menu_item.save()
+                    except Exception as stock_err:
+                        print(f"❌ Error reducing stock for {menu_item.name}: {stock_err}")
 
+            # 4. Send confirmation emails (best-effort)
+            try:
+                send_order_confirmation_email(order)
+            except Exception as e:
+                print(f"Email error: {e}")
+
+        # ✅ Redirect to order confirmation — customer sees their order as "received"
         messages.success(request, '✅ Payment successful! Your order has been placed.')
         return redirect('order_confirmation', order_id=order.id)
 
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('view_cart')
     except Exception as e:
-        print(f"❌ Error in gcash_payment_success: {e}")
+        print(f"❌ Error in payment success handler: {e}")
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
 
