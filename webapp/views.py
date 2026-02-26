@@ -2143,14 +2143,19 @@ def gcash_payment_cancel(request):
 @login_required
 def checkout_page(request):
     """
-    Display the checkout page for a specific pending order.
-    Called from the cart with ?order_id=<id>
+    Checkout page - shows order items, customer info, establishment details, and payment options.
+    Called from cart with ?order_id=<id>
     """
     order_id = request.GET.get('order_id')
     if not order_id:
         return redirect('view_cart')
 
-    order = get_object_or_404(Order, id=order_id, user=request.user, status='PENDING')
+    order = get_object_or_404(
+        Order.objects.select_related('establishment', 'user'),
+        id=order_id,
+        user=request.user,
+        status='PENDING'
+    )
     items = order.orderitem_set.select_related('menu_item').all()
 
     context = {
@@ -5993,15 +5998,14 @@ def get_user_transaction_history(request):
                 })
 
             # Build order data
-            # Normalize status so client sees same labels as owner dashboard
             raw_status = order.status or 'PENDING'
             client_status_map = {
-                'PAID': 'order_received',    # online payment confirmed
+                'PAID': 'order_received',
                 'order_received': 'order_received',
                 'preparing': 'preparing',
                 'to_claim': 'to_claim',
                 'completed': 'completed',
-                'PENDING': 'PENDING',        # unpaid, keep as-is so Pay Now button shows
+                'PENDING': 'PENDING',
             }
             normalized_status = client_status_map.get(raw_status, raw_status.lower())
 

@@ -6,438 +6,576 @@
 
 {% block extra_css %}
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap');
 
 :root {
     --red: #B71C1C;
     --red-dark: #7f1212;
+    --red-mid: #e53935;
     --red-light: #fff5f5;
-    --red-mid: #ef5350;
+    --red-glow: rgba(183,28,28,0.18);
     --green: #16a34a;
     --green-light: #f0fdf4;
-    --ink: #111111;
+    --ink: #0f0f0f;
+    --ink-soft: #1e1e2e;
     --muted: #6b7280;
-    --border: #e5e7eb;
-    --bg: #f9fafb;
+    --muted-light: #9ca3af;
+    --border: #e8eaed;
+    --border-soft: #f1f3f5;
+    --bg: #f4f5f7;
     --white: #ffffff;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
-    --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
-    --radius: 14px;
-    --radius-sm: 8px;
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.09);
+    --shadow-lg: 0 20px 48px rgba(0,0,0,0.12);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     background: var(--bg) !important;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     color: var(--ink);
+    -webkit-font-smoothing: antialiased;
 }
 
-/* ── Page Wrapper ── */
+/* ── Page ── */
 #checkout-page {
-    max-width: 1100px;
-    margin: 36px auto 60px;
+    max-width: 1080px;
+    margin: 32px auto 80px;
     padding: 0 20px;
 }
 
-/* ── Breadcrumb ── */
-.checkout-breadcrumb {
+/* ── Top nav ── */
+.co-nav {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.co-back {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 28px;
-}
-.checkout-breadcrumb a {
-    color: var(--red);
-    text-decoration: none;
     font-weight: 600;
-    transition: opacity .2s;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    transition: all .2s;
 }
-.checkout-breadcrumb a:hover { opacity: .75; }
-.checkout-breadcrumb i { font-size: 0.7rem; }
+.co-back:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-light);
+}
+.co-back i { font-size: 0.75rem; }
 
-/* ── Heading ── */
-.checkout-heading {
-    font-family: 'Syne', sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--ink);
-    margin-bottom: 32px;
+.co-steps {
     display: flex;
     align-items: center;
-    gap: 12px;
-}
-.checkout-heading span {
-    background: var(--red);
-    color: #fff;
-    font-size: 0.75rem;
-    font-family: 'DM Sans', sans-serif;
+    gap: 6px;
+    font-size: 0.8rem;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    vertical-align: middle;
+}
+.co-step { color: var(--muted-light); }
+.co-step.active { color: var(--ink); }
+.co-step-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+}
+.co-step-dot.active { background: var(--red); }
+.co-step-sep { color: var(--border); }
+
+/* ── Heading ── */
+.co-heading {
+    margin-bottom: 28px;
+}
+.co-heading h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+.co-heading p {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin-top: 6px;
 }
 
-/* ── Two-column layout ── */
-.checkout-grid {
+/* ── Grid ── */
+.co-grid {
     display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 28px;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
     align-items: start;
 }
 
-/* ── Card base ── */
-.checkout-card {
+/* ── Card ── */
+.co-card {
     background: var(--white);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
+    margin-bottom: 16px;
 }
+.co-card:last-child { margin-bottom: 0; }
 
-.checkout-card-header {
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
+.co-card-header {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border-soft);
     display: flex;
     align-items: center;
     gap: 10px;
+    background: #fafbfc;
 }
-.checkout-card-header h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--ink);
-}
-.checkout-card-header .step-badge {
-    width: 26px;
-    height: 26px;
+.co-card-num {
+    width: 24px; height: 24px;
     border-radius: 50%;
     background: var(--red);
     color: #fff;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
+.co-card-header h3 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+.co-card-header-meta {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 500;
+}
 
-/* ── Order Items ── */
-.order-items-list { padding: 0; }
-
-.order-item-row {
+/* ── Establishment banner ── */
+.estab-banner {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 24px;
-    border-bottom: 1px solid #f3f4f6;
+    gap: 14px;
+    padding: 16px 22px;
+    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+    border-bottom: 1px solid var(--border-soft);
+}
+.estab-img {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #f3f4f6;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+.estab-img-placeholder {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    background: var(--red-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--red);
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    border: 1px solid #fecaca;
+}
+.estab-info-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--ink);
+}
+.estab-info-meta {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.estab-info-meta i { font-size: 0.7rem; }
+.item-count-badge {
+    margin-left: auto;
+    background: var(--red-light);
+    color: var(--red);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #fecaca;
+    flex-shrink: 0;
+}
+
+/* ── Order items ── */
+.co-items { padding: 0; }
+
+.co-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border-soft);
     transition: background .15s;
 }
-.order-item-row:last-child { border-bottom: none; }
-.order-item-row:hover { background: #fafafa; }
+.co-item:last-child { border-bottom: none; }
+.co-item:hover { background: #fafbfc; }
 
-.order-item-img {
-    width: 72px;
-    height: 72px;
+.co-item-img {
+    width: 64px; height: 64px;
     border-radius: 10px;
     object-fit: cover;
     flex-shrink: 0;
     background: #f3f4f6;
+    border: 1px solid var(--border);
 }
-.order-item-img-placeholder {
-    width: 72px;
-    height: 72px;
+.co-item-img-placeholder {
+    width: 64px; height: 64px;
     border-radius: 10px;
     background: #f3f4f6;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ccc;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     flex-shrink: 0;
+    border: 1px solid var(--border);
 }
-.order-item-details { flex: 1; min-width: 0; }
-.order-item-name {
+.co-item-info { flex: 1; min-width: 0; }
+.co-item-name {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.93rem;
     color: var(--ink);
-    margin-bottom: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 4px;
 }
-.order-item-qty {
-    font-size: 0.82rem;
-    color: var(--muted);
-}
-.order-item-price {
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--red);
-    flex-shrink: 0;
-}
-
-/* ── Establishment pill ── */
-.estab-pill {
+.co-item-sub {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 24px 0;
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.78rem;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .5px;
 }
-.estab-pill i { color: var(--red); }
+.co-item-qty-badge {
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+}
+.co-item-price {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--red);
+    flex-shrink: 0;
+    text-align: right;
+}
+.co-item-unit-price {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+}
 
-/* ── Customer Info ── */
-.customer-info-body { padding: 20px 24px; }
+/* ── Customer info ── */
+.co-info-body { padding: 8px 22px 16px; }
 
-.info-row {
+.co-info-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid #f3f4f6;
+    gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border-soft);
 }
-.info-row:last-child { border-bottom: none; }
-.info-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+.co-info-row:last-child { border-bottom: none; }
+.co-info-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
     background: var(--red-light);
     color: var(--red);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     flex-shrink: 0;
+    border: 1px solid #fecaca;
 }
-.info-label {
-    font-size: 0.78rem;
+.co-info-label {
+    font-size: 0.73rem;
     color: var(--muted);
-    margin-bottom: 2px;
-    font-weight: 500;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 3px;
 }
-.info-value {
+.co-info-value {
     font-size: 0.92rem;
     font-weight: 600;
     color: var(--ink);
 }
 
-/* ── Right column: Summary ── */
-.summary-card { position: sticky; top: 90px; }
-
-.summary-body { padding: 20px 24px; }
-
-.summary-estab-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--ink);
-    padding: 10px 14px;
-    background: var(--red-light);
-    border-radius: var(--radius-sm);
-    border-left: 4px solid var(--red);
-    margin-bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+/* ── Order meta ── */
+.co-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 6px 22px 16px;
 }
-.summary-estab-name i { color: var(--red); font-size: 0.9rem; }
-
-.summary-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    font-size: 0.92rem;
+.co-meta-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+.co-meta-item:nth-child(odd) { border-right: 1px solid var(--border-soft); padding-right: 16px; }
+.co-meta-item:nth-child(even) { padding-left: 16px; }
+.co-meta-item:nth-last-child(-n+2) { border-bottom: none; }
+.co-meta-label {
+    font-size: 0.72rem;
     color: var(--muted);
-    border-bottom: 1px solid #f3f4f6;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 4px;
 }
-.summary-line:last-of-type { border-bottom: none; }
-.summary-line strong { color: var(--ink); font-weight: 600; }
+.co-meta-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+.co-meta-value.highlight { color: var(--red); }
 
-.summary-total-row {
+/* ── Right: Summary card ── */
+.co-summary { position: sticky; top: 88px; }
+
+.co-summary-body { padding: 20px 22px; }
+
+.co-sum-items { margin-bottom: 16px; }
+
+.co-sum-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border-soft);
+}
+.co-sum-row:last-child { border-bottom: none; }
+.co-sum-row span:first-child { flex: 1; }
+.co-sum-row strong { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.co-sum-name { font-weight: 500; color: var(--ink-soft); }
+.co-sum-qty { font-size: 0.75rem; color: var(--muted); }
+
+.co-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 16px;
+}
+
+.co-total-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 0 20px;
-    margin-top: 4px;
-    border-top: 2px solid var(--border);
+    padding: 14px 22px;
+    background: var(--red-light);
+    border-top: 1.5px solid #fecaca;
 }
-.summary-total-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
+.co-total-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--ink);
 }
-.summary-total-amount {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 800;
+.co-total-amount {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 900;
     color: var(--red);
+    letter-spacing: -0.5px;
+}
+.co-item-count-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 400;
+    display: block;
+    margin-top: 1px;
 }
 
-/* ── Payment Method ── */
-.payment-methods { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 12px; }
+/* ── Payment section ── */
+.co-pay-section { padding: 0 22px 20px; }
 
-.payment-method-title {
-    font-size: 0.78rem;
+.co-pay-label {
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: .6px;
-    padding: 0 24px 12px;
+    padding: 18px 0 12px;
     border-top: 1px solid var(--border);
-    padding-top: 18px;
+    display: block;
 }
 
-.pay-btn {
+.pay-opt {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 15px 18px;
+    padding: 14px 16px;
     border-radius: 12px;
     border: 2px solid var(--border);
     background: var(--white);
     cursor: pointer;
-    transition: all .25s ease;
+    transition: all .22s ease;
     text-align: left;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
 }
-.pay-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+.pay-opt:last-child { margin-bottom: 0; }
+.pay-opt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .22s;
+    border-radius: 10px;
 }
-.pay-btn:disabled { opacity: .55; cursor: not-allowed; }
+.pay-opt:hover:not(:disabled)::before { opacity: 1; }
+.pay-opt:disabled { opacity: .5; cursor: not-allowed; }
 
-.pay-btn-icon {
-    width: 46px;
-    height: 46px;
+.pay-opt-icon {
+    width: 44px; height: 44px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     flex-shrink: 0;
+    transition: transform .22s;
+    position: relative;
+    z-index: 1;
 }
+.pay-opt:hover:not(:disabled) .pay-opt-icon { transform: scale(1.08); }
 
-.pay-btn-text-wrap { flex: 1; }
-.pay-btn-name {
+.pay-opt-info { flex: 1; position: relative; z-index: 1; }
+.pay-opt-name {
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.93rem;
     color: var(--ink);
     display: block;
     margin-bottom: 2px;
+    transition: color .22s;
 }
-.pay-btn-desc {
-    font-size: 0.78rem;
+.pay-opt-desc {
+    font-size: 0.75rem;
     color: var(--muted);
     display: block;
 }
-.pay-btn-arrow {
+.pay-opt-arrow {
     color: var(--muted);
-    font-size: 0.9rem;
-    transition: transform .2s;
+    font-size: 0.85rem;
+    transition: transform .2s, color .2s;
+    position: relative;
+    z-index: 1;
 }
-.pay-btn:hover .pay-btn-arrow { transform: translateX(4px); }
+.pay-opt:hover:not(:disabled) .pay-opt-arrow { transform: translateX(4px); }
 
-/* Online payment button */
-.pay-btn-online {
-    border-color: #dde3ff;
-    background: #f8f9ff;
-}
-.pay-btn-online .pay-btn-icon {
-    background: #eef0ff;
-    color: #4f46e5;
-}
-.pay-btn-online:hover:not(:disabled) {
-    border-color: #4f46e5;
-    background: #eef0ff;
-    box-shadow: 0 4px 16px rgba(79,70,229,.15);
-}
-.pay-btn-online:hover .pay-btn-name { color: #4f46e5; }
+/* Online */
+.pay-opt-online { border-color: #dde3ff; background: #f7f8ff; }
+.pay-opt-online .pay-opt-icon { background: #eef0ff; color: #4338ca; }
+.pay-opt-online::before { background: #eef0ff; }
+.pay-opt-online:hover:not(:disabled) { border-color: #4338ca; box-shadow: 0 4px 16px rgba(67,56,202,.12); }
+.pay-opt-online:hover:not(:disabled) .pay-opt-name { color: #4338ca; }
+.pay-opt-online:hover:not(:disabled) .pay-opt-arrow { color: #4338ca; }
 
-/* Cash payment button */
-.pay-btn-cash {
-    border-color: #d1fae5;
-    background: var(--green-light);
-}
-.pay-btn-cash .pay-btn-icon {
-    background: #d1fae5;
-    color: var(--green);
-}
-.pay-btn-cash:hover:not(:disabled) {
-    border-color: var(--green);
-    background: #dcfce7;
-    box-shadow: 0 4px 16px rgba(22,163,74,.15);
-}
-.pay-btn-cash:hover .pay-btn-name { color: var(--green); }
+/* Cash */
+.pay-opt-cash { border-color: #d1fae5; background: var(--green-light); }
+.pay-opt-cash .pay-opt-icon { background: #bbf7d0; color: #15803d; }
+.pay-opt-cash::before { background: #dcfce7; }
+.pay-opt-cash:hover:not(:disabled) { border-color: #15803d; box-shadow: 0 4px 16px rgba(21,128,61,.12); }
+.pay-opt-cash:hover:not(:disabled) .pay-opt-name { color: #15803d; }
+.pay-opt-cash:hover:not(:disabled) .pay-opt-arrow { color: #15803d; }
 
 /* ── Security note ── */
-.security-note {
+.co-secure {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    padding: 14px 24px;
-    border-top: 1px solid var(--border);
-    font-size: 0.78rem;
+    gap: 6px;
+    padding: 13px 22px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 0.75rem;
     color: var(--muted);
+    background: #fafbfc;
 }
-.security-note i { color: var(--green); }
+.co-secure i { color: var(--green); }
 
 /* ── Loading overlay ── */
-.checkout-loading-overlay {
+.co-loading {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(255,255,255,.85);
-    backdrop-filter: blur(4px);
+    background: rgba(255,255,255,.9);
+    backdrop-filter: blur(6px);
     z-index: 9999;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 18px;
+    gap: 20px;
 }
-.checkout-loading-overlay.active { display: flex; }
-.loading-spinner {
-    width: 56px;
-    height: 56px;
-    border: 4px solid #fce7e7;
+.co-loading.active { display: flex; }
+
+.co-spinner {
+    width: 52px; height: 52px;
+    border: 3px solid #fce7e7;
     border-top-color: var(--red);
     border-radius: 50%;
-    animation: spin .8s linear infinite;
+    animation: cospin .7s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
+@keyframes cospin { to { transform: rotate(360deg); } }
+
+.co-loading-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
     color: var(--ink);
 }
-.loading-sub {
+.co-loading-sub {
     font-size: 0.82rem;
     color: var(--muted);
+    margin-top: -10px;
 }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
-    .checkout-grid { grid-template-columns: 1fr; }
-    .summary-card { position: static; }
+@media (max-width: 860px) {
+    .co-grid { grid-template-columns: 1fr; }
+    .co-summary { position: static; }
 }
-@media (max-width: 480px) {
-    .checkout-heading { font-size: 1.5rem; }
-    #checkout-page { padding: 0 14px; margin-top: 20px; }
+@media (max-width: 520px) {
+    #checkout-page { padding: 0 14px; margin-top: 16px; }
+    .co-heading h1 { font-size: 1.5rem; }
+    .co-steps { display: none; }
+    .co-meta-grid { grid-template-columns: 1fr; }
+    .co-meta-item:nth-child(odd) { border-right: none; padding-right: 0; }
+    .co-meta-item:nth-child(even) { padding-left: 0; }
 }
 </style>
 {% endblock %}
@@ -445,159 +583,224 @@ body {
 {% block content %}
 <div id="checkout-page">
 
-    <!-- Breadcrumb -->
-    <nav class="checkout-breadcrumb">
-        <a href="{% url 'view_cart' %}"><i class="fas fa-arrow-left"></i> Cart</a>
-        <i class="fas fa-chevron-right"></i>
-        <span>Checkout</span>
-    </nav>
+    <!-- Top nav -->
+    <div class="co-nav">
+        <a href="{% url 'view_cart' %}" class="co-back">
+            <i class="fas fa-arrow-left"></i> Back to Cart
+        </a>
+        <div class="co-steps">
+            <span class="co-step">Cart</span>
+            <i class="fas fa-chevron-right" style="font-size:.6rem;color:var(--border);"></i>
+            <span class="co-step active">Checkout</span>
+            <i class="fas fa-chevron-right" style="font-size:.6rem;color:var(--border);"></i>
+            <span class="co-step">Confirmation</span>
+        </div>
+    </div>
 
     <!-- Heading -->
-    <h1 class="checkout-heading">
-        Complete Your Order
-        <span>Secure</span>
-    </h1>
+    <div class="co-heading">
+        <h1>Complete Your Order</h1>
+        <p>Review your items and choose a payment method to proceed.</p>
+    </div>
 
-    <div class="checkout-grid">
+    <div class="co-grid">
 
-        <!-- LEFT: Order Details + Customer Info -->
-        <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- ═══ LEFT COLUMN ═══ -->
+        <div>
 
-            <!-- Order Items Card -->
-            <div class="checkout-card">
-                <div class="checkout-card-header">
-                    <div class="step-badge">1</div>
+            <!-- Order Items -->
+            <div class="co-card">
+                <div class="co-card-header">
+                    <div class="co-card-num">1</div>
                     <h3>Order Summary</h3>
+                    <span class="co-card-header-meta">{{ items|length }} item{% if items|length != 1 %}s{% endif %}</span>
                 </div>
 
-                <div class="estab-pill">
-                    <i class="fas fa-store"></i>
-                    {{ order.establishment.name }}
+                <!-- Establishment -->
+                <div class="estab-banner">
+                    {% if order.establishment.image %}
+                        <img src="{{ order.establishment.image.url }}"
+                             alt="{{ order.establishment.name }}"
+                             class="estab-img">
+                    {% else %}
+                        <div class="estab-img-placeholder">
+                            <i class="fas fa-store"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="estab-info-name">{{ order.establishment.name }}</div>
+                        {% if order.establishment.address %}
+                        <div class="estab-info-meta">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ order.establishment.address }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="item-count-badge">
+                        {{ items|length }} item{% if items|length != 1 %}s{% endif %}
+                    </div>
                 </div>
 
-                <div class="order-items-list">
-                    {% for item in order_items %}
-                    <div class="order-item-row">
+                <!-- Items list -->
+                <div class="co-items">
+                    {% for item in items %}
+                    <div class="co-item">
                         {% if item.menu_item.image %}
                             <img src="{{ item.menu_item.image.url }}"
                                  alt="{{ item.menu_item.name }}"
-                                 class="order-item-img">
+                                 class="co-item-img">
                         {% else %}
-                            <div class="order-item-img-placeholder">
+                            <div class="co-item-img-placeholder">
                                 <i class="fas fa-utensils"></i>
                             </div>
                         {% endif %}
-                        <div class="order-item-details">
-                            <div class="order-item-name">{{ item.menu_item.name }}</div>
-                            <div class="order-item-qty">₱{{ item.menu_item.price|floatformat:2 }} × {{ item.quantity }}</div>
+                        <div class="co-item-info">
+                            <div class="co-item-name">{{ item.menu_item.name }}</div>
+                            <div class="co-item-sub">
+                                <span class="co-item-qty-badge">× {{ item.quantity }}</span>
+                                <span>₱{{ item.menu_item.price|floatformat:2 }} each</span>
+                            </div>
                         </div>
-                        <div class="order-item-price">₱{{ item.total_price|floatformat:2 }}</div>
+                        <div class="co-item-price">
+                            ₱{{ item.total_price|floatformat:2 }}
+                            <div class="co-item-unit-price">subtotal</div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Customer Info Card -->
-            <div class="checkout-card">
-                <div class="checkout-card-header">
-                    <div class="step-badge">2</div>
+            <!-- Customer Information -->
+            <div class="co-card">
+                <div class="co-card-header">
+                    <div class="co-card-num">2</div>
                     <h3>Customer Information</h3>
                 </div>
-                <div class="customer-info-body">
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-user"></i></div>
+                <div class="co-info-body">
+                    <div class="co-info-row">
+                        <div class="co-info-icon"><i class="fas fa-user"></i></div>
                         <div>
-                            <div class="info-label">Full Name</div>
-                            <div class="info-value">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="co-info-label">Full Name</div>
+                            <div class="co-info-value">{{ user.get_full_name|default:user.username }}</div>
                         </div>
                     </div>
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="co-info-row">
+                        <div class="co-info-icon"><i class="fas fa-envelope"></i></div>
                         <div>
-                            <div class="info-label">Email Address</div>
-                            <div class="info-value">{{ user.email }}</div>
+                            <div class="co-info-label">Email Address</div>
+                            <div class="co-info-value">{{ user.email }}</div>
                         </div>
                     </div>
                     {% if user.profile.phone_number %}
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                    <div class="co-info-row">
+                        <div class="co-info-icon"><i class="fas fa-phone"></i></div>
                         <div>
-                            <div class="info-label">Phone Number</div>
-                            <div class="info-value">{{ user.profile.phone_number }}</div>
+                            <div class="co-info-label">Phone Number</div>
+                            <div class="co-info-value">{{ user.profile.phone_number }}</div>
                         </div>
                     </div>
                     {% endif %}
                 </div>
             </div>
 
+            <!-- Order Details -->
+            <div class="co-card">
+                <div class="co-card-header">
+                    <div class="co-card-num">3</div>
+                    <h3>Order Details</h3>
+                </div>
+                <div class="co-meta-grid">
+                    <div class="co-meta-item">
+                        <div class="co-meta-label">Order ID</div>
+                        <div class="co-meta-value highlight">#{{ order.id }}</div>
+                    </div>
+                    <div class="co-meta-item">
+                        <div class="co-meta-label">Date &amp; Time</div>
+                        <div class="co-meta-value">{{ order.created_at|date:"M d, Y · g:i A" }}</div>
+                    </div>
+                    <div class="co-meta-item">
+                        <div class="co-meta-label">Establishment</div>
+                        <div class="co-meta-value">{{ order.establishment.name }}</div>
+                    </div>
+                    <div class="co-meta-item">
+                        <div class="co-meta-label">Total Items</div>
+                        <div class="co-meta-value">{{ items|length }} item{% if items|length != 1 %}s{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- RIGHT: Payment Summary -->
+        <!-- ═══ RIGHT COLUMN ═══ -->
         <div>
-            <div class="checkout-card summary-card">
-                <div class="checkout-card-header">
-                    <div class="step-badge">3</div>
+            <div class="co-card co-summary">
+
+                <!-- Summary header -->
+                <div class="co-card-header">
+                    <div class="co-card-num">4</div>
                     <h3>Payment</h3>
                 </div>
 
-                <div class="summary-body">
-                    <div class="summary-estab-name">
-                        <i class="fas fa-store"></i>
-                        {{ order.establishment.name }}
-                    </div>
-
-                    {% for item in order_items %}
-                    <div class="summary-line">
-                        <span>{{ item.menu_item.name }} × {{ item.quantity }}</span>
-                        <strong>₱{{ item.total_price|floatformat:2 }}</strong>
-                    </div>
-                    {% endfor %}
-
-                    <div class="summary-total-row">
-                        <span class="summary-total-label">Total</span>
-                        <span class="summary-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
+                <!-- Line items -->
+                <div class="co-summary-body">
+                    <div class="co-sum-items">
+                        {% for item in items %}
+                        <div class="co-sum-row">
+                            <span>
+                                <span class="co-sum-name">{{ item.menu_item.name }}</span>
+                                <span class="co-sum-qty">× {{ item.quantity }}</span>
+                            </span>
+                            <strong>₱{{ item.total_price|floatformat:2 }}</strong>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <!-- Payment Method Title -->
-                <div class="payment-method-title">Choose Payment Method</div>
+                <!-- Total -->
+                <div class="co-total-row">
+                    <div>
+                        <span class="co-total-label">Total Amount</span>
+                        <span class="co-item-count-note">{{ items|length }} item{% if items|length != 1 %}s{% endif %}</span>
+                    </div>
+                    <span class="co-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
+                </div>
 
-                <div class="payment-methods">
+                <!-- Payment options -->
+                <div class="co-pay-section">
+                    <span class="co-pay-label">Choose Payment Method</span>
 
-                    <!-- Online Payment -->
-                    <button class="pay-btn pay-btn-online"
+                    <button class="pay-opt pay-opt-online"
                             id="btn-online-pay"
                             onclick="handleOnlinePayment(this)">
-                        <div class="pay-btn-icon">
+                        <div class="pay-opt-icon">
                             <i class="fas fa-credit-card"></i>
                         </div>
-                        <div class="pay-btn-text-wrap">
-                            <span class="pay-btn-name">Online Payment</span>
-                            <span class="pay-btn-desc">GCash, Credit/Debit Card, Maya</span>
+                        <div class="pay-opt-info">
+                            <span class="pay-opt-name">Online Payment</span>
+                            <span class="pay-opt-desc">GCash, Credit/Debit Card, Maya</span>
                         </div>
-                        <i class="fas fa-chevron-right pay-btn-arrow"></i>
+                        <i class="fas fa-chevron-right pay-opt-arrow"></i>
                     </button>
 
-                    <!-- Cash Payment -->
-                    <button class="pay-btn pay-btn-cash"
+                    <button class="pay-opt pay-opt-cash"
                             id="btn-cash-pay"
                             onclick="handleCashPayment(this)">
-                        <div class="pay-btn-icon">
+                        <div class="pay-opt-icon">
                             <i class="fas fa-money-bill-wave"></i>
                         </div>
-                        <div class="pay-btn-text-wrap">
-                            <span class="pay-btn-name">Cash on Pickup</span>
-                            <span class="pay-btn-desc">Pay when you claim your order</span>
+                        <div class="pay-opt-info">
+                            <span class="pay-opt-name">Cash on Pickup</span>
+                            <span class="pay-opt-desc">Pay when you claim your order</span>
                         </div>
-                        <i class="fas fa-chevron-right pay-btn-arrow"></i>
+                        <i class="fas fa-chevron-right pay-opt-arrow"></i>
                     </button>
-
                 </div>
 
-                <div class="security-note">
+                <div class="co-secure">
                     <i class="fas fa-shield-alt"></i>
-                    Secured by PayMongo
+                    Payments secured by PayMongo
                 </div>
+
             </div>
         </div>
 
@@ -605,10 +808,10 @@ body {
 </div>
 
 <!-- Loading Overlay -->
-<div class="checkout-loading-overlay" id="checkoutLoadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text" id="loadingText">Processing...</div>
-    <div class="loading-sub" id="loadingSubText">Please wait, do not close this page</div>
+<div class="co-loading" id="checkoutLoadingOverlay">
+    <div class="co-spinner"></div>
+    <div class="co-loading-title" id="loadingText">Processing...</div>
+    <div class="co-loading-sub" id="loadingSubText">Please wait, do not close this page</div>
 </div>
 
 {% endblock %}
