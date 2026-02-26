@@ -155,6 +155,11 @@ body {
     border: 1px solid var(--amber-border);
     color: var(--amber);
 }
+.oc-pill-maya {
+    background: #D1FAE5;
+    border: 1px solid #6EE7B7;
+    color: #065F46;
+}
 
 /* Hero footer strip */
 .oc-hero-strip {
@@ -498,6 +503,10 @@ body {
                     <div class="oc-hero-pill oc-pill-cash">
                         <i class="fas fa-money-bill-wave"></i> Cash on Pickup
                     </div>
+                {% elif order.gcash_payment_method == 'paymaya' %}
+                    <div class="oc-hero-pill oc-pill-maya">
+                        <i class="fas fa-wallet"></i> Maya Paid
+                    </div>
                 {% else %}
                     <div class="oc-hero-pill oc-pill-paid">
                         <i class="fas fa-shield-check" style="font-size:.72rem;"></i> Payment Confirmed
@@ -617,6 +626,8 @@ body {
                 <div class="oc-det-value">
                     {% if order.gcash_payment_method == 'gcash' %}
                         <i class="fas fa-mobile-alt" style="color:var(--green-mid);"></i> GCash
+                    {% elif order.gcash_payment_method == 'paymaya' %}
+                        <i class="fas fa-wallet" style="color:var(--green-mid);"></i> Maya
                     {% elif order.gcash_payment_method == 'card' %}
                         <i class="fas fa-credit-card" style="color:var(--green-mid);"></i> Card
                     {% elif order.gcash_payment_method == 'cash' %}
@@ -688,6 +699,8 @@ body {
                 <div class="oc-step-text">
                     {% if order.gcash_payment_method == 'cash' %}
                         <strong>Pick up &amp; pay</strong> — go to <strong>{{ order.establishment.name }}</strong>, show order <strong>#{{ order.id }}</strong>, and pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> in cash.
+                    {% elif order.gcash_payment_method == 'paymaya' %}
+                        <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Maya payment is already confirmed ✓
                     {% else %}
                         <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Payment is already confirmed ✓
                     {% endif %}

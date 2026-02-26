@@ -337,6 +337,16 @@
         color: #2563EB;
     }
 
+    .payment-gcash {
+        background: #EDE9FE;
+        color: #6D28D9;
+    }
+
+    .payment-maya {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
     /* Bulk Actions */
     .bulk-actions {
         background: white;
@@ -1116,7 +1126,11 @@
             const next = FLOW[currentTab];
             const paymentHTML = (o.payment_method === 'cash')
                 ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash</span>'
-                : '<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> Online</span>';
+                : (o.payment_method === 'gcash')
+                ? '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash</span>'
+                : (o.payment_method === 'paymaya')
+                ? '<span class="payment-badge payment-maya"><i class="fas fa-wallet"></i> Maya</span>'
+                : `<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> ${o.payment_method || 'Online'}</span>`;
 
             let itemsHTML = '';
             if (o.items && o.items.length > 0) {
@@ -1199,7 +1213,11 @@
 
         const payHTML = (o.payment_method === 'cash')
             ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash Payment</span>'
-            : '<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> Online Payment</span>';
+            : (o.payment_method === 'gcash')
+            ? '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash Payment</span>'
+            : (o.payment_method === 'paymaya')
+            ? '<span class="payment-badge payment-maya"><i class="fas fa-wallet"></i> Maya Payment</span>'
+            : `<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> ${o.payment_method || 'Online'} Payment</span>`;
 
         let itemsHTML = '';
         if (o.items && o.items.length > 0) {
