@@ -5625,14 +5625,18 @@ def payment_success(request):
 
         print(f"DEBUG: Order found - ID: {order.id}, Status: {order.status}")
 
+        # Get all order items for the confirmation page
+        order_items = order.orderitem_set.select_related('menu_item').all()
+
         # Prepare context data for template
         context = {
             'order': order,
+            'order_items': order_items,
             'payment_method': payment_method,  # 'cash' or 'online'
         }
 
-        # Render the success page
-        return render(request, 'webapplication/payment_success.html', context)
+        # Render the unified order confirmation page (works for both cash and online)
+        return render(request, 'webapplication/order_confirmation.html', context)
 
     except Order.DoesNotExist:
         # Order not found or doesn't belong to user

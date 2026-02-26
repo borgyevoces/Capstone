@@ -6,487 +6,703 @@
 
 {% block extra_css %}
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
 :root {
     --red: #B71C1C;
-    --red-dark: #7f1212;
+    --red-dark: #8b0000;
     --red-light: #fff5f5;
-    --green: #16a34a;
+    --red-glow: rgba(183,28,28,.15);
+    --green: #166534;
+    --green-mid: #16a34a;
     --green-light: #f0fdf4;
-    --ink: #111111;
+    --green-border: #bbf7d0;
+    --amber: #92400e;
+    --amber-mid: #d97706;
+    --amber-light: #fffbeb;
+    --amber-border: #fde68a;
+    --ink: #0a0a0a;
+    --ink-soft: #1c1c1e;
+    --sub: #374151;
     --muted: #6b7280;
+    --faint: #9ca3af;
     --border: #e5e7eb;
-    --bg: #f9fafb;
+    --border-soft: #f1f3f5;
+    --surface: #f8f9fa;
     --white: #ffffff;
+    --page-bg: #f2f3f5;
+
+    --r-card: 18px;
+    --r-sm: 10px;
+    --r-xs: 6px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+    --shadow-btn: 0 4px 14px rgba(183,28,28,.3);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-body { background: var(--bg) !important; font-family: 'Inter', -apple-system, sans-serif; }
-
-#confirmation-page {
-    max-width: 680px;
-    margin: 40px auto 60px;
-    padding: 0 20px;
+body {
+    background: var(--page-bg) !important;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
 }
 
-/* ── Success Banner ── */
-.success-banner {
-    background: var(--green);
-    border-radius: 16px;
-    padding: 40px 24px;
-    text-align: center;
-    color: #fff;
-    margin-bottom: 24px;
+/* ════════════════════════
+   PAGE WRAPPER
+════════════════════════ */
+#oc-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 18px 80px;
+}
+
+/* ════════════════════════
+   HERO BANNER
+════════════════════════ */
+.oc-hero {
     position: relative;
+    border-radius: 22px;
+    padding: 0;
+    margin-bottom: 16px;
     overflow: hidden;
-}
-.success-banner::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 160px; height: 160px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 50%;
-}
-.success-banner::after {
-    content: '';
-    position: absolute;
-    bottom: -30px; left: -30px;
-    width: 120px; height: 120px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
+    background: linear-gradient(145deg, #1a5c36 0%, #166534 40%, #14532d 100%);
+    box-shadow: 0 8px 32px rgba(21,101,52,.35);
 }
 
-.success-icon {
-    width: 80px;
-    height: 80px;
-    background: rgba(255,255,255,0.2);
+/* Decorative rings */
+.oc-hero-ring {
+    position: absolute;
     border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    pointer-events: none;
+}
+.oc-hero-ring-1 { width: 280px; height: 280px; top: -100px; right: -80px; }
+.oc-hero-ring-2 { width: 200px; height: 200px; top: -60px; right: -40px; background: rgba(255,255,255,.04); border: none; }
+.oc-hero-ring-3 { width: 180px; height: 180px; bottom: -80px; left: -60px; }
+
+.oc-hero-body {
+    position: relative;
+    z-index: 2;
+    padding: 40px 28px 32px;
+    text-align: center;
+}
+
+.oc-hero-check {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.oc-hero-check i { font-size: 1.9rem; color: #fff; }
+
+@keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.oc-hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+}
+.oc-hero-sub {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,.75);
+    margin-bottom: 26px;
+}
+
+/* Pill row */
+.oc-hero-pills {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 18px;
-    animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
+    gap: 10px;
+    flex-wrap: wrap;
 }
-@keyframes popIn {
-    from { transform: scale(0); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
-}
-.success-icon i { font-size: 2.2rem; }
-
-.success-title {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin: 0 0 8px;
-    letter-spacing: -.3px;
-}
-.success-sub {
-    font-size: 1rem;
-    opacity: .88;
-    margin: 0;
-}
-
-/* ── Order Number Badge ── */
-.order-number-badge {
-    background: var(--white);
-    border-radius: 12px;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-    border: 1px solid var(--border);
-}
-.order-number-label {
-    font-size: 0.82rem;
-    color: var(--muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-}
-.order-number-value {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--red);
-}
-.order-status-pill {
-    display: flex;
+.oc-hero-pill {
+    display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 40px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: .2px;
+    backdrop-filter: blur(4px);
+}
+.oc-pill-id {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.22);
+    color: #fff;
+}
+.oc-pill-id span { font-family: 'DM Sans', monospace; font-weight: 700; font-size: 0.9rem; }
+.oc-pill-paid {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.28);
+    color: #fff;
+}
+.oc-pill-cash {
+    background: var(--amber-light);
+    border: 1px solid var(--amber-border);
+    color: var(--amber);
+}
+
+/* Hero footer strip */
+.oc-hero-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 14px 28px;
+    background: rgba(0,0,0,.15);
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+.oc-hero-strip-item {
+    text-align: center;
+}
+.oc-hero-strip-label {
+    font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: .4px;
+    letter-spacing: .6px;
+    color: rgba(255,255,255,.55);
+    margin-bottom: 3px;
 }
-.status-paid {
-    background: var(--green-light);
-    color: var(--green);
-    border: 1.5px solid #bbf7d0;
+.oc-hero-strip-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.92);
 }
-.status-pending {
-    background: #fffbeb;
-    color: #d97706;
-    border: 1.5px solid #fde68a;
+.oc-hero-strip-div {
+    width: 1px; height: 32px;
+    background: rgba(255,255,255,.12);
 }
 
-/* ── Card ── */
-.conf-card {
+/* ════════════════════════
+   CARDS
+════════════════════════ */
+.oc-card {
     background: var(--white);
-    border-radius: 14px;
+    border-radius: var(--r-card);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+    animation: slideUp .35s ease both;
+}
+.oc-card:nth-child(2) { animation-delay: .04s; }
+.oc-card:nth-child(3) { animation-delay: .08s; }
+.oc-card:nth-child(4) { animation-delay: .12s; }
+.oc-card:nth-child(5) { animation-delay: .16s; }
+
+@keyframes slideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-.conf-card-header {
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--border);
+.oc-card-hd {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #fafafa;
+    padding: 13px 20px;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--border-soft);
 }
-.conf-card-header i { color: var(--red); font-size: 1rem; }
-.conf-card-header h3 {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--ink);
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    margin: 0;
-}
-
-/* ── Order Items ── */
-.conf-items { padding: 0; }
-
-.conf-item-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 20px;
-    border-bottom: 1px solid #f3f4f6;
-}
-.conf-item-row:last-child { border-bottom: none; }
-
-.conf-item-img {
-    width: 56px; height: 56px;
-    border-radius: 8px;
-    object-fit: cover;
-    flex-shrink: 0;
-    background: #f3f4f6;
-}
-.conf-item-img-placeholder {
-    width: 56px; height: 56px;
-    border-radius: 8px;
-    background: #f3f4f6;
+.oc-card-hd-ic {
+    width: 26px; height: 26px;
+    border-radius: var(--r-xs);
+    background: var(--red-light);
+    color: var(--red);
     display: flex; align-items: center; justify-content: center;
-    color: #ccc; font-size: 1.3rem; flex-shrink: 0;
+    font-size: 0.72rem;
+    flex-shrink: 0;
 }
-.conf-item-name {
-    font-weight: 600;
-    font-size: 0.92rem;
-    color: var(--ink);
+.oc-card-hd h3 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: .7px;
     flex: 1;
 }
-.conf-item-qty {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 2px;
-}
-.conf-item-price {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--red);
+.oc-card-hd-tag {
+    font-size: 0.72rem;
+    color: var(--faint);
+    font-weight: 500;
 }
 
-/* ── Summary Lines ── */
-.conf-summary { padding: 16px 20px; }
-
-.conf-line {
+/* ════════════════════════
+   ESTABLISHMENT ROW
+════════════════════════ */
+.oc-estab {
     display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 0.9rem;
-    color: var(--muted);
-    border-bottom: 1px solid #f3f4f6;
-}
-.conf-line:last-child { border-bottom: none; }
-.conf-line strong { color: var(--ink); font-weight: 600; }
-
-.conf-total-row {
-    display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 13px;
     padding: 14px 20px;
+    background: linear-gradient(to right, var(--red-light) 0%, #fff 100%);
+    border-bottom: 1px solid var(--border-soft);
+}
+.oc-estab-img {
+    width: 48px; height: 48px;
+    border-radius: var(--r-sm);
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.oc-estab-ph {
+    width: 48px; height: 48px;
+    border-radius: var(--r-sm);
     background: var(--red-light);
-    border-top: 2px solid #fecaca;
-}
-.conf-total-label {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--ink);
-}
-.conf-total-amount {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--red);
-}
-
-/* ── Info rows ── */
-.conf-info-body { padding: 6px 20px 14px; }
-
-.conf-info-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid #f3f4f6;
-}
-.conf-info-row:last-child { border-bottom: none; }
-.conf-info-icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: var(--red-light);
-    color: var(--red);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; flex-shrink: 0;
-}
-.conf-info-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
-.conf-info-value { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
-
-/* ── What's Next ── */
-.whats-next {
-    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
-    border-radius: 14px;
     border: 1px solid #fecaca;
-    padding: 20px;
-    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--red); font-size: 1.15rem; flex-shrink: 0;
 }
-.whats-next h4 {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--red);
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    margin: 0 0 14px;
+.oc-estab-name { font-weight: 700; font-size: 0.93rem; color: var(--ink); }
+.oc-estab-addr { font-size: 0.74rem; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+.oc-estab-addr i { font-size: 0.62rem; color: var(--red); }
+
+/* ════════════════════════
+   ITEMS LIST
+════════════════════════ */
+.oc-items { padding: 0; }
+.oc-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 13px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background .15s;
 }
-.next-step {
+.oc-item:last-child { border-bottom: none; }
+.oc-item:hover { background: #fafbfc; }
+
+.oc-item-img {
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--surface);
+}
+.oc-item-ph {
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--faint); font-size: 1.25rem; flex-shrink: 0;
+}
+.oc-item-info { flex: 1; min-width: 0; }
+.oc-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.oc-item-sub { display: flex; align-items: center; gap: 7px; margin-top: 4px; }
+.oc-item-qty {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+}
+.oc-item-each { font-size: 0.74rem; color: var(--muted); }
+.oc-item-price { flex-shrink: 0; text-align: right; }
+.oc-item-total { font-weight: 700; font-size: 0.92rem; color: var(--red); }
+.oc-item-sub-price { font-size: 0.68rem; color: var(--faint); margin-top: 2px; }
+
+/* Total row */
+.oc-total {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: var(--red-light);
+    border-top: 1.5px solid #fecaca;
 }
-.next-step:last-child { margin-bottom: 0; }
-.next-num {
-    width: 24px; height: 24px;
+.oc-total-left-label { font-size: 0.88rem; font-weight: 700; color: var(--ink); }
+.oc-total-left-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.oc-total-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: var(--red);
+    letter-spacing: -0.5px;
+
+}
+
+/* ════════════════════════
+   DETAILS GRID
+════════════════════════ */
+.oc-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 4px 20px 14px;
+}
+.oc-det-cell {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+.oc-det-cell:nth-child(odd) { border-right: 1px solid var(--border-soft); padding-right: 16px; }
+.oc-det-cell:nth-child(even) { padding-left: 16px; }
+.oc-det-cell.oc-det-full { grid-column: span 2; border-right: none !important; padding-right: 0 !important; }
+.oc-det-cell:where(:nth-last-child(-n+2)):not(.oc-det-full) { border-bottom: none; }
+.oc-det-cell.oc-det-full:last-child { border-bottom: none; }
+
+.oc-det-label {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .55px;
+    margin-bottom: 4px;
+}
+.oc-det-value {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.oc-det-value i { font-size: 0.72rem; }
+.oc-det-value.oc-accent { color: var(--red); }
+.oc-det-value.oc-ok { color: var(--green-mid); }
+.oc-det-value.oc-warn { color: var(--amber-mid); }
+
+/* Status dot */
+.oc-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.oc-status-dot.ok { background: var(--green-mid); box-shadow: 0 0 0 2px var(--green-border); }
+.oc-status-dot.warn { background: var(--amber-mid); box-shadow: 0 0 0 2px var(--amber-border); }
+
+/* ════════════════════════
+   WHAT'S NEXT
+════════════════════════ */
+.oc-next {
+    background: var(--white);
+    border-radius: var(--r-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 12px;
+    animation: slideUp .35s .2s ease both;
+}
+.oc-next-hd {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 20px;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--border-soft);
+}
+.oc-next-hd-ic { width: 26px; height: 26px; border-radius: var(--r-xs); background: var(--red-light); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; flex-shrink: 0; }
+.oc-next-hd h3 { font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .7px; margin: 0; }
+.oc-next-body { padding: 14px 20px; }
+
+.oc-step {
+    display: flex; align-items: flex-start; gap: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+.oc-step:last-child { border-bottom: none; padding-bottom: 0; }
+.oc-step-num {
+    width: 26px; height: 26px;
     border-radius: 50%;
     background: var(--red);
     color: #fff;
-    font-size: 0.72rem;
-    font-weight: 800;
+    font-size: 0.68rem; font-weight: 800;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; margin-top: 1px;
 }
-.next-text { font-size: 0.88rem; color: #374151; line-height: 1.5; }
-.next-text strong { color: var(--ink); }
+.oc-step-num.done { background: var(--green-mid); }
+.oc-step-text { font-size: 0.85rem; color: var(--sub); line-height: 1.55; padding-top: 3px; }
+.oc-step-text strong { color: var(--ink); font-weight: 700; }
 
-/* ── Action Buttons ── */
-.conf-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+/* ════════════════════════
+   ACTION BUTTONS
+════════════════════════ */
+.oc-actions {
+    display: flex; flex-direction: column; gap: 10px;
+    animation: slideUp .35s .25s ease both;
 }
-.btn-primary-conf {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+.oc-btn-primary {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
     padding: 15px;
     background: var(--red);
     color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
+    border: none; border-radius: 13px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem; font-weight: 700;
+    text-decoration: none; cursor: pointer;
     transition: all .2s;
-    box-shadow: 0 4px 12px rgba(183,28,28,.25);
+    box-shadow: var(--shadow-btn);
 }
-.btn-primary-conf:hover {
-    background: var(--red-dark);
-    transform: translateY(-1px);
-    color: #fff;
-}
-.btn-secondary-conf {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+.oc-btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); color: #fff; box-shadow: 0 6px 20px rgba(183,28,28,.38); }
+
+.oc-btn-secondary {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
     padding: 14px;
-    background: var(--white);
-    color: var(--ink);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
+    background: var(--white); color: var(--ink);
+    border: 1.5px solid var(--border); border-radius: 13px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; cursor: pointer;
     transition: all .2s;
 }
-.btn-secondary-conf:hover {
-    border-color: var(--red);
-    color: var(--red);
-    background: var(--red-light);
-}
+.oc-btn-secondary:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
 
 @media (max-width: 480px) {
-    #confirmation-page { margin-top: 20px; }
-    .success-title { font-size: 1.4rem; }
-    .order-number-badge { flex-wrap: wrap; gap: 10px; }
+    #oc-page { padding-top: 16px; }
+    .oc-hero-title { font-size: 1.7rem; }
+    .oc-hero-strip { gap: 12px; padding: 12px 18px; }
+    .oc-details-grid { grid-template-columns: 1fr; }
+    .oc-det-cell:nth-child(odd) { border-right: none; padding-right: 0; }
+    .oc-det-cell:nth-child(even) { padding-left: 0; }
+    .oc-det-cell { border-bottom: 1px solid var(--border-soft) !important; }
+    .oc-det-cell:last-child { border-bottom: none !important; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="confirmation-page">
+<div id="oc-page">
 
-    <!-- Success Banner -->
-    <div class="success-banner">
-        <div class="success-icon">
-            <i class="fas fa-check"></i>
-        </div>
-        <h1 class="success-title">Order Received!</h1>
-        <p class="success-sub">Your order has been confirmed and is being prepared.</p>
-    </div>
+    <!-- ══ HERO ══ -->
+    <div class="oc-hero">
+        <div class="oc-hero-ring oc-hero-ring-1"></div>
+        <div class="oc-hero-ring oc-hero-ring-2"></div>
+        <div class="oc-hero-ring oc-hero-ring-3"></div>
 
-    <!-- Order Number -->
-    <div class="order-number-badge">
-        <div>
-            <div class="order-number-label">Order Number</div>
-            <div class="order-number-value">#{{ order.id }}</div>
-        </div>
-        <div class="order-status-pill {% if order.status == 'PAID' %}status-paid{% else %}status-pending{% endif %}">
-            <i class="fas {% if order.status == 'PAID' %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
-            {% if order.status == 'PAID' %}Paid{% elif order.status == 'PENDING' %}Cash on Pickup{% else %}{{ order.status }}{% endif %}
-        </div>
-    </div>
+        <div class="oc-hero-body">
+            <div class="oc-hero-check"><i class="fas fa-check"></i></div>
+            <h1 class="oc-hero-title">Order Confirmed!</h1>
+            <p class="oc-hero-sub">Your order has been received and is now being prepared.</p>
 
-    <!-- Order Items -->
-    <div class="conf-card">
-        <div class="conf-card-header">
-            <i class="fas fa-store"></i>
-            <h3>{{ order.establishment.name }}</h3>
-        </div>
-        <div class="conf-items">
-            {% for item in order_items %}
-            <div class="conf-item-row">
-                {% if item.menu_item.image %}
-                    <img src="{{ item.menu_item.image.url }}"
-                         alt="{{ item.menu_item.name }}"
-                         class="conf-item-img">
+            <div class="oc-hero-pills">
+                <div class="oc-hero-pill oc-pill-id">
+                    <i class="fas fa-hashtag" style="opacity:.65;font-size:.65rem;"></i>
+                    <span>{{ order.id }}</span>
+                </div>
+                {% if order.gcash_payment_method == 'cash' %}
+                    <div class="oc-hero-pill oc-pill-cash">
+                        <i class="fas fa-money-bill-wave"></i> Cash on Pickup
+                    </div>
                 {% else %}
-                    <div class="conf-item-img-placeholder">
-                        <i class="fas fa-utensils"></i>
+                    <div class="oc-hero-pill oc-pill-paid">
+                        <i class="fas fa-shield-check" style="font-size:.72rem;"></i> Payment Confirmed
                     </div>
                 {% endif %}
-                <div style="flex:1; min-width:0;">
-                    <div class="conf-item-name">{{ item.menu_item.name }}</div>
-                    <div class="conf-item-qty">Qty: {{ item.quantity }} × ₱{{ item.menu_item.price|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <!-- Strip with key info -->
+        <div class="oc-hero-strip">
+            <div class="oc-hero-strip-item">
+                <div class="oc-hero-strip-label">Amount</div>
+                <div class="oc-hero-strip-value">₱{{ order.total_amount|floatformat:2 }}</div>
+            </div>
+            <div class="oc-hero-strip-div"></div>
+            <div class="oc-hero-strip-item">
+                <div class="oc-hero-strip-label">From</div>
+                <div class="oc-hero-strip-value">{{ order.establishment.name }}</div>
+            </div>
+            <div class="oc-hero-strip-div"></div>
+            <div class="oc-hero-strip-item">
+                <div class="oc-hero-strip-label">Date</div>
+                <div class="oc-hero-strip-value">{{ order.created_at|date:"M d, Y" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ORDER ITEMS ══ -->
+    <div class="oc-card">
+        <div class="oc-card-hd">
+            <div class="oc-card-hd-ic"><i class="fas fa-utensils"></i></div>
+            <h3>Items Ordered</h3>
+            <span class="oc-card-hd-tag">{{ order_items|length }} item{% if order_items|length != 1 %}s{% endif %}</span>
+        </div>
+
+        <!-- Establishment -->
+        <div class="oc-estab">
+            {% if order.establishment.image %}
+                <img src="{{ order.establishment.image.url }}" alt="{{ order.establishment.name }}" class="oc-estab-img">
+            {% else %}
+                <div class="oc-estab-ph"><i class="fas fa-store"></i></div>
+            {% endif %}
+            <div>
+                <div class="oc-estab-name">{{ order.establishment.name }}</div>
+                {% if order.establishment.address %}
+                <div class="oc-estab-addr">
+                    <i class="fas fa-map-marker-alt"></i>{{ order.establishment.address }}
                 </div>
-                <div class="conf-item-price">₱{{ item.total_price|floatformat:2 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="oc-items">
+            {% for item in order_items %}
+            <div class="oc-item">
+                {% if item.menu_item.image %}
+                    <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" class="oc-item-img">
+                {% else %}
+                    <div class="oc-item-ph"><i class="fas fa-utensils"></i></div>
+                {% endif %}
+                <div class="oc-item-info">
+                    <div class="oc-item-name">{{ item.menu_item.name }}</div>
+                    <div class="oc-item-sub">
+                        <span class="oc-item-qty">× {{ item.quantity }}</span>
+                        <span class="oc-item-each">₱{{ item.menu_item.price|floatformat:2 }} each</span>
+                    </div>
+                </div>
+                <div class="oc-item-price">
+                    <div class="oc-item-total">₱{{ item.total_price|floatformat:2 }}</div>
+                    <div class="oc-item-sub-price">subtotal</div>
+                </div>
             </div>
             {% endfor %}
         </div>
 
         <!-- Total -->
-        <div class="conf-total-row">
-            <span class="conf-total-label">Total Paid</span>
-            <span class="conf-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
+        <div class="oc-total">
+            <div>
+                <div class="oc-total-left-label">Total Amount</div>
+                <div class="oc-total-left-sub">{{ order_items|length }} item{% if order_items|length != 1 %}s{% endif %} · inclusive of all charges</div>
+            </div>
+            <span class="oc-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
         </div>
     </div>
 
-    <!-- Order Details -->
-    <div class="conf-card">
-        <div class="conf-card-header">
-            <i class="fas fa-info-circle"></i>
+    <!-- ══ ORDER DETAILS ══ -->
+    <div class="oc-card">
+        <div class="oc-card-hd">
+            <div class="oc-card-hd-ic"><i class="fas fa-receipt"></i></div>
             <h3>Order Details</h3>
         </div>
-        <div class="conf-info-body">
-            <div class="conf-info-row">
-                <div class="conf-info-icon"><i class="fas fa-calendar"></i></div>
-                <div>
-                    <div class="conf-info-label">Date Ordered</div>
-                    <div class="conf-info-value">{{ order.created_at|date:"F d, Y · g:i A" }}</div>
-                </div>
-            </div>
-            <div class="conf-info-row">
-                <div class="conf-info-icon"><i class="fas fa-wallet"></i></div>
-                <div>
-                    <div class="conf-info-label">Payment Method</div>
-                    <div class="conf-info-value">
-                        {% if order.gcash_payment_method == 'gcash' %}
-                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> GCash
-                        {% elif order.gcash_payment_method == 'card' %}
-                            <i class="fas fa-credit-card" style="color:#16a34a;"></i> Card
-                        {% elif order.gcash_payment_method == 'cash' %}
-                            <i class="fas fa-money-bill-wave" style="color:#d97706;"></i> Cash on Pickup
-                        {% elif order.status == 'PAID' %}
-                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> GCash
-                        {% else %}
-                            <i class="fas fa-money-bill-wave" style="color:#d97706;"></i> Cash on Pickup
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="conf-info-row">
-                <div class="conf-info-icon"><i class="fas fa-user"></i></div>
-                <div>
-                    <div class="conf-info-label">Customer</div>
-                    <div class="conf-info-value">{{ request.user.get_full_name|default:request.user.username }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="oc-details-grid">
 
-    <!-- What's Next -->
-    <div class="whats-next">
-        <h4><i class="fas fa-route"></i> What happens next?</h4>
-        <div class="next-step">
-            <div class="next-num">1</div>
-            <div class="next-text"><strong>Order received</strong> — the establishment has been notified and is now preparing your order.</div>
-        </div>
-        <div class="next-step">
-            <div class="next-num">2</div>
-            <div class="next-text"><strong>Wait for preparation</strong> — you'll receive updates as your order status changes.</div>
-        </div>
-        <div class="next-step">
-            <div class="next-num">3</div>
-            <div class="next-text">
-                {% if order.status == 'PAID' %}
-                    <strong>Pick up your order</strong> — show your order number <strong>#{{ order.id }}</strong> at the establishment.
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Order ID</div>
+                <div class="oc-det-value oc-accent"><i class="fas fa-hashtag"></i>#{{ order.id }}</div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Date &amp; Time</div>
+                <div class="oc-det-value"><i class="fas fa-calendar-alt" style="color:var(--faint);"></i>{{ order.created_at|date:"M d, Y · g:i A" }}</div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Customer</div>
+                <div class="oc-det-value"><i class="fas fa-user" style="color:var(--faint);"></i>{{ request.user.get_full_name|default:request.user.username }}</div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Email</div>
+                <div class="oc-det-value" style="font-size:.78rem; word-break:break-all;"><i class="fas fa-envelope" style="color:var(--faint);"></i>{{ request.user.email }}</div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Payment Method</div>
+                <div class="oc-det-value">
+                    {% if order.gcash_payment_method == 'gcash' %}
+                        <i class="fas fa-mobile-alt" style="color:var(--green-mid);"></i> GCash
+                    {% elif order.gcash_payment_method == 'card' %}
+                        <i class="fas fa-credit-card" style="color:var(--green-mid);"></i> Card
+                    {% elif order.gcash_payment_method == 'cash' %}
+                        <i class="fas fa-money-bill-wave" style="color:var(--amber-mid);"></i> Cash on Pickup
+                    {% elif order.status == 'PAID' %}
+                        <i class="fas fa-mobile-alt" style="color:var(--green-mid);"></i> GCash
+                    {% else %}
+                        <i class="fas fa-money-bill-wave" style="color:var(--amber-mid);"></i> Cash on Pickup
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Order Status</div>
+                {% if order.gcash_payment_method == 'cash' %}
+                    <div class="oc-det-value oc-warn">
+                        <div class="oc-status-dot warn"></div> Awaiting Pickup
+                    </div>
                 {% else %}
-                    <strong>Pick up & pay</strong> — bring cash and show order number <strong>#{{ order.id }}</strong> at the establishment.
+                    <div class="oc-det-value oc-ok">
+                        <div class="oc-status-dot ok"></div> Confirmed
+                    </div>
                 {% endif %}
             </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Establishment</div>
+                <div class="oc-det-value"><i class="fas fa-store" style="color:var(--faint);"></i>{{ order.establishment.name }}</div>
+            </div>
+
+            <div class="oc-det-cell">
+                <div class="oc-det-label">Total Items</div>
+                <div class="oc-det-value"><i class="fas fa-layer-group" style="color:var(--faint);"></i>{{ order_items|length }} item{% if order_items|length != 1 %}s{% endif %}</div>
+            </div>
+
+            {% if order.gcash_reference_number %}
+            <div class="oc-det-cell oc-det-full" style="border-bottom:none;">
+                <div class="oc-det-label">Reference Number</div>
+                <div class="oc-det-value" style="font-size:.78rem; letter-spacing:.6px;">
+                    <i class="fas fa-fingerprint" style="color:var(--faint);"></i>{{ order.gcash_reference_number }}
+                </div>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="conf-actions">
-        <a href="{% url 'order_history' %}" class="btn-primary-conf">
-            <i class="fas fa-receipt"></i>
-            View My Orders
+    <!-- ══ WHAT'S NEXT ══ -->
+    <div class="oc-next">
+        <div class="oc-next-hd">
+            <div class="oc-next-hd-ic"><i class="fas fa-route"></i></div>
+            <h3>What Happens Next?</h3>
+        </div>
+        <div class="oc-next-body">
+            <div class="oc-step">
+                <div class="oc-step-num done"><i class="fas fa-check" style="font-size:.58rem;"></i></div>
+                <div class="oc-step-text">
+                    <strong>Order received</strong> — {{ order.establishment.name }} has been notified and your order is now in the queue.
+                </div>
+            </div>
+            <div class="oc-step">
+                <div class="oc-step-num">2</div>
+                <div class="oc-step-text">
+                    <strong>Preparation</strong> — your food is being freshly prepared. Check the status anytime in My Orders.
+                </div>
+            </div>
+            <div class="oc-step">
+                <div class="oc-step-num">3</div>
+                <div class="oc-step-text">
+                    {% if order.gcash_payment_method == 'cash' %}
+                        <strong>Pick up &amp; pay</strong> — go to <strong>{{ order.establishment.name }}</strong>, show order <strong>#{{ order.id }}</strong>, and pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> in cash.
+                    {% else %}
+                        <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Payment is already confirmed ✓
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ACTIONS ══ -->
+    <div class="oc-actions">
+        <a href="{% url 'order_history' %}" class="oc-btn-primary">
+            <i class="fas fa-receipt"></i> View My Orders
         </a>
-        <a href="{% url 'kabsueats_home' %}" class="btn-secondary-conf">
-            <i class="fas fa-store"></i>
-            Back to Dashboard
+        <a href="{% url 'kabsueats_home' %}" class="oc-btn-secondary">
+            <i class="fas fa-store"></i> Back to Dashboard
         </a>
     </div>
 
