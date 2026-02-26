@@ -4499,9 +4499,55 @@ def mark_all_notifications_read(request):
         }, status=500)
 
 
+def _fetch_paymongo_session(session_id):
+    """
+    Calls PayMongo GET /v1/checkout_sessions/{id} and returns
+    (is_paid: bool, payment_method: str|None).
+
+    PayMongo payments[].attributes.source.type values:
+      'gcash', 'paymaya', 'card', 'dob', etc.
+    """
+    try:
+        auth_b64 = base64.b64encode(f"{settings.PAYMONGO_SECRET_KEY}:".encode()).decode()
+        resp = requests.get(
+            f"https://api.paymongo.com/v1/checkout_sessions/{session_id}",
+            headers={
+                'Authorization': f'Basic {auth_b64}',
+                'Accept': 'application/json',
+            },
+            timeout=(5, 10),  # connect=5s, read=10s
+        )
+        if resp.status_code != 200:
+            print(f"⚠️ PayMongo session {session_id} → HTTP {resp.status_code}: {resp.text[:200]}")
+            return False, None
+
+        attrs = resp.json().get('data', {}).get('attributes', {})
+        is_paid = attrs.get('status') == 'paid'
+
+        # Extract the actual payment method the customer chose
+        # PayMongo structure: payments[0].attributes.source.type
+        pay_method = None
+        payments = attrs.get('payments', [])
+        if payments:
+            pay_method = (
+                payments[0]
+                .get('attributes', {})   # ← direct attrs, NOT nested under 'data'
+                .get('source', {})
+                .get('type')             # 'gcash' | 'paymaya' | 'card'
+            )
+        print(f"✅ PayMongo session {session_id}: status={attrs.get('status')}, method={pay_method}")
+        return is_paid, pay_method
+
+    except Exception as e:
+        print(f"❌ PayMongo fetch error: {e}")
+        return False, None
+
+
 def gcash_payment_success(request):
     """
-    ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS and STOCK REDUCTION
+    Handles PayMongo redirect after payment.
+    Always verifies with PayMongo API first, then saves the ACTUAL
+    payment method (gcash / paymaya / card) used by the customer.
     """
     order_id = request.GET.get('order_id')
 
@@ -4515,59 +4561,74 @@ def gcash_payment_success(request):
             messages.error(request, 'Order not found')
             return redirect('view_cart')
 
-        # Update order status if still pending
-        if order.status != 'PAID':
-            with transaction.atomic():
-                # 1. Update order status
-                order.status = 'PAID'
-                order.payment_confirmed_at = timezone.now()
-                order.save()
+        # Already fully processed — just show confirmation
+        if order.status == 'PAID':
+            messages.success(request, '✅ Payment successful! Your order has been placed.')
+            return redirect('order_confirmation', order_id=order.id)
 
-                # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER
-                try:
-                    OrderNotification.objects.create(
-                        establishment=order.establishment,
-                        order=order,
-                        notification_type='new_order',
-                        message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
-                    )
-                    print(f"✅ Notification created for Order #{order.id}")
-                except Exception as notif_error:
-                    print(f"⚠️ Notification creation error: {notif_error}")
+        session_id = order.gcash_reference_number
+        is_simulated = session_id and session_id.startswith('SIM-')
 
-                # 3. ✅ REDUCE STOCK FOR EACH ORDER ITEM
-                for order_item in order.orderitem_set.select_related('menu_item'):
-                    menu_item = order_item.menu_item
-                    try:
-                        if menu_item.quantity >= order_item.quantity:
-                            # Reduce the quantity
-                            menu_item.quantity -= order_item.quantity
-                            menu_item.save()
-                            print(f"✅ Stock reduced for {menu_item.name}: {order_item.quantity} units")
-                        else:
-                            print(
-                                f"⚠️ Warning: Insufficient stock for {menu_item.name}. Available: {menu_item.quantity}, Ordered: {order_item.quantity}")
-                            # Still process the order but log the issue
-                            menu_item.quantity = 0
-                            menu_item.save()
-                    except Exception as stock_err:
-                        print(f"❌ Error reducing stock for {menu_item.name}: {stock_err}")
+        if is_simulated:
+            # DEBUG simulation path
+            is_paid = True
+            pay_method = order.gcash_payment_method or 'gcash'
+        elif session_id:
+            # ── Verify with PayMongo — retry once (0.5s) for slow connections ──
+            is_paid, pay_method = _fetch_paymongo_session(session_id)
+            if not is_paid:
+                import time
+                time.sleep(0.5)
+                is_paid, pay_method = _fetch_paymongo_session(session_id)
 
-            # 4. Send confirmation emails (best-effort)
+            if not is_paid:
+                print(f"⚠️ Session {session_id} not confirmed. Order #{order.id}")
+                messages.error(request, 'Payment not yet confirmed. If you already paid, please wait a moment and try again.')
+                return redirect('view_cart')
+        else:
+            print(f"❌ No session_id for Order #{order.id}")
+            messages.error(request, 'Payment could not be verified. Contact support if you were charged.')
+            return redirect('view_cart')
+
+        # ── Payment verified — process order ──
+        with transaction.atomic():
+            order.status = 'PAID'
+            order.payment_confirmed_at = timezone.now()
+            # ✅ Save the actual method the customer used (gcash / paymaya / card)
+            if pay_method:
+                order.gcash_payment_method = pay_method
+            order.save()
+
             try:
-                send_order_confirmation_email(order)
-            except Exception as e:
-                print(f"Email error: {e}")
+                OrderNotification.objects.create(
+                    establishment=order.establishment,
+                    order=order,
+                    notification_type='new_order',
+                    message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                )
+                print(f"✅ Notification created for Order #{order.id}")
+            except Exception as notif_error:
+                print(f"⚠️ Notification error: {notif_error}")
 
-        # ✅ Redirect to order confirmation — customer sees their order as "received"
+            for order_item in order.orderitem_set.select_related('menu_item'):
+                menu_item = order_item.menu_item
+                try:
+                    menu_item.quantity = max(0, menu_item.quantity - order_item.quantity)
+                    menu_item.save(update_fields=['quantity'])
+                    print(f"✅ Stock reduced: {menu_item.name} -{order_item.quantity}")
+                except Exception as stock_err:
+                    print(f"❌ Stock error {menu_item.name}: {stock_err}")
+
+        try:
+            send_order_confirmation_email(order)
+        except Exception as e:
+            print(f"Email error: {e}")
+
         messages.success(request, '✅ Payment successful! Your order has been placed.')
         return redirect('order_confirmation', order_id=order.id)
 
-    except Order.DoesNotExist:
-        messages.error(request, 'Order not found')
-        return redirect('view_cart')
     except Exception as e:
-        print(f"❌ Error in payment success handler: {e}")
+        print(f"❌ Error in gcash_payment_success: {e}")
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
 
