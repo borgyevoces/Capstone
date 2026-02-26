@@ -372,9 +372,9 @@ body { background: var(--bg) !important; font-family: 'Inter', -apple-system, sa
             <div class="order-number-label">Order Number</div>
             <div class="order-number-value">#{{ order.id }}</div>
         </div>
-        <div class="order-status-pill {% if order.gcash_payment_method == 'cash' %}status-pending{% else %}status-paid{% endif %}">
-            <i class="fas {% if order.gcash_payment_method == 'cash' %}fa-money-bill-wave{% else %}fa-check-circle{% endif %}"></i>
-            {% if order.gcash_payment_method == 'cash' %}Cash on Pickup{% else %}Paid Online{% endif %}
+        <div class="order-status-pill {% if order.status == 'PAID' %}status-paid{% else %}status-pending{% endif %}">
+            <i class="fas {% if order.status == 'PAID' %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+            {% if order.status == 'PAID' %}Paid{% elif order.status == 'PENDING' %}Cash on Pickup{% else %}{{ order.status }}{% endif %}
         </div>
     </div>
 
@@ -431,12 +431,14 @@ body { background: var(--bg) !important; font-family: 'Inter', -apple-system, sa
                 <div>
                     <div class="conf-info-label">Payment Method</div>
                     <div class="conf-info-value">
-                        {% if order.gcash_payment_method == 'gcash' or order.gcash_payment_method == 'online' or order.gcash_payment_method == 'card' %}
-                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> Online Payment (GCash/Card)
+                        {% if order.gcash_payment_method == 'gcash' %}
+                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> GCash
+                        {% elif order.gcash_payment_method == 'card' %}
+                            <i class="fas fa-credit-card" style="color:#16a34a;"></i> Card
                         {% elif order.gcash_payment_method == 'cash' %}
                             <i class="fas fa-money-bill-wave" style="color:#d97706;"></i> Cash on Pickup
                         {% elif order.status == 'PAID' %}
-                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> Online Payment (GCash/Card)
+                            <i class="fas fa-mobile-alt" style="color:#16a34a;"></i> GCash
                         {% else %}
                             <i class="fas fa-money-bill-wave" style="color:#d97706;"></i> Cash on Pickup
                         {% endif %}
@@ -467,10 +469,10 @@ body { background: var(--bg) !important; font-family: 'Inter', -apple-system, sa
         <div class="next-step">
             <div class="next-num">3</div>
             <div class="next-text">
-                {% if order.gcash_payment_method == 'cash' %}
-                    <strong>Pick up & pay</strong> — bring cash and show order number <strong>#{{ order.id }}</strong> at the establishment.
-                {% else %}
+                {% if order.status == 'PAID' %}
                     <strong>Pick up your order</strong> — show your order number <strong>#{{ order.id }}</strong> at the establishment.
+                {% else %}
+                    <strong>Pick up & pay</strong> — bring cash and show order number <strong>#{{ order.id }}</strong> at the establishment.
                 {% endif %}
             </div>
         </div>
