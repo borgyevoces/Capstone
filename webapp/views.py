@@ -1892,15 +1892,7 @@ def create_gcash_payment_link(request):
                 'message': 'Order total must be greater than zero.'
             }, status=400)
 
-        # ✅ FIXED: Removed simulation mode. Always calls real PayMongo API.
-        # The old DEBUG simulation was bypassing PayMongo entirely.
-        # Now if order is below PayMongo minimum (₱100), show a clear error.
-        MIN_AMOUNT_CENTAVOS = int(getattr(settings, 'PAYMONGO_MINIMUM_AMOUNT_CENTAVOS', 10000))
-        if amount_in_centavos < MIN_AMOUNT_CENTAVOS:
-            return JsonResponse({
-                'success': False,
-                'message': f'Minimum order for online payment is ₱{MIN_AMOUNT_CENTAVOS / 100:.0f}. Please add more items or use Cash on Pickup instead.'
-            }, status=400)
+        # ✅ No minimum amount restriction — PayMongo handles any amount.
 
         # PayMongo API setup
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
