@@ -4499,6 +4499,56 @@ def mark_all_notifications_read(request):
         }, status=500)
 
 
+def _fetch_paymongo_payment_method(session_id):
+    """
+    ✅ NEW HELPER: Query PayMongo Checkout Sessions API to get the actual payment method used.
+    Returns: 'gcash', 'paymaya', 'card', or None if unavailable.
+    Called after a successful PayMongo payment to detect which method the customer chose.
+    """
+    try:
+        if not session_id or session_id.startswith(('SIM-', 'CASH-', 'CASH_ON_PICKUP')):
+            return None  # Not a real PayMongo checkout session
+
+        auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
+        auth_header = "Basic " + base64.b64encode(auth_string.encode()).decode()
+
+        response = requests.get(
+            f"https://api.paymongo.com/v1/checkout_sessions/{session_id}",
+            headers={
+                "Authorization": auth_header,
+                "Content-Type": "application/json",
+            },
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            session_data = response.json()
+            payments = (
+                session_data
+                .get('data', {})
+                .get('attributes', {})
+                .get('payments', [])
+            )
+            if payments:
+                # Extract payment method type from first completed payment
+                payment_type = (
+                    payments[0]
+                    .get('data', {})
+                    .get('attributes', {})
+                    .get('source', {})
+                    .get('type', None)
+                )
+                print(f"✅ PayMongo payment method detected: {payment_type}")
+                return payment_type  # Returns 'gcash', 'paymaya', 'card', etc.
+        else:
+            print(f"⚠️ PayMongo session fetch returned {response.status_code}")
+
+    except Exception as e:
+        print(f"⚠️ Could not fetch PayMongo payment method: {e}")
+
+    return None
+
+
 def gcash_payment_success(request):
     """
     ✅ ENHANCED: Handle successful payment with ORDER NOTIFICATIONS and STOCK REDUCTION
@@ -4515,12 +4565,21 @@ def gcash_payment_success(request):
             messages.error(request, 'Order not found')
             return redirect('view_cart')
 
+        # ✅ NEW: Detect actual payment method from PayMongo before the transaction
+        # This queries PayMongo API to know if user paid via GCash, Maya, or Card
+        detected_method = _fetch_paymongo_payment_method(order.gcash_reference_number)
+        if detected_method and not order.gcash_payment_method:
+            print(f"✅ Payment method '{detected_method}' detected for Order #{order.id}")
+
         # Update order status if still pending
         if order.status != 'PAID':
             with transaction.atomic():
                 # 1. Update order status
                 order.status = 'PAID'
                 order.payment_confirmed_at = timezone.now()
+                # ✅ Save the actual payment method (gcash, paymaya, card)
+                if detected_method:
+                    order.gcash_payment_method = detected_method
                 order.save()
 
                 # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER
@@ -4560,6 +4619,11 @@ def gcash_payment_success(request):
                 print(f"Email error: {e}")
 
         # ✅ Redirect to order confirmation — customer sees their order as "received"
+        # If order was already PAID by webhook but payment method missing, save it now
+        if detected_method and not order.gcash_payment_method:
+            order.gcash_payment_method = detected_method
+            order.save(update_fields=['gcash_payment_method'])
+
         messages.success(request, '✅ Payment successful! Your order has been placed.')
         return redirect('order_confirmation', order_id=order.id)
 
@@ -4657,6 +4721,21 @@ def paymongo_webhook(request):
                             # Update order
                             order.status = 'PAID'
                             order.payment_confirmed_at = timezone.now()
+
+                            # ✅ NEW: Extract payment method from webhook payload
+                            try:
+                                pm_method = (
+                                    payment_data
+                                    .get('attributes', {})
+                                    .get('source', {})
+                                    .get('type', None)
+                                )
+                                if pm_method and not order.gcash_payment_method:
+                                    order.gcash_payment_method = pm_method
+                                    print(f"✅ Webhook: Payment method '{pm_method}' saved for Order #{order.id}")
+                            except Exception as pm_err:
+                                print(f"⚠️ Webhook: Could not extract payment method: {pm_err}")
+
                             order.save()
 
                             # Create notification
