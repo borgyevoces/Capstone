@@ -1892,51 +1892,15 @@ def create_gcash_payment_link(request):
                 'message': 'Order total must be greater than zero.'
             }, status=400)
 
-        # PayMongo enforces a minimum amount (typically ₱100). If the order is
-        # below that threshold we cannot create a PayMongo link. For local
-        # development (DEBUG=True) we simulate a successful payment so you can
-        # test the checkout flow without calling the external API. In
-        # production we return a clear error to the client.
+        # ✅ FIXED: Removed simulation mode. Always calls real PayMongo API.
+        # The old DEBUG simulation was bypassing PayMongo entirely.
+        # Now if order is below PayMongo minimum (₱100), show a clear error.
         MIN_AMOUNT_CENTAVOS = int(getattr(settings, 'PAYMONGO_MINIMUM_AMOUNT_CENTAVOS', 10000))
         if amount_in_centavos < MIN_AMOUNT_CENTAVOS:
-            if settings.DEBUG:
-                # Simulate immediate successful payment for testing
-                order.status = 'PAID'
-                order.payment_confirmed_at = timezone.now()
-                order.gcash_reference_number = f"SIM-{uuid.uuid4()}"
-                order.save()
-
-                # Reduce stock for order items
-                for order_item in order.orderitem_set.all():
-                    menu_item = order_item.menu_item
-                    try:
-                        if menu_item.quantity >= order_item.quantity:
-                            menu_item.quantity -= order_item.quantity
-                            menu_item.save()
-                    except Exception as stock_err:
-                        print(f"Error reducing stock for {menu_item.id}: {stock_err}")
-
-                # Send confirmation emails (best-effort)
-                try:
-                    send_order_confirmation_email(order)
-                except Exception as e:
-                    print(f"Email error (simulated payment): {e}")
-
-                # Return a redirect URL so the frontend can continue the happy path
-                redirect_url = request.build_absolute_uri(reverse('gcash_payment_success')) + f'?order_id={order.id}'
-                return JsonResponse({
-                    'success': True,
-                    'checkout_url': redirect_url,
-                    'order_id': order.id,
-                    'reference_number': order.gcash_reference_number,
-                    'total_amount': float(total_amount),
-                    'note': 'Simulated payment because amount below PayMongo minimum and DEBUG=True'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'PayMongo requires a minimum payment of ₱{MIN_AMOUNT_CENTAVOS / 100:.2f}. Please increase your order or use another payment method.'
-                }, status=400)
+            return JsonResponse({
+                'success': False,
+                'message': f'Minimum order for online payment is ₱{MIN_AMOUNT_CENTAVOS / 100:.0f}. Please add more items or use Cash on Pickup instead.'
+            }, status=400)
 
         # PayMongo API setup
         auth_string = f"{settings.PAYMONGO_SECRET_KEY}:"
