@@ -542,6 +542,12 @@
             document.getElementById(tab + "-tab").classList.add("active");
             document.getElementById(tab).classList.add("active");
 
+            // Update URL hash without page jump
+            history.replaceState(null, null, '#' + tab);
+
+            // Scroll smoothly to the tab area
+            document.querySelector(".tab-buttons").scrollIntoView({ behavior: "smooth", block: "start" });
+
             // Reset registration steps when switching tabs
             if (tab === 'register') {
                 showStep('email-step');
@@ -572,7 +578,7 @@
         // Email Form Submission
         document.getElementById('email-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const emailInput = document.getElementById('reg_email');
             const email = emailInput.value.trim();
             const submitBtn = e.target.querySelector('.action-btn');
@@ -646,12 +652,12 @@
         function startOTPTimer() {
             timeRemaining = 600; // 10 minutes
             updateTimerDisplay();
-            
+
             const resendContainer = document.querySelector('.resend-otp');
             resendContainer.classList.add('disabled');
 
             if (otpTimer) clearInterval(otpTimer);
-            
+
             otpTimer = setInterval(() => {
                 timeRemaining--;
                 updateTimerDisplay();
@@ -672,7 +678,7 @@
         function updateTimerDisplay() {
             const minutes = Math.floor(timeRemaining / 60);
             const seconds = timeRemaining % 60;
-            document.getElementById('timer').textContent = 
+            document.getElementById('timer').textContent =
                 `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
@@ -723,7 +729,7 @@
 
             try {
                 console.log('📤 Verifying OTP:', otp, 'for email:', registrationEmail);
-                
+
                 const response = await fetch('/api/verify-otp/', {
                     method: 'POST',
                     headers: {
@@ -807,7 +813,7 @@
 
                 let data;
                 const contentType = response.headers.get('content-type');
-                
+
                 if (contentType && contentType.includes('application/json')) {
                     data = await response.json();
                 } else {
@@ -817,7 +823,7 @@
                 if (data.success) {
                     showMessagePopup(data.message || 'Account created successfully!', 'success');
                     otpInputs.forEach(input => input.value = '');
-                    
+
                     setTimeout(() => {
                         switchTab('login');
                         document.getElementById('id_username').value = registrationEmail;
@@ -833,7 +839,7 @@
                 let errorMessage = 'Network error. Please try again.';
                 if (error.message.includes('502')) errorMessage = 'Server is temporarily unavailable.';
                 if (error.message.includes('500')) errorMessage = 'Server error.';
-                
+
                 showMessagePopup(errorMessage, 'error');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
@@ -874,6 +880,12 @@
 
         // Display Django messages on page load
         window.onload = function() {
+            // Check URL hash to activate correct tab on load
+            const hash = window.location.hash.replace('#', '');
+            if (hash === 'register' || hash === 'login') {
+                switchTab(hash);
+            }
+
             const messagesList = document.querySelector('.messages');
             if (messagesList) {
                 const messages = messagesList.querySelectorAll('li');
