@@ -351,113 +351,146 @@ def google_callback(request):
 
 def forgot_password(request):
     """
-    Handle forgot password requests with proper email sending
+    Handle forgot password — fires email in background for instant response.
+    Fixes: sync blocking, bad protocol on Render proxy, fail_silently=False crash.
     """
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        User = get_user_model()
+    if request.method != 'POST':
+        return redirect('user_login_register')
 
-        try:
-            user = User.objects.get(email=email)
+    email = request.POST.get('email', '').strip()
+    User = get_user_model()
 
-            # Generate reset token
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
+    try:
+        user = User.objects.get(email=email)
 
-            # build.sh reset URL
-            protocol = 'https' if request.is_secure() else 'http'
-            domain = request.get_host()
-            reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
+        # Generate reset token
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
 
-            # Email subject and content
-            subject = "Password Reset Request - KabsuEats"
+        # ✅ FIX: Render sits behind a reverse proxy — request.is_secure() always
+        # returns False even on HTTPS. Check X-Forwarded-Proto header first.
+        forwarded_proto = request.META.get('HTTP_X_FORWARDED_PROTO', '')
+        protocol = forwarded_proto if forwarded_proto in ('http', 'https') else (
+            'https' if request.is_secure() else 'http'
+        )
+        domain = request.get_host()
+        reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
 
-            # Plain text message (fallback)
-            text_message = f"""
+        # Detect account type
+        is_owner = FoodEstablishment.objects.filter(owner=user).exists()
+        account_type = "Business Owner" if is_owner else "Student / School Personnel"
+        account_badge_color = "#1a1a2e" if is_owner else "#2e7d32"
+        account_badge_icon = "🏪" if is_owner else "🎓"
+
+        subject = f"Password Reset Request - KabsuEats ({'Owner' if is_owner else 'Client'} Account)"
+
+        text_message = f"""
 Hello {user.username},
+
+Account Type: {account_type}
 
 We received a request to reset the password for your KabsuEats account.
 
-To reset your password, please click the link below or copy and paste it into your browser:
-
+Click the link below or paste it into your browser to reset your password:
 {reset_url}
 
 This link will expire in 24 hours.
 
-If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+If you did not request this, please ignore this email.
 
 Thank you,
 The KabsuEats Team
-            """
+        """
 
-            # HTML message (better formatting)
-            html_message = f"""
+        html_message = f"""
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #e59b20; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
-        .content {{ background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }}
-        .button {{ display: inline-block; padding: 12px 30px; background-color: #e59b20; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-        .footer {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset - KabsuEats</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Password Reset Request</h2>
-        </div>
-        <div class="content">
-            <p>Hello <strong>{user.username}</strong>,</p>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;padding:40px 0;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 
-            <p>We received a request to reset the password for your KabsuEats account.</p>
+        <!-- LOGO HEADER -->
+        <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:16px 16px 0 0;padding:28px 40px 24px;text-align:center;">
+          <div style="font-family:Georgia,serif;font-size:30px;font-weight:bold;color:#e59b20;letter-spacing:1px;margin-bottom:4px;">🍽 KabsuEats</div>
+          <div style="font-size:12px;color:#aaa;letter-spacing:2px;text-transform:uppercase;">Campus Food Reservation</div>
+        </td></tr>
 
-            <p>Click the button below to reset your password:</p>
+        <!-- MAIN CARD -->
+        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <!-- Account badge -->
+          <div style="display:inline-block;background:{account_badge_color};color:#fff;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;margin-bottom:20px;">{account_badge_icon}&nbsp;{account_type} Account</div>
 
-            <a href="{reset_url}" class="button">Reset Password</a>
+          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a2e;font-weight:700;">Password Reset Request</h2>
+          <p style="margin:0 0 24px;font-size:14px;color:#888;">We received a request to reset your password.</p>
 
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #e59b20;">{reset_url}</p>
+          <p style="font-size:15px;color:#333;margin:0 0 8px;">Hello, <strong>{user.username}</strong> 👋</p>
+          <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 28px;">
+            Someone requested a password reset for your <strong>KabsuEats {account_type}</strong> account.
+            Click the button below to set a new password. This link expires in <strong>24 hours</strong>.
+          </p>
 
-            <p><strong>This link will expire in 24 hours.</strong></p>
+          <!-- Reset button -->
+          <div style="text-align:center;margin:0 0 28px;">
+            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#e59b20,#d48a10);color:#fff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 42px;border-radius:50px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(229,155,32,0.4);">
+              🔑&nbsp;Reset My Password
+            </a>
+          </div>
 
-            <div class="footer">
-                <p>If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
-                <p>Thank you,<br>The KabsuEats Team</p>
-            </div>
-        </div>
-    </div>
+          <hr style="border:none;border-top:1px solid #eee;margin:0 0 20px;">
+          <p style="font-size:13px;color:#888;margin:0 0 8px;">Or copy and paste this link into your browser:</p>
+          <p style="font-size:12px;color:#e59b20;word-break:break-all;background:#fff8ee;border:1px solid #f5dfa0;border-radius:8px;padding:10px 14px;margin:0 0 28px;">{reset_url}</p>
+
+          <div style="background:#fff8ee;border-left:4px solid #e59b20;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:28px;">
+            <p style="margin:0;font-size:13px;color:#7a5a00;">⚠️&nbsp;If you did not request this, please ignore this email. Your password will remain unchanged.</p>
+          </div>
+
+          <p style="font-size:13px;color:#aaa;text-align:center;margin:0;">Thank you,&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
+        </td></tr>
+
+        <!-- FOOTER NOTE -->
+        <tr><td align="center" style="padding:20px 0 0;">
+          <p style="font-size:11px;color:#bbb;margin:0;">This email was sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>
-            """
+        """
 
-            # Send email using the wrapper function
+        from_email = getattr(settings, 'SENDER_EMAIL', None) or settings.DEFAULT_FROM_EMAIL
+
+        # ✅ FIX: Fire email in background — return success response instantly
+        import threading
+        def _send_reset_email():
             try:
                 send_mail(
                     subject=subject,
                     message=text_message,
-                    from_email=settings.SENDER_EMAIL or settings.DEFAULT_FROM_EMAIL,
+                    from_email=from_email,
                     recipient_list=[email],
-                    fail_silently=False,
+                    fail_silently=True,   # ✅ Never crash the reset flow
                     html_message=html_message
                 )
+                print(f"✅ Password reset email sent to {email}")
+            except Exception as e:
+                print(f"❌ Background reset email error: {e}")
 
-                messages.success(request, "Password reset instructions have been sent to your email.")
-                return redirect('password_reset_done_redirect')
+        threading.Thread(target=_send_reset_email, daemon=True).start()
 
-            except Exception as email_error:
-                print(f"Email sending error: {email_error}")
-                messages.error(request, "There was an error sending the reset email. Please try again later.")
-                return redirect('user_login_register')
+    except User.DoesNotExist:
+        pass  # Security: don't reveal whether email is registered
 
-        except User.DoesNotExist:
-            # Don't reveal if email exists (security best practice)
-            messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
-            return redirect('password_reset_done_redirect')
-
-    return redirect('user_login_register')
+    # Always redirect to "done" page regardless of whether email was found
+    messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
+    return redirect('password_reset_done_redirect')
 
 
 def password_reset_done_redirect(request):
