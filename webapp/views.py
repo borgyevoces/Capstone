@@ -1125,7 +1125,7 @@ def send_registration_otp(request):
     </html>
     """
 
-    # Send email in background thread so response is instant
+    # Fire email in background — respond instantly to user
     import threading
     def _send_otp_email():
         try:
@@ -1143,7 +1143,6 @@ def send_registration_otp(request):
 
     threading.Thread(target=_send_otp_email, daemon=True).start()
 
-    # Return immediately — don't wait for email
     return JsonResponse({
         'success': True,
         'message': 'OTP sent successfully to your email'
@@ -1470,7 +1469,7 @@ def resend_otp(request):
     </div>
     """
 
-    # Send email in background thread so response is instant
+    # Fire email in background — respond instantly to user
     import threading
     def _resend_otp_email():
         try:
@@ -1488,7 +1487,6 @@ def resend_otp(request):
 
     threading.Thread(target=_resend_otp_email, daemon=True).start()
 
-    # Return immediately — don't wait for email
     return JsonResponse({
         'success': True,
         'message': 'New OTP sent successfully!'
@@ -1515,85 +1513,82 @@ def get_csrf_token(request):
 
 def send_mail(subject, message, from_email, recipient_list, fail_silently=False, html_message=None):
     """
-    ✅ PRODUCTION-READY EMAIL SENDING WITH SENDGRID PRIMARY + GMAIL FALLBACK
-    Priority: SendGrid (reliable on Render) → Gmail SMTP (local backup)
+    ✅ RELIABLE EMAIL SENDING — SendGrid with retry + timeout + Gmail fallback
     """
     import logging
+    import time
     logger = logging.getLogger(__name__)
 
-    # ============================================================================
-    # STEP 1: VALIDATE SENDER EMAIL
-    # ============================================================================
+    # Resolve sender email
     if not from_email or from_email == 'webmaster@localhost':
         from_email = os.getenv('SENDER_EMAIL') or getattr(settings, 'SENDER_EMAIL', None)
-
     if not from_email:
         logger.error("❌ CRITICAL: No sender email configured")
         if not fail_silently:
-            raise ValueError("SENDER_EMAIL not configured in environment variables")
+            raise ValueError("SENDER_EMAIL not configured")
         return 0
 
-    # Ensure recipient_list is a list
     if isinstance(recipient_list, str):
         recipient_list = [recipient_list]
 
-    # ============================================================================
-    # STEP 2: TRY SENDGRID FIRST (BEST FOR RENDER/PRODUCTION)
-    # ============================================================================
+    body = html_message if html_message else message
+
+    # ── SendGrid (primary, with retry) ───────────────────────────────────────
     sendgrid_key = os.getenv('SENDGRID_API_KEY') or getattr(settings, 'SENDGRID_API_KEY', None)
 
-    if sendgrid_key and sendgrid_key != '********************':
-        try:
-            from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail, Email, To, Content
+    if sendgrid_key and sendgrid_key not in ('', '********************'):
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail, Email, To, Content
+        from python_http_client.exceptions import HTTPError
 
-            logger.info(f"📧 Attempting SendGrid email to {recipient_list}")
+        MAX_RETRIES = 3
+        RETRY_DELAYS = [0, 1, 2]  # seconds between retries
 
-            # Create SendGrid message
-            sg_msg = Mail(
-                from_email=Email(from_email),
-                to_emails=[To(email) for email in recipient_list],
-                subject=subject,
-                html_content=Content("text/html", html_message if html_message else message)
-            )
+        for attempt in range(MAX_RETRIES):
+            try:
+                sg_msg = Mail(
+                    from_email=Email(from_email),
+                    to_emails=[To(r) for r in recipient_list],
+                    subject=subject,
+                    html_content=Content("text/html", body)
+                )
+                # Add plain-text for better deliverability
+                sg_msg.add_content(Content("text/plain", message))
 
-            # Send with timeout
-            sg = SendGridAPIClient(sendgrid_key)
-            response = sg.send(sg_msg)
+                sg = SendGridAPIClient(sendgrid_key)
+                # Set HTTP timeout to 10 s so it never hangs indefinitely
+                sg.client.session.timeout = 10
 
-            if response.status_code in (200, 202):
-                logger.info(f"✅ SendGrid email sent successfully to {recipient_list}")
-                return 1
-            else:
-                logger.warning(f"⚠️ SendGrid returned status {response.status_code}")
+                response = sg.send(sg_msg)
 
-        except Exception as sg_error:
-            logger.error(f"❌ SendGrid error: {sg_error}")
+                if response.status_code in (200, 202):
+                    logger.info(f"✅ SendGrid sent to {recipient_list} (attempt {attempt+1})")
+                    return 1
+                else:
+                    logger.warning(f"⚠️ SendGrid status {response.status_code} on attempt {attempt+1}")
 
-            # Provide specific diagnostics
-            error_msg = str(sg_error).lower()
-            if '403' in error_msg or 'forbidden' in error_msg:
-                logger.error("❌ SendGrid 403 Error - Possible causes:")
-                logger.error("   1. API Key is invalid or expired")
-                logger.error("   2. Sender email not verified in SendGrid")
-                logger.error("   3. Free trial expired")
-                logger.error("   Fix: Go to https://app.sendgrid.com/settings/sender_auth")
-            elif '401' in error_msg:
-                logger.error("❌ SendGrid 401 - API Key authentication failed")
+            except HTTPError as http_err:
+                err_str = str(http_err).lower()
+                if '403' in err_str:
+                    logger.error("❌ SendGrid 403 — sender not verified. No point retrying.")
+                    break  # Won't recover with retries
+                elif '401' in err_str:
+                    logger.error("❌ SendGrid 401 — invalid API key. No point retrying.")
+                    break
+                logger.error(f"❌ SendGrid HTTP error attempt {attempt+1}: {http_err}")
 
-            # Continue to Gmail fallback
+            except Exception as e:
+                logger.error(f"❌ SendGrid error attempt {attempt+1}: {e}")
+
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAYS[attempt + 1])
+
+        logger.warning("⚠️ SendGrid failed after retries, trying Gmail SMTP fallback...")
     else:
         logger.warning("⚠️ SendGrid not configured, trying Gmail SMTP...")
 
-    # ============================================================================
-    # STEP 3: FALLBACK TO GMAIL SMTP (LOCAL DEVELOPMENT)
-    # ============================================================================
-    # NOTE: Gmail SMTP often fails on Render due to network restrictions
-    # This fallback is mainly for local development
-
+    # ── Gmail SMTP fallback (works locally, may fail on Render) ─────────────
     try:
-        logger.info(f"📧 Attempting Gmail SMTP fallback to {recipient_list}")
-
         result = django_send_mail(
             subject=subject,
             message=message,
@@ -1602,38 +1597,23 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
             fail_silently=False,
             html_message=html_message
         )
-
         if result and result > 0:
-            logger.info(f"✅ Gmail SMTP email sent successfully to {recipient_list}")
+            logger.info(f"✅ Gmail SMTP sent to {recipient_list}")
             return result
-        else:
-            logger.warning(f"⚠️ Gmail SMTP returned {result}")
-
     except Exception as smtp_error:
-        logger.error(f"❌ Gmail SMTP error: {smtp_error}")
-
-        # Provide specific diagnostics
-        error_msg = str(smtp_error).lower()
-        if 'network is unreachable' in error_msg or 'errno 101' in error_msg:
-            logger.error("❌ Network Error - Render cannot reach Gmail SMTP")
-            logger.error("   Solution: Use SendGrid instead (set SENDGRID_API_KEY)")
-        elif 'authentication' in error_msg or '535' in error_msg:
-            logger.error("❌ Gmail Authentication Failed")
-            logger.error("   1. Enable 2-Step Verification: https://myaccount.google.com/security")
-            logger.error("   2. Generate App Password: https://myaccount.google.com/apppasswords")
-            logger.error("   3. Update EMAIL_HOST_PASSWORD in .env")
-
+        err = str(smtp_error).lower()
+        if 'network is unreachable' in err or 'errno 101' in err:
+            logger.error("❌ Render blocks Gmail SMTP — use SendGrid in production")
+        elif 'authentication' in err or '535' in err:
+            logger.error("❌ Gmail auth failed — check App Password in .env")
+        else:
+            logger.error(f"❌ Gmail SMTP error: {smtp_error}")
         if not fail_silently:
             raise
 
-    # ============================================================================
-    # STEP 4: ALL METHODS FAILED
-    # ============================================================================
-    logger.error(f"❌ All email sending methods failed for {recipient_list}")
-
+    logger.error(f"❌ All email methods failed for {recipient_list}")
     if not fail_silently:
-        raise Exception("Email sending failed - both SendGrid and Gmail SMTP unavailable")
-
+        raise Exception("Email sending failed — SendGrid and Gmail both unavailable")
     return 0
 
 
