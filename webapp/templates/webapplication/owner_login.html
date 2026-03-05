@@ -425,9 +425,15 @@
     <script>
         function openForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'flex';
-            document.getElementById('forgot_email').focus();
+            // Reset modal state every time
             document.getElementById('forgot-success').style.display = 'none';
             document.getElementById('forgot-error').style.display = 'none';
+            document.getElementById('forgotPasswordForm').style.display = 'block';
+            const btn = document.getElementById('forgot-submit-btn');
+            btn.disabled = false;
+            btn.textContent = 'Send Reset Link';
+            document.getElementById('forgot_email').value = '';
+            setTimeout(() => document.getElementById('forgot_email').focus(), 100);
         }
 
         function closeForgotPasswordModal() {
@@ -448,6 +454,12 @@
             document.getElementById('forgot-success').style.display = 'none';
             document.getElementById('forgot-error').style.display = 'none';
 
+            if (!email) {
+                document.getElementById('forgot-error-text').textContent = 'Please enter your email address.';
+                document.getElementById('forgot-error').style.display = 'block';
+                return;
+            }
+
             btn.disabled = true;
             btn.textContent = 'Sending...';
 
@@ -456,13 +468,13 @@
                 formData.append('email', email);
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-                const response = await fetch("{% url 'forgot_password' %}", {
+                await fetch("{% url 'forgot_password' %}", {
                     method: 'POST',
                     body: formData,
-                    redirect: 'manual'  // Don't follow Django redirect
+                    redirect: 'manual'
                 });
 
-                // Show success regardless (security: don't reveal if email exists)
+                // Always show success (security: don't reveal if email exists)
                 document.getElementById('forgot-success').style.display = 'block';
                 document.getElementById('forgotPasswordForm').style.display = 'none';
 

@@ -478,13 +478,24 @@
                 <h3>Forgot Password?</h3>
             </div>
             <p class="modal-text">Enter your email below to reset your password.</p>
-            <form class="modal-form" method="post" action="{% url 'forgot_password' %}">
+
+            <!-- Success message -->
+            <div id="forgot-success-msg" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:12px 14px; color:#2e7d32; font-size:0.88rem; margin-bottom:16px;">
+                ✓ &nbsp;If that email is registered, a reset link has been sent. Check your inbox and spam folder.
+            </div>
+
+            <!-- Error message -->
+            <div id="forgot-error-msg" style="display:none; background:#fef5f5; border:1px solid #fcc; border-radius:6px; padding:12px 14px; color:#d9534f; font-size:0.88rem; margin-bottom:16px;">
+                ⚠ &nbsp;<span id="forgot-error-text-msg">Something went wrong. Please try again.</span>
+            </div>
+
+            <form id="forgotPasswordForm" class="modal-form">
                 {% csrf_token %}
                 <div class="form-field-container">
-                    <label for="id_email">Email</label>
-                    <input type="text" name="email" id="id_email" placeholder="Enter your email" required>
+                    <label for="id_forgot_email">Email</label>
+                    <input type="email" name="email" id="id_forgot_email" placeholder="Enter your registered email" required>
                 </div>
-                <button type="submit" class="action-btn modal-action-btn">Send Reset Link</button>
+                <button type="submit" id="forgot-submit-btn" class="action-btn modal-action-btn">Send Reset Link</button>
             </form>
         </div>
     </div>
@@ -849,6 +860,14 @@
         // Forgot Password Modal
         function openForgotPasswordModal() {
             document.getElementById("forgotPasswordModal").style.display = "flex";
+            // Reset modal state every time it opens
+            document.getElementById('forgot-success-msg').style.display = 'none';
+            document.getElementById('forgot-error-msg').style.display = 'none';
+            document.getElementById('forgotPasswordForm').style.display = 'block';
+            document.getElementById('forgot-submit-btn').disabled = false;
+            document.getElementById('forgot-submit-btn').textContent = 'Send Reset Link';
+            document.getElementById('id_forgot_email').value = '';
+            setTimeout(() => document.getElementById('id_forgot_email').focus(), 100);
         }
 
         function closeForgotPasswordModal() {
@@ -861,6 +880,48 @@
                 closeForgotPasswordModal();
             }
         }
+
+        // AJAX Forgot Password Submit
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('id_forgot_email').value.trim();
+            const btn = document.getElementById('forgot-submit-btn');
+
+            document.getElementById('forgot-success-msg').style.display = 'none';
+            document.getElementById('forgot-error-msg').style.display = 'none';
+
+            if (!email) {
+                document.getElementById('forgot-error-text-msg').textContent = 'Please enter your email address.';
+                document.getElementById('forgot-error-msg').style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Sending...';
+
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+                const response = await fetch("{% url 'forgot_password' %}", {
+                    method: 'POST',
+                    body: formData,
+                    redirect: 'manual'
+                });
+
+                // Show success regardless (security: don't reveal if email exists)
+                document.getElementById('forgotPasswordForm').style.display = 'none';
+                document.getElementById('forgot-success-msg').style.display = 'block';
+
+            } catch (err) {
+                document.getElementById('forgot-error-text-msg').textContent = 'Network error. Please try again.';
+                document.getElementById('forgot-error-msg').style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Send Reset Link';
+            }
+        });
 
         // Get CSRF Token
         function getCookie(name) {
