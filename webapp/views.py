@@ -350,77 +350,64 @@ def google_callback(request):
 
 
 def _build_client_reset_email(username, reset_url, email):
-    """
-    EMAIL DESIGN FOR CLIENT (Student / School Personnel)
-    Warm gold & campus theme.
-    """
-    subject = "🔑 Password Reset — KabsuEats Student Account"
+    """Client password reset email — clean gold/white, matches client dashboard."""
+    subject = "Password Reset — KabsuEats Student Account"
+    text = f"""Hello {username},
 
-    text = f"""
-Hello {username},
+You requested a password reset for your KabsuEats Student account.
 
-You requested a password reset for your KabsuEats Student/School Personnel account.
+Reset your password here: {reset_url}
 
-Reset your password here:
-{reset_url}
+This link expires in 24 hours.
+If you did not request this, ignore this email.
 
-This link expires in 24 hours. If you didn't request this, ignore this email.
+— The KabsuEats Team"""
 
-— The KabsuEats Team
-"""
-
-    html = f"""
-<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#fff8ee;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8ee;padding:36px 0;">
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
-        <!-- HEADER: warm gold -->
-        <tr><td style="background:linear-gradient(135deg,#e59b20 0%,#f0b429 100%);border-radius:16px 16px 0 0;padding:32px 40px 28px;text-align:center;">
-          <div style="font-size:36px;margin-bottom:6px;">🍽️</div>
-          <div style="font-family:Georgia,serif;font-size:28px;font-weight:bold;color:#fff;letter-spacing:1px;">KabsuEats</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.8);letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Campus Food Reservation</div>
-          <!-- Account type badge -->
-          <div style="display:inline-block;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;font-size:12px;font-weight:600;padding:5px 16px;border-radius:20px;margin-top:14px;">
-            🎓&nbsp; Student / School Personnel Account
-          </div>
+        <!-- Header: gold -->
+        <tr><td style="background:#e59b20;padding:28px 32px;text-align:center;">
+          <div style="font-size:22px;font-weight:bold;color:#fff;letter-spacing:0.5px;">KabsuEats</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">Campus Food Reservation</div>
         </td></tr>
 
-        <!-- BODY: white card -->
-        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(229,155,32,0.12);">
-          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a1a;font-weight:700;">Password Reset Request</h2>
-          <p style="margin:0 0 22px;font-size:14px;color:#999;">We received a request to reset your student account password.</p>
+        <!-- Account badge row -->
+        <tr><td style="background:#fff8ee;padding:12px 32px;border-bottom:1px solid #fde8b0;">
+          <span style="font-size:13px;color:#b87400;font-weight:600;">&#127891; Student / School Personnel Account</span>
+        </td></tr>
 
-          <p style="font-size:15px;color:#333;margin:0 0 6px;">Hello, <strong>{username}</strong> 👋</p>
-          <p style="font-size:14px;color:#555;line-height:1.8;margin:0 0 28px;">
-            Click the button below to set a new password for your
-            <strong style="color:#e59b20;">KabsuEats Student Account</strong>.
+        <!-- Body -->
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 8px;font-size:15px;color:#1a1a1a;font-weight:600;">Password Reset Request</p>
+          <p style="margin:0 0 20px;font-size:13px;color:#777;">We received a request to reset your password.</p>
+
+          <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.7;">
+            Hello <strong>{username}</strong>, click the button below to set a new password.
             This link is valid for <strong>24 hours</strong>.
           </p>
 
-          <!-- CTA Button -->
-          <div style="text-align:center;margin:0 0 28px;">
-            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#e59b20,#d48a10);color:#fff;text-decoration:none;font-size:16px;font-weight:700;padding:15px 48px;border-radius:50px;box-shadow:0 4px 16px rgba(229,155,32,0.45);">
-              🔑&nbsp; Reset My Password
+          <!-- Button -->
+          <div style="text-align:center;margin:24px 0;">
+            <a href="{reset_url}" style="display:inline-block;background:#e59b20;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 40px;border-radius:8px;">
+              Reset My Password
             </a>
           </div>
 
-          <hr style="border:none;border-top:1px solid #f0e0c0;margin:0 0 20px;">
-          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy and paste this link:</p>
-          <p style="font-size:12px;color:#e59b20;word-break:break-all;background:#fff8ee;border:1px solid #f5dfa0;border-radius:8px;padding:10px 14px;margin:0 0 24px;">{reset_url}</p>
+          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy this link into your browser:</p>
+          <p style="font-size:11px;color:#e59b20;word-break:break-all;background:#fff8ee;border:1px solid #fde8b0;border-radius:6px;padding:8px 12px;margin:0 0 20px;">{reset_url}</p>
 
-          <div style="background:#fff8ee;border-left:4px solid #e59b20;border-radius:0 8px 8px 0;padding:11px 16px;">
-            <p style="margin:0;font-size:13px;color:#7a5a00;">⚠️&nbsp; If you did not request this, please ignore this email. Your password stays unchanged.</p>
-          </div>
-
-          <p style="font-size:13px;color:#ccc;text-align:center;margin:24px 0 0;">Thank you —&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
+          <p style="font-size:12px;color:#999;margin:0;">If you did not request this, you can safely ignore this email.</p>
         </td></tr>
 
-        <tr><td align="center" style="padding:16px 0 0;">
-          <p style="font-size:11px;color:#bbb;margin:0;">Sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
+        <!-- Footer -->
+        <tr><td style="background:#f9f9f9;padding:14px 32px;text-align:center;border-top:1px solid #eee;">
+          <p style="margin:0;font-size:11px;color:#bbb;">Sent to {email} &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
         </td></tr>
 
       </table>
@@ -428,82 +415,68 @@ This link expires in 24 hours. If you didn't request this, ignore this email.
   </table>
 </body>
 </html>"""
-
     return subject, text, html
 
 
 def _build_owner_reset_email(username, reset_url, email):
-    """
-    EMAIL DESIGN FOR BUSINESS OWNER
-    Dark professional navy/charcoal theme.
-    """
-    subject = "🔑 Password Reset — KabsuEats Business Owner Account"
-
-    text = f"""
-Hello {username},
+    """Owner password reset email — clean dark/white, matches owner dashboard."""
+    subject = "Password Reset — KabsuEats Business Owner Account"
+    text = f"""Hello {username},
 
 You requested a password reset for your KabsuEats Business Owner account.
 
-Reset your password here:
-{reset_url}
+Reset your password here: {reset_url}
 
-This link expires in 24 hours. If you didn't request this, ignore this email.
+This link expires in 24 hours.
+If you did not request this, ignore this email.
 
-— The KabsuEats Team
-"""
+— The KabsuEats Team"""
 
-    html = f"""
-<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:36px 0;">
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
-        <!-- HEADER: dark navy professional -->
-        <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:16px 16px 0 0;padding:32px 40px 28px;text-align:center;">
-          <div style="font-size:36px;margin-bottom:6px;">🏪</div>
-          <div style="font-family:Georgia,serif;font-size:28px;font-weight:bold;color:#e59b20;letter-spacing:1px;">KabsuEats</div>
-          <div style="font-size:11px;color:rgba(229,155,32,0.7);letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Business Owner Portal</div>
-          <!-- Account type badge -->
-          <div style="display:inline-block;background:rgba(229,155,32,0.15);border:1px solid rgba(229,155,32,0.4);color:#e59b20;font-size:12px;font-weight:600;padding:5px 16px;border-radius:20px;margin-top:14px;">
-            🏪&nbsp; Business Owner Account
-          </div>
+        <!-- Header: dark navy -->
+        <tr><td style="background:#1a1a2e;padding:28px 32px;text-align:center;">
+          <div style="font-size:22px;font-weight:bold;color:#e59b20;letter-spacing:0.5px;">KabsuEats</div>
+          <div style="font-size:11px;color:rgba(229,155,32,0.7);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">Business Owner Portal</div>
         </td></tr>
 
-        <!-- BODY: white card with dark accents -->
-        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
-          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a2e;font-weight:700;">Password Reset Request</h2>
-          <p style="margin:0 0 22px;font-size:14px;color:#999;">A reset was requested for your business owner account.</p>
+        <!-- Account badge row -->
+        <tr><td style="background:#f0f0f0;padding:12px 32px;border-bottom:1px solid #ddd;">
+          <span style="font-size:13px;color:#1a1a2e;font-weight:600;">&#127978; Business Owner Account</span>
+        </td></tr>
 
-          <p style="font-size:15px;color:#333;margin:0 0 6px;">Hello, <strong>{username}</strong> 👋</p>
-          <p style="font-size:14px;color:#555;line-height:1.8;margin:0 0 28px;">
-            Click the button below to set a new password for your
-            <strong style="color:#1a1a2e;">KabsuEats Business Owner Account</strong>.
+        <!-- Body -->
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 8px;font-size:15px;color:#1a1a1a;font-weight:600;">Password Reset Request</p>
+          <p style="margin:0 0 20px;font-size:13px;color:#777;">We received a request to reset your business owner password.</p>
+
+          <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.7;">
+            Hello <strong>{username}</strong>, click the button below to set a new password.
             This link is valid for <strong>24 hours</strong>.
           </p>
 
-          <!-- CTA Button: dark -->
-          <div style="text-align:center;margin:0 0 28px;">
-            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#1a1a2e,#0d1117);color:#e59b20;text-decoration:none;font-size:16px;font-weight:700;padding:15px 48px;border-radius:50px;box-shadow:0 4px 16px rgba(0,0,0,0.3);border:2px solid #e59b20;">
-              🔑&nbsp; Reset My Password
+          <!-- Button -->
+          <div style="text-align:center;margin:24px 0;">
+            <a href="{reset_url}" style="display:inline-block;background:#1a1a2e;color:#e59b20;text-decoration:none;font-size:15px;font-weight:700;padding:13px 40px;border-radius:8px;border:2px solid #e59b20;">
+              Reset My Password
             </a>
           </div>
 
-          <hr style="border:none;border-top:1px solid #eee;margin:0 0 20px;">
-          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy and paste this link:</p>
-          <p style="font-size:12px;color:#1a1a2e;word-break:break-all;background:#f5f6f8;border:1px solid #dde;border-radius:8px;padding:10px 14px;margin:0 0 24px;">{reset_url}</p>
+          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy this link into your browser:</p>
+          <p style="font-size:11px;color:#1a1a2e;word-break:break-all;background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:8px 12px;margin:0 0 20px;">{reset_url}</p>
 
-          <div style="background:#f5f6f8;border-left:4px solid #1a1a2e;border-radius:0 8px 8px 0;padding:11px 16px;">
-            <p style="margin:0;font-size:13px;color:#444;">⚠️&nbsp; If you did not request this, please ignore this email. Your password stays unchanged.</p>
-          </div>
-
-          <p style="font-size:13px;color:#ccc;text-align:center;margin:24px 0 0;">Thank you —&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
+          <p style="font-size:12px;color:#999;margin:0;">If you did not request this, you can safely ignore this email.</p>
         </td></tr>
 
-        <tr><td align="center" style="padding:16px 0 0;">
-          <p style="font-size:11px;color:#bbb;margin:0;">Sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
+        <!-- Footer -->
+        <tr><td style="background:#f9f9f9;padding:14px 32px;text-align:center;border-top:1px solid #eee;">
+          <p style="margin:0;font-size:11px;color:#bbb;">Sent to {email} &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
         </td></tr>
 
       </table>
@@ -511,7 +484,6 @@ This link expires in 24 hours. If you didn't request this, ignore this email.
   </table>
 </body>
 </html>"""
-
     return subject, text, html
 
 
@@ -541,8 +513,10 @@ def forgot_password(request):
         domain = request.get_host()
         reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
 
-        # Detect account type and pick the right email design
-        is_owner = FoodEstablishment.objects.filter(owner=user).exists()
+        # ✅ Use account_type from POST — 100% reliable, no DB ambiguity.
+        # 'owner' is sent by owner_login.html modal, 'client' by login.html modal.
+        account_type = request.POST.get('account_type', 'client').strip().lower()
+        is_owner = (account_type == 'owner')
 
         if is_owner:
             subject, text_message, html_message = _build_owner_reset_email(user.username, reset_url, email)

@@ -466,6 +466,7 @@
             try {
                 const formData = new FormData();
                 formData.append('email', email);
+                formData.append('account_type', 'owner');
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
                 await fetch("{% url 'forgot_password' %}", {

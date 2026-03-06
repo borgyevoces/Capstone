@@ -903,6 +903,7 @@
             try {
                 const formData = new FormData();
                 formData.append('email', email);
+                formData.append('account_type', 'client');
                 formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
 
                 const response = await fetch("{% url 'forgot_password' %}", {
