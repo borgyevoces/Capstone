@@ -46,13 +46,11 @@ urlpatterns = [
                        name='password_reset'),
                   path('accounts/password_reset/done/', auth_views.PasswordResetDoneView.as_view(
                       template_name='webapplication/password_reset_done.html'), name='password_reset_done'),
-                  path('accounts/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+                  path('accounts/reset/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(
                       template_name='webapplication/password_reset_confirm.html'), name='password_reset_confirm'),
-                  path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(
-                      template_name='webapplication/password_reset_complete.html'), name='password_reset_complete'),
+                  path('accounts/reset/done/', views.password_reset_complete_redirect, name='password_reset_complete'),
                   path('accounts/password_reset_done_redirect/', views.password_reset_done_redirect,
                        name='password_reset_done_redirect'),
-                  path('accounts/reset/done/', views.password_reset_complete_redirect, name='password_reset_complete'),
 
                   # 4. Cart & Payments - COMPLETE FIXED ROUTES
                   path('cart/', views.view_cart, name='view_cart'),
