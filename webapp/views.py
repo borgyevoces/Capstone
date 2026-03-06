@@ -543,6 +543,9 @@ def forgot_password(request):
 
         threading.Thread(target=_send_reset_email, daemon=True).start()
 
+        # ✅ Save account_type to session so password_reset_complete knows where to redirect
+        request.session['reset_account_type'] = account_type
+
     except User.DoesNotExist:
         pass  # Security: never reveal whether an email is registered
 
@@ -559,9 +562,25 @@ def password_reset_done_redirect(request):
 
 
 def password_reset_complete_redirect(request):
-    """Custom redirect after password reset"""
-    messages.success(request, 'Your password has been reset successfully! You can now log in.')
-    return redirect('user_login_register')
+    """Custom redirect after password reset — sends owner to owner login, client to client login"""
+    account_type = request.session.pop('reset_account_type', 'client')
+    is_owner = (account_type == 'owner')
+
+    if is_owner:
+        login_url = reverse('owner_login')
+        login_label = 'Go to Owner Login'
+        portal_label = 'Business Owner Portal'
+    else:
+        login_url = reverse('user_login_register')
+        login_label = 'Go to Login'
+        portal_label = 'Student / School Personnel'
+
+    return render(request, 'password_reset_complete.html', {
+        'login_url': login_url,
+        'login_label': login_label,
+        'portal_label': portal_label,
+        'is_owner': is_owner,
+    })
 
 
 def kabsueats_main_view(request):
