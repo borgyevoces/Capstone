@@ -349,10 +349,176 @@ def google_callback(request):
         return redirect('user_login_register')
 
 
+def _build_client_reset_email(username, reset_url, email):
+    """
+    EMAIL DESIGN FOR CLIENT (Student / School Personnel)
+    Warm gold & campus theme.
+    """
+    subject = "🔑 Password Reset — KabsuEats Student Account"
+
+    text = f"""
+Hello {username},
+
+You requested a password reset for your KabsuEats Student/School Personnel account.
+
+Reset your password here:
+{reset_url}
+
+This link expires in 24 hours. If you didn't request this, ignore this email.
+
+— The KabsuEats Team
+"""
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#fff8ee;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8ee;padding:36px 0;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <!-- HEADER: warm gold -->
+        <tr><td style="background:linear-gradient(135deg,#e59b20 0%,#f0b429 100%);border-radius:16px 16px 0 0;padding:32px 40px 28px;text-align:center;">
+          <div style="font-size:36px;margin-bottom:6px;">🍽️</div>
+          <div style="font-family:Georgia,serif;font-size:28px;font-weight:bold;color:#fff;letter-spacing:1px;">KabsuEats</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.8);letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Campus Food Reservation</div>
+          <!-- Account type badge -->
+          <div style="display:inline-block;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;font-size:12px;font-weight:600;padding:5px 16px;border-radius:20px;margin-top:14px;">
+            🎓&nbsp; Student / School Personnel Account
+          </div>
+        </td></tr>
+
+        <!-- BODY: white card -->
+        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(229,155,32,0.12);">
+          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a1a;font-weight:700;">Password Reset Request</h2>
+          <p style="margin:0 0 22px;font-size:14px;color:#999;">We received a request to reset your student account password.</p>
+
+          <p style="font-size:15px;color:#333;margin:0 0 6px;">Hello, <strong>{username}</strong> 👋</p>
+          <p style="font-size:14px;color:#555;line-height:1.8;margin:0 0 28px;">
+            Click the button below to set a new password for your
+            <strong style="color:#e59b20;">KabsuEats Student Account</strong>.
+            This link is valid for <strong>24 hours</strong>.
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align:center;margin:0 0 28px;">
+            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#e59b20,#d48a10);color:#fff;text-decoration:none;font-size:16px;font-weight:700;padding:15px 48px;border-radius:50px;box-shadow:0 4px 16px rgba(229,155,32,0.45);">
+              🔑&nbsp; Reset My Password
+            </a>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #f0e0c0;margin:0 0 20px;">
+          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy and paste this link:</p>
+          <p style="font-size:12px;color:#e59b20;word-break:break-all;background:#fff8ee;border:1px solid #f5dfa0;border-radius:8px;padding:10px 14px;margin:0 0 24px;">{reset_url}</p>
+
+          <div style="background:#fff8ee;border-left:4px solid #e59b20;border-radius:0 8px 8px 0;padding:11px 16px;">
+            <p style="margin:0;font-size:13px;color:#7a5a00;">⚠️&nbsp; If you did not request this, please ignore this email. Your password stays unchanged.</p>
+          </div>
+
+          <p style="font-size:13px;color:#ccc;text-align:center;margin:24px 0 0;">Thank you —&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
+        </td></tr>
+
+        <tr><td align="center" style="padding:16px 0 0;">
+          <p style="font-size:11px;color:#bbb;margin:0;">Sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    return subject, text, html
+
+
+def _build_owner_reset_email(username, reset_url, email):
+    """
+    EMAIL DESIGN FOR BUSINESS OWNER
+    Dark professional navy/charcoal theme.
+    """
+    subject = "🔑 Password Reset — KabsuEats Business Owner Account"
+
+    text = f"""
+Hello {username},
+
+You requested a password reset for your KabsuEats Business Owner account.
+
+Reset your password here:
+{reset_url}
+
+This link expires in 24 hours. If you didn't request this, ignore this email.
+
+— The KabsuEats Team
+"""
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:36px 0;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <!-- HEADER: dark navy professional -->
+        <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:16px 16px 0 0;padding:32px 40px 28px;text-align:center;">
+          <div style="font-size:36px;margin-bottom:6px;">🏪</div>
+          <div style="font-family:Georgia,serif;font-size:28px;font-weight:bold;color:#e59b20;letter-spacing:1px;">KabsuEats</div>
+          <div style="font-size:11px;color:rgba(229,155,32,0.7);letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Business Owner Portal</div>
+          <!-- Account type badge -->
+          <div style="display:inline-block;background:rgba(229,155,32,0.15);border:1px solid rgba(229,155,32,0.4);color:#e59b20;font-size:12px;font-weight:600;padding:5px 16px;border-radius:20px;margin-top:14px;">
+            🏪&nbsp; Business Owner Account
+          </div>
+        </td></tr>
+
+        <!-- BODY: white card with dark accents -->
+        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a2e;font-weight:700;">Password Reset Request</h2>
+          <p style="margin:0 0 22px;font-size:14px;color:#999;">A reset was requested for your business owner account.</p>
+
+          <p style="font-size:15px;color:#333;margin:0 0 6px;">Hello, <strong>{username}</strong> 👋</p>
+          <p style="font-size:14px;color:#555;line-height:1.8;margin:0 0 28px;">
+            Click the button below to set a new password for your
+            <strong style="color:#1a1a2e;">KabsuEats Business Owner Account</strong>.
+            This link is valid for <strong>24 hours</strong>.
+          </p>
+
+          <!-- CTA Button: dark -->
+          <div style="text-align:center;margin:0 0 28px;">
+            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#1a1a2e,#0d1117);color:#e59b20;text-decoration:none;font-size:16px;font-weight:700;padding:15px 48px;border-radius:50px;box-shadow:0 4px 16px rgba(0,0,0,0.3);border:2px solid #e59b20;">
+              🔑&nbsp; Reset My Password
+            </a>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:0 0 20px;">
+          <p style="font-size:12px;color:#aaa;margin:0 0 6px;">Or copy and paste this link:</p>
+          <p style="font-size:12px;color:#1a1a2e;word-break:break-all;background:#f5f6f8;border:1px solid #dde;border-radius:8px;padding:10px 14px;margin:0 0 24px;">{reset_url}</p>
+
+          <div style="background:#f5f6f8;border-left:4px solid #1a1a2e;border-radius:0 8px 8px 0;padding:11px 16px;">
+            <p style="margin:0;font-size:13px;color:#444;">⚠️&nbsp; If you did not request this, please ignore this email. Your password stays unchanged.</p>
+          </div>
+
+          <p style="font-size:13px;color:#ccc;text-align:center;margin:24px 0 0;">Thank you —&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
+        </td></tr>
+
+        <tr><td align="center" style="padding:16px 0 0;">
+          <p style="font-size:11px;color:#bbb;margin:0;">Sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    return subject, text, html
+
+
 def forgot_password(request):
     """
-    Handle forgot password — fires email in background for instant response.
-    Fixes: sync blocking, bad protocol on Render proxy, fail_silently=False crash.
+    Forgot password — sends completely different email designs for Client vs Owner.
+    Fires in background thread for instant response.
     """
     if request.method != 'POST':
         return redirect('user_login_register')
@@ -367,8 +533,7 @@ def forgot_password(request):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        # ✅ FIX: Render sits behind a reverse proxy — request.is_secure() always
-        # returns False even on HTTPS. Check X-Forwarded-Proto header first.
+        # ✅ Fix for Render reverse proxy: X-Forwarded-Proto gives real protocol
         forwarded_proto = request.META.get('HTTP_X_FORWARDED_PROTO', '')
         protocol = forwarded_proto if forwarded_proto in ('http', 'https') else (
             'https' if request.is_secure() else 'http'
@@ -376,98 +541,17 @@ def forgot_password(request):
         domain = request.get_host()
         reset_url = f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
 
-        # Detect account type
+        # Detect account type and pick the right email design
         is_owner = FoodEstablishment.objects.filter(owner=user).exists()
-        account_type = "Business Owner" if is_owner else "Student / School Personnel"
-        account_badge_color = "#1a1a2e" if is_owner else "#2e7d32"
-        account_badge_icon = "🏪" if is_owner else "🎓"
 
-        subject = f"Password Reset Request - KabsuEats ({'Owner' if is_owner else 'Client'} Account)"
-
-        text_message = f"""
-Hello {user.username},
-
-Account Type: {account_type}
-
-We received a request to reset the password for your KabsuEats account.
-
-Click the link below or paste it into your browser to reset your password:
-{reset_url}
-
-This link will expire in 24 hours.
-
-If you did not request this, please ignore this email.
-
-Thank you,
-The KabsuEats Team
-        """
-
-        html_message = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Reset - KabsuEats</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;padding:40px 0;">
-    <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
-
-        <!-- LOGO HEADER -->
-        <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:16px 16px 0 0;padding:28px 40px 24px;text-align:center;">
-          <div style="font-family:Georgia,serif;font-size:30px;font-weight:bold;color:#e59b20;letter-spacing:1px;margin-bottom:4px;">🍽 KabsuEats</div>
-          <div style="font-size:12px;color:#aaa;letter-spacing:2px;text-transform:uppercase;">Campus Food Reservation</div>
-        </td></tr>
-
-        <!-- MAIN CARD -->
-        <tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:36px 40px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <!-- Account badge -->
-          <div style="display:inline-block;background:{account_badge_color};color:#fff;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;margin-bottom:20px;">{account_badge_icon}&nbsp;{account_type} Account</div>
-
-          <h2 style="margin:0 0 8px;font-size:22px;color:#1a1a2e;font-weight:700;">Password Reset Request</h2>
-          <p style="margin:0 0 24px;font-size:14px;color:#888;">We received a request to reset your password.</p>
-
-          <p style="font-size:15px;color:#333;margin:0 0 8px;">Hello, <strong>{user.username}</strong> 👋</p>
-          <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 28px;">
-            Someone requested a password reset for your <strong>KabsuEats {account_type}</strong> account.
-            Click the button below to set a new password. This link expires in <strong>24 hours</strong>.
-          </p>
-
-          <!-- Reset button -->
-          <div style="text-align:center;margin:0 0 28px;">
-            <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#e59b20,#d48a10);color:#fff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 42px;border-radius:50px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(229,155,32,0.4);">
-              🔑&nbsp;Reset My Password
-            </a>
-          </div>
-
-          <hr style="border:none;border-top:1px solid #eee;margin:0 0 20px;">
-          <p style="font-size:13px;color:#888;margin:0 0 8px;">Or copy and paste this link into your browser:</p>
-          <p style="font-size:12px;color:#e59b20;word-break:break-all;background:#fff8ee;border:1px solid #f5dfa0;border-radius:8px;padding:10px 14px;margin:0 0 28px;">{reset_url}</p>
-
-          <div style="background:#fff8ee;border-left:4px solid #e59b20;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:28px;">
-            <p style="margin:0;font-size:13px;color:#7a5a00;">⚠️&nbsp;If you did not request this, please ignore this email. Your password will remain unchanged.</p>
-          </div>
-
-          <p style="font-size:13px;color:#aaa;text-align:center;margin:0;">Thank you,&nbsp;<strong style="color:#e59b20;">The KabsuEats Team</strong></p>
-        </td></tr>
-
-        <!-- FOOTER NOTE -->
-        <tr><td align="center" style="padding:20px 0 0;">
-          <p style="font-size:11px;color:#bbb;margin:0;">This email was sent to <strong>{email}</strong> &bull; KabsuEats &bull; CvSU Bacoor Campus</p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>
-        """
+        if is_owner:
+            subject, text_message, html_message = _build_owner_reset_email(user.username, reset_url, email)
+        else:
+            subject, text_message, html_message = _build_client_reset_email(user.username, reset_url, email)
 
         from_email = getattr(settings, 'SENDER_EMAIL', None) or settings.DEFAULT_FROM_EMAIL
 
-        # ✅ FIX: Fire email in background — return success response instantly
+        # ✅ Fire email in background — return instantly, never block the request
         import threading
         def _send_reset_email():
             try:
@@ -476,19 +560,19 @@ The KabsuEats Team
                     message=text_message,
                     from_email=from_email,
                     recipient_list=[email],
-                    fail_silently=True,   # ✅ Never crash the reset flow
+                    fail_silently=True,
                     html_message=html_message
                 )
-                print(f"✅ Password reset email sent to {email}")
+                print(f"✅ Password reset email sent to {email} ({'owner' if is_owner else 'client'})")
             except Exception as e:
                 print(f"❌ Background reset email error: {e}")
 
         threading.Thread(target=_send_reset_email, daemon=True).start()
 
     except User.DoesNotExist:
-        pass  # Security: don't reveal whether email is registered
+        pass  # Security: never reveal whether an email is registered
 
-    # Always redirect to "done" page regardless of whether email was found
+    # Always redirect — don't reveal if email was found or not
     messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
     return redirect('password_reset_done_redirect')
 
