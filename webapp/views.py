@@ -600,7 +600,7 @@ def password_reset_complete_redirect(request):
         login_label = 'Go to Login'
         portal_label = 'Student / School Personnel'
 
-    return render(request, 'password_reset_complete.html', {
+    return render(request, 'webapplication/password_reset_complete.html', {
         'login_url': login_url,
         'login_label': login_label,
         'portal_label': portal_label,
