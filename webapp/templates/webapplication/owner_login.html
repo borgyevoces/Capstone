@@ -380,7 +380,7 @@
                 ⚠ &nbsp;<span id="forgot-error-text">Something went wrong. Please try again.</span>
             </div>
 
-            <form id="forgotPasswordForm" method="POST" action="{% url 'forgot_password' %}">
+            <form id="forgotPasswordForm">
                 {% csrf_token %}
                 <div style="margin-bottom: 16px;">
                     <label for="forgot_email" style="display:block; font-size:0.82rem; font-weight:600; color:#555; margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">Email Address</label>
