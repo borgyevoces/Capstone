@@ -490,13 +490,11 @@ If you did not request this, ignore this email.
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     """
-    Wraps Django's built-in PasswordResetConfirmView to preserve the ?at= (account_type)
-    query param across the confirm → complete redirect.
-    When the user clicks the reset link, we save account_type to session.
-    When they submit the new password, success_url carries ?at= to the complete view.
+    Preserves ?at= (account_type) param across the confirm → complete redirect.
+    When user lands on confirm page, saves account_type to session.
+    On form submit, success_url carries ?at= to the complete view.
     """
     def dispatch(self, request, *args, **kwargs):
-        # Save account_type to session when user first lands on the confirm page
         at = request.GET.get('at', '').strip().lower()
         if at in ('owner', 'client'):
             request.session['reset_account_type'] = at
@@ -504,7 +502,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 
     def get_success_url(self):
         at = self.request.session.get('reset_account_type', 'client')
-        return reverse('password_reset_complete_redirect') + f'?at={at}'
+        return reverse('password_reset_complete') + f'?at={at}'
 
 
 def forgot_password(request):
@@ -532,15 +530,11 @@ def forgot_password(request):
         )
         domain = request.get_host()
 
-        # ✅ Use account_type from POST — 100% reliable, no DB ambiguity.
-        # 'owner' is sent by owner_login.html modal, 'client' by login.html modal.
+        # ✅ Use account_type from POST — reliable, no DB ambiguity.
         account_type = request.POST.get('account_type', 'client').strip().lower()
         is_owner = (account_type == 'owner')
 
-        # ✅ Embed account_type in the reset URL as ?at= query param.
-        # Session-based approach fails when the user clicks the email link in a new
-        # tab or incognito window — the session is empty, so account_type defaults
-        # to 'client' even for owners. The URL param travels with the link always.
+        # ✅ Embed ?at= in reset URL so it survives new tabs / fresh sessions
         confirm_path = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
         reset_url = f"{protocol}://{domain}{confirm_path}?at={account_type}"
 
@@ -589,19 +583,12 @@ def password_reset_done_redirect(request):
 
 def password_reset_complete_redirect(request):
     """
-    Custom password reset complete page.
-    Reads account_type from:
-      1. ?at= query param (set by our forgot_password view in the reset URL)
-      2. session fallback (in case the confirm view preserves it)
-      3. defaults to 'client'
-    This ensures owners always land on the owner login page, not the client login.
+    Reads account_type from ?at= URL param first (survives new tabs/incognito),
+    falls back to session. Owners go to owner login, clients go to client login.
     """
-    # Try URL param first (most reliable — survives new tabs and incognito)
     account_type = request.GET.get('at', '').strip().lower()
     if account_type not in ('owner', 'client'):
-        # Fallback to session (set during forgot_password)
         account_type = request.session.pop('reset_account_type', 'client')
-
     is_owner = (account_type == 'owner')
 
     if is_owner:
