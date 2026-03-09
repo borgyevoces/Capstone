@@ -1969,12 +1969,14 @@ def create_gcash_payment_link(request):
                 'message': 'Order ID is required'
             }, status=400)
 
-        # Get the specific order
+        # Get the specific order — accept both PENDING (legacy) and to_pay (new flow)
+        from django.db.models import Q
         order = get_object_or_404(
-            Order.objects.prefetch_related('orderitem_set__menu_item'),
+            Order.objects.prefetch_related('orderitem_set__menu_item').filter(
+                Q(status='PENDING') | Q(status='to_pay')
+            ),
             id=order_id,
             user=request.user,
-            status='PENDING'
         )
 
         cart_items = order.orderitem_set.all()
@@ -2128,11 +2130,13 @@ def debug_create_gcash_payload(request, order_id):
     without calling PayMongo. Use this to inspect the payload, amount, and URLs.
     """
     try:
+        from django.db.models import Q
         order = get_object_or_404(
-            Order.objects.prefetch_related('orderitem_set__menu_item'),
+            Order.objects.prefetch_related('orderitem_set__menu_item').filter(
+                Q(status='PENDING') | Q(status='to_pay')
+            ),
             id=order_id,
             user=request.user,
-            status='PENDING'
         )
 
         cart_items = order.orderitem_set.all()
@@ -2203,17 +2207,20 @@ def gcash_payment_cancel(request):
 def checkout_page(request):
     """
     Checkout page - shows order items, customer info, establishment details, and payment options.
-    Called from cart with ?order_id=<id>
+    Called from cart with ?order_id=<id> or from My Orders Pay Now button.
+    Accepts orders with status 'PENDING' (legacy) or 'to_pay' (new flow).
     """
     order_id = request.GET.get('order_id')
     if not order_id:
         return redirect('view_cart')
 
+    from django.db.models import Q
     order = get_object_or_404(
-        Order.objects.select_related('establishment', 'user'),
+        Order.objects.select_related('establishment', 'user').filter(
+            Q(status='PENDING') | Q(status='to_pay')
+        ),
         id=order_id,
         user=request.user,
-        status='PENDING'
     )
     items = order.orderitem_set.select_related('menu_item').all()
 
@@ -4630,11 +4637,11 @@ def gcash_payment_success(request):
         if detected_method and not order.gcash_payment_method:
             print(f"✅ Payment method '{detected_method}' detected for Order #{order.id}")
 
-        # Update order status if still pending
-        if order.status != 'PAID':
+        # Update order status if still pending/to_pay
+        if order.status not in ('request', 'to_pay', 'preparing', 'to_claim', 'completed'):
             with transaction.atomic():
-                # 1. Update order status
-                order.status = 'PAID'
+                # 1. Update order status — move to 'request' so owner reviews it
+                order.status = 'request'
                 order.payment_confirmed_at = timezone.now()
                 # ✅ Save the actual payment method (gcash, paymaya, card)
                 if detected_method:
@@ -5305,14 +5312,13 @@ def get_establishment_orders(request):
                 preview_text += f' +{len(items_preview) - 2} more'
 
             # Ensure status is always lowercase and valid
-            order_status = order.status.lower() if order.status else 'request'
+            order_status = order.status.lower() if order.status else 'order_received'
 
             # Normalize legacy statuses
-            # 'paid' = confirmed online payment -> show as to_pay for owner (awaiting payment confirmation)
+            # 'paid' = confirmed online payment -> show as order_received for owner
             # 'pending' orders are EXCLUDED above (those are just unpaid cart items)
             status_mapping = {
-                'paid': 'preparing',
-                'order_received': 'request',  # legacy mapping
+                'paid': 'order_received',
             }
             order_status = status_mapping.get(order_status, order_status)
 
@@ -5391,7 +5397,7 @@ def update_order_status(request, order_id):
         new_status = data.get('status', '').lower()
 
         # Validate status
-        valid_statuses = ['request', 'to_pay', 'order_received', 'preparing', 'to_claim', 'completed']
+        valid_statuses = ['order_received', 'preparing', 'to_claim', 'completed']
         if new_status not in valid_statuses:
             return JsonResponse({
                 'success': False,
@@ -5406,8 +5412,6 @@ def update_order_status(request, order_id):
         # Create notification for status change
         try:
             notification_messages = {
-                'request': f'Order #{order.id} request has been sent',
-                'to_pay': f'Your order #{order.id} has been accepted! Please proceed with payment.',
                 'order_received': f'Order #{order.id} has been received',
                 'preparing': f'Your order #{order.id} is now being prepared',
                 'to_claim': f'Your order #{order.id} is ready for pickup!',
@@ -5601,7 +5605,7 @@ def create_cash_order(request):
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
             # Update order details
-            order.status = 'request'  # ✅ Set status to request (waiting for owner acceptance)
+            order.status = 'request'  # ✅ New flow: cash orders start at request stage
             order.gcash_payment_method = 'cash'  # Mark as cash payment
 
             # Generate cash reference number
@@ -5831,7 +5835,7 @@ def paymongo_payment_success(request):
         # Update order if needed (if not already updated by webhook)
         if order.status == 'PENDING':
             with transaction.atomic():
-                order.status = 'request'  # Customer paid, now waits for owner acceptance
+                order.status = 'order_received'
                 order.payment_confirmed_at = timezone.now()
                 order.save()
 
