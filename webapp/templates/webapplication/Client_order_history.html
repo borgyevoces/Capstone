@@ -191,6 +191,16 @@
     }
 
     /* Status Colors - Exactly matching Owner Dashboard */
+    .status-request {
+        background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+        color: #713f12;
+    }
+
+    .status-to_pay {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #9b1c1c;
+    }
+
     .status-order_received {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         color: #92400e;
@@ -535,12 +545,7 @@
             justify-content: unset;
         }
 
-        /* "All Orders" spans full width */
-        .order-tab[data-status="all"] {
-            grid-column: 1 / -1;
-            justify-content: center;
-        }
-
+        /* 5 tabs in 2-column grid on mobile */
         .order-tab {
             padding: 9px 10px;
             font-size: 11px;
@@ -1214,16 +1219,16 @@
 
     <!-- Order Status Tabs - SYNCED with Owner Dashboard -->
     <div class="order-tabs">
-        <button class="order-tab active" data-status="all" onclick="switchTab('all')">
-            <i class="fas fa-list"></i>
-            All Orders
-            <span class="order-tab-count" id="count-all">0</span>
+        <button class="order-tab active" data-status="request" onclick="switchTab('request')">
+            <i class="fas fa-paper-plane"></i>
+            Request
+            <span class="order-tab-count" id="count-request">0</span>
         </button>
 
-        <button class="order-tab" data-status="order_received" onclick="switchTab('order_received')">
-            <i class="fas fa-bell"></i>
-            Order Received
-            <span class="order-tab-count" id="count-order_received">0</span>
+        <button class="order-tab" data-status="to_pay" onclick="switchTab('to_pay')">
+            <i class="fas fa-credit-card"></i>
+            To Pay
+            <span class="order-tab-count" id="count-to_pay">0</span>
         </button>
 
         <button class="order-tab" data-status="preparing" onclick="switchTab('preparing')">
@@ -1352,7 +1357,7 @@
     // GLOBAL VARIABLES
     // ========================================
     let allOrders = [];
-    let currentFilter = 'all';
+    let currentFilter = 'request';
 
     // ========================================
     // INITIALIZE
@@ -1405,7 +1410,8 @@
     // ========================================
     function updateOrderCounts() {
         const counts = {
-            all: allOrders.length,
+            request: allOrders.filter(o => o.status === 'request').length,
+            to_pay: allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING').length,
             order_received: allOrders.filter(o => o.status === 'order_received').length,
             preparing: allOrders.filter(o => o.status === 'preparing').length,
             to_claim: allOrders.filter(o => o.status === 'to_claim').length,
@@ -1414,8 +1420,8 @@
 
         console.log('📊 Order counts:', counts);
 
-        document.getElementById('count-all').textContent = counts.all;
-        document.getElementById('count-order_received').textContent = counts.order_received;
+        document.getElementById('count-request').textContent = counts.request;
+        document.getElementById('count-to_pay').textContent = counts.to_pay;
         document.getElementById('count-preparing').textContent = counts.preparing;
         document.getElementById('count-to_claim').textContent = counts.to_claim;
         document.getElementById('count-completed').textContent = counts.completed;
@@ -1443,8 +1449,8 @@
         console.log('🔍 Filtering orders by status:', status);
 
         let filteredOrders;
-        if (status === 'all') {
-            filteredOrders = allOrders;
+        if (status === 'to_pay') {
+            filteredOrders = allOrders.filter(order => order.status === 'to_pay' || order.status === 'PENDING');
         } else {
             filteredOrders = allOrders.filter(order => order.status === status);
         }
@@ -1542,9 +1548,11 @@
     // ========================================
     function getStatusText(status) {
         const statusMap = {
+            'request': 'Request',
+            'to_pay': 'To Pay',
             'order_received': 'Order Received',
             'preparing': 'Preparing',
-            'to_claim': 'Ready to Claim',
+            'to_claim': 'To Claim',
             'completed': 'Completed',
             'PENDING': 'To Pay',
             'PAID': 'Paid',
@@ -1558,11 +1566,13 @@
     // ========================================
     function getStatusIcon(status) {
         const iconMap = {
+            'request': '<i class="fas fa-paper-plane"></i>',
+            'to_pay': '<i class="fas fa-credit-card"></i>',
             'order_received': '<i class="fas fa-bell"></i>',
             'preparing': '<i class="fas fa-fire"></i>',
             'to_claim': '<i class="fas fa-box"></i>',
             'completed': '<i class="fas fa-check-circle"></i>',
-            'PENDING': '<i class="fas fa-clock"></i>',
+            'PENDING': '<i class="fas fa-credit-card"></i>',
             'PAID': '<i class="fas fa-check"></i>',
             'CANCELLED': '<i class="fas fa-times-circle"></i>'
         };
@@ -1575,8 +1585,8 @@
     function getOrderActions(order) {
         let actions = '';
 
-        // Pay Now button for PENDING orders
-        if (order.status === 'PENDING') {
+        // Pay Now button for to_pay / PENDING orders
+        if (order.status === 'to_pay' || order.status === 'PENDING') {
             actions += `
                 <button class="order-action-btn btn-pay" onclick="payOrder(${order.id})">
                     <i class="fas fa-credit-card"></i> Pay Now

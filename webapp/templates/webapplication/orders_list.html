@@ -157,9 +157,14 @@
         text-transform: uppercase;
     }
 
-    .status-order_received {
+    .status-request {
         background: #FEF3C7;
         color: #92400E;
+    }
+
+    .status-to_pay {
+        background: #FFE4E1;
+        color: #9B1C1C;
     }
 
     .status-preparing {
@@ -942,10 +947,15 @@
     <!-- Status Tabs + Bulk Bar combined -->
     <div class="status-tabs-container">
         <div class="status-tabs">
-            <div class="status-tab active" data-status="order_received" onclick="switchTab('order_received')">
-                <i class="fas fa-bell"></i>
-                <span>Order Received</span>
-                <span class="tab-count" id="count-order_received">0</span>
+            <div class="status-tab active" data-status="request" onclick="switchTab('request')">
+                <i class="fas fa-paper-plane"></i>
+                <span>Order Request</span>
+                <span class="tab-count" id="count-request">0</span>
+            </div>
+            <div class="status-tab" data-status="to_pay" onclick="switchTab('to_pay')">
+                <i class="fas fa-credit-card"></i>
+                <span>To Pay</span>
+                <span class="tab-count" id="count-to_pay">0</span>
             </div>
             <div class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
                 <i class="fas fa-fire"></i>
@@ -1028,12 +1038,13 @@
     // GLOBAL STATE
     // ==========================================
     let orders = [];
-    let currentTab = 'order_received';
+    let currentTab = 'request';
     let selectedOrders = new Set();
 
     // Status flow configuration
     const FLOW = {
-        'order_received': 'preparing',
+        'request': 'to_pay',
+        'to_pay': 'preparing',
         'preparing': 'to_claim',
         'to_claim': 'completed',
         'completed': null
@@ -1041,9 +1052,10 @@
 
     // Status labels
     const LABELS = {
-        'order_received': 'Order Received',
+        'request': 'Order Request',
+        'to_pay': 'To Pay',
         'preparing': 'Preparing',
-        'to_claim': 'Ready for Pickup',
+        'to_claim': 'To Claim',
         'completed': 'Completed'
     };
 
@@ -1091,7 +1103,7 @@
     // ==========================================
     function updateCounts() {
         Object.keys(LABELS).forEach(status => {
-            const count = orders.filter(o => (o.status || 'order_received') === status).length;
+            const count = orders.filter(o => (o.status || 'request') === status).length;
             const el = document.getElementById(`count-${status}`);
             if (el) el.textContent = count;
         });
@@ -1107,7 +1119,7 @@
 
     function renderOrders() {
         const container = document.getElementById('ordersContainer');
-        const filtered = orders.filter(o => (o.status || 'order_received') === currentTab);
+        const filtered = orders.filter(o => (o.status || 'request') === currentTab);
 
         if (filtered.length === 0) {
             container.innerHTML = `
@@ -1160,8 +1172,8 @@
                                 <i class="far fa-clock"></i>
                                 ${formatDate(o.created_at)}, ${formatTime(o.created_at)}
                             </span>
-                            <span class="order-status-badge status-${o.status || 'order_received'}">
-                                ${LABELS[o.status || 'order_received']}
+                            <span class="order-status-badge status-${o.status || 'request'}">
+                                ${LABELS[o.status || 'request']}
                             </span>
                         </div>
                     </div>
@@ -1249,7 +1261,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Status</span>
-                <span class="detail-value">${LABELS[o.status || 'order_received']}</span>
+                <span class="detail-value">${LABELS[o.status || 'request']}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Payment Method</span>

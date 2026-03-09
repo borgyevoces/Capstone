@@ -358,11 +358,13 @@ class CartItem(models.Model):
 class Order(models.Model):
     """Represents a customer's order from a food establishment."""
     STATUS_CHOICES = [
-        ('order_received', 'Order Received'),
+        ('request', 'Request'),
+        ('to_pay', 'To Pay'),
         ('preparing', 'Preparing'),
-        ('ready_for_pickup', 'Ready for Pickup'),
+        ('to_claim', 'To Claim'),
         ('completed', 'Completed'),
         # Legacy statuses (for backward compatibility)
+        ('order_received', 'Order Received'),
         ('PENDING', 'Pending Payment'),
         ('PAID', 'Paid'),
         ('CANCELLED', 'Cancelled'),
@@ -370,7 +372,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     establishment = models.ForeignKey('FoodEstablishment', on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='order_received')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='request')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     # GCash/PayMongo Fields
