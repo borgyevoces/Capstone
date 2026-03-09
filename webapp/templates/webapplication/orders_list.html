@@ -310,6 +310,16 @@
         background: #991515;
     }
 
+    /* Accept button style for request tab */
+    .btn-accept {
+        background: #16a34a !important;
+        color: white !important;
+    }
+
+    .btn-accept:hover {
+        background: #15803d !important;
+    }
+
     .btn-done {
         background: #D1FAE5;
         color: #065F46;
@@ -1202,8 +1212,8 @@
                                 <i class="fas fa-eye"></i> Details
                             </button>
                             ${next
-                                ? `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
-                                       <i class="fas fa-arrow-right"></i> ${LABELS[next].split(' ')[0]}
+                                ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
+                                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next].split(' ')[0]}
                                    </button>`
                                 : '<button class="action-btn btn-done"><i class="fas fa-check"></i> Done</button>'}
                         </div>
@@ -1333,7 +1343,9 @@
 
         if (count > 0 && next) {
             btn.disabled = false;
-            txt.textContent = `Move ${count} to ${LABELS[next]}`;
+            txt.textContent = currentTab === 'request'
+                ? `Accept ${count} Request${count > 1 ? 's' : ''}`
+                : `Move ${count} to ${LABELS[next]}`;
         } else {
             btn.disabled = true;
             txt.textContent = 'Move to Next Step';
@@ -1375,9 +1387,11 @@
         }
 
         showConfirmModal(
-            'Move Order',
-            `Move order <strong>#${id}</strong> to <strong>${LABELS[next]}</strong>?`,
-            `Move to ${LABELS[next]}`,
+            currentTab === 'request' ? 'Accept Order Request' : 'Move Order',
+            currentTab === 'request'
+                ? `Accept order request <strong>#${id}</strong>? The customer will be notified to proceed with payment.`
+                : `Move order <strong>#${id}</strong> to <strong>${LABELS[next]}</strong>?`,
+            currentTab === 'request' ? 'Accept Request' : `Move to ${LABELS[next]}`,
             () => updateStatus(id, next)
         );
     }
@@ -1390,9 +1404,11 @@
         const count = ids.length;
 
         showConfirmModal(
-            'Move Multiple Orders',
-            `Move <strong>${count} order${count > 1 ? 's' : ''}</strong> to <strong>${LABELS[next]}</strong>?`,
-            `Move ${count} to ${LABELS[next]}`,
+            currentTab === 'request' ? 'Accept Order Requests' : 'Move Multiple Orders',
+            currentTab === 'request'
+                ? `Accept <strong>${count} order request${count > 1 ? 's' : ''}</strong>? Customers will be notified to proceed with payment.`
+                : `Move <strong>${count} order${count > 1 ? 's' : ''}</strong> to <strong>${LABELS[next]}</strong>?`,
+            currentTab === 'request' ? `Accept ${count} Request${count > 1 ? 's' : ''}` : `Move ${count} to ${LABELS[next]}`,
             () => {
                 Promise.all(ids.map(id =>
                     fetch(`/api/food-establishment/orders/${id}/update-status/`, {

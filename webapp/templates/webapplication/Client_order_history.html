@@ -1635,10 +1635,10 @@
         window.location.href = `/cart/`;
     }
 
-    // ✅ Pay Now button → go to cart and auto-show payment method selection
+    // ✅ Pay Now button → go to checkout page for payment
     function payOrder(orderId) {
         console.log('💳 Paying for order:', orderId);
-        window.location.href = `/cart/?pay=1`;
+        window.location.href = `/checkout/?order_id=${orderId}`;
     }
 
     function trackOrder(orderId) {

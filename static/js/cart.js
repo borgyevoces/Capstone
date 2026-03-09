@@ -346,11 +346,11 @@ function updateOrderSummary(cartBox) {
 window.updateOrderSummary = updateOrderSummary;
 
 // =======================================================
-// ✅ NEW: SHOW PAYMENT METHOD SELECTION
+// SEND ORDER REQUEST (replaces proceedToCheckout)
 // =======================================================
-function proceedToCheckout() {
+function sendOrderRequest() {
     if (!window.activeOrderId) {
-        showMessage('Please select an establishment to checkout', 'warning');
+        showMessage('Please select an establishment to place a request', 'warning');
         return;
     }
 
@@ -359,13 +359,69 @@ function proceedToCheckout() {
     if (activeBox) {
         const checkedItems = activeBox.querySelectorAll('.item-checkbox:checked');
         if (checkedItems.length === 0) {
-            showMessage('Please select at least one item to checkout', 'warning');
+            showMessage('Please select at least one item to order', 'warning');
             return;
         }
     }
 
-    // Go directly to checkout page
-    window.location.href = '/checkout/?order_id=' + window.activeOrderId;
+    // Disable button while sending
+    const btn = document.getElementById('initial-checkout-btn');
+    const originalHTML = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Request...';
+    }
+
+    const csrfToken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('order_id', window.activeOrderId);
+
+    fetch('/payment/create-request-order/', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show the success modal
+            const modal = document.getElementById('orderRequestModal');
+            if (modal) {
+                modal.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+            // Update cart badge
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge(0);
+            }
+        } else {
+            throw new Error(data.message || 'Failed to send order request');
+        }
+    })
+    .catch(error => {
+        console.error('Order Request Error:', error);
+        showMessage('Error: ' + error.message, 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    });
+}
+window.sendOrderRequest = sendOrderRequest;
+
+function closeOrderRequestModal() {
+    const modal = document.getElementById('orderRequestModal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+window.closeOrderRequestModal = closeOrderRequestModal;
+
+// Keep proceedToCheckout as legacy alias
+function proceedToCheckout() {
+    sendOrderRequest();
 }
 window.proceedToCheckout = proceedToCheckout;
 
