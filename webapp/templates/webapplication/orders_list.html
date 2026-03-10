@@ -108,53 +108,39 @@
 
     /* Orders Container */
     .orders-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        width: 100%;
     }
 
     /* Individual Order Card */
-    .order-card {
+    /* ── Table ── */
+    .orders-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 6px;
+    }
+
+    /* Data rows */
+    .order-row td {
+        padding: 12px 14px;
+        vertical-align: middle;
         background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        transition: box-shadow 0.2s ease;
-    }
-
-    .order-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .order-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .order-number {
-        font-size: 16px;
-        font-weight: 700;
-        color: #B71C1C;
-    }
-
-    .order-time {
+        border-top: 1px solid #ececec;
+        border-bottom: 1px solid #ececec;
         font-size: 13px;
-        color: #718096;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        transition: background 0.15s;
     }
+    .order-row:hover td { background: #fdfafa; }
+    .order-row td:first-child { border-left: 1px solid #ececec; border-radius: 10px 0 0 10px; }
+    .order-row td:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; }
 
     .order-status-badge {
-        padding: 6px 14px;
+        padding: 4px 10px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
+        white-space: nowrap;
+        display: inline-block;
     }
 
     .status-request {
@@ -167,129 +153,46 @@
         color: #9B1C1C;
     }
 
-    .status-preparing {
-        background: #DBEAFE;
-        color: #1E40AF;
-    }
+    .status-preparing { background: #DBEAFE; color: #1E40AF; }
+    .status-to_claim  { background: #E9D5FF; color: #6B21A8; }
+    .status-completed { background: #D1FAE5; color: #065F46; }
 
-    .status-to_claim {
-        background: #E9D5FF;
-        color: #6B21A8;
-    }
+    /* Row cells */
+    .row-order-num { font-size: 14px; font-weight: 700; color: #B71C1C; }
+    .row-meta      { font-size: 11px; color: #a0aec0; line-height: 1.5; }
+    .row-customer-name { font-size: 13px; font-weight: 600; color: #2d3748; }
 
-    .status-completed {
-        background: #D1FAE5;
-        color: #065F46;
-    }
-
-    /* Customer Info Section */
-    .order-customer {
-        margin-bottom: 16px;
-    }
-
-    .customer-name {
-        font-size: 15px;
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 4px;
-    }
-
-    .customer-email {
-        font-size: 13px;
+    .row-items-list { display: flex; flex-direction: column; gap: 3px; }
+    .row-item       { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .row-item-name  { flex: 1; color: #2d3748; font-weight: 500; }
+    .row-item-qty   { color: #a0aec0; font-size: 11px; }
+    .row-item-total {
+        font-size: 11px;
         color: #718096;
-    }
-
-    /* Order Items */
-    .order-items {
-        margin-bottom: 16px;
-    }
-
-    .item-row {
-        display: flex;
-        gap: 12px;
-        padding: 10px 0;
-        border-bottom: 1px solid #f7fafc;
-    }
-
-    .item-row:last-child {
-        border-bottom: none;
-    }
-
-    .item-image {
-        width: 60px;
-        height: 60px;
-        border-radius: 8px;
-        object-fit: cover;
-        background: #e2e8f0;
-    }
-
-    .item-details {
-        flex: 1;
-    }
-
-    .item-name {
-        font-size: 14px;
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 4px;
-    }
-
-    .item-qty {
-        font-size: 12px;
-        color: #718096;
-    }
-
-    .item-price {
-        font-size: 15px;
-        font-weight: 700;
-        color: #B71C1C;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px dashed #e2e8f0;
         text-align: right;
     }
+    .row-item-total strong { color: #B71C1C; font-size: 13px; }
 
-    /* Order Footer */
-    .order-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 16px;
-        border-top: 2px solid #e2e8f0;
-    }
-
-    .order-total {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .total-label {
-        font-size: 12px;
-        color: #718096;
-        text-transform: uppercase;
-        font-weight: 600;
-        margin-bottom: 2px;
-    }
-
-    .total-amount {
-        font-size: 22px;
-        font-weight: 700;
-        color: #B71C1C;
-    }
+    .row-total { font-size: 15px; font-weight: 800; color: #B71C1C; white-space: nowrap; }
 
     .order-actions {
-        display: flex;
-        gap: 8px;
+        display: flex; gap: 5px;
+        justify-content: flex-end; align-items: center;
     }
 
     .action-btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        padding: 6px 11px; border: none; border-radius: 7px;
+        font-weight: 600; font-size: 12px; cursor: pointer;
+        transition: all 0.2s ease; display: inline-flex;
+        align-items: center; gap: 4px; white-space: nowrap; text-decoration: none;
+    }
+
+    .awaiting-btn {
+        background: #f7fafc; color: #a0aec0;
+        border: 1px solid #e2e8f0; cursor: default; font-size: 11px;
     }
 
     .btn-view {
@@ -336,10 +239,14 @@
     }
 
     .payment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
+        border-radius: 20px;
+        font-size: 12px;
         font-weight: 700;
+        white-space: nowrap;
     }
 
     .payment-cash {
@@ -754,8 +661,11 @@
         }
 
         .orders-container {
-            gap: 10px;
+            overflow-x: auto;
         }
+
+        .orders-table thead th:nth-child(4),
+        .orders-table td:nth-child(4) { display: none; } /* hide payment col on mobile */
 
         /* Toast */
         .orders-toast {
@@ -1148,86 +1058,91 @@
             return;
         }
 
-        let html = '';
+        // Build rows
+        let rows = '';
         filtered.forEach(o => {
             const next = FLOW[currentTab];
-            const paymentHTML = (o.payment_method === 'cash')
-                ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash</span>'
-                : (o.payment_method === 'gcash')
-                ? '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash</span>'
-                : (o.payment_method === 'paymaya')
-                ? '<span class="payment-badge payment-maya"><i class="fas fa-wallet"></i> Maya</span>'
-                : `<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> ${o.payment_method || 'Online'}</span>`;
 
-            let itemsHTML = '';
-            if (o.items && o.items.length > 0) {
-                itemsHTML = o.items.map(i => `
-                    <div class="item-row">
-                        <div class="item-details">
-                            <div class="item-name">${esc(i.name)}</div>
-                            <div class="item-qty">Qty: ${i.quantity}</div>
-                        </div>
-                        <div class="item-price">₱${parseFloat(i.price).toFixed(2)}</div>
-                    </div>
-                `).join('');
-            }
+            const paymentLabel = (o.payment_method === 'cash') ? 'Cash'
+                : (o.payment_method === 'gcash') ? 'GCash'
+                : (o.payment_method === 'paymaya') ? 'Maya'
+                : (o.payment_method || 'Online');
 
-            html += `
-                <div class="order-card">
-                    <div class="order-header">
-                        <div>
-                            <input type="checkbox" class="checkbox" data-id="${o.id}"
-                                   ${selectedOrders.has(o.id) ? 'checked' : ''}
-                                   onchange="toggleSelectOrder(${o.id})"
-                                   style="margin-right: 12px;">
-                            <span class="order-number">#${o.id}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <span class="order-time">
-                                <i class="far fa-clock"></i>
-                                ${formatDate(o.created_at)}, ${formatTime(o.created_at)}
-                            </span>
-                            <span class="order-status-badge status-${o.status || 'request'}">
-                                ${LABELS[o.status || 'request']}
-                            </span>
-                        </div>
-                    </div>
+            const paymentIcon = (o.payment_method === 'cash') ? 'fa-money-bill-wave'
+                : (o.payment_method === 'gcash') ? 'fa-mobile-alt'
+                : (o.payment_method === 'paymaya') ? 'fa-wallet'
+                : 'fa-credit-card';
 
-                    <div class="order-customer">
-                        <div class="customer-name">${esc(o.customer_name || 'Unknown Customer')}</div>
-                        <div class="customer-email">${esc(o.customer_email || 'No email provided')}</div>
-                    </div>
+            const paymentClass = (o.payment_method === 'cash') ? 'payment-cash'
+                : (o.payment_method === 'gcash') ? 'payment-gcash'
+                : (o.payment_method === 'paymaya') ? 'payment-maya'
+                : 'payment-online';
 
-                    <div class="payment-info">
-                        <i class="fas fa-wallet"></i>
-                        ${paymentHTML}
-                    </div>
+            const itemsList = (o.items && o.items.length > 0)
+                ? o.items.map(i =>
+                    `<div class="row-item"><span class="row-item-name">${esc(i.name)}</span><span class="row-item-qty">×${i.quantity}</span><span class="row-item-price">₱${parseFloat(i.price).toFixed(2)}</span></div>`
+                  ).join('') + `<div class="row-item-total">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
+                : '<span style="color:#a0aec0;font-size:12px;">—</span>';
 
-                    <div class="order-items">
-                        ${itemsHTML}
-                    </div>
+            const actionBtn = next && currentTab !== 'to_pay'
+                ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
+                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
+                   </button>`
+                : currentTab === 'to_pay'
+                ? `<span class="action-btn awaiting-btn"><i class="fas fa-clock"></i> Awaiting</span>`
+                : `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
 
-                    <div class="order-footer">
-                        <div class="order-total">
-                            <span class="total-label">Total Amount</span>
-                            <span class="total-amount">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
-                        </div>
-                        <div class="order-actions">
-                            <button class="action-btn btn-view" onclick="viewOrder(${o.id})">
-                                <i class="fas fa-eye"></i> Details
-                            </button>
-                            ${next && currentTab !== 'to_pay'
-                                ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
-                                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
-                                   </button>`
-                                : currentTab === 'to_pay'
-                                ? `<span class="action-btn" style="opacity:.45;cursor:default;font-size:.75rem;padding:6px 10px;"><i class="fas fa-clock"></i> Awaiting Payment</span>`
-                                : '<button class="action-btn btn-done"><i class="fas fa-check"></i> Done</button>'}
-                        </div>
-                    </div>
-                </div>
+            rows += `
+                <tr class="order-row">
+                    <td class="col-check">
+                        <input type="checkbox" class="checkbox" data-id="${o.id}"
+                               ${selectedOrders.has(o.id) ? 'checked' : ''}
+                               onchange="toggleSelectOrder(${o.id})">
+                    </td>
+                    <td class="col-order">
+                        <div class="row-order-num">#${o.id}</div>
+                        <div class="row-meta">${formatTime(o.created_at)}</div>
+                        <div class="row-meta">${formatDate(o.created_at)}</div>
+                    </td>
+                    <td class="col-customer">
+                        <div class="row-customer-name">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
+                    </td>
+                    <td class="col-payment">
+                        <span class="payment-badge ${paymentClass}">
+                            <i class="fas ${paymentIcon}"></i> ${paymentLabel}
+                        </span>
+                    </td>
+                    <td class="col-items">
+                        <div class="row-items-list">${itemsList}</div>
+                    </td>
+                    <td class="col-status">
+                        <span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>
+                    </td>
+                    <td class="col-actions">
+                        ${currentTab === 'completed' ? `<button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button>` : ''}
+                        ${actionBtn}
+                    </td>
+                </tr>
             `;
         });
+
+        const thS = `style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;"`;
+        const html = `
+            <table class="orders-table">
+                <thead>
+                    <tr style="box-shadow:0 1px 3px rgba(0,0,0,0.07);">
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;">Order</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
 
         container.innerHTML = html;
         updateBulk();
