@@ -1213,7 +1213,7 @@
                             </button>
                             ${next
                                 ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
-                                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next].split(' ')[0]}
+                                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
                                    </button>`
                                 : '<button class="action-btn btn-done"><i class="fas fa-check"></i> Done</button>'}
                         </div>

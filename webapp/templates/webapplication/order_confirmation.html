@@ -433,6 +433,7 @@ body {
     flex-shrink: 0; margin-top: 1px;
 }
 .oc-step-num.done { background: var(--green-mid); }
+.oc-step-num.active { background: var(--red); }
 .oc-step-text { font-size: 0.85rem; color: var(--sub); line-height: 1.55; padding-top: 3px; }
 .oc-step-text strong { color: var(--ink); font-weight: 700; }
 
@@ -492,7 +493,7 @@ body {
         <div class="oc-hero-body">
             <div class="oc-hero-check"><i class="fas fa-check"></i></div>
             <h1 class="oc-hero-title">Order Confirmed!</h1>
-            <p class="oc-hero-sub">Your order has been received and is now being prepared.</p>
+            <p class="oc-hero-sub">Your order has been accepted and is now being prepared.</p>
 
             <div class="oc-hero-pills">
                 <div class="oc-hero-pill oc-pill-id">
@@ -642,15 +643,9 @@ body {
 
             <div class="oc-det-cell">
                 <div class="oc-det-label">Order Status</div>
-                {% if order.gcash_payment_method == 'cash' %}
-                    <div class="oc-det-value oc-warn">
-                        <div class="oc-status-dot warn"></div> Awaiting Pickup
-                    </div>
-                {% else %}
-                    <div class="oc-det-value oc-ok">
-                        <div class="oc-status-dot ok"></div> Confirmed
-                    </div>
-                {% endif %}
+                <div class="oc-det-value oc-ok">
+                    <div class="oc-status-dot ok"></div> Preparing
+                </div>
             </div>
 
             <div class="oc-det-cell">
@@ -685,24 +680,39 @@ body {
             <div class="oc-step">
                 <div class="oc-step-num done"><i class="fas fa-check" style="font-size:.58rem;"></i></div>
                 <div class="oc-step-text">
-                    <strong>Order received</strong> — {{ order.establishment.name }} has been notified and your order is now in the queue.
+                    <strong>Request accepted</strong> — {{ order.establishment.name }} has reviewed and accepted your order request.
                 </div>
             </div>
             <div class="oc-step">
-                <div class="oc-step-num">2</div>
+                <div class="oc-step-num done"><i class="fas fa-check" style="font-size:.58rem;"></i></div>
                 <div class="oc-step-text">
-                    <strong>Preparation</strong> — your food is being freshly prepared. Check the status anytime in My Orders.
+                    <strong>Payment confirmed</strong> —
+                    {% if order.gcash_payment_method == 'cash' %}
+                        Cash on pickup selected. Pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> when you claim your order.
+                    {% else %}
+                        Your payment has been confirmed ✓
+                    {% endif %}
                 </div>
             </div>
             <div class="oc-step">
-                <div class="oc-step-num">3</div>
+                <div class="oc-step-num active">3</div>
+                <div class="oc-step-text">
+                    <strong>Preparing</strong> — your food is being freshly prepared right now. Check the status anytime in My Orders.
+                </div>
+            </div>
+            <div class="oc-step">
+                <div class="oc-step-num">4</div>
+                <div class="oc-step-text">
+                    <strong>Ready to claim</strong> — you'll be notified when your order is ready for pickup at {{ order.establishment.name }}.
+                </div>
+            </div>
+            <div class="oc-step">
+                <div class="oc-step-num">5</div>
                 <div class="oc-step-text">
                     {% if order.gcash_payment_method == 'cash' %}
                         <strong>Pick up &amp; pay</strong> — go to <strong>{{ order.establishment.name }}</strong>, show order <strong>#{{ order.id }}</strong>, and pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> in cash.
-                    {% elif order.gcash_payment_method == 'paymaya' %}
-                        <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Maya payment is already confirmed ✓
                     {% else %}
-                        <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Payment is already confirmed ✓
+                        <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Payment already confirmed ✓
                     {% endif %}
                 </div>
             </div>
