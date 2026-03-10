@@ -1932,13 +1932,12 @@ def view_order_confirmation(request, order_id):
     Display order confirmation page after successful payment.
     """
     order = get_object_or_404(Order, id=order_id, user=request.user)
-
-    # Get all order items
     order_items = order.orderitem_set.select_related('menu_item').all()
 
     context = {
         'order': order,
         'order_items': order_items,
+        'payment_method': order.gcash_payment_method or 'cash',
     }
 
     return render(request, 'webapplication/order_confirmation.html', context)
@@ -2241,6 +2240,7 @@ def order_confirmation_view(request, order_id):
     context = {
         'order': order,
         'order_items': order_items,
+        'payment_method': order.gcash_payment_method or 'cash',
     }
     return render(request, 'webapplication/order_confirmation.html', context)
 
@@ -4645,8 +4645,11 @@ def gcash_payment_success(request):
                 order.status = 'preparing'
                 order.payment_confirmed_at = timezone.now()
                 # ✅ Save the actual payment method (gcash, paymaya, card)
+                # Always update away from 'cash' since this is an online payment
                 if detected_method:
                     order.gcash_payment_method = detected_method
+                elif order.gcash_payment_method == 'cash':
+                    order.gcash_payment_method = 'gcash'  # default online method
                 order.save()
 
                 # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER

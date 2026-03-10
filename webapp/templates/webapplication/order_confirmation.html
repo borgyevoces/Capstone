@@ -500,13 +500,21 @@ body {
                     <i class="fas fa-hashtag" style="opacity:.65;font-size:.65rem;"></i>
                     <span>{{ order.id }}</span>
                 </div>
-                {% if order.gcash_payment_method == 'cash' %}
+                {% if order.gcash_payment_method == 'cash' and payment_method != 'online' %}
                     <div class="oc-hero-pill oc-pill-cash">
                         <i class="fas fa-money-bill-wave"></i> Cash on Pickup
                     </div>
                 {% elif order.gcash_payment_method == 'paymaya' %}
                     <div class="oc-hero-pill oc-pill-maya">
                         <i class="fas fa-wallet"></i> Maya Paid
+                    </div>
+                {% elif order.gcash_payment_method == 'gcash' %}
+                    <div class="oc-hero-pill oc-pill-paid">
+                        <i class="fas fa-mobile-alt" style="font-size:.72rem;"></i> GCash Paid
+                    </div>
+                {% elif order.gcash_payment_method == 'card' %}
+                    <div class="oc-hero-pill oc-pill-paid">
+                        <i class="fas fa-credit-card" style="font-size:.72rem;"></i> Card Paid
                     </div>
                 {% else %}
                     <div class="oc-hero-pill oc-pill-paid">
@@ -631,12 +639,10 @@ body {
                         <i class="fas fa-wallet" style="color:var(--green-mid);"></i> Maya
                     {% elif order.gcash_payment_method == 'card' %}
                         <i class="fas fa-credit-card" style="color:var(--green-mid);"></i> Card
-                    {% elif order.gcash_payment_method == 'cash' %}
+                    {% elif order.gcash_payment_method == 'cash' and payment_method != 'online' %}
                         <i class="fas fa-money-bill-wave" style="color:var(--amber-mid);"></i> Cash on Pickup
-                    {% elif order.status == 'PAID' %}
-                        <i class="fas fa-mobile-alt" style="color:var(--green-mid);"></i> GCash
                     {% else %}
-                        <i class="fas fa-money-bill-wave" style="color:var(--amber-mid);"></i> Cash on Pickup
+                        <i class="fas fa-credit-card" style="color:var(--green-mid);"></i> Online Payment
                     {% endif %}
                 </div>
             </div>
@@ -687,10 +693,10 @@ body {
                 <div class="oc-step-num done"><i class="fas fa-check" style="font-size:.58rem;"></i></div>
                 <div class="oc-step-text">
                     <strong>Payment confirmed</strong> —
-                    {% if order.gcash_payment_method == 'cash' %}
+                    {% if order.gcash_payment_method == 'cash' and payment_method != 'online' %}
                         Cash on pickup selected. Pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> when you claim your order.
                     {% else %}
-                        Your payment has been confirmed ✓
+                        Your online payment has been confirmed ✓
                     {% endif %}
                 </div>
             </div>
@@ -709,7 +715,7 @@ body {
             <div class="oc-step">
                 <div class="oc-step-num">5</div>
                 <div class="oc-step-text">
-                    {% if order.gcash_payment_method == 'cash' %}
+                    {% if order.gcash_payment_method == 'cash' and payment_method != 'online' %}
                         <strong>Pick up &amp; pay</strong> — go to <strong>{{ order.establishment.name }}</strong>, show order <strong>#{{ order.id }}</strong>, and pay <strong>₱{{ order.total_amount|floatformat:2 }}</strong> in cash.
                     {% else %}
                         <strong>Pick up your order</strong> — go to <strong>{{ order.establishment.name }}</strong> and show order <strong>#{{ order.id }}</strong>. Payment already confirmed ✓

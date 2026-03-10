@@ -1076,8 +1076,13 @@
         console.log('Orders page loaded');
         loadOrders();
 
-        // Auto-refresh every 30 seconds
-        setInterval(loadOrders, 30000);
+        // Real-time: poll every 5 seconds
+        setInterval(loadOrders, 5000);
+
+        // Instant refresh when tab becomes visible again
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) loadOrders();
+        });
     });
 
     // ==========================================
@@ -1211,10 +1216,12 @@
                             <button class="action-btn btn-view" onclick="viewOrder(${o.id})">
                                 <i class="fas fa-eye"></i> Details
                             </button>
-                            ${next
+                            ${next && currentTab !== 'to_pay'
                                 ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
                                        <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
                                    </button>`
+                                : currentTab === 'to_pay'
+                                ? `<span class="action-btn" style="opacity:.45;cursor:default;font-size:.75rem;padding:6px 10px;"><i class="fas fa-clock"></i> Awaiting Payment</span>`
                                 : '<button class="action-btn btn-done"><i class="fas fa-check"></i> Done</button>'}
                         </div>
                     </div>
@@ -1341,7 +1348,10 @@
         const btn = document.getElementById('bulkBtn');
         const txt = document.getElementById('bulkText');
 
-        if (count > 0 && next) {
+        if (currentTab === 'to_pay') {
+            btn.disabled = true;
+            txt.textContent = 'Awaiting Client Payment';
+        } else if (count > 0 && next) {
             btn.disabled = false;
             txt.textContent = currentTab === 'request'
                 ? `Accept ${count} Request${count > 1 ? 's' : ''}`

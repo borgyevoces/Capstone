@@ -1366,8 +1366,13 @@
         console.log('🚀 Order History Page Initialized');
         loadOrders();
 
-        // Auto-refresh every 30 seconds to sync with owner updates
-        setInterval(loadOrders, 30000);
+        // Real-time: poll every 5 seconds to sync with owner updates
+        setInterval(loadOrders, 5000);
+
+        // Instant refresh when tab becomes visible again
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) loadOrders();
+        });
 
         // Close reorder modal on ESC
         document.addEventListener('keydown', function(e) {
