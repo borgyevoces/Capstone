@@ -1969,11 +1969,11 @@ def create_gcash_payment_link(request):
                 'message': 'Order ID is required'
             }, status=400)
 
-        # Get the specific order — accept both PENDING (legacy) and to_pay (new flow)
+        # Get the specific order — accept PENDING (legacy), to_pay (accepted), or request (new)
         from django.db.models import Q
         order = get_object_or_404(
             Order.objects.prefetch_related('orderitem_set__menu_item').filter(
-                Q(status='PENDING') | Q(status='to_pay')
+                Q(status='PENDING') | Q(status='to_pay') | Q(status='request')
             ),
             id=order_id,
             user=request.user,
@@ -4638,10 +4638,11 @@ def gcash_payment_success(request):
             print(f"✅ Payment method '{detected_method}' detected for Order #{order.id}")
 
         # Update order status if still pending/to_pay
-        if order.status not in ('request', 'to_pay', 'preparing', 'to_claim', 'completed'):
+        if order.status not in ('preparing', 'to_claim', 'completed'):
             with transaction.atomic():
-                # 1. Update order status — move to 'request' so owner reviews it
-                order.status = 'request'
+                # If order was in to_pay (accepted by owner), move to preparing
+                # If order was PENDING (legacy), move to preparing as well
+                order.status = 'preparing'
                 order.payment_confirmed_at = timezone.now()
                 # ✅ Save the actual payment method (gcash, paymaya, card)
                 if detected_method:
@@ -5397,7 +5398,7 @@ def update_order_status(request, order_id):
         new_status = data.get('status', '').lower()
 
         # Validate status
-        valid_statuses = ['order_received', 'preparing', 'to_claim', 'completed']
+        valid_statuses = ['request', 'to_pay', 'order_received', 'preparing', 'to_claim', 'completed']
         if new_status not in valid_statuses:
             return JsonResponse({
                 'success': False,
@@ -5412,6 +5413,8 @@ def update_order_status(request, order_id):
         # Create notification for status change
         try:
             notification_messages = {
+                'request': f'New order request #{order.id} from {order.user.username}',
+                'to_pay': f'Your order #{order.id} has been accepted! Please proceed to payment.',
                 'order_received': f'Order #{order.id} has been received',
                 'preparing': f'Your order #{order.id} is now being prepared',
                 'to_claim': f'Your order #{order.id} is ready for pickup!',
@@ -5604,8 +5607,16 @@ def create_cash_order(request):
 
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
-            # Update order details
-            order.status = 'request'  # ✅ New flow: cash orders start at request stage
+            # Determine new status based on source:
+            # - From cart (order is PENDING): set to 'request' waiting for owner acceptance
+            # - From checkout (order is 'to_pay'): owner already accepted, set to 'preparing'
+            source = request.POST.get('source', 'cart')
+            if order.status == 'to_pay' or source == 'checkout':
+                new_status = 'preparing'
+            else:
+                new_status = 'request'
+
+            order.status = new_status
             order.gcash_payment_method = 'cash'  # Mark as cash payment
 
             # Generate cash reference number
@@ -5833,9 +5844,9 @@ def paymongo_payment_success(request):
         # ... your existing PayMongo verification code ...
 
         # Update order if needed (if not already updated by webhook)
-        if order.status == 'PENDING':
+        if order.status in ('PENDING', 'to_pay'):
             with transaction.atomic():
-                order.status = 'order_received'
+                order.status = 'preparing'  # Payment done → move to preparing
                 order.payment_confirmed_at = timezone.now()
                 order.save()
 
@@ -6149,12 +6160,14 @@ def get_user_transaction_history(request):
             # Build order data
             raw_status = order.status or 'PENDING'
             client_status_map = {
-                'PAID': 'order_received',
-                'order_received': 'order_received',
+                'request': 'request',
+                'to_pay': 'to_pay',
+                'PENDING': 'to_pay',       # legacy PENDING maps to to_pay
+                'PAID': 'preparing',        # legacy PAID maps to preparing
+                'order_received': 'preparing',  # legacy order_received maps to preparing
                 'preparing': 'preparing',
                 'to_claim': 'to_claim',
                 'completed': 'completed',
-                'PENDING': 'PENDING',
             }
             normalized_status = client_status_map.get(raw_status, raw_status.lower())
 

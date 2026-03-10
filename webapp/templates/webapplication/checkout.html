@@ -873,6 +873,7 @@ function handleCashPayment(button) {
 
     const formData = new FormData();
     formData.append('order_id', ORDER_ID);
+    formData.append('source', 'checkout');  // tells server: payment done → set to preparing
 
     fetch('/payment/create-cash-order/', {
         method: 'POST',

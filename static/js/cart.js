@@ -376,7 +376,7 @@ function sendOrderRequest() {
     const formData = new FormData();
     formData.append('order_id', window.activeOrderId);
 
-    fetch('/payment/create-request-order/', {
+    fetch('/payment/create-cash-order/', {
         method: 'POST',
         body: formData,
         headers: { 'X-CSRFToken': csrfToken },
