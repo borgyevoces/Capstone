@@ -3322,7 +3322,7 @@ def update_establishment_details_ajax(request, pk):
 
         # ── Payment Methods ────────────────────────────────────────────────
         payment_methods = request.POST.get('payment_methods', '').strip()
-        allowed_payments = {'Cash', 'GCash', 'Maya', 'Credit/Debit Card'}
+        allowed_payments = {'Cash', 'GCash'}
         if payment_methods:
             submitted = {p.strip() for p in payment_methods.split(',')}
             invalid = submitted - allowed_payments
@@ -3350,6 +3350,7 @@ def update_establishment_details_ajax(request, pk):
                 pass
 
         # ── Opening / Closing Time ─────────────────────────────────────────
+        opening_time_str = request.POST.get('opening_time', '').strip()
         closing_time_str = request.POST.get('closing_time', '').strip()
 
         if opening_time_str:

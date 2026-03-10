@@ -1394,16 +1394,6 @@
                                     {% if "GCash" in current_payments %}checked{% endif %}>
                                 <label for="pay_gcash">📱 GCash</label>
                             </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="pay_maya" name="payment_method_options" value="Maya"
-                                    {% if "Maya" in current_payments %}checked{% endif %}>
-                                <label for="pay_maya">💳 Maya</label>
-                            </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="pay_card" name="payment_method_options" value="Credit/Debit Card"
-                                    {% if "Credit" in current_payments or "Card" in current_payments %}checked{% endif %}>
-                                <label for="pay_card">🏦 Credit/Debit Card</label>
-                            </div>
                             {% endwith %}
                         </div>
                         <input type="hidden" id="payment_methods" name="payment_methods" value="{{ establishment.payment_methods }}">
