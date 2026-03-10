@@ -327,8 +327,8 @@ function initMap() {
         curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
 
         L.circle([CVSU.lat, CVSU.lng], {
-            color: '#B71C1C', fillColor: 'rgba(183,28,28,0.06)',
-            fillOpacity: 0.3, weight: 2, radius: RADIUS, dashArray: '6 4'
+            color: '#FFC107', fillColor: 'transparent',
+            fillOpacity: 0, weight: 3, radius: RADIUS, dashArray: '10 8'
         }).addTo(mapInst);
 
         const cvIco = L.divIcon({
