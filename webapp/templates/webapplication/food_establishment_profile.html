@@ -2312,8 +2312,41 @@
             showToast('Pin removed. Click inside the 500m circle to set a new one.', 'success');
         }
 
-        function openDeleteModal() {
+        const ACTIVE_STATUSES = ['request', 'to_pay', 'preparing', 'to_claim'];
+
+        async function checkActiveOrders() {
+            try {
+                const res = await fetch('/api/food-establishment/orders/', {
+                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '' }
+                });
+                const data = await res.json();
+                if (data.success && data.orders) {
+                    return data.orders.filter(o => ACTIVE_STATUSES.includes(o.status || 'request'));
+                }
+            } catch (e) {}
+            return [];
+        }
+
+        function showActiveOrdersWarning(action) {
+            showToast(`Cannot ${action} — there are active orders currently in progress. Please wait until all orders are completed or cancelled.`, 'error');
+        }
+
+        async function openDeleteModal() {
+            const active = await checkActiveOrders();
+            if (active.length > 0) {
+                showActiveOrdersWarning('delete your establishment');
+                return;
+            }
             document.getElementById('deleteModal').classList.add('active');
+        }
+
+        async function openDeactivateModal() {
+            const active = await checkActiveOrders();
+            if (active.length > 0) {
+                showActiveOrdersWarning('deactivate your establishment');
+                return;
+            }
+            document.getElementById('deactivateModal').classList.add('active');
         }
 
         function closeDeleteModal() {
@@ -2322,8 +2355,8 @@
             document.getElementById('deleteBtn').disabled = true;
         }
 
-        function openDeactivateModal() {
-            document.getElementById('deactivateModal').classList.add('active');
+        function closeDeactivateModal() {
+            document.getElementById('deactivateModal').classList.remove('active');
         }
 
         function closeDeactivateModal() {
