@@ -1642,6 +1642,7 @@
         const CVSU_LAT = {{ CVSU_LATITUDE|default:"14.1649" }};
         const CVSU_LNG = {{ CVSU_LONGITUDE|default:"120.9881" }};
         const ESTABLISHMENT_ID = {{ establishment.id }};
+        const ESTABLISHMENT_IS_ACTIVE = {{ establishment.is_active|yesno:"true,false" }};
 
         // ===== IMAGE PREVIEW =====
         function previewImage(input) {
@@ -2368,10 +2369,13 @@
         }
 
         async function openDeactivateModal() {
-            const active = await checkActiveOrders();
-            if (active.length > 0) {
-                showBlockedModal('deactivate', active.length);
-                return;
+            // Only block if currently active (deactivating), not when reactivating
+            if (ESTABLISHMENT_IS_ACTIVE) {
+                const active = await checkActiveOrders();
+                if (active.length > 0) {
+                    showBlockedModal('deactivate', active.length);
+                    return;
+                }
             }
             document.getElementById('deactivateModal').classList.add('active');
         }
@@ -2380,10 +2384,6 @@
             document.getElementById('deleteModal').classList.remove('active');
             document.getElementById('deleteConfirm').value = '';
             document.getElementById('deleteBtn').disabled = true;
-        }
-
-        function closeDeactivateModal() {
-            document.getElementById('deactivateModal').classList.remove('active');
         }
 
         function closeDeactivateModal() {
