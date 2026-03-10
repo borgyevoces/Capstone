@@ -544,6 +544,13 @@
             font-weight: 500;
         }
 
+        .edit-hint {
+            display: block;
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
         .edit-input,
         .edit-select,
         .edit-textarea {
@@ -1325,7 +1332,11 @@
                     <!-- NAME -->
                     <div class="edit-group">
                         <label class="edit-label" for="name">Establishment Name</label>
-                        <input type="text" id="name" name="name" class="edit-input" value="{{ establishment.name }}" required>
+                        <input type="text" id="name" name="name" class="edit-input"
+                               value="{{ establishment.name }}" required
+                               maxlength="80" minlength="3"
+                               placeholder="e.g., Athilanos Food Hub">
+                        <small class="edit-hint">3–80 characters. Letters, numbers, spaces and basic punctuation only.</small>
                     </div>
 
                     <!-- CATEGORIES (Checkboxes with Other) -->
@@ -1370,10 +1381,32 @@
 
                     <!-- PAYMENT METHODS -->
                     <div class="edit-group">
-                        <label class="edit-label" for="payment_methods">Payment Methods</label>
-                        <input type="text" id="payment_methods" name="payment_methods" class="edit-input"
-                               value="{{ establishment.payment_methods }}"
-                               placeholder="e.g., Cash, GCash, PayMaya">
+                        <label class="edit-label">Payment Methods (select at least one)</label>
+                        <div class="checkbox-grid">
+                            {% with current_payments=establishment.payment_methods|default:"" %}
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pay_cash" name="payment_method_options" value="Cash"
+                                    {% if "Cash" in current_payments %}checked{% endif %}>
+                                <label for="pay_cash">💵 Cash</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pay_gcash" name="payment_method_options" value="GCash"
+                                    {% if "GCash" in current_payments %}checked{% endif %}>
+                                <label for="pay_gcash">📱 GCash</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pay_maya" name="payment_method_options" value="Maya"
+                                    {% if "Maya" in current_payments %}checked{% endif %}>
+                                <label for="pay_maya">💳 Maya</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pay_card" name="payment_method_options" value="Credit/Debit Card"
+                                    {% if "Credit" in current_payments or "Card" in current_payments %}checked{% endif %}>
+                                <label for="pay_card">🏦 Credit/Debit Card</label>
+                            </div>
+                            {% endwith %}
+                        </div>
+                        <input type="hidden" id="payment_methods" name="payment_methods" value="{{ establishment.payment_methods }}">
                     </div>
 
                     <!-- OPENING TIME -->
@@ -2390,6 +2423,16 @@
             document.getElementById('deactivateModal').classList.remove('active');
         }
 
+        // ── Sync payment checkboxes whenever they change ──────────────────
+        document.querySelectorAll('input[name="payment_method_options"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const checked = Array.from(
+                    document.querySelectorAll('input[name="payment_method_options"]:checked')
+                ).map(c => c.value);
+                document.getElementById('payment_methods').value = checked.join(', ');
+            });
+        });
+
         // Enable delete button when "DELETE" is typed
         document.getElementById('deleteConfirm').addEventListener('input', function() {
             document.getElementById('deleteBtn').disabled = this.value !== 'DELETE';
@@ -2399,7 +2442,34 @@
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // ── Validate "Other" fields before submitting ──────────────────
+            // ── Sync payment method checkboxes → hidden field ──────────────
+            const checkedPayments = Array.from(
+                document.querySelectorAll('input[name="payment_method_options"]:checked')
+            ).map(cb => cb.value);
+            if (checkedPayments.length === 0) {
+                showToast('Please select at least one payment method.', 'error');
+                return;
+            }
+            document.getElementById('payment_methods').value = checkedPayments.join(', ');
+
+            // ── Validate establishment name ────────────────────────────────
+            const nameVal = document.getElementById('name').value.trim();
+            if (nameVal.length < 3) {
+                showToast('Establishment name must be at least 3 characters.', 'error');
+                document.getElementById('name').focus();
+                return;
+            }
+            if (nameVal.length > 80) {
+                showToast('Establishment name must be 80 characters or fewer.', 'error');
+                document.getElementById('name').focus();
+                return;
+            }
+            // Only allow letters, numbers, spaces, apostrophes, hyphens, ampersands, periods, commas
+            if (!/^[a-zA-Z0-9\s'\-&.,áéíóúÁÉÍÓÚñÑ]+$/.test(nameVal)) {
+                showToast('Establishment name contains invalid characters. Use only letters, numbers, spaces, and basic punctuation.', 'error');
+                document.getElementById('name').focus();
+                return;
+            }
             const otherCategoryChecked = document.getElementById('cat_other') &&
                                          document.getElementById('cat_other').checked;
             const otherAmenityChecked  = document.getElementById('amen_other') &&
@@ -2445,12 +2515,18 @@
                 loadingOverlay.classList.remove('active');
 
                 if (data.success) {
-                    // Update header image if changed
+                    // ── Name ──────────────────────────────────────────────
+                    if (data.name) {
+                        document.getElementById('display-name').textContent = data.name;
+                        document.title = data.name + ' - Establishment Settings';
+                    }
+
+                    // ── Image ─────────────────────────────────────────────
                     if (data.image_url) {
                         document.getElementById('headerImage').src = data.image_url;
                     }
 
-                    // ── Update categories display (include other_category as tag) ──
+                    // ── Categories ────────────────────────────────────────
                     let categoryDisplay = data.categories_str || '';
                     if (data.other_category) {
                         categoryDisplay = categoryDisplay
@@ -2459,13 +2535,13 @@
                     }
                     document.getElementById('display-category').textContent = categoryDisplay || 'Not set';
 
-                    // Update other display values
+                    // ── Payment, Times, Address ───────────────────────────
                     document.getElementById('display-payment').textContent = data.payment_methods || 'Not set';
                     document.getElementById('display-opening').textContent = data.opening_time || 'Not set';
                     document.getElementById('display-closing').textContent = data.closing_time || 'Not set';
                     document.getElementById('display-address').textContent = data.address || 'Address not set';
 
-                    // ── Update amenities display (include other_amenity as tag) ──
+                    // ── Amenities ─────────────────────────────────────────
                     const amenitiesContainer = document.getElementById('display-amenities');
                     let amenityTagsHTML = '';
 
@@ -2478,7 +2554,6 @@
                         `).join('');
                     }
 
-                    // Append other_amenity as its own tag if valid
                     if (data.other_amenity) {
                         amenityTagsHTML += `
                             <span class="amenity-tag">
@@ -2488,7 +2563,7 @@
                         `;
                     }
 
-                    amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';
+                    amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';                    amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';
 
                     // Show success toast
                     showToast('Changes saved successfully!', 'success');

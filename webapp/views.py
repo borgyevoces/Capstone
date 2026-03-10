@@ -3308,13 +3308,27 @@ def update_establishment_details_ajax(request, pk):
 
     try:
         # ── Name (required) ────────────────────────────────────────────────
+        import re
         name = request.POST.get('name', '').strip()
         if not name:
-            return JsonResponse({
-                'success': False,
-                'error': 'Establishment name is required.'
-            }, status=400)
+            return JsonResponse({'success': False, 'error': 'Establishment name is required.'}, status=400)
+        if len(name) < 3:
+            return JsonResponse({'success': False, 'error': 'Establishment name must be at least 3 characters.'}, status=400)
+        if len(name) > 80:
+            return JsonResponse({'success': False, 'error': 'Establishment name must be 80 characters or fewer.'}, status=400)
+        if not re.match(r"^[a-zA-Z0-9\s'\-&.,áéíóúÁÉÍÓÚñÑ]+$", name):
+            return JsonResponse({'success': False, 'error': 'Establishment name contains invalid characters.'}, status=400)
         establishment.name = name
+
+        # ── Payment Methods ────────────────────────────────────────────────
+        payment_methods = request.POST.get('payment_methods', '').strip()
+        allowed_payments = {'Cash', 'GCash', 'Maya', 'Credit/Debit Card'}
+        if payment_methods:
+            submitted = {p.strip() for p in payment_methods.split(',')}
+            invalid = submitted - allowed_payments
+            if invalid:
+                return JsonResponse({'success': False, 'error': f'Invalid payment method(s): {", ".join(invalid)}'}, status=400)
+        establishment.payment_methods = payment_methods
 
         # ── Address ────────────────────────────────────────────────────────
         address = request.POST.get('address', '').strip()
@@ -3335,11 +3349,7 @@ def update_establishment_details_ajax(request, pk):
             except ValueError:
                 pass
 
-        # ── Payment Methods ────────────────────────────────────────────────
-        establishment.payment_methods = request.POST.get('payment_methods', '').strip()
-
         # ── Opening / Closing Time ─────────────────────────────────────────
-        opening_time_str = request.POST.get('opening_time', '').strip()
         closing_time_str = request.POST.get('closing_time', '').strip()
 
         if opening_time_str:
