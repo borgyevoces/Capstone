@@ -467,47 +467,13 @@ html body .establishment-cart-box.active-cart {
                 Once accepted, you will see a <strong>Pay Now</strong> button in your order history.
             </p>
         </div>
-        <div class="cart-confirm-actions" style="border-top:1px solid #f0f0f0;padding:4px 0;">
-            <button class="cc-confirm-btn" id="goToMyOrdersBtn"
-                    onclick="window.location.href='/my-purchases/'"
-                    style="flex:1;padding:16px 12px;border:none;background:transparent;
-                           font-size:14px;font-weight:700;cursor:pointer;color:#B71C1C;
-                           font-family:inherit;display:flex;align-items:center;
-                           justify-content:center;gap:8px;transition:background .15s;">
-                <i class="fas fa-list-alt"></i> Go to My Orders
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================
-     ORDER REQUEST SUCCESS MODAL
-     ============================================================ -->
-<div class="cart-confirm-overlay" id="orderRequestModal">
-    <div class="cart-confirm-box" style="max-width:400px;">
-        <div class="cart-confirm-icon-band">
-            <div class="cart-confirm-icon" style="background:#f0fdf4;color:#16a34a;width:80px;height:80px;font-size:36px;">
-                <i class="fas fa-check-circle"></i>
-            </div>
-        </div>
-        <div class="cart-confirm-text" style="padding:0 28px 10px;">
-            <h3 style="font-size:19px;margin-bottom:10px;">Order Request Sent!</h3>
-            <p style="font-size:14px;color:#555;line-height:1.6;">
-                Your order request has been sent to the establishment.<br><br>
-                <span style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;text-align:left;font-size:13px;color:#92400e;">
-                    <i class="fas fa-clock" style="margin-top:2px;flex-shrink:0;"></i>
-                    <span>Please wait while the owner reviews and accepts your request. You'll be notified once it's confirmed and ready for payment.</span>
-                </span>
-            </p>
-        </div>
-        <div style="padding:0 28px 24px;display:flex;flex-direction:column;gap:10px;">
+        <div class="cart-confirm-actions" style="border-top:1px solid #f0f0f0;padding:4px 0;display:flex;flex-direction:column;gap:0;">
             <a href="{% url 'order_history' %}"
-               style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:#B71C1C;color:#fff;border-radius:10px;font-weight:700;font-size:0.95rem;text-decoration:none;border:none;cursor:pointer;box-sizing:border-box;">
-                <i class="fas fa-list-alt"></i>
-                Go to My Orders
+               style="flex:1;padding:16px 12px;border:none;background:transparent;font-size:14px;font-weight:700;cursor:pointer;color:#B71C1C;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:background .15s;">
+                <i class="fas fa-list-alt"></i> Go to My Orders
             </a>
             <button onclick="closeOrderRequestModal()"
-                    style="width:100%;padding:12px;background:#f5f5f5;color:#555;border:none;border-radius:10px;font-weight:600;font-size:0.9rem;cursor:pointer;">
+                    style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;">
                 Continue Shopping
             </button>
         </div>
@@ -515,6 +481,8 @@ html body .establishment-cart-box.active-cart {
 </div>
 
 {% endblock %}
+
+{% block extra_js %}
 <script>
     // Auto-scroll to payment section when redirected from "Buy Now" button
     document.addEventListener('DOMContentLoaded', function () {
