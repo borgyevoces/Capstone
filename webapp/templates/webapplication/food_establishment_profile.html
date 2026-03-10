@@ -1550,6 +1550,31 @@
         </div>
     </div>
 
+    <!-- BLOCKED MODAL — active orders exist -->
+    <div class="modal" id="blockedModal">
+        <div class="modal-content confirm-modal-content" style="max-width:420px;">
+            <div class="confirm-modal-body" style="text-align:center;padding:32px 28px;">
+                <div style="width:60px;height:60px;background:#FEE2E2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="fas fa-ban" style="font-size:26px;color:#B71C1C;"></i>
+                </div>
+                <h3 style="font-size:18px;font-weight:700;color:#1a202c;margin-bottom:10px;">Action Not Allowed</h3>
+                <p style="color:#4a5568;font-size:14px;line-height:1.6;margin-bottom:6px;">
+                    You cannot <strong id="blockedModalAction">delete</strong> your establishment while there are active orders in progress.
+                </p>
+                <p style="color:#B71C1C;font-weight:700;font-size:14px;margin-bottom:20px;">
+                    <i class="fas fa-shopping-bag"></i> <span id="blockedModalCount">0</span> order(s) still being processed
+                </p>
+                <p style="color:#718096;font-size:13px;margin-bottom:24px;">
+                    Please complete or resolve all pending orders before performing this action.
+                </p>
+                <button onclick="document.getElementById('blockedModal').classList.remove('active')"
+                    style="padding:10px 28px;background:#B71C1C;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">
+                    Got it
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- DEACTIVATE MODAL -->
     <div class="modal" id="deactivateModal">
         <div class="modal-content confirm-modal-content">
@@ -2312,7 +2337,7 @@
             showToast('Pin removed. Click inside the 500m circle to set a new one.', 'success');
         }
 
-        const ACTIVE_STATUSES = ['request', 'to_pay', 'preparing', 'to_claim'];
+        const ACTIVE_STATUSES = ['request', 'to_pay', 'preparing', 'to_claim', 'PENDING', 'order_received'];
 
         async function checkActiveOrders() {
             try {
@@ -2327,14 +2352,16 @@
             return [];
         }
 
-        function showActiveOrdersWarning(action) {
-            showToast(`Cannot ${action} — there are active orders currently in progress. Please wait until all orders are completed or cancelled.`, 'error');
+        function showBlockedModal(action, count) {
+            document.getElementById('blockedModalAction').textContent = action;
+            document.getElementById('blockedModalCount').textContent = count;
+            document.getElementById('blockedModal').classList.add('active');
         }
 
         async function openDeleteModal() {
             const active = await checkActiveOrders();
             if (active.length > 0) {
-                showActiveOrdersWarning('delete your establishment');
+                showBlockedModal('delete', active.length);
                 return;
             }
             document.getElementById('deleteModal').classList.add('active');
@@ -2343,7 +2370,7 @@
         async function openDeactivateModal() {
             const active = await checkActiveOrders();
             if (active.length > 0) {
-                showActiveOrdersWarning('deactivate your establishment');
+                showBlockedModal('deactivate', active.length);
                 return;
             }
             document.getElementById('deactivateModal').classList.add('active');

@@ -2416,8 +2416,19 @@ def delete_establishment(request):
     This will cascade delete all related data (menu items, orders, reviews, etc.)
     """
     try:
-        # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+        # Block deletion if there are any non-completed orders
+        active_statuses = ['request', 'to_pay', 'preparing', 'to_claim', 'PENDING', 'order_received']
+        active_orders = Order.objects.filter(
+            establishment=establishment,
+            status__in=active_statuses
+        )
+        if active_orders.exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'Cannot delete — there are {active_orders.count()} active order(s) still in progress. Please wait until all orders are completed before deleting your establishment.'
+            }, status=400)
 
         establishment_name = establishment.name
 
@@ -5163,7 +5174,21 @@ def deactivate_establishment(request):
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
         name = establishment.name
 
+        # Only block deactivation (not reactivation)
         if establishment.is_active:
+            active_statuses = ['request', 'to_pay', 'preparing', 'to_claim', 'PENDING', 'order_received']
+            active_orders = Order.objects.filter(
+                establishment=establishment,
+                status__in=active_statuses
+            )
+            if active_orders.exists():
+                messages.error(
+                    request,
+                    f'Cannot deactivate "{name}" — there are {active_orders.count()} active order(s) still in progress. Please wait until all orders are completed before deactivating.',
+                    extra_tags='owner_only'
+                )
+                return redirect('food_establishment_profile')
+
             establishment.is_active = False
             establishment.save()
             messages.success(
@@ -5610,16 +5635,6 @@ def create_cash_order(request):
 
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
-            # Filter to only selected items if provided
-            selected_item_ids = request.POST.getlist('selected_item_ids[]')
-            if selected_item_ids:
-                # Delete unchecked items from the order
-                order.orderitem_set.exclude(id__in=selected_item_ids).delete()
-                # Recalculate order total based on remaining items
-                remaining_items = order.orderitem_set.select_related('menu_item').all()
-                new_total = sum(item.menu_item.price * item.quantity for item in remaining_items)
-                order.total_price = new_total
-
             # Determine new status based on source:
             # - From cart (order is PENDING): set to 'request' waiting for owner acceptance
             # - From checkout (order is 'to_pay'): owner already accepted, set to 'preparing'
