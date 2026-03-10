@@ -308,7 +308,7 @@ function setView(v) {
 const TILES = {
     hybrid:    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                  opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 },
-                 labels: 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png' },
+                 labels: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png' },
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                  opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -326,7 +326,7 @@ function initMap() {
     setTimeout(() => {
         mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16, zoomControl: true, scrollWheelZoom: true });
         curTile = L.tileLayer(TILES.hybrid.url, TILES.hybrid.opt).addTo(mapInst);
-        curLabels = L.tileLayer(TILES.hybrid.labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 0.9 }).addTo(mapInst);
+        curLabels = L.tileLayer(TILES.hybrid.labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 1 }).addTo(mapInst);
 
         L.circle([CVSU.lat, CVSU.lng], {
             color: '#FFC107', fillColor: 'transparent',
@@ -484,7 +484,7 @@ function switchTile(t) {
     if (curLabels) { mapInst.removeLayer(curLabels); curLabels = null; }
     curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
     if (TILES[t].labels) {
-        curLabels = L.tileLayer(TILES[t].labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 0.9 }).addTo(mapInst);
+        curLabels = L.tileLayer(TILES[t].labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 1 }).addTo(mapInst);
     }
     document.getElementById('mapLayerPanel').classList.remove('show');
 }
