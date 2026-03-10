@@ -5610,6 +5610,16 @@ def create_cash_order(request):
 
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
+            # Filter to only selected items if provided
+            selected_item_ids = request.POST.getlist('selected_item_ids[]')
+            if selected_item_ids:
+                # Delete unchecked items from the order
+                order.orderitem_set.exclude(id__in=selected_item_ids).delete()
+                # Recalculate order total based on remaining items
+                remaining_items = order.orderitem_set.select_related('menu_item').all()
+                new_total = sum(item.menu_item.price * item.quantity for item in remaining_items)
+                order.total_price = new_total
+
             # Determine new status based on source:
             # - From cart (order is PENDING): set to 'request' waiting for owner acceptance
             # - From checkout (order is 'to_pay'): owner already accepted, set to 'preparing'
