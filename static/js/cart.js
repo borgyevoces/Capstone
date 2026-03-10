@@ -376,6 +376,10 @@ function sendOrderRequest() {
     const formData = new FormData();
     formData.append('order_id', window.activeOrderId);
 
+    // Only send checked item IDs so unchecked items are excluded from the order
+    const checkedIds = getCheckedItemIds();
+    checkedIds.forEach(id => formData.append('selected_item_ids[]', id));
+
     fetch('/payment/create-cash-order/', {
         method: 'POST',
         body: formData,
