@@ -306,17 +306,18 @@ function setView(v) {
 // LEAFLET MAP
 // ============================================
 const TILES = {
+    hybrid:    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                 opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 },
+                 labels: 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png' },
     street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                  opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                  opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 } },
-    topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                 opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } },
-    dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                 opt: { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20 } }
+    terrain:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                 opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } }
 };
 
-let mapPollTimer = null;
+let mapPollTimer = null, curLabels = null;
 let liveStatusCache = {};
 let userLocMarker = null;
 let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', search: '' };
@@ -324,7 +325,8 @@ let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', sea
 function initMap() {
     setTimeout(() => {
         mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16, zoomControl: true, scrollWheelZoom: true });
-        curTile = L.tileLayer(TILES.satellite.url, TILES.satellite.opt).addTo(mapInst);
+        curTile = L.tileLayer(TILES.hybrid.url, TILES.hybrid.opt).addTo(mapInst);
+        curLabels = L.tileLayer(TILES.hybrid.labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 0.9 }).addTo(mapInst);
 
         L.circle([CVSU.lat, CVSU.lng], {
             color: '#FFC107', fillColor: 'transparent',
@@ -478,8 +480,12 @@ function switchTile(t) {
     document.querySelectorAll('.mlp-opt').forEach(b => b.classList.remove('on'));
     const btn = document.getElementById('mts-' + t);
     if (btn) btn.classList.add('on');
-    if (curTile) mapInst.removeLayer(curTile);
+    if (curTile)   mapInst.removeLayer(curTile);
+    if (curLabels) { mapInst.removeLayer(curLabels); curLabels = null; }
     curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
+    if (TILES[t].labels) {
+        curLabels = L.tileLayer(TILES[t].labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 0.9 }).addTo(mapInst);
+    }
     document.getElementById('mapLayerPanel').classList.remove('show');
 }
 
