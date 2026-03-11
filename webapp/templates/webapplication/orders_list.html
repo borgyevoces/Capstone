@@ -1095,9 +1095,9 @@
             rows += `
                 <tr class="order-row">
                     <td class="col-check">
-                        <input type="checkbox" class="checkbox" data-id="${o.id}"
+                        ${currentTab !== 'to_pay' ? `<input type="checkbox" class="checkbox" data-id="${o.id}"
                                ${selectedOrders.has(o.id) ? 'checked' : ''}
-                               onchange="toggleSelectOrder(${o.id})">
+                               onchange="toggleSelectOrder(${o.id})">` : ''}
                     </td>
                     <td class="col-order">
                         <div class="row-order-num">#${o.id}</div>
@@ -1107,11 +1107,11 @@
                     <td class="col-customer">
                         <div class="row-customer-name">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
                     </td>
-                    <td class="col-payment">
+                    ${currentTab !== 'request' ? `<td class="col-payment">
                         <span class="payment-badge ${paymentClass}">
                             <i class="fas ${paymentIcon}"></i> ${paymentLabel}
                         </span>
-                    </td>
+                    </td>` : ''}
                     <td class="col-items">
                         <div class="row-items-list">${itemsList}</div>
                     </td>
@@ -1134,7 +1134,7 @@
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;">Order</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>
+                        ${currentTab !== 'request' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
@@ -1262,6 +1262,12 @@
 
         const btn = document.getElementById('bulkBtn');
         const txt = document.getElementById('bulkText');
+        const selectionInfo = document.querySelector('.selection-info');
+
+        // Hide the checkbox+count area for to_pay tab
+        if (selectionInfo) {
+            selectionInfo.style.visibility = currentTab === 'to_pay' ? 'hidden' : 'visible';
+        }
 
         if (currentTab === 'to_pay') {
             btn.disabled = true;
