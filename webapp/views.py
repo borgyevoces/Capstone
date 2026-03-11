@@ -5679,29 +5679,68 @@ def create_cash_order(request):
             else:
                 new_status = 'request'
 
-            # ✅ Filter to only checked/selected items
-            # selected_item_ids[] are the CartItem IDs (order item IDs) the user checked
-            selected_item_ids = request.POST.getlist('selected_item_ids[]')
+            # ✅ Handle partial selection (only checked items go into the new order)
+            # selected_item_ids[] are OrderItem IDs the user checked in the cart.
+            # IMPORTANT: We do NOT delete unchecked items from the original order.
+            # Instead, we create a brand-new Order for the checked items only,
+            # so unchecked items remain in the original cart order untouched.
+            selected_item_ids_raw = request.POST.getlist('selected_item_ids[]')
+            selected_item_ids = [int(i) for i in selected_item_ids_raw if str(i).isdigit()]
+
             if selected_item_ids:
-                selected_item_ids = [int(i) for i in selected_item_ids if str(i).isdigit()]
-                # Remove unchecked items from the order
-                order.orderitem_set.exclude(id__in=selected_item_ids).delete()
-                # Recalculate order total based on remaining items
-                order.update_total()
+                # Get only the checked OrderItems
+                checked_items = order.orderitem_set.filter(id__in=selected_item_ids)
 
-            order.status = new_status
-            order.gcash_payment_method = 'cash'  # Mark as cash payment
+                if not checked_items.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No valid items selected.'
+                    }, status=400)
 
-            # Generate cash reference number
-            order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
+                # Create a brand-new Order for the checked items only
+                new_order = Order.objects.create(
+                    user=order.user,
+                    establishment=order.establishment,
+                    status=new_status,
+                    gcash_payment_method='cash',
+                    gcash_reference_number=f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}',
+                    payment_confirmed_at=timezone.now(),
+                )
 
-            # Set payment confirmed timestamp
-            order.payment_confirmed_at = timezone.now()
+                # Copy checked OrderItems into the new order
+                total = Decimal('0.00')
+                for oi in checked_items:
+                    OrderItem.objects.create(
+                        order=new_order,
+                        menu_item=oi.menu_item,
+                        quantity=oi.quantity,
+                        price_at_order=oi.price_at_order,
+                    )
+                    total += oi.price_at_order * oi.quantity
 
-            # Save the order
-            order.save()
+                new_order.total_amount = total
+                new_order.save(update_fields=['total_amount'])
 
-            print(f"DEBUG: Order saved with status: {order.status}")
+                # Remove checked items from the original cart-order
+                # (they now belong to new_order; unchecked items stay intact)
+                checked_items.delete()
+
+                # If original order is now empty, clean it up
+                if not order.orderitem_set.exists():
+                    order.delete()
+
+                active_order = new_order
+
+            else:
+                # No filter provided — process entire order (checkout flow or legacy)
+                order.status = new_status
+                order.gcash_payment_method = 'cash'
+                order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
+                order.payment_confirmed_at = timezone.now()
+                order.save()
+                active_order = order
+
+            print(f"DEBUG: Order saved with status: {active_order.status}")
 
             # NOTE: Stock quantity is NOT deducted here.
             # Deduction happens only when the owner moves the order to 'preparing'
@@ -5711,10 +5750,10 @@ def create_cash_order(request):
             # ✅ FIXED: Create notification for establishment owner
             try:
                 notification = OrderNotification.objects.create(
-                    order=order,
-                    establishment=order.establishment,
+                    order=active_order,
+                    establishment=active_order.establishment,
                     notification_type='new_order',
-                    message=f'New cash order #{order.id} from {request.user.username}'
+                    message=f'New cash order #{active_order.id} from {request.user.username}'
                 )
                 print(f"DEBUG: Created notification #{notification.id}")
             except Exception as notification_error:
@@ -5724,13 +5763,13 @@ def create_cash_order(request):
                 print(traceback.format_exc())
                 # Order will still complete successfully
 
-        print(f"DEBUG: Order #{order_id} processed successfully")
+        print(f"DEBUG: Order #{active_order.id} processed successfully")
 
         # Return success response
         return JsonResponse({
             'success': True,
             'message': 'Order placed successfully',
-            'order_id': order.id
+            'order_id': active_order.id
         })
 
     except Order.DoesNotExist:
