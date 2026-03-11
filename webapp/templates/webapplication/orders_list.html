@@ -1107,7 +1107,7 @@
                     <td class="col-customer">
                         <div class="row-customer-name">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
                     </td>
-                    ${currentTab !== 'request' ? `<td class="col-payment">
+                    ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<td class="col-payment">
                         <span class="payment-badge ${paymentClass}">
                             <i class="fas ${paymentIcon}"></i> ${paymentLabel}
                         </span>
@@ -1134,7 +1134,7 @@
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;">Order</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
-                        ${currentTab !== 'request' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
+                        ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
