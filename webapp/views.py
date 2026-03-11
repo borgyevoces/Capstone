@@ -5449,6 +5449,30 @@ def update_order_status(request, order_id):
         order.status = new_status
         order.save(update_fields=['status', 'updated_at'])
 
+        # ============================================================
+        # When order moves to 'preparing':
+        # 1. Deduct menu item quantities based on order items
+        # 2. Remove the ordered items from the customer's cart
+        # ============================================================
+        if new_status == 'preparing' and old_status != 'preparing':
+            with transaction.atomic():
+                for order_item in order.orderitem_set.select_related('menu_item').all():
+                    menu_item = order_item.menu_item
+                    # Deduct quantity (floor at 0)
+                    menu_item.quantity = max(menu_item.quantity - order_item.quantity, 0)
+                    menu_item.save(update_fields=['quantity'])
+
+                # Remove only the cart items that correspond to this order's items
+                ordered_menu_item_ids = list(order.orderitem_set.values_list('menu_item_id', flat=True))
+                try:
+                    customer_cart = Cart.objects.get(user=order.user)
+                    CartItem.objects.filter(
+                        cart=customer_cart,
+                        menu_item_id__in=ordered_menu_item_ids
+                    ).delete()
+                except Cart.DoesNotExist:
+                    pass  # No cart to clean up
+
         # Create notification for status change
         try:
             notification_messages = {
