@@ -389,6 +389,11 @@ function sendOrderRequest() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Reset button back to original state
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
             // Show the success modal
             const modal = document.getElementById('orderRequestModal');
             if (modal) {
