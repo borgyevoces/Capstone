@@ -5679,6 +5679,16 @@ def create_cash_order(request):
             else:
                 new_status = 'request'
 
+            # ✅ Filter to only checked/selected items
+            # selected_item_ids[] are the CartItem IDs (order item IDs) the user checked
+            selected_item_ids = request.POST.getlist('selected_item_ids[]')
+            if selected_item_ids:
+                selected_item_ids = [int(i) for i in selected_item_ids if str(i).isdigit()]
+                # Remove unchecked items from the order
+                order.orderitem_set.exclude(id__in=selected_item_ids).delete()
+                # Recalculate order total based on remaining items
+                order.update_total()
+
             order.status = new_status
             order.gcash_payment_method = 'cash'  # Mark as cash payment
 
@@ -5693,23 +5703,10 @@ def create_cash_order(request):
 
             print(f"DEBUG: Order saved with status: {order.status}")
 
-            # Process each item in the order
-            for order_item in order.orderitem_set.all():
-                menu_item = order_item.menu_item
-
-                # Validate stock availability
-                if menu_item.quantity < order_item.quantity:
-                    # Rollback will happen automatically due to transaction.atomic()
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Not enough stock for {menu_item.name}. Available: {menu_item.quantity}, Requested: {order_item.quantity}'
-                    }, status=400)
-
-                # Reduce stock quantity
-                menu_item.quantity -= order_item.quantity
-                menu_item.save()
-
-                print(f"DEBUG: Reduced stock for {menu_item.name}: {order_item.quantity} units")
+            # NOTE: Stock quantity is NOT deducted here.
+            # Deduction happens only when the owner moves the order to 'preparing'
+            # in update_order_status(), ensuring stock is only consumed after
+            # the owner has confirmed and accepted the transaction.
 
             # ✅ FIXED: Create notification for establishment owner
             try:
