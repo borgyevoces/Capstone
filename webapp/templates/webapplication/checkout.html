@@ -1075,7 +1075,6 @@ body { background: #f5f5f5 !important; }
         })
         .then(r => {
             if (!r.ok) {
-                // Non-2xx: try to parse JSON error, else show HTTP status
                 return r.text().then(text => {
                     let msg = 'Server error ' + r.status;
                     try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
@@ -1096,9 +1095,17 @@ body { background: #f5f5f5 !important; }
         })
         .catch(err => {
             console.error('Online payment error:', err);
-            _toast(err.message || 'Network error. Please try again.', 'error');
-            _resetBtn(btn);
-            closePolicyModal();
+            // If the global connection overlay is already showing (network error),
+            // don't show a toast on top of it — overlay handles it.
+            if (navigator.onLine) {
+                _toast(err.message || 'Network error. Please try again.', 'error');
+                _resetBtn(btn);
+                closePolicyModal();
+            } else {
+                // Still re-enable button for when connection is restored
+                _resetBtn(btn);
+                closePolicyModal();
+            }
         });
     }
 
@@ -1130,6 +1137,7 @@ body { background: #f5f5f5 !important; }
         .then(data => {
             if (data.success) {
                 closePolicyModal();
+                // Redirect to order confirmation page
                 window.location.href = '/payment/success/?order_id=' + ORDER_ID + '&payment_method=cash';
             } else {
                 _toast(data.message || 'Failed to place order.', 'error');
@@ -1139,9 +1147,17 @@ body { background: #f5f5f5 !important; }
         })
         .catch(err => {
             console.error('Cash payment error:', err);
-            _toast(err.message || 'Network error. Please try again.', 'error');
-            _resetBtn(btn);
-            closePolicyModal();
+            // If the global connection overlay is already showing (network error),
+            // don't show a toast on top of it — overlay handles it.
+            if (navigator.onLine) {
+                _toast(err.message || 'Network error. Please try again.', 'error');
+                _resetBtn(btn);
+                closePolicyModal();
+            } else {
+                // Still re-enable button for when connection is restored
+                _resetBtn(btn);
+                closePolicyModal();
+            }
         });
     }
 
