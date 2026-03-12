@@ -5385,32 +5385,51 @@ def _deduct_stock_and_clear_cart(order):
     """
     Deduct menu item quantities for all items in the order,
     and remove those items from the customer's cart.
-    Must be called inside a transaction.atomic() block.
+    Safe to call from anywhere — wraps itself in transaction.atomic().
     """
-    order_items = list(order.orderitem_set.all())
-
-    # Build deduct map: menu_item_id → total qty to deduct
-    deduct_map = {}
-    for oi in order_items:
-        deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
-
-    # Lock and update MenuItem rows directly
-    menu_items = MenuItem.objects.filter(id__in=list(deduct_map.keys())).select_for_update()
-    for menu_item in menu_items:
-        qty_to_deduct = deduct_map.get(menu_item.id, 0)
-        menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
-        menu_item.save(update_fields=['quantity'])
-
-    # Remove matching cart items for this customer
-    menu_item_ids = list(deduct_map.keys())
+    import traceback as _tb
     try:
-        customer_cart = Cart.objects.get(user=order.user)
-        CartItem.objects.filter(
-            cart=customer_cart,
-            menu_item_id__in=menu_item_ids
-        ).delete()
-    except Cart.DoesNotExist:
-        pass  # No cart to clean up
+        with transaction.atomic():
+            # Re-fetch order from DB to ensure fresh state
+            order = Order.objects.select_related('user').get(pk=order.pk)
+
+            order_items = list(order.orderitem_set.select_related('menu_item').all())
+            if not order_items:
+                print(f"DEBUG _deduct_stock: No items found for Order #{order.pk}")
+                return
+
+            # Build deduct map: menu_item_id → total qty to deduct
+            deduct_map = {}
+            for oi in order_items:
+                deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
+
+            print(f"DEBUG _deduct_stock: Order #{order.pk} → deducting {deduct_map}")
+
+            # Lock and update MenuItem rows directly
+            menu_items = MenuItem.objects.filter(id__in=list(deduct_map.keys())).select_for_update()
+            for menu_item in menu_items:
+                qty_to_deduct = deduct_map.get(menu_item.id, 0)
+                old_qty = menu_item.quantity
+                menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
+                menu_item.save(update_fields=['quantity'])
+                print(f"DEBUG _deduct_stock: {menu_item.name} {old_qty} → {menu_item.quantity}")
+
+            # Remove matching cart items for this customer
+            menu_item_ids = list(deduct_map.keys())
+            try:
+                customer_cart = Cart.objects.get(user=order.user)
+                deleted_count, _ = CartItem.objects.filter(
+                    cart=customer_cart,
+                    menu_item_id__in=menu_item_ids
+                ).delete()
+                print(f"DEBUG _deduct_stock: Removed {deleted_count} cart items for user {order.user_id}")
+            except Cart.DoesNotExist:
+                pass  # No cart to clean up
+
+    except Exception as e:
+        print(f"ERROR in _deduct_stock_and_clear_cart: {e}")
+        print(_tb.format_exc())
+        raise  # Re-raise so caller's atomic block rolls back
 
 
 
