@@ -5378,9 +5378,6 @@ def get_establishment_orders(request):
             'message': str(e)
         }, status=500)
 
-
-@login_required
-@require_POST
 def _deduct_stock_and_clear_cart(order):
     """
     Deduct menu item quantities for all items in the order,
@@ -5433,8 +5430,6 @@ def _deduct_stock_and_clear_cart(order):
         print(f"ERROR in _deduct_stock_and_clear_cart: {e}")
         print(_tb.format_exc())
         raise  # Re-raise so caller's atomic block rolls back
-
-
 
 def update_order_status(request, order_id):
     """
