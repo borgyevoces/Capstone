@@ -5457,13 +5457,20 @@ def update_order_status(request, order_id):
             order.save(update_fields=['status', 'updated_at'])
 
             if new_status == 'preparing' and old_status != 'preparing':
-                # Use select_for_update to lock rows and prevent race conditions
-                order_items = order.orderitem_set.select_related('menu_item').select_for_update().all()
+                # Fetch order items (without select_related so we can lock MenuItem rows separately)
+                order_items = list(order.orderitem_set.all())
 
-                for order_item in order_items:
-                    menu_item = order_item.menu_item
-                    # Deduct quantity for every item, floor at 0
-                    menu_item.quantity = max(menu_item.quantity - order_item.quantity, 0)
+                # Build a map of menu_item_id -> order quantity to deduct
+                deduct_map = {}
+                for oi in order_items:
+                    deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
+
+                # Lock and update each MenuItem row directly — guarantees real-time deduction
+                menu_item_ids = list(deduct_map.keys())
+                menu_items = MenuItem.objects.filter(id__in=menu_item_ids).select_for_update()
+                for menu_item in menu_items:
+                    qty_to_deduct = deduct_map.get(menu_item.id, 0)
+                    menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
                     menu_item.save(update_fields=['quantity'])
 
                 # Remove matching cart items for this customer
