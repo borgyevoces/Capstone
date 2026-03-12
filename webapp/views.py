@@ -3514,7 +3514,6 @@ def handle_payment_success(order):
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
 
-
 @login_required
 @require_POST
 def add_to_cart(request):
@@ -3565,8 +3564,6 @@ def add_to_cart(request):
 
         with transaction.atomic():
             # Get or create PENDING order for this establishment
-            # Use filter().first() + create() pattern to safely handle
-            # MultipleObjectsReturned (can happen if stale PENDING orders exist)
             existing_orders = Order.objects.filter(
                 user=request.user,
                 establishment=establishment,
@@ -3600,18 +3597,17 @@ def add_to_cart(request):
             )
 
             if not item_created:
-                # ✅ FIX: Replace quantity instead of accumulating.
-                # Stale PENDING orders from previous incomplete sessions were
-                # causing "Cannot add N more. Only 0 items available." errors.
-                # The modal always shows the user's chosen quantity, so we
-                # treat that as the authoritative desired quantity.
-                if quantity > menu_item.quantity:
+                # ✅ ACCUMULATE: Add on top of existing cart quantity
+                new_quantity = order_item.quantity + quantity
+
+                if new_quantity > menu_item.quantity:
                     return JsonResponse({
                         'success': False,
-                        'message': f'Only {menu_item.quantity} items available in stock.'
+                        'message': f'Only {menu_item.quantity} items available in stock. '
+                                   f'You already have {order_item.quantity} in your cart.'
                     }, status=400)
 
-                order_item.quantity = quantity  # SET, not accumulate
+                order_item.quantity = new_quantity
                 order_item.save()
 
             # Update order total
@@ -3647,7 +3643,6 @@ def add_to_cart(request):
             'success': False,
             'message': 'An error occurred while adding to cart.'
         }, status=500)
-
 
 @login_required
 @require_POST

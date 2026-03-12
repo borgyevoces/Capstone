@@ -346,76 +346,108 @@ function updateOrderSummary(cartBox) {
 window.updateOrderSummary = updateOrderSummary;
 
 // =======================================================
-// SEND ORDER REQUEST (replaces proceedToCheckout)
+// SEND ORDER REQUEST — checkbox-aware, multi-establishment
+// Only sends checked items. Unchecked items stay in cart.
 // =======================================================
 function sendOrderRequest() {
-    if (!window.activeOrderId) {
-        showMessage('Please select an establishment to place a request', 'warning');
+    const btn = document.getElementById('initial-checkout-btn');
+
+    // Collect every establishment box that has at least one checked item
+    const estabBoxes   = document.querySelectorAll('.establishment-cart-box');
+    const ordersToSend = [];
+
+    estabBoxes.forEach(function(box) {
+        const checkedItemChks = box.querySelectorAll('.item-checkbox:checked');
+        if (checkedItemChks.length === 0) return;
+
+        const orderId   = box.getAttribute('data-order-id');
+        const estabName = (box.querySelector('.cart-establishment-info h2') || {}).textContent || '';
+        const itemIds   = [];
+
+        checkedItemChks.forEach(function(chk) {
+            const id = chk.getAttribute('data-item-id');
+            if (id) itemIds.push(id);
+        });
+
+        if (orderId && itemIds.length > 0) {
+            ordersToSend.push({ orderId, estabName: estabName.trim(), itemIds, box });
+        }
+    });
+
+    if (ordersToSend.length === 0) {
+        showMessage('Please check at least one item to place an order.', 'warning');
         return;
     }
 
-    // Check that at least one item is selected
-    const activeBox = document.querySelector('.establishment-cart-box.active-cart');
-    if (activeBox) {
-        const checkedItems = activeBox.querySelectorAll('.item-checkbox:checked');
-        if (checkedItems.length === 0) {
-            showMessage('Please select at least one item to order', 'warning');
-            return;
-        }
-    }
-
-    // Disable button while sending
-    const btn = document.getElementById('initial-checkout-btn');
-    const originalHTML = btn ? btn.innerHTML : '';
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Request...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     }
 
     const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('order_id', window.activeOrderId);
+    let idx = 0;
+    const successBoxes = [];
 
-    // Only send checked item IDs so unchecked items are excluded from the order
-    const checkedIds = getCheckedItemIds();
-    checkedIds.forEach(id => formData.append('selected_item_ids[]', id));
+    function sendNext() {
+        if (idx >= ordersToSend.length) {
+            // Animate out successfully sent boxes
+            successBoxes.forEach(function(box) {
+                box.style.transition = 'opacity 0.35s, transform 0.35s';
+                box.style.opacity    = '0';
+                box.style.transform  = 'translateX(30px)';
+                setTimeout(function() { box.remove(); }, 380);
+            });
 
-    fetch('/payment/create-cash-order/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Reset button back to original state
+            setTimeout(function() {
+                if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+                const modal = document.getElementById('orderRequestModal');
+                if (modal) {
+                    modal.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
+                }
+            }, 400);
+            return;
+        }
+
+        const entry = ordersToSend[idx];
+        idx++;
+
+        const fd = new FormData();
+        fd.append('order_id', entry.orderId);
+        // Send ONLY the checked item IDs — backend creates a new order for these
+        // and leaves unchecked items in the original PENDING cart order untouched
+        entry.itemIds.forEach(function(id) { fd.append('selected_item_ids[]', id); });
+
+        fetch('/payment/create-cash-order/', {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRFToken': csrfToken },
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                successBoxes.push(entry.box);
+                sendNext();
+            } else {
+                throw new Error(data.message || 'Failed to send order for ' + entry.estabName);
+            }
+        })
+        .catch(function(err) {
+            console.error('Order request error:', err);
+            showMessage('Error sending order for ' + entry.estabName + ': ' + err.message, 'error');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
             }
-            // Show the success modal
-            const modal = document.getElementById('orderRequestModal');
-            if (modal) {
-                modal.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
-            // Update cart badge
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(0);
-            }
-        } else {
-            throw new Error(data.message || 'Failed to send order request');
-        }
-    })
-    .catch(error => {
-        console.error('Order Request Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
-    });
+        });
+    }
+
+    sendNext();
 }
 window.sendOrderRequest = sendOrderRequest;
 
@@ -611,17 +643,16 @@ function onItemCheckboxChange(checkbox) {
         cartItem.classList.toggle('item-unchecked', !checkbox.checked);
     }
 
-    // Update the establishment's "Select All" checkbox state
-    const orderId = checkbox.dataset.orderId;
     const cartBox = checkbox.closest('.establishment-cart-box');
     if (cartBox) {
         updateEstabSelectAll(cartBox);
+        // Dim establishment box if all items unchecked
+        const anyChecked = cartBox.querySelectorAll('.item-checkbox:checked').length > 0;
+        cartBox.classList.toggle('estab-unchecked', !anyChecked);
     }
 
-    // Update order summary if this establishment is active
-    if (cartBox && cartBox.classList.contains('active-cart')) {
-        updateOrderSummary(cartBox);
-    }
+    // ✅ Rebuild full summary realtime — covers ALL establishments
+    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
 }
 window.onItemCheckboxChange = onItemCheckboxChange;
 
@@ -630,19 +661,18 @@ function toggleEstablishmentItems(selectAllCheckbox) {
     const cartBox = selectAllCheckbox.closest('.establishment-cart-box');
     if (!cartBox) return;
 
-    const itemCheckboxes = cartBox.querySelectorAll('.item-checkbox');
-    itemCheckboxes.forEach(cb => {
-        cb.checked = selectAllCheckbox.checked;
+    const checked = selectAllCheckbox.checked;
+
+    cartBox.querySelectorAll('.item-checkbox').forEach(function(cb) {
+        cb.checked = checked;
         const cartItem = cb.closest('.cart-item');
-        if (cartItem) {
-            cartItem.classList.toggle('item-unchecked', !selectAllCheckbox.checked);
-        }
+        if (cartItem) cartItem.classList.toggle('item-unchecked', !checked);
     });
 
-    // Update summary if active
-    if (cartBox.classList.contains('active-cart')) {
-        updateOrderSummary(cartBox);
-    }
+    cartBox.classList.toggle('estab-unchecked', !checked);
+
+    // ✅ Rebuild full summary realtime — covers ALL establishments
+    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
 }
 window.toggleEstablishmentItems = toggleEstablishmentItems;
 

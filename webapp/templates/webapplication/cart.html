@@ -16,12 +16,11 @@
 /* CART OVERRIDE - Inline styles beat any cached external CSS */
 body{background:#ffffff!important}
 .cart-establishment-info{background:#ffffff!important;background-image:none!important;padding:18px 24px!important;display:flex!important;align-items:center!important;gap:12px!important;position:relative!important;border-bottom:2px solid #f0f0f0!important}
-.cart-establishment-info i{color:#B71C1C!important;opacity:1!important;font-size:1.4rem!important}
+.cart-establishment-info i.fa-store{color:#B71C1C!important;opacity:1!important;font-size:1.4rem!important}
 .cart-establishment-info h2{color:#111!important;font-weight:700!important;margin:0!important;flex:1!important}
 .clear-establishment-btn{background:#f0f0f0!important;border:1px solid #ddd!important;color:#555!important}
 .clear-establishment-btn:hover{background:#B71C1C!important;border-color:#B71C1C!important}
 .establishment-cart-box{background:#fff!important;border-radius:12px!important;overflow:hidden!important}
-.establishment-cart-box.active-cart{border-color:transparent!important;box-shadow:0 0 0 3px #B71C1C!important}
 .establishment-cart-box:hover{box-shadow:0 5px 18px rgba(0,0,0,.13)!important;transform:translateY(-2px)!important}
 .cart-item{background:#fff!important;border-bottom:1px solid #f0f0f0!important;display:flex!important;align-items:center!important;gap:20px!important;padding:20px 24px!important}
 .cart-item:hover{background:#fafafa!important}
@@ -47,6 +46,7 @@ body{background:#ffffff!important}
   box-shadow:0 4px 14px rgba(183,28,28,.3)!important;text-transform:uppercase!important;letter-spacing:.5px!important;
   box-sizing:border-box!important;outline:none!important;-webkit-appearance:none!important;line-height:normal!important}
 #initial-checkout-btn:hover,.btn-checkout-main:hover{background:#8B0000!important;transform:translateY(-2px)!important;box-shadow:0 6px 20px rgba(183,28,28,.4)!important}
+#initial-checkout-btn:disabled,.btn-checkout-main:disabled{background:#ccc!important;cursor:not-allowed!important;transform:none!important;box-shadow:none!important}
 .payment-method-section{border-top:2px solid #f0f0f0!important;padding-top:20px!important;margin-top:20px!important}
 .payment-method-title{color:#111!important;font-size:.85rem!important;font-weight:700!important;text-transform:uppercase!important;text-align:center!important;margin-bottom:14px!important;letter-spacing:.6px!important}
 .btn-paymongo{border:2px solid #B71C1C!important;background:#fff5f5!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border-radius:10px!important;cursor:pointer!important;margin-bottom:10px!important;transition:all .25s ease!important}
@@ -106,6 +106,34 @@ body{background:#ffffff!important}
     opacity: 0.45;
 }
 
+/* ── Establishment box dimmed when unchecked ── */
+.establishment-cart-box.estab-unchecked .cart-establishment-info {
+    opacity: 0.55;
+}
+.establishment-cart-box.estab-unchecked .cart-items-list {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* ── Establishment name link ── */
+.estab-name-link {
+    color: #111;
+    text-decoration: none;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.estab-name-link:hover {
+    color: #B71C1C;
+}
+.estab-name-link .ext-icon {
+    font-size: 0.6rem;
+    color: #B71C1C;
+    opacity: 0.7;
+    vertical-align: middle;
+}
+
 /* KILL ALL BORDERS ON CART BOX - HIGHEST PRIORITY */
 html body #cart-page-container .establishment-cart-box,
 html body #cart-page-container .establishment-cart-box:hover,
@@ -118,6 +146,68 @@ html body .establishment-cart-box.active-cart {
     outline: none !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
 }
+
+/* ── Multi-establishment Order Summary ── */
+.summary-empty-msg {
+    text-align: center;
+    color: #9CA3AF;
+    font-size: 0.88rem;
+    padding: 20px 0;
+}
+.summary-estab-block {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.summary-estab-block:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+.summary-estab-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #111;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.summary-estab-label i { color: #B71C1C; font-size: 0.85rem; }
+.summary-item-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: #555;
+    padding: 3px 4px;
+}
+.summary-item-line .item-label { flex: 1; }
+.summary-item-line .item-amt   { font-weight: 600; color: #111; white-space: nowrap; }
+.summary-estab-subtotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.83rem;
+    color: #777;
+    padding: 6px 4px 0;
+    border-top: 1px dashed #eee;
+    margin-top: 4px;
+}
+.summary-grand-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111;
+    padding: 14px 0 0;
+    border-top: 2px solid #f0f0f0;
+    margin-top: 10px;
+}
+.summary-grand-total-row .total-amt { color: #111; }
 
 /* ============================================
    CONFIRMATION MODAL
@@ -236,7 +326,9 @@ html body .establishment-cart-box.active-cart {
             <div class="all-carts-container">
 
                 {% for cart in carts_data %}
-                <div class="establishment-cart-box" data-establishment-id="{{ cart.establishment.id }}">
+                <div class="establishment-cart-box"
+                     data-establishment-id="{{ cart.establishment.id }}"
+                     data-order-id="{{ cart.order.id }}">
 
                     <!-- Establishment Header -->
                     <div class="cart-establishment-info">
@@ -248,7 +340,15 @@ html body .establishment-cart-box.active-cart {
                                    onchange="toggleEstablishmentItems(this)">
                         </label>
                         <i class="fas fa-store"></i>
-                        <h2>{{ cart.establishment.name }}</h2>
+                        <h2>
+                            <a href="{% url 'food_establishment_details' cart.establishment.id %}"
+                               class="estab-name-link"
+                               target="_blank"
+                               onclick="event.stopPropagation()">
+                                {{ cart.establishment.name }}
+                                <i class="fas fa-external-link-alt ext-icon"></i>
+                            </a>
+                        </h2>
                         <button type="button"
                                 class="clear-establishment-btn"
                                 onclick="clearEstablishmentCart({{ cart.establishment.id }})"
@@ -264,7 +364,10 @@ html body .establishment-cart-box.active-cart {
                                  id="cart-item-{{ item.id }}"
                                  data-order-id="{{ cart.order.id }}"
                                  data-item-id="{{ item.id }}"
-                                 data-max-stock="{{ item.menu_item.quantity }}">
+                                 data-max-stock="{{ item.menu_item.quantity }}"
+                                 data-unit-price="{{ item.menu_item.price }}"
+                                 data-qty="{{ item.quantity }}"
+                                 data-name="{{ item.menu_item.name|escapejs }}">
 
                                 <!-- Item Checkbox -->
                                 <div class="item-checkbox-wrap" onclick="event.stopPropagation()">
@@ -272,6 +375,7 @@ html body .establishment-cart-box.active-cart {
                                            class="item-checkbox"
                                            data-item-id="{{ item.id }}"
                                            data-order-id="{{ cart.order.id }}"
+                                           data-establishment-id="{{ cart.establishment.id }}"
                                            checked
                                            onchange="onItemCheckboxChange(this)">
                                 </div>
@@ -338,28 +442,23 @@ html body .establishment-cart-box.active-cart {
 
             </div>
 
-            <!-- Right Column: Active Order Summary (Sticky) -->
+            <!-- Right Column: Order Summary (Sticky) -->
             <div class="cart-summary-sticky">
                 <div class="cart-summary" id="active-order-summary">
                     <h2 class="summary-title">Order Summary</h2>
-                    <p class="summary-instruction">Click on an establishment to see order details</p>
 
-                    <div class="summary-content" style="display: none;">
-                        <div class="summary-establishment-name"></div>
+                    <!-- Dynamic summary rendered by JS -->
+                    <div id="summary-body">
+                        <p class="summary-empty-msg">Check an establishment to see order details.</p>
+                    </div>
 
-                        <div class="summary-line">
-                            <span>Subtotal <span class="summary-item-count"></span></span>
-                            <strong class="summary-subtotal">₱0.00</strong>
-                        </div>
-
-                        <div class="summary-divider"></div>
-
-                        <div class="grand-total-line">
+                    <!-- Grand total + button (hidden when nothing checked) -->
+                    <div id="summary-footer" style="display:none;">
+                        <div class="summary-grand-total-row">
                             <strong>Total</strong>
-                            <span class="grand-total-amount">₱0.00</span>
+                            <span class="total-amt" id="summary-grand-total">₱0.00</span>
                         </div>
 
-                        <!-- Order Request Button -->
                         <button type="button"
                                 class="btn-checkout-main"
                                 id="initial-checkout-btn"
@@ -372,6 +471,14 @@ html body .establishment-cart-box.active-cart {
                             <i class="fas fa-info-circle"></i>
                             <span>Owner will confirm your request</span>
                         </div>
+                    </div>
+
+                    <!-- Shown only when nothing is checked -->
+                    <div id="summary-no-selection" style="display:none; text-align:center; padding: 12px 0;">
+                        <p style="color:#9CA3AF; font-size:0.85rem;">
+                            <i class="fas fa-mouse-pointer" style="margin-right:5px;"></i>
+                            Check an establishment above to include it in your order.
+                        </p>
                     </div>
                 </div>
 
@@ -493,17 +600,17 @@ html body .establishment-cart-box.active-cart {
                 if (firstEstablishment) {
                     firstEstablishment.click();
                 }
-                // Payment method selection removed - checkout goes directly to checkout page
             }, 300);
         }
+
+        // Initial summary render on page load
+        window.rebuildOrderSummary();
     });
 
     // ============================================================
     // CUSTOM CONFIRM MODAL — replaces browser confirm()
-    // Called by cart.js via window.customConfirm(...)
     // ============================================================
     window.customConfirm = function(title, message, confirmText, cancelText, resolve) {
-        // Detect which modal to use based on title keyword
         const isRemove = title.toLowerCase().includes('remove');
         const modalId  = isRemove ? 'ccRemoveModal'  : 'ccClearModal';
         const cnfBtnId = isRemove ? 'ccRemoveConfirmBtn' : 'ccClearConfirmBtn';
@@ -515,12 +622,9 @@ html body .establishment-cart-box.active-cart {
 
         if (!overlay) { resolve(window.confirm(message)); return; }
 
-        // Populate dynamic text
         if (isRemove) {
-            // Try to pull item name from the currently hovered/clicked item
             const nameEl = document.getElementById('ccRemoveItemName');
             if (nameEl) {
-                // Look for the item name in the page — we pass it via a data attribute trick
                 const itemName = window._pendingRemoveItemName || 'this item';
                 nameEl.textContent = itemName;
                 window._pendingRemoveItemName = null;
@@ -534,11 +638,9 @@ html body .establishment-cart-box.active-cart {
             }
         }
 
-        // Update button labels if custom text provided
         if (confirmText) cnfBtn.childNodes[cnfBtn.childNodes.length - 1].textContent = confirmText;
         if (cancelText)  cncBtn.textContent = cancelText;
 
-        // Open modal
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
 
@@ -562,7 +664,7 @@ html body .establishment-cart-box.active-cart {
         document.addEventListener('keydown', onKey);
     };
 
-    // ── Intercept removeItemFromCart to capture item name before modal opens ──
+    // ── Intercept remove/clear to capture name before modal opens ──
     document.addEventListener('click', function(e) {
         const removeBtn = e.target.closest('.remove-item-btn');
         if (removeBtn) {
@@ -580,7 +682,301 @@ html body .establishment-cart-box.active-cart {
                 window._pendingClearEstabName = nameEl ? nameEl.textContent.trim() : 'this establishment';
             }
         }
-    }, true); // capture phase so it fires before cart.js handlers
+    }, true);
+
+    // ============================================================
+    // ORDER SUMMARY — rebuilt dynamically from checked items
+    // Exposed on window so ALL script blocks can call it safely
+    // ============================================================
+    window.rebuildOrderSummary = function() {
+        const summaryBody   = document.getElementById('summary-body');
+        const summaryFooter = document.getElementById('summary-footer');
+        const summaryNoSel  = document.getElementById('summary-no-selection');
+        const grandTotalEl  = document.getElementById('summary-grand-total');
+
+        const estabBoxes = document.querySelectorAll('.establishment-cart-box');
+        let html       = '';
+        let grandTotal = 0;
+        let anyChecked = false;
+
+        estabBoxes.forEach(function(box) {
+            const estabNameEl = box.querySelector('.cart-establishment-info h2');
+            if (!estabNameEl) return;
+
+            // SOLE source of truth: count checked item checkboxes directly.
+            // Never gate on estabChk.indeterminate — it is write-only in browsers;
+            // reading it back after a programmatic set is unreliable.
+            const checkedItems = box.querySelectorAll('.item-checkbox:checked');
+            if (checkedItems.length === 0) return;
+
+            anyChecked = true;
+            let estabSubtotal = 0;
+            let itemsHtml = '';
+
+            checkedItems.forEach(function(itemChk) {
+                const itemId   = itemChk.getAttribute('data-item-id');
+                const cartItem = document.getElementById('cart-item-' + itemId);
+                if (!cartItem) return;
+
+                const name     = cartItem.getAttribute('data-name') || cartItem.querySelector('.item-name')?.textContent?.trim() || 'Item';
+                const qty      = parseInt(cartItem.querySelector('.quantity-value')?.textContent || cartItem.getAttribute('data-qty') || '1');
+                const price    = parseFloat(cartItem.getAttribute('data-unit-price') || '0');
+                const subtotal = qty * price;
+                estabSubtotal += subtotal;
+
+                itemsHtml += `
+                    <div class="summary-item-line">
+                        <span class="item-label">${name} ×${qty}</span>
+                        <span class="item-amt">₱${subtotal.toFixed(2)}</span>
+                    </div>`;
+            });
+
+            grandTotal += estabSubtotal;
+
+            const estabNameText = estabNameEl.querySelector('.estab-name-link')?.firstChild?.textContent?.trim()
+                                || estabNameEl.textContent.trim();
+
+            html += `
+                <div class="summary-estab-block">
+                    <div class="summary-estab-label">
+                        <i class="fas fa-store"></i>
+                        ${estabNameText}
+                    </div>
+                    ${itemsHtml}
+                    <div class="summary-estab-subtotal">
+                        <span>Subtotal</span>
+                        <strong>₱${estabSubtotal.toFixed(2)}</strong>
+                    </div>
+                </div>`;
+        });
+
+        if (anyChecked) {
+            summaryBody.innerHTML       = html;
+            summaryFooter.style.display = 'block';
+            summaryNoSel.style.display  = 'none';
+            grandTotalEl.textContent    = '₱' + grandTotal.toFixed(2);
+        } else {
+            summaryBody.innerHTML       = '<p class="summary-empty-msg">Check an establishment to see order details.</p>';
+            summaryFooter.style.display = 'none';
+            summaryNoSel.style.display  = 'none';
+        }
+    };
+
+    // ============================================================
+    // CHECKBOX HANDLERS
+    // ============================================================
+
+    // Establishment header checkbox — check/uncheck ALL items inside
+    window.toggleEstablishmentItems = function(estabChk) {
+        const estabId = estabChk.getAttribute('data-establishment-id');
+        const box     = document.querySelector(`.establishment-cart-box[data-establishment-id="${estabId}"]`);
+        if (!box) return;
+
+        const checked = estabChk.checked;
+
+        // Sync all item checkboxes to match the establishment checkbox
+        box.querySelectorAll('.item-checkbox').forEach(function(chk) {
+            chk.checked = checked;
+            const cartItem = chk.closest('.cart-item');
+            if (cartItem) cartItem.classList.toggle('item-unchecked', !checked);
+        });
+
+        box.classList.toggle('estab-unchecked', !checked);
+
+        // Rebuild immediately — realtime update
+        window.rebuildOrderSummary();
+    };
+
+    // Individual item checkbox — update parent estab checkbox state then rebuild
+    window.onItemCheckboxChange = function(itemChk) {
+        const estabId  = itemChk.getAttribute('data-establishment-id');
+        const cartItem = itemChk.closest('.cart-item');
+        if (cartItem) cartItem.classList.toggle('item-unchecked', !itemChk.checked);
+
+        const box = document.querySelector(`.establishment-cart-box[data-establishment-id="${estabId}"]`);
+        if (box) {
+            const allItems     = box.querySelectorAll('.item-checkbox');
+            const checkedItems = box.querySelectorAll('.item-checkbox:checked');
+            const estabChk     = box.querySelector('.estab-select-all');
+            if (estabChk) {
+                if (checkedItems.length === 0) {
+                    estabChk.checked       = false;
+                    estabChk.indeterminate = false;
+                    box.classList.add('estab-unchecked');
+                } else if (checkedItems.length === allItems.length) {
+                    estabChk.checked       = true;
+                    estabChk.indeterminate = false;
+                    box.classList.remove('estab-unchecked');
+                } else {
+                    // Partially checked — indeterminate visual only (do NOT read back)
+                    estabChk.checked       = false;
+                    estabChk.indeterminate = true;
+                    box.classList.remove('estab-unchecked');
+                }
+            }
+        }
+
+        window.rebuildOrderSummary();
+    };
+
+    // Rebuild summary when cart.js fires quantity update event
+    document.addEventListener('cart:quantityUpdated', function() {
+        window.rebuildOrderSummary();
+    });
+
+    // ============================================================
+    // SEND ORDER REQUEST — only for CHECKED establishments/items
+    // Unchecked establishments and items stay in cart untouched
+    // ============================================================
+    window.sendOrderRequest = function() {
+        const btn = document.getElementById('initial-checkout-btn');
+
+        const estabBoxes   = document.querySelectorAll('.establishment-cart-box');
+        const ordersToSend = [];
+
+        estabBoxes.forEach(function(box) {
+            const estabChk = box.querySelector('.estab-select-all');
+            if (!estabChk) return;
+
+            const checkedItemChks = box.querySelectorAll('.item-checkbox:checked');
+            if (checkedItemChks.length === 0) return;
+
+            const orderId   = box.getAttribute('data-order-id');
+            const estabId   = box.getAttribute('data-establishment-id');
+            const estabName = box.querySelector('.cart-establishment-info h2')?.textContent?.trim() || '';
+
+            const itemIds = [];
+            checkedItemChks.forEach(function(chk) {
+                const id = chk.getAttribute('data-item-id');
+                if (id) itemIds.push(id);
+            });
+
+            if (orderId && itemIds.length > 0) {
+                ordersToSend.push({ orderId, estabId, estabName, itemIds, box });
+            }
+        });
+
+        if (ordersToSend.length === 0) {
+            alert('Please check at least one establishment to place an order.');
+            return;
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                       || document.cookie.match(/csrftoken=([^;]+)/)?.[1]
+                       || '';
+
+        const URL_SEND = "{% url 'create_cash_order' %}";
+
+        let idx = 0;
+        const successBoxes = [];
+
+        function sendNext() {
+            if (idx >= ordersToSend.length) {
+                // Animate out sent establishment boxes
+                successBoxes.forEach(function(box) {
+                    box.style.transition = 'opacity 0.35s, transform 0.35s';
+                    box.style.opacity    = '0';
+                    box.style.transform  = 'translateX(30px)';
+                    setTimeout(function() { box.remove(); }, 380);
+                });
+
+                setTimeout(function() {
+                    window.rebuildOrderSummary();
+                    const modal = document.getElementById('orderRequestModal');
+                    if (modal) {
+                        modal.classList.add('open');
+                        document.body.style.overflow = 'hidden';
+                    }
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
+                    }
+                }, 400);
+                return;
+            }
+
+            const { orderId, itemIds, box, estabName } = ordersToSend[idx];
+            idx++;
+
+            const fd = new FormData();
+            fd.append('order_id', orderId);
+            itemIds.forEach(function(id) {
+                fd.append('selected_item_ids[]', id);
+            });
+            // No source param → defaults to 'cart' → status = 'request'
+
+            fetch(URL_SEND, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-CSRFToken': csrfToken },
+                credentials: 'same-origin'
+            })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.text().then(function(text) {
+                        let msg = 'Server error ' + r.status;
+                        try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return r.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    successBoxes.push(box);
+                    sendNext();
+                } else {
+                    throw new Error(data.message || 'Failed to send order for ' + estabName);
+                }
+            })
+            .catch(function(err) {
+                console.error('Order request error:', err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
+                }
+                alert('Error sending order for ' + estabName + ': ' + err.message);
+            });
+        }
+
+        sendNext();
+    };
+
+    // Close the order success modal
+    window.closeOrderRequestModal = function() {
+        const modal = document.getElementById('orderRequestModal');
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        window.location.reload();
+    };
+
 </script>
 <script src="{% static 'js/cart.js' %}"></script>
+
+<script>
+    // ── Re-hook cart.js quantity updates to refresh our summary ──
+    (function() {
+        const observer = new MutationObserver(function() {
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+        });
+        document.querySelectorAll('.quantity-value').forEach(function(el) {
+            observer.observe(el, { childList: true, characterData: true, subtree: true });
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-decrease, .btn-increase');
+            if (!btn) return;
+            setTimeout(function() {
+                if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            }, 500);
+        });
+    })();
+</script>
 {% endblock %}
