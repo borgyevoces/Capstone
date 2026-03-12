@@ -4686,23 +4686,8 @@ def gcash_payment_success(request):
                 except Exception as notif_error:
                     print(f"⚠️ Notification creation error: {notif_error}")
 
-                # 3. ✅ REDUCE STOCK FOR EACH ORDER ITEM
-                for order_item in order.orderitem_set.select_related('menu_item'):
-                    menu_item = order_item.menu_item
-                    try:
-                        if menu_item.quantity >= order_item.quantity:
-                            # Reduce the quantity
-                            menu_item.quantity -= order_item.quantity
-                            menu_item.save()
-                            print(f"✅ Stock reduced for {menu_item.name}: {order_item.quantity} units")
-                        else:
-                            print(
-                                f"⚠️ Warning: Insufficient stock for {menu_item.name}. Available: {menu_item.quantity}, Ordered: {order_item.quantity}")
-                            # Still process the order but log the issue
-                            menu_item.quantity = 0
-                            menu_item.save()
-                    except Exception as stock_err:
-                        print(f"❌ Error reducing stock for {menu_item.name}: {stock_err}")
+                # 3. ✅ REDUCE STOCK + CLEAR CART (online payment → preparing)
+                _deduct_stock_and_clear_cart(order)
 
             # 4. Send confirmation emails (best-effort)
             try:
@@ -5396,6 +5381,39 @@ def get_establishment_orders(request):
 
 @login_required
 @require_POST
+def _deduct_stock_and_clear_cart(order):
+    """
+    Deduct menu item quantities for all items in the order,
+    and remove those items from the customer's cart.
+    Must be called inside a transaction.atomic() block.
+    """
+    order_items = list(order.orderitem_set.all())
+
+    # Build deduct map: menu_item_id → total qty to deduct
+    deduct_map = {}
+    for oi in order_items:
+        deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
+
+    # Lock and update MenuItem rows directly
+    menu_items = MenuItem.objects.filter(id__in=list(deduct_map.keys())).select_for_update()
+    for menu_item in menu_items:
+        qty_to_deduct = deduct_map.get(menu_item.id, 0)
+        menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
+        menu_item.save(update_fields=['quantity'])
+
+    # Remove matching cart items for this customer
+    menu_item_ids = list(deduct_map.keys())
+    try:
+        customer_cart = Cart.objects.get(user=order.user)
+        CartItem.objects.filter(
+            cart=customer_cart,
+            menu_item_id__in=menu_item_ids
+        ).delete()
+    except Cart.DoesNotExist:
+        pass  # No cart to clean up
+
+
+
 def update_order_status(request, order_id):
     """
     API endpoint to update the status of a specific order
@@ -5457,34 +5475,8 @@ def update_order_status(request, order_id):
             order.save(update_fields=['status', 'updated_at'])
 
             if new_status == 'preparing' and old_status != 'preparing':
-                # Fetch order items (without select_related so we can lock MenuItem rows separately)
-                order_items = list(order.orderitem_set.all())
-
-                # Build a map of menu_item_id -> order quantity to deduct
-                deduct_map = {}
-                for oi in order_items:
-                    deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
-
-                # Lock and update each MenuItem row directly — guarantees real-time deduction
-                menu_item_ids = list(deduct_map.keys())
-                menu_items = MenuItem.objects.filter(id__in=menu_item_ids).select_for_update()
-                for menu_item in menu_items:
-                    qty_to_deduct = deduct_map.get(menu_item.id, 0)
-                    menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
-                    menu_item.save(update_fields=['quantity'])
-
-                # Remove matching cart items for this customer
-                ordered_menu_item_ids = list(
-                    order.orderitem_set.values_list('menu_item_id', flat=True)
-                )
-                try:
-                    customer_cart = Cart.objects.get(user=order.user)
-                    CartItem.objects.filter(
-                        cart=customer_cart,
-                        menu_item_id__in=ordered_menu_item_ids
-                    ).delete()
-                except Cart.DoesNotExist:
-                    pass  # Customer has no cart — nothing to clean up
+                # Deduct stock and clear cart items for this order
+                _deduct_stock_and_clear_cart(order)
 
         # Create notification for status change
         try:
@@ -5755,10 +5747,10 @@ def create_cash_order(request):
 
             print(f"DEBUG: Order saved with status: {active_order.status}")
 
-            # NOTE: Stock quantity is NOT deducted here.
-            # Deduction happens only when the owner moves the order to 'preparing'
-            # in update_order_status(), ensuring stock is only consumed after
-            # the owner has confirmed and accepted the transaction.
+            # ✅ If this order goes straight to 'preparing' (cash on checkout),
+            # deduct stock and clear cart immediately — same as online payment flow.
+            if new_status == 'preparing':
+                _deduct_stock_and_clear_cart(active_order)
 
             # ✅ FIXED: Create notification for establishment owner
             try:
