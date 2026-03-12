@@ -5444,26 +5444,32 @@ def update_order_status(request, order_id):
                 'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
             }, status=400)
 
-        # Update the order status
-        old_status = order.status
-        order.status = new_status
-        order.save(update_fields=['status', 'updated_at'])
-
         # ============================================================
         # When order moves to 'preparing':
-        # 1. Deduct menu item quantities based on order items
+        # 1. Deduct menu item quantities for ALL items in the order
         # 2. Remove the ordered items from the customer's cart
+        # Everything runs inside ONE atomic block so it fully
+        # rolls back (including the status change) if anything fails.
         # ============================================================
-        if new_status == 'preparing' and old_status != 'preparing':
-            with transaction.atomic():
-                for order_item in order.orderitem_set.select_related('menu_item').all():
+        with transaction.atomic():
+            old_status = order.status
+            order.status = new_status
+            order.save(update_fields=['status', 'updated_at'])
+
+            if new_status == 'preparing' and old_status != 'preparing':
+                # Use select_for_update to lock rows and prevent race conditions
+                order_items = order.orderitem_set.select_related('menu_item').select_for_update().all()
+
+                for order_item in order_items:
                     menu_item = order_item.menu_item
-                    # Deduct quantity (floor at 0)
+                    # Deduct quantity for every item, floor at 0
                     menu_item.quantity = max(menu_item.quantity - order_item.quantity, 0)
                     menu_item.save(update_fields=['quantity'])
 
-                # Remove only the cart items that correspond to this order's items
-                ordered_menu_item_ids = list(order.orderitem_set.values_list('menu_item_id', flat=True))
+                # Remove matching cart items for this customer
+                ordered_menu_item_ids = list(
+                    order.orderitem_set.values_list('menu_item_id', flat=True)
+                )
                 try:
                     customer_cart = Cart.objects.get(user=order.user)
                     CartItem.objects.filter(
@@ -5471,7 +5477,7 @@ def update_order_status(request, order_id):
                         menu_item_id__in=ordered_menu_item_ids
                     ).delete()
                 except Cart.DoesNotExist:
-                    pass  # No cart to clean up
+                    pass  # Customer has no cart — nothing to clean up
 
         # Create notification for status change
         try:
