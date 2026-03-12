@@ -992,6 +992,10 @@ body { background: #f5f5f5 !important; }
     const ORDER_ID = (new URLSearchParams(window.location.search)).get('order_id')
                      || '{{ order.id }}';
 
+    // Endpoint URLs — resolved server-side so they always match urls.py
+    const URL_CREATE_GCASH = "{% url 'create_gcash_payment_link' %}";
+    const URL_CREATE_CASH  = "{% url 'create_cash_order' %}";
+
     let _pendingType = null;  // 'online' | 'cash'
 
     // ----------------------------------------------------------
@@ -1063,13 +1067,23 @@ body { background: #f5f5f5 !important; }
         const fd = new FormData();
         fd.append('order_id', ORDER_ID);
 
-        fetch('/payment/create-gcash/', {
+        fetch(URL_CREATE_GCASH, {
             method: 'POST',
             body: fd,
             headers: { 'X-CSRFToken': _csrf() },
             credentials: 'same-origin'
         })
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) {
+                // Non-2xx: try to parse JSON error, else show HTTP status
+                return r.text().then(text => {
+                    let msg = 'Server error ' + r.status;
+                    try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
+                    throw new Error(msg);
+                });
+            }
+            return r.json();
+        })
         .then(data => {
             if (data.success && data.checkout_url) {
                 // Redirect to PayMongo hosted checkout
@@ -1082,7 +1096,7 @@ body { background: #f5f5f5 !important; }
         })
         .catch(err => {
             console.error('Online payment error:', err);
-            _toast('Network error. Please try again.', 'error');
+            _toast(err.message || 'Network error. Please try again.', 'error');
             _resetBtn(btn);
             closePolicyModal();
         });
@@ -1096,13 +1110,22 @@ body { background: #f5f5f5 !important; }
         fd.append('order_id', ORDER_ID);
         fd.append('source', 'checkout');   // tells view: already accepted, set to preparing
 
-        fetch('/payment/create-cash-order/', {
+        fetch(URL_CREATE_CASH, {
             method: 'POST',
             body: fd,
             headers: { 'X-CSRFToken': _csrf() },
             credentials: 'same-origin'
         })
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) {
+                return r.text().then(text => {
+                    let msg = 'Server error ' + r.status;
+                    try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
+                    throw new Error(msg);
+                });
+            }
+            return r.json();
+        })
         .then(data => {
             if (data.success) {
                 closePolicyModal();
@@ -1115,7 +1138,7 @@ body { background: #f5f5f5 !important; }
         })
         .catch(err => {
             console.error('Cash payment error:', err);
-            _toast('Network error. Please try again.', 'error');
+            _toast(err.message || 'Network error. Please try again.', 'error');
             _resetBtn(btn);
             closePolicyModal();
         });
