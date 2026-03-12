@@ -5405,8 +5405,11 @@ def _deduct_stock_and_clear_cart(order):
 
             print(f"DEBUG _deduct_stock: Order #{order.pk} → deducting {deduct_map}")
 
-            # Lock and update MenuItem rows directly
-            menu_items = MenuItem.objects.filter(id__in=list(deduct_map.keys())).select_for_update()
+            # Update MenuItem rows directly (select_for_update only on non-SQLite)
+            from django.db import connection
+            use_lock = 'sqlite' not in connection.vendor
+            qs = MenuItem.objects.filter(id__in=list(deduct_map.keys()))
+            menu_items = qs.select_for_update() if use_lock else qs
             for menu_item in menu_items:
                 qty_to_deduct = deduct_map.get(menu_item.id, 0)
                 old_qty = menu_item.quantity
@@ -5757,8 +5760,10 @@ def create_cash_order(request):
 
             else:
                 # No filter provided — process entire order (checkout flow or legacy)
+                # Accept payment_method param but always store in gcash_payment_method field
+                payment_method = request.POST.get('payment_method', 'cash')
                 order.status = new_status
-                order.gcash_payment_method = 'cash'
+                order.gcash_payment_method = payment_method
                 order.gcash_reference_number = f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}'
                 order.payment_confirmed_at = timezone.now()
                 order.save()
