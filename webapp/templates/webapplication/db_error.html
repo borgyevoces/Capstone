@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Temporarily Unavailable – KabsuEats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ── Navbar stub so it doesn't feel broken ── */
+    .nav-stub {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: 0 1px 8px rgba(0,0,0,.06);
+      z-index: 100;
+    }
+    .nav-brand { font-size: 1.25rem; font-weight: 800; color: #dc2626; }
+
+    /* ── Main card ── */
+    .error-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 52px 40px 44px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 48px rgba(0,0,0,.10);
+      margin-top: 56px;   /* clear the nav */
+      animation: cardPop .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes cardPop {
+      from { transform: scale(.9) translateY(20px); opacity: 0; }
+      to   { transform: scale(1) translateY(0);    opacity: 1; }
+    }
+
+    /* ── Icon ── */
+    .icon-ring {
+      width: 80px; height: 80px;
+      background: #fee2e2;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 22px;
+    }
+    .icon-ring i { font-size: 2.1rem; color: #dc2626; }
+
+    /* ── Text ── */
+    .error-card h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #111;
+      margin-bottom: 10px;
+    }
+    .error-card p {
+      color: #6b7280;
+      font-size: .9rem;
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+    .error-detail {
+      font-size: .78rem;
+      color: #9ca3af;
+      margin-bottom: 28px;
+    }
+
+    /* ── Buttons ── */
+    .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700; font-size: .9rem;
+      padding: 11px 26px; border-radius: 50px; cursor: pointer;
+      border: none; text-decoration: none;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(220,38,38,.3);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 22px rgba(220,38,38,.45); }
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+
+    /* ── Status dot ── */
+    .status-row {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: .8rem;
+      color: #9ca3af;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.7); }
+    }
+
+    /* ── Countdown auto-retry ── */
+    #countdown { font-weight: 700; color: #dc2626; }
+
+    @media (max-width: 480px) {
+      .error-card { padding: 36px 24px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimal nav so the page feels like KabsuEats -->
+  <div class="nav-stub">
+    <span class="nav-brand">KabsuEats</span>
+  </div>
+
+  <div class="error-card">
+    <div class="icon-ring">
+      <i class="fas fa-database"></i>
+    </div>
+
+    <h1>Service Temporarily Unavailable</h1>
+
+    <p>
+      {{ error_message|default:"Our database is temporarily unreachable. Please try again in a few minutes." }}
+    </p>
+    <p class="error-detail">
+      Auto-retrying in <span id="countdown">30</span>s&nbsp;&nbsp;·&nbsp;&nbsp;
+      HTTP 503
+    </p>
+
+    <div class="btn-group">
+      <a href="javascript:location.reload()" class="btn btn-primary">
+        <i class="fas fa-redo"></i> Try Again
+      </a>
+      <a href="/" class="btn btn-secondary">
+        <i class="fas fa-home"></i> Home
+      </a>
+    </div>
+
+    <div class="status-row">
+      <span class="dot"></span>
+      Database connection unavailable
+    </div>
+  </div>
+
+  <script>
+    // ── Auto countdown + reload ──────────────────────────────
+    (function () {
+      var secs = 30;
+      var el   = document.getElementById('countdown');
+      var t    = setInterval(function () {
+        secs--;
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(t);
+          window.location.reload();
+        }
+      }, 1000);
+    }());
+  </script>
+</body>
+</html>

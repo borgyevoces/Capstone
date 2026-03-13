@@ -91,6 +91,8 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # ============================================================================
 MIDDLEWARE = [
+    # ✅ FIRST — catches DB OperationalError on every view before anything else runs
+    'webapp.middleware.DatabaseErrorMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
