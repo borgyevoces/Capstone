@@ -115,39 +115,37 @@
         font-family: 'Poppins', sans-serif;
     }
     #connRetryBtn {
-        background: #B71C1C;
+        background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
         color: #fff;
         border: none;
-        padding: 11px 32px;
-        border-radius: 10px;
+        padding: 11px 28px;
+        border-radius: 50px;
         font-weight: 700;
         cursor: pointer;
         font-size: 0.92rem;
         font-family: 'Poppins', sans-serif;
-        transition: background 0.2s, transform 0.15s;
+        transition: transform 0.2s;
         display: none;
     }
-    #connRetryBtn:hover { background: #9b1919; transform: translateY(-1px); }
+    #connRetryBtn:hover { transform: scale(1.04); }
     .conn-spinner {
-        width: 52px;
-        height: 52px;
-        border: 5px solid #f0f0f0;
+        width: 36px;
+        height: 36px;
+        border: 4px solid #f0f0f0;
         border-top-color: #B71C1C;
         border-radius: 50%;
         animation: connSpin 0.75s linear infinite;
-        margin: 0 auto;
+        display: none;
     }
     @keyframes connSpin { to { transform: rotate(360deg); } }
     .conn-icon-offline {
-        font-size: 2.8rem;
+        font-size: 1.8rem;
         color: #B71C1C;
-        margin-bottom: 4px;
         display: none;
     }
     .conn-icon-db {
-        font-size: 2.8rem;
+        font-size: 1.8rem;
         color: #B71C1C;
-        margin-bottom: 4px;
         display: none;
     }
 
@@ -1489,14 +1487,28 @@ window._lastMapData = [];
      ============================================================ -->
 <div id="connectionOverlay">
     <div id="connectionOverlayBox">
-        <i class="fas fa-wifi conn-icon-offline" id="connIconOffline"></i>
-        <i class="fas fa-database conn-icon-db" id="connIconDb"></i>
-        <div class="conn-spinner" id="connSpinner"></div>
+        <div id="connIconWrap" style="width:64px;height:64px;border-radius:50%;background:#fde8e8;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fas fa-wifi conn-icon-offline" id="connIconOffline"></i>
+            <i class="fas fa-database conn-icon-db" id="connIconDb"></i>
+            <div class="conn-spinner" id="connSpinner"></div>
+        </div>
         <h3 id="connTitle">Connecting...</h3>
         <p id="connMsg">Please wait while we reconnect.</p>
-        <button id="connRetryBtn" onclick="window._connRetry()">
-            <i class="fas fa-redo"></i> Try Again
-        </button>
+        <p id="connCountdown" style="display:none;font-size:0.82rem;color:#6B7280;margin:-10px 0 16px;font-family:'Poppins',sans-serif;">
+            Auto-retrying in <span id="connSecs" style="color:#B71C1C;font-weight:700;">30</span>s &nbsp;·&nbsp; <span id="connHttpStatus"></span>
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button id="connRetryBtn" onclick="window._connRetry()" style="display:none;">
+                <i class="fas fa-redo"></i> Try Again
+            </button>
+            <a id="connHomeBtn" href="/" style="display:none;padding:11px 24px;background:#f3f4f6;color:#374151;border-radius:10px;font-weight:700;font-size:0.92rem;font-family:'Poppins',sans-serif;text-decoration:none;">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+        <div id="connStatusDot" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;font-size:0.8rem;color:#6B7280;font-family:'Poppins',sans-serif;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px;"></span>
+            <span id="connStatusText">Database connection unavailable</span>
+        </div>
     </div>
 </div>
 
@@ -1504,24 +1516,51 @@ window._lastMapData = [];
 (function () {
     'use strict';
 
-    var overlay   = document.getElementById('connectionOverlay');
-    var titleEl   = document.getElementById('connTitle');
-    var msgEl     = document.getElementById('connMsg');
-    var retryBtn  = document.getElementById('connRetryBtn');
-    var spinner   = document.getElementById('connSpinner');
-    var offIcon   = document.getElementById('connIconOffline');
-    var dbIcon    = document.getElementById('connIconDb');
+    var overlay    = document.getElementById('connectionOverlay');
+    var titleEl    = document.getElementById('connTitle');
+    var msgEl      = document.getElementById('connMsg');
+    var retryBtn   = document.getElementById('connRetryBtn');
+    var homeBtn    = document.getElementById('connHomeBtn');
+    var spinner    = document.getElementById('connSpinner');
+    var offIcon    = document.getElementById('connIconOffline');
+    var dbIcon     = document.getElementById('connIconDb');
+    var countdown  = document.getElementById('connCountdown');
+    var secsEl     = document.getElementById('connSecs');
+    var httpStatus = document.getElementById('connHttpStatus');
+    var statusDot  = document.getElementById('connStatusDot');
+    var statusText = document.getElementById('connStatusText');
 
-    var _retryFn  = null;
+    var _retryFn   = null;
+    var _timer     = null;
+    var _countdown = null;
+
+    function clearTimers() {
+        if (_timer)     { clearTimeout(_timer);   _timer    = null; }
+        if (_countdown) { clearInterval(_countdown); _countdown = null; }
+    }
+
+    function startCountdown(seconds, retryFn) {
+        var secs = seconds;
+        secsEl.textContent = secs;
+        countdown.style.display = 'block';
+        _countdown = setInterval(function () {
+            secs--;
+            secsEl.textContent = secs;
+            if (secs <= 0) {
+                clearInterval(_countdown);
+                _countdown = null;
+                if (retryFn) retryFn();
+            }
+        }, 1000);
+    }
 
     // ── Show overlay ─────────────────────────────────────────
-    // iconType: 'offline' | 'db' | 'spinner'  (auto-detected if omitted)
-    window.showConnectionOverlay = function (title, msg, retryFn, iconType) {
-        titleEl.textContent   = title || 'Connecting...';
-        msgEl.textContent     = msg   || 'Please wait while we reconnect.';
-        _retryFn              = retryFn || null;
+    window.showConnectionOverlay = function (title, msg, retryFn, iconType, httpCode, statusMsg) {
+        clearTimers();
+        titleEl.textContent  = title || 'Connecting...';
+        msgEl.textContent    = msg   || 'Please wait while we reconnect.';
+        _retryFn             = retryFn || null;
 
-        // Reset all icons first
         spinner.style.display = 'none';
         offIcon.style.display = 'none';
         dbIcon.style.display  = 'none';
@@ -1535,6 +1574,25 @@ window._lastMapData = [];
         }
 
         retryBtn.style.display = _retryFn ? 'inline-block' : 'none';
+        homeBtn.style.display  = 'inline-block';
+
+        // HTTP status + countdown
+        if (httpCode) {
+            httpStatus.textContent = 'HTTP ' + httpCode;
+            countdown.style.display = 'block';
+            startCountdown(30, retryFn);
+        } else {
+            countdown.style.display = 'none';
+        }
+
+        // Status dot
+        if (statusMsg) {
+            statusText.textContent  = statusMsg;
+            statusDot.style.display = 'block';
+        } else {
+            statusDot.style.display = 'none';
+        }
+
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     };
@@ -1542,15 +1600,18 @@ window._lastMapData = [];
     // ── DB-specific convenience wrapper ──────────────────────
     window.showDatabaseErrorOverlay = function () {
         showConnectionOverlay(
-            'Database Unavailable',
-            'Our database is temporarily unreachable. Please try again in a moment.',
+            'Service Temporarily Unavailable',
+            'Our database is temporarily unavailable. Please try again in a few minutes.',
             function () { window.location.reload(); },
-            'db'
+            'db',
+            503,
+            'Database connection unavailable'
         );
     };
 
     // ── Hide overlay ─────────────────────────────────────────
     window.hideConnectionOverlay = function () {
+        clearTimers();
         overlay.classList.remove('active');
         document.body.style.overflow = '';
         _retryFn = null;
@@ -1558,15 +1619,17 @@ window._lastMapData = [];
 
     // ── Retry callback ────────────────────────────────────────
     window._connRetry = function () {
-        retryBtn.style.display = 'none';
-        spinner.style.display  = 'block';
-        offIcon.style.display  = 'none';
-        dbIcon.style.display   = 'none';
-        titleEl.textContent    = 'Retrying...';
-        msgEl.textContent      = 'Trying to reconnect, please wait.';
-        setTimeout(function () {
-            if (_retryFn) _retryFn();
-        }, 600);
+        clearTimers();
+        retryBtn.style.display   = 'none';
+        homeBtn.style.display    = 'none';
+        countdown.style.display  = 'none';
+        statusDot.style.display  = 'none';
+        spinner.style.display    = 'block';
+        offIcon.style.display    = 'none';
+        dbIcon.style.display     = 'none';
+        titleEl.textContent      = 'Retrying...';
+        msgEl.textContent        = 'Trying to reconnect, please wait.';
+        setTimeout(function () { if (_retryFn) _retryFn(); }, 600);
     };
 
     // ── Intercept all fetch() calls globally ─────────────────
@@ -1574,20 +1637,19 @@ window._lastMapData = [];
     window.fetch = function (url, opts) {
         return _origFetch(url, opts)
             .then(function (res) {
-                // 503 = DB / service unavailable
                 if (res.status === 503) {
                     showConnectionOverlay(
-                        'Database Unavailable',
-                        'Our database is temporarily unreachable. Please try again in a moment.',
+                        'Service Temporarily Unavailable',
+                        'Our database is temporarily unavailable. Please try again in a few minutes.',
                         function () { window.location.reload(); },
-                        'db'
+                        'db', 503, 'Database connection unavailable'
                     );
                 } else if (res.status === 502 || res.status === 504) {
                     showConnectionOverlay(
                         'Server Unavailable',
                         'The server is temporarily down. Please wait a moment.',
                         function () { window.location.reload(); },
-                        'spinner'
+                        'spinner', res.status, 'Server unreachable'
                     );
                 }
                 return res;
@@ -1600,20 +1662,17 @@ window._lastMapData = [];
                         ? 'Please check your internet connection and try again.'
                         : 'Something went wrong with the connection. Please wait.',
                     function () {
-                        if (navigator.onLine) {
-                            window.location.reload();
-                        } else {
-                            titleEl.textContent    = 'Still Offline';
-                            msgEl.textContent      = 'No internet detected. Please check your connection.';
-                            spinner.style.display  = 'none';
-                            offIcon.style.display  = 'block';
-                            dbIcon.style.display   = 'none';
-                            retryBtn.style.display = 'inline-block';
+                        if (navigator.onLine) { window.location.reload(); }
+                        else {
+                            titleEl.textContent  = 'Still Offline';
+                            msgEl.textContent    = 'No internet detected. Please check your connection.';
                         }
                     },
-                    offline ? 'offline' : 'spinner'
+                    offline ? 'offline' : 'spinner',
+                    null,
+                    offline ? 'No internet connection' : null
                 );
-                throw err; // re-throw so caller .catch() still fires
+                throw err;
             });
     };
 
@@ -1623,45 +1682,34 @@ window._lastMapData = [];
             'No Internet Connection',
             'Your internet connection was lost. Please check your connection.',
             function () {
-                if (navigator.onLine) {
-                    hideConnectionOverlay();
-                    window.location.reload();
-                } else {
-                    titleEl.textContent    = 'Still Offline';
-                    msgEl.textContent      = 'No internet detected. Please check your Wi-Fi or mobile data.';
-                    spinner.style.display  = 'none';
-                    offIcon.style.display  = 'block';
-                    dbIcon.style.display   = 'none';
-                    retryBtn.style.display = 'inline-block';
-                }
+                if (navigator.onLine) { hideConnectionOverlay(); window.location.reload(); }
+                else { titleEl.textContent = 'Still Offline'; msgEl.textContent = 'No internet detected.'; }
             },
-            'offline'
+            'offline', null, 'No internet connection'
         );
     });
 
     // ── Browser comes back online ─────────────────────────────
     window.addEventListener('online', function () {
         if (overlay.classList.contains('active')) {
-            titleEl.textContent    = 'Connection Restored!';
-            msgEl.textContent      = 'You\'re back online. Reloading the page...';
-            spinner.style.display  = 'block';
-            offIcon.style.display  = 'none';
-            dbIcon.style.display   = 'none';
-            retryBtn.style.display = 'none';
-            setTimeout(function () {
-                hideConnectionOverlay();
-                window.location.reload();
-            }, 1500);
+            clearTimers();
+            titleEl.textContent      = 'Connection Restored!';
+            msgEl.textContent        = 'You\'re back online. Reloading the page...';
+            spinner.style.display    = 'block';
+            offIcon.style.display    = 'none';
+            dbIcon.style.display     = 'none';
+            retryBtn.style.display   = 'none';
+            homeBtn.style.display    = 'none';
+            countdown.style.display  = 'none';
+            statusDot.style.display  = 'none';
+            setTimeout(function () { hideConnectionOverlay(); window.location.reload(); }, 1500);
         }
     });
 
-    // ── Auto-show DB error overlay if Django view flagged it ──
-    // Works on every page that extends kabsueats.html
+    // ── Auto-show DB error overlay if Django flagged it ───────
     {% if db_error %}
     document.addEventListener('DOMContentLoaded', function () {
-        if (window.showDatabaseErrorOverlay) {
-            window.showDatabaseErrorOverlay();
-        }
+        if (window.showDatabaseErrorOverlay) window.showDatabaseErrorOverlay();
     });
     {% endif %}
 

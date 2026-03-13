@@ -3361,20 +3361,6 @@
         <!-- EXPANDABLE: All Details (Hidden by default) -->
         <div class="notif-expand">
             <div class="notif-inner">
-                <div class="notif-msg"></div>
-
-                <!-- Customer -->
-                <div class="notif-block customer-block">
-                    <div class="notif-sec-label">Customer</div>
-                    <div class="notif-cust">
-                        <div class="notif-pic"></div>
-                        <div class="notif-cust-data">
-                            <div class="notif-cust-name"></div>
-                            <div class="notif-cust-mail"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Order -->
                 <div class="notif-block order-block">
                     <div class="notif-sec-label">Order Details</div>
@@ -4437,17 +4423,6 @@ function confirmToggleSeller() {
             </div>
             <div class="notif-expand">
                 <div class="notif-inner">
-                    ${notif.message ? `<div class="notif-msg">${escapeHtml(notif.message)}</div>` : ''}
-                    <div class="notif-block">
-                        <div class="notif-sec-label">Customer</div>
-                        <div class="notif-cust">
-                            <div class="notif-pic">${initial}</div>
-                            <div class="notif-cust-data">
-                                <div class="notif-cust-name">${escapeHtml(notif.customer ? notif.customer.name : '')}</div>
-                                <div class="notif-cust-mail">${escapeHtml(email)}</div>
-                            </div>
-                        </div>
-                    </div>
                     ${notif.order ? `
                     <div class="notif-block">
                         <div class="notif-sec-label">Order Details</div>
