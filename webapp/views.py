@@ -6557,6 +6557,107 @@ def create_admin_user(request):
             'type': type(e).__name__
         }, status=500)
 
+
+# ============================================================
+# ✅ NEW: REALTIME API — single establishment live data
+# ============================================================
+def get_establishment_realtime(request, establishment_id):
+    """
+    Returns live status, menu item quantities/availability/top-seller flags,
+    rating, and review count for a specific establishment.
+    Called by status_updater.js every 30 seconds on the details page.
+    """
+    from django.db.models import Avg, Count as DjCount
+    try:
+        establishment = get_object_or_404(
+            FoodEstablishment.objects.prefetch_related('categories', 'amenities'),
+            id=establishment_id,
+            is_active=True,
+        )
+
+        status = get_current_status(establishment.opening_time, establishment.closing_time)
+
+        # ── Menu items (only fields needed by frontend) ──
+        menu_items_data = list(
+            MenuItem.objects.filter(food_establishment=establishment)
+            .values('id', 'name', 'quantity', 'is_top_seller', 'price')
+        )
+        for m in menu_items_data:
+            m['is_available'] = m['quantity'] > 0
+            m['price'] = float(m['price'])
+
+        # ── Rating ──
+        rating_agg = establishment.reviews.aggregate(
+            avg=Avg('rating'),
+            count=DjCount('id'),
+        )
+        avg_rating   = round(float(rating_agg['avg']), 1) if rating_agg['avg'] else 0.0
+        review_count = rating_agg['count'] or 0
+
+        # ── Categories string ──
+        cat_names = list(establishment.categories.values_list('name', flat=True))
+        if establishment.other_category:
+            cat_names.append(establishment.other_category)
+
+        return JsonResponse({
+            'success':         True,
+            'establishment_id': establishment_id,
+            'status':          status,
+            'name':            establishment.name,
+            'address':         establishment.address,
+            'payment_methods': establishment.payment_methods or '',
+            'opening_time':    establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+            'closing_time':    establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+            'opening_24h':     establishment.opening_time.strftime('%H:%M') if establishment.opening_time else '',
+            'closing_24h':     establishment.closing_time.strftime('%H:%M') if establishment.closing_time else '',
+            'categories':      ', '.join(cat_names) if cat_names else 'N/A',
+            'average_rating':  avg_rating,
+            'review_count':    review_count,
+            'image_url':       request.build_absolute_uri(establishment.image.url) if establishment.image else None,
+            'menu_items':      menu_items_data,
+        })
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'get_establishment_realtime error: {e}')
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ============================================================
+# ✅ NEW: REALTIME API — lightweight status for ALL establishments
+# ============================================================
+def get_all_establishments_status(request):
+    """
+    Lightweight endpoint: returns status + rating + review count for all active
+    establishments. Used by kabsueats.js to refresh establishment cards every 30s
+    without a full page reload.
+    """
+    from django.db.models import Avg, Count as DjCount
+    try:
+        ests = FoodEstablishment.objects.filter(is_active=True).annotate(
+            avg_rating=Avg('reviews__rating'),
+            review_count=DjCount('reviews', distinct=True),
+        )
+
+        data = []
+        for est in ests:
+            status     = get_current_status(est.opening_time, est.closing_time)
+            avg_rating = round(float(est.avg_rating), 1) if est.avg_rating else 0.0
+            data.append({
+                'id':             est.id,
+                'status':         status,
+                'average_rating': avg_rating,
+                'review_count':   est.review_count or 0,
+            })
+
+        return JsonResponse({'success': True, 'establishments': data})
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'get_all_establishments_status error: {e}')
+        return JsonResponse({'success': True, 'establishments': []})
+
+
 def get_bestsellers(request):
     """
     Get all top seller items across all establishments.

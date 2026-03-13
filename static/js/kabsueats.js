@@ -1,5 +1,6 @@
 // ============================================
 // KabsuEats.js — All functions connected to Django backend
+// ✅ UPDATED: Real-time polling for bestsellers AND establishment cards
 // ============================================
 
 // ── CAROUSEL STATE ──
@@ -27,8 +28,9 @@ function getCsrf() {
     return document.getElementById('csrfToken')?.value || '';
 }
 
-// ── Status Real-time Refresh Timer ──
-let statusRefreshTimer = null;
+// ── Status Real-time Refresh Timers ──
+let statusRefreshTimer    = null;
+let estStatusRefreshTimer = null;
 
 // ============================================
 // INIT ON DOM READY
@@ -41,11 +43,27 @@ document.addEventListener('DOMContentLoaded', function () {
     initEstablishmentCards();
     initSmartSearch();
 
-    // ✅ FIX: Load correct cart count on every page load (realtime from backend)
+    // ✅ Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
 
-    // ✅ FIX: Start real-time status refresh every 60 seconds
-    statusRefreshTimer = setInterval(refreshBestsellerStatuses, 60000);
+    // ✅ Bestseller status refresh every 30 seconds
+    statusRefreshTimer = setInterval(refreshBestsellerStatuses, 30000);
+
+    // ✅ Establishment card status/rating refresh every 30 seconds (backend)
+    estStatusRefreshTimer = setInterval(refreshEstablishmentCardStatuses, 30000);
+
+    // ✅ Pause polling when tab hidden, resume when visible
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            clearInterval(statusRefreshTimer);
+            clearInterval(estStatusRefreshTimer);
+        } else {
+            refreshBestsellerStatuses();
+            refreshEstablishmentCardStatuses();
+            statusRefreshTimer    = setInterval(refreshBestsellerStatuses, 30000);
+            estStatusRefreshTimer = setInterval(refreshEstablishmentCardStatuses, 30000);
+        }
+    });
 });
 
 // ============================================
@@ -119,6 +137,71 @@ function refreshBestsellerStatuses() {
             }
         })
         .catch(() => {});
+}
+
+// ============================================
+// ✅ NEW: REFRESH ESTABLISHMENT CARD STATUSES (backend)
+// Polls /api/establishments/status/ every 30s and updates
+// status badge, rating number, stars, and review count on
+// every establishment card without a page reload.
+// ============================================
+function refreshEstablishmentCardStatuses() {
+    const apiUrl = (typeof URLS !== 'undefined' && URLS.allEstStatus)
+        ? URLS.allEstStatus
+        : '/api/establishments/status/';
+
+    fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success || !data.establishments) return;
+
+            data.establishments.forEach(function (est) {
+                const status   = (est.status || 'closed').toLowerCase();
+                const isOpen   = status === 'open';
+                const labelTxt = isOpen ? 'Open' : 'Closed';
+
+                // ── 1. Status badge (targeted by ID) ──
+                const statusBadge = document.getElementById(`estStatusBadge-${est.id}`);
+                if (statusBadge) {
+                    const dot = statusBadge.querySelector('.estb-dot');
+                    statusBadge.className = `estb ${status}`;
+                    statusBadge.innerHTML = '';
+                    if (dot) statusBadge.appendChild(dot);
+                    statusBadge.appendChild(document.createTextNode(labelTxt));
+                    // Also keep data-status in sync for search/filter JS
+                    const card = statusBadge.closest('.food-est-item');
+                    if (card) card.setAttribute('data-status', status);
+                }
+
+                // ── 2. Rating number ──
+                if (est.average_rating !== undefined) {
+                    const rNum = document.getElementById(`estRatingNum-${est.id}`);
+                    if (rNum) rNum.textContent = parseFloat(est.average_rating).toFixed(1);
+
+                    // ── 3. Rating stars (rebuild only <i> tags, keep .sv span) ──
+                    const starsWrap = document.getElementById(`estStars-${est.id}`);
+                    if (starsWrap) {
+                        const svSpan = starsWrap.querySelector('.sv');
+                        const rounded = Math.round(est.average_rating);
+                        starsWrap.querySelectorAll('i').forEach(el => el.remove());
+                        const starHTML = [1,2,3,4,5].map(i =>
+                            i <= rounded
+                                ? '<i class="fas fa-star" style="color:#fbbf24;font-size:12px"></i>'
+                                : '<i class="far fa-star" style="color:#fbbf24;font-size:12px"></i>'
+                        ).join('');
+                        starsWrap.insertAdjacentHTML('afterbegin', starHTML);
+                        if (svSpan && !starsWrap.contains(svSpan)) starsWrap.appendChild(svSpan);
+                    }
+                }
+
+                // ── 4. Review count ──
+                if (est.review_count !== undefined) {
+                    const rc = document.getElementById(`estReviewCount-${est.id}`);
+                    if (rc) rc.textContent = `(${est.review_count} Reviews)`;
+                }
+            });
+        })
+        .catch(() => {}); // silent — never break the page
 }
 
 // ============================================
