@@ -32,6 +32,10 @@ function getCsrf() {
 let statusRefreshTimer    = null;
 let estStatusRefreshTimer = null;
 
+// ✅ last_modified trackers — detect dashboard changes for instant client sync
+let bsLastModified  = {};  // { establishment_id: timestamp } for bestsellers
+let estLastModified = {};  // { establishment_id: timestamp } for card statuses
+
 // ============================================
 // INIT ON DOM READY
 // ============================================
@@ -88,6 +92,12 @@ function fetchBestsellers() {
         .then(data => {
             if (data.success && data.bestsellers.length > 0) {
                 bsData = data.bestsellers;
+                // ✅ Seed last_modified tracker on initial load
+                bsData.forEach(item => {
+                    const estId = item.establishment && item.establishment.id;
+                    const ts    = item.establishment && item.establishment.last_modified || 0;
+                    if (estId && ts) bsLastModified[estId] = ts;
+                });
                 // Only render if not in search mode
                 if (!searchMode) renderBS(bsData);
             } else {
@@ -111,6 +121,25 @@ function refreshBestsellerStatuses() {
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.bestsellers.length) return;
+
+            // ✅ Check if any establishment changed since last poll
+            let changed = false;
+            data.bestsellers.forEach(fresh => {
+                const estId = fresh.establishment && fresh.establishment.id;
+                const serverTs = fresh.establishment && fresh.establishment.last_modified || 0;
+                if (estId && serverTs && bsLastModified[estId] !== undefined && serverTs > bsLastModified[estId]) {
+                    changed = true;
+                }
+                if (estId && serverTs) bsLastModified[estId] = serverTs;
+            });
+
+            // ✅ If dashboard changed, do a full bestseller re-fetch & re-render
+            if (changed) {
+                console.log('🔄 [KabsuEats] Dashboard change detected in bestsellers — re-fetching');
+                fetchBestsellers();
+                return;
+            }
+
             data.bestsellers.forEach(fresh => {
                 const idx = bsData.findIndex(x => x.id === fresh.id);
                 if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
@@ -155,12 +184,25 @@ function refreshEstablishmentCardStatuses() {
         .then(data => {
             if (!data.success || !data.establishments) return;
 
+            // ✅ Check if any establishment changed since last poll
+            let changed = false;
+            data.establishments.forEach(function (est) {
+                const serverTs = est.last_modified || 0;
+                if (serverTs && estLastModified[est.id] !== undefined && serverTs > estLastModified[est.id]) {
+                    changed = true;
+                }
+                if (serverTs) estLastModified[est.id] = serverTs;
+            });
+
             data.establishments.forEach(function (est) {
                 const status   = (est.status || 'closed').toLowerCase();
                 const isOpen   = status === 'open';
                 const labelTxt = isOpen ? 'Open' : 'Closed';
 
-                // ── 1. Status badge (targeted by ID) ──
+                // ── Card root element (targeted by data-id) ──
+                const card = document.querySelector(`.food-est-item[data-id="${est.id}"]`);
+
+                // ── 1. Status badge ──
                 const statusBadge = document.getElementById(`estStatusBadge-${est.id}`);
                 if (statusBadge) {
                     const dot = statusBadge.querySelector('.estb-dot');
@@ -168,8 +210,6 @@ function refreshEstablishmentCardStatuses() {
                     statusBadge.innerHTML = '';
                     if (dot) statusBadge.appendChild(dot);
                     statusBadge.appendChild(document.createTextNode(labelTxt));
-                    // Also keep data-status in sync for search/filter JS
-                    const card = statusBadge.closest('.food-est-item');
                     if (card) card.setAttribute('data-status', status);
                 }
 
@@ -178,7 +218,7 @@ function refreshEstablishmentCardStatuses() {
                     const rNum = document.getElementById(`estRatingNum-${est.id}`);
                     if (rNum) rNum.textContent = parseFloat(est.average_rating).toFixed(1);
 
-                    // ── 3. Rating stars (rebuild only <i> tags, keep .sv span) ──
+                    // ── 3. Stars ──
                     const starsWrap = document.getElementById(`estStars-${est.id}`);
                     if (starsWrap) {
                         const svSpan = starsWrap.querySelector('.sv');
@@ -198,6 +238,61 @@ function refreshEstablishmentCardStatuses() {
                 if (est.review_count !== undefined) {
                     const rc = document.getElementById(`estReviewCount-${est.id}`);
                     if (rc) rc.textContent = `(${est.review_count} Reviews)`;
+                }
+
+                // ── 5–9. Detail fields — only update if changed ──────────
+                if (changed && card) {
+                    // 5. Name
+                    if (est.name) {
+                        const nameEl = card.querySelector('.estc-name');
+                        if (nameEl) nameEl.textContent = est.name;
+                        card.setAttribute('data-name', est.name.toLowerCase());
+                        // Update img alt
+                        const img = card.querySelector('.estc-img');
+                        if (img) img.alt = est.name;
+                    }
+
+                    // 6. Image
+                    if (est.image_url) {
+                        const img = card.querySelector('.estc-img');
+                        if (img && img.src !== est.image_url) img.src = est.image_url;
+                    }
+
+                    // 7. Categories
+                    if (est.categories) {
+                        const catEl = card.querySelector('.ecat');
+                        if (catEl) catEl.textContent = est.categories;
+                        card.setAttribute('data-category', est.categories.toLowerCase());
+                    }
+
+                    // 8. Payment methods (2nd .emr div — after the distance one)
+                    if (est.payment_methods !== undefined) {
+                        const emrs = card.querySelectorAll('.emr');
+                        // emrs[0] = distance, emrs[1] = payment, emrs[2] = amenities
+                        if (emrs[1]) {
+                            emrs[1].innerHTML = `<i class="fas fa-credit-card" style="color:#B71C1C"></i> ${est.payment_methods || 'Cash'}`;
+                        }
+                    }
+
+                    // 9. Amenities (3rd .emr div)
+                    if (est.amenities !== undefined) {
+                        const emrs = card.querySelectorAll('.emr');
+                        if (emrs[2]) {
+                            if (est.amenities) {
+                                emrs[2].innerHTML = `<i class="fas fa-concierge-bell" style="color:#B71C1C"></i> ${est.amenities}`;
+                                emrs[2].style.display = '';
+                            } else {
+                                emrs[2].style.display = 'none';
+                            }
+                        }
+                    }
+
+                    // 10. Opening/closing time data-attrs (for client-side status calc)
+                    if (est.opening_time) {
+                        // Convert 12h to 24h for data-attrs used by status_updater
+                        // The API now returns opening_time in 12h format for display
+                        // We keep the data-attrs as-is since status_updater uses its own calc
+                    }
                 }
             });
         })

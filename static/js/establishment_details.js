@@ -26,8 +26,8 @@ window.updateCartBadge = function(count) {
     const badge = document.getElementById('cart-count-badge');
     if (badge) {
         if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'block';
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'flex';  // flex for centering
             badge.classList.add('badge-pulse');
             setTimeout(() => badge.classList.remove('badge-pulse'), 600);
         } else {
@@ -623,8 +623,116 @@ window.onclick = function(event) {
 // =======================================================
 // INITIALIZE ON PAGE LOAD
 // =======================================================
+// =======================================================
+// ✅ REALTIME: Poll unread message count (client side)
+// Updates chatNotificationBadge in navbar every 10s
+// =======================================================
+function updateClientMsgBadge(count) {
+    const displayVal = count > 99 ? '99+' : (count > 0 ? String(count) : '');
+
+    // Desktop: nav Message button badge
+    const navBadge = document.getElementById('chatNotificationBadge');
+    if (navBadge) {
+        if (count > 0) {
+            navBadge.textContent = displayVal;
+            navBadge.style.display = 'flex';
+        } else {
+            navBadge.style.display = 'none';
+        }
+    }
+
+    // Mobile: floating chat FAB badge
+    const floatBadge = document.getElementById('floatingChatBadge');
+    if (floatBadge) {
+        if (count > 0) {
+            floatBadge.textContent = displayVal;
+            floatBadge.style.display = 'flex';
+            floatBadge.classList.add('active');
+        } else {
+            floatBadge.style.display = 'none';
+            floatBadge.classList.remove('active');
+        }
+    }
+}
+
+function pollClientUnreadMessages() {
+    // Only run if user is authenticated
+    if (typeof IS_USER_AUTHENTICATED === 'undefined' || !IS_USER_AUTHENTICATED) return;
+
+    // Get establishment ID from the page
+    const estIdEl = document.getElementById('establishment-id');
+    const estId = estIdEl ? estIdEl.value : (typeof ESTABLISHMENT_ID !== 'undefined' ? ESTABLISHMENT_ID : null);
+    if (!estId) return;
+
+    // Skip if chat popup is open (user is reading)
+    const chatPopup = document.getElementById('chatPopupContainer');
+    if (chatPopup && chatPopup.classList.contains('active')) return;
+
+    fetch(`/api/client-unread-messages/?establishment_id=${estId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            updateClientMsgBadge(data.unread_count);
+            // Show toast if new message arrived
+            const prev = parseInt(sessionStorage.getItem('prevClientMsgCount') || '0');
+            if (data.unread_count > prev) {
+                showClientMsgToast(data.unread_count - prev);
+            }
+            sessionStorage.setItem('prevClientMsgCount', data.unread_count);
+        }
+    })
+    .catch(err => console.error('Error polling client messages:', err));
+}
+
+function showClientMsgToast(count) {
+    // Remove existing toast if any
+    const existing = document.getElementById('clientMsgToast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'clientMsgToast';
+    toast.style.cssText = `
+        position:fixed;bottom:24px;right:24px;z-index:9999;
+        background:#B71C1C;color:#fff;
+        padding:14px 20px;border-radius:12px;
+        box-shadow:0 4px 16px rgba(0,0,0,0.25);
+        display:flex;align-items:center;gap:12px;
+        font-family:'Segoe UI',sans-serif;font-size:14px;
+        animation:slideInRight 0.3s ease;
+    `;
+    toast.innerHTML = `
+        <i class="fas fa-envelope" style="font-size:18px;"></i>
+        <div>
+            <div style="font-weight:700;">New Message from Establishment</div>
+            <div style="font-size:12px;opacity:0.9;">You have ${count} new message${count > 1 ? 's' : ''}. Click Message to view.</div>
+        </div>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;margin-left:8px;">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.animation = 'slideInRight 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Establishment details JS loaded successfully');
+
+    // ✅ Start polling for unread messages every 10s
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
+        pollClientUnreadMessages();
+        setInterval(pollClientUnreadMessages, 10000);
+    }
 
     // Load cart count on page load
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {

@@ -163,6 +163,8 @@ urlpatterns = [
                        name='view_order_confirmation'),
 
                   # Chat URLs
+                  path('api/unread-messages/', views.get_owner_unread_message_count, name='owner_unread_messages'),
+                  path('api/client-unread-messages/', views.get_client_unread_message_count, name='client_unread_messages'),
                   path('chat/customer/<int:establishment_id>/', views.customer_chat_view, name='customer_chat'),
                   path('chat/owner/<int:customer_id>/', views.owner_chat_view, name='owner_chat'),
                   path('chat/inbox/', views.owner_inbox_view, name='owner_inbox'),

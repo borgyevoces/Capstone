@@ -1460,6 +1460,9 @@
             filteredOrders = allOrders.filter(order => order.status === status);
         }
 
+        // Sort ascending by created_at — whoever ordered first goes to the top
+        filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
         console.log(`✅ Filtered ${filteredOrders.length} orders`);
         renderOrders(filteredOrders);
     }

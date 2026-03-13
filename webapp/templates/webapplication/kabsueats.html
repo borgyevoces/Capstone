@@ -144,6 +144,52 @@
         margin-bottom: 4px;
         display: none;
     }
+
+    /* ✅ Map category filter buttons */
+    .map-cat-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 4px 8px;
+        align-items: center;
+    }
+    .mcf-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 20px;
+        border: 1.5px solid #ddd;
+        background: #fff;
+        color: #444;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        white-space: nowrap;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .mcf-btn:hover {
+        border-color: #B71C1C;
+        color: #B71C1C;
+        background: #fff5f5;
+    }
+    .mcf-btn.active {
+        background: #B71C1C;
+        border-color: #B71C1C;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(183,28,28,0.25);
+    }
+    .mcf-btn.active:hover {
+        background: #8b0000;
+        border-color: #8b0000;
+        color: #fff;
+    }
+    @media (max-width: 600px) {
+        .map-cat-filter { gap: 6px; padding: 8px 2px 6px; }
+        .mcf-btn { font-size: 12px; padding: 6px 11px; }
+    }
     </style>
 </head>
 <body>
@@ -314,6 +360,15 @@
 
         <!-- MAP (hidden by default) -->
         <div id="mapSection">
+
+            <!-- ✅ Category Filter Buttons above map -->
+            <div class="map-cat-filter" id="mapCatFilter">
+                <button class="mcf-btn mcf-all active" onclick="filterMapCategory('__all__', this)">
+                    <i class="fas fa-store"></i> All
+                </button>
+                <!-- Category buttons injected by JS from SITE_DATA.categories -->
+            </div>
+
             <!-- Map container -->
             <div class="map-wrap">
                 <div id="esMap"></div>
@@ -617,6 +672,106 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="{% static 'js/kabsueats.js' %}"></script>
+
+<script>
+// ✅ MAP CATEGORY FILTER
+// Builds category buttons from SITE_DATA.categories (realtime from DB)
+// Supports multi-select — click multiple categories to show their establishments
+(function initMapCatFilter() {
+    // Category icon map
+    const CAT_ICONS = {
+        'cafe': 'fa-coffee',
+        'coffee': 'fa-coffee',
+        'carinderia': 'fa-utensils',
+        'restaurant': 'fa-utensils',
+        'fastfood': 'fa-hamburger',
+        'fast food': 'fa-hamburger',
+        'bakery': 'fa-bread-slice',
+        'bar': 'fa-glass-cheers',
+        'pizza': 'fa-pizza-slice',
+        'default': 'fa-store'
+    };
+    function getIcon(cat) {
+        const key = (cat || '').toLowerCase();
+        for (const k in CAT_ICONS) { if (key.includes(k)) return CAT_ICONS[k]; }
+        return CAT_ICONS['default'];
+    }
+
+    const container = document.getElementById('mapCatFilter');
+    if (!container || !window.SITE_DATA || !SITE_DATA.categories) return;
+
+    // Build buttons from SITE_DATA.categories
+    SITE_DATA.categories.forEach(function(cat) {
+        const btn = document.createElement('button');
+        btn.className = 'mcf-btn';
+        btn.setAttribute('data-cat', cat.toLowerCase());
+        btn.innerHTML = '<i class="fas ' + getIcon(cat) + '"></i> ' + cat;
+        btn.onclick = function() { filterMapCategory(cat.toLowerCase(), this); };
+        container.appendChild(btn);
+    });
+
+    window._mapActiveCats = new Set(); // tracks selected categories
+
+    window.filterMapCategory = function(cat, btn) {
+        const allBtn = container.querySelector('.mcf-all');
+
+        if (cat === '__all__') {
+            // Clear all selections, show all
+            window._mapActiveCats.clear();
+            container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(b => b.classList.remove('active'));
+            allBtn.classList.add('active');
+        } else {
+            // Toggle this category
+            if (window._mapActiveCats.has(cat)) {
+                window._mapActiveCats.delete(cat);
+                btn.classList.remove('active');
+            } else {
+                window._mapActiveCats.add(cat);
+                btn.classList.add('active');
+            }
+            // Deactivate All if any category selected
+            if (window._mapActiveCats.size > 0) {
+                allBtn.classList.remove('active');
+            } else {
+                allBtn.classList.add('active');
+            }
+        }
+
+        applyMapCatFilter();
+    };
+
+    window.applyMapCatFilter = function() {
+        const active = window._mapActiveCats;
+        const showAll = active.size === 0;
+
+        // ── Filter map markers ──────────────────────────────
+        // kabsueats.js stores markers in window.estMarkers or window._estMarkers
+        const markerMap = window.estMarkers || window._estMarkers || {};
+        Object.keys(EST_ALL_DATA).forEach(function(id) {
+            const est = EST_ALL_DATA[id];
+            const estCats = (est.categories || '').toLowerCase();
+            const visible = showAll || Array.from(active).some(c => estCats.includes(c));
+
+            // Show/hide marker on map
+            const marker = markerMap[id];
+            if (marker) {
+                if (visible) {
+                    if (!window._esMap.hasLayer(marker)) window._esMap.addLayer(marker);
+                } else {
+                    if (window._esMap.hasLayer(marker)) window._esMap.removeLayer(marker);
+                }
+            }
+        });
+
+        // ── Filter establishment cards ──────────────────────
+        document.querySelectorAll('.food-est-item').forEach(function(card) {
+            const cardCats = (card.getAttribute('data-category') || '').toLowerCase();
+            const visible = showAll || Array.from(active).some(c => cardCats.includes(c));
+            card.style.display = visible ? '' : 'none';
+        });
+    };
+})();
+</script>
 {% block extra_js %}{% endblock %}
 
 

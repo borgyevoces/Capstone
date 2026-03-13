@@ -134,6 +134,16 @@ def get_current_status(opening_time, closing_time):
         return "Open" if now >= opening_time or now <= closing_time else "Closed"
 
 
+def invalidate_establishment_cache(establishment_id):
+    """
+    Bump a per-establishment 'last_modified' timestamp in Django's cache.
+    Called after any dashboard/profile mutation so client-side JS detects
+    the change and re-fetches immediately instead of waiting 30 seconds.
+    """
+    import time as _time
+    cache.set(f'est_{establishment_id}_last_modified', _time.time(), timeout=86400)
+
+
 def about_page(request):
     return render(request, 'webapplication/about.html')
 
@@ -2960,7 +2970,32 @@ def food_establishment_dashboard(request):
                         if not hasattr(menu_item, 'quantity') or menu_item.quantity is None:
                             menu_item.quantity = 0
 
-                        menu_item.save()
+                        # ✅ Duplicate name guard: if an item with the same name already
+                        # exists for this establishment, stack the quantity instead of
+                        # creating a duplicate entry.
+                        existing = MenuItem.objects.filter(
+                            food_establishment=establishment,
+                            name__iexact=menu_item.name.strip()
+                        ).first()
+
+                        if existing:
+                            added_qty = menu_item.quantity or 0
+                            existing.quantity = (existing.quantity or 0) + added_qty
+                            # Update price/description/image if the owner filled them in
+                            if menu_item_form.cleaned_data.get('price'):
+                                existing.price = menu_item_form.cleaned_data['price']
+                            if menu_item_form.cleaned_data.get('description'):
+                                existing.description = menu_item_form.cleaned_data['description']
+                            if request.FILES.get('image'):
+                                existing.image = menu_item_form.cleaned_data['image']
+                            existing.save()
+                            invalidate_establishment_cache(establishment.id)
+                            menu_item = existing
+                            stacked = True
+                        else:
+                            menu_item.save()
+                            invalidate_establishment_cache(establishment.id)  # ✅ instant client sync
+                            stacked = False
 
                         # ✅ CRITICAL: Return complete item data for AJAX
                         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -2985,12 +3020,16 @@ def food_establishment_dashboard(request):
 
                             return JsonResponse({
                                 'success': True,
-                                'message': f"'{menu_item.name}' added successfully!",
+                                'message': f"'{menu_item.name}' already exists — quantity updated to {menu_item.quantity}!" if stacked else f"'{menu_item.name}' added successfully!",
+                                'stacked': stacked,
                                 'item': item_data,
                                 'new_menu_token': str(uuid.uuid4())
                             })
 
-                        messages.success(request, f"'{menu_item.name}' added to your menu!")
+                        if stacked:
+                            messages.success(request, f"'{menu_item.name}' already exists — quantity updated to {menu_item.quantity}!")
+                        else:
+                            messages.success(request, f"'{menu_item.name}' added to your menu!")
                         return redirect('food_establishment_dashboard')
 
                     except Exception as save_error:
@@ -3106,6 +3145,7 @@ def delete_menu_item(request, item_id):
         food_establishment = get_object_or_404(FoodEstablishment, pk=establishment_id)
         menu_item = get_object_or_404(MenuItem, pk=item_id, food_establishment=food_establishment)
         item_name = menu_item.name
+        _est_id_for_cache = menu_item.food_establishment_id  # ✅ save before deletion
 
         # Manually delete related OrderItems first
         try:
@@ -3120,6 +3160,7 @@ def delete_menu_item(request, item_id):
 
         # Use low-level _raw_delete() to bypass broken ORM cascade checks
         MenuItem.objects.filter(pk=item_id)._raw_delete(using=MenuItem.objects.db)
+        invalidate_establishment_cache(_est_id_for_cache)  # ✅ instant client sync
 
         # Return JSON for AJAX requests
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -3185,6 +3226,7 @@ def edit_menu_item(request, item_id):
     if form.is_valid():
         form.save()
         menu_item.refresh_from_db()
+        invalidate_establishment_cache(menu_item.food_establishment_id)  # ✅ instant client sync
 
         # ✅ CRITICAL: Return item data for real-time update
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -3266,6 +3308,7 @@ def toggle_top_seller(request, item_id):
         item.top_seller_marked_at = None
 
     item.save()
+    invalidate_establishment_cache(item.food_establishment_id)  # ✅ instant client sync
 
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
@@ -3389,6 +3432,7 @@ def update_establishment_details_ajax(request, pk):
 
         # ── Save scalar fields ─────────────────────────────────────────────
         establishment.save()
+        invalidate_establishment_cache(establishment.id)  # ✅ instant client sync
 
         # ── Categories (M2M) ──────────────────────────────────────────────
         category_ids = request.POST.getlist('categories')
@@ -4180,6 +4224,70 @@ def get_chat_messages_api(request, customer_id, establishment_id):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+
+
+# =======================================================
+# ✅ REALTIME: Owner unread message count API
+# GET /api/unread-messages/
+# Called by owner dashboard JS every 10s to update chat badge
+# =======================================================
+@login_required
+def get_owner_unread_message_count(request):
+    try:
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+        if not establishment:
+            return JsonResponse({'success': True, 'unread_count': 0})
+
+        from .models import ChatRoom
+        chat_rooms = ChatRoom.objects.filter(establishment=establishment)
+
+        total_unread = 0
+        for room in chat_rooms:
+            total_unread += room.messages.filter(
+                is_read=False,
+                sender=room.customer
+            ).count()
+
+        return JsonResponse({'success': True, 'unread_count': total_unread})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'unread_count': 0, 'error': str(e)})
+
+
+# =======================================================
+# ✅ REALTIME: Client unread message count API
+# GET /api/client-unread-messages/?establishment_id=<id>
+# Called by establishment_details.js every 10s to update badge
+# =======================================================
+@login_required
+def get_client_unread_message_count(request):
+    try:
+        establishment_id = request.GET.get('establishment_id')
+        if not establishment_id:
+            return JsonResponse({'success': True, 'unread_count': 0})
+
+        from .models import ChatRoom
+        establishment = get_object_or_404(FoodEstablishment, id=establishment_id)
+
+        try:
+            chat_room = ChatRoom.objects.get(
+                customer=request.user,
+                establishment=establishment
+            )
+        except ChatRoom.DoesNotExist:
+            return JsonResponse({'success': True, 'unread_count': 0})
+
+        unread_count = chat_room.messages.filter(
+            is_read=False,
+            sender=establishment.owner
+        ).count()
+
+        return JsonResponse({'success': True, 'unread_count': unread_count})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'unread_count': 0, 'error': str(e)})
 
 
 @csrf_exempt
@@ -5309,7 +5417,7 @@ def get_establishment_orders(request):
             'user', 'establishment'
         ).prefetch_related(
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
-        ).order_by('-created_at')
+        ).order_by('created_at')
 
         # Build the response data
         orders_data = []
@@ -6615,6 +6723,7 @@ def get_establishment_realtime(request, establishment_id):
             'review_count':    review_count,
             'image_url':       request.build_absolute_uri(establishment.image.url) if establishment.image else None,
             'menu_items':      menu_items_data,
+            'last_modified':   cache.get(f'est_{establishment_id}_last_modified', 0),  # ✅ sync signal
         })
 
     except Exception as e:
@@ -6628,13 +6737,16 @@ def get_establishment_realtime(request, establishment_id):
 # ============================================================
 def get_all_establishments_status(request):
     """
-    Lightweight endpoint: returns status + rating + review count for all active
-    establishments. Used by kabsueats.js to refresh establishment cards every 30s
-    without a full page reload.
+    Returns status + rating + review count + all detail fields for all active
+    establishments. Used by kabsueats.js to refresh establishment cards every 30s.
+    ✅ Now includes name, image, categories, payment_methods, opening/closing time,
+    and amenities so card details update in real-time when owner saves from dashboard/profile.
     """
     from django.db.models import Avg, Count as DjCount
     try:
-        ests = FoodEstablishment.objects.filter(is_active=True).annotate(
+        ests = FoodEstablishment.objects.filter(is_active=True).prefetch_related(
+            'categories', 'amenities'
+        ).annotate(
             avg_rating=Avg('reviews__rating'),
             review_count=DjCount('reviews', distinct=True),
         )
@@ -6643,11 +6755,33 @@ def get_all_establishments_status(request):
         for est in ests:
             status     = get_current_status(est.opening_time, est.closing_time)
             avg_rating = round(float(est.avg_rating), 1) if est.avg_rating else 0.0
+
+            # Build categories string
+            cat_names = list(est.categories.values_list('name', flat=True))
+            if est.other_category:
+                cat_names.append(est.other_category)
+            categories_str = ', '.join(cat_names) if cat_names else 'Uncategorized'
+
+            # Build amenities string
+            amenity_names = list(est.amenities.values_list('name', flat=True))
+            if est.other_amenity:
+                amenity_names.append(est.other_amenity)
+            amenities_str = ', '.join(amenity_names) if amenity_names else ''
+
             data.append({
-                'id':             est.id,
-                'status':         status,
-                'average_rating': avg_rating,
-                'review_count':   est.review_count or 0,
+                'id':              est.id,
+                'status':          status,
+                'average_rating':  avg_rating,
+                'review_count':    est.review_count or 0,
+                'last_modified':   cache.get(f'est_{est.id}_last_modified', 0),  # ✅ sync signal
+                # ✅ Detail fields — update card DOM on change
+                'name':            est.name,
+                'image_url':       est.image.url if est.image else None,
+                'categories':      categories_str,
+                'payment_methods': est.payment_methods or '',
+                'opening_time':    est.opening_time.strftime('%I:%M %p') if est.opening_time else '',
+                'closing_time':    est.closing_time.strftime('%I:%M %p') if est.closing_time else '',
+                'amenities':       amenities_str,
             })
 
         return JsonResponse({'success': True, 'establishments': data})
@@ -6690,12 +6824,13 @@ def get_bestsellers(request):
                 'quantity':    item.quantity,
                 'total_orders': item.total_orders,
                 'establishment': {
-                    'id':        establishment.id,
-                    'name':      establishment.name,
-                    'address':   establishment.address,
-                    'status':    status,
-                    'latitude':  establishment.latitude,
-                    'longitude': establishment.longitude,
+                    'id':            establishment.id,
+                    'name':          establishment.name,
+                    'address':       establishment.address,
+                    'status':        status,
+                    'latitude':      establishment.latitude,
+                    'longitude':     establishment.longitude,
+                    'last_modified': cache.get(f'est_{establishment.id}_last_modified', 0),  # ✅ sync signal
                 }
             })
 

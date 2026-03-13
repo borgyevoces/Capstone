@@ -1293,11 +1293,11 @@
     {% endif %}
 
     {# HERO HEADER #}
-    <header class="establishment-hero"
+    <header class="establishment-hero" id="detailHeroHeader"
             style="background-image: url('{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default-bg.jpg' %}{% endif %}');">
         <div class="hero-overlay">
             <div class="hero-content">
-                <h1>{{ establishment.name }}</h1>
+                <h1 id="detailEstName">{{ establishment.name }}</h1>
                 <div class="average-rating-display" id="averageRatingDisplay">
                     <span class="rating-number">{{ establishment.average_rating|floatformat:1|default:"0.0" }}</span>
                     <div class="star-rating-main">
@@ -1337,7 +1337,7 @@
                         </div>
                         <div class="contact-info-body">
                             <span class="contact-label">Address</span>
-                            <span class="contact-value">{{ establishment.address|default:"Not Available" }}</span>
+                            <span class="contact-value" id="detailAddress">{{ establishment.address|default:"Not Available" }}</span>
                         </div>
                     </div>
 
@@ -1347,7 +1347,7 @@
                         </div>
                         <div class="contact-info-body">
                             <span class="contact-label">Categories</span>
-                            <span class="contact-value">
+                            <span class="contact-value" id="detailCategories">
                                 {% with cats=establishment.categories.all %}
                                 {% if cats %}
                                     {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -1367,7 +1367,7 @@
                         </div>
                         <div class="contact-info-body">
                             <span class="contact-label">Hours</span>
-                            <span class="hours-text">
+                            <span class="hours-text" id="detailHours">
                                 {% if establishment.opening_time and establishment.closing_time %}
                                     {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
                                 {% else %}
@@ -1383,7 +1383,7 @@
                         </div>
                         <div class="contact-info-body">
                             <span class="contact-label">Payment</span>
-                            <span class="contact-value">
+                            <span class="contact-value" id="detailPayment">
                                 {% if establishment.payment_methods %}{{ establishment.payment_methods }}{% else %}N/A{% endif %}
                             </span>
                         </div>
@@ -1395,12 +1395,15 @@
             {# COLUMN 2: Amenities & Features #}
             <section class="section-card amenities-section">
                 <h2>Amenities & Features</h2>
-                <ul class="amenities-list">
+                <ul class="amenities-list" id="detailAmenities">
                     {% for amenity in establishment.amenities.all %}
                     <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
                     {% empty %}
                     <li>No amenities listed.</li>
                     {% endfor %}
+                    {% if establishment.other_amenity %}
+                    <li><i class="fas fa-check-circle"></i> {{ establishment.other_amenity }}</li>
+                    {% endif %}
                 </ul>
             </section>
 
@@ -1467,11 +1470,6 @@
                                         data-comment="{{ review.comment|default:''|escapejs }}"
                                         title="Edit">
                                     <i class="fas fa-pen"></i>
-                                </button>
-                                <button class="review-action-btn review-action-btn--delete delete-review"
-                                        data-review-id="{{ review.id }}"
-                                        title="Delete">
-                                    <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </div>
@@ -3087,7 +3085,6 @@
             '</div>' +
             '<div class="review-card__actions">' +
                 '<button class="review-action-btn edit-review" data-review-id="" data-rating="' + rating + '" data-comment="' + comment.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '" title="Edit"><i class="fas fa-pen"></i></button>' +
-                '<button class="review-action-btn review-action-btn--delete delete-review" data-review-id="" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
             '</div>';
 
         list.insertBefore(card, list.firstChild);

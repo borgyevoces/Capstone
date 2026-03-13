@@ -1044,7 +1044,9 @@
 
     function renderOrders() {
         const container = document.getElementById('ordersContainer');
-        const filtered = orders.filter(o => (o.status || 'request') === currentTab);
+        const filtered = orders
+            .filter(o => (o.status || 'request') === currentTab)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
         if (filtered.length === 0) {
             container.innerHTML = `

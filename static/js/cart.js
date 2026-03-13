@@ -390,12 +390,21 @@ function sendOrderRequest() {
 
     function sendNext() {
         if (idx >= ordersToSend.length) {
-            // Animate out successfully sent boxes
+            // Remove only checked item rows; keep box if unchecked items remain
             successBoxes.forEach(function(box) {
-                box.style.transition = 'opacity 0.35s, transform 0.35s';
-                box.style.opacity    = '0';
-                box.style.transform  = 'translateX(30px)';
-                setTimeout(function() { box.remove(); }, 380);
+                // Remove the checked item rows
+                box.querySelectorAll('.item-checkbox:checked').forEach(function(chk) {
+                    var row = chk.closest('.cart-item');
+                    if (row) row.remove();
+                });
+                // Only remove whole box if no items remain
+                var remaining = box.querySelectorAll('.cart-item');
+                if (remaining.length === 0) {
+                    box.style.transition = 'opacity 0.35s, transform 0.35s';
+                    box.style.opacity    = '0';
+                    box.style.transform  = 'translateX(30px)';
+                    setTimeout(function() { box.remove(); }, 380);
+                }
             });
 
             setTimeout(function() {

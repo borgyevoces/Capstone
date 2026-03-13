@@ -45,6 +45,9 @@ function toggleChatPanel() {
 
         // Load conversations when opening
         loadConversations();
+        // ✅ Clear both nav + float badges when owner opens chat
+        updateChatBadge(0);
+        sessionStorage.setItem('prevMsgCount', '0');
     }
 
     // Hide chat window if open
@@ -1433,6 +1436,85 @@ function updateNotificationBadge(count) {
     }
 }
 
+// ==========================================
+// ✅ REALTIME: Poll unread message count (owner)
+// Updates the envelope badge in navbar every 10s
+// ==========================================
+function updateChatBadge(count) {
+    const displayVal = count > 99 ? '99+' : String(count);
+
+    // Desktop: navbar envelope badge
+    // ✅ Always set textContent so MutationObserver syncs float badge correctly
+    const navBadge = document.getElementById('chatBadge');
+    if (navBadge) {
+        navBadge.textContent = displayVal;  // always set — observer reads this
+        navBadge.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    // Mobile: floating FAB badge — directly updated (don't rely on observer alone)
+    const floatBadge = document.getElementById('chatFloatBadge');
+    if (floatBadge) {
+        if (count > 0) {
+            floatBadge.textContent = displayVal;
+            floatBadge.style.display = 'flex';
+        } else {
+            floatBadge.textContent = '0';
+            floatBadge.style.display = 'none';
+        }
+    }
+}
+
+function pollUnreadMessages() {
+    // Skip if chat panel is open (user is reading messages)
+    const chatPanel = document.getElementById('chatPanel');
+    const chatWindow = document.getElementById('chatWindow');
+    const panelOpen = chatPanel && chatPanel.classList.contains('open');
+    const windowOpen = chatWindow && chatWindow.style.display === 'flex';
+    if (panelOpen || windowOpen) return;
+
+    fetch('/api/unread-messages/', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            updateChatBadge(data.unread_count);
+            // Show toast if new message arrived
+            const prev = parseInt(sessionStorage.getItem('prevMsgCount') || '0');
+            if (data.unread_count > prev) {
+                showNewMessageToast(data.unread_count - prev);
+            }
+            sessionStorage.setItem('prevMsgCount', data.unread_count);
+        }
+    })
+    .catch(err => console.error('Error polling messages:', err));
+}
+
+function showNewMessageToast(count) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas fa-envelope"></i></div>
+        <div class="toast-content">
+            <div class="toast-title">New Message${count > 1 ? 's' : ''}</div>
+            <div class="toast-message">You have ${count} new message${count > 1 ? 's' : ''} from a customer.</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 300ms ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+
 function markNotificationRead(notificationId) {
     fetch(`/api/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
@@ -1528,6 +1610,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Poll for new notifications every 60 seconds
     setInterval(pollNotifications, 60000);
+
+    // ✅ Poll unread message count every 10 seconds
+    pollUnreadMessages();
+    setInterval(pollUnreadMessages, 10000);
 
     // Setup form handlers
     setupUpdateStoreDetailsForm();

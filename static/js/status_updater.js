@@ -16,6 +16,7 @@
     let backendRetryCount = 0;
     let backendPollTimer  = null;
     let statusTimer       = null;
+    let lastKnownModified = 0;  // ✅ track last_modified from backend
 
 
     // ===========================================================
@@ -288,6 +289,86 @@
         }
     }
 
+    /** Update establishment detail fields from fresh backend data (details page) */
+    function updateEstablishmentDetailsFromBackend(data) {
+        // ── Name (hero h1 + page title) ──────────────────────────────────
+        if (data.name) {
+            const nameEl = document.getElementById('detailEstName');
+            if (nameEl) nameEl.textContent = data.name;
+            // Also update chat/modal references that show the name
+            document.querySelectorAll('.item-modal-est-name').forEach(el => el.textContent = data.name);
+            document.title = data.name + ' - KabsuEats';
+        }
+
+        // ── Hero background image ─────────────────────────────────────────
+        if (data.image_url) {
+            const hero = document.getElementById('detailHeroHeader');
+            if (hero) hero.style.backgroundImage = `url('${data.image_url}')`;
+        }
+
+        // ── Address ───────────────────────────────────────────────────────
+        if (data.address) {
+            const addrEl = document.getElementById('detailAddress');
+            if (addrEl) addrEl.textContent = data.address;
+        }
+
+        // ── Categories ────────────────────────────────────────────────────
+        if (data.categories) {
+            const catEl = document.getElementById('detailCategories');
+            if (catEl) catEl.textContent = data.categories;
+        }
+
+        // ── Hours (opening – closing) ─────────────────────────────────────
+        if (data.opening_time && data.closing_time) {
+            const hoursEl = document.getElementById('detailHours');
+            if (hoursEl) {
+                // Remove any injected liveHoursStatus badge so we can reset cleanly
+                const liveBadge = document.getElementById('liveHoursStatus');
+                hoursEl.textContent = `${data.opening_time} – ${data.closing_time}`;
+                if (liveBadge) hoursEl.after(liveBadge);
+            }
+            // Also update the data-attrs used by client-side status calc
+            const heroBadge = document.getElementById('liveEstStatus');
+            if (heroBadge) {
+                heroBadge.dataset.openingTime = data.opening_24h || '';
+                heroBadge.dataset.closingTime = data.closing_24h || '';
+            }
+            const hoursBadge = document.getElementById('liveHoursStatus');
+            if (hoursBadge) {
+                hoursBadge.dataset.openingTime = data.opening_24h || '';
+                hoursBadge.dataset.closingTime = data.closing_24h || '';
+            }
+            const detailBadge = document.getElementById('detailStatusBadge');
+            if (detailBadge) {
+                detailBadge.dataset.openingTime = data.opening_24h || '';
+                detailBadge.dataset.closingTime = data.closing_24h || '';
+            }
+        }
+
+        // ── Payment Methods ───────────────────────────────────────────────
+        if (data.payment_methods !== undefined) {
+            const pmEl = document.getElementById('detailPayment');
+            if (pmEl) pmEl.textContent = data.payment_methods || 'N/A';
+            // Also update the item-modal payment display if present
+            const modalPm = document.getElementById('itemModalPayment');
+            if (modalPm) modalPm.textContent = data.payment_methods || 'N/A';
+        }
+
+        // ── Amenities list ────────────────────────────────────────────────
+        if (data.amenities !== undefined) {
+            const amenEl = document.getElementById('detailAmenities');
+            if (amenEl) {
+                if (data.amenities && data.amenities.length > 0) {
+                    amenEl.innerHTML = data.amenities.split(',').map(a =>
+                        `<li><i class="fas fa-check-circle"></i> ${a.trim()}</li>`
+                    ).join('');
+                } else {
+                    amenEl.innerHTML = '<li>No amenities listed.</li>';
+                }
+            }
+        }
+    }
+
     /** Update the hero live-status badge + hours badge using backend status */
     function updateHeroBadgesFromBackend(status, openingTime, closingTime) {
         const isOpen   = (status || '').toLowerCase() === 'open';
@@ -342,9 +423,21 @@
                 if (!data.success) return;
                 backendRetryCount = 0;
 
+                // ✅ Detect dashboard change — re-poll immediately next tick
+                const serverModified = data.last_modified || 0;
+                if (serverModified && lastKnownModified && serverModified > lastKnownModified) {
+                    console.log('🔄 [StatusUpdater] Dashboard change detected — syncing now');
+                    lastKnownModified = serverModified;
+                    clearInterval(backendPollTimer);
+                    backendPollTimer = setInterval(pollBackend, BACKEND_POLL_INTERVAL_MS);
+                } else if (serverModified) {
+                    lastKnownModified = serverModified;
+                }
+
                 updateMenuItemsFromBackend(data.menu_items);
                 updateRatingFromBackend(data.average_rating, data.review_count);
                 updateHeroBadgesFromBackend(data.status, data.opening_time, data.closing_time);
+                updateEstablishmentDetailsFromBackend(data);  // ✅ name, image, address, categories, hours, payment, amenities
                 pulseLiveDot();
             })
             .catch(function (err) {
@@ -433,38 +526,16 @@
             document.head.appendChild(style);
         }
 
-        // Hero badge
-        const heroContent = document.querySelector('.hero-content');
-        if (heroContent && !document.getElementById('liveEstStatus')) {
-            const badge = document.createElement('div');
-            badge.id = 'liveEstStatus';
-            badge.className = 'live-est-status-badge';
-            // seed data attrs so client-side calc works instantly too
-            const open24  = typeof EST_OPENING_24H !== 'undefined' ? EST_OPENING_24H : '';
-            const close24 = typeof EST_CLOSING_24H !== 'undefined' ? EST_CLOSING_24H : '';
-            if (open24) badge.dataset.openingTime = open24;
-            if (close24) badge.dataset.closingTime = close24;
-            badge.textContent = open24 && close24
-                ? (calculateStatus(open24, close24) === 'Open' ? 'Open' : 'Closed')
-                : '...';
-            heroContent.appendChild(badge);
+
+        // ✅ No injected hero badge — detailStatusBadge already exists in the HTML template.
+        // Alias it as liveEstStatus so updateHeroBadgesFromBackend keeps working.
+        if (!document.getElementById('liveEstStatus')) {
+            const existing = document.getElementById('detailStatusBadge');
+            if (existing) existing.id = 'liveEstStatus';
         }
 
-        // Hours badge (next to hours text)
-        const hoursEl = document.querySelector('.hours-text');
-        if (hoursEl && !document.getElementById('liveHoursStatus')) {
-            const hBadge = document.createElement('span');
-            hBadge.id = 'liveHoursStatus';
-            hBadge.className = 'live-hours-badge';
-            const open24  = typeof EST_OPENING_24H !== 'undefined' ? EST_OPENING_24H : '';
-            const close24 = typeof EST_CLOSING_24H !== 'undefined' ? EST_CLOSING_24H : '';
-            if (open24) hBadge.dataset.openingTime = open24;
-            if (close24) hBadge.dataset.closingTime = close24;
-            hBadge.textContent = open24 && close24
-                ? (calculateStatus(open24, close24) === 'Open' ? 'Open' : 'Closed')
-                : '...';
-            hoursEl.after(hBadge);
-        }
+        // ✅ Hours badge removed — the Open/Closed pill below the hours text is no longer shown.
+        // All getElementById('liveHoursStatus') calls below are safe — they return null gracefully.
 
         // Live indicator dot next to Menu title
         const menuTitle = document.querySelector('.menu-title-centered span');

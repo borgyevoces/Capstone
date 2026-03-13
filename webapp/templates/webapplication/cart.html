@@ -343,10 +343,9 @@ html body .establishment-cart-box.active-cart {
                         <h2>
                             <a href="{% url 'food_establishment_details' cart.establishment.id %}"
                                class="estab-name-link"
-                               target="_blank"
+                               target="_self"
                                onclick="event.stopPropagation()">
                                 {{ cart.establishment.name }}
-                                <i class="fas fa-external-link-alt ext-icon"></i>
                             </a>
                         </h2>
                         <button type="button"
