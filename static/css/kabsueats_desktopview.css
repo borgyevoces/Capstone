@@ -289,16 +289,25 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
              color: var(--g800); width: 100%; background: transparent; }
 #mapSearch::placeholder { color: var(--g400); }
 
-/* ── Layer switcher button (top right) ── */
-.map-layer-btn { position: absolute; top: 14px; right: 14px; z-index: 1000;
-                 width: 42px; height: 42px; background: #fff; border-radius: 8px;
+/* ── Control stack (layer + route buttons) — top right ── */
+.map-ctrl-stack {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+/* Layer button — inside the stack, no longer standalone absolute */
+.map-layer-btn { width: 42px; height: 42px; background: #fff; border-radius: 8px;
                  display: flex; align-items: center; justify-content: center;
                  box-shadow: 0 2px 12px rgba(0,0,0,.18); cursor: pointer;
                  border: 1px solid var(--g200); font-size: 16px; color: var(--g700);
                  transition: .2s; }
 .map-layer-btn:hover { background: var(--g50); color: var(--red); }
 
-.map-layer-panel { position: absolute; top: 62px; right: 14px; z-index: 1001;
+.map-layer-panel { position: absolute; top: 14px; right: 66px; z-index: 1001;
                    background: #fff; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.16);
                    border: 1px solid var(--g200); overflow: hidden; min-width: 150px;
                    display: none; }
@@ -566,4 +575,10 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
     0%   { transform: scale(0.8); opacity: 0; }
     60%  { transform: scale(1.05); }
     100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Route Guide Panel Animation ── */
+@keyframes slideUpIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }

@@ -432,14 +432,23 @@
                     <div class="map-wrap">
                         <div id="esMap"></div>
 
-                        <!-- Layer switcher (top right) -->
-                        <div class="map-layer-btn" id="mapLayerBtn" onclick="toggleLayerPanel()">
-                            <i class="fas fa-layer-group"></i>
+                        <!-- Top-right control stack -->
+                        <div class="map-ctrl-stack">
+                            <!-- Layer switcher -->
+                            <div class="map-layer-btn" id="mapLayerBtn" onclick="toggleLayerPanel()" title="Map Layers">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <!-- Route guide toggle (hidden until a route is active) -->
+                            <div class="map-route-btn" id="mapRouteBtn" onclick="toggleRouteGuide()" title="Directions" style="display:none;">
+                                <i class="fas fa-directions"></i>
+                            </div>
                         </div>
+
+                        <!-- Layer panel (opens from ctrl stack) -->
                         <div class="map-layer-panel" id="mapLayerPanel">
                             <div class="mlp-title">Map Type</div>
-                            <button class="mlp-opt on" id="mts-hybrid" onclick="switchTile('hybrid')"><i class="fas fa-layer-group"></i> Hybrid (Satellite + Labels)</button>
-                            <button class="mlp-opt" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street Map</button>
+                            <button class="mlp-opt on" id="mts-hybrid" onclick="switchTile('hybrid')"><i class="fas fa-layer-group"></i> Hybrid</button>
+                            <button class="mlp-opt" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street</button>
                             <button class="mlp-opt" id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
                             <button class="mlp-opt" id="mts-terrain" onclick="switchTile('terrain')"><i class="fas fa-mountain"></i> Terrain</button>
                         </div>
@@ -452,17 +461,40 @@
                         <!-- 500m legend -->
                         <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
 
-                        <!-- ── Route guide panel ── -->
+                        <!-- ── Route guide panel — right side, clean white ── -->
                         <div id="routeGuide">
-                            <div id="routeGuideHeader">
-                                <span id="routeGuideTitle">Directions</span>
-                                <span id="routeGuideMeta"></span>
-                                <button id="routeGuideClose" onclick="closeRouteGuide()" title="Close">
-                                    <i class="fas fa-times"></i>
+                            <div id="rgHeader">
+                                <div id="rgHeaderInner">
+                                    <div id="rgIcon"><i class="fas fa-directions"></i></div>
+                                    <div>
+                                        <div id="rgDestName">Directions</div>
+                                        <div id="rgSubtitle">Walking directions</div>
+                                    </div>
+                                </div>
+                                <button id="rgClose" onclick="closeRouteGuide()" title="Close"><i class="fas fa-times"></i></button>
+                            </div>
+                            <!-- Distance / time summary -->
+                            <div id="rgSummary" style="display:none;">
+                                <div class="rg-stat">
+                                    <div class="rg-stat-lbl">Distance</div>
+                                    <div class="rg-stat-val rg-dist" id="rgDist">—</div>
+                                </div>
+                                <div class="rg-stat-divider"></div>
+                                <div class="rg-stat">
+                                    <div class="rg-stat-lbl">Walk time</div>
+                                    <div class="rg-stat-val rg-time" id="rgTime">—</div>
+                                </div>
+                            </div>
+                            <!-- Loading -->
+                            <div id="rgLoading"><i class="fas fa-spinner fa-spin"></i> Getting route…</div>
+                            <!-- Steps list -->
+                            <div id="rgSteps"></div>
+                            <!-- Clear button -->
+                            <div id="rgFooter" style="display:none;">
+                                <button id="rgClearBtn" onclick="closeRouteGuide()">
+                                    <i class="fas fa-times-circle"></i> Clear Route
                                 </button>
                             </div>
-                            <div id="routeGuideLoading"><i class="fas fa-spinner fa-spin"></i> Fetching route...</div>
-                            <div id="routeSteps"></div>
                         </div>
                     </div>
                 </div>
@@ -921,133 +953,262 @@
      Uses OSRM (free, no API key) + Leaflet polyline
      ============================================================ -->
 <style>
-/* ── Route line on map ── */
-.route-line { stroke: #3b82f6; stroke-width: 5; stroke-opacity: 0.85; }
+/* ═══════════════════════════════════════════
+   ROUTE GUIDE — clean white, Google Maps look
+   ═══════════════════════════════════════════ */
 
-/* ── Mini guide panel (bottom of map) ── */
+/* Control stack (layer + route btns stacked vertically) */
+.map-ctrl-stack {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.map-ctrl-stack .map-layer-btn,
+.map-ctrl-stack .map-route-btn {
+    position: static !important;    /* override absolute from desktop CSS */
+    top: auto !important;
+    right: auto !important;
+}
+.map-route-btn {
+    width: 42px;
+    height: 42px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    font-size: 17px;
+    color: #1967d2;
+    transition: .2s;
+}
+.map-route-btn:hover  { background: #f0f4ff; }
+.map-route-btn.active { background: #1967d2; color: #fff; border-color: #1967d2; }
+
+/* Route guide panel — right side */
 #routeGuide {
     position: absolute;
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1100;
+    top: 14px;
+    right: 66px;            /* 14px gap + 42px ctrl stack + 10px breathing room */
+    z-index: 1090;
+    width: 280px;
+    max-width: calc(100vw - 100px);
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 6px 28px rgba(0,0,0,.22);
+    box-shadow: 0 2px 6px rgba(0,0,0,.12), 0 6px 24px rgba(0,0,0,.14);
     border: 1px solid #e5e7eb;
-    width: 320px;
-    max-width: calc(100% - 28px);
     display: none;
     flex-direction: column;
     overflow: hidden;
     font-family: 'Poppins', sans-serif;
+    animation: rgIn .22s ease;
+}
+@keyframes rgIn {
+    from { opacity:0; transform:translateX(10px); }
+    to   { opacity:1; transform:translateX(0); }
 }
 #routeGuide.show { display: flex; }
 
-#routeGuideHeader {
-    background: linear-gradient(135deg, #B71C1C, #8B0000);
-    color: #fff;
-    padding: 10px 14px;
+/* Header — white with blue accent left border */
+#rgHeader {
+    padding: 11px 12px 10px;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px;
 }
-#routeGuideTitle {
+#rgHeaderInner {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1;
+    min-width: 0;
+}
+#rgIcon {
+    width: 32px;
+    height: 32px;
+    background: #1967d2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+#rgDestName {
     font-size: 12px;
     font-weight: 700;
-    flex: 1;
+    color: #111827;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-#routeGuideMeta {
-    font-size: 11px;
-    font-weight: 600;
-    color: rgba(255,255,255,.85);
-    white-space: nowrap;
-}
-#routeGuideClose {
-    background: rgba(255,255,255,.2);
-    border: none;
-    color: #fff;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-#routeGuideClose:hover { background: rgba(255,255,255,.35); }
-
-#routeSteps {
-    padding: 8px 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.rg-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    padding: 6px 8px;
-    border-radius: 7px;
-    transition: background .15s;
-}
-.rg-step:hover { background: #f9fafb; }
-.rg-step-ico {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-.rg-step-ico.turn-left  { background: #dbeafe; color: #1d4ed8; }
-.rg-step-ico.turn-right { background: #dcfce7; color: #166534; }
-.rg-step-ico.arrive     { background: #fee2e2; color: #B71C1C; }
-.rg-step-ico.depart     { background: #f0fdf4; color: #166534; }
-.rg-step-text { flex: 1; min-width: 0; }
-.rg-step-name {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #111827;
-    line-height: 1.3;
-}
-.rg-step-dist {
+#rgSubtitle {
     font-size: 10.5px;
     color: #9ca3af;
     margin-top: 1px;
 }
-#routeGuideLoading {
-    padding: 18px;
-    text-align: center;
-    font-size: 12px;
+#rgClose {
+    width: 26px;
+    height: 26px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
     color: #6b7280;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    flex-shrink: 0;
+    transition: .15s;
 }
+#rgClose:hover { background: #fee2e2; color: #B71C1C; }
+
+/* Distance / time bar */
+#rgSummary {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+}
+.rg-stat { flex: 1; text-align: center; }
+.rg-stat-divider { width: 1px; height: 30px; background: #e5e7eb; }
+.rg-stat-lbl {
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+}
+.rg-stat-val {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+}
+.rg-dist { color: #1967d2; }
+.rg-time { color: #16a34a; }
+
+/* Loading state */
+#rgLoading {
+    padding: 18px 14px;
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* Steps list */
+#rgSteps {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 4px 0 2px;
+}
+#rgSteps::-webkit-scrollbar { width: 3px; }
+#rgSteps::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+
+.rg-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 12px;
+    transition: background .12s;
+    position: relative;
+}
+.rg-step:hover { background: #f8fafc; }
+
+/* Vertical connector line between steps */
+.rg-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 22px;           /* center of the 20px icon = 12px padding + 10px */
+    top: 32px;
+    bottom: -7px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.rg-ico {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    z-index: 1;
+}
+.rg-ico.depart  { border-color: #bbf7d0; background: #f0fdf4; color: #16a34a; }
+.rg-ico.left    { border-color: #bfdbfe; background: #eff6ff; color: #1967d2; }
+.rg-ico.right   { border-color: #bbf7d0; background: #f0fdf4; color: #16a34a; }
+.rg-ico.uturn   { border-color: #fde68a; background: #fefce8; color: #b45309; }
+.rg-ico.arrive  { border-color: #fca5a5; background: #fef2f2; color: #B71C1C; }
+
+.rg-step-body { flex: 1; min-width: 0; }
+.rg-step-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.4;
+}
+.rg-step-dist {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 1px;
+}
+
+/* Footer with Clear button */
+#rgFooter {
+    padding: 8px 10px 10px;
+    border-top: 1px solid #f1f5f9;
+}
+#rgClearBtn {
+    width: 100%;
+    padding: 9px;
+    background: #fff;
+    color: #dc2626;
+    border: 1.5px solid #fca5a5;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: .15s;
+}
+#rgClearBtn:hover { background: #fef2f2; border-color: #dc2626; }
 </style>
 
 <script>
-// ── Routing state ──────────────────────────────────────────────
-window._routeLayer  = null;   // current Leaflet polyline/layer
-window._userLat     = null;
-window._userLng     = null;
+// ═══════════════════════════════════════════
+// ROUTING — OSRM + clean white panel
+// ═══════════════════════════════════════════
+window._routeLayer       = null;
+window._routeExtraLayers = [];
+window._userLat          = null;
+window._userLng          = null;
 
-// ── Silently watch user position to always have coords ready ──
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         function(pos) {
@@ -1059,176 +1220,219 @@ if (navigator.geolocation) {
     );
 }
 
-// ── Main: show route from user → establishment ─────────────────
+// ── Toggle panel open/closed (via button) ──
+window.toggleRouteGuide = function() {
+    var guide = document.getElementById('routeGuide');
+    var btn   = document.getElementById('mapRouteBtn');
+    if (!guide) return;
+    var isOpen = guide.classList.contains('show');
+    if (isOpen) {
+        guide.classList.remove('show');
+        if (btn) btn.classList.remove('active');
+    } else {
+        guide.classList.add('show');
+        if (btn) btn.classList.add('active');
+    }
+};
+
+// ── Show route from user location → establishment ──
 window.showRouteTo = function(destLat, destLng, destName) {
-    // If we don't have user location yet, request it now then route
     if (!window._userLat || !window._userLng) {
         if (!navigator.geolocation) {
             if (typeof showToast === 'function') showToast('Geolocation not supported.', 'error');
             return;
         }
-        if (typeof showToast === 'function') showToast('Getting your location...', 'info');
+        if (typeof showToast === 'function') showToast('Getting your location…', 'info');
         navigator.geolocation.getCurrentPosition(
             function(pos) {
                 window._userLat = pos.coords.latitude;
                 window._userLng = pos.coords.longitude;
-                window.showRouteTo(destLat, destLng, destName); // retry
+                window.showRouteTo(destLat, destLng, destName);
             },
             function() {
                 if (typeof showToast === 'function')
-                    showToast('Could not get location. Please allow location access.', 'error');
+                    showToast('Could not get location. Allow location access.', 'error');
             },
             { timeout: 8000, maximumAge: 30000 }
         );
         return;
     }
 
-    // Show loading state in guide panel
-    const guide = document.getElementById('routeGuide');
-    const stepsEl = document.getElementById('routeSteps');
-    const loadingEl = document.getElementById('routeGuideLoading');
-    const titleEl = document.getElementById('routeGuideTitle');
-    const metaEl = document.getElementById('routeGuideMeta');
+    // Show the panel in loading state
+    var guide     = document.getElementById('routeGuide');
+    var rgLoading = document.getElementById('rgLoading');
+    var rgSteps   = document.getElementById('rgSteps');
+    var rgSummary = document.getElementById('rgSummary');
+    var rgFooter  = document.getElementById('rgFooter');
+    var rgDest    = document.getElementById('rgDestName');
+    var rgDist    = document.getElementById('rgDist');
+    var rgTime    = document.getElementById('rgTime');
+    var btn       = document.getElementById('mapRouteBtn');
 
-    titleEl.textContent = 'Getting directions...';
-    metaEl.textContent = '';
-    stepsEl.style.display = 'none';
-    loadingEl.style.display = 'flex';
+    rgDest.textContent    = destName;
+    document.getElementById('rgSubtitle').textContent = 'Calculating…';
+    rgSummary.style.display = 'none';
+    rgFooter.style.display  = 'none';
+    rgSteps.innerHTML       = '';
+    rgLoading.style.display = 'flex';
     guide.classList.add('show');
+    btn.style.display = 'flex';
+    btn.classList.add('active');
 
-    // Remove old route layer
-    if (window._routeLayer && mapInst) {
-        mapInst.removeLayer(window._routeLayer);
-        window._routeLayer = null;
-    }
+    // Clear previous route layers
+    _clearRouteLayers();
 
-    // Call OSRM routing API (free, no key)
-    const url = `https://router.project-osrm.org/route/v1/driving/` +
-        `${window._userLng},${window._userLat};${destLng},${destLat}` +
-        `?overview=full&geometries=geojson&steps=true`;
+    // Fetch OSRM walking route
+    var url = 'https://router.project-osrm.org/route/v1/walking/' +
+        window._userLng + ',' + window._userLat + ';' +
+        destLng + ',' + destLat +
+        '?overview=full&geometries=geojson&steps=true';
 
     fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            if (!data.routes || !data.routes.length) throw new Error('No route');
-            const route = data.routes[0];
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.routes || !data.routes.length) throw new Error('no route');
 
-            // ── Draw polyline ──────────────────────────────
-            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-            window._routeLayer = L.polyline(coords, {
-                color: '#3b82f6', weight: 5, opacity: 0.85,
-                lineJoin: 'round', lineCap: 'round',
-                dashArray: null
+            var route  = data.routes[0];
+            var coords = route.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+
+            // ── Draw Google-Maps-style route lines ──
+            // 1. shadow glow
+            var shadow = L.polyline(coords, {
+                color: '#1967d2', weight: 10, opacity: 0.15,
+                lineJoin: 'round', lineCap: 'round'
             }).addTo(mapInst);
-            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [40, 40] });
+            // 2. main blue line
+            window._routeLayer = L.polyline(coords, {
+                color: '#1967d2', weight: 5, opacity: 1,
+                lineJoin: 'round', lineCap: 'round'
+            }).addTo(mapInst);
+            // 3. white center dash
+            var center = L.polyline(coords, {
+                color: '#ffffff', weight: 2, opacity: 0.5,
+                lineJoin: 'round', lineCap: 'round', dashArray: '1 8'
+            }).addTo(mapInst);
+            window._routeExtraLayers = [shadow, center];
 
-            // ── Parse steps ────────────────────────────────
-            const legs = route.legs || [];
-            const allSteps = [];
-            legs.forEach(leg => (leg.steps || []).forEach(s => allSteps.push(s)));
+            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [50, 50], animate: true });
 
-            const distM  = route.distance;
-            const durSec = route.duration;
-            const distTxt = distM < 1000
-                ? Math.round(distM) + ' m'
-                : (distM / 1000).toFixed(1) + ' km';
-            const durTxt = durSec < 60
-                ? Math.round(durSec) + ' sec'
+            // ── Summary ──
+            var distM  = route.distance;
+            var durSec = route.duration;
+            var distTxt = distM < 1000
+                ? Math.round(distM) + 'm'
+                : (distM / 1000).toFixed(1) + 'km';
+            var durTxt = durSec < 60
+                ? Math.round(durSec) + 's'
                 : durSec < 3600
                     ? Math.round(durSec / 60) + ' min'
                     : Math.floor(durSec / 3600) + 'h ' + Math.round((durSec % 3600) / 60) + 'm';
 
-            titleEl.textContent = '📍 ' + destName;
-            metaEl.textContent  = distTxt + ' · ' + durTxt;
-            loadingEl.style.display = 'none';
-            stepsEl.style.display = 'flex';
-            stepsEl.innerHTML = '';
+            rgDist.textContent = distTxt;
+            rgTime.textContent = durTxt;
+            document.getElementById('rgSubtitle').textContent = 'Walking directions';
+            rgSummary.style.display = 'flex';
+            rgLoading.style.display = 'none';
 
-            allSteps.forEach(function(step) {
-                const maneuver = (step.maneuver || {});
-                const type = maneuver.type || '';
-                const modifier = maneuver.modifier || '';
-                const name = step.name || '';
-                const dist = step.distance || 0;
-                const distLabel = dist < 5 ? '' :
-                    dist < 1000 ? Math.round(dist) + ' m' :
-                    (dist / 1000).toFixed(1) + ' km';
+            // ── Steps ──
+            var allSteps = [];
+            (route.legs || []).forEach(function(leg) {
+                (leg.steps || []).forEach(function(s) { allSteps.push(s); });
+            });
 
-                // Icon + class based on maneuver
-                let icoClass = '', icoHtml = '';
-                if (type === 'arrive') {
-                    icoClass = 'arrive';
-                    icoHtml = '<i class="fas fa-map-marker-alt"></i>';
-                } else if (type === 'depart') {
-                    icoClass = 'depart';
-                    icoHtml = '<i class="fas fa-walking"></i>';
-                } else if (modifier.includes('left')) {
-                    icoClass = 'turn-left';
-                    icoHtml = '<i class="fas fa-arrow-left"></i>';
-                } else if (modifier.includes('right')) {
-                    icoClass = 'turn-right';
-                    icoHtml = '<i class="fas fa-arrow-right"></i>';
+            rgSteps.innerHTML = '';
+            allSteps.forEach(function(step, idx) {
+                var type     = (step.maneuver || {}).type     || '';
+                var modifier = (step.maneuver || {}).modifier || '';
+                var name     = step.name || '';
+                var dist     = step.distance || 0;
+                var distLbl  = dist < 5 ? '' : dist < 1000
+                    ? Math.round(dist) + 'm'
+                    : (dist / 1000).toFixed(1) + 'km';
+
+                // Icon class
+                var icoClass = '', icoHtml = '<i class="fas fa-arrow-up"></i>';
+                if (type === 'depart') {
+                    icoClass = 'depart'; icoHtml = '<i class="fas fa-walking"></i>';
+                } else if (type === 'arrive') {
+                    icoClass = 'arrive'; icoHtml = '<i class="fas fa-map-marker-alt"></i>';
+                } else if (modifier && modifier.includes('left')) {
+                    icoClass = 'left'; icoHtml = '<i class="fas fa-arrow-left"></i>';
+                } else if (modifier && modifier.includes('right')) {
+                    icoClass = 'right'; icoHtml = '<i class="fas fa-arrow-right"></i>';
                 } else if (modifier === 'uturn') {
-                    icoClass = '';
-                    icoHtml = '<i class="fas fa-undo"></i>';
-                } else {
-                    icoClass = '';
-                    icoHtml = '<i class="fas fa-arrow-up"></i>';
+                    icoClass = 'uturn'; icoHtml = '<i class="fas fa-undo-alt"></i>';
                 }
 
-                // Step label
-                let label = '';
-                if (type === 'depart')       label = 'Head ' + (modifier || 'forward');
-                else if (type === 'arrive')  label = 'Arrive at ' + (name || destName);
-                else if (type === 'turn')    label = 'Turn ' + modifier + (name ? ' onto ' + name : '');
-                else if (type === 'continue') label = 'Continue' + (name ? ' on ' + name : '');
+                // Label
+                var label = '';
+                if (type === 'depart')         label = 'Head ' + (modifier || 'forward') + (name ? ' on ' + name : '');
+                else if (type === 'arrive')    label = 'Arrive at ' + (name || destName);
+                else if (type === 'turn')      label = 'Turn ' + modifier + (name ? ' onto ' + name : '');
+                else if (type === 'new name')  label = 'Continue onto ' + name;
+                else if (type === 'continue')  label = 'Continue' + (name ? ' on ' + name : '');
                 else if (type === 'roundabout') label = 'Enter roundabout' + (name ? ' — ' + name : '');
-                else label = (type ? cap(type) : 'Go') + (modifier ? ' ' + modifier : '') + (name ? ' on ' + name : '');
+                else label = (_cap(type) || 'Go') + (modifier ? ' ' + modifier : '') + (name ? ' on ' + name : '');
 
-                const div = document.createElement('div');
-                div.className = 'rg-step';
+                var isLast = idx === allSteps.length - 1;
+                var div = document.createElement('div');
+                div.className = 'rg-step' + (isLast ? ' rg-step-last' : '');
                 div.innerHTML =
-                    '<div class="rg-step-ico ' + icoClass + '">' + icoHtml + '</div>' +
-                    '<div class="rg-step-text">' +
-                        '<div class="rg-step-name">' + escHtml(label) + '</div>' +
-                        (distLabel ? '<div class="rg-step-dist">' + distLabel + '</div>' : '') +
+                    '<div class="rg-ico ' + icoClass + '">' + icoHtml + '</div>' +
+                    '<div class="rg-step-body">' +
+                        '<div class="rg-step-name">' + _escHtml(label) + '</div>' +
+                        (distLbl ? '<div class="rg-step-dist">' + distLbl + '</div>' : '') +
                     '</div>';
-                stepsEl.appendChild(div);
+                rgSteps.appendChild(div);
             });
+
+            rgFooter.style.display = 'block';
         })
         .catch(function() {
-            // OSRM failed — draw straight line fallback
-            if (window._routeLayer && mapInst) mapInst.removeLayer(window._routeLayer);
+            // Fallback: straight dashed line
+            _clearRouteLayers();
             window._routeLayer = L.polyline(
                 [[window._userLat, window._userLng], [destLat, destLng]],
-                { color: '#3b82f6', weight: 4, opacity: 0.75, dashArray: '8 6' }
+                { color: '#1967d2', weight: 4, opacity: 0.8, dashArray: '10 8', lineJoin: 'round' }
             ).addTo(mapInst);
-            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [40, 40] });
+            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [50, 50] });
 
-            titleEl.textContent = '📍 ' + destName;
-            metaEl.textContent = 'Straight line (no route data)';
-            loadingEl.style.display = 'none';
-            stepsEl.style.display = 'flex';
-            stepsEl.innerHTML =
-                '<div class="rg-step"><div class="rg-step-ico arrive"><i class="fas fa-map-marker-alt"></i></div>' +
-                '<div class="rg-step-text"><div class="rg-step-name">Head towards ' + escHtml(destName) + '</div></div></div>';
+            document.getElementById('rgSubtitle').textContent = 'Straight-line estimate';
+            rgLoading.style.display = 'none';
+            rgSteps.innerHTML =
+                '<div class="rg-step rg-step-last">' +
+                '<div class="rg-ico depart"><i class="fas fa-walking"></i></div>' +
+                '<div class="rg-step-body"><div class="rg-step-name">Head towards ' + _escHtml(destName) + '</div>' +
+                '<div class="rg-step-dist">Straight-line estimate</div></div></div>';
+            rgFooter.style.display = 'block';
         });
 };
 
-// ── Close guide + clear route ──────────────────────────────────
+// ── Close panel + clear route layers ──
 window.closeRouteGuide = function() {
-    document.getElementById('routeGuide').classList.remove('show');
-    if (window._routeLayer && mapInst) {
-        mapInst.removeLayer(window._routeLayer);
-        window._routeLayer = null;
-    }
+    var guide = document.getElementById('routeGuide');
+    var btn   = document.getElementById('mapRouteBtn');
+    if (guide) guide.classList.remove('show');
+    if (btn)   btn.classList.remove('active');
+    _clearRouteLayers();
 };
 
-// Helper — capitalize (may already exist in kabsueats.js)
-function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
-function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function _clearRouteLayers() {
+    if (window._routeLayer && mapInst) {
+        try { mapInst.removeLayer(window._routeLayer); } catch(e) {}
+        window._routeLayer = null;
+    }
+    (window._routeExtraLayers || []).forEach(function(l) {
+        try { mapInst.removeLayer(l); } catch(e) {}
+    });
+    window._routeExtraLayers = [];
 }
+
+function _cap(s)      { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function _escHtml(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Keep old names in case anything else calls them
+function cap(s)       { return _cap(s); }
+function escHtml(s)   { return _escHtml(s); }
 </script>
 
 <!-- routeGuide panel injected directly in map-wrap HTML -->

@@ -397,13 +397,21 @@
     .map-search-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #fff; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.16); display: flex; align-items: center; gap: 8px; padding: 8px 12px; width: 260px; border: 1px solid var(--g200); }
     .map-search-ico { color: var(--g400); font-size: 13px; flex-shrink: 0; }
     #mapSearch { border: none; outline: none; font-size: 12px; font-family: 'Poppins',sans-serif; color: var(--g800); width: 100%; background: transparent; }
-    .map-layer-btn { position: absolute; top: 10px; right: 10px; z-index: 1000; width: 34px; height: 34px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.14); color: var(--g700); font-size: 15px; border: 1px solid var(--g200); }
-    .map-layer-panel { position: absolute; top: 50px; right: 10px; z-index: 1001; background: #fff; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.14); border: 1px solid var(--g200); overflow: hidden; display: none; min-width: 130px; }
+    /* Control stack */
+    .map-ctrl-stack { position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; }
+    .map-layer-btn { width: 34px; height: 34px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.14); color: var(--g700); font-size: 15px; border: 1px solid var(--g200); }
+    .map-route-btn { width: 34px; height: 34px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.14); font-size: 15px; color: #1967d2; border: 1px solid #bfdbfe; transition: .15s; }
+    .map-route-btn.active { background: #1967d2; color: #fff; border-color: #1967d2; }
+    .map-layer-panel { position: absolute; top: 10px; right: 54px; z-index: 1001; background: #fff; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.14); border: 1px solid var(--g200); overflow: hidden; display: none; min-width: 130px; }
     .map-layer-panel.show { display: block; }
     .mlp-title { padding: 8px 12px 4px; font-size: 10px; font-weight: 700; color: var(--g400); text-transform: uppercase; }
     .mlp-opt { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; background: none; border: none; font-size: 12px; font-weight: 500; color: var(--g700); cursor: pointer; font-family: 'Poppins',sans-serif; transition: .15s; }
     .mlp-opt:hover { background: var(--g50); }
     .mlp-opt.on { background: var(--red-light); color: var(--red); font-weight: 700; }
+    /* Route guide — bottom sheet on mobile */
+    #routeGuide { top: auto !important; right: 0 !important; bottom: 0 !important; left: 0 !important; width: 100% !important; max-width: 100% !important; border-radius: 16px 16px 0 0 !important; animation: rgUp .22s ease !important; max-height: 60vh; overflow-y: auto; }
+    @keyframes rgUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    #rgSteps { max-height: 200px; }
     .map-loc-btn { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--g900); color: #fff; border: none; border-radius: 20px; padding: 8px 16px; font-size: 12px; font-weight: 600; font-family: 'Poppins',sans-serif; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.2); white-space: nowrap; }
     .mleg { position: absolute; bottom: 14px; right: 10px; z-index: 1000; background: rgba(255,255,255,.9); border-radius: 6px; padding: 4px 8px; font-size: 10px; color: var(--g600); font-weight: 600; display: flex; align-items: center; gap: 5px; }
     .mleg-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,193,7,.3); border: 2px solid #FFC107; flex-shrink: 0; }
@@ -579,4 +587,10 @@
     .mimg  { height: 260px; }
     .mimg img { border-radius: 14px 0 0 14px; }
     .mar   { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Route Guide Panel (mobile) ── */
+@keyframes slideUpIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }

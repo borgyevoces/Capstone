@@ -498,6 +498,9 @@ const TILES = {
 let mapPollTimer = null, curLabels = null;
 let liveStatusCache = {};
 let userLocMarker = null;
+let userLatLng = null;       // stores the user's current location {lat, lng}
+let routeLine = null;        // active polyline from user → establishment
+let routeAnimMarker = null;  // animated dot along the route
 let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', search: '' };
 
 function initMap() {
@@ -639,9 +642,14 @@ function renderMarkers(data) {
             '<div style="font-size:11px;color:#6b7280;margin-bottom:7px;">' + escHtml(e.address || '') + '</div>' +
             '<div style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;background:' + statusBg + ';color:' + statusFg + ';font-size:11px;font-weight:700;">' +
             statusDot + statusLabel + '</div>' + distRow +
+            '<div style="display:flex;gap:6px;margin-top:10px;">' +
             '<button onclick="window.location.href=\'' + URLS.estDetail + e.id + '/\'" ' +
-            'style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#B71C1C,#8B0000);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-            '<i class="fas fa-eye"></i> View Details</button></div>';
+            'style="flex:1;padding:9px;background:linear-gradient(135deg,#B71C1C,#8B0000);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<i class="fas fa-eye"></i> View</button>' +
+            '<button onclick="showRouteToEst(' + parseFloat(e.latitude) + ',' + parseFloat(e.longitude) + ',\'' + escHtml(e.name).replace(/'/g, "\\'") + '\')" ' +
+            'style="flex:1;padding:9px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<i class="fas fa-directions"></i> Directions</button>' +
+            '</div></div>';
 
         L.marker([parseFloat(e.latitude), parseFloat(e.longitude)], { icon: ico })
             .addTo(mkLayer)
@@ -675,13 +683,14 @@ function showMyLocation() {
     navigator.geolocation.getCurrentPosition(
         pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            userLatLng = { lat, lng };
             if (userLocMarker) mapInst.removeLayer(userLocMarker);
             const locIco = L.divIcon({
                 html: '<div style="width:18px;height:18px;background:#3b82f6;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,.3),0 2px 8px rgba(0,0,0,.3);"></div>',
                 className: '', iconSize: [18, 18], iconAnchor: [9, 9]
             });
             userLocMarker = L.marker([lat, lng], { icon: locIco }).addTo(mapInst)
-                .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:600;font-size:13px;">You are here</div>')
+                .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:600;font-size:13px;">📍 You are here</div>')
                 .openPopup();
             mapInst.flyTo([lat, lng], 17, { animate: true, duration: 1.2 });
             btn.disabled = false;
@@ -697,8 +706,240 @@ function showMyLocation() {
 }
 
 // ============================================
-// CATEGORY FILTER — filters DOM elements
+// ROUTING — Real road-based routing via OSRM
 // ============================================
+
+// OSRM turn instruction codes → human-readable + emoji
+const OSRM_TURN_MAP = {
+    'turn-straight':        { emoji: '⬆️',  text: 'Continue straight' },
+    'turn-slight right':    { emoji: '↗️',  text: 'Turn slight right' },
+    'turn-right':           { emoji: '➡️',  text: 'Turn right' },
+    'turn-sharp right':     { emoji: '↪️',  text: 'Turn sharp right' },
+    'turn-uturn':           { emoji: '🔄',  text: 'Make a U-turn' },
+    'turn-sharp left':      { emoji: '↩️',  text: 'Turn sharp left' },
+    'turn-left':            { emoji: '⬅️',  text: 'Turn left' },
+    'turn-slight left':     { emoji: '↖️',  text: 'Turn slight left' },
+    'depart':               { emoji: '📍',  text: 'Depart' },
+    'arrive':               { emoji: '🏁',  text: 'Arrive' },
+    'roundabout':           { emoji: '🔄',  text: 'Enter roundabout' },
+    'merge':                { emoji: '↗️',  text: 'Merge' },
+    'fork':                 { emoji: '⬆️',  text: 'Keep on fork' },
+    'end of road-right':    { emoji: '➡️',  text: 'End of road, turn right' },
+    'end of road-left':     { emoji: '⬅️',  text: 'End of road, turn left' },
+    'new name-straight':    { emoji: '⬆️',  text: 'Continue on' },
+    'new name-right':       { emoji: '➡️',  text: 'Continue right on' },
+    'new name-left':        { emoji: '⬅️',  text: 'Continue left on' },
+    'notification':         { emoji: 'ℹ️',  text: 'Note' },
+    'rotary':               { emoji: '🔄',  text: 'Enter rotary' },
+    'roundabout turn':      { emoji: '🔄',  text: 'Roundabout turn' },
+    'exit roundabout':      { emoji: '↗️',  text: 'Exit roundabout' },
+    'exit rotary':          { emoji: '↗️',  text: 'Exit rotary' },
+};
+
+function getOsrmInstruction(step) {
+    const maneuver = step.maneuver || {};
+    const type = maneuver.type || '';
+    const modifier = maneuver.modifier || '';
+    const key = modifier ? `${type}-${modifier}` : type;
+    const match = OSRM_TURN_MAP[key] || OSRM_TURN_MAP[type] || { emoji: '➡️', text: cap(type || 'Continue') };
+    const road = step.name ? ` on <strong>${escHtml(step.name)}</strong>` : '';
+    const dist = step.distance > 0 ? ` for <strong>${formatDist(step.distance)}</strong>` : '';
+    return { emoji: match.emoji, text: match.text + road + dist };
+}
+
+function formatDist(meters) {
+    return meters < 1000 ? Math.round(meters) + 'm' : (meters / 1000).toFixed(1) + 'km';
+}
+
+function formatDuration(seconds) {
+    if (seconds < 60) return Math.round(seconds) + 's';
+    const mins = Math.round(seconds / 60);
+    if (mins < 60) return mins + ' min';
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return hrs + 'h ' + (rem > 0 ? rem + 'm' : '');
+}
+
+async function showRouteToEst(destLat, destLng, estName) {
+    if (!userLatLng) {
+        showToast('Please tap "Show My Location" first!', 'error');
+        return;
+    }
+
+    clearRoute();
+    _rgShow(estName, null, null, null, null); // loading state
+
+    const fromLng = userLatLng.lng, fromLat = userLatLng.lat;
+    const OSRM_URL =
+        'https://router.project-osrm.org/route/v1/walking/' +
+        fromLng + ',' + fromLat + ';' +
+        destLng + ',' + destLat +
+        '?overview=full&geometries=geojson&steps=true&annotations=false';
+
+    try {
+        const res  = await fetch(OSRM_URL);
+        const data = await res.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) throw new Error('No route');
+
+        const route  = data.routes[0];
+        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+        // Single clean Google-Maps-style line
+        routeLine = L.polyline(coords, {
+            color: '#1a73e8',
+            weight: 5,
+            opacity: 0.9,
+            lineJoin: 'round',
+            lineCap: 'round'
+        }).addTo(mapInst);
+        routeLine._extraLayers = [];
+
+        // Small animated dot
+        const totalPts = coords.length;
+        let animStep = 0;
+        function animDot() {
+            if (!routeLine) return;
+            const pos = coords[animStep % totalPts];
+            if (routeAnimMarker) {
+                routeAnimMarker.setLatLng(pos);
+            } else {
+                const ico = L.divIcon({
+                    html: '<div style="width:10px;height:10px;background:#1a73e8;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>',
+                    className: '', iconSize: [10, 10], iconAnchor: [5, 5]
+                });
+                routeAnimMarker = L.marker(pos, { icon: ico, zIndexOffset: 1000 }).addTo(mapInst);
+            }
+            animStep++;
+            if (routeLine) setTimeout(animDot, Math.max(30, 2000 / totalPts));
+        }
+        animDot();
+
+        mapInst.fitBounds(L.latLngBounds(coords), { padding: [60, 60], animate: true, duration: 1.0 });
+
+        const steps = [];
+        (route.legs || []).forEach(leg => (leg.steps || []).forEach(s => steps.push(s)));
+
+        _rgShow(estName, formatDist(route.distance), formatDuration(route.duration), steps, route.distance);
+
+    } catch (err) {
+        clearRoute();
+        const from = [userLatLng.lat, userLatLng.lng];
+        const to   = [destLat, destLng];
+        routeLine = L.polyline([from, to], {
+            color: '#1a73e8', weight: 5, opacity: 0.9,
+            lineJoin: 'round', lineCap: 'round', dashArray: '8 6'
+        }).addTo(mapInst);
+        routeLine._extraLayers = [];
+        mapInst.fitBounds(L.latLngBounds([from, to]), { padding: [60, 60] });
+        const dist = haversineMeters(userLatLng.lat, userLatLng.lng, destLat, destLng);
+        _rgShow(estName, formatDist(dist), '~' + formatDuration(dist / 1.2), null, dist);
+    }
+}
+
+// Populate the white #routeGuide panel in the HTML
+function _rgShow(destName, dist, duration, rawSteps, rawMeters) {
+    const guide    = document.getElementById('routeGuide');
+    const loading  = document.getElementById('rgLoading');
+    const summary  = document.getElementById('rgSummary');
+    const footer   = document.getElementById('rgFooter');
+    const stepsEl  = document.getElementById('rgSteps');
+    const destEl   = document.getElementById('rgDestName');
+    const subtitle = document.getElementById('rgSubtitle');
+    const distEl   = document.getElementById('rgDist');
+    const timeEl   = document.getElementById('rgTime');
+    const btn      = document.getElementById('mapRouteBtn');
+    if (!guide) return;
+
+    if (destEl)  destEl.textContent = destName;
+
+    if (!dist) {
+        // Loading state
+        if (subtitle) subtitle.textContent = 'Calculating\u2026';
+        if (summary)  summary.style.display = 'none';
+        if (footer)   footer.style.display  = 'none';
+        if (stepsEl)  stepsEl.innerHTML = '';
+        if (loading)  loading.style.display = 'flex';
+        guide.classList.add('show');
+        if (btn) { btn.style.display = 'flex'; btn.classList.add('active'); }
+        return;
+    }
+
+    if (subtitle) subtitle.textContent = 'Walking directions';
+    if (distEl)   distEl.textContent   = dist;
+    if (timeEl)   timeEl.textContent   = duration;
+    if (summary)  summary.style.display = 'flex';
+    if (loading)  loading.style.display = 'none';
+
+    if (stepsEl) {
+        stepsEl.innerHTML = '';
+        if (rawSteps && rawSteps.length) {
+            rawSteps.forEach(function(step, idx) {
+                const type     = (step.maneuver || {}).type     || '';
+                const modifier = (step.maneuver || {}).modifier || '';
+                const name     = step.name || '';
+                const d        = step.distance || 0;
+                const dLbl     = d < 5 ? '' : d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
+                const isLast   = idx === rawSteps.length - 1;
+
+                let icoClass = '', icoHtml = '<i class="fas fa-arrow-up"></i>';
+                if (type === 'depart')                            { icoClass = 'depart'; icoHtml = '<i class="fas fa-walking"></i>'; }
+                else if (type === 'arrive')                       { icoClass = 'arrive'; icoHtml = '<i class="fas fa-map-marker-alt"></i>'; }
+                else if (modifier && modifier.includes('left'))   { icoClass = 'left';   icoHtml = '<i class="fas fa-arrow-left"></i>'; }
+                else if (modifier && modifier.includes('right'))  { icoClass = 'right';  icoHtml = '<i class="fas fa-arrow-right"></i>'; }
+                else if (modifier === 'uturn')                    { icoClass = 'uturn';  icoHtml = '<i class="fas fa-undo-alt"></i>'; }
+
+                let label = '';
+                if (type === 'depart')          label = 'Head ' + (modifier || 'forward') + (name ? ' on ' + name : '');
+                else if (type === 'arrive')     label = 'Arrive at ' + (name || destName);
+                else if (type === 'turn')       label = 'Turn ' + modifier + (name ? ' onto ' + name : '');
+                else if (type === 'new name')   label = 'Continue onto ' + name;
+                else if (type === 'continue')   label = 'Continue' + (name ? ' on ' + name : '');
+                else if (type === 'roundabout') label = 'Enter roundabout' + (name ? ' \u2014 ' + name : '');
+                else label = (cap(type) || 'Go') + (modifier ? ' ' + modifier : '') + (name ? ' on ' + name : '');
+
+                const div = document.createElement('div');
+                div.className = 'rg-step' + (isLast ? ' rg-step-last' : '');
+                div.innerHTML =
+                    '<div class="rg-ico ' + icoClass + '">' + icoHtml + '</div>' +
+                    '<div class="rg-step-body">' +
+                        '<div class="rg-step-name">' + escHtml(label) + '</div>' +
+                        (dLbl ? '<div class="rg-step-dist">' + dLbl + '</div>' : '') +
+                    '</div>';
+                stepsEl.appendChild(div);
+            });
+        } else {
+            stepsEl.innerHTML =
+                '<div class="rg-step rg-step-last">' +
+                '<div class="rg-ico depart"><i class="fas fa-walking"></i></div>' +
+                '<div class="rg-step-body"><div class="rg-step-name">Head towards ' + escHtml(destName) + '</div>' +
+                '<div class="rg-step-dist">Straight-line estimate</div></div></div>';
+        }
+    }
+
+    if (footer) footer.style.display = 'block';
+    guide.classList.add('show');
+    if (btn) { btn.style.display = 'flex'; btn.classList.add('active'); }
+}
+
+function clearRoute() {
+    if (routeLine) {
+        if (routeLine._extraLayers) {
+            routeLine._extraLayers.forEach(l => { try { mapInst.removeLayer(l); } catch(e){} });
+        }
+        try { mapInst.removeLayer(routeLine); } catch(e){}
+        routeLine = null;
+    }
+    if (routeAnimMarker) {
+        try { mapInst.removeLayer(routeAnimMarker); } catch(e){}
+        routeAnimMarker = null;
+    }
+    const guide = document.getElementById('routeGuide');
+    const btn   = document.getElementById('mapRouteBtn');
+    if (guide) guide.classList.remove('show');
+    if (btn)   btn.classList.remove('active');
+}
+
+
 function applyFilter() {
     const val = document.getElementById('catFilt').value.toLowerCase();
     document.querySelectorAll('.food-est-item').forEach(el => {
