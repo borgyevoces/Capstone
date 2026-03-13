@@ -354,6 +354,44 @@
     /* ---------- MAP SECTION ---------- */
     #mapSection { display: none; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--sh1); margin-bottom: 20px; }
     #mapSection.on { display: block; }
+
+    /* ── Phone: stack sidebar above map ── */
+    .map-layout { display: flex; flex-direction: column; }
+    .map-cat-sidebar {
+        width: 100%;
+        max-height: none;
+        background: #fff;
+        border-right: none;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 10px 12px 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+    .mcs-header { display: none; }
+    .map-cat-filter {
+        display: flex !important;
+        grid-template-columns: none !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 7px !important;
+        padding: 0 !important;
+        width: max-content;
+    }
+    .mcf-btn.mcf-all {
+        grid-column: auto !important;
+    }
+    .mcf-btn {
+        width: auto !important;
+        border-radius: 20px !important;
+        padding: 5px 11px !important;
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        height: auto !important;
+    }
+    .mcf-check { display: none !important; }
+    .map-right { flex: 1; }
+
     .map-wrap { position: relative; }
     #esMap { width: 100%; height: 360px; }
     .map-search-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #fff; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.16); display: flex; align-items: center; gap: 8px; padding: 8px 12px; width: 260px; border: 1px solid var(--g200); }

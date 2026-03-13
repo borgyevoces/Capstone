@@ -151,50 +151,91 @@
         display: none;
     }
 
-    /* ✅ Map category filter buttons */
+    /* ✅ Map category sidebar — checkbox-pill style */
     .map-cat-filter {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 10px 4px 8px;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        padding: 4px 0;
+    }
+    /* "All" button spans full width */
+    .mcf-btn.mcf-all {
+        grid-column: 1 / -1;
     }
     .mcf-btn {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 6px;
-        padding: 7px 14px;
-        border-radius: 20px;
-        border: 1.5px solid #ddd;
+        padding: 6px 8px;
+        border-radius: 7px;
+        border: 1.5px solid #d1d5db;
         background: #fff;
-        color: #444;
-        font-size: 13px;
+        color: #374151;
+        font-size: 11px;
         font-weight: 600;
         font-family: 'Poppins', sans-serif;
         cursor: pointer;
-        transition: all 0.18s ease;
+        transition: border-color .15s, background .15s, color .15s;
         white-space: nowrap;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        text-align: left;
+        width: 100%;
+        line-height: 1.3;
+    }
+    /* Checkbox indicator box */
+    .mcf-check {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        border: 1.5px solid #d1d5db;
+        background: #fff;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color .15s, background .15s;
+    }
+    .mcf-check::after {
+        content: '';
+        display: none;
+        width: 4px;
+        height: 7px;
+        border: 2px solid #fff;
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg) translate(-1px, -1px);
     }
     .mcf-btn:hover {
         border-color: #B71C1C;
+        background: #fff8f8;
         color: #B71C1C;
-        background: #fff5f5;
+    }
+    .mcf-btn:hover .mcf-check {
+        border-color: #B71C1C;
     }
     .mcf-btn.active {
+        border-color: #B71C1C;
+        background: #fff8f8;
+        color: #B71C1C;
+    }
+    .mcf-btn.active .mcf-check {
         background: #B71C1C;
         border-color: #B71C1C;
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(183,28,28,0.25);
     }
-    .mcf-btn.active:hover {
-        background: #8b0000;
-        border-color: #8b0000;
-        color: #fff;
+    .mcf-btn.active .mcf-check::after {
+        display: block;
     }
-    @media (max-width: 600px) {
-        .map-cat-filter { gap: 6px; padding: 8px 2px 6px; }
-        .mcf-btn { font-size: 12px; padding: 6px 11px; }
+    /* "All" active is filled red */
+    .mcf-btn.mcf-all.active {
+        background: #B71C1C;
+        color: #fff;
+        border-color: #B71C1C;
+    }
+    .mcf-btn.mcf-all.active .mcf-check {
+        background: rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.6);
+    }
+    .mcf-btn.mcf-all.active .mcf-check::after {
+        display: block;
     }
     </style>
 </head>
@@ -307,7 +348,7 @@
 
     <!-- Suggestion data for JS -->
     <script>
-    const SUGGEST_DATA = {
+    window.SUGGEST_DATA = {
         establishments: [{% for est in food_establishments %}{"id":{{ est.id }},"name":"{{ est.name|escapejs }}","category":"{% for c in est.categories.all %}{{ c.name|escapejs }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %}, {% endif %}{{ est.other_category|escapejs }}{% endif %}","status":"{{ est.calculated_status|lower }}"}{% if not forloop.last %},{% endif %}{% endfor %}],
         categories: [{% for cat in all_categories %}"{{ cat.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
     };
@@ -367,38 +408,66 @@
         <!-- MAP (hidden by default) -->
         <div id="mapSection">
 
-            <!-- ✅ Category Filter Buttons above map -->
-            <div class="map-cat-filter" id="mapCatFilter">
-                <button class="mcf-btn mcf-all active" onclick="filterMapCategory('__all__', this)">
-                    <i class="fas fa-store"></i> All
-                </button>
-                <!-- Category buttons injected by JS from SITE_DATA.categories -->
-            </div>
+            <!-- ── Desktop: sidebar + map side-by-side layout ── -->
+            <div class="map-layout">
 
-            <!-- Map container -->
-            <div class="map-wrap">
-                <div id="esMap"></div>
-
-                <!-- Layer switcher (top right) -->
-                <div class="map-layer-btn" id="mapLayerBtn" onclick="toggleLayerPanel()">
-                    <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="map-layer-panel" id="mapLayerPanel">
-                    <div class="mlp-title">Map Type</div>
-                    <button class="mlp-opt on" id="mts-hybrid" onclick="switchTile('hybrid')"><i class="fas fa-layer-group"></i> Hybrid (Satellite + Labels)</button>
-                    <button class="mlp-opt" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street Map</button>
-                    <button class="mlp-opt" id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
-                    <button class="mlp-opt" id="mts-terrain" onclick="switchTile('terrain')"><i class="fas fa-mountain"></i> Terrain</button>
+                <!-- LEFT: Category Sidebar -->
+                <div class="map-cat-sidebar" id="mapCatSidebar">
+                    <div class="mcs-header">
+                        <i class="fas fa-tag"></i>
+                        <span>Filter by Category</span>
+                    </div>
+                    <div class="map-cat-filter" id="mapCatFilter">
+                        <button class="mcf-btn mcf-all active" onclick="filterMapCategory('__all__', this)">
+                            <span class="mcf-check"></span>
+                            <span>All</span>
+                        </button>
+                        <!-- Category buttons injected by JS from SUGGEST_DATA.categories -->
+                    </div>
                 </div>
 
-                <!-- Show My Location button -->
-                <button class="map-loc-btn" id="mapLocBtn" onclick="showMyLocation()">
-                    <i class="fas fa-location-arrow"></i> Show My Location
-                </button>
+                <!-- RIGHT: Map -->
+                <div class="map-right">
+                    <!-- Map container -->
+                    <div class="map-wrap">
+                        <div id="esMap"></div>
 
-                <!-- 500m legend -->
-                <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
-            </div>
+                        <!-- Layer switcher (top right) -->
+                        <div class="map-layer-btn" id="mapLayerBtn" onclick="toggleLayerPanel()">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="map-layer-panel" id="mapLayerPanel">
+                            <div class="mlp-title">Map Type</div>
+                            <button class="mlp-opt on" id="mts-hybrid" onclick="switchTile('hybrid')"><i class="fas fa-layer-group"></i> Hybrid (Satellite + Labels)</button>
+                            <button class="mlp-opt" id="mts-street" onclick="switchTile('street')"><i class="fas fa-road"></i> Street Map</button>
+                            <button class="mlp-opt" id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
+                            <button class="mlp-opt" id="mts-terrain" onclick="switchTile('terrain')"><i class="fas fa-mountain"></i> Terrain</button>
+                        </div>
+
+                        <!-- Show My Location button -->
+                        <button class="map-loc-btn" id="mapLocBtn" onclick="showMyLocation()">
+                            <i class="fas fa-location-arrow"></i> Show My Location
+                        </button>
+
+                        <!-- 500m legend -->
+                        <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
+
+                        <!-- ── Route guide panel ── -->
+                        <div id="routeGuide">
+                            <div id="routeGuideHeader">
+                                <span id="routeGuideTitle">Directions</span>
+                                <span id="routeGuideMeta"></span>
+                                <button id="routeGuideClose" onclick="closeRouteGuide()" title="Close">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="routeGuideLoading"><i class="fas fa-spinner fa-spin"></i> Fetching route...</div>
+                            <div id="routeSteps"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.map-layout -->
         </div>
     </section>
 
@@ -414,10 +483,90 @@
                     {% for cat in all_categories %}
                     <option value="{{ cat.name|lower }}" {% if request.GET.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
+                    <!-- other_category options injected by JS below -->
                 </select>
             </div>
         </div>
     </div>
+    <script>
+    // ── Inject other_category values into dropdown + sidebar ──────────────
+    // Runs after DOM ready so EST_ALL_DATA is guaranteed to be defined.
+    document.addEventListener('DOMContentLoaded', function injectOtherCategories() {
+        if (typeof EST_ALL_DATA === 'undefined') return;
+
+        // Collect all category values already in the dropdown
+        const catFilt = document.getElementById('catFilt');
+        const existingOpts = new Set();
+        if (catFilt) {
+            Array.from(catFilt.options).forEach(function(o) {
+                if (o.value) existingOpts.add(o.value.trim().toLowerCase());
+            });
+        }
+
+        // Collect all categories from EST_ALL_DATA (M2M + other_category)
+        const allCats = new Set();
+        Object.values(EST_ALL_DATA).forEach(function(est) {
+            (est.categories || '').split(',').forEach(function(c) {
+                const t = c.trim();
+                if (t) allCats.add(t);
+            });
+            const oc = (est.other_category || '').trim();
+            if (oc) allCats.add(oc);
+        });
+
+        // Add missing ones to dropdown
+        if (catFilt) {
+            Array.from(allCats).sort().forEach(function(cat) {
+                const key = cat.toLowerCase();
+                if (!existingOpts.has(key)) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+                    catFilt.appendChild(opt);
+                    existingOpts.add(key);
+                }
+            });
+        }
+
+        // Patch SUGGEST_DATA.categories with merged list for sidebar buttons
+        if (window.SUGGEST_DATA) {
+            const existingSuggest = new Set(
+                (SUGGEST_DATA.categories || []).map(c => c.toLowerCase())
+            );
+            Array.from(allCats).forEach(function(cat) {
+                if (!existingSuggest.has(cat.toLowerCase())) {
+                    SUGGEST_DATA.categories.push(cat);
+                    existingSuggest.add(cat.toLowerCase());
+                }
+            });
+            SUGGEST_DATA.categories.sort();
+        }
+
+        // Re-run sidebar button builder now that SUGGEST_DATA is complete
+        // (initMapCatFilter already ran — we need to add the missing buttons)
+        const container = document.getElementById('mapCatFilter');
+        if (container && window._mapActiveCats !== undefined) {
+            // Collect already-rendered category buttons
+            const rendered = new Set();
+            container.querySelectorAll('.mcf-btn[data-cat]').forEach(function(b) {
+                rendered.add(b.getAttribute('data-cat'));
+            });
+            // Add missing ones
+            Array.from(allCats).sort().forEach(function(cat) {
+                const key = cat.toLowerCase();
+                if (!rendered.has(key)) {
+                    const btn = document.createElement('button');
+                    btn.className = 'mcf-btn';
+                    btn.setAttribute('data-cat', key);
+                    btn.innerHTML = '<span class="mcf-check"></span><span>'
+                        + cat.charAt(0).toUpperCase() + cat.slice(1) + '</span>';
+                    btn.onclick = function() { filterMapCategory(key, this); };
+                    container.appendChild(btn);
+                }
+            });
+        }
+    });
+    </script>
 
     <div class="est-wrap">
         <div class="est-grid" id="estGrid">
@@ -659,7 +808,7 @@
         {% endfor %}
     };
     // Full establishment data for map markers (status + image, rendered server-side)
-    const EST_ALL_DATA = {
+    window.EST_ALL_DATA = {
         {% for est in food_establishments %}
         {{ est.id }}: {
             name: "{{ est.name|escapejs }}",
@@ -681,37 +830,18 @@
 
 <script>
 // ✅ MAP CATEGORY FILTER
-// Builds category buttons from SITE_DATA.categories (realtime from DB)
+// Builds category buttons from SUGGEST_DATA.categories (realtime from DB)
 // Supports multi-select — click multiple categories to show their establishments
 (function initMapCatFilter() {
-    // Category icon map
-    const CAT_ICONS = {
-        'cafe': 'fa-coffee',
-        'coffee': 'fa-coffee',
-        'carinderia': 'fa-utensils',
-        'restaurant': 'fa-utensils',
-        'fastfood': 'fa-hamburger',
-        'fast food': 'fa-hamburger',
-        'bakery': 'fa-bread-slice',
-        'bar': 'fa-glass-cheers',
-        'pizza': 'fa-pizza-slice',
-        'default': 'fa-store'
-    };
-    function getIcon(cat) {
-        const key = (cat || '').toLowerCase();
-        for (const k in CAT_ICONS) { if (key.includes(k)) return CAT_ICONS[k]; }
-        return CAT_ICONS['default'];
-    }
-
     const container = document.getElementById('mapCatFilter');
-    if (!container || !window.SITE_DATA || !SITE_DATA.categories) return;
+    if (!container || !window.SUGGEST_DATA || !SUGGEST_DATA.categories) return;
 
-    // Build buttons from SITE_DATA.categories
-    SITE_DATA.categories.forEach(function(cat) {
+    // Build one button per category registered in the DB
+    SUGGEST_DATA.categories.forEach(function(cat) {
         const btn = document.createElement('button');
         btn.className = 'mcf-btn';
         btn.setAttribute('data-cat', cat.toLowerCase());
-        btn.innerHTML = '<i class="fas ' + getIcon(cat) + '"></i> ' + cat;
+        btn.innerHTML = '<span class="mcf-check"></span><span>' + cat + '</span>';
         btn.onclick = function() { filterMapCategory(cat.toLowerCase(), this); };
         container.appendChild(btn);
     });
@@ -722,12 +852,10 @@
         const allBtn = container.querySelector('.mcf-all');
 
         if (cat === '__all__') {
-            // Clear all selections, show all
             window._mapActiveCats.clear();
             container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(b => b.classList.remove('active'));
             allBtn.classList.add('active');
         } else {
-            // Toggle this category
             if (window._mapActiveCats.has(cat)) {
                 window._mapActiveCats.delete(cat);
                 btn.classList.remove('active');
@@ -735,7 +863,6 @@
                 window._mapActiveCats.add(cat);
                 btn.classList.add('active');
             }
-            // Deactivate All if any category selected
             if (window._mapActiveCats.size > 0) {
                 allBtn.classList.remove('active');
             } else {
@@ -748,38 +875,409 @@
 
     window.applyMapCatFilter = function() {
         const active = window._mapActiveCats;
-        const showAll = active.size === 0;
 
-        // ── Filter map markers ──────────────────────────────
-        // kabsueats.js stores markers in window.estMarkers or window._estMarkers
-        const markerMap = window.estMarkers || window._estMarkers || {};
-        Object.keys(EST_ALL_DATA).forEach(function(id) {
-            const est = EST_ALL_DATA[id];
-            const estCats = (est.categories || '').toLowerCase();
-            const visible = showAll || Array.from(active).some(c => estCats.includes(c));
+        // ── Hook into kabsueats.js rendering pipeline ──────
+        // esMapData + applyFiltersToData + renderMarkers are all defined in kabsueats.js
+        if (typeof esMapData === 'undefined' || typeof renderMarkers !== 'function') return;
 
-            // Show/hide marker on map
-            const marker = markerMap[id];
-            if (marker) {
-                if (visible) {
-                    if (!window._esMap.hasLayer(marker)) window._esMap.addLayer(marker);
-                } else {
-                    if (window._esMap.hasLayer(marker)) window._esMap.removeLayer(marker);
-                }
-            }
-        });
+        if (active.size === 0) {
+            // "All" selected — clear category filter, show everything
+            mapFilterState.cats = null;
+        } else {
+            // Store active categories array on mapFilterState for applyFiltersToData override
+            mapFilterState.cats = Array.from(active);
+        }
 
-        // ── Filter establishment cards ──────────────────────
-        document.querySelectorAll('.food-est-item').forEach(function(card) {
-            const cardCats = (card.getAttribute('data-category') || '').toLowerCase();
-            const visible = showAll || Array.from(active).some(c => cardCats.includes(c));
-            card.style.display = visible ? '' : 'none';
-        });
+        // Re-render markers with current filter state
+        renderMarkers(_applyFiltersWithCats(esMapData));
     };
+
+    // Wraps applyFiltersToData but replaces single-cat with multi-cat from sidebar
+    function _applyFiltersWithCats(data) {
+        // Run the standard filters first (status, alpha, dist, rating, search)
+        const saved = mapFilterState.cat;
+        mapFilterState.cat = ''; // temporarily clear single-cat so we handle it ourselves
+        let result = applyFiltersToData(data);
+        mapFilterState.cat = saved;
+
+        // Apply multi-cat filter from sidebar
+        if (mapFilterState.cats && mapFilterState.cats.length > 0) {
+            result = result.filter(function(e) {
+                const estCats = (e.categories || '').toLowerCase();
+                const estOther = (e.other_category || '').toLowerCase();
+                return mapFilterState.cats.some(function(c) {
+                    return estCats.includes(c) || estOther.includes(c);
+                });
+            });
+        }
+        return result;
+    }
 })();
 </script>
 {% block extra_js %}{% endblock %}
 
+<!-- ============================================================
+     DIRECTIONS / ROUTING SYSTEM
+     Uses OSRM (free, no API key) + Leaflet polyline
+     ============================================================ -->
+<style>
+/* ── Route line on map ── */
+.route-line { stroke: #3b82f6; stroke-width: 5; stroke-opacity: 0.85; }
+
+/* ── Mini guide panel (bottom of map) ── */
+#routeGuide {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1100;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 28px rgba(0,0,0,.22);
+    border: 1px solid #e5e7eb;
+    width: 320px;
+    max-width: calc(100% - 28px);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+}
+#routeGuide.show { display: flex; }
+
+#routeGuideHeader {
+    background: linear-gradient(135deg, #B71C1C, #8B0000);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+#routeGuideTitle {
+    font-size: 12px;
+    font-weight: 700;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#routeGuideMeta {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,.85);
+    white-space: nowrap;
+}
+#routeGuideClose {
+    background: rgba(255,255,255,.2);
+    border: none;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+#routeGuideClose:hover { background: rgba(255,255,255,.35); }
+
+#routeSteps {
+    padding: 8px 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.rg-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    transition: background .15s;
+}
+.rg-step:hover { background: #f9fafb; }
+.rg-step-ico {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.rg-step-ico.turn-left  { background: #dbeafe; color: #1d4ed8; }
+.rg-step-ico.turn-right { background: #dcfce7; color: #166534; }
+.rg-step-ico.arrive     { background: #fee2e2; color: #B71C1C; }
+.rg-step-ico.depart     { background: #f0fdf4; color: #166534; }
+.rg-step-text { flex: 1; min-width: 0; }
+.rg-step-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.3;
+}
+.rg-step-dist {
+    font-size: 10.5px;
+    color: #9ca3af;
+    margin-top: 1px;
+}
+#routeGuideLoading {
+    padding: 18px;
+    text-align: center;
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+</style>
+
+<script>
+// ── Routing state ──────────────────────────────────────────────
+window._routeLayer  = null;   // current Leaflet polyline/layer
+window._userLat     = null;
+window._userLng     = null;
+
+// ── Silently watch user position to always have coords ready ──
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+        function(pos) {
+            window._userLat = pos.coords.latitude;
+            window._userLng = pos.coords.longitude;
+        },
+        null,
+        { enableHighAccuracy: true, maximumAge: 15000 }
+    );
+}
+
+// ── Main: show route from user → establishment ─────────────────
+window.showRouteTo = function(destLat, destLng, destName) {
+    // If we don't have user location yet, request it now then route
+    if (!window._userLat || !window._userLng) {
+        if (!navigator.geolocation) {
+            if (typeof showToast === 'function') showToast('Geolocation not supported.', 'error');
+            return;
+        }
+        if (typeof showToast === 'function') showToast('Getting your location...', 'info');
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                window._userLat = pos.coords.latitude;
+                window._userLng = pos.coords.longitude;
+                window.showRouteTo(destLat, destLng, destName); // retry
+            },
+            function() {
+                if (typeof showToast === 'function')
+                    showToast('Could not get location. Please allow location access.', 'error');
+            },
+            { timeout: 8000, maximumAge: 30000 }
+        );
+        return;
+    }
+
+    // Show loading state in guide panel
+    const guide = document.getElementById('routeGuide');
+    const stepsEl = document.getElementById('routeSteps');
+    const loadingEl = document.getElementById('routeGuideLoading');
+    const titleEl = document.getElementById('routeGuideTitle');
+    const metaEl = document.getElementById('routeGuideMeta');
+
+    titleEl.textContent = 'Getting directions...';
+    metaEl.textContent = '';
+    stepsEl.style.display = 'none';
+    loadingEl.style.display = 'flex';
+    guide.classList.add('show');
+
+    // Remove old route layer
+    if (window._routeLayer && mapInst) {
+        mapInst.removeLayer(window._routeLayer);
+        window._routeLayer = null;
+    }
+
+    // Call OSRM routing API (free, no key)
+    const url = `https://router.project-osrm.org/route/v1/driving/` +
+        `${window._userLng},${window._userLat};${destLng},${destLat}` +
+        `?overview=full&geometries=geojson&steps=true`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.routes || !data.routes.length) throw new Error('No route');
+            const route = data.routes[0];
+
+            // ── Draw polyline ──────────────────────────────
+            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+            window._routeLayer = L.polyline(coords, {
+                color: '#3b82f6', weight: 5, opacity: 0.85,
+                lineJoin: 'round', lineCap: 'round',
+                dashArray: null
+            }).addTo(mapInst);
+            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [40, 40] });
+
+            // ── Parse steps ────────────────────────────────
+            const legs = route.legs || [];
+            const allSteps = [];
+            legs.forEach(leg => (leg.steps || []).forEach(s => allSteps.push(s)));
+
+            const distM  = route.distance;
+            const durSec = route.duration;
+            const distTxt = distM < 1000
+                ? Math.round(distM) + ' m'
+                : (distM / 1000).toFixed(1) + ' km';
+            const durTxt = durSec < 60
+                ? Math.round(durSec) + ' sec'
+                : durSec < 3600
+                    ? Math.round(durSec / 60) + ' min'
+                    : Math.floor(durSec / 3600) + 'h ' + Math.round((durSec % 3600) / 60) + 'm';
+
+            titleEl.textContent = '📍 ' + destName;
+            metaEl.textContent  = distTxt + ' · ' + durTxt;
+            loadingEl.style.display = 'none';
+            stepsEl.style.display = 'flex';
+            stepsEl.innerHTML = '';
+
+            allSteps.forEach(function(step) {
+                const maneuver = (step.maneuver || {});
+                const type = maneuver.type || '';
+                const modifier = maneuver.modifier || '';
+                const name = step.name || '';
+                const dist = step.distance || 0;
+                const distLabel = dist < 5 ? '' :
+                    dist < 1000 ? Math.round(dist) + ' m' :
+                    (dist / 1000).toFixed(1) + ' km';
+
+                // Icon + class based on maneuver
+                let icoClass = '', icoHtml = '';
+                if (type === 'arrive') {
+                    icoClass = 'arrive';
+                    icoHtml = '<i class="fas fa-map-marker-alt"></i>';
+                } else if (type === 'depart') {
+                    icoClass = 'depart';
+                    icoHtml = '<i class="fas fa-walking"></i>';
+                } else if (modifier.includes('left')) {
+                    icoClass = 'turn-left';
+                    icoHtml = '<i class="fas fa-arrow-left"></i>';
+                } else if (modifier.includes('right')) {
+                    icoClass = 'turn-right';
+                    icoHtml = '<i class="fas fa-arrow-right"></i>';
+                } else if (modifier === 'uturn') {
+                    icoClass = '';
+                    icoHtml = '<i class="fas fa-undo"></i>';
+                } else {
+                    icoClass = '';
+                    icoHtml = '<i class="fas fa-arrow-up"></i>';
+                }
+
+                // Step label
+                let label = '';
+                if (type === 'depart')       label = 'Head ' + (modifier || 'forward');
+                else if (type === 'arrive')  label = 'Arrive at ' + (name || destName);
+                else if (type === 'turn')    label = 'Turn ' + modifier + (name ? ' onto ' + name : '');
+                else if (type === 'continue') label = 'Continue' + (name ? ' on ' + name : '');
+                else if (type === 'roundabout') label = 'Enter roundabout' + (name ? ' — ' + name : '');
+                else label = (type ? cap(type) : 'Go') + (modifier ? ' ' + modifier : '') + (name ? ' on ' + name : '');
+
+                const div = document.createElement('div');
+                div.className = 'rg-step';
+                div.innerHTML =
+                    '<div class="rg-step-ico ' + icoClass + '">' + icoHtml + '</div>' +
+                    '<div class="rg-step-text">' +
+                        '<div class="rg-step-name">' + escHtml(label) + '</div>' +
+                        (distLabel ? '<div class="rg-step-dist">' + distLabel + '</div>' : '') +
+                    '</div>';
+                stepsEl.appendChild(div);
+            });
+        })
+        .catch(function() {
+            // OSRM failed — draw straight line fallback
+            if (window._routeLayer && mapInst) mapInst.removeLayer(window._routeLayer);
+            window._routeLayer = L.polyline(
+                [[window._userLat, window._userLng], [destLat, destLng]],
+                { color: '#3b82f6', weight: 4, opacity: 0.75, dashArray: '8 6' }
+            ).addTo(mapInst);
+            mapInst.fitBounds(window._routeLayer.getBounds(), { padding: [40, 40] });
+
+            titleEl.textContent = '📍 ' + destName;
+            metaEl.textContent = 'Straight line (no route data)';
+            loadingEl.style.display = 'none';
+            stepsEl.style.display = 'flex';
+            stepsEl.innerHTML =
+                '<div class="rg-step"><div class="rg-step-ico arrive"><i class="fas fa-map-marker-alt"></i></div>' +
+                '<div class="rg-step-text"><div class="rg-step-name">Head towards ' + escHtml(destName) + '</div></div></div>';
+        });
+};
+
+// ── Close guide + clear route ──────────────────────────────────
+window.closeRouteGuide = function() {
+    document.getElementById('routeGuide').classList.remove('show');
+    if (window._routeLayer && mapInst) {
+        mapInst.removeLayer(window._routeLayer);
+        window._routeLayer = null;
+    }
+};
+
+// Helper — capitalize (may already exist in kabsueats.js)
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+<!-- routeGuide panel injected directly in map-wrap HTML -->
+
+<!-- ── Add Directions button to map popups ── -->
+<script>
+window._lastMapData = [];
+(function patchMapRendering() {
+    function tryPatch() {
+        if (typeof renderMarkers !== 'function') { setTimeout(tryPatch, 200); return; }
+        const _orig = renderMarkers;
+        window.renderMarkers = function(data) {
+            window._lastMapData = data || [];
+            _orig(data);
+            if (!window.mkLayer) return;
+            window.mkLayer.eachLayer(function(layer) {
+                if (!layer._popup) return;
+                var html = layer._popup._content;
+                if (!html || html.indexOf('showRouteTo') !== -1) return;
+                var ll = layer.getLatLng();
+                var e = null;
+                for (var i = 0; i < window._lastMapData.length; i++) {
+                    var d = window._lastMapData[i];
+                    if (d.latitude && d.longitude &&
+                        Math.abs(parseFloat(d.latitude) - ll.lat) < 0.0002 &&
+                        Math.abs(parseFloat(d.longitude) - ll.lng) < 0.0002) {
+                        e = d; break;
+                    }
+                }
+                if (!e) return;
+                var lat = parseFloat(e.latitude);
+                var lng = parseFloat(e.longitude);
+                var safeName = (e.name || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                var dirBtn = '<button onclick="showRouteTo(' + lat + ',' + lng + ',\'' + safeName + '\')" '
+                    + 'style="margin-top:6px;width:100%;padding:8px;background:#eff6ff;color:#1d4ed8;'
+                    + 'border:1.5px solid #bfdbfe;border-radius:8px;font-size:11.5px;font-weight:700;'
+                    + 'cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;'
+                    + 'justify-content:center;gap:6px;">'
+                    + '<i class="fas fa-route"></i> Get Directions</button>';
+                var lastDiv = html.lastIndexOf('</div>');
+                if (lastDiv !== -1) {
+                    layer._popup._content = html.slice(0, lastDiv) + dirBtn + html.slice(lastDiv);
+                }
+            });
+        };
+    }
+    tryPatch();
+})();
+</script>
 
 <!-- ============================================================
      GLOBAL CONNECTION OVERLAY — must be LAST before </body>
