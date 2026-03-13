@@ -5637,5 +5637,258 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endblock %}
 
+
+
+<!-- ============================================================
+     GLOBAL CONNECTION & DB ERROR OVERLAY
+     Handles: offline, 502/503/504, DB OperationalError
+     ============================================================ -->
+<style>
+#connectionOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+}
+#connectionOverlay.active { display: flex !important; }
+#connectionOverlayBox {
+    background: #fff;
+    border-radius: 18px;
+    padding: 40px 32px;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    animation: connBoxPop 0.25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes connBoxPop {
+    from { transform: scale(0.88) translateY(16px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.conn-icon-offline, .conn-icon-db {
+    font-size: 2.8rem;
+    color: #B71C1C;
+    margin-bottom: 4px;
+    display: none;
+}
+.conn-spinner {
+    width: 48px; height: 48px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #B71C1C;
+    border-radius: 50%;
+    animation: connSpin 0.9s linear infinite;
+    margin: 0 auto 12px;
+    display: none;
+}
+@keyframes connSpin { to { transform: rotate(360deg); } }
+#connectionOverlayBox h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #111;
+    margin: 8px 0 8px;
+    font-family: 'Poppins', sans-serif;
+}
+#connectionOverlayBox p {
+    color: #6B7280;
+    font-size: 0.88rem;
+    margin: 0 0 20px;
+    line-height: 1.55;
+    font-family: 'Poppins', sans-serif;
+}
+#connRetryBtn {
+    padding: 11px 28px;
+    background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: 'Poppins', sans-serif;
+    transition: transform 0.2s;
+    display: none;
+}
+#connRetryBtn:hover { transform: scale(1.04); }
+</style>
+
+<div id="connectionOverlay">
+    <div id="connectionOverlayBox">
+        <i class="fas fa-wifi conn-icon-offline" id="connIconOffline"></i>
+        <i class="fas fa-database conn-icon-db" id="connIconDb"></i>
+        <div class="conn-spinner" id="connSpinner"></div>
+        <h3 id="connTitle">Connecting...</h3>
+        <p id="connMsg">Please wait while we reconnect.</p>
+        <button id="connRetryBtn" onclick="window._connRetry()">
+            <i class="fas fa-redo"></i> Try Again
+        </button>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var overlay  = document.getElementById('connectionOverlay');
+    var titleEl  = document.getElementById('connTitle');
+    var msgEl    = document.getElementById('connMsg');
+    var retryBtn = document.getElementById('connRetryBtn');
+    var spinner  = document.getElementById('connSpinner');
+    var offIcon  = document.getElementById('connIconOffline');
+    var dbIcon   = document.getElementById('connIconDb');
+
+    var _retryFn = null;
+
+    // ── Show overlay ─────────────────────────────────────────
+    // iconType: 'offline' | 'db' | 'spinner'
+    window.showConnectionOverlay = function (title, msg, retryFn, iconType) {
+        titleEl.textContent  = title || 'Connecting...';
+        msgEl.textContent    = msg   || 'Please wait while we reconnect.';
+        _retryFn             = retryFn || null;
+
+        spinner.style.display = 'none';
+        offIcon.style.display = 'none';
+        dbIcon.style.display  = 'none';
+
+        if (iconType === 'db') {
+            dbIcon.style.display = 'block';
+        } else if (iconType === 'offline' || !navigator.onLine) {
+            offIcon.style.display = 'block';
+        } else {
+            spinner.style.display = 'block';
+        }
+
+        retryBtn.style.display = _retryFn ? 'inline-block' : 'none';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    // ── DB-specific convenience wrapper ──────────────────────
+    window.showDatabaseErrorOverlay = function () {
+        showConnectionOverlay(
+            'Database Unavailable',
+            'Our database is temporarily unreachable. Please try again in a moment.',
+            function () { window.location.reload(); },
+            'db'
+        );
+    };
+
+    // ── Hide overlay ─────────────────────────────────────────
+    window.hideConnectionOverlay = function () {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        _retryFn = null;
+    };
+
+    // ── Retry callback ────────────────────────────────────────
+    window._connRetry = function () {
+        retryBtn.style.display = 'none';
+        spinner.style.display  = 'block';
+        offIcon.style.display  = 'none';
+        dbIcon.style.display   = 'none';
+        titleEl.textContent    = 'Retrying...';
+        msgEl.textContent      = 'Trying to reconnect, please wait.';
+        setTimeout(function () { if (_retryFn) _retryFn(); }, 600);
+    };
+
+    // ── Intercept all fetch() calls globally ─────────────────
+    var _origFetch = window.fetch;
+    window.fetch = function (url, opts) {
+        return _origFetch(url, opts)
+            .then(function (res) {
+                if (res.status === 503) {
+                    showConnectionOverlay(
+                        'Database Unavailable',
+                        'Our database is temporarily unreachable. Please try again in a moment.',
+                        function () { window.location.reload(); },
+                        'db'
+                    );
+                } else if (res.status === 502 || res.status === 504) {
+                    showConnectionOverlay(
+                        'Server Unavailable',
+                        'The server is temporarily down. Please wait a moment.',
+                        function () { window.location.reload(); },
+                        'spinner'
+                    );
+                }
+                return res;
+            })
+            .catch(function (err) {
+                var offline = !navigator.onLine;
+                showConnectionOverlay(
+                    offline ? 'No Internet Connection' : 'Connection Problem',
+                    offline
+                        ? 'Please check your internet connection and try again.'
+                        : 'Something went wrong with the connection. Please wait.',
+                    function () {
+                        if (navigator.onLine) {
+                            window.location.reload();
+                        } else {
+                            titleEl.textContent    = 'Still Offline';
+                            msgEl.textContent      = 'No internet detected. Please check your connection.';
+                            spinner.style.display  = 'none';
+                            offIcon.style.display  = 'block';
+                            dbIcon.style.display   = 'none';
+                            retryBtn.style.display = 'inline-block';
+                        }
+                    },
+                    offline ? 'offline' : 'spinner'
+                );
+                throw err;
+            });
+    };
+
+    // ── Browser goes offline ──────────────────────────────────
+    window.addEventListener('offline', function () {
+        showConnectionOverlay(
+            'No Internet Connection',
+            'Your internet connection was lost. Please check your connection.',
+            function () {
+                if (navigator.onLine) {
+                    hideConnectionOverlay();
+                    window.location.reload();
+                } else {
+                    titleEl.textContent    = 'Still Offline';
+                    msgEl.textContent      = 'No internet detected. Please check your Wi-Fi or mobile data.';
+                    spinner.style.display  = 'none';
+                    offIcon.style.display  = 'block';
+                    dbIcon.style.display   = 'none';
+                    retryBtn.style.display = 'inline-block';
+                }
+            },
+            'offline'
+        );
+    });
+
+    // ── Browser comes back online ─────────────────────────────
+    window.addEventListener('online', function () {
+        if (overlay.classList.contains('active')) {
+            titleEl.textContent    = 'Connection Restored!';
+            msgEl.textContent      = 'You\'re back online. Reloading the page...';
+            spinner.style.display  = 'block';
+            offIcon.style.display  = 'none';
+            dbIcon.style.display   = 'none';
+            retryBtn.style.display = 'none';
+            setTimeout(function () {
+                hideConnectionOverlay();
+                window.location.reload();
+            }, 1500);
+        }
+    });
+
+    // ── Auto-show DB error overlay if Django flagged it ───────
+    {% if db_error %}
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.showDatabaseErrorOverlay) window.showDatabaseErrorOverlay();
+    });
+    {% endif %}
+
+}());
+</script>
+
 </body>
 </html>
