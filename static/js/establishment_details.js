@@ -511,25 +511,77 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // Establishment open/closed status
+    // ✅ Establishment open/closed status — use backend-provided status via status_updater.js
+    // EST_OPENING_24H and EST_CLOSING_24H are set as JS globals in the HTML template.
+    // We compute the status client-side using those values for accuracy.
     const estStatus = document.getElementById('itemModalEstStatus');
+    let isEstablishmentOpen = false;
     if (estStatus) {
-        const now = new Date();
-        const hour = now.getHours();
-        // Simple check — ideally server-provided; fallback visual
-        estStatus.className = 'item-modal-est-status open';
-        estStatus.textContent = 'Open';
+        // Derive current open/closed from EST_OPENING_24H / EST_CLOSING_24H globals
+        try {
+            const openStr  = (typeof EST_OPENING_24H !== 'undefined') ? EST_OPENING_24H : '';
+            const closeStr = (typeof EST_CLOSING_24H !== 'undefined') ? EST_CLOSING_24H : '';
+
+            if (openStr && closeStr) {
+                const now    = new Date();
+                const nowMin = now.getHours() * 60 + now.getMinutes();
+
+                const [oh, om] = openStr.split(':').map(Number);
+                const [ch, cm] = closeStr.split(':').map(Number);
+                const openMin  = oh * 60 + om;
+                const closeMin = ch * 60 + cm;
+
+                if (closeMin > openMin) {
+                    // Same-day window (e.g. 08:00–20:00)
+                    isEstablishmentOpen = nowMin >= openMin && nowMin < closeMin;
+                } else {
+                    // Overnight window (e.g. 22:00–06:00)
+                    isEstablishmentOpen = nowMin >= openMin || nowMin < closeMin;
+                }
+            } else {
+                // No hours on record — fall back to the status badge already on the page
+                const badge = document.querySelector('.status-badge');
+                if (badge) {
+                    isEstablishmentOpen = badge.classList.contains('status-open');
+                }
+            }
+        } catch (e) {
+            isEstablishmentOpen = false;
+        }
+
+        if (isEstablishmentOpen) {
+            estStatus.className = 'item-modal-est-status open';
+            estStatus.textContent = 'Open';
+        } else {
+            estStatus.className = 'item-modal-est-status closed';
+            estStatus.textContent = 'Closed';
+        }
     }
 
     const addToCartBtn = document.getElementById('modalAddToCartBtn');
-    const buyNowBtn = document.getElementById('modalBuyNowBtn');
+    const buyNowBtn    = document.getElementById('modalBuyNowBtn');
 
-    if (itemQuantity <= 0) {
-        if (addToCartBtn) { addToCartBtn.disabled = true; addToCartBtn.style.opacity = '0.5'; }
-        if (buyNowBtn) { buyNowBtn.disabled = true; buyNowBtn.style.opacity = '0.5'; }
+    // ✅ Disable order buttons when establishment is CLOSED or stock is 0
+    const canOrder = itemQuantity > 0 && isEstablishmentOpen;
+
+    if (!canOrder) {
+        if (addToCartBtn) {
+            addToCartBtn.disabled = true;
+            addToCartBtn.style.opacity = '0.45';
+            addToCartBtn.title = itemQuantity <= 0
+                ? 'This item is out of stock'
+                : 'This establishment is currently closed';
+        }
+        if (buyNowBtn) {
+            buyNowBtn.disabled = true;
+            buyNowBtn.style.opacity = '0.45';
+            buyNowBtn.title = itemQuantity <= 0
+                ? 'This item is out of stock'
+                : 'This establishment is currently closed';
+        }
     } else {
-        if (addToCartBtn) { addToCartBtn.disabled = false; addToCartBtn.style.opacity = '1'; }
-        if (buyNowBtn) { buyNowBtn.disabled = false; buyNowBtn.style.opacity = '1'; }
+        if (addToCartBtn) { addToCartBtn.disabled = false; addToCartBtn.style.opacity = '1'; addToCartBtn.title = ''; }
+        if (buyNowBtn)    { buyNowBtn.disabled = false;    buyNowBtn.style.opacity = '1';    buyNowBtn.title = ''; }
     }
 
     const itemDetailModal = document.getElementById('itemDetailModal');

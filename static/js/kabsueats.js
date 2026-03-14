@@ -163,6 +163,8 @@ function refreshBestsellerStatuses() {
                     const st = (fresh.establishment.status || 'closed').toLowerCase();
                     const stEl = document.getElementById('mEstS');
                     if (stEl) { stEl.className = `mests ${st}`; stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`; }
+                    // ✅ Re-apply order button state in case establishment just opened/closed
+                    applyModOrderState(st, currentModalItem.quantity);
                 }
             }
         })
@@ -335,6 +337,7 @@ function renderBS(data, isSearchResult = false) {
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${escHtml(d.name)}</div>
+                ${d.description ? `<div class="bsc-desc">${escHtml(d.description)}</div>` : ''}
                 <div class="bsc-price">₱${parseFloat(d.price).toFixed(2)}</div>
                 <div class="bsc-stats">
                     <span><i class="fas fa-shopping-bag"></i> ${d.total_orders || 0} orders</span>
@@ -1615,11 +1618,14 @@ function openMod(id) {
     stEl.className = `mests ${st}`;
     stEl.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(st)}`;
 
+    // ✅ Enable/disable order buttons based on establishment status and stock
+    applyModOrderState(st, d.quantity);
+
     document.getElementById('mqty').value = 1;
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
-    // Fetch fresh status
+    // Fetch fresh status from backend
     fetch(URLS.bestsellers)
         .then(r => r.json())
         .then(data => {
@@ -1632,8 +1638,31 @@ function openMod(id) {
             const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
             const el = document.getElementById('mEstS');
             if (el) { el.className = `mests ${freshSt}`; el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`; }
+            // ✅ Re-apply button state with the fresh status
+            applyModOrderState(freshSt, currentModalItem ? currentModalItem.quantity : 0);
         })
         .catch(() => {});
+}
+
+// ✅ Helper: enable/disable Add to Cart & Buy Now buttons in the bestseller modal
+function applyModOrderState(status, quantity) {
+    const addBtn = document.getElementById('addToCartBtn');
+    const buyBtn = document.getElementById('buyNowBtn');
+    const isOpen = status === 'open';
+    const canOrder = isOpen && quantity > 0;
+
+    [addBtn, buyBtn].forEach(btn => {
+        if (!btn) return;
+        btn.disabled = !canOrder;
+        btn.style.opacity = canOrder ? '1' : '0.45';
+        if (!canOrder) {
+            btn.title = !isOpen
+                ? 'This establishment is currently closed'
+                : 'This item is out of stock';
+        } else {
+            btn.title = '';
+        }
+    });
 }
 
 function closeMod() {

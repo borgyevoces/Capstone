@@ -323,6 +323,7 @@
     .bsc-badge i { font-size: 8px; }
     .bsc-body { padding: 8px 10px 7px; }
     .bsc-name { font-size: 12px; font-weight: 700; color: var(--g800); margin-bottom: 2px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .bsc-desc { font-size: 10.5px; color: var(--g500, #6b7280); margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
     .bsc-price { font-size: 15px; font-weight: 800; color: var(--red); margin-bottom: 4px; }
     .bsc-stats { display: flex; gap: 7px; font-size: 10px; color: var(--g600); margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid var(--g100); }
     .bsc-stats span { display: flex; align-items: center; gap: 3px; }

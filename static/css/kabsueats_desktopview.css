@@ -210,6 +210,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .bsc-badge i { font-size: 10px; }
 .bsc-body { padding: 10px 13px 9px; }
 .bsc-name { font-size: 14px; font-weight: 700; color: var(--g800); margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.bsc-desc { font-size: 11.5px; color: var(--g500, #6b7280); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
 .bsc-price { font-size: 17px; font-weight: 800; color: var(--red); margin-bottom: 5px; }
 .bsc-stats { display: flex; gap: 10px; font-size: 11px; color: var(--g600); margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--g100); }
 .bsc-stats span { display: flex; align-items: center; gap: 4px; }
@@ -437,7 +438,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .mimg { position: relative; height: 380px; }
 .mimg img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px 0 0 18px; }
 .m-bsbadge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg,var(--orange),var(--orange2)); color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
-.mdet { padding: 26px 24px; }
+.mdet { padding: 26px 24px; display: flex; flex-direction: column; }
 .miname { font-size: 22px; font-weight: 800; color: var(--g800); margin-bottom: 10px; }
 .midesc { font-size: 13px; color: var(--g600); line-height: 1.6; margin-bottom: 14px; }
 .mpr { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
@@ -457,7 +458,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .qb:hover { background: var(--g300); color: var(--g800); }
 #mqty { width: 50px; text-align: center; border: 2px solid var(--g200); border-radius: 8px; padding: 6px; font-size: 14px; font-weight: 700; font-family: 'Poppins', sans-serif; outline: none; }
 /* Action buttons — Add to Cart (red) + Buy Now (orange) */
-.mar { display: flex; gap: 10px; }
+.mar { display: flex; gap: 10px; margin-top: auto; }
 .macb { flex: 1; padding: 12px; background: linear-gradient(135deg,var(--red),var(--red-dark)); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; text-decoration: none; }
 .macb:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(183,28,28,.35); }
 .mbnb { flex: 1; padding: 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; }
