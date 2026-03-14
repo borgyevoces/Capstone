@@ -6729,7 +6729,7 @@ def get_establishment_realtime(request, establishment_id):
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f'get_establishment_realtime error: {e}')
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        return JsonResponse({'error': 'database_unavailable'}, status=503)
 
 
 # ============================================================
@@ -6789,7 +6789,7 @@ def get_all_establishments_status(request):
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f'get_all_establishments_status error: {e}')
-        return JsonResponse({'success': True, 'establishments': []})
+        return JsonResponse({'error': 'database_unavailable'}, status=503)
 
 
 def get_bestsellers(request):
@@ -6843,12 +6843,7 @@ def get_bestsellers(request):
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"DB error in get_bestsellers: {e}")
-        return JsonResponse({
-            'success': True,
-            'bestsellers': [],
-            'count': 0,
-            'warning': 'Database temporarily unavailable'
-        })
+        return JsonResponse({'error': 'database_unavailable'}, status=503)
 
 def search_menu_items(request):
     """
