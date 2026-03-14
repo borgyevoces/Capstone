@@ -3509,7 +3509,7 @@
             </div>
             <div class="btn-text">
                 <span class="btn-label">Total Items</span>
-                <span class="btn-desc stats-number">{{ menu_items|length }}</span>
+                <span class="btn-desc stats-number" id="totalItemsCount">{{ menu_items|length }}</span>
             </div>
         </div>
         <div class="top-action-btn stats-card bestsellers-card">
@@ -3518,7 +3518,7 @@
             </div>
             <div class="btn-text">
                 <span class="btn-label">Top Sellers</span>
-                <span class="btn-desc stats-number">{{ top_sellers_count|default:"0" }}</span>
+                <span class="btn-desc stats-number" id="topSellersCount">{{ top_sellers_count|default:"0" }}</span>
             </div>
         </div>
     </div>
@@ -4413,7 +4413,7 @@ function confirmToggleSeller() {
             }
 
             // 4. Update the Top Sellers stat counter
-            if (typeof updateStoreStats === 'function') updateStoreStats();
+            if (typeof fetchRealtimeStats === 'function') fetchRealtimeStats(); else if (typeof updateStoreStats === 'function') updateStoreStats();
 
             // 5. Show success notification
             const icon = data.is_top_seller ? '⭐' : '✅';
@@ -4439,6 +4439,7 @@ function confirmToggleSeller() {
 
 <script>
     const establishmentId = {{ establishment.id }};
+    const DASHBOARD_REALTIME_URL = "{% url 'get_establishment_realtime' establishment.id %}";
     const currentUserId = {{ request.user.id }};
     let activeCustomerId = null;
     let chatSocket = null;

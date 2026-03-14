@@ -1728,9 +1728,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 document.addEventListener('DOMContentLoaded', function() {
-    updateStoreStats();
+    // ✅ Initial load: fetch from backend for accuracy
+    fetchRealtimeStats();
 
-    // Update stats whenever menu changes
+    // ✅ Poll backend every 30s for realtime updates
+    setInterval(fetchRealtimeStats, 30000);
+
+    // ✅ Also update from DOM whenever menu cards change (add/edit/delete)
     const observer = new MutationObserver(updateStoreStats);
     const menuGrid = document.querySelector('.menu-grid');
     if (menuGrid) {
@@ -1738,20 +1742,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ✅ REALTIME: Fetch live menu stats from backend every 30s
+function fetchRealtimeStats() {
+    const url = (typeof DASHBOARD_REALTIME_URL !== 'undefined') ? DASHBOARD_REALTIME_URL : null;
+    if (!url) { updateStoreStats(); return; }
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success || !data.menu_items) { updateStoreStats(); return; }
+            const totalItems = data.menu_items.length;
+            const topSellers = data.menu_items.filter(m => m.is_top_seller).length;
+            animateCount('totalItemsCount', totalItems);
+            animateCount('topSellersCount', topSellers);
+        })
+        .catch(() => updateStoreStats());
+}
+
 function updateStoreStats() {
-    // Count Best Sellers (items with "Best Seller" badge)
-    const bestSellerBadges = document.querySelectorAll('.badge.bestseller');
-    const bestSellerCount = bestSellerBadges.length;
-
-    // Count Available Items (items with quantity > 0)
-    const availableBadges = document.querySelectorAll('.badge.available');
-    const availableCount = availableBadges.length;
-
-    // Update display with animation
-    animateCount('bestSellerCount', bestSellerCount);
-    animateCount('availableCount', availableCount);
-
-    console.log(`âœ… Stats Updated: ${bestSellerCount} Best Sellers, ${availableCount} Available`);
+    const totalItems = document.querySelectorAll('.menu-card').length;
+    const topSellers = document.querySelectorAll('.badge.bestseller').length;
+    animateCount('totalItemsCount', totalItems);
+    animateCount('topSellersCount', topSellers);
 }
 
 function animateCount(elementId, targetCount) {
@@ -1779,7 +1790,7 @@ function animateCount(elementId, targetCount) {
 }
 
 // âœ… Auto-update when menu items are added/edited/deleted
-window.addEventListener('menuUpdated', updateStoreStats);
+window.addEventListener('menuUpdated', fetchRealtimeStats);
 // ==========================================
 // DELETE ESTABLISHMENT FUNCTIONALITY
 // ==========================================
