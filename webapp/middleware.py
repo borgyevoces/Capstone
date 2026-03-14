@@ -97,47 +97,45 @@ class DatabaseErrorMiddleware:
             return HttpResponse(_FALLBACK_HTML, status=503, content_type='text/html; charset=utf-8')
 
 
-# ── Fallback HTML (zero template dependencies) ───────────────────────────────
+# ── Fallback HTML — modal overlay style, no template dependencies ─────────────
 _FALLBACK_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Service Temporarily Unavailable – KabsuEats</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;800&display=swap" rel="stylesheet">
+  <title>KabsuEats</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Poppins',sans-serif;background:#f9fafb;min-height:100vh;
-         display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{background:#fff;border-radius:20px;padding:48px 36px;max-width:420px;
-          width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12)}
-    .icon-wrap{width:72px;height:72px;background:#fee2e2;border-radius:50%;
-               display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
-    .icon-wrap i{font-size:2rem;color:#dc2626}
-    .brand{font-size:1.3rem;font-weight:800;color:#dc2626;margin-bottom:28px}
-    h1{font-size:1.4rem;font-weight:800;color:#111;margin-bottom:12px}
-    p{color:#6b7280;font-size:.9rem;line-height:1.6;margin-bottom:28px}
-    .btn{display:inline-block;background:linear-gradient(135deg,#dc2626,#b91c1c);
-         color:#fff;font-weight:700;font-size:.95rem;padding:12px 28px;
-         border-radius:50px;text-decoration:none;border:none;cursor:pointer}
-    #cd{font-weight:700;color:#dc2626}
+    body{font-family:'Poppins',Arial,sans-serif;background:#f3f4f6;min-height:100vh;}
+    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);
+             backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+             display:flex;align-items:center;justify-content:center;z-index:999999;}
+    .box{background:#fff;border-radius:18px;padding:40px 32px;max-width:380px;
+         width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.25);
+         animation:pop .25s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes pop{from{transform:scale(.88) translateY(16px);opacity:0}
+                   to{transform:scale(1) translateY(0);opacity:1}}
+    .db-icon{font-size:2.2rem;color:#B71C1C;margin-bottom:12px;}
+    h3{font-size:1.15rem;font-weight:800;color:#111;margin:0 0 8px;}
+    p{color:#6B7280;font-size:.88rem;line-height:1.55;margin:0 0 20px;}
+    .btn{background:linear-gradient(135deg,#B71C1C,#7f1111);color:#fff;border:none;
+         padding:11px 28px;border-radius:50px;font-weight:700;font-size:.92rem;
+         cursor:pointer;transition:transform .2s;}
+    .btn:hover{transform:scale(1.04);}
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="brand">KabsuEats</div>
-    <div class="icon-wrap"><i class="fas fa-database"></i></div>
-    <h1>Service Temporarily Unavailable</h1>
-    <p>Our database is temporarily unreachable. Auto-retrying in
-       <span id="cd">30</span>s. You can also try manually.</p>
-    <a href="/" class="btn"><i class="fas fa-redo"></i>&nbsp; Try Again</a>
+  <div id="overlay">
+    <div class="box">
+      <div class="db-icon"><i class="fas fa-database"></i></div>
+      <h3>Database Unavailable</h3>
+      <p>Our database is temporarily unreachable.<br>Please try again in a moment.</p>
+      <button class="btn" onclick="location.reload()">
+        <i class="fas fa-redo"></i> Try Again
+      </button>
+    </div>
   </div>
-  <script>
-    var s=30,el=document.getElementById('cd');
-    var t=setInterval(function(){s--;if(el)el.textContent=s;
-      if(s<=0){clearInterval(t);location.reload();}},1000);
-  </script>
 </body>
 </html>"""
 
