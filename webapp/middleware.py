@@ -60,27 +60,41 @@ class DatabaseErrorMiddleware:
 
     def _db_error_response(self, request):
         """
-        Renders db_error.html (place at webapp/templates/webapplication/db_error.html).
-        Falls back to inline HTML if template rendering itself fails.
+        - API/fetch calls → JSON 503 (JS fetch interceptor shows modal)
+        - Owner dashboard  → food_establishment_dashboard.html with db_error=True
+        - All other pages  → kabsueats.html with db_error=True
+        - Fallback         → inline HTML if template fails
         """
-        try:
-            html = render_to_string(
-                'webapplication/db_error.html',
-                {
-                    'error_message': (
-                        'Our database is temporarily unavailable. '
-                        'Please try again in a few minutes.'
-                    ),
-                },
-                request=request,
+        import json
+
+        # ── API / fetch calls → JSON 503
+        is_ajax = (
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or request.path.startswith('/api/')
+            or request.headers.get('Accept', '').startswith('application/json')
+        )
+        if is_ajax:
+            return HttpResponse(
+                json.dumps({'error': 'database_unavailable', 'message': 'Our database is temporarily unavailable.'}),
+                status=503,
+                content_type='application/json'
             )
+
+        # ── Pick the right template based on URL
+        path = request.path
+        if path.startswith('/food_establishment/dashboard') or path.startswith('/owner/'):
+            template = 'webapplication/food_establishment_dashboard.html'
+            context  = {'db_error': True, 'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.'}
+        else:
+            template = 'webapplication/kabsueats.html'
+            context  = {'db_error': True, 'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.', 'food_establishments': [], 'all_categories': []}
+
+        try:
+            html = render_to_string(template, context, request=request)
             return HttpResponse(html, status=503)
         except Exception as tmpl_err:
-            logger.error(
-                f"[DatabaseErrorMiddleware] Template render failed: {tmpl_err}"
-            )
-            return HttpResponse(_FALLBACK_HTML, status=503,
-                                content_type='text/html; charset=utf-8')
+            logger.error(f"[DatabaseErrorMiddleware] Template render failed: {tmpl_err}")
+            return HttpResponse(_FALLBACK_HTML, status=503, content_type='text/html; charset=utf-8')
 
 
 # ── Fallback HTML (zero template dependencies) ───────────────────────────────

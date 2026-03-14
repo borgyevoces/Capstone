@@ -28,44 +28,6 @@ function getCsrf() {
     return document.getElementById('csrfToken')?.value || '';
 }
 
-// ── Global Fetch Interceptor — triggers DB modal on 503/502/504 ──
-(function () {
-    var _origFetch = window.fetch;
-    window.fetch = function (url, opts) {
-        return _origFetch(url, opts)
-            .then(function (res) {
-                if (res.status === 503) {
-                    if (window.showDatabaseErrorOverlay) window.showDatabaseErrorOverlay();
-                } else if (res.status === 502 || res.status === 504) {
-                    if (window.showConnectionOverlay) {
-                        window.showConnectionOverlay(
-                            'Server Unavailable',
-                            'The server is temporarily down. Please wait a moment.',
-                            function () { window.location.reload(); },
-                            'spinner'
-                        );
-                    }
-                }
-                return res;
-            })
-            .catch(function (err) {
-                var offline = !navigator.onLine;
-                if (window.showConnectionOverlay) {
-                    window.showConnectionOverlay(
-                        offline ? 'No Internet Connection' : 'Connection Problem',
-                        offline
-                            ? 'Please check your internet connection and try again.'
-                            : 'Something went wrong with the connection. Please wait.',
-                        function () {
-                            if (navigator.onLine) { window.location.reload(); }
-                        },
-                        offline ? 'offline' : 'spinner'
-                    );
-                }
-                throw err;
-            });
-    };
-}());
 
 // ── Status Real-time Refresh Timers ──
 let statusRefreshTimer    = null;
