@@ -1702,17 +1702,15 @@ function addToCartFromModal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            closeMod();
-            const badge = document.getElementById('cartBadge');
-            if (badge && data.cart_count !== undefined) badge.textContent = data.cart_count;
-            else updateCartBadge();
-            showToast(data.message || 'Item added to cart!', 'success');
+            // ✅ Always go directly to cart on success — no blocking, no toast
+            window.location.href = URLS.cart;
         } else {
             showToast(data.message || 'Could not add to cart.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
         }
     })
-    .catch(() => showToast('Network error. Please try again.', 'error'))
-    .finally(() => {
+    .catch(() => {
+        showToast('Network error. Please try again.', 'error');
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
     });
 }

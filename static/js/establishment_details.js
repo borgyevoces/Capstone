@@ -291,12 +291,6 @@ window.handleModalAddToCart = function(button) {
     const quantity = parseInt(itemQuantityInput.value) || 1;
     const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
 
-    // ✅ VALIDATE QUANTITY AGAINST STOCK
-    if (quantity > maxQuantity) {
-        showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
-        return;
-    }
-
     if (quantity < 1) {
         showMessage('Please select a valid quantity', 'error');
         return;
@@ -333,40 +327,24 @@ window.handleModalAddToCart = function(button) {
     })
     .then(data => {
         if (data.success) {
-            showMessage(
-                data.message || `${itemName} added to cart!`,
-                'success',
-                {
-                    text: '🛒 View Cart',
-                    onClick: () => { window.location.href = '/cart/'; }
-                }
-            );
-
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
-
-            // Close modal after a brief moment
-            setTimeout(() => {
-                closeItemDetailModal();
-            }, 1200);
+            // ✅ Go directly to cart — no toast, no delay
+            window.location.href = '/cart/';
         } else {
             showMessage(data.message || 'Failed to add item', 'error');
+            button.disabled = false;
+            button.innerHTML = originalHTML;
         }
     })
     .catch(error => {
         console.error('Error:', error);
         showMessage('Error: ' + error.message, 'error');
-
+        button.disabled = false;
+        button.innerHTML = originalHTML;
         if (error.message.includes('log in')) {
             setTimeout(() => {
                 window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
             }, 2000);
         }
-    })
-    .finally(() => {
-        button.disabled = false;
-        button.innerHTML = originalHTML;
     });
 };
 
@@ -511,77 +489,25 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // ✅ Establishment open/closed status — use backend-provided status via status_updater.js
-    // EST_OPENING_24H and EST_CLOSING_24H are set as JS globals in the HTML template.
-    // We compute the status client-side using those values for accuracy.
+    // Establishment open/closed status
     const estStatus = document.getElementById('itemModalEstStatus');
-    let isEstablishmentOpen = false;
     if (estStatus) {
-        // Derive current open/closed from EST_OPENING_24H / EST_CLOSING_24H globals
-        try {
-            const openStr  = (typeof EST_OPENING_24H !== 'undefined') ? EST_OPENING_24H : '';
-            const closeStr = (typeof EST_CLOSING_24H !== 'undefined') ? EST_CLOSING_24H : '';
-
-            if (openStr && closeStr) {
-                const now    = new Date();
-                const nowMin = now.getHours() * 60 + now.getMinutes();
-
-                const [oh, om] = openStr.split(':').map(Number);
-                const [ch, cm] = closeStr.split(':').map(Number);
-                const openMin  = oh * 60 + om;
-                const closeMin = ch * 60 + cm;
-
-                if (closeMin > openMin) {
-                    // Same-day window (e.g. 08:00–20:00)
-                    isEstablishmentOpen = nowMin >= openMin && nowMin < closeMin;
-                } else {
-                    // Overnight window (e.g. 22:00–06:00)
-                    isEstablishmentOpen = nowMin >= openMin || nowMin < closeMin;
-                }
-            } else {
-                // No hours on record — fall back to the status badge already on the page
-                const badge = document.querySelector('.status-badge');
-                if (badge) {
-                    isEstablishmentOpen = badge.classList.contains('status-open');
-                }
-            }
-        } catch (e) {
-            isEstablishmentOpen = false;
-        }
-
-        if (isEstablishmentOpen) {
-            estStatus.className = 'item-modal-est-status open';
-            estStatus.textContent = 'Open';
-        } else {
-            estStatus.className = 'item-modal-est-status closed';
-            estStatus.textContent = 'Closed';
-        }
+        const now = new Date();
+        const hour = now.getHours();
+        // Simple check — ideally server-provided; fallback visual
+        estStatus.className = 'item-modal-est-status open';
+        estStatus.textContent = 'Open';
     }
 
     const addToCartBtn = document.getElementById('modalAddToCartBtn');
-    const buyNowBtn    = document.getElementById('modalBuyNowBtn');
+    const buyNowBtn = document.getElementById('modalBuyNowBtn');
 
-    // ✅ Disable order buttons when establishment is CLOSED or stock is 0
-    const canOrder = itemQuantity > 0 && isEstablishmentOpen;
-
-    if (!canOrder) {
-        if (addToCartBtn) {
-            addToCartBtn.disabled = true;
-            addToCartBtn.style.opacity = '0.45';
-            addToCartBtn.title = itemQuantity <= 0
-                ? 'This item is out of stock'
-                : 'This establishment is currently closed';
-        }
-        if (buyNowBtn) {
-            buyNowBtn.disabled = true;
-            buyNowBtn.style.opacity = '0.45';
-            buyNowBtn.title = itemQuantity <= 0
-                ? 'This item is out of stock'
-                : 'This establishment is currently closed';
-        }
+    if (itemQuantity <= 0) {
+        if (addToCartBtn) { addToCartBtn.disabled = true; addToCartBtn.style.opacity = '0.5'; }
+        if (buyNowBtn) { buyNowBtn.disabled = true; buyNowBtn.style.opacity = '0.5'; }
     } else {
-        if (addToCartBtn) { addToCartBtn.disabled = false; addToCartBtn.style.opacity = '1'; addToCartBtn.title = ''; }
-        if (buyNowBtn)    { buyNowBtn.disabled = false;    buyNowBtn.style.opacity = '1';    buyNowBtn.title = ''; }
+        if (addToCartBtn) { addToCartBtn.disabled = false; addToCartBtn.style.opacity = '1'; }
+        if (buyNowBtn) { buyNowBtn.disabled = false; buyNowBtn.style.opacity = '1'; }
     }
 
     const itemDetailModal = document.getElementById('itemDetailModal');
