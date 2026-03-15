@@ -1357,14 +1357,18 @@
                 .then(results => {
                     const successCount = results.filter(r => r.success).length;
                     const stockErrors = results.filter(r => !r.success && r.stock_error);
+                    const otherErrors = results.filter(r => !r.success && !r.stock_error);
                     selectedOrders.clear();
                     loadOrders();
                     if (successCount > 0) {
                         showToast(`Successfully moved ${successCount} order${successCount > 1 ? 's' : ''} to ${LABELS[next]}!`);
                     }
-                    // ✅ Show stock error for any bulk orders that failed
+                    // ✅ Show stock errors — these are duplicate orders that exceeded stock
                     stockErrors.forEach(r => {
-                        showToast(`⚠️ ${r.message} — order may be a duplicate. Check stock levels.`, 'error');
+                        showToast(
+                            `⚠️ Duplicate order blocked: ${r.message}. Stock already reserved by another active order.`,
+                            'error'
+                        );
                     });
                     if (successCount === 0 && stockErrors.length === 0) {
                         showToast('Error updating orders', 'error');
@@ -1393,12 +1397,11 @@
                 loadOrders();
                 showToast(`Order #${id} moved to ${LABELS[status]}!`);
             } else if (data.stock_error) {
-                // ✅ Stock insufficient — show a clear warning so the owner knows
-                // this order cannot be prepared (likely a duplicate was already accepted)
+                // ✅ Stock reservation check failed — duplicate order exceeded available stock
                 loadOrders();
                 showToast(
-                    `⚠️ Cannot prepare Order #${id}: ${data.message}. ` +
-                    `This order may be a duplicate — please check stock levels.`,
+                    `⚠️ Cannot accept Order #${id}: ${data.message}. ` +
+                    `This appears to be a duplicate order — stock is already reserved by another active order.`,
                     'error'
                 );
             } else {

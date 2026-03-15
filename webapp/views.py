@@ -4785,6 +4785,18 @@ def gcash_payment_success(request):
 
         # Update order status if still pending/to_pay
         if order.status not in ('preparing', 'to_claim', 'completed'):
+            # ✅ STOCK RESERVATION CHECK — prevent processing a duplicate to_pay order
+            # when another order for the same items is already active
+            stock_errors = _check_stock_for_order(order)
+            if stock_errors:
+                messages.error(
+                    request,
+                    'Payment could not be processed: insufficient stock for '
+                    + ', '.join(stock_errors)
+                    + '. This may be a duplicate order. Please contact support.'
+                )
+                return redirect('order_history')
+
             with transaction.atomic():
                 # If order was in to_pay (accepted by owner), move to preparing
                 # If order was PENDING (legacy), move to preparing as well
@@ -5555,6 +5567,47 @@ def _deduct_stock_and_clear_cart(order):
         print(_tb.format_exc())
         raise  # Re-raise so caller's atomic block rolls back
 
+def _check_stock_for_order(order, exclude_statuses=None):
+    """
+    ✅ STOCK RESERVATION CHECK
+    Verifies that accepting/processing this order will not exceed available stock,
+    taking into account ALL other active orders (request, to_pay, preparing) that
+    already have a claim on the same menu items.
+
+    Returns a list of error strings if stock is insufficient, or an empty list if OK.
+    exclude_statuses: list of order statuses to EXCLUDE from the reservation count
+                      (e.g. exclude 'preparing' if stock was already deducted for those).
+    """
+    from django.db.models import Sum as _Sum, Q as _Q
+    if exclude_statuses is None:
+        # 'preparing' and above have already had stock deducted — don't double-count
+        exclude_statuses = ['preparing', 'to_claim', 'completed']
+
+    order_items = list(order.orderitem_set.select_related('menu_item').all())
+    if not order_items:
+        return []
+
+    errors = []
+    for oi in order_items:
+        mi = oi.menu_item
+        # How much is already reserved by OTHER active orders for the same item
+        reserved = OrderItem.objects.filter(
+            menu_item=mi,
+        ).exclude(
+            order__status__in=exclude_statuses
+        ).exclude(
+            order=order  # don't count this order itself
+        ).aggregate(total=_Sum('quantity'))['total'] or 0
+
+        available = mi.quantity - reserved
+        if available < oi.quantity:
+            errors.append(
+                f"{mi.name} (in stock: {mi.quantity}, reserved by other orders: {reserved}, "
+                f"needed: {oi.quantity}, available: {max(available, 0)})"
+            )
+    return errors
+
+
 def update_order_status(request, order_id):
     """
     API endpoint to update the status of a specific order
@@ -5604,6 +5657,21 @@ def update_order_status(request, order_id):
             }, status=400)
 
         # ============================================================
+        # ✅ STOCK RESERVATION CHECK
+        # Before accepting (request → to_pay) OR preparing (to_pay → preparing),
+        # verify that total stock minus ALL other active reservations is enough.
+        # This prevents accepting duplicate orders that would exceed stock.
+        # ============================================================
+        if new_status in ('to_pay', 'preparing'):
+            stock_errors = _check_stock_for_order(order)
+            if stock_errors:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Insufficient stock for: ' + ', '.join(stock_errors),
+                    'stock_error': True,
+                }, status=409)
+
+        # ============================================================
         # When order moves to 'preparing':
         # 1. Deduct menu item quantities for ALL items in the order
         # 2. Remove the ordered items from the customer's cart
@@ -5616,37 +5684,7 @@ def update_order_status(request, order_id):
             order.save(update_fields=['status', 'updated_at'])
 
             if new_status == 'preparing' and old_status != 'preparing':
-                # ✅ STOCK SUFFICIENCY CHECK — before deducting, verify enough stock exists.
-                # This prevents over-deduction when duplicate orders are accepted.
-                from django.db import connection as _conn
-                use_lock = 'sqlite' not in _conn.vendor
-
-                order_items = list(order.orderitem_set.select_related('menu_item').all())
-                # Build required qty map
-                required = {}
-                for oi in order_items:
-                    required[oi.menu_item_id] = required.get(oi.menu_item_id, 0) + oi.quantity
-
-                # Lock and check each menu item
-                menu_items_qs = MenuItem.objects.filter(id__in=list(required.keys()))
-                if use_lock:
-                    menu_items_qs = menu_items_qs.select_for_update()
-
-                insufficient = []
-                for mi in menu_items_qs:
-                    needed = required.get(mi.id, 0)
-                    if mi.quantity < needed:
-                        insufficient.append(
-                            f"{mi.name} (available: {mi.quantity}, needed: {needed})"
-                        )
-
-                if insufficient:
-                    # Roll back the status change by raising an exception
-                    raise ValueError(
-                        "Insufficient stock for: " + ", ".join(insufficient)
-                    )
-
-                # Stock is sufficient — proceed with deduction
+                # Deduct stock and clear cart items for this order
                 _deduct_stock_and_clear_cart(order)
 
         # Create notification for status change
@@ -5690,17 +5728,6 @@ def update_order_status(request, order_id):
             'success': False,
             'message': 'Invalid JSON in request body'
         }, status=400)
-    except ValueError as e:
-        # ✅ Raised by stock sufficiency check — return a clear 409 so the
-        # owner dashboard can show a meaningful error message.
-        import traceback
-        print(f"STOCK CHECK FAILED in update_order_status: {str(e)}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'message': str(e),
-            'stock_error': True,
-        }, status=409)
     except Exception as e:
         import traceback
         print(f"ERROR in update_order_status: {str(e)}")
@@ -5855,34 +5882,12 @@ def create_cash_order(request):
         print(f"DEBUG: Order establishment: {order.establishment.name}")
         print(f"DEBUG: Order user: {request.user.username}")
 
-        # ✅ DUPLICATE ORDER GUARD
-        # Prevent the same user from submitting another active order for the
-        # same establishment while one is already in request/to_pay state.
-        # This stops double-submissions from back-button, double-tap, or
-        # network retries from causing duplicate pending orders.
-        source = request.POST.get('source', 'cart')
-        if source != 'checkout' and order.status not in ('to_pay', 'PENDING'):
-            # Only check for duplicates when creating a NEW request (not processing checkout)
-            from django.db.models import Q as _Q
-            duplicate_exists = Order.objects.filter(
-                user=request.user,
-                establishment=order.establishment,
-                status__in=['request', 'to_pay'],
-            ).exclude(id=order.id).exists()
-
-            if duplicate_exists:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'You already have a pending order for this establishment. '
-                               'Please wait for it to be processed before placing another.',
-                    'duplicate': True,
-                }, status=409)
-
         # Start atomic transaction to ensure data consistency
         with transaction.atomic():
             # Determine new status based on source:
             # - From cart (order is PENDING): set to 'request' waiting for owner acceptance
             # - From checkout (order is 'to_pay'): owner already accepted, set to 'preparing'
+            source = request.POST.get('source', 'cart')
             if order.status == 'to_pay' or source == 'checkout':
                 new_status = 'preparing'
             else:
@@ -5956,6 +5961,10 @@ def create_cash_order(request):
             # ✅ If this order goes straight to 'preparing' (cash on checkout),
             # deduct stock and clear cart immediately — same as online payment flow.
             if new_status == 'preparing':
+                # ✅ STOCK RESERVATION CHECK before deducting
+                stock_errors = _check_stock_for_order(active_order)
+                if stock_errors:
+                    raise ValueError('Insufficient stock for: ' + ', '.join(stock_errors))
                 _deduct_stock_and_clear_cart(active_order)
 
             # ✅ FIXED: Create notification for establishment owner
@@ -5989,6 +5998,15 @@ def create_cash_order(request):
             'success': False,
             'message': 'Order not found or does not belong to you'
         }, status=404)
+
+    except ValueError as e:
+        # ✅ Raised by stock reservation check — return 409 with clear message
+        print(f"STOCK CHECK FAILED in create_cash_order: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': str(e),
+            'stock_error': True,
+        }, status=409)
 
     except Exception as e:
         # Log the full error for debugging
