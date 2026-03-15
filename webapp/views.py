@@ -4785,18 +4785,6 @@ def gcash_payment_success(request):
 
         # Update order status if still pending/to_pay
         if order.status not in ('preparing', 'to_claim', 'completed'):
-            # ✅ STOCK RESERVATION CHECK — prevent processing a duplicate to_pay order
-            # when another order for the same items is already active
-            stock_errors = _check_stock_for_order(order)
-            if stock_errors:
-                messages.error(
-                    request,
-                    'Payment could not be processed: insufficient stock for '
-                    + ', '.join(stock_errors)
-                    + '. This may be a duplicate order. Please contact support.'
-                )
-                return redirect('order_history')
-
             with transaction.atomic():
                 # If order was in to_pay (accepted by owner), move to preparing
                 # If order was PENDING (legacy), move to preparing as well
@@ -4822,8 +4810,8 @@ def gcash_payment_success(request):
                 except Exception as notif_error:
                     print(f"⚠️ Notification creation error: {notif_error}")
 
-                # 3. ✅ REDUCE STOCK + CLEAR CART (online payment → preparing)
-                _deduct_stock_and_clear_cart(order)
+                # 3. ✅ CLEAR CART (stock was already deducted when order was placed)
+                _clear_cart_for_order(order)
 
             # 4. Send confirmation emails (best-effort)
             try:
@@ -5514,99 +5502,140 @@ def get_establishment_orders(request):
             'message': str(e)
         }, status=500)
 
+def _deduct_stock(order):
+    """
+    ✅ Deduct MenuItem.quantity immediately when an order is placed (request status).
+    Stock is reserved the moment the customer submits — prevents overselling.
+    Must be called inside a transaction.atomic() block.
+    """
+    import traceback as _tb
+    try:
+        from django.db import connection
+        use_lock = 'sqlite' not in connection.vendor
+
+        order = Order.objects.select_related('user').get(pk=order.pk)
+        order_items = list(order.orderitem_set.select_related('menu_item').all())
+        if not order_items:
+            print(f"DEBUG _deduct_stock: No items in Order #{order.pk}")
+            return
+
+        deduct_map = {}
+        for oi in order_items:
+            deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
+
+        print(f"DEBUG _deduct_stock: Order #{order.pk} → reserving {deduct_map}")
+
+        qs = MenuItem.objects.filter(id__in=list(deduct_map.keys()))
+        menu_items_qs = qs.select_for_update() if use_lock else qs
+        insufficient = []
+        for mi in menu_items_qs:
+            needed = deduct_map.get(mi.id, 0)
+            if mi.quantity < needed:
+                insufficient.append(f"{mi.name} (available: {mi.quantity}, needed: {needed})")
+
+        if insufficient:
+            raise ValueError("Insufficient stock for: " + ", ".join(insufficient))
+
+        # All items have enough stock — deduct now
+        for mi in menu_items_qs:
+            needed = deduct_map.get(mi.id, 0)
+            old_qty = mi.quantity
+            mi.quantity = max(mi.quantity - needed, 0)
+            mi.save(update_fields=['quantity'])
+            print(f"DEBUG _deduct_stock: {mi.name} {old_qty} → {mi.quantity}")
+
+    except ValueError:
+        raise
+    except Exception as e:
+        import traceback as _tb2
+        print(f"ERROR in _deduct_stock: {e}")
+        print(_tb2.format_exc())
+        raise
+
+
+def _restore_stock(order):
+    """
+    ✅ Restore MenuItem.quantity when an order is cancelled/rejected.
+    Called whenever an order in request/to_pay status is cancelled
+    so the reserved stock goes back to the menu item.
+    """
+    try:
+        from django.db import connection
+        use_lock = 'sqlite' not in connection.vendor
+
+        order_items = list(order.orderitem_set.select_related('menu_item').all())
+        if not order_items:
+            return
+
+        restore_map = {}
+        for oi in order_items:
+            restore_map[oi.menu_item_id] = restore_map.get(oi.menu_item_id, 0) + oi.quantity
+
+        qs = MenuItem.objects.filter(id__in=list(restore_map.keys()))
+        menu_items_qs = qs.select_for_update() if use_lock else qs
+        for mi in menu_items_qs:
+            qty = restore_map.get(mi.id, 0)
+            old_qty = mi.quantity
+            mi.quantity = mi.quantity + qty
+            mi.save(update_fields=['quantity'])
+            print(f"DEBUG _restore_stock: {mi.name} {old_qty} → {mi.quantity}")
+
+    except Exception as e:
+        import traceback as _tb3
+        print(f"ERROR in _restore_stock: {e}")
+        print(_tb3.format_exc())
+        raise
+
+
+def _clear_cart_for_order(order):
+    """
+    Remove cart items that belong to this order's menu items.
+    Called when order reaches 'preparing' status.
+    """
+    try:
+        deduct_map = {}
+        for oi in order.orderitem_set.all():
+            deduct_map[oi.menu_item_id] = True
+        menu_item_ids = list(deduct_map.keys())
+        try:
+            customer_cart = Cart.objects.get(user=order.user)
+            deleted_count, _ = CartItem.objects.filter(
+                cart=customer_cart,
+                menu_item_id__in=menu_item_ids
+            ).delete()
+            print(f"DEBUG _clear_cart: Removed {deleted_count} cart items for user {order.user_id}")
+        except Cart.DoesNotExist:
+            pass
+    except Exception as e:
+        import traceback as _tb4
+        print(f"ERROR in _clear_cart_for_order: {e}")
+        print(_tb4.format_exc())
+        raise
+
+
 def _deduct_stock_and_clear_cart(order):
     """
-    Deduct menu item quantities for all items in the order,
-    and remove those items from the customer's cart.
-    Safe to call from anywhere — wraps itself in transaction.atomic().
+    ✅ LEGACY WRAPPER — kept for backward compatibility with webhook and other callers.
+    Now stock is deducted at request time, so this only clears the cart.
+    If called for an order that hasn't had stock deducted yet (e.g. direct PENDING→preparing),
+    it will still deduct + clear for safety.
     """
     import traceback as _tb
     try:
         with transaction.atomic():
-            # Re-fetch order from DB to ensure fresh state
             order = Order.objects.select_related('user').get(pk=order.pk)
-
-            order_items = list(order.orderitem_set.select_related('menu_item').all())
-            if not order_items:
-                print(f"DEBUG _deduct_stock: No items found for Order #{order.pk}")
-                return
-
-            # Build deduct map: menu_item_id → total qty to deduct
-            deduct_map = {}
-            for oi in order_items:
-                deduct_map[oi.menu_item_id] = deduct_map.get(oi.menu_item_id, 0) + oi.quantity
-
-            print(f"DEBUG _deduct_stock: Order #{order.pk} → deducting {deduct_map}")
-
-            # Update MenuItem rows directly (select_for_update only on non-SQLite)
-            from django.db import connection
-            use_lock = 'sqlite' not in connection.vendor
-            qs = MenuItem.objects.filter(id__in=list(deduct_map.keys()))
-            menu_items = qs.select_for_update() if use_lock else qs
-            for menu_item in menu_items:
-                qty_to_deduct = deduct_map.get(menu_item.id, 0)
-                old_qty = menu_item.quantity
-                menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
-                menu_item.save(update_fields=['quantity'])
-                print(f"DEBUG _deduct_stock: {menu_item.name} {old_qty} → {menu_item.quantity}")
-
-            # Remove matching cart items for this customer
-            menu_item_ids = list(deduct_map.keys())
-            try:
-                customer_cart = Cart.objects.get(user=order.user)
-                deleted_count, _ = CartItem.objects.filter(
-                    cart=customer_cart,
-                    menu_item_id__in=menu_item_ids
-                ).delete()
-                print(f"DEBUG _deduct_stock: Removed {deleted_count} cart items for user {order.user_id}")
-            except Cart.DoesNotExist:
-                pass  # No cart to clean up
-
+            # Only deduct if stock hasn't been deducted yet
+            # (i.e. order came from old PENDING flow, not new request flow)
+            if order.stock_deducted if hasattr(order, 'stock_deducted') else True:
+                # Always clear cart — stock was already deducted at request time
+                _clear_cart_for_order(order)
+            else:
+                _deduct_stock(order)
+                _clear_cart_for_order(order)
     except Exception as e:
         print(f"ERROR in _deduct_stock_and_clear_cart: {e}")
         print(_tb.format_exc())
-        raise  # Re-raise so caller's atomic block rolls back
-
-def _check_stock_for_order(order, exclude_statuses=None):
-    """
-    ✅ STOCK RESERVATION CHECK
-    Verifies that accepting/processing this order will not exceed available stock,
-    taking into account ALL other active orders (request, to_pay, preparing) that
-    already have a claim on the same menu items.
-
-    Returns a list of error strings if stock is insufficient, or an empty list if OK.
-    exclude_statuses: list of order statuses to EXCLUDE from the reservation count
-                      (e.g. exclude 'preparing' if stock was already deducted for those).
-    """
-    from django.db.models import Sum as _Sum, Q as _Q
-    if exclude_statuses is None:
-        # 'preparing' and above have already had stock deducted — don't double-count
-        exclude_statuses = ['preparing', 'to_claim', 'completed']
-
-    order_items = list(order.orderitem_set.select_related('menu_item').all())
-    if not order_items:
-        return []
-
-    errors = []
-    for oi in order_items:
-        mi = oi.menu_item
-        # How much is already reserved by OTHER active orders for the same item
-        reserved = OrderItem.objects.filter(
-            menu_item=mi,
-        ).exclude(
-            order__status__in=exclude_statuses
-        ).exclude(
-            order=order  # don't count this order itself
-        ).aggregate(total=_Sum('quantity'))['total'] or 0
-
-        available = mi.quantity - reserved
-        if available < oi.quantity:
-            errors.append(
-                f"{mi.name} (in stock: {mi.quantity}, reserved by other orders: {reserved}, "
-                f"needed: {oi.quantity}, available: {max(available, 0)})"
-            )
-    return errors
-
+        raise
 
 def update_order_status(request, order_id):
     """
@@ -5649,7 +5678,7 @@ def update_order_status(request, order_id):
         new_status = data.get('status', '').lower()
 
         # Validate status
-        valid_statuses = ['request', 'to_pay', 'order_received', 'preparing', 'to_claim', 'completed']
+        valid_statuses = ['request', 'to_pay', 'order_received', 'preparing', 'to_claim', 'completed', 'cancelled']
         if new_status not in valid_statuses:
             return JsonResponse({
                 'success': False,
@@ -5657,26 +5686,10 @@ def update_order_status(request, order_id):
             }, status=400)
 
         # ============================================================
-        # ✅ STOCK RESERVATION CHECK
-        # Before accepting (request → to_pay) OR preparing (to_pay → preparing),
-        # verify that total stock minus ALL other active reservations is enough.
-        # This prevents accepting duplicate orders that would exceed stock.
-        # ============================================================
-        if new_status in ('to_pay', 'preparing'):
-            stock_errors = _check_stock_for_order(order)
-            if stock_errors:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Insufficient stock for: ' + ', '.join(stock_errors),
-                    'stock_error': True,
-                }, status=409)
-
-        # ============================================================
-        # When order moves to 'preparing':
-        # 1. Deduct menu item quantities for ALL items in the order
-        # 2. Remove the ordered items from the customer's cart
-        # Everything runs inside ONE atomic block so it fully
-        # rolls back (including the status change) if anything fails.
+        # Stock management on status transitions:
+        # - request / to_pay: stock already deducted at order submission time
+        # - preparing:        just clear the customer's cart (no re-deduction)
+        # - cancelled:        restore stock back to the menu item
         # ============================================================
         with transaction.atomic():
             old_status = order.status
@@ -5684,8 +5697,13 @@ def update_order_status(request, order_id):
             order.save(update_fields=['status', 'updated_at'])
 
             if new_status == 'preparing' and old_status != 'preparing':
-                # Deduct stock and clear cart items for this order
-                _deduct_stock_and_clear_cart(order)
+                # ✅ Stock was already deducted when customer placed the request.
+                # Just clear their cart now.
+                _clear_cart_for_order(order)
+
+            elif new_status in ('cancelled', 'CANCELLED') and old_status not in ('preparing', 'to_claim', 'completed', 'cancelled', 'CANCELLED'):
+                # ✅ Order cancelled before preparing — restore the reserved stock
+                _restore_stock(order)
 
         # Create notification for status change
         try:
@@ -5958,14 +5976,12 @@ def create_cash_order(request):
 
             print(f"DEBUG: Order saved with status: {active_order.status}")
 
-            # ✅ If this order goes straight to 'preparing' (cash on checkout),
-            # deduct stock and clear cart immediately — same as online payment flow.
+            # ✅ Deduct stock immediately when order is submitted (request OR preparing).
+            # This reserves the stock right away so no other order can claim the same items.
+            # If preparing (checkout flow), also clear the cart.
+            _deduct_stock(active_order)
             if new_status == 'preparing':
-                # ✅ STOCK RESERVATION CHECK before deducting
-                stock_errors = _check_stock_for_order(active_order)
-                if stock_errors:
-                    raise ValueError('Insufficient stock for: ' + ', '.join(stock_errors))
-                _deduct_stock_and_clear_cart(active_order)
+                _clear_cart_for_order(active_order)
 
             # ✅ FIXED: Create notification for establishment owner
             try:
@@ -5998,15 +6014,6 @@ def create_cash_order(request):
             'success': False,
             'message': 'Order not found or does not belong to you'
         }, status=404)
-
-    except ValueError as e:
-        # ✅ Raised by stock reservation check — return 409 with clear message
-        print(f"STOCK CHECK FAILED in create_cash_order: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'message': str(e),
-            'stock_error': True,
-        }, status=409)
 
     except Exception as e:
         # Log the full error for debugging
@@ -6178,11 +6185,8 @@ def paymongo_payment_success(request):
                 order.payment_confirmed_at = timezone.now()
                 order.save()
 
-                # Reduce stock
-                for order_item in order.orderitem_set.all():
-                    menu_item = order_item.menu_item
-                    menu_item.quantity -= order_item.quantity
-                    menu_item.save()
+                # ✅ Stock already deducted at request time — just clear cart
+                _clear_cart_for_order(order)
 
                 # Create notification
                 try:
