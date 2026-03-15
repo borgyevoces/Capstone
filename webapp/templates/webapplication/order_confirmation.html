@@ -736,4 +736,30 @@ body {
     </div>
 
 </div>
+
+<script>
+// ✅ Back-navigation guard — prevent returning to checkout after order is confirmed
+// Uses pageshow to catch bfcache restores (browser back button)
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+        // Page was restored from bfcache (back/forward button)
+        // Redirect to My Orders so the user cannot go back to checkout
+        window.location.replace("{% url 'order_history' %}");
+    }
+});
+
+// ✅ Also replace the current history entry so the back button
+// on THIS page goes to My Orders, not to checkout
+(function () {
+    const myOrdersUrl = "{% url 'order_history' %}";
+    // Replace the checkout entry in history with My Orders
+    if (window.history && window.history.replaceState) {
+        // Push a dummy entry for the current page first so replaceState works correctly
+        window.history.pushState(null, '', window.location.href);
+        window.addEventListener('popstate', function () {
+            window.location.replace(myOrdersUrl);
+        });
+    }
+})();
+</script>
 {% endblock %}

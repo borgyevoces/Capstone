@@ -161,6 +161,7 @@ urlpatterns = [
                   path('gcash/confirm-payment/', views.confirm_gcash_payment, name='confirm_gcash_payment'),
                   path('order/confirmation/<int:order_id>/', views.view_order_confirmation,
                        name='view_order_confirmation'),
+                  path('checkout/status/', views.check_order_status, name='check_order_status'),
 
                   # Chat URLs
                   path('api/unread-messages/', views.get_owner_unread_message_count, name='owner_unread_messages'),

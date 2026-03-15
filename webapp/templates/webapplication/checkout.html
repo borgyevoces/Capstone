@@ -995,6 +995,30 @@ body { background: #f5f5f5 !important; }
     // Endpoint URLs — resolved server-side so they always match urls.py
     const URL_CREATE_GCASH = "{% url 'create_gcash_payment_link' %}";
     const URL_CREATE_CASH  = "{% url 'create_cash_order' %}";
+    const URL_CHECK_STATUS = "{% url 'check_order_status' %}";
+
+    // ✅ Back-navigation guard — if user arrives here via browser back button
+    // after order is already confirmed/preparing, redirect them to My Orders.
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            // Restored from bfcache — verify order is still payable
+            fetch(URL_CHECK_STATUS + '?order_id=' + ORDER_ID, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                const payable = ['PENDING', 'to_pay'];
+                if (!data.success || !payable.includes(data.status)) {
+                    // Order already processed — send to My Orders
+                    window.location.replace("{% url 'order_history' %}");
+                }
+            })
+            .catch(() => {
+                // On error, safer to redirect away than allow double-payment
+                window.location.replace("{% url 'order_history' %}");
+            });
+        }
+    });
 
     let _pendingType = null;  // 'online' | 'cash'
 

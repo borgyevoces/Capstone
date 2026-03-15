@@ -2243,6 +2243,26 @@ def checkout_page(request):
 
 
 @login_required
+def check_order_status(request):
+    """
+    ✅ Lightweight API — returns the current status of an order.
+    Used by the checkout page's back-navigation guard to verify
+    whether the order is still payable before showing the page.
+
+    GET /checkout/status/?order_id=<id>
+    Returns: { success: true, status: 'PENDING'|'to_pay'|'preparing'|... }
+    """
+    order_id = request.GET.get('order_id')
+    if not order_id:
+        return JsonResponse({'success': False, 'message': 'No order_id'}, status=400)
+    try:
+        order = Order.objects.get(id=order_id, user=request.user)
+        return JsonResponse({'success': True, 'status': order.status})
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+
+
+@login_required
 def order_confirmation_view(request, order_id):
     """Display order confirmation"""
     order = get_object_or_404(Order, id=order_id, user=request.user)
