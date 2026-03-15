@@ -2023,8 +2023,10 @@ def create_gcash_payment_link(request):
             reverse('gcash_payment_success')
         ) + f'?order_id={order.id}'
 
+        # ✅ cancel_url points back to the KabsuEats checkout page
+        # so when user clicks the back button on PayMongo they return here
         cancel_url = request.build_absolute_uri(
-            reverse('gcash_payment_cancel')
+            reverse('checkout_page')
         ) + f'?order_id={order.id}'
 
         # build.sh description
@@ -2033,9 +2035,8 @@ def create_gcash_payment_link(request):
         if cart_items.count() > 3:
             description += f" and {cart_items.count() - 3} more items"
 
-        # Add return_to param for post-payment routing
+        # Add return_to param for post-payment routing on success only
         success_url = success_url + '&return_to=cart'
-        cancel_url = cancel_url + '&return_to=cart'
 
         # Build line items for checkout session
         line_items = []

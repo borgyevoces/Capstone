@@ -505,6 +505,7 @@ let userLocMarker = null;
 let userLatLng = null;       // stores the user's current location {lat, lng}
 let routeLine = null;        // active polyline from user → establishment
 let routeAnimMarker = null;  // animated dot along the route
+let activeRouteEstId = null; // ✅ tracks which establishment the current route is for
 let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', search: '' };
 
 function initMap() {
@@ -604,6 +605,9 @@ function filterMapMarkers(q) {
 
 function renderMarkers(data) {
     if (!mkLayer) return;
+    // ✅ Clear any existing route — only 1 route at a time, and never for a filtered-out establishment
+    const activeStillVisible = data.some(e => e.id === activeRouteEstId);
+    if (!activeStillVisible) clearRoute();
     mkLayer.clearLayers();
     data.forEach(e => {
         if (!e.latitude || !e.longitude) return;
@@ -650,7 +654,7 @@ function renderMarkers(data) {
             '<button onclick="window.location.href=\'' + URLS.estDetail + e.id + '/\'" ' +
             'style="flex:1;padding:9px;background:linear-gradient(135deg,#B71C1C,#8B0000);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
             '<i class="fas fa-eye"></i> View</button>' +
-            '<button onclick="showRouteToEst(' + parseFloat(e.latitude) + ',' + parseFloat(e.longitude) + ',\'' + escHtml(e.name).replace(/'/g, "\\'") + '\')" ' +
+            '<button onclick="showRouteToEst(' + parseFloat(e.latitude) + ',' + parseFloat(e.longitude) + ',\'' + escHtml(e.name).replace(/'/g, "\\'") + '\',' + e.id + ')" ' +
             'style="flex:1;padding:9px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">' +
             '<i class="fas fa-directions"></i> Directions</button>' +
             '</div></div>';
@@ -764,13 +768,14 @@ function formatDuration(seconds) {
     return hrs + 'h ' + (rem > 0 ? rem + 'm' : '');
 }
 
-async function showRouteToEst(destLat, destLng, estName) {
+async function showRouteToEst(destLat, destLng, estName, estId) {
     if (!userLatLng) {
         showToast('Please tap "Show My Location" first!', 'error');
         return;
     }
 
     clearRoute();
+    activeRouteEstId = estId || null; // ✅ track which establishment this route belongs to
     _rgShow(estName, null, null, null, null); // loading state
 
     const fromLng = userLatLng.lng, fromLat = userLatLng.lat;
@@ -926,6 +931,7 @@ function _rgShow(destName, dist, duration, rawSteps, rawMeters) {
 }
 
 function clearRoute() {
+    activeRouteEstId = null; // ✅ reset tracker
     if (routeLine) {
         if (routeLine._extraLayers) {
             routeLine._extraLayers.forEach(l => { try { mapInst.removeLayer(l); } catch(e){} });
