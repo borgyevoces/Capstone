@@ -40,6 +40,11 @@ let estLastModified = {};  // { establishment_id: timestamp } for card statuses
 // ============================================
 // INIT ON DOM READY
 // ============================================
+// ── INVENTORY WebSocket STATE ──
+// Keyed by establishment_id → WebSocket instance
+// Populated after bestsellers load (we know which establishments to watch)
+const inventoryWs = {};
+
 document.addEventListener('DOMContentLoaded', function () {
     initProfile();
     initScrollTop();
@@ -85,6 +90,134 @@ function autoHideMessages() {
 }
 
 // ============================================
+// ✅ REALTIME INVENTORY — WebSocket per establishment
+// When any user places an order, the server broadcasts the new
+// menu item quantities instantly to ALL connected browsers.
+// This function subscribes to one establishment's channel.
+// ============================================
+function subscribeInventoryWs(estId) {
+    if (inventoryWs[estId]) return; // already connected, don't duplicate
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${estId}/`);
+
+    ws.onopen = function () {
+        console.log(`📦 [Inventory WS] Connected → establishment #${estId}`);
+    };
+
+    ws.onmessage = function (e) {
+        try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'quantity_update') {
+                applyInventoryUpdate(data.updates);
+            }
+        } catch (err) {
+            console.warn('[Inventory WS] Bad message:', err);
+        }
+    };
+
+    ws.onclose = function () {
+        delete inventoryWs[estId];
+        console.log(`📦 [Inventory WS] Disconnected from #${estId} — will reconnect in 3s`);
+        // Auto-reconnect so users never miss an update during a session
+        setTimeout(() => subscribeInventoryWs(estId), 3000);
+    };
+
+    ws.onerror = function () {
+        ws.close(); // triggers onclose → reconnect
+    };
+
+    inventoryWs[estId] = ws;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Apply a batch of quantity updates from the WebSocket message.
+// updates = [ { menu_item_id, new_quantity }, ... ]
+// ─────────────────────────────────────────────────────────────
+function applyInventoryUpdate(updates) {
+    if (!Array.isArray(updates) || !updates.length) return;
+
+    let needsRerender = false;
+
+    updates.forEach(({ menu_item_id, new_quantity }) => {
+        const newQty = parseInt(new_quantity, 10);
+
+        // ── 1. Update bsData in-memory ──────────────────────────────
+        const bsIdx = bsData.findIndex(x => x.id === menu_item_id);
+        if (bsIdx !== -1) {
+            const wasInStock = bsData[bsIdx].quantity > 0;
+            bsData[bsIdx].quantity = newQty;
+            // If item just went out of stock or came back in, re-render the carousel
+            if ((wasInStock && newQty <= 0) || (!wasInStock && newQty > 0)) {
+                needsRerender = true;
+            }
+        }
+
+        // ── 2. Update searchMenuData in-memory ──────────────────────
+        const smIdx = searchMenuData.findIndex(x => x.id === menu_item_id);
+        if (smIdx !== -1) searchMenuData[smIdx].quantity = newQty;
+
+        // ── 3. Update the rendered .bsc card instantly ───────────────
+        const card = document.querySelector(`.bsc[onclick="openMod(${menu_item_id})"]`);
+        if (card) {
+            // Update "X left" stock span
+            card.querySelectorAll('.bsc-stats span').forEach(span => {
+                if (span.textContent.includes('left') || span.textContent.includes('left')) {
+                    span.innerHTML = newQty <= 0
+                        ? `<i class="fas fa-times-circle" style="color:#dc2626"></i> Out of Stock`
+                        : `<i class="fas fa-boxes"></i> ${newQty} left`;
+                }
+            });
+            // Dim card and block clicks if out of stock
+            card.style.opacity       = newQty <= 0 ? '0.45' : '';
+            card.style.pointerEvents = newQty <= 0 ? 'none' : '';
+        }
+
+        // ── 4. Update open bestseller/search modal in real-time ─────
+        if (currentModalItem && currentModalItem.id === menu_item_id) {
+            currentModalItem.quantity = newQty;
+
+            // Update stock display text
+            const mStock = document.getElementById('mStock');
+            if (mStock) {
+                mStock.innerHTML = newQty <= 0
+                    ? `<i class="fas fa-times-circle"></i> Out of Stock`
+                    : `<i class="fas fa-box"></i> ${newQty} Items`;
+                mStock.style.transition = 'color 0.3s';
+                mStock.style.color = newQty === 0 ? '#ef4444' : newQty <= 5 ? '#f59e0b' : '';
+                setTimeout(() => { mStock.style.color = ''; }, 2000);
+            }
+
+            // Clamp the qty input so user can't select more than available
+            const qtyInput = document.getElementById('mqty');
+            if (qtyInput) {
+                qtyInput.max = newQty;
+                const curVal = parseInt(qtyInput.value, 10) || 1;
+                if (curVal > newQty) qtyInput.value = Math.max(1, newQty);
+            }
+
+            // Re-evaluate Add to Cart / Buy Now button states
+            const st = (currentModalItem.establishment && currentModalItem.establishment.status || 'closed').toLowerCase();
+            applyModOrderState(st, newQty);
+
+            // Toast notification for stock changes
+            if (newQty === 0) {
+                showToast('⚠️ Sorry, this item just sold out!', 'error');
+            } else if (newQty <= 5) {
+                showToast(`⚡ Only ${newQty} left — order fast!`, 'warning');
+            }
+        }
+    });
+
+    // ── 5. Re-render carousel if any item went in/out of stock ──────
+    // Filter out-of-stock items from the bestsellers display
+    if (needsRerender && !searchMode) {
+        const inStockBs = bsData.filter(x => x.quantity > 0);
+        renderBS(inStockBs.length > 0 ? inStockBs : bsData); // fallback: show all if all OOS
+    }
+}
+
+// ============================================
 // FETCH BESTSELLERS FROM BACKEND API
 // ============================================
 function fetchBestsellers() {
@@ -101,6 +234,10 @@ function fetchBestsellers() {
                 });
                 // Only render if not in search mode
                 if (!searchMode) renderBS(bsData);
+                // ✅ REALTIME: Subscribe to inventory WebSocket for every establishment
+                // shown so stock changes by other users reflect instantly — no refresh.
+                const estIds = [...new Set(bsData.map(x => x.establishment && x.establishment.id).filter(Boolean))];
+                estIds.forEach(id => subscribeInventoryWs(id));
             } else {
                 document.getElementById('cTrack').innerHTML =
                     '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
@@ -1423,6 +1560,9 @@ function doMenuSearch(q) {
                 matchCount[i.establishment.id] = (matchCount[i.establishment.id] || 0) + 1;
             });
             sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow);
+
+            // ✅ Subscribe to inventory WS for every establishment in search results
+            [...matchingEstIds].forEach(id => subscribeInventoryWs(id));
         })
         .catch(err => {
             if (err.name === 'AbortError') return; // Intentionally cancelled — do nothing

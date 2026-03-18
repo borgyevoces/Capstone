@@ -18,7 +18,7 @@
     }
 
     .order-history-container {
-        max-width: 900px;
+        max-width: 100%;
         margin: 0 auto;
         padding: 20px 16px;
         min-height: calc(100vh - 200px);
@@ -235,6 +235,58 @@
     .status-cancelled {
         background: #fee2e2;
         color: #991b1b;
+    }
+
+    /* Cancelled by Owner badge */
+    .status-cancelled-owner {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    /* Time's Up badge */
+    .status-timesup {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .cancelled-owner-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    /* Reason shown always below the badge */
+    .reason-inline {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        background: #fff5f5;
+        border: 1px solid #fecaca;
+        border-radius: 7px;
+        padding: 7px 10px;
+        font-size: 11.5px;
+        color: #7f1d1d;
+        font-weight: 500;
+        line-height: 1.5;
+        margin-top: 2px;
+        animation: reasonFadeIn 0.2s ease;
+    }
+    .reason-inline i {
+        color: #B71C1C;
+        flex-shrink: 0;
+        margin-top: 2px;
+        font-size: 11px;
+    }
+    .reason-inline span {
+        word-break: break-word;
+    }
+
+    @keyframes reasonFadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
     .order-card-body {
@@ -1203,6 +1255,185 @@
         .rating-modal { border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; }
         .rating-modal-overlay.open { align-items: flex-end; padding: 0; }
     }
+
+    /* ==========================================
+       TABLE LAYOUT — like owner orders page
+    ========================================== */
+    .orders-table-wrap {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 680px;
+    }
+    .orders-table thead tr {
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .orders-table th {
+        background: white;
+        color: #a0aec0;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        padding: 10px 14px;
+        border-top: 1px solid #ececec;
+        border-bottom: 1px solid #ececec;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .orders-table th:first-child { border-left: 1px solid #ececec; border-radius: 10px 0 0 10px; }
+    .orders-table th:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; text-align: right; }
+    .orders-table tbody tr { border-bottom: 1px solid #f7f7f7; transition: background .12s; }
+    .orders-table tbody tr:hover { background: #fafbfc; }
+    .orders-table td { padding: 12px 14px; vertical-align: middle; }
+    .orders-table td:last-child { text-align: right; }
+
+    .tbl-order-num  { font-family: monospace; font-weight: 700; font-size: 13px; color: #B71C1C; background: rgba(183,28,28,.07); padding: 3px 8px; border-radius: 6px; display: inline-block; }
+    .tbl-date       { font-size: 11px; color: #718096; margin-top: 3px; }
+    .tbl-est-name   { font-weight: 700; color: #1a202c; font-size: 13px; }
+    .tbl-est-addr   { font-size: 11px; color: #718096; margin-top: 2px; }
+    .tbl-item-line  { font-size: 12px; color: #4a5568; line-height: 1.6; }
+    .tbl-item-qty   { color: #718096; font-size: 11px; }
+    .tbl-total      { font-weight: 800; color: #B71C1C; font-size: 15px; }
+    .tbl-actions    { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
+    .orders-table td:nth-last-child(2) { white-space: nowrap; } /* status cell stays on 1 row */
+
+    /* Payment method badges — Cash and GCash only */
+    .pay-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .pay-cash  { background: #D1FAE5; color: #059669; }
+    .pay-gcash { background: #EDE9FE; color: #6D28D9; }
+
+    /* Action buttons in table */
+    .tbl-btn {
+        padding: 7px 13px;
+        border-radius: 6px;
+        border: none;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .tbl-btn-pay    { background: linear-gradient(135deg,#059669,#047857); color:#fff; }
+    .tbl-btn-pay:hover { background: linear-gradient(135deg,#047857,#065f46); box-shadow:0 2px 8px rgba(5,150,105,.25); }
+    .tbl-btn-cancel { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .tbl-btn-cancel:hover { background: #fecaca; }
+    .tbl-btn-rerequest { background: linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; }
+    .tbl-btn-rerequest:hover { background: linear-gradient(135deg,#1d4ed8,#1e40af); box-shadow:0 2px 8px rgba(37,99,235,.25); }
+    .tbl-btn-reject { background: linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; }
+    .tbl-btn-reject:hover { background: linear-gradient(135deg,#b91c1c,#991b1b); box-shadow:0 2px 8px rgba(220,38,38,.3); }
+    .tbl-btn-rate   { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+    .tbl-btn-rate:hover { background: linear-gradient(135deg,#d97706,#b45309); }
+    .tbl-btn-reorder{ background: linear-gradient(135deg,#B71C1C,#8B0000); color:#fff; }
+    .tbl-btn-reorder:hover { background: linear-gradient(135deg,#8B0000,#6B0000); }
+
+    /* Cancelled status */
+    .status-cancelled { background: linear-gradient(135deg,#fee2e2,#fecaca); color:#991b1b; }
+
+    /* Countdown timer chip */
+    .timer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: .02em;
+        white-space: nowrap;
+    }
+    .timer-chip.urgent { background:#fee2e2; border-color:#fca5a5; color:#991b1b; animation: timerPulse 1s infinite; }
+    .timer-chip.expired { background:#f3f4f6; border-color:#e5e7eb; color:#6b7280; }
+    @keyframes timerPulse {
+        0%,100% { opacity:1; } 50% { opacity:.6; }
+    }
+
+    /* Awaiting chip */
+    .awaiting-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    /* Empty / loading states */
+    .tbl-empty {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #e2e8f0;
+    }
+    .tbl-empty i  { font-size: 52px; color: #cbd5e0; margin-bottom: 14px; display: block; }
+    .tbl-empty h3 { font-size: 18px; color: #2d3748; margin-bottom: 8px; font-weight: 700; }
+    .tbl-empty p  { font-size: 13px; color: #718096; margin-bottom: 20px; }
+
+    /* Confirm cancel overlay */
+    .confirm-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99998;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(2px);
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 28px 22px;
+        max-width: 380px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        animation: modalSlideIn 0.2s ease;
+        text-align: center;
+    }
+    .confirm-box i.big-icon { font-size: 44px; margin-bottom: 14px; display: block; }
+    .confirm-box h3 { font-size: 18px; font-weight: 700; color: #1a202c; margin-bottom: 8px; }
+    .confirm-box p  { font-size: 13px; color: #718096; margin-bottom: 20px; line-height: 1.6; }
+    .confirm-btns   { display: flex; gap: 10px; }
+    .confirm-btn-no  { flex:1; padding:10px; border-radius:8px; border:1.5px solid #e2e8f0; background:white; color:#4a5568; font-weight:600; font-size:13px; cursor:pointer; }
+    .confirm-btn-yes { flex:1; padding:10px; border-radius:8px; border:none; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; font-weight:700; font-size:13px; cursor:pointer; }
+    .confirm-btn-yes:hover { background:linear-gradient(135deg,#b91c1c,#991b1b); }
+
+    @media (max-width: 768px) {
+        .orders-table-wrap { border-radius: 10px; }
+        .tbl-actions { flex-direction: column; align-items: flex-end; }
+    }
 </style>
 {% endblock %}
 
@@ -1217,32 +1448,28 @@
         <p>Track and manage all your food orders in one place</p>
     </div>
 
-    <!-- Order Status Tabs - SYNCED with Owner Dashboard -->
+    <!-- Order Status Tabs -->
     <div class="order-tabs">
         <button class="order-tab active" data-status="request" onclick="switchTab('request')">
             <i class="fas fa-paper-plane"></i>
             Request
             <span class="order-tab-count" id="count-request">0</span>
         </button>
-
         <button class="order-tab" data-status="to_pay" onclick="switchTab('to_pay')">
             <i class="fas fa-credit-card"></i>
             To Pay
             <span class="order-tab-count" id="count-to_pay">0</span>
         </button>
-
         <button class="order-tab" data-status="preparing" onclick="switchTab('preparing')">
             <i class="fas fa-fire"></i>
             Preparing
             <span class="order-tab-count" id="count-preparing">0</span>
         </button>
-
         <button class="order-tab" data-status="to_claim" onclick="switchTab('to_claim')">
             <i class="fas fa-box"></i>
             To Claim
             <span class="order-tab-count" id="count-to_claim">0</span>
         </button>
-
         <button class="order-tab" data-status="completed" onclick="switchTab('completed')">
             <i class="fas fa-check-circle"></i>
             Completed
@@ -1250,11 +1477,24 @@
         </button>
     </div>
 
-    <!-- Orders List -->
-    <div class="orders-list" id="ordersList">
+    <!-- Orders Table -->
+    <div id="ordersList">
         <div class="loading-state">
             <i class="fas fa-spinner"></i>
             <p>Loading your orders...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirm Dialog -->
+<div class="confirm-overlay" id="cancelConfirmOverlay">
+    <div class="confirm-box">
+        <i class="big-icon fas fa-times-circle" style="color:#dc2626;"></i>
+        <h3>Cancel Order?</h3>
+        <p>Are you sure you want to cancel this order? The items will be returned to stock.</p>
+        <div class="confirm-btns">
+            <button class="confirm-btn-no" onclick="closeCancelConfirm()">No, Keep It</button>
+            <button class="confirm-btn-yes" id="cancelConfirmYes">Yes, Cancel</button>
         </div>
     </div>
 </div>
@@ -1351,317 +1591,1252 @@
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
-    // ========================================
-    // GLOBAL VARIABLES
-    // ========================================
-    let allOrders = [];
+    // ============================================================
+    // GLOBALS
+    // ============================================================
+    // ✅ REALTIME: expose user ID for WebSocket subscription
+    const CURRENT_USER_ID = {{ request.user.id|default:'null' }};
+
+    let allOrders    = [];
     let currentFilter = 'request';
+    // countdown timers: orderId → { intervalId, deadlineMs }
+    const timerMap = {};
+    // pending cancel orderId
+    let cancelTargetId = null;
 
-    // ========================================
-    // INITIALIZE
-    // ========================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Order History Page Initialized');
+    // ============================================================
+    // LOCALSTORAGE — persist cancelled-by-owner rows across refresh
+    // Key: kabsueats_cancelled_<userId>
+    // Value: { [orderId]: { _cancelReason, _cancelledByOwner, _expired, ...order } }
+    // ============================================================
+    const LS_KEY = 'kabsueats_cancelled_' + (CURRENT_USER_ID || 'guest');
+
+    function lsSaveCancelled(order) {
+        try {
+            const store = lsGetAll();
+            store[order.id] = {
+                id:                order.id,
+                status:            'to_pay',
+                _expired:          true,
+                _cancelledByOwner: order._cancelledByOwner === true,  // strict — never default to true
+                _cancelReason:     order._cancelReason     || '',
+                // preserve display fields
+                establishment_name:    order.establishment_name    || '',
+                establishment_address: order.establishment_address || '',
+                establishment_id:      order.establishment_id      || null,
+                items:                 order.items                  || [],
+                total_amount:          order.total_amount           || 0,
+                created_at:            order.created_at             || '',
+                updated_at:            order.updated_at             || '',
+                payment_method:        order.payment_method         || '',
+            };
+            localStorage.setItem(LS_KEY, JSON.stringify(store));
+        } catch (e) { /* storage full or disabled */ }
+    }
+
+    function lsRemoveCancelled(orderId) {
+        try {
+            const store = lsGetAll();
+            delete store[orderId];
+            localStorage.setItem(LS_KEY, JSON.stringify(store));
+        } catch (e) {}
+    }
+
+    function lsGetAll() {
+        try {
+            return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        } catch (e) { return {}; }
+    }
+
+    function lsGetCancelledOrders() {
+        return Object.values(lsGetAll());
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function () {
+        // ── Migrate stale localStorage data ──────────────────────
+        // Old buggy code saved _cancelledByOwner:true even for timer-expired orders.
+        // Fix: any entry with _cancelledByOwner:true but _cancelReason empty = timer-expired.
+        (function migrateLsData() {
+            try {
+                const store = lsGetAll();
+                let changed = false;
+                Object.values(store).forEach(function (entry) {
+                    if (entry._cancelledByOwner === true && !entry._cancelReason) {
+                        entry._cancelledByOwner = false;
+                        changed = true;
+                    }
+                });
+                if (changed) localStorage.setItem(LS_KEY, JSON.stringify(store));
+            } catch (e) {}
+        })();
+
         loadOrders();
-
-        // Real-time: poll every 5 seconds to sync with owner updates
-        setInterval(loadOrders, 5000);
-
-        // Instant refresh when tab becomes visible again
-        document.addEventListener('visibilitychange', function() {
+        // ✅ REALTIME: WS handles instant pushes — keep 30s poll as fallback only
+        setInterval(loadOrders, 30000);
+        document.addEventListener('visibilitychange', function () {
             if (!document.hidden) loadOrders();
         });
-
-        // Close reorder modal on ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeReorderModal();
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeReorderModal(); closeCancelConfirm(); }
         });
+        // ✅ REALTIME: Subscribe to order-status WebSocket (customer side)
+        initClientOrderStatusWs();
     });
 
-    // ========================================
-    // LOAD ORDERS FROM API
-    // ========================================
+    // ============================================================
+    // ✅ REALTIME: Order-Status WebSocket — customer order history
+    // Fires instantly when the owner accepts, cancels, or advances an order.
+    // Removes / moves rows without waiting for the 30-second poll.
+    // ============================================================
+    function showOrderToast(msg, type) {
+        // Try to use the global showToast if available (kabsueats.js style)
+        if (typeof showToast === 'function') { showToast(msg, type); return; }
+        // Lightweight fallback toast
+        let container = document.getElementById('_orderToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = '_orderToastContainer';
+            container.style.cssText =
+                'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        const bg = type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#22c55e';
+        toast.style.cssText =
+            'background:' + bg + ';color:#fff;padding:12px 18px;border-radius:10px;' +
+            'font-size:14px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.18);' +
+            'max-width:320px;opacity:1;transition:opacity .4s;';
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(function () {
+            toast.style.opacity = '0';
+            setTimeout(function () { toast.remove(); }, 400);
+        }, 4000);
+    }
+
+    function initClientOrderStatusWs() {
+        if (!CURRENT_USER_ID) return;
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        let ws;
+
+        function connect() {
+            ws = new WebSocket(
+                proto + '://' + location.host +
+                '/ws/order-status/user/user/' + CURRENT_USER_ID + '/'
+            );
+
+            ws.onopen = function () {
+                console.log('📦 [Client Orders WS] Connected → user #' + CURRENT_USER_ID);
+            };
+
+            ws.onmessage = function (e) {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.type !== 'order_status_update') return;
+
+                    const orderId   = d.order_id;
+                    const newStatus = d.new_status;
+                    const reason    = d.cancel_reason || '';
+                    console.log('📦 [Client Orders WS] Order #' + orderId + ' → ' + newStatus);
+
+                    const idx = allOrders.findIndex(function (o) { return o.id === orderId; });
+
+                    if (newStatus === 'cancelled') {
+                        // ── RULE: to_pay rows NEVER disappear automatically. ──
+                        // Row stays on the to_pay tab until the client clicks
+                        // Re-order or Cancel. ONLY client button clicks remove a row.
+
+                        const orderEntry     = idx !== -1 ? allOrders[idx] : null;
+                        const wasToPayStatus = !orderEntry ||
+                            orderEntry.status === 'to_pay' ||
+                            orderEntry.status === 'PENDING';
+
+                        if (wasToPayStatus) {
+                            // Mark as expired in memory — status stays 'to_pay' so
+                            // the row remains in the to_pay tab on next poll/re-render
+                            if (idx !== -1) {
+                                allOrders[idx].status             = 'to_pay';
+                                allOrders[idx]._expired           = true;
+                                allOrders[idx]._cancelReason      = reason;
+                                allOrders[idx]._cancelledByOwner  = true;
+                                // Persist to localStorage so row survives page refresh
+                                lsSaveCancelled(allOrders[idx]);
+                            }
+
+                            // Stop the countdown timer
+                            if (timerMap[orderId]) {
+                                clearInterval(timerMap[orderId].id);
+                                delete timerMap[orderId];
+                            }
+
+                            // Update the status cell — show "Cancelled by Owner" badge + reason
+                            const statusCell = document.getElementById('status-cell-' + orderId);
+                            if (statusCell) {
+                                statusCell.innerHTML = buildCancelledByOwnerBadge(reason);
+                            } else {
+                                // Fallback: hide old badge + update timer chip
+                                const chipEl = document.getElementById('timer-' + orderId);
+                                if (chipEl) {
+                                    chipEl.className = 'timer-chip expired';
+                                    chipEl.innerHTML = '<i class="fas fa-clock"></i> Time\'s up';
+                                }
+                                const badge = document.getElementById('status-badge-' + orderId);
+                                if (badge) badge.style.display = 'none';
+                            }
+
+                            // Swap action buttons: Pay Now → Re-order + Cancel
+                            swapToExpiredActions(orderId);
+
+                            // Toast always — client may be on any tab
+                            const toastMsg = reason
+                                ? 'Order #' + orderId + ' cancelled by owner: ' + reason
+                                : 'Order #' + orderId + ' was cancelled. Re-order or cancel below.';
+                            showOrderToast(toastMsg, 'error');
+                            updateOrderCounts();
+
+                        } else {
+                            // Not a to_pay order — safe to remove from view
+                            if (idx !== -1) allOrders.splice(idx, 1);
+                            const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                            if (row) {
+                                row.style.transition = 'opacity 0.3s, transform 0.3s';
+                                row.style.opacity    = '0';
+                                row.style.transform  = 'translateX(14px)';
+                                setTimeout(function () {
+                                    row.remove();
+                                    updateOrderCounts();
+                                    const tbody = document.querySelector('#ordersList tbody');
+                                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                                }, 320);
+                            } else {
+                                updateOrderCounts();
+                            }
+                        }
+                    } else if (idx !== -1) {
+                        // ── Status advanced (request→to_pay, to_pay→preparing, etc.) ──
+                        const prevStatus = allOrders[idx].status;
+                        allOrders[idx].status = newStatus;
+
+                        if (prevStatus !== newStatus) {
+                            // Friendly toast for key milestones
+                            const labels = {
+                                to_pay:    '💳 Your order was accepted! Please proceed to payment.',
+                                preparing: '👨‍🍳 Your order is now being prepared!',
+                                to_claim:  '🎉 Your order is ready for pickup!',
+                                completed: '✅ Your order has been completed.',
+                            };
+                            if (labels[newStatus]) {
+                                showOrderToast(labels[newStatus], 'success');
+                            }
+
+                            // If the row is in the tab we're currently viewing,
+                            // fade it out (it belongs to a different tab now).
+                            const prevMatchesTab =
+                                prevStatus === currentFilter ||
+                                (currentFilter === 'to_pay' && prevStatus === 'PENDING');
+                            if (prevMatchesTab) {
+                                const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                                if (row) {
+                                    row.style.transition = 'opacity 0.3s';
+                                    row.style.opacity    = '0';
+                                    setTimeout(function () {
+                                        row.remove();
+                                        updateOrderCounts();
+                                    }, 320);
+                                }
+                            }
+                            updateOrderCounts();
+                        }
+
+                    } else {
+                        // Brand-new order (e.g. re-request by another session) — reload
+                        loadOrders();
+                    }
+
+                } catch (err) {
+                    console.warn('[Client Orders WS] Bad message:', err);
+                }
+            };
+
+            ws.onclose = function () {
+                console.log('📦 [Client Orders WS] Disconnected — reconnecting in 3s');
+                setTimeout(connect, 3000);
+            };
+            ws.onerror = function () { ws.close(); };
+        }
+
+        connect();
+    }
+
+    // ============================================================
+    // LOAD ORDERS
+    // ============================================================
     function loadOrders() {
-        console.log('📥 Loading orders from API...');
+        const container = document.getElementById('ordersList');
 
         fetch('/api/user/transactions/')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            .then(function (r) {
+                if (r.status === 401 || r.redirected) {
+                    window.location.href = '/accounts/login/';
+                    return null;
                 }
-                return response.json();
+                // Safe JSON parse — avoids crash if body is HTML/empty
+                return r.text().then(function (text) {
+                    try { return JSON.parse(text); }
+                    catch (e) {
+                        console.error('[loadOrders] Non-JSON response:', text.slice(0, 200));
+                        return null;
+                    }
+                });
             })
-            .then(data => {
-                console.log('✅ Orders loaded:', data);
+            .then(function (data) {
+                if (!data) return;
 
-                if (data.success && data.orders) {
-                    allOrders = data.orders;
+                if (data.success && Array.isArray(data.orders)) {
+                    // ── Merge localStorage cancelled orders (survive page refresh) ──
+                    const lsCancelled = lsGetCancelledOrders();
+
+                    // Preserve any to_pay rows the client hasn't acted on yet
+                    // (server cancelled them but client still needs to choose Re-order or Cancel)
+                    // Carry over ALL client-side flags so row + reason survive polls and page refresh.
+                    const preservedToPay = allOrders.filter(function (existing) {
+                        return (existing.status === 'to_pay' || existing.status === 'PENDING') &&
+                               !data.orders.find(function (fresh) { return fresh.id === existing.id; });
+                    }).map(function (o) {
+                        return Object.assign({}, o, {
+                            _expired:          true,
+                            _cancelledByOwner: o._cancelledByOwner || false,
+                            _cancelReason:     o._cancelReason     || ''
+                        });
+                    });
+
+                    // Also merge any fresh orders that are in to_pay — keep their client flags
+                    const freshWithFlags = data.orders.map(function (fresh) {
+                        // Check in-memory first, then localStorage
+                        const existing = allOrders.find(function (e) { return e.id === fresh.id; });
+                        const lsEntry  = lsCancelled.find(function (e) { return e.id === fresh.id; });
+                        const src      = (existing && (existing._cancelledByOwner || existing._expired))
+                                         ? existing : lsEntry;
+                        if (src) {
+                            return Object.assign({}, fresh, {
+                                status:            src.status,
+                                _expired:          src._expired,
+                                _cancelledByOwner: src._cancelledByOwner,
+                                _cancelReason:     src._cancelReason
+                            });
+                        }
+                        return fresh;
+                    });
+
+                    // Add any localStorage cancelled orders not returned by server at all
+                    const serverIds    = data.orders.map(function (o) { return o.id; });
+                    const memIds       = preservedToPay.map(function (o) { return o.id; });
+                    const lsOnlyRows   = lsCancelled.filter(function (o) {
+                        return !serverIds.includes(o.id) && !memIds.includes(o.id);
+                    });
+
+                    allOrders = freshWithFlags.concat(preservedToPay).concat(lsOnlyRows);
                     updateOrderCounts();
                     filterOrders(currentFilter);
+
+                    // Subscribe to inventory WS for every establishment
+                    const estIds = [...new Set(allOrders.map(function (o) {
+                        return o.establishment_id;
+                    }).filter(Boolean))];
+                    estIds.forEach(function (id) { subscribeOrderHistoryInventoryWs(id); });
+
                 } else {
-                    showError('No orders found');
+                    if (data.message) console.warn('[loadOrders] API error:', data.message);
+                    allOrders = [];
+                    updateOrderCounts();
+                    filterOrders(currentFilter);
                 }
             })
-            .catch(error => {
-                console.error('❌ Error loading orders:', error);
-                showError('Failed to load orders. Please try again.');
+            .catch(function (err) {
+                console.error('[loadOrders] Fetch error:', err);
+                if (!container) return;
+                container.innerHTML =
+                    '<div class="tbl-empty">' +
+                    '<i class="fas fa-exclamation-circle"></i>' +
+                    '<h3>Could not load orders</h3>' +
+                    '<p>Check your connection and ' +
+                    '<button class="empty-state-btn" onclick="loadOrders()" ' +
+                    'style="display:inline-block;padding:6px 14px;font-size:13px;cursor:pointer;">' +
+                    'Retry</button></p>' +
+                    '</div>';
             });
     }
 
-    // ========================================
-    // UPDATE ORDER COUNTS
-    // ========================================
+    // ── Inventory WebSocket for client order history ──
+    // Keeps the to_pay tab accurate: if an item's stock changes (e.g. another
+    // customer cancels and stock is restored), the counts update in real time.
+    const _orderHistoryInvWs = {};
+    function subscribeOrderHistoryInventoryWs(estId) {
+        if (!estId || _orderHistoryInvWs[estId]) return;
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws    = new WebSocket(`${proto}://${location.host}/ws/inventory/${estId}/`);
+        ws.onmessage = function (e) {
+            try {
+                const d = JSON.parse(e.data);
+                if (d.type === 'quantity_update') {
+                    // Re-evaluate tab counts in case statuses changed
+                    updateOrderCounts();
+                }
+            } catch (_) {}
+        };
+        ws.onclose = function () {
+            delete _orderHistoryInvWs[estId];
+            setTimeout(() => subscribeOrderHistoryInventoryWs(estId), 3000);
+        };
+        ws.onerror = function () { ws.close(); };
+        _orderHistoryInvWs[estId] = ws;
+    }
+
+    // ============================================================
+    // COUNTS
+    // ============================================================
     function updateOrderCounts() {
         const counts = {
-            request: allOrders.filter(o => o.status === 'request').length,
-            to_pay: allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING').length,
-            order_received: allOrders.filter(o => o.status === 'order_received').length,
-            preparing: allOrders.filter(o => o.status === 'preparing').length,
+            request:  allOrders.filter(o => o.status === 'request').length,
+            to_pay:   allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING').length,
+            preparing:allOrders.filter(o => o.status === 'preparing').length,
             to_claim: allOrders.filter(o => o.status === 'to_claim').length,
-            completed: allOrders.filter(o => o.status === 'completed').length
+            completed:allOrders.filter(o => o.status === 'completed').length,
         };
-
-        console.log('📊 Order counts:', counts);
-
-        document.getElementById('count-request').textContent = counts.request;
-        document.getElementById('count-to_pay').textContent = counts.to_pay;
+        document.getElementById('count-request').textContent   = counts.request;
+        document.getElementById('count-to_pay').textContent    = counts.to_pay;
         document.getElementById('count-preparing').textContent = counts.preparing;
-        document.getElementById('count-to_claim').textContent = counts.to_claim;
+        document.getElementById('count-to_claim').textContent  = counts.to_claim;
         document.getElementById('count-completed').textContent = counts.completed;
     }
 
-    // ========================================
-    // SWITCH TABS
-    // ========================================
+    // ============================================================
+    // TABS
+    // ============================================================
     function switchTab(status) {
-        console.log('🔄 Switching to tab:', status);
         currentFilter = status;
-
-        document.querySelectorAll('.order-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
+        document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
         document.querySelector(`.order-tab[data-status="${status}"]`).classList.add('active');
-
         filterOrders(status);
     }
 
-    // ========================================
-    // FILTER ORDERS BY STATUS
-    // ========================================
     function filterOrders(status) {
-        console.log('🔍 Filtering orders by status:', status);
-
-        let filteredOrders;
+        let filtered;
         if (status === 'to_pay') {
-            filteredOrders = allOrders.filter(order => order.status === 'to_pay' || order.status === 'PENDING');
+            filtered = allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING');
         } else {
-            filteredOrders = allOrders.filter(order => order.status === status);
+            filtered = allOrders.filter(o => o.status === status);
         }
-
-        // Sort ascending by created_at — whoever ordered first goes to the top
-        filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-        console.log(`✅ Filtered ${filteredOrders.length} orders`);
-        renderOrders(filteredOrders);
+        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        renderOrders(filtered);
     }
 
-    // ========================================
-    // RENDER ORDERS TO PAGE
-    // ========================================
+    // ============================================================
+    // RENDER — table layout matching owner dashboard
+    // ============================================================
     function renderOrders(orders) {
-        const ordersList = document.getElementById('ordersList');
+        // Stop all existing timers before re-rendering
+        Object.values(timerMap).forEach(t => clearInterval(t.id));
+        Object.keys(timerMap).forEach(k => delete timerMap[k]);
 
-        if (orders.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
+        const container = document.getElementById('ordersList');
+
+        if (!orders.length) {
+            container.innerHTML = `
+                <div class="tbl-empty">
                     <i class="fas fa-shopping-bag"></i>
                     <h3>No orders found</h3>
-                    <p>You haven't placed any orders yet. Start exploring delicious food!</p>
+                    <p>No orders in this category yet.</p>
                     <a href="{% url 'kabsueats_home' %}" class="empty-state-btn">
-                        <i class="fas fa-utensils"></i>
-                        Browse Establishments
+                        <i class="fas fa-utensils"></i> Browse Establishments
                     </a>
-                </div>
-            `;
+                </div>`;
             return;
         }
 
-        ordersList.innerHTML = orders.map(order => `
-            <div class="order-card">
-                <div class="order-card-header">
-                    <div class="order-card-header-left">
-                        <span class="order-number">#${order.id}</span>
-                        <span class="order-date">
-                            <i class="far fa-clock"></i>
-                            ${formatDate(order.created_at)}
-                        </span>
-                    </div>
-                    <span class="order-status-badge status-${order.status}">
-                        ${getStatusIcon(order.status)}
-                        ${getStatusText(order.status)}
-                    </span>
-                </div>
+        const thS = `style="background:white;color:#a0aec0;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;"`;
 
-                <div class="order-card-body">
-                    <div class="order-establishment">
-                        <img src="${order.establishment_image || '/static/images/menu.png'}"
-                             alt="${order.establishment_name}"
-                             class="establishment-image"
-                             onerror="this.src='/static/images/menu.png'">
-                        <div class="establishment-info">
-                            <h3>${order.establishment_name}</h3>
-                            <p>
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${order.establishment_address || 'No address provided'}
-                            </p>
-                        </div>
-                    </div>
+        // Build table rows
+        const rows = orders.map(o => {
+            const itemsHtml = (o.items || []).map(i =>
+                `<div class="tbl-item-line"><strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}</div>`
+            ).join('');
 
-                    <div class="order-items">
-                        ${order.items.map(item => `
-                            <div class="order-item">
-                                <div class="order-item-info">
-                                    <img src="${item.image || '/static/images/menu.png'}"
-                                         alt="${item.name}"
-                                         class="order-item-image"
-                                         onerror="this.src='/static/images/menu.png'">
-                                    <div class="order-item-details">
-                                        <h4>${item.name}</h4>
-                                        <span class="order-item-quantity">Qty: ${item.quantity}</span>
-                                    </div>
-                                </div>
-                                <span class="order-item-price">₱${parseFloat(item.total_price).toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
+            // ── Timer for to_pay orders ──
+            let timerHtml = '';
+            let statusCellExpired = false;
+            if (o.status === 'to_pay' || o.status === 'PENDING') {
+                const acceptedAt = new Date(o.updated_at || o.created_at);
+                const deadlineMs = acceptedAt.getTime() + 8 * 60 * 1000;
+                const remaining  = deadlineMs - Date.now();
+                // _expired flag = server cancelled it, client hasn't decided yet
+                if (o._expired || remaining <= 0) {
+                    timerHtml = `<span class="timer-chip expired" style="margin-left:6px;"><i class="fas fa-clock"></i> Time's up</span>`;
+                    statusCellExpired = true;
+                } else {
+                    timerHtml = `<span class="timer-chip" id="timer-${o.id}" style="margin-left:6px;"><i class="fas fa-clock"></i> <span id="timer-val-${o.id}">${fmtMs(remaining)}</span></span>`;
+                }
+            }
 
-                <div class="order-card-footer">
-                    <div class="order-total">
-                        <span class="order-total-label">Total Amount</span>
-                        <span class="order-total-amount">₱${parseFloat(order.total_amount).toFixed(2)}</span>
-                    </div>
-                    <div class="order-actions">
-                        ${getOrderActions(order)}
-                    </div>
-                </div>
-            </div>
-        `).join('');
+            const actions = buildClientActions(o, statusCellExpired);
+
+            // Status cell: badge + timer on one line
+            // Only show "Cancelled by Owner" if flag is true AND there is a real reason
+            const reallyOwnerCancelled = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
+            const statusCell = (o.status === 'to_pay' || o.status === 'PENDING')
+                ? (statusCellExpired
+                    ? (reallyOwnerCancelled
+                        ? buildCancelledByOwnerBadge(o._cancelReason)
+                        : buildTimesUpBadge())
+                    : `<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:4px;">
+                           <span class="order-status-badge status-${o.status}" id="status-badge-${o.id}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>
+                           ${timerHtml}
+                       </div>`)
+                : `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
+
+            const showActions = o.status !== 'preparing' && o.status !== 'to_claim';
+            // Show payment badge for preparing, to_claim, completed
+            const showPayment = o.status === 'preparing' || o.status === 'to_claim' || o.status === 'completed';
+            const paymentBadge = showPayment ? buildPaymentBadge(o.payment_method || '') : '';
+
+            return `
+            <tr class="order-row" data-id="${o.id}" data-status="${o.status}" data-updated="${o.updated_at || o.created_at}">
+                <td>
+                    <div class="tbl-order-num">#${o.id}</div>
+                    <div class="tbl-date"><i class="far fa-clock" style="margin-right:3px;"></i>${fmtDate(o.created_at)}</div>
+                </td>
+                <td>
+                    <div class="tbl-est-name">${esc(o.establishment_name)}</div>
+                    <div class="tbl-est-addr"><i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>${esc(o.establishment_address || '')}</div>
+                </td>
+                <td>${itemsHtml || '<span style="color:#a0aec0;font-size:12px;">—</span>'}</td>
+                <td>
+                    <span class="tbl-total">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
+                </td>
+                ${showPayment ? `<td>${paymentBadge}</td>` : ''}
+                <td>
+                    <div id="status-cell-${o.id}">${statusCell}</div>
+                </td>
+                ${showActions ? `<td><div class="tbl-actions" id="actions-cell-${o.id}">${actions}</div></td>` : ''}
+            </tr>`;
+        }).join('');
+
+        // Hide actions column for preparing and to_claim tabs
+        const hideActions = currentFilter === 'preparing' || currentFilter === 'to_claim';
+        // Show payment column for preparing, to_claim, completed
+        const showPaymentCol = currentFilter === 'preparing' || currentFilter === 'to_claim' || currentFilter === 'completed';
+
+        container.innerHTML = `
+            <div class="orders-table-wrap">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th ${thS} style="border-left:1px solid #ececec;border-radius:10px 0 0 10px;width:90px;">Order</th>
+                            <th ${thS} style="min-width:160px;">Establishment</th>
+                            <th ${thS}>Items</th>
+                            <th ${thS} style="width:100px;">Total</th>
+                            ${showPaymentCol ? `<th ${thS} style="width:120px;">Payment</th>` : ''}
+                            <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}min-width:180px;text-align:left;">Status</th>
+                            ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:180px;text-align:right;">Actions</th>`}
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+
+        // Start live countdown timers for to_pay rows
+        orders.forEach(o => {
+            if (o.status !== 'to_pay' && o.status !== 'PENDING') return;
+            const acceptedAt = new Date(o.updated_at || o.created_at);
+            const deadlineMs = acceptedAt.getTime() + 8 * 60 * 1000;
+
+            if (Date.now() >= deadlineMs) return; // already expired on first render
+
+            const intervalId = setInterval(() => {
+                const rem    = deadlineMs - Date.now();
+                const valEl  = document.getElementById(`timer-val-${o.id}`);
+                const chipEl = document.getElementById(`timer-${o.id}`);
+                if (!valEl) { clearInterval(intervalId); return; }
+
+                if (rem <= 0) {
+                    clearInterval(intervalId);
+                    delete timerMap[o.id];
+
+                    // 1. Replace the entire status cell with the Time's Up badge
+                    const statusCell = document.getElementById(`status-cell-${o.id}`);
+                    if (statusCell) {
+                        statusCell.innerHTML = buildTimesUpBadge();
+                    } else {
+                        // Fallback: update chip + hide badge separately
+                        const chipEl2 = document.getElementById(`timer-${o.id}`);
+                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time\'s up'; }
+                        const statusBadge = document.getElementById(`status-badge-${o.id}`);
+                        if (statusBadge) statusBadge.style.display = 'none';
+                    }
+
+                    // 2. Mark as expired in memory (not owner-cancelled)
+                    const expiredIdx = allOrders.findIndex(function (x) { return x.id === o.id; });
+                    if (expiredIdx !== -1) {
+                        allOrders[expiredIdx]._expired          = true;
+                        allOrders[expiredIdx]._cancelledByOwner = false;
+                        allOrders[expiredIdx]._cancelReason     = '';
+                        // Persist so row survives refresh
+                        lsSaveCancelled(allOrders[expiredIdx]);
+                    }
+
+                    // 3. Call cancel API to restore stock server-side
+                    //    (in case owner's dashboard isn't open to trigger auto-reject)
+                    fetch('/api/order/' + o.id + '/cancel/', {
+                        method:  'POST',
+                        headers: {
+                            'X-CSRFToken':  getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        }
+                    }).catch(function () { /* silent — stock will be restored on owner login */ });
+
+                    // 4. Swap to Re-order + Remove buttons
+                    swapToExpiredActions(o.id);
+                    return;
+                }
+
+                valEl.textContent = fmtMs(rem);
+                if (chipEl) chipEl.className = rem <= 60000 ? 'timer-chip urgent' : 'timer-chip';
+            }, 1000);
+
+            timerMap[o.id] = { id: intervalId, deadlineMs };
+        });
     }
 
-    // ========================================
-    // GET STATUS TEXT - SYNCED WITH OWNER DASHBOARD
-    // ========================================
-    function getStatusText(status) {
-        const statusMap = {
-            'request': 'Request',
-            'to_pay': 'To Pay',
-            'order_received': 'Order Received',
-            'preparing': 'Preparing',
-            'to_claim': 'To Claim',
-            'completed': 'Completed',
-            'PENDING': 'To Pay',
-            'PAID': 'Paid',
-            'CANCELLED': 'Cancelled'
-        };
-        return statusMap[status] || status;
+    // ============================================================
+    // CANCELLED-BY-OWNER STATUS BADGE BUILDER
+    // ============================================================
+    function buildCancelledByOwnerBadge(reason) {
+        const displayReason = (reason && reason.trim().length > 0)
+            ? reason.trim()
+            : 'No specific reason provided.';
+        return `
+            <div class="cancelled-owner-wrap">
+                <span class="order-status-badge status-cancelled-owner">
+                    <i class="fas fa-ban"></i> Cancelled by Owner
+                </span>
+                <div class="reason-inline">
+                    <i class="fas fa-info-circle"></i>
+                    <span>${esc(displayReason)}</span>
+                </div>
+            </div>`;
     }
 
-    // ========================================
-    // GET STATUS ICON
-    // ========================================
-    function getStatusIcon(status) {
-        const iconMap = {
-            'request': '<i class="fas fa-paper-plane"></i>',
-            'to_pay': '<i class="fas fa-credit-card"></i>',
-            'order_received': '<i class="fas fa-bell"></i>',
-            'preparing': '<i class="fas fa-fire"></i>',
-            'to_claim': '<i class="fas fa-box"></i>',
-            'completed': '<i class="fas fa-check-circle"></i>',
-            'PENDING': '<i class="fas fa-credit-card"></i>',
-            'PAID': '<i class="fas fa-check"></i>',
-            'CANCELLED': '<i class="fas fa-times-circle"></i>'
-        };
-        return iconMap[status] || '<i class="fas fa-info-circle"></i>';
+    function buildTimesUpBadge() {
+        return `
+            <div class="cancelled-owner-wrap">
+                <span class="order-status-badge status-timesup">
+                    <i class="fas fa-clock"></i> Time's Up
+                </span>
+                <div class="reason-inline" style="background:#f9fafb;border-color:#e5e7eb;color:#4b5563;">
+                    <i class="fas fa-info-circle" style="color:#6b7280;"></i>
+                    <span>Payment time has expired. You may re-order or remove this.</span>
+                </div>
+            </div>`;
     }
 
-    // ========================================
-    // GET ORDER ACTIONS BASED ON STATUS
-    // ========================================
-    function getOrderActions(order) {
-        let actions = '';
+    function buildPaymentBadge(method) {
+        const m = (method || '').toLowerCase().trim();
+        if (m === 'cash') {
+            return `<span class="pay-badge pay-cash"><i class="fas fa-money-bill-wave"></i> Cash</span>`;
+        }
+        if (m === 'gcash' || m) {
+            return `<span class="pay-badge pay-gcash"><i class="fas fa-mobile-alt"></i> GCash</span>`;
+        }
+        return `<span style="color:#a0aec0;font-size:12px;">—</span>`;
+    }
 
-        // Pay Now button for to_pay / PENDING orders
-        if (order.status === 'to_pay' || order.status === 'PENDING') {
-            actions += `
-                <button class="order-action-btn btn-pay" onclick="payOrder(${order.id})">
-                    <i class="fas fa-credit-card"></i> Pay Now
-                </button>
-            `;
+    // ============================================================
+    // CLIENT ACTION BUTTONS PER STATUS
+    // ============================================================
+    function buildClientActions(o, expired) {
+        let html = '';
+
+        if (o.status === 'request') {
+            html += `<button class="tbl-btn tbl-btn-cancel" onclick="askCancelOrder(${o.id})">
+                        <i class="fas fa-times"></i> Cancel
+                     </button>`;
         }
 
-        // Rate button for completed orders
-        if (order.status === 'completed') {
-            const estId = order.establishment_id || '';
-            actions += `
-                <button class="order-action-btn btn-rate" onclick="openRatingModal(${estId})">
-                    <i class="fas fa-star"></i> Rate
-                </button>
-                <button class="order-action-btn btn-reorder" onclick="showReorderModal(${order.id})">
-                    <i class="fas fa-redo"></i> Reorder
-                </button>
-            `;
+        if (o.status === 'to_pay' || o.status === 'PENDING') {
+            if (expired) {
+                // Only treat as owner-cancelled if flag is true AND there is a reason or explicit WS cancel.
+                // If _cancelledByOwner is true but _cancelReason is empty, treat as timer-expired
+                // (catches stale LS data from the old buggy code).
+                const reallyOwnerCancelled = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
+
+                if (reallyOwnerCancelled) {
+                    // ── Owner cancelled with a reason ──
+                    // Show REMOVE ONLY — row is informational, stock already restored.
+                    html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                                <i class="fas fa-times"></i> Remove
+                             </button>`;
+                } else {
+                    // ── Timer expired (or owner cancelled without reason) ──
+                    // Re-order = re-request. Remove = dismiss row.
+                    html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(${o.id}, this)">
+                                <i class="fas fa-redo-alt"></i> Re-order
+                             </button>
+                             <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                                <i class="fas fa-times"></i> Remove
+                             </button>`;
+                }
+            } else {
+                // Timer still running — show Pay Now only
+                html += `<button class="tbl-btn tbl-btn-pay" onclick="payOrder(${o.id})">
+                            <i class="fas fa-credit-card"></i> Pay Now
+                         </button>`;
+            }
         }
 
-        return actions;
+        if (o.status === 'preparing' || o.status === 'to_claim') {
+            html += `<span class="awaiting-chip"><i class="fas fa-${o.status === 'preparing' ? 'fire' : 'box'}"></i> ${getStatusText(o.status)}</span>`;
+        }
+
+        if (o.status === 'completed') {
+            const estId = o.establishment_id || '';
+            html += `<button class="tbl-btn tbl-btn-rate" onclick="openRatingModal(${estId})">
+                        <i class="fas fa-star"></i> Rate
+                     </button>
+                     <button class="tbl-btn tbl-btn-reorder" onclick="showReorderModal(${o.id})">
+                        <i class="fas fa-redo"></i> Reorder
+                     </button>`;
+        }
+
+        return html || '<span style="color:#a0aec0;font-size:12px;">—</span>';
     }
 
-    // ========================================
-    // FORMAT DATE
-    // ========================================
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        const options = {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+    // ============================================================
+    // HELPER — swap a to_pay row's actions to Re-order / Cancel
+    // Called when the 8-min timer expires OR when owner cancels.
+    // The row stays in the to_pay tab so the customer can decide.
+    // ============================================================
+    function swapToExpiredActions(orderId) {
+        const actCell = document.getElementById('actions-cell-' + orderId);
+        if (!actCell) return;
+
+        const orderEntry = allOrders.find(function (o) { return o.id === orderId; });
+        // Only treat as owner-cancelled if flag is true AND there is a reason
+        const reallyOwnerCancelled = orderEntry &&
+            orderEntry._cancelledByOwner === true &&
+            (orderEntry._cancelReason || '').trim().length > 0;
+
+        if (reallyOwnerCancelled) {
+            // Owner cancelled with reason — Remove only
+            actCell.innerHTML =
+                '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
+                '    <i class="fas fa-times"></i> Remove' +
+                '</button>';
+        } else {
+            // Timer expired — Re-order + Remove
+            actCell.innerHTML =
+                '<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(' + orderId + ', this)">' +
+                '    <i class="fas fa-redo-alt"></i> Re-order' +
+                '</button>' +
+                '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
+                '    <i class="fas fa-times"></i> Remove' +
+                '</button>';
+        }
+    }
+
+    // ============================================================
+    // CANCEL ORDER (CUSTOMER)
+    // ============================================================
+    function askCancelOrder(orderId) {
+        cancelTargetId = orderId;
+        const overlay = document.getElementById('cancelConfirmOverlay');
+        overlay.classList.add('open');
+        document.getElementById('cancelConfirmYes').onclick = function () {
+            doCancel(cancelTargetId);
         };
-        return date.toLocaleDateString('en-US', options);
     }
 
-    // ========================================
-    // ORDER ACTION FUNCTIONS
-    // ========================================
-
-    // ✅ Details button → go to cart page
-    function viewOrderDetails(orderId) {
-        console.log('👁️ Viewing order details:', orderId);
-        window.location.href = `/cart/`;
+    function closeCancelConfirm() {
+        document.getElementById('cancelConfirmOverlay').classList.remove('open');
+        cancelTargetId = null;
     }
 
-    // ✅ Pay Now button → go to checkout page for payment
+    function doCancel(orderId) {
+        const btn = document.getElementById('cancelConfirmYes');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+
+        fetch('/api/order/' + orderId + '/cancel/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) { return { success: false, message: 'Server error. Please try again.' }; }
+            });
+        })
+        .then(function (data) {
+            closeCancelConfirm();
+            if (data.success) {
+                if (timerMap[orderId]) {
+                    clearInterval(timerMap[orderId].id);
+                    delete timerMap[orderId];
+                }
+                // Fade row out — server already restored stock + broadcasted WS
+                fadeOutRow(orderId, function () {
+                    allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+                    updateOrderCounts();
+                    const tbody = document.querySelector('#ordersList tbody');
+                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                });
+                showOrderToast('Order #' + orderId + ' cancelled. Stock has been returned.', 'success');
+            } else {
+                showOrderToast(data.message || 'Could not cancel order.', 'error');
+            }
+        })
+        .catch(function () {
+            closeCancelConfirm();
+            showOrderToast('Network error. Please try again.', 'error');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            btn.innerHTML = 'Yes, Cancel';
+        });
+    }
+
+    // Remove a specific row with fade-out animation
+    function removeOrderRow(orderId) {
+        fadeOutRow(orderId, function () {
+            allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+            updateOrderCounts();
+            const tbody = document.querySelector('#ordersList tbody');
+            if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+        });
+    }
+
+    // Legacy alias
+    function doReRequest(orderId, btn) { doReOrder(orderId, btn); }
+
+    // ── RE-ORDER ─────────────────────────────────────────────────────────────
+    // Re-submits the expired to_pay order as a fresh 'request'.
+    // Server re-deducts stock and broadcasts inventory WS → all pages update.
+    // Row fades from to_pay tab instantly on success.
+    function doReOrder(orderId, btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        fetch('/api/order/' + orderId + '/re-request/', {
+            method:  'POST',
+            headers: {
+                'X-CSRFToken':  getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) {
+                    console.error('[doReOrder] Non-JSON response:', txt.slice(0, 200));
+                    return { success: false, message: 'Server error. Please try again.' };
+                }
+            });
+        })
+        .then(function (data) {
+            if (data.success) {
+                // ── Update in-memory status so poll doesn't resurrect the row ──
+                const idx = allOrders.findIndex(function (o) { return o.id === orderId; });
+                if (idx !== -1) allOrders[idx].status = 'request';
+
+                // Remove from localStorage — client has acted
+                lsRemoveCancelled(orderId);
+
+                // ── Fade the row out immediately (no need to wait for WS push) ──
+                fadeOutRow(orderId, function () {
+                    allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+                    updateOrderCounts();
+                    const tbody = document.querySelector('#ordersList tbody');
+                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                });
+
+                showOrderToast(
+                    'Order #' + orderId + ' re-submitted! Waiting for owner acceptance.',
+                    'success'
+                );
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
+                showOrderToast(data.message || 'Could not re-order. Please try again.', 'error');
+            }
+        })
+        .catch(function (err) {
+            console.error('[doReOrder] error:', err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
+            showOrderToast('Network error. Please try again.', 'error');
+        });
+    }
+
+    // ── CANCEL (EXPIRED) ──────────────────────────────────────────────────────
+    // Cancels the expired to_pay order — server restores stock and broadcasts
+    // inventory WS so kabsueats, details, and dashboard all update in real time.
+    // Row fades out instantly on success.
+    function doCancelExpired(orderId, btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch('/api/order/' + orderId + '/cancel/', {
+            method:  'POST',
+            headers: {
+                'X-CSRFToken':  getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) {
+                    console.error('[doCancelExpired] Non-JSON response:', txt.slice(0, 200));
+                    return { success: false, message: 'Server error. Please try again.' };
+                }
+            });
+        })
+        .then(function (data) {
+            if (data.success) {
+                // Remove from localStorage — client has acted
+                lsRemoveCancelled(orderId);
+
+                // ── Fade the row out — stock is restored server-side ──
+                fadeOutRow(orderId, function () {
+                    allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+                    updateOrderCounts();
+                    const tbody = document.querySelector('#ordersList tbody');
+                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                });
+
+                showOrderToast(
+                    'Order #' + orderId + ' cancelled. Stock has been returned.',
+                    'success'
+                );
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+                showOrderToast(data.message || 'Could not cancel order.', 'error');
+            }
+        })
+        .catch(function (err) {
+            console.error('[doCancelExpired] error:', err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+            showOrderToast('Network error. Please try again.', 'error');
+        });
+    }
+
+    // ── RE-ORDER FROM OWNER-CANCELLED ─────────────────────────────────────────
+    // Order is already 'cancelled' on server (owner rejected it).
+    // Uses /api/reorder/<id>/ to add items to cart, then redirects to cart page.
+    // Row fades out on success.
+    function doReOrderFromCancelled(orderId, btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+        fetch('/api/reorder/' + orderId + '/', {
+            method:  'POST',
+            headers: {
+                'X-CSRFToken':  getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) { return { success: false, message: 'Server error. Please try again.' }; }
+            });
+        })
+        .then(function (data) {
+            if (data.success) {
+                lsRemoveCancelled(orderId);
+                fadeOutRow(orderId, function () {
+                    allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+                    updateOrderCounts();
+                    const tbody = document.querySelector('#ordersList tbody');
+                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                });
+                showOrderToast('Items added to cart! Redirecting...', 'success');
+                setTimeout(function () { window.location.href = '/cart/'; }, 900);
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
+                showOrderToast(data.message || 'Could not re-order. Please try again.', 'error');
+            }
+        })
+        .catch(function (err) {
+            console.error('[doReOrderFromCancelled] error:', err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
+            showOrderToast('Network error. Please try again.', 'error');
+        });
+    }
+
+    // ── REMOVE ROW (owner-cancelled OR timer-expired) ─────────────────────────
+    // Stock is always restored server-side before this is shown:
+    //   • Owner cancelled  → reject_order API restores stock
+    //   • Timer expired    → cancel API called by client timer OR owner auto-reject
+    // No additional API call needed here — just dismiss the row and clear localStorage.
+    function doRemoveCancelledRow(orderId, btn) {
+        if (btn) btn.disabled = true;
+        lsRemoveCancelled(orderId);
+        fadeOutRow(orderId, function () {
+            allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+            updateOrderCounts();
+            const tbody = document.querySelector('#ordersList tbody');
+            if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+        });
+    }
+
+    // ── Smooth fade-out helper ────────────────────────────────────────────────
+    function fadeOutRow(orderId, onComplete) {
+        // orderId may be number or string — coerce to string for dataset comparison
+        const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+        if (!row) {
+            if (onComplete) onComplete();
+            return;
+        }
+        row.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+        row.style.opacity    = '0';
+        row.style.transform  = 'translateX(16px)';
+        setTimeout(function () {
+            row.remove();
+            if (onComplete) onComplete();
+        }, 300);
+    }
+
+    // ============================================================
+    // PAY ORDER
+    // ============================================================
     function payOrder(orderId) {
-        console.log('💳 Paying for order:', orderId);
         window.location.href = `/checkout/?order_id=${orderId}`;
     }
 
-    function trackOrder(orderId) {
-        console.log('📍 Tracking order:', orderId);
-        alert('Your order is being prepared! The establishment will notify you when it\'s ready.');
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function esc(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function rateOrder(establishmentId) {
-        openRatingModal(establishmentId);
+    function fmtDate(ds) {
+        const d = new Date(ds);
+        return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
     }
 
-    // ========================================
-    // REORDER MODAL — Product Detail Style
-    // ========================================
-    let reorderCurrentOrder = null; // stores the loaded order data
+    function fmtMs(ms) {
+        const totalSec = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function getStatusText(status) {
+        return { request:'Request', to_pay:'To Pay', order_received:'Order Received', preparing:'Preparing',
+                 to_claim:'To Claim', completed:'Completed', PENDING:'To Pay', PAID:'Paid',
+                 cancelled:'Cancelled', CANCELLED:'Cancelled' }[status] || status;
+    }
+
+    function getStatusIcon(status) {
+        return { request:'<i class="fas fa-paper-plane"></i>', to_pay:'<i class="fas fa-credit-card"></i>',
+                 order_received:'<i class="fas fa-bell"></i>', preparing:'<i class="fas fa-fire"></i>',
+                 to_claim:'<i class="fas fa-box"></i>', completed:'<i class="fas fa-check-circle"></i>',
+                 PENDING:'<i class="fas fa-credit-card"></i>', PAID:'<i class="fas fa-check"></i>',
+                 cancelled:'<i class="fas fa-times-circle"></i>' }[status] || '<i class="fas fa-info-circle"></i>';
+    }
+
+    function showError(msg) {
+        document.getElementById('ordersList').innerHTML = `
+            <div class="tbl-empty">
+                <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                <h3>Something went wrong</h3>
+                <p>${esc(msg)}</p>
+            </div>`;
+    }
+
+    function getCookie(name) {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            const [k, val] = c.trim().split('=');
+            if (k === name) v = decodeURIComponent(val);
+        });
+        return v;
+    }
+
+</script>
+
+<!-- ====================================================
+     RATING MODAL  (unchanged — kept in full)
+===================================================== -->
+<div class="rating-modal-overlay" id="ratingModalOverlay" onclick="handleRatingOverlayClick(event)" style="display:none;">
+    <div class="rating-modal">
+        <div class="rating-modal-header">
+            <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:4px;"></i> Rate Your Experience</h3>
+            <button class="rating-modal-close-btn" onclick="closeRatingModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="rating-modal-body">
+            <p class="rating-modal-subtitle" id="ratingModalSubtitle">How was your experience?</p>
+            <div class="rating-stars-row" id="ratingStarsRow">
+                <span class="r-star" data-v="1" onclick="setRating(1)">★</span>
+                <span class="r-star" data-v="2" onclick="setRating(2)">★</span>
+                <span class="r-star" data-v="3" onclick="setRating(3)">★</span>
+                <span class="r-star" data-v="4" onclick="setRating(4)">★</span>
+                <span class="r-star" data-v="5" onclick="setRating(5)">★</span>
+            </div>
+            <p class="rating-label-txt" id="ratingLabelTxt"></p>
+            <div class="rating-comment-group">
+                <label>Leave a comment (optional)</label>
+                <textarea id="ratingCommentBox" placeholder="Share your experience..."></textarea>
+            </div>
+        </div>
+        <div class="rating-modal-footer">
+            <button class="rating-cancel-btn" onclick="closeRatingModal()">Cancel</button>
+            <button class="rating-submit-btn" id="ratingSubmitBtn" onclick="submitRating()">
+                <i class="fas fa-paper-plane"></i> Submit Review
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Thank You Modal -->
+<div class="thankyou-overlay" id="thankyouOverlay" onclick="closeThankyou(event)">
+    <div class="thankyou-modal" onclick="event.stopPropagation()">
+        <span class="thankyou-icon">✅</span>
+        <h3>Thank You!</h3>
+        <p>Your review has been submitted successfully.<br>Your feedback helps other customers!</p>
+        <button class="thankyou-done-btn" onclick="closeThankyou()">
+            <i class="fas fa-check"></i> Done
+        </button>
+    </div>
+</div>
+
+<!-- Reorder Modal -->
+<div class="reorder-modal-overlay" id="reorderModal" onclick="handleReorderOverlayClick(event)">
+    <div class="reorder-modal" onclick="event.stopPropagation()">
+        <div class="reorder-modal-topbar">
+            <button class="reorder-modal-close" onclick="closeReorderModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="reorder-modal-body" id="reorderModalItems"></div>
+        <div id="reorderConflictWarning" class="reorder-conflict-warning" style="display:none; margin: 0 20px 12px;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Some items may be from a different establishment than what's in your cart. Proceeding will start a new cart.</span>
+        </div>
+        <div class="reorder-modal-footer">
+            <button class="reorder-atc-btn" id="reorderAtcBtn" onclick="submitReorder('cart')">
+                <i class="fas fa-shopping-cart"></i> Add to Cart
+            </button>
+            <button class="reorder-buy-btn" id="reorderBuyBtn" onclick="submitReorder('buy')">
+                <i class="fas fa-bolt"></i> Buy Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // RATING MODAL
+    // ============================================================
+    let _rateEstId = null, _rateScore = 0;
+
+    function openRatingModal(estId) {
+        _rateEstId = estId;
+        _rateScore = 0;
+        document.getElementById('ratingCommentBox').value = '';
+        document.getElementById('ratingLabelTxt').textContent = '';
+        document.getElementById('ratingLabelTxt').className = 'rating-label-txt';
+        document.querySelectorAll('.r-star').forEach(s => s.classList.remove('lit'));
+        const btn = document.getElementById('ratingSubmitBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+        const overlay = document.getElementById('ratingModalOverlay');
+        overlay.style.display = 'flex';
+        overlay.classList.add('open');
+    }
+
+    function closeRatingModal() {
+        const overlay = document.getElementById('ratingModalOverlay');
+        overlay.style.display = 'none';
+        overlay.classList.remove('open');
+    }
+
+    function handleRatingOverlayClick(e) {
+        if (e.target === document.getElementById('ratingModalOverlay')) closeRatingModal();
+    }
+
+    function setRating(val) {
+        _rateScore = val;
+        const labels = ['','Poor','Fair','Good','Very Good','Excellent'];
+        document.getElementById('ratingLabelTxt').textContent = labels[val] || '';
+        document.getElementById('ratingLabelTxt').className = 'rating-label-txt';
+        document.querySelectorAll('.r-star').forEach(s => {
+            s.classList.toggle('lit', parseInt(s.dataset.v) <= val);
+        });
+    }
+
+    function closeThankyou(e) {
+        if (!e || e.target === document.getElementById('thankyouOverlay')) {
+            const o = document.getElementById('thankyouOverlay');
+            o.classList.remove('open');
+            o.style.display = 'none';
+        }
+    }
+
+    function submitRating() {
+        const lbl = document.getElementById('ratingLabelTxt');
+        if (!_rateScore) {
+            lbl.textContent = 'Please select a rating.';
+            lbl.classList.add('error');
+            lbl.style.color = '#ef4444';
+            return;
+        }
+        const btn = document.getElementById('ratingSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        const comment  = document.getElementById('ratingCommentBox').value.trim();
+        const formData = new FormData();
+        formData.append('rating',  _rateScore);
+        formData.append('comment', comment);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        fetch(`/food_establishment/${_rateEstId}/submit_review/`, {
+            method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:formData, credentials:'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeRatingModal();
+                setTimeout(() => {
+                    const ty = document.getElementById('thankyouOverlay');
+                    ty.classList.add('open'); ty.style.display='flex';
+                    ty.style.cssText += ';position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:100000;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);margin:0;';
+                }, 180);
+            } else {
+                btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Review';
+                lbl.textContent = data.error||'Something went wrong.'; lbl.classList.add('error'); lbl.style.color='#ef4444';
+            }
+        })
+        .catch(() => {
+            btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Review';
+            lbl.textContent='Network error. Please try again.'; lbl.classList.add('error'); lbl.style.color='#ef4444';
+        });
+    }
+
+    // ============================================================
+    // REORDER MODAL
+    // ============================================================
+    let reorderCurrentOrder = null;
 
     function showReorderModal(orderId) {
         const modal   = document.getElementById('reorderModal');
@@ -1669,468 +2844,89 @@
         const warning = document.getElementById('reorderConflictWarning');
         const atcBtn  = document.getElementById('reorderAtcBtn');
         const buyBtn  = document.getElementById('reorderBuyBtn');
-
-        // Reset
         reorderCurrentOrder = null;
         modal.style.display = 'flex';
         items.innerHTML = `<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i><span>Loading items...</span></div>`;
         warning.style.display = 'none';
-        atcBtn.disabled = false;
-        buyBtn.disabled = false;
+        atcBtn.disabled = false; buyBtn.disabled = false;
         atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
         buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-        atcBtn.dataset.orderId = orderId;
-        buyBtn.dataset.orderId = orderId;
 
-        fetch(`/api/order/${orderId}/`, {
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) throw new Error(data.message);
-            reorderCurrentOrder = data.order;
-            renderReorderItems(data.order);
-        })
-        .catch(err => {
-            items.innerHTML = `
-                <div style="text-align:center;padding:32px;color:#e53935;">
-                    <i class="fas fa-exclamation-circle" style="font-size:30px;display:block;margin-bottom:10px;"></i>
-                    ${err.message || 'Failed to load items.'}
-                </div>`;
-            atcBtn.disabled = true;
-            buyBtn.disabled = true;
-        });
+        fetch(`/api/order/${orderId}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success || !data.order) { items.innerHTML='<div class="reorder-loading">Failed to load items.</div>'; return; }
+                reorderCurrentOrder = data.order;
+                const order = data.order;
+                items.innerHTML = (order.items||[]).map(item => {
+                    const inStock  = (item.current_quantity || 0) > 0;
+                    const badgeCls = inStock ? 'badge-in-stock' : 'badge-out-stock';
+                    const badgeTxt = inStock ? `${item.current_quantity} in stock` : 'Out of stock';
+                    return `
+                    <div class="reorder-item-card ${inStock?'':'unavailable'}" data-item-id="${item.menu_item_id||item.id}">
+                        <div class="reorder-item-hero">
+                            ${item.image ? `<img src="${item.image}" alt="${esc(item.name)}" onerror="this.parentNode.innerHTML='<span class=reorder-item-hero-placeholder>🍽️</span>'">` : '<span class="reorder-item-hero-placeholder">🍽️</span>'}
+                        </div>
+                        <div class="reorder-item-title-row">
+                            <div class="reorder-item-title">${esc(item.name)}</div>
+                            <span class="reorder-item-badge ${badgeCls}">${esc(badgeTxt)}</span>
+                        </div>
+                        <div class="reorder-item-price-big">₱${parseFloat(item.price||item.price_at_order||0).toFixed(2)}</div>
+                        ${inStock ? `
+                        <div class="reorder-qty-row">
+                            <span class="reorder-qty-label">Quantity</span>
+                            <div class="reorder-qty-ctrl">
+                                <button class="reorder-qty-btn" onclick="reorderChg(${item.menu_item_id||item.id},-1)">−</button>
+                                <span class="reorder-qty-val" id="rqv-${item.menu_item_id||item.id}">${item.quantity}</span>
+                                <button class="reorder-qty-btn" onclick="reorderChg(${item.menu_item_id||item.id},1)">+</button>
+                            </div>
+                        </div>` : ''}
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => { items.innerHTML='<div class="reorder-loading">Error loading items.</div>'; });
     }
 
-    function renderReorderItems(order) {
-        const items   = document.getElementById('reorderModalItems');
-        const warning = document.getElementById('reorderConflictWarning');
-        const atcBtn  = document.getElementById('reorderAtcBtn');
-        const buyBtn  = document.getElementById('reorderBuyBtn');
-
-        // Cart conflict check
-        const cartEstId = getCartEstablishmentId();
-        if (cartEstId && cartEstId !== order.establishment.id) {
-            warning.style.display = 'flex';
-        }
-
-        const allUnavail = order.items.every(i => i.available_stock === 0);
-        if (allUnavail) {
-            atcBtn.disabled = true;
-            buyBtn.disabled = true;
-            atcBtn.innerHTML = '<i class="fas fa-ban"></i> Unavailable';
-            buyBtn.innerHTML = '<i class="fas fa-ban"></i> Unavailable';
-        }
-
-        const estab = order.establishment;
-        const estabIconHtml = estab.image
-            ? `<img src="${estab.image}" alt="${estab.name}">`
-            : `<i class="fas fa-store"></i>`;
-
-        items.innerHTML = order.items.map((item, idx) => {
-            const inStock  = item.available_stock > 0;
-            const badgeCls = inStock ? 'badge-in-stock' : 'badge-out-stock';
-            const badgeTxt = inStock ? `<i class="fas fa-check-circle"></i> ${item.available_stock} left` : '<i class="fas fa-times-circle"></i> Out of stock';
-            const imgHtml  = item.image
-                ? `<img src="${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML='<div class=reorder-item-hero-placeholder><i class=\\'fas fa-utensils\\'></i></div>'">`
-                : `<div class="reorder-item-hero-placeholder"><i class="fas fa-utensils"></i></div>`;
-
-            return `
-            <div class="reorder-item-card ${!inStock ? 'unavailable' : ''}" id="reorder-card-${idx}">
-                <!-- Hero image -->
-                <div class="reorder-item-hero">${imgHtml}</div>
-
-                <!-- Title + stock badge -->
-                <div class="reorder-item-title-row">
-                    <div class="reorder-item-title">${item.name}</div>
-                    <span class="reorder-item-badge ${badgeCls}">${badgeTxt}</span>
-                </div>
-
-                <!-- Price -->
-                <div class="reorder-item-price-big">₱${parseFloat(item.price).toFixed(2)}</div>
-                <div class="reorder-item-units">
-                    <i class="fas fa-box-open"></i> ${item.quantity} item${item.quantity > 1 ? 's' : ''} in original order
-                </div>
-
-                <!-- Establishment info -->
-                <div class="reorder-estab-info">
-                    <div class="reorder-estab-icon">${estabIconHtml}</div>
-                    <div class="reorder-estab-text">
-                        <div class="reorder-estab-name">${estab.name}</div>
-                        <div class="reorder-estab-addr"><i class="fas fa-map-marker-alt" style="color:#B71C1C;margin-right:3px;"></i>${estab.address || ''}</div>
-                        <div class="reorder-estab-open"><i class="fas fa-circle"></i> Open</div>
-                    </div>
-                </div>
-
-                <!-- Quantity control -->
-                <div class="reorder-qty-row">
-                    <span class="reorder-qty-label">Quantity:</span>
-                    <div class="reorder-qty-ctrl">
-                        <button class="reorder-qty-btn" onclick="changeQty(${idx}, -1)" id="qtyMinus-${idx}" ${!inStock ? 'disabled' : ''}>−</button>
-                        <div class="reorder-qty-val" id="qtyVal-${idx}">${item.quantity}</div>
-                        <button class="reorder-qty-btn" onclick="changeQty(${idx}, 1)" id="qtyPlus-${idx}" ${!inStock ? 'disabled' : ''}>+</button>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
+    function reorderChg(itemId, delta) {
+        const el = document.getElementById(`rqv-${itemId}`);
+        if (!el) return;
+        let v = parseInt(el.textContent) + delta;
+        if (v < 1) v = 1;
+        el.textContent = v;
     }
 
-    function changeQty(idx, delta) {
+    function closeReorderModal() { document.getElementById('reorderModal').style.display='none'; }
+    function handleReorderOverlayClick(e) { if (e.target===document.getElementById('reorderModal')) closeReorderModal(); }
+
+    function submitReorder(mode) {
         if (!reorderCurrentOrder) return;
-        const item   = reorderCurrentOrder.items[idx];
-        const valEl  = document.getElementById(`qtyVal-${idx}`);
-        const minusEl = document.getElementById(`qtyMinus-${idx}`);
-        let qty = parseInt(valEl.textContent) + delta;
-
-        // Clamp: min 1, max = available_stock
-        qty = Math.max(1, Math.min(qty, item.available_stock));
-        valEl.textContent = qty;
-        minusEl.disabled  = qty <= 1;
-        // Update stored quantity
-        item._qty = qty;
-    }
-
-    function getCartEstablishmentId() {
-        try { return parseInt(sessionStorage.getItem('cartEstablishmentId')) || null; }
-        catch(e) { return null; }
-    }
-
-    function handleOverlayClick(e) {
-        if (e.target === document.getElementById('reorderModal')) closeReorderModal();
-    }
-
-    function closeReorderModal() {
-        document.getElementById('reorderModal').style.display = 'none';
-    }
-
-    // ============================================================
-    // REORDER — Add to Cart (realtime) or Buy Now (→ /cart/?pay=1)
-    // Uses the same /cart/add/ endpoint as kabsueats.js
-    // ============================================================
-    function doReorder(mode) {
-        if (!reorderCurrentOrder) return;
-
         const atcBtn = document.getElementById('reorderAtcBtn');
         const buyBtn = document.getElementById('reorderBuyBtn');
-        atcBtn.disabled = true;
-        buyBtn.disabled = true;
-        const activeBtn = mode === 'cart' ? atcBtn : buyBtn;
-        activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        atcBtn.disabled = true; buyBtn.disabled = true;
 
-        // Collect items + user-adjusted quantities
-        const itemsToAdd = reorderCurrentOrder.items
-            .map((item, idx) => {
-                const valEl = document.getElementById(`qtyVal-${idx}`);
-                const qty = valEl ? parseInt(valEl.textContent) : item.quantity;
-                return { menu_item_id: item.id, quantity: qty, available: item.available_stock };
-            })
-            .filter(i => i.available > 0); // skip out-of-stock items
-
-        if (itemsToAdd.length === 0) {
-            showReorderToast('All items are out of stock.', 'error');
-            atcBtn.disabled = false;
-            buyBtn.disabled = false;
-            atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-            buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-            return;
-        }
-
-        // Add all items sequentially to cart, then handle result
-        addItemsToCart(itemsToAdd, 0)
-            .then(lastCartCount => {
-                // Update cart badge in realtime — same as kabsueats.js
-                const badge = document.getElementById('cartBadge');
-                if (badge && lastCartCount !== null) {
-                    badge.textContent = lastCartCount;
-                } else {
-                    // Fallback: fetch fresh count
-                    fetch('/cart/count/')
-                        .then(r => r.json())
-                        .then(d => { if (badge) badge.textContent = d.cart_count ?? d.count ?? 0; })
-                        .catch(() => {});
-                }
-
-                closeReorderModal();
-
-                if (mode === 'buy') {
-                    // Buy Now → go directly to cart with payment modal open
-                    window.location.href = '/cart/?pay=1';
-                } else {
-                    // Add to Cart → toast, stay on page
-                    showReorderToast(
-                        `${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''} added to cart!`,
-                        'success'
-                    );
-                }
-            })
-            .catch(errMsg => {
-                showReorderToast(errMsg || 'Could not add items to cart.', 'error');
-                atcBtn.disabled = false;
-                buyBtn.disabled = false;
-                atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-                buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
-            });
-    }
-
-    // Recursively add items one by one, returns Promise<lastCartCount>
-    function addItemsToCart(items, idx) {
-        if (idx >= items.length) return Promise.resolve(null);
-        const item = items[idx];
-
-        return fetch('/cart/add/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                // Non-fatal: skip this item but keep going
-                console.warn('Could not add item to cart:', data.message);
-                return addItemsToCart(items, idx + 1);
-            }
-            // On last item, return cart count
-            if (idx === items.length - 1) {
-                return data.cart_count !== undefined ? data.cart_count : null;
-            }
-            return addItemsToCart(items, idx + 1);
+        const cards = document.querySelectorAll('.reorder-item-card:not(.unavailable)');
+        const items = [];
+        cards.forEach(card => {
+            const id  = card.dataset.itemId;
+            const qty = parseInt(document.getElementById(`rqv-${id}`)?.textContent || '1');
+            items.push({ menu_item_id: id, quantity: qty });
         });
-    }
+        if (!items.length) { atcBtn.disabled=false; buyBtn.disabled=false; closeReorderModal(); return; }
 
-    // ── Toast: use kabsueats.js showToast if loaded, else simple fallback ──
-    function showReorderToast(message, type = 'success') {
-        if (typeof showToast === 'function') {
-            // Use the same rich toast as kabsueats.js
-            showToast(message, type);
-            return;
-        }
-        // Fallback for standalone use
-        let toast = document.getElementById('reorderToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'reorderToast';
-            toast.style.cssText = `
-                position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-                padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;
-                color:white;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.18);
-                transition:opacity 0.3s;opacity:0;pointer-events:none;white-space:nowrap;
-            `;
-            document.body.appendChild(toast);
-        }
-        toast.textContent = message;
-        toast.style.background = type === 'success' ? '#059669' : '#dc2626';
-        toast.style.opacity = '1';
-        clearTimeout(toast._hideTimer);
-        toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
-    }
-
-    function reorder(orderId) { showReorderModal(orderId); }
-
-    // ========================================
-    // UTILITY FUNCTIONS
-    // ========================================
-
-    function showError(message) {
-        const ordersList = document.getElementById('ordersList');
-        ordersList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
-                <h3>Error Loading Orders</h3>
-                <p>${message}</p>
-                <button onclick="loadOrders()" class="empty-state-btn">
-                    <i class="fas fa-redo"></i>
-                    Try Again
-                </button>
-            </div>
-        `;
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    // =========================================
-    // RATING MODAL
-    // =========================================
-    let _rateEstId  = null;
-    let _rateScore  = 0;
-    const _rateLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
-
-    function openRatingModal(establishmentId) {
-        _rateEstId  = establishmentId;
-        _rateScore  = 0;
-
-        // reset stars
-        document.querySelectorAll('.r-star').forEach(s => {
-            s.className = 'far fa-star r-star';
+        let chain = Promise.resolve();
+        items.forEach(item => {
+            chain = chain.then(() =>
+                fetch('/cart/add/', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+                    body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity })
+                }).then(r => r.json())
+            );
         });
-        const lbl = document.getElementById('ratingLabelTxt');
-        lbl.textContent = '\u00a0';
-        lbl.classList.remove('error');
-        document.getElementById('ratingCommentBox').value = '';
-
-        const btn = document.getElementById('ratingSubmitBtn');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
-
-        const overlay = document.getElementById('ratingModalOverlay');
-        overlay.classList.add('open');
-        overlay.style.display = 'flex';
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100vw';
-        overlay.style.height = '100vh';
-        overlay.style.zIndex = '99999';
-        overlay.style.alignItems = 'center';
-        overlay.style.justifyContent = 'center';
-        overlay.style.background = 'rgba(0,0,0,0.55)';
-        overlay.style.margin = '0';
+        chain.then(() => {
+            closeReorderModal();
+            window.location.href = mode==='buy' ? '/cart/?pay=1' : '/cart/';
+        }).catch(() => { atcBtn.disabled=false; buyBtn.disabled=false; });
     }
-
-    function closeRatingModal() {
-        const overlay = document.getElementById('ratingModalOverlay');
-        overlay.classList.remove('open');
-        overlay.style.display = 'none';
-    }
-
-    function handleRatingOverlayClick(e) {
-        if (e.target.id === 'ratingModalOverlay') closeRatingModal();
-    }
-
-    function closeThankyouModal() {
-        const overlay = document.getElementById('thankyouOverlay');
-        overlay.classList.remove('open');
-        overlay.style.display = 'none';
-    }
-
-    // Wire star hover/click
-    document.addEventListener('DOMContentLoaded', function () {
-        const stars = document.querySelectorAll('.r-star');
-        const lbl   = document.getElementById('ratingLabelTxt');
-
-        stars.forEach(star => {
-            const val = parseInt(star.dataset.val);
-
-            star.addEventListener('mouseenter', () => {
-                stars.forEach((s, i) => {
-                    s.className = i < val ? 'fas fa-star r-star lit' : 'far fa-star r-star';
-                });
-                lbl.textContent = _rateLabels[val];
-                lbl.classList.remove('error');
-                lbl.style.color = '#f59e0b';
-            });
-
-            star.addEventListener('click', () => {
-                _rateScore = val;
-                stars.forEach((s, i) => {
-                    s.className = i < val ? 'fas fa-star r-star lit' : 'far fa-star r-star';
-                });
-                lbl.textContent = _rateLabels[val];
-                lbl.classList.remove('error');
-                lbl.style.color = '#f59e0b';
-            });
-        });
-
-        // On mouse-leave from the row, revert to selected score
-        document.getElementById('ratingStarsRow').addEventListener('mouseleave', () => {
-            stars.forEach((s, i) => {
-                s.className = i < _rateScore ? 'fas fa-star r-star lit' : 'far fa-star r-star';
-            });
-            lbl.textContent = _rateScore ? _rateLabels[_rateScore] : '\u00a0';
-            lbl.style.color = '#f59e0b';
-        });
-
-        // ESC closes both modals
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') { closeRatingModal(); closeThankyouModal(); }
-        });
-    });
-
-    function submitRatingNow() {
-        const lbl = document.getElementById('ratingLabelTxt');
-
-        if (!_rateScore) {
-            lbl.textContent = 'Please select a star rating first!';
-            lbl.classList.add('error');
-            lbl.style.color = '#ef4444';
-            // shake the stars row
-            const row = document.getElementById('ratingStarsRow');
-            row.animate([
-                { transform: 'translateX(0)' },
-                { transform: 'translateX(-7px)' },
-                { transform: 'translateX(7px)' },
-                { transform: 'translateX(-5px)' },
-                { transform: 'translateX(5px)' },
-                { transform: 'translateX(0)' }
-            ], { duration: 350, easing: 'ease' });
-            return;
-        }
-
-        const btn = document.getElementById('ratingSubmitBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-        const comment  = document.getElementById('ratingCommentBox').value.trim();
-        const formData = new FormData();
-        formData.append('rating',  _rateScore);
-        formData.append('comment', comment);
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-
-        fetch(`/food_establishment/${_rateEstId}/submit_review/`, {
-            method:      'POST',
-            headers:     { 'X-Requested-With': 'XMLHttpRequest' },
-            body:        formData,
-            credentials: 'same-origin'
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                closeRatingModal();
-                setTimeout(() => {
-                    const tyOverlay = document.getElementById('thankyouOverlay');
-                    tyOverlay.classList.add('open');
-                    tyOverlay.style.display = 'flex';
-                    tyOverlay.style.position = 'fixed';
-                    tyOverlay.style.top = '0';
-                    tyOverlay.style.left = '0';
-                    tyOverlay.style.width = '100vw';
-                    tyOverlay.style.height = '100vh';
-                    tyOverlay.style.zIndex = '100000';
-                    tyOverlay.style.alignItems = 'center';
-                    tyOverlay.style.justifyContent = 'center';
-                    tyOverlay.style.background = 'rgba(0,0,0,0.55)';
-                    tyOverlay.style.margin = '0';
-                }, 180);
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
-                lbl.textContent = data.error || 'Something went wrong. Please try again.';
-                lbl.classList.add('error');
-                lbl.style.color = '#ef4444';
-            }
-        })
-        .catch(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
-            lbl.textContent = 'Network error. Please try again.';
-            lbl.classList.add('error');
-            lbl.style.color = '#ef4444';
-        });
-    }
-
 </script>
 {% endblock %}

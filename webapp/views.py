@@ -144,6 +144,22 @@ def invalidate_establishment_cache(establishment_id):
     cache.set(f'est_{establishment_id}_last_modified', _time.time(), timeout=86400)
 
 
+def normalize_payment_method(raw):
+    """
+    Normalize stored gcash_payment_method to one of two display values:
+    - 'cash'  → Cash on Pickup
+    - 'gcash' → GCash / Online Payment (all non-cash methods)
+    This matches the two payment options offered on the checkout page.
+    """
+    if not raw:
+        return 'cash'
+    r = raw.strip().lower()
+    if r == 'cash':
+        return 'cash'
+    # All online methods (gcash, paymaya, card, etc.) → gcash
+    return 'gcash'
+
+
 def about_page(request):
     return render(request, 'webapplication/about.html')
 
@@ -4807,6 +4823,14 @@ def gcash_payment_success(request):
 
                 # 3. ✅ REDUCE STOCK + CLEAR CART (online payment → preparing)
                 _deduct_stock_and_clear_cart(order)
+                # Broadcast updated inventory quantities to all WS clients
+                try:
+                    updated_items = list(order.orderitem_set.select_related('menu_item').all())
+                    id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                    _broadcast_inventory_update_from_items(order.establishment_id, id_qty_pairs)
+                    _broadcast_order_status_update(order, order.status)
+                except Exception as _bcast_err:
+                    print(f"WARNING broadcast after payment: {_bcast_err}")
 
             # 4. Send confirmation emails (best-effort)
             try:
@@ -5478,7 +5502,7 @@ def get_establishment_orders(request):
                 'created_at': order.created_at.isoformat(),
                 'updated_at': order.updated_at.isoformat(),
                 'gcash_reference': order.gcash_reference_number or '',
-                'payment_method': order.gcash_payment_method or 'cash',
+                'payment_method': normalize_payment_method(order.gcash_payment_method),
             }
             orders_data.append(order_data)
 
@@ -5610,9 +5634,16 @@ def update_order_status(request, order_id):
             order.status = new_status
             order.save(update_fields=['status', 'updated_at'])
 
-            if new_status == 'preparing' and old_status != 'preparing':
-                # Deduct stock and clear cart items for this order
+            # ── Stock deduction ─────────────────────────────────────────
+            # Stock is already deducted at request-submission time
+            # (create_cash_order / paymongo_payment_success).
+            # We only fall back to deducting here for legacy online-payment
+            # orders that were created before this fix (old_status == PENDING).
+            if new_status == 'preparing' and old_status not in ('preparing', 'request', 'to_pay'):
                 _deduct_stock_and_clear_cart(order)
+
+        # Broadcast real-time order status change to owner + customer
+        _broadcast_order_status_update(order, new_status)
 
         # Create notification for status change
         try:
@@ -5663,6 +5694,320 @@ def update_order_status(request, order_id):
             'success': False,
             'message': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def reject_order(request, order_id):
+    """
+    Owner rejects a 'to_pay' order after the 8-minute waiting period expires.
+    Restores stock for all items in the order and marks the order as 'cancelled'.
+
+    Endpoint: /api/food-establishment/orders/<order_id>/reject/
+    Method: POST
+    """
+    try:
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+        if not establishment:
+            return JsonResponse({'success': False, 'message': 'No establishment found'}, status=404)
+
+        order = get_object_or_404(
+            Order.objects.select_related('establishment', 'user')
+                 .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            establishment=establishment
+        )
+
+        # Parse optional cancellation reason from request body
+        cancel_reason = ''
+        try:
+            body_data = json.loads(request.body)
+            cancel_reason = body_data.get('reason', '')
+        except Exception:
+            pass
+
+        # Only allow rejecting orders that are in 'to_pay' status
+        if order.status not in ('to_pay', 'request'):
+            return JsonResponse({
+                'success': False,
+                'message': f'Cannot reject order with status: {order.status}'
+            }, status=400)
+
+        with transaction.atomic():
+            # ── Restore stock for all items ──────────────────────────────
+            from django.db import connection
+            use_lock = 'sqlite' not in connection.vendor
+            item_ids = [oi.menu_item_id for oi in order.orderitem_set.all()]
+            qs = MenuItem.objects.filter(id__in=item_ids)
+            menu_items_map = {mi.id: mi for mi in (qs.select_for_update() if use_lock else qs)}
+
+            for oi in order.orderitem_set.all():
+                mi = menu_items_map.get(oi.menu_item_id)
+                if mi:
+                    mi.quantity += oi.quantity
+                    mi.save(update_fields=['quantity'])
+                    print(f"DEBUG reject_order: Restored {oi.quantity} × {mi.name} → new qty {mi.quantity}")
+
+            # ── Update order status ───────────────────────────────────────
+            order.status = 'cancelled'
+            order.save(update_fields=['status', 'updated_at'])
+
+        # Broadcast restored quantities to all browser clients
+        _broadcast_inventory_update_from_items(
+            establishment.id,
+            [(oi.menu_item_id, menu_items_map[oi.menu_item_id].quantity)
+             for oi in order.orderitem_set.all()
+             if oi.menu_item_id in menu_items_map]
+        )
+
+        # Broadcast order status change (removes row from owner to_pay tab + client history)
+        _broadcast_order_status_update(order, 'cancelled', cancel_reason=cancel_reason)
+
+        # Notify the customer their order was rejected
+        try:
+            OrderNotification.objects.create(
+                establishment=establishment,
+                order=order,
+                notification_type='order_cancelled',
+                message=f'Your order #{order.id} has been rejected by the establishment.'
+            )
+        except Exception as e:
+            print(f"WARNING: notification failed: {e}")
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} rejected and stock restored.',
+            'order_id': order.id
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in reject_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def cancel_order(request, order_id):
+    """
+    Customer cancels their own order while it is still in 'request' status.
+    Restores stock for all items and marks the order as 'cancelled'.
+
+    Endpoint: /api/order/<order_id>/cancel/
+    Method: POST
+    """
+    try:
+        order = get_object_or_404(
+            Order.objects.select_related('establishment', 'user')
+                 .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            user=request.user
+        )
+
+        # Customers can cancel while 'request' (pending acceptance)
+        # OR while 'to_pay' (accepted but payment timer expired)
+        # If already 'cancelled' (e.g. owner auto-rejected first), return success silently
+        if order.status == 'cancelled':
+            return JsonResponse({
+                'success': True,
+                'message': f'Order #{order.id} already cancelled.',
+                'order_id': order.id
+            })
+
+        if order.status not in ('request', 'to_pay'):
+            return JsonResponse({
+                'success': False,
+                'message': 'You can only cancel an order that is pending or awaiting payment.'
+            }, status=400)
+
+        with transaction.atomic():
+            # ── Restore stock ─────────────────────────────────────────────
+            from django.db import connection
+            use_lock = 'sqlite' not in connection.vendor
+            item_ids = [oi.menu_item_id for oi in order.orderitem_set.all()]
+            qs = MenuItem.objects.filter(id__in=item_ids)
+            menu_items_map = {mi.id: mi for mi in (qs.select_for_update() if use_lock else qs)}
+
+            for oi in order.orderitem_set.all():
+                mi = menu_items_map.get(oi.menu_item_id)
+                if mi:
+                    mi.quantity += oi.quantity
+                    mi.save(update_fields=['quantity'])
+                    print(f"DEBUG cancel_order: Restored {oi.quantity} × {mi.name} → new qty {mi.quantity}")
+
+            order.status = 'cancelled'
+            order.save(update_fields=['status', 'updated_at'])
+
+        # Broadcast restored quantities
+        _broadcast_inventory_update_from_items(
+            order.establishment_id,
+            [(oi.menu_item_id, menu_items_map[oi.menu_item_id].quantity)
+             for oi in order.orderitem_set.all()
+             if oi.menu_item_id in menu_items_map]
+        )
+
+        # Broadcast order status change → owner request tab row disappears instantly
+        _broadcast_order_status_update(order, 'cancelled')
+
+        try:
+            OrderNotification.objects.create(
+                establishment=order.establishment,
+                order=order,
+                notification_type='order_cancelled',
+                message=f'Order #{order.id} was cancelled by the customer.'
+            )
+        except Exception as e:
+            print(f"WARNING: notification failed: {e}")
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} cancelled successfully.',
+            'order_id': order.id
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in cancel_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def re_request_order(request, order_id):
+    """
+    Customer re-requests an expired to_pay order.
+    Resets status back to 'request' — stock stays deducted (already reserved).
+    Endpoint: /api/order/<order_id>/re-request/
+    """
+    try:
+        order = get_object_or_404(
+            Order.objects.select_related('establishment', 'user')
+                 .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            user=request.user
+        )
+
+        # Accept 'to_pay' (timer hasn't fired yet) OR 'cancelled' (auto-cancelled after timer)
+        if order.status not in ('to_pay', 'cancelled'):
+            return JsonResponse({
+                'success': False,
+                'message': 'Only expired or awaiting-payment orders can be re-requested.'
+            }, status=400)
+
+        with transaction.atomic():
+            # ── Re-check stock availability before re-requesting ────────────
+            order_items = list(order.orderitem_set.select_related('menu_item').all())
+            for oi in order_items:
+                mi = oi.menu_item
+                if mi.quantity < oi.quantity:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Sorry, {mi.name} only has {mi.quantity} left '
+                                   f'(you need {oi.quantity}). Please cancel and reorder with less.'
+                    }, status=400)
+
+            # ── Deduct stock again (it was restored when the order expired/was rejected) ──
+            from django.db import connection
+            use_lock = 'sqlite' not in connection.vendor
+            item_ids = [oi.menu_item_id for oi in order_items]
+            qs = MenuItem.objects.filter(id__in=item_ids)
+            menu_items_map = {mi.id: mi for mi in (qs.select_for_update() if use_lock else qs)}
+            for oi in order_items:
+                mi = menu_items_map.get(oi.menu_item_id)
+                if mi:
+                    mi.quantity = max(mi.quantity - oi.quantity, 0)
+                    mi.save(update_fields=['quantity'])
+                    print(f"DEBUG re_request_order: Deducted {oi.quantity} × {mi.name} → new qty {mi.quantity}")
+
+            order.status = 'request'
+            order.gcash_reference_number = None
+            order.payment_confirmed_at = None
+            order.save(update_fields=['status', 'gcash_reference_number',
+                                      'payment_confirmed_at', 'updated_at'])
+
+        # Broadcast updated inventory quantities to all WS clients
+        _broadcast_inventory_update_from_items(
+            order.establishment_id,
+            [(oi.menu_item_id, menu_items_map[oi.menu_item_id].quantity)
+             for oi in order_items if oi.menu_item_id in menu_items_map]
+        )
+
+        # Broadcast order status change (owner sees new request, client row moves tab)
+        _broadcast_order_status_update(order, 'request')
+
+        try:
+            OrderNotification.objects.create(
+                establishment=order.establishment,
+                order=order,
+                notification_type='new_order',
+                message=f'Order #{order.id} re-requested by {request.user.username}'
+            )
+        except Exception as e:
+            print(f"WARNING: notification failed: {e}")
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} re-requested successfully.',
+            'order_id': order.id
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in re_request_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def _broadcast_inventory_update_from_items(establishment_id, id_qty_pairs):
+    """
+    Broadcast stock restoration to all WebSocket clients watching an establishment.
+    id_qty_pairs = [(menu_item_id, new_quantity), ...]
+    """
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if not channel_layer or not id_qty_pairs:
+            return
+        updates = [{'menu_item_id': mid, 'new_quantity': qty} for mid, qty in id_qty_pairs]
+        async_to_sync(channel_layer.group_send)(
+            f'inventory_{establishment_id}',
+            {'type': 'inventory.quantity_update', 'updates': updates}
+        )
+    except Exception as e:
+        print(f"WARNING _broadcast_inventory_update_from_items: {e}")
+
+
+def _broadcast_order_status_update(order, new_status, cancel_reason=''):
+    """
+    Broadcast an order-status change to:
+      • The owner's establishment group  →  order_status_establishment_<est_id>
+      • The customer's user group        →  order_status_user_<user_id>
+
+    Called from: update_order_status, reject_order, cancel_order, create_cash_order
+    """
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            return
+        payload = {
+            'type':             'order.status.update',
+            'order_id':         order.id,
+            'new_status':       new_status,
+            'establishment_id': order.establishment_id,
+            'user_id':          order.user_id,
+            'cancel_reason':    cancel_reason,
+        }
+        sync_send = async_to_sync(channel_layer.group_send)
+        # Notify the owner dashboard
+        sync_send(f'order_status_establishment_{order.establishment_id}', payload)
+        # Notify the customer's order history page
+        sync_send(f'order_status_user_{order.user_id}', payload)
+    except Exception as e:
+        print(f"WARNING _broadcast_order_status_update: {e}")
 
 
 @login_required
@@ -5885,10 +6230,15 @@ def create_cash_order(request):
 
             print(f"DEBUG: Order saved with status: {active_order.status}")
 
-            # ✅ If this order goes straight to 'preparing' (cash on checkout),
-            # deduct stock and clear cart immediately — same as online payment flow.
-            if new_status == 'preparing':
+            # ✅ Deduct stock immediately on both 'request' and 'preparing'.
+            # This reserves quantity the moment the order is submitted,
+            # so no two order requests can claim the same units simultaneously.
+            if new_status in ('request', 'preparing'):
                 _deduct_stock_and_clear_cart(active_order)
+                # Re-fetch updated quantities and broadcast to all WS clients
+                updated_items = list(active_order.orderitem_set.select_related('menu_item').all())
+                id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                _broadcast_inventory_update_from_items(active_order.establishment_id, id_qty_pairs)
 
             # ✅ FIXED: Create notification for establishment owner
             try:
@@ -5907,6 +6257,9 @@ def create_cash_order(request):
                 # Order will still complete successfully
 
         print(f"DEBUG: Order #{active_order.id} processed successfully")
+
+        # Broadcast order status change to owner dashboard + customer history
+        _broadcast_order_status_update(active_order, active_order.status)
 
         # Return success response
         return JsonResponse({
@@ -6357,91 +6710,86 @@ def order_history_view(request):
         'cart_count': cart_count,
     })
 
-@login_required
 def get_user_transaction_history(request):
     """
-    API endpoint to get all orders for the logged-in user
-    Returns JSON with order details including items
-
-    Used by: Client_order_history.html
+    API endpoint to get all orders for the logged-in user.
+    Returns JSON with order details including items.
     Endpoint: /api/user/transactions/
     """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'Login required'}, status=401)
+
     try:
-        # Get all orders for the user, ordered by most recent first
+        # Get all orders for the user that have been formally submitted (status = 'request' or beyond).
+        # EXCLUDE 'PENDING' — these are cart orders that haven't been submitted yet.
+        # EXCLUDE 'cancelled'/'CANCELLED' — already handled client-side via localStorage.
         orders = Order.objects.filter(
             user=request.user
+        ).exclude(
+            status__in=['PENDING', 'cancelled', 'CANCELLED']
         ).select_related(
             'establishment'
         ).prefetch_related(
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
         ).order_by('-created_at')
 
-        # Build the response data
+        client_status_map = {
+            'request':        'request',
+            'to_pay':         'to_pay',
+            'PAID':           'preparing',
+            'order_received': 'preparing',
+            'preparing':      'preparing',
+            'to_claim':       'to_claim',
+            'completed':      'completed',
+        }
+
         orders_data = []
         for order in orders:
-            # Get order items
-            items = []
-            for order_item in order.orderitem_set.all():
-                # Calculate item price and total
-                # Try to get price from order_item first, then fall back to menu_item
-                if hasattr(order_item, 'price') and order_item.price:
-                    item_price = order_item.price
-                else:
-                    item_price = order_item.menu_item.price
-
-                item_total = order_item.quantity * item_price
-
-                items.append({
-                    'name': order_item.menu_item.name,
-                    'quantity': order_item.quantity,
-                    'price': str(item_price),
-                    'total_price': str(item_total),
-                    'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
-                })
-
-            # Build order data
-            raw_status = order.status or 'PENDING'
-            client_status_map = {
-                'request': 'request',
-                'to_pay': 'to_pay',
-                'PENDING': 'to_pay',       # legacy PENDING maps to to_pay
-                'PAID': 'preparing',        # legacy PAID maps to preparing
-                'order_received': 'preparing',  # legacy order_received maps to preparing
-                'preparing': 'preparing',
-                'to_claim': 'to_claim',
-                'completed': 'completed',
-            }
+            raw_status        = order.status or 'PENDING'
             normalized_status = client_status_map.get(raw_status, raw_status.lower())
 
-            order_data = {
-                'id': order.id,
-                'order_number': order.gcash_reference_number or f"ORD-{order.id}",
-                'status': normalized_status,
-                'total_amount': str(order.total_amount),
-                'created_at': order.created_at.isoformat(),
-                'payment_confirmed_at': order.payment_confirmed_at.isoformat() if order.payment_confirmed_at else None,
-                'establishment_id': order.establishment.id,
-                'establishment_name': order.establishment.name,
+            items = []
+            for oi in order.orderitem_set.all():
+                items.append({
+                    'name':             oi.menu_item.name,
+                    'quantity':         oi.quantity,
+                    'price':            str(oi.price_at_order),
+                    'total_price':      str(oi.price_at_order * oi.quantity),
+                    'menu_item_id':     oi.menu_item.id,
+                    'current_quantity': oi.menu_item.quantity,
+                    'image':            oi.menu_item.image.url if oi.menu_item.image else None,
+                })
+
+            orders_data.append({
+                'id':                  order.id,
+                'order_number':        order.gcash_reference_number or f"ORD-{order.id}",
+                'status':              normalized_status,
+                'raw_status':          raw_status,
+                'total_amount':        str(order.total_amount),
+                'payment_method':      normalize_payment_method(order.gcash_payment_method),
+                'created_at':          order.created_at.isoformat(),
+                'updated_at':          order.updated_at.isoformat(),
+                'payment_confirmed_at': order.payment_confirmed_at.isoformat()
+                                        if order.payment_confirmed_at else None,
+                'establishment_id':    order.establishment.id,
+                'establishment_name':  order.establishment.name,
                 'establishment_address': order.establishment.address,
-                'establishment_image': order.establishment.image.url if order.establishment.image else None,
+                'establishment_image': order.establishment.image.url
+                                       if order.establishment.image else None,
                 'items': items,
-            }
-            orders_data.append(order_data)
+            })
 
         return JsonResponse({
-            'success': True,
-            'orders': orders_data,
-            'total_orders': len(orders_data)
+            'success':      True,
+            'orders':       orders_data,
+            'total_orders': len(orders_data),
         })
 
     except Exception as e:
         import traceback
-        print(f"Error in get_user_transaction_history: {str(e)}")
+        print(f"ERROR in get_user_transaction_history: {e}")
         print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @login_required
@@ -6475,11 +6823,8 @@ def reorder_items(request, order_id):
         # Get the order and verify it belongs to the user
         order = Order.objects.get(id=order_id, user=request.user)
 
-        # Get or create cart for the establishment
-        cart, created = Cart.objects.get_or_create(
-            user=request.user,
-            establishment=order.establishment
-        )
+        # Get or create the user's cart (Cart is per-user, not per-establishment)
+        cart, created = Cart.objects.get_or_create(user=request.user)
 
         # Add each item from the order to the cart
         with transaction.atomic():

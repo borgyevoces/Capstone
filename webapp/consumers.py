@@ -6,6 +6,101 @@ from django.contrib.auth.models import User
 from .models import ChatRoom, Message, FoodEstablishment
 
 
+# ============================================================
+# INVENTORY CONSUMER — real-time stock broadcast per establishment
+# ============================================================
+class InventoryConsumer(AsyncWebsocketConsumer):
+    """
+    Clients (kabsueats.html) connect to:
+        ws/inventory/<establishment_id>/
+
+    When any order request deducts stock, views.py calls
+    channel_layer.group_send(f'inventory_{est_id}', {...})
+    and every connected client receives the new quantities instantly
+    without a page refresh.
+    """
+
+    async def connect(self):
+        self.establishment_id = self.scope['url_route']['kwargs']['establishment_id']
+        self.group_name = f'inventory_{self.establishment_id}'
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # ── Handler called when views.py sends a group_send ──
+    async def inventory_quantity_update(self, event):
+        """
+        Forward stock update to the browser.
+        event format:
+          {
+            'type': 'inventory.quantity_update',   ← Django channels replaces . with _
+            'updates': [{'menu_item_id': X, 'new_quantity': Y}, ...]
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'quantity_update',
+            'updates': event['updates'],
+        }))
+
+
+# ============================================================
+# ORDER STATUS CONSUMER — real-time order lifecycle events
+# ============================================================
+class OrderStatusConsumer(AsyncWebsocketConsumer):
+    """
+    Two group types subscribe to this consumer:
+
+    1. Owner group  →  ws/order-status/establishment/<establishment_id>/
+       Receives events for every order that belongs to their establishment.
+
+    2. Customer group  →  ws/order-status/user/<user_id>/
+       Receives events for the customer's own orders only.
+
+    views.py calls _broadcast_order_status_update() whenever an order
+    status changes (accept, prepare, cancel, reject, complete).
+    """
+
+    async def connect(self):
+        self.scope_type = self.scope['url_route']['kwargs'].get('scope_type')   # 'establishment' | 'user'
+        self.scope_id   = self.scope['url_route']['kwargs'].get('scope_id')
+        self.group_name = f'order_status_{self.scope_type}_{self.scope_id}'
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # Handler invoked by group_send from views.py
+    async def order_status_update(self, event):
+        """
+        Forward order status change to the browser.
+        event format:
+          {
+            'type': 'order.status.update',
+            'order_id': 42,
+            'new_status': 'cancelled',
+            'establishment_id': 5,
+            'user_id': 3,
+            'cancel_reason': '...',   # optional
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type':             'order_status_update',
+            'order_id':         event['order_id'],
+            'new_status':       event['new_status'],
+            'establishment_id': event['establishment_id'],
+            'user_id':          event['user_id'],
+            'cancel_reason':    event.get('cancel_reason', ''),
+        }))
+
+
+# ============================================================
+# CHAT CONSUMER — unchanged
+# ============================================================
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Called when WebSocket connects"""

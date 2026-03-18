@@ -5754,6 +5754,62 @@ document.addEventListener('DOMContentLoaded', function() {
     update(); // initial sync
 })();
 </script>
+
+<script>
+// ============================================================
+// ✅ REALTIME INVENTORY — Owner Dashboard WebSocket
+// When any order deducts or restores stock for THIS establishment,
+// the menu cards update instantly without a page refresh.
+// ============================================================
+(function initDashboardInventoryWs() {
+    if (typeof establishmentId === 'undefined' || !establishmentId) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws;
+
+    function connect() {
+        ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${establishmentId}/`);
+
+        ws.onmessage = function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'quantity_update') applyDashboardInventoryUpdate(data.updates);
+            } catch (_) {}
+        };
+        ws.onclose = function () { setTimeout(connect, 3000); };
+        ws.onerror = function () { ws.close(); };
+    }
+    connect();
+})();
+
+function applyDashboardInventoryUpdate(updates) {
+    updates.forEach(function ({ menu_item_id, new_quantity }) {
+        const qty  = parseInt(new_quantity, 10);
+        const card = document.querySelector(`.menu-card[data-item-id="${menu_item_id}"]`);
+        if (!card) return;
+
+        // Update stored quantity attribute
+        card.dataset.itemQuantity = qty;
+
+        // Update the badges container (same pattern as toggle-top-seller code)
+        const badgesContainer = card.querySelector('.badges-container');
+        if (badgesContainer) {
+            const isBestseller = card.querySelector('.badge.bestseller');
+            const bestsellerBadge = isBestseller
+                ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>'
+                : '';
+            const stockBadge = qty > 0
+                ? `<span class="badge available">Available: ${qty}</span>`
+                : '<span class="badge soldout">Out of Stock</span>';
+            badgesContainer.innerHTML = bestsellerBadge + stockBadge;
+        }
+
+        // Flash the card so the owner notices the change
+        card.style.transition = 'box-shadow 0.35s';
+        card.style.boxShadow  = qty <= 0 ? '0 0 0 3px #dc2626' : '0 0 0 3px #059669';
+        setTimeout(function () { card.style.boxShadow = ''; }, 1200);
+    });
+}
+</script>
 {% endblock %}
 
 

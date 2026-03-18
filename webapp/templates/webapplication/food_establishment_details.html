@@ -2231,6 +2231,96 @@
 <script src="{% static 'js/status_updater.js' %}"></script>
 
 <script>
+// ============================================================
+// ✅ REALTIME INVENTORY — WebSocket for this establishment
+// Receives quantity_update events whenever any order deducts
+// or restores stock, and updates all menu item cards + modal.
+// ============================================================
+(function initInventoryWs() {
+    if (!ESTABLISHMENT_ID) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws;
+
+    function connect() {
+        ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${ESTABLISHMENT_ID}/`);
+
+        ws.onmessage = function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'quantity_update') applyDetailsInventoryUpdate(data.updates);
+            } catch (_) {}
+        };
+
+        ws.onclose = function () { setTimeout(connect, 3000); };
+        ws.onerror = function () { ws.close(); };
+    }
+
+    connect();
+})();
+
+function applyDetailsInventoryUpdate(updates) {
+    updates.forEach(function ({ menu_item_id, new_quantity }) {
+        const qty = parseInt(new_quantity, 10);
+
+        // 1. Update data-item-quantity on the .menu-item card
+        const card = document.querySelector(`.menu-item[data-item-id="${menu_item_id}"]`);
+        if (card) {
+            card.setAttribute('data-item-quantity', qty);
+
+            // Update stock badge / text inside the card if present
+            const stockBadge = card.querySelector('.item-quantity, .stock-badge, [class*="quantity"]');
+            if (stockBadge && stockBadge.textContent.match(/\d/)) {
+                if (qty <= 0) {
+                    stockBadge.textContent = 'Out of Stock';
+                    stockBadge.style.color = '#dc2626';
+                } else {
+                    stockBadge.textContent = qty + ' left';
+                    stockBadge.style.color = '';
+                }
+            }
+            // Dim card if out of stock
+            card.style.opacity  = qty <= 0 ? '0.55' : '';
+        }
+
+        // 2. Update open modal if it's showing this item
+        const modalItemId = document.getElementById('modalItemId');
+        if (modalItemId && parseInt(modalItemId.value) === menu_item_id) {
+            // Update stock display in modal
+            const stockDisplay = document.getElementById('modalItemStock');
+            if (stockDisplay) {
+                if (qty <= 0) {
+                    stockDisplay.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
+                    stockDisplay.style.color = '#dc2626';
+                } else {
+                    stockDisplay.innerHTML = `<i class="fas fa-box"></i> ${qty} Item${qty !== 1 ? 's' : ''}`;
+                    stockDisplay.style.color = qty <= 5 ? '#f59e0b' : '#374151';
+                }
+            }
+            // Clamp quantity input
+            const qtyInput = document.getElementById('itemQuantityInput') || document.getElementById('modalQuantity');
+            if (qtyInput) {
+                qtyInput.max = qty;
+                if (parseInt(qtyInput.value) > qty) qtyInput.value = Math.max(1, qty);
+            }
+            // Disable add/buy buttons if out of stock
+            ['addToCartBtn','buyNowBtn','modalAddToCartBtn','modalBuyNowBtn'].forEach(function (id) {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.disabled = qty <= 0;
+                    btn.style.opacity = qty <= 0 ? '0.45' : '';
+                }
+            });
+            // Flash stock display
+            if (stockDisplay) {
+                stockDisplay.style.transition = 'color 0.3s';
+                setTimeout(function () { stockDisplay.style.transition = ''; }, 600);
+            }
+        }
+    });
+}
+</script>
+
+<script>
     let chatSocket = null;
     let chatPopupOpen = false;
     let chatMessagesCache = [];

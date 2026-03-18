@@ -702,3 +702,119 @@ function getCheckedItemIds() {
     const checked = activeBox.querySelectorAll('.item-checkbox:checked');
     return Array.from(checked).map(cb => cb.dataset.itemId);
 }
+
+// ============================================================
+// ✅ REALTIME INVENTORY — WebSocket per establishment
+// Subscribes to each establishment cart box on the page.
+// When stock changes, warns user if their cart qty exceeds
+// new available stock and updates the max on qty controls.
+// ============================================================
+(function initCartInventoryWs() {
+    const cartInventoryWs = {};
+
+    function subscribeCart(estId) {
+        if (!estId || cartInventoryWs[estId]) return;
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${estId}/`);
+
+        ws.onmessage = function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'quantity_update') applyCartInventoryUpdate(data.updates);
+            } catch (_) {}
+        };
+        ws.onclose = function () {
+            delete cartInventoryWs[estId];
+            setTimeout(() => subscribeCart(estId), 3000);
+        };
+        ws.onerror = function () { ws.close(); };
+        cartInventoryWs[estId] = ws;
+    }
+
+    function applyCartInventoryUpdate(updates) {
+        updates.forEach(function ({ menu_item_id, new_quantity }) {
+            const newQty = parseInt(new_quantity, 10);
+
+            // Find every cart item row that corresponds to this menu item
+            // The cart item row uses data-menu-item-id or we check data-item-id on the row
+            // and match against the hidden menu-item reference
+            document.querySelectorAll('.cart-item-row, [id^="cart-item-"]').forEach(function (row) {
+                const menuItemIdAttr = row.dataset.menuItemId || row.dataset.menuItemid;
+                const cartItemId     = row.id ? row.id.replace('cart-item-', '') : null;
+
+                // Try to find a match via data-menu-item-id, or by checking
+                // that the increase/decrease buttons reference a matching cart item
+                let matched = false;
+                if (menuItemIdAttr && parseInt(menuItemIdAttr) === menu_item_id) {
+                    matched = true;
+                }
+
+                // Also update via the max-stock attribute on the row
+                const maxStockAttr = parseInt(row.dataset.maxStock || '999');
+                // Only flag rows where the stored stock matches this item
+                // (best we can do without menu_item_id on the row is to update all rows
+                //  that have this value as max — so we update the max-stock attribute)
+
+                if (cartItemId) {
+                    const increaseBtn = document.querySelector(`.btn-increase[data-item-id="${cartItemId}"]`);
+                    const qtyEl       = document.querySelector(`.quantity-value[data-item-id="${cartItemId}"]`);
+
+                    if (increaseBtn && qtyEl) {
+                        // Update the max stock stored on the row
+                        row.dataset.maxStock = newQty;
+
+                        const currentCartQty = parseInt(qtyEl.textContent) || 1;
+
+                        if (newQty <= 0) {
+                            // Out of stock — disable increase and mark the row
+                            increaseBtn.disabled = true;
+                            increaseBtn.style.opacity = '0.4';
+                            row.style.opacity = '0.6';
+                            showCartStockWarning(row, 0);
+                        } else if (currentCartQty > newQty) {
+                            // Cart has more than available — clamp and warn
+                            increaseBtn.disabled = false;
+                            increaseBtn.style.opacity = '';
+                            row.style.opacity = '';
+                            updateQuantityRealTime(cartItemId, newQty);
+                            showCartStockWarning(row, newQty);
+                        } else {
+                            // Stock is fine — re-enable
+                            increaseBtn.disabled = false;
+                            increaseBtn.style.opacity = '';
+                            row.style.opacity = '';
+                            clearCartStockWarning(row);
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function showCartStockWarning(row, availableQty) {
+        let warn = row.querySelector('.cart-stock-warn');
+        if (!warn) {
+            warn = document.createElement('div');
+            warn.className = 'cart-stock-warn';
+            warn.style.cssText = 'color:#dc2626;font-size:11px;font-weight:600;margin-top:3px;';
+            const nameEl = row.querySelector('.item-name, .item-details, .cart-item-name');
+            if (nameEl) nameEl.after(warn);
+            else row.appendChild(warn);
+        }
+        warn.textContent = availableQty <= 0
+            ? '⚠ This item is now out of stock'
+            : `⚠ Only ${availableQty} left — qty adjusted`;
+    }
+
+    function clearCartStockWarning(row) {
+        const warn = row.querySelector('.cart-stock-warn');
+        if (warn) warn.remove();
+    }
+
+    // Subscribe to all establishment cart boxes present on the page
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.establishment-cart-box[data-establishment-id]').forEach(function (box) {
+            subscribeCart(box.dataset.establishmentId);
+        });
+    });
+})();

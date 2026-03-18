@@ -195,6 +195,32 @@
         border: 1px solid #e2e8f0; cursor: default; font-size: 11px;
     }
 
+    /* Reject button — appears after 8-min timer expires */
+    .btn-reject {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+    }
+    .btn-reject:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); box-shadow: 0 2px 6px rgba(220,38,38,.3); }
+
+    /* Owner-side countdown timer chip */
+    .owner-timer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .owner-timer-chip.urgent  { background:#fee2e2; border-color:#fca5a5; color:#991b1b; animation: timerPulse 1s infinite; }
+    .owner-timer-chip.expired { background:#f3f4f6; border-color:#e5e7eb; color:#6b7280; }
+    @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
     .btn-view {
         background: #4a5568;
         color: white;
@@ -254,19 +280,9 @@
         color: #059669;
     }
 
-    .payment-online {
-        background: #DBEAFE;
-        color: #2563EB;
-    }
-
     .payment-gcash {
         background: #EDE9FE;
         color: #6D28D9;
-    }
-
-    .payment-maya {
-        background: #D1FAE5;
-        color: #065F46;
     }
 
     /* Bulk Actions */
@@ -850,6 +866,76 @@
     .confirm-btn-ok:hover {
         background: #991515;
     }
+
+    /* ==========================================
+       REJECT REASON DROPDOWN
+       ========================================== */
+    .reject-reason-select {
+        width: 100%;
+        padding: 10px 36px 10px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #2d3748;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        transition: border-color .2s, box-shadow .2s;
+        font-family: inherit;
+    }
+    .reject-reason-select:focus {
+        outline: none;
+        border-color: #B71C1C;
+        box-shadow: 0 0 0 3px rgba(183,28,28,.1);
+    }
+    .reject-reason-textarea {
+        width: 100%;
+        margin-top: 10px;
+        padding: 9px 10px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+        box-sizing: border-box;
+        transition: border-color .2s, box-shadow .2s;
+        color: #2d3748;
+        min-height: 72px;
+        display: none;
+    }
+    .reject-reason-textarea:focus {
+        outline: none;
+        border-color: #B71C1C;
+        box-shadow: 0 0 0 3px rgba(183,28,28,.1);
+    }
+    .reject-reason-error {
+        display: none;
+        margin-top: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #B71C1C;
+        align-items: center;
+        gap: 5px;
+    }
+    .reject-reason-error.show {
+        display: flex;
+    }
+    .reject-reason-select.invalid,
+    .reject-reason-textarea.invalid {
+        border-color: #B71C1C !important;
+        box-shadow: 0 0 0 3px rgba(183,28,28,.12) !important;
+        animation: shakeField 0.3s ease;
+    }
+    @keyframes shakeField {
+        0%,100% { transform: translateX(0); }
+        20%,60%  { transform: translateX(-5px); }
+        40%,80%  { transform: translateX(5px); }
+    }
 </style>
 {% endblock %}
 
@@ -927,6 +1013,27 @@
         </div>
         <div class="confirm-modal-title" id="confirmModalTitle">Confirm Action</div>
         <div class="confirm-modal-message" id="confirmModalMessage">Are you sure?</div>
+        <!-- Reject reason picker — only shown for reject actions -->
+        <div id="confirmReasonWrap" style="display:none; margin-bottom:14px; text-align:left;">
+            <p style="font-size:12px;font-weight:700;color:#4a5568;margin:0 0 8px;">Select a reason:</p>
+            <select id="rejectReasonSelect" class="reject-reason-select"
+                    onchange="onRejectReasonChange(this.value)">
+                <option value="">— Choose a reason —</option>
+                <option value="The item you ordered is currently out of stock.">The item you ordered is currently out of stock.</option>
+                <option value="The establishment will be closing shortly and cannot process new orders.">The establishment will be closing shortly and cannot process new orders.</option>
+                <option value="We are temporarily unable to fulfill this order at the moment.">We are temporarily unable to fulfill this order at the moment.</option>
+                <option value="The establishment is experiencing high volume and cannot accommodate this order.">The establishment is experiencing high volume and cannot accommodate this order.</option>
+                <option value="other">Other (please specify)</option>
+            </select>
+            <textarea id="confirmReasonInput"
+                      class="reject-reason-textarea"
+                      placeholder="Please describe the reason for rejecting this order..."
+                      oninput="this.classList.remove('invalid'); document.getElementById('rejectReasonError').classList.remove('show');"></textarea>
+            <p class="reject-reason-error" id="rejectReasonError">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="rejectReasonErrorText">Please select or enter a reason before rejecting.</span>
+            </p>
+        </div>
         <div class="confirm-modal-actions">
             <button class="confirm-btn-cancel" onclick="closeConfirmModal()">
                 <i class="fas fa-times"></i> Cancel
@@ -957,6 +1064,9 @@
     // ==========================================
     // GLOBAL STATE
     // ==========================================
+    // ✅ REALTIME: establishment ID exposed for WebSocket subscriptions
+    const establishmentId = {{ establishment.id }};
+
     let orders = [];
     let currentTab = 'request';
     let selectedOrders = new Set();
@@ -986,14 +1096,90 @@
         console.log('Orders page loaded');
         loadOrders();
 
-        // Real-time: poll every 5 seconds
-        setInterval(loadOrders, 5000);
+        // ✅ REALTIME: WebSocket handles instant pushes.
+        // Keep poll as a 30-second fallback only (catches missed WS messages).
+        setInterval(loadOrders, 30000);
 
         // Instant refresh when tab becomes visible again
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) loadOrders();
         });
+
+        // ✅ REALTIME: Subscribe to order-status WebSocket (owner side)
+        // Removes rows instantly when orders are cancelled / move tabs.
+        initOwnerOrderStatusWs();
     });
+
+    // =====================================================
+    // ✅ REALTIME: Order-Status WebSocket — owner dashboard
+    // =====================================================
+    function initOwnerOrderStatusWs() {
+        if (typeof establishmentId === 'undefined' || !establishmentId) return;
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        let ws;
+
+        function connect() {
+            ws = new WebSocket(
+                proto + '://' + location.host +
+                '/ws/order-status/establishment/establishment/' + establishmentId + '/'
+            );
+
+            ws.onopen = function () {
+                console.log('📋 [Owner Orders WS] Connected → establishment #' + establishmentId);
+            };
+
+            ws.onmessage = function (e) {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.type !== 'order_status_update') return;
+
+                    const orderId   = d.order_id;
+                    const newStatus = d.new_status;
+                    console.log('📋 [Owner Orders WS] Order #' + orderId + ' → ' + newStatus);
+
+                    const idx = orders.findIndex(function (o) { return o.id === orderId; });
+
+                    if (newStatus === 'cancelled') {
+                        // ── Remove cancelled order row immediately ──────────
+                        if (idx !== -1) orders.splice(idx, 1);
+                        removeOrderRow(orderId);
+
+                    } else if (idx !== -1) {
+                        // ── Status changed — move row if it's in wrong tab ──
+                        const prevStatus = orders[idx].status;
+                        orders[idx].status = newStatus;
+                        if (prevStatus !== newStatus) {
+                            if (prevStatus === currentTab) {
+                                // Row was visible in this tab — fade it out
+                                const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                                if (row) {
+                                    row.style.transition = 'opacity 0.3s';
+                                    row.style.opacity    = '0';
+                                    setTimeout(function () { row.remove(); updateCounts(); }, 320);
+                                }
+                            }
+                            updateCounts();
+                        }
+
+                    } else {
+                        // ── Brand-new order we haven't seen — reload ────────
+                        loadOrders();
+                    }
+
+                } catch (err) {
+                    console.warn('[Owner Orders WS] Bad message:', err);
+                }
+            };
+
+            ws.onclose = function () {
+                console.log('📋 [Owner Orders WS] Disconnected — reconnecting in 3s');
+                setTimeout(connect, 3000);
+            };
+            ws.onerror = function () { ws.close(); };
+        }
+
+        connect();
+    }
 
     // ==========================================
     // DATA LOADING
@@ -1065,20 +1251,9 @@
         filtered.forEach(o => {
             const next = FLOW[currentTab];
 
-            const paymentLabel = (o.payment_method === 'cash') ? 'Cash'
-                : (o.payment_method === 'gcash') ? 'GCash'
-                : (o.payment_method === 'paymaya') ? 'Maya'
-                : (o.payment_method || 'Online');
-
-            const paymentIcon = (o.payment_method === 'cash') ? 'fa-money-bill-wave'
-                : (o.payment_method === 'gcash') ? 'fa-mobile-alt'
-                : (o.payment_method === 'paymaya') ? 'fa-wallet'
-                : 'fa-credit-card';
-
-            const paymentClass = (o.payment_method === 'cash') ? 'payment-cash'
-                : (o.payment_method === 'gcash') ? 'payment-gcash'
-                : (o.payment_method === 'paymaya') ? 'payment-maya'
-                : 'payment-online';
+            const paymentLabel = o.payment_method === 'cash' ? 'Cash' : 'GCash';
+            const paymentIcon  = o.payment_method === 'cash' ? 'fa-money-bill-wave' : 'fa-mobile-alt';
+            const paymentClass = o.payment_method === 'cash' ? 'payment-cash' : 'payment-gcash';
 
             const itemsList = (o.items && o.items.length > 0)
                 ? o.items.map(i =>
@@ -1086,16 +1261,38 @@
                   ).join('') + `<div class="row-item-total">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
                 : '<span style="color:#a0aec0;font-size:12px;">—</span>';
 
+            // ── 8-minute countdown for to_pay orders ──
+            // Timer starts from updated_at (when owner accepted = moved to to_pay)
+            let timerCellHtml = '';
+            if (currentTab === 'to_pay') {
+                const acceptedAt  = new Date(o.updated_at || o.created_at);
+                const deadlineMs  = acceptedAt.getTime() + 8 * 60 * 1000;
+                const remaining   = deadlineMs - Date.now();
+                if (remaining > 0) {
+                    const mm = Math.floor(remaining / 60000);
+                    const ss = Math.floor((remaining % 60000) / 1000);
+                    timerCellHtml = `<span class="owner-timer-chip" id="otimer-${o.id}" data-deadline="${deadlineMs}">
+                        <i class="fas fa-clock"></i> <span id="otimer-val-${o.id}">${mm}:${String(ss).padStart(2,'0')}</span>
+                    </span>`;
+                } else {
+                    timerCellHtml = `<span class="owner-timer-chip expired"><i class="fas fa-clock"></i> Expired</span>`;
+                }
+            }
+
+            const timerExpired = currentTab === 'to_pay' && (new Date(o.updated_at || o.created_at).getTime() + 8*60*1000) <= Date.now();
+
             const actionBtn = next && currentTab !== 'to_pay'
                 ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
                        <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
                    </button>`
                 : currentTab === 'to_pay'
-                ? `<span class="action-btn awaiting-btn"><i class="fas fa-clock"></i> Awaiting</span>`
+                ? `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
+                       <i class="fas fa-times"></i> Reject
+                   </button>`
                 : `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
 
             rows += `
-                <tr class="order-row">
+                <tr class="order-row" data-id="${o.id}">
                     <td class="col-check">
                         ${currentTab !== 'to_pay' ? `<input type="checkbox" class="checkbox" data-id="${o.id}"
                                ${selectedOrders.has(o.id) ? 'checked' : ''}
@@ -1122,7 +1319,7 @@
                     </td>
                     <td class="col-actions">
                         ${currentTab === 'completed' ? `<button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button>` : ''}
-                        ${actionBtn}
+                        ${currentTab === 'to_pay' ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">${timerCellHtml}${actionBtn}</div>` : actionBtn}
                     </td>
                 </tr>
             `;
@@ -1148,6 +1345,12 @@
 
         container.innerHTML = html;
         updateBulk();
+        // ✅ Start countdown timers for all to_pay rows
+        if (currentTab === 'to_pay') {
+            startOwnerTimers();
+            // Auto-reject rows that were already expired when the page rendered
+            autoRejectExpiredRows();
+        }
     }
 
     // ==========================================
@@ -1157,13 +1360,9 @@
         const o = orders.find(x => x.id === id);
         if (!o) return;
 
-        const payHTML = (o.payment_method === 'cash')
-            ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash Payment</span>'
-            : (o.payment_method === 'gcash')
-            ? '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash Payment</span>'
-            : (o.payment_method === 'paymaya')
-            ? '<span class="payment-badge payment-maya"><i class="fas fa-wallet"></i> Maya Payment</span>'
-            : `<span class="payment-badge payment-online"><i class="fas fa-credit-card"></i> ${o.payment_method || 'Online'} Payment</span>`;
+        const payHTML = o.payment_method === 'cash'
+            ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>'
+            : '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash (Online)</span>';
 
         let itemsHTML = '';
         if (o.items && o.items.length > 0) {
@@ -1302,14 +1501,288 @@
     }
 
     function confirmModalOk() {
-        const cb = confirmCallback; // FIX: save callback BEFORE closeConfirmModal nulls it
+        // If the reject reason picker is visible, validate before proceeding
+        const reasonWrap = document.getElementById('confirmReasonWrap');
+        if (reasonWrap && reasonWrap.style.display !== 'none') {
+            const rs        = document.getElementById('rejectReasonSelect');
+            const ri        = document.getElementById('confirmReasonInput');
+            const errEl     = document.getElementById('rejectReasonError');
+            const errTxtEl  = document.getElementById('rejectReasonErrorText');
+            const selected  = rs ? rs.value : '';
+
+            // Clear previous invalid state
+            if (rs) rs.classList.remove('invalid');
+            if (ri) ri.classList.remove('invalid');
+            if (errEl) errEl.classList.remove('show');
+
+            if (!selected) {
+                if (rs) rs.classList.add('invalid');
+                if (errTxtEl) errTxtEl.textContent = 'Please select a reason before rejecting.';
+                if (errEl) errEl.classList.add('show');
+                return;
+            }
+
+            if (selected === 'other') {
+                const customReason = ri ? ri.value.trim() : '';
+                if (!customReason) {
+                    if (ri) ri.classList.add('invalid');
+                    if (errTxtEl) errTxtEl.textContent = 'Please describe the reason before rejecting.';
+                    if (errEl) errEl.classList.add('show');
+                    if (ri) ri.focus();
+                    return;
+                }
+            }
+        }
+
+        // ── CRITICAL: read values BEFORE closeConfirmModal resets the fields ──
+        const rsVal = document.getElementById('rejectReasonSelect')?.value || '';
+        const riVal = document.getElementById('confirmReasonInput')?.value?.trim() || '';
+
+        const cb = confirmCallback; // save BEFORE closeConfirmModal nulls it
         closeConfirmModal();
-        if (cb) cb();
+
+        if (cb) {
+            // Pass the captured reason into the callback via a temporary global
+            window._capturedRejectReason = rsVal === 'other' ? riVal : rsVal;
+            cb();
+            delete window._capturedRejectReason;
+        }
     }
 
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('show');
         confirmCallback = null;
+        // Reset reason dropdown + validation state whenever the modal closes
+        const reasonWrap = document.getElementById('confirmReasonWrap');
+        if (reasonWrap) reasonWrap.style.display = 'none';
+        const rs = document.getElementById('rejectReasonSelect');
+        if (rs) { rs.value = ''; rs.classList.remove('invalid'); }
+        const ri = document.getElementById('confirmReasonInput');
+        if (ri) { ri.value = ''; ri.style.display = 'none'; ri.classList.remove('invalid'); }
+        const errEl = document.getElementById('rejectReasonError');
+        if (errEl) errEl.classList.remove('show');
+    }
+
+    // ==========================================
+    // AUTO-REMOVE ALREADY-EXPIRED ROWS
+    // Called once after renderOrders when on to_pay tab.
+    // Rows that were expired even before the page loaded get
+    // rejected immediately (restoring stock) then fade out.
+    // ==========================================
+    function autoRejectExpiredRows() {
+        // Find all to_pay orders in memory that are already past deadline
+        const expiredOrders = orders.filter(o => {
+            if ((o.status || '') !== 'to_pay') return false;
+            const deadlineMs = new Date(o.updated_at || o.created_at).getTime() + 8 * 60 * 1000;
+            return Date.now() >= deadlineMs;
+        });
+
+        expiredOrders.forEach((o, idx) => {
+            // Stagger removal slightly so they don't all fire at once
+            setTimeout(() => {
+                fetch(`/api/food-establishment/orders/${o.id}/reject/`, {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        removeOrderRow(o.id);
+                    } else {
+                        // If it's already cancelled/moved on the backend, still remove from view
+                        removeOrderRow(o.id);
+                    }
+                })
+                .catch(() => removeOrderRow(o.id));
+            }, idx * 300); // 300ms stagger per row
+        });
+    }
+
+    // ==========================================
+    // OWNER 8-MIN COUNTDOWN TIMERS (to_pay tab)
+    // ==========================================
+    const ownerTimerMap = {};  // orderId → intervalId
+
+    function startOwnerTimers() {
+        // Clear any existing timers first
+        Object.values(ownerTimerMap).forEach(id => clearInterval(id));
+        Object.keys(ownerTimerMap).forEach(k => delete ownerTimerMap[k]);
+
+        document.querySelectorAll('.owner-timer-chip[data-deadline]').forEach(chip => {
+            const orderId    = chip.id.replace('otimer-', '');
+            const deadlineMs = parseInt(chip.dataset.deadline, 10);
+
+            const tick = () => {
+                const rem     = deadlineMs - Date.now();
+                const valEl   = document.getElementById(`otimer-val-${orderId}`);
+                const chipEl  = document.getElementById(`otimer-${orderId}`);
+                const awEl    = document.getElementById(`awaiting-${orderId}`);
+                const rejBtn  = document.getElementById(`reject-btn-${orderId}`);
+
+                if (rem <= 0) {
+                    clearInterval(ownerTimerMap[orderId]);
+                    // ── Timer expired: auto-reject → restore stock → remove row ──
+                    if (chipEl) {
+                        chipEl.className = 'owner-timer-chip expired';
+                        chipEl.innerHTML = '<i class="fas fa-clock"></i> Expired';
+                    }
+                    // Auto-reject after a brief visual pause so owner sees "Expired"
+                    setTimeout(() => {
+                        fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                            }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                removeOrderRow(parseInt(orderId));
+                            } else {
+                                // Backend rejected the reject — just reload
+                                loadOrders();
+                            }
+                        })
+                        .catch(() => loadOrders());
+                    }, 1200);
+                    return;
+                }
+
+                const mm = Math.floor(rem / 60000);
+                const ss = Math.floor((rem % 60000) / 1000);
+                if (valEl) valEl.textContent = `${mm}:${String(ss).padStart(2, '0')}`;
+                if (chipEl) chipEl.className = rem <= 60000 ? 'owner-timer-chip urgent' : 'owner-timer-chip';
+            };
+
+            tick(); // run immediately
+            ownerTimerMap[orderId] = setInterval(tick, 1000);
+        });
+    }
+
+    // ==========================================
+    // REJECT REASON — dropdown change handler
+    // ==========================================
+    function onRejectReasonChange(val) {
+        // Clear validation error when user picks something
+        const rs    = document.getElementById('rejectReasonSelect');
+        const errEl = document.getElementById('rejectReasonError');
+        if (rs)    rs.classList.remove('invalid');
+        if (errEl) errEl.classList.remove('show');
+
+        const textarea = document.getElementById('confirmReasonInput');
+        if (!textarea) return;
+        if (val === 'other') {
+            textarea.style.display = 'block';
+            textarea.focus();
+        } else {
+            textarea.style.display = 'none';
+            textarea.value = '';
+            textarea.classList.remove('invalid');
+        }
+    }
+
+    // ==========================================
+    // REJECT ORDER (owner) — restores stock
+    // ==========================================
+    function rejectOrder(orderId) {
+        const reasonWrap   = document.getElementById('confirmReasonWrap');
+        const reasonSelect = document.getElementById('rejectReasonSelect');
+        const reasonInput  = document.getElementById('confirmReasonInput');
+
+        // Reset state
+        if (reasonSelect) reasonSelect.value = '';
+        if (reasonInput)  { reasonInput.value = ''; reasonInput.style.display = 'none'; }
+        if (reasonWrap)   reasonWrap.style.display = 'block';
+
+        showConfirmModal(
+            'Reject Order',
+            `Reject order <strong>#${orderId}</strong>? The customer's reserved items will be returned to stock.`,
+            'Reject Order',
+            () => {
+                // Read the reason captured by confirmModalOk BEFORE fields were reset
+                const reason = (window._capturedRejectReason !== undefined)
+                    ? window._capturedRejectReason
+                    : (() => {
+                        const sel = document.getElementById('rejectReasonSelect');
+                        const inp = document.getElementById('confirmReasonInput');
+                        const s = sel ? sel.value : '';
+                        return s === 'other' ? (inp ? inp.value.trim() : '') : s;
+                    })();
+
+                fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                    },
+                    body: JSON.stringify({ reason })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(`Order #${orderId} rejected — stock restored.`, 'success');
+                        removeOrderRow(orderId);
+                    } else {
+                        showToast(data.message || 'Could not reject order.', 'error');
+                    }
+                })
+                .catch(() => showToast('Network error. Please try again.', 'error'));
+            }
+        );
+    }
+
+    // Reset reason dropdown when modal is closed without confirming
+    function closeConfirmModalAndReset() {
+        const reasonWrap = document.getElementById('confirmReasonWrap');
+        if (reasonWrap) reasonWrap.style.display = 'none';
+        const rs = document.getElementById('rejectReasonSelect');
+        if (rs) rs.value = '';
+        const ri = document.getElementById('confirmReasonInput');
+        if (ri) { ri.value = ''; ri.style.display = 'none'; }
+        closeConfirmModal();
+    }
+
+    // Remove a row instantly with fade-out, then sync counts + empty state
+    function removeOrderRow(orderId) {
+        const row = document.querySelector(`tr.order-row[data-id="${orderId}"]`) ||
+                    document.querySelector(`tr.order-row td .row-order-num`)?.closest('tr');
+
+        // Fallback: find by order number text
+        let targetRow = null;
+        document.querySelectorAll('tr.order-row').forEach(tr => {
+            const numEl = tr.querySelector('.row-order-num');
+            if (numEl && numEl.textContent.trim() === `#${orderId}`) targetRow = tr;
+        });
+        const finalRow = row || targetRow;
+
+        if (finalRow) {
+            finalRow.style.transition = 'opacity .3s, transform .3s';
+            finalRow.style.opacity    = '0';
+            finalRow.style.transform  = 'translateX(16px)';
+            setTimeout(() => {
+                finalRow.remove();
+                // Remove from in-memory orders array
+                orders = orders.filter(o => o.id !== orderId);
+                updateCounts();
+                // If tbody is now empty, show empty state
+                const tbody = document.querySelector('#ordersContainer tbody');
+                if (tbody && !tbody.querySelector('tr')) {
+                    document.getElementById('ordersContainer').innerHTML = `
+                        <div class="state-container">
+                            <div class="state-icon"><i class="fas fa-inbox"></i></div>
+                            <h3 class="state-title">No ${LABELS[currentTab]}</h3>
+                            <p class="state-text">Orders will appear here when customers place them</p>
+                        </div>`;
+                }
+            }, 320);
+        } else {
+            // Row not found in DOM — just reload
+            loadOrders();
+        }
     }
 
     function moveOrder(id) {
@@ -1500,5 +1973,40 @@
             closeConfirmModal();
         }
     });
+</script>
+
+<script>
+// ============================================================
+// ✅ REALTIME INVENTORY — Owner Orders List WebSocket
+// Connects to this establishment's inventory channel.
+// When stock changes (order placed or cancelled/rejected),
+// the to_pay tab auto-removes expired rows and the counts
+// stay accurate without a full page reload.
+// ============================================================
+(function initOrdersListInventoryWs() {
+    const estId = {{ establishment.id|default:'null' }};
+    if (!estId) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws;
+
+    function connect() {
+        ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${estId}/`);
+
+        ws.onmessage = function (e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'quantity_update') {
+                    // Reload the orders list so counts and statuses are fresh.
+                    // This is lightweight (just an API call) and keeps the table in sync
+                    // when another browser session triggers a stock change.
+                    if (typeof loadOrders === 'function') loadOrders();
+                }
+            } catch (_) {}
+        };
+        ws.onclose = function () { setTimeout(connect, 3000); };
+        ws.onerror = function () { ws.close(); };
+    }
+    connect();
+})();
 </script>
 {% endblock %}

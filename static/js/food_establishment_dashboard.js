@@ -1941,3 +1941,102 @@ function escapeHtml(text) {
 }
 
 // Modal click-outside handlers are set up in the HTML inline script
+
+// ============================================================
+// ✅ REALTIME — Inventory WebSocket for dashboard menu cards
+// Subscribes to ws/inventory/<establishmentId>/ and updates
+// every menu card's Available/Out-of-Stock badge in real time
+// whenever any order deducts or restores stock.
+// establishmentId is declared in the <script> block in the
+// food_establishment_dashboard.html template.
+// ============================================================
+(function initDashboardInventoryWs() {
+    // Wait until the DOM exposes establishmentId (set in the HTML template)
+    function tryConnect() {
+        if (typeof establishmentId === 'undefined' || !establishmentId) {
+            setTimeout(tryConnect, 200);
+            return;
+        }
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        let ws;
+
+        function connect() {
+            ws = new WebSocket(proto + '://' + location.host + '/ws/inventory/' + establishmentId + '/');
+
+            ws.onopen = function () {
+                console.log('📦 [Dashboard Inventory WS] Connected → establishment #' + establishmentId);
+            };
+
+            ws.onmessage = function (e) {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.type !== 'quantity_update') return;
+
+                    data.updates.forEach(function (upd) {
+                        const menuItemId  = upd.menu_item_id;
+                        const newQuantity = parseInt(upd.new_quantity, 10);
+
+                        // ── 1. Update the data attribute so edit-modal reads fresh value ──
+                        const card = document.querySelector('.menu-card[data-item-id="' + menuItemId + '"]');
+                        if (!card) return;
+                        card.dataset.itemQuantity = newQuantity;
+
+                        // ── 2. Swap the Available / Out-of-Stock badge ──────────────────
+                        const badgesContainer = card.querySelector('.badges-container');
+                        if (badgesContainer) {
+                            badgesContainer.querySelectorAll('.badge.available, .badge.soldout')
+                                .forEach(function (b) { b.remove(); });
+                            const badge = document.createElement('span');
+                            if (newQuantity > 0) {
+                                badge.className   = 'badge available';
+                                badge.textContent = 'Available: ' + newQuantity;
+                            } else {
+                                badge.className   = 'badge soldout';
+                                badge.textContent = 'Out of Stock';
+                            }
+                            badgesContainer.appendChild(badge);
+                        }
+
+                        // ── 3. Brief colour-flash so owner sees the change instantly ────
+                        card.style.transition = 'box-shadow 0.3s';
+                        card.style.boxShadow  = newQuantity <= 0
+                            ? '0 0 0 2px #ef4444'
+                            : '0 0 0 2px #22c55e';
+                        setTimeout(function () { card.style.boxShadow = ''; }, 1800);
+
+                        // ── 4. Sync quantity input if the edit modal is open for this item ──
+                        const editModal = document.getElementById('editModal') ||
+                                          document.getElementById('editMenuModal');
+                        const editQtyInput = document.getElementById('id_quantity_edit');
+                        if (editModal && editQtyInput) {
+                            const isVisible =
+                                editModal.style.display !== 'none' &&
+                                editModal.style.visibility !== 'hidden' &&
+                                !editModal.classList.contains('hidden');
+                            const modalItemId =
+                                editModal.dataset.currentItemId ||
+                                editModal.getAttribute('data-current-item-id') || '';
+                            if (isVisible && String(modalItemId) === String(menuItemId)) {
+                                editQtyInput.value = newQuantity;
+                            }
+                        }
+
+                        console.log('📦 [Dashboard] Menu item #' + menuItemId + ' qty → ' + newQuantity);
+                    });
+                } catch (err) {
+                    console.warn('[Dashboard Inventory WS] Bad message:', err);
+                }
+            };
+
+            ws.onclose = function () {
+                console.log('📦 [Dashboard Inventory WS] Disconnected — reconnecting in 3s');
+                setTimeout(connect, 3000);
+            };
+            ws.onerror = function () { ws.close(); };
+        }
+
+        connect();
+    }
+
+    tryConnect();
+})();
