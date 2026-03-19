@@ -783,6 +783,45 @@
     .badge-in-stock  { background: #d1fae5; color: #065f46; }
     .badge-out-stock { background: #fee2e2; color: #991b1b; }
 
+    /* ── Stock warning on to_pay rows ── */
+    .stock-warn-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+        border-radius: 6px;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        margin-left: 6px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .stock-warn-chip.out {
+        background: #FEE2E2;
+        color: #991B1B;
+        border-color: #FECACA;
+    }
+    .stock-warn-row-banner {
+        display: none;
+        background: #FEF2F2;
+        border: 1.5px solid #FECACA;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #7F1D1D;
+        font-weight: 500;
+    }
+    .stock-warn-row-banner.visible { display: block; }
+    .tbl-btn-pay.btn-disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     /* Price */
     .reorder-item-price-big {
         font-size: 22px;
@@ -1619,7 +1658,7 @@
             const store = lsGetAll();
             store[order.id] = {
                 id:                order.id,
-                status:            'to_pay',
+                status:            order.status === 'request' ? 'request' : 'to_pay',
                 _expired:          true,
                 _cancelledByOwner: order._cancelledByOwner === true,  // strict — never default to true
                 _cancelReason:     order._cancelReason     || '',
@@ -1753,15 +1792,22 @@
                         // Re-order or Cancel. ONLY client button clicks remove a row.
 
                         const orderEntry     = idx !== -1 ? allOrders[idx] : null;
+                        // Keep rows visible for both to_pay AND request cancellations.
+                        // When an owner removes an out-of-stock request order, the
+                        // client should still see it so they can re-order or dismiss it.
                         const wasToPayStatus = !orderEntry ||
                             orderEntry.status === 'to_pay' ||
-                            orderEntry.status === 'PENDING';
+                            orderEntry.status === 'PENDING' ||
+                            orderEntry.status === 'request';
 
                         if (wasToPayStatus) {
-                            // Mark as expired in memory — status stays 'to_pay' so
-                            // the row remains in the to_pay tab on next poll/re-render
+                            // Mark as expired in memory.
+                            // request orders stay in the request tab (status unchanged).
+                            // to_pay / PENDING orders are forced to 'to_pay' to stay visible there.
                             if (idx !== -1) {
-                                allOrders[idx].status             = 'to_pay';
+                                const wasRequest = allOrders[idx].status === 'request';
+                                if (!wasRequest) allOrders[idx].status = 'to_pay';
+                                // ↑ request rows keep status='request' → remain in Request tab
                                 allOrders[idx]._expired           = true;
                                 allOrders[idx]._cancelReason      = reason;
                                 allOrders[idx]._cancelledByOwner  = true;
@@ -1796,7 +1842,9 @@
                             // Toast always — client may be on any tab
                             const toastMsg = reason
                                 ? 'Order #' + orderId + ' cancelled by owner: ' + reason
-                                : 'Order #' + orderId + ' was cancelled. Re-order or cancel below.';
+                                : (orderEntry && orderEntry.status === 'request'
+                                    ? 'Order #' + orderId + ' was removed by the establishment (item out of stock). You can re-order below.'
+                                    : 'Order #' + orderId + ' was cancelled. Re-order or cancel below.');
                             showOrderToast(toastMsg, 'error');
                             updateOrderCounts();
 
@@ -1902,12 +1950,21 @@
                     // ── Merge localStorage cancelled orders (survive page refresh) ──
                     const lsCancelled = lsGetCancelledOrders();
 
-                    // Preserve any to_pay rows the client hasn't acted on yet
-                    // (server cancelled them but client still needs to choose Re-order or Cancel)
-                    // Carry over ALL client-side flags so row + reason survive polls and page refresh.
-                    const preservedToPay = allOrders.filter(function (existing) {
-                        return (existing.status === 'to_pay' || existing.status === 'PENDING') &&
-                               !data.orders.find(function (fresh) { return fresh.id === existing.id; });
+                    // Preserve rows the client hasn't acted on yet:
+                    // • to_pay / PENDING: owner accepted then cancelled (expired timer etc.)
+                    // • request: owner removed due to out-of-stock — client must still see it
+                    // Server never returns cancelled orders so we keep them from memory/localStorage.
+                    const preservedCancelled = allOrders.filter(function (existing) {
+                        const isWatchedStatus = existing.status === 'to_pay'
+                                             || existing.status === 'PENDING'
+                                             || existing.status === 'request';
+                        const notInFreshData  = !data.orders.find(function (fresh) {
+                            return fresh.id === existing.id;
+                        });
+                        // Only preserve rows that were actually cancelled by owner
+                        // (have the _expired flag set) — don't preserve normal request rows
+                        // that just haven't appeared in this poll yet.
+                        return isWatchedStatus && notInFreshData && existing._expired === true;
                     }).map(function (o) {
                         return Object.assign({}, o, {
                             _expired:          true,
@@ -1936,12 +1993,12 @@
 
                     // Add any localStorage cancelled orders not returned by server at all
                     const serverIds    = data.orders.map(function (o) { return o.id; });
-                    const memIds       = preservedToPay.map(function (o) { return o.id; });
+                    const memIds       = preservedCancelled.map(function (o) { return o.id; });
                     const lsOnlyRows   = lsCancelled.filter(function (o) {
                         return !serverIds.includes(o.id) && !memIds.includes(o.id);
                     });
 
-                    allOrders = freshWithFlags.concat(preservedToPay).concat(lsOnlyRows);
+                    allOrders = freshWithFlags.concat(preservedCancelled).concat(lsOnlyRows);
                     updateOrderCounts();
                     filterOrders(currentFilter);
 
@@ -1987,6 +2044,105 @@
                 if (d.type === 'quantity_update') {
                     // Re-evaluate tab counts in case statuses changed
                     updateOrderCounts();
+
+                    // ── Real-time stock check for to_pay rows ──────────────
+                    // d.items = [{ id, quantity }, ...] — broadcast from server
+                    // after every stock deduction. Update available_stock on
+                    // matching order items and refresh their chips live.
+                    // d.updates = [{ menu_item_id, new_quantity }, ...]
+                    if (Array.isArray(d.updates)) {
+                        // Build a quick lookup: menu_item_id → new available_stock
+                        const stockMap = {};
+                        d.updates.forEach(function (upd) { stockMap[upd.menu_item_id] = upd.new_quantity; });
+
+                        allOrders.forEach(function (order) {
+                            // Update chips for both request and to_pay orders
+                            if (order.status !== 'to_pay' && order.status !== 'PENDING' && order.status !== 'request') return;
+                            let anyChange = false;
+
+                            (order.items || []).forEach(function (item) {
+                                if (Object.prototype.hasOwnProperty.call(stockMap, item.menu_item_id)) {
+                                    item.available_stock = stockMap[item.menu_item_id];
+                                    anyChange = true;
+                                }
+                            });
+
+                            if (!anyChange) return;
+
+                            // Re-check if this order now has a stock problem
+                            const nowHasIssue = (order.items || []).some(function (i) {
+                                return typeof i.available_stock === 'number' && i.available_stock < i.quantity;
+                            });
+
+                            // Update the banner div in the DOM without full re-render
+                            const banner = document.getElementById('stock-banner-' + order.id);
+                            if (banner) {
+                                if (nowHasIssue) {
+                                    const wsMsg = order.status === 'request'
+                                        ? 'Some items ran out of stock — your order request may not be accepted. Consider cancelling and reordering.'
+                                        : 'Some items ran out of stock — you may not be able to pay for this order. Contact the establishment or cancel and reorder.';
+                                    banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + wsMsg;
+                                    banner.classList.add('visible');
+                                } else {
+                                    banner.classList.remove('visible');
+                                }
+                            }
+
+                            // Update per-item chips
+                            (order.items || []).forEach(function (item) {
+                                // Find the chip inside the matching row
+                                const row = document.querySelector('tr.order-row[data-id="' + order.id + '"]');
+                                if (!row) return;
+                                // Item lines are rendered in order — find by item name text
+                                const lines = row.querySelectorAll('.tbl-item-line');
+                                lines.forEach(function (line) {
+                                    const nameEl = line.querySelector('strong');
+                                    if (!nameEl || nameEl.textContent !== item.name) return;
+                                    // Remove existing chip
+                                    const old = line.querySelector('.stock-warn-chip');
+                                    if (old) old.remove();
+                                    // Add fresh chip if needed
+                                    if (typeof item.available_stock === 'number' && item.available_stock < item.quantity) {
+                                        const chip = document.createElement('span');
+                                        chip.className = item.available_stock === 0
+                                            ? 'stock-warn-chip out'
+                                            : 'stock-warn-chip';
+                                        chip.innerHTML = item.available_stock === 0
+                                            ? '<i class="fas fa-times-circle"></i> Out of stock'
+                                            : '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
+                                        line.appendChild(chip);
+                                    }
+                                });
+                            });
+
+                            // Enable / disable Pay Now button
+                            const actCell = document.getElementById('actions-cell-' + order.id);
+                            if (actCell) {
+                                const payBtn = actCell.querySelector('.tbl-btn-pay');
+                                if (payBtn) {
+                                    if (nowHasIssue) {
+                                        payBtn.classList.add('btn-disabled');
+                                        payBtn.title = 'Some items are out of stock';
+                                        payBtn.onclick = null;
+                                    } else {
+                                        payBtn.classList.remove('btn-disabled');
+                                        payBtn.title = '';
+                                        payBtn.onclick = function () { payOrder(order.id); };
+                                    }
+                                }
+                            }
+
+                            // Show a toast if this order just became problematic
+                            if (nowHasIssue && !order._hasStockIssue) {
+                                showOrderToast(
+                                    '⚠️ Order #' + order.id + ': some items are now out of stock. ' +
+                                    'Check your To Pay orders.',
+                                    'warning'
+                                );
+                            }
+                            order._hasStockIssue = nowHasIssue;
+                        });
+                    }
                 }
             } catch (_) {}
         };
@@ -2064,9 +2220,32 @@
 
         // Build table rows
         const rows = orders.map(o => {
-            const itemsHtml = (o.items || []).map(i =>
-                `<div class="tbl-item-line"><strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}</div>`
-            ).join('');
+            // Show per-item stock chips on both 'request' and 'to_pay' orders
+        const isStockWarnOrder = o.status === 'to_pay' || o.status === 'PENDING' || o.status === 'request';
+        const itemsHtml = (o.items || []).map(i => {
+                let stockChip = '';
+                if (isStockWarnOrder && typeof i.available_stock === 'number') {
+                    if (i.available_stock === 0) {
+                        stockChip = `<span class="stock-warn-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
+                    } else if (i.available_stock < i.quantity) {
+                        stockChip = `<span class="stock-warn-chip"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+                    }
+                }
+                return `<div class="tbl-item-line"><strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}</div>`;
+            }).join('');
+
+        // Check if any item has insufficient stock (request + to_pay)
+        const hasStockIssue = isStockWarnOrder && (o.items || []).some(i =>
+            typeof i.available_stock === 'number' && i.available_stock < i.quantity
+        );
+        const stockBannerMsg = o.status === 'request'
+            ? 'Some items ran out of stock — your order request may not be accepted. Consider cancelling and reordering.'
+            : 'Some items ran out of stock — you may not be able to pay for this order. Contact the establishment or cancel and reorder.';
+        const stockBanner = hasStockIssue
+            ? `<div class="stock-warn-row-banner visible" id="stock-banner-${o.id}">
+                   <i class="fas fa-exclamation-triangle"></i> ${stockBannerMsg}
+               </div>`
+            : `<div class="stock-warn-row-banner" id="stock-banner-${o.id}"></div>`;
 
             // ── Timer for to_pay orders ──
             let timerHtml = '';
@@ -2084,6 +2263,8 @@
                 }
             }
 
+            // Set _hasStockIssue so buildClientActions can disable Pay Now
+            o._hasStockIssue = hasStockIssue;
             const actions = buildClientActions(o, statusCellExpired);
 
             // Status cell: badge + timer on one line
@@ -2115,7 +2296,7 @@
                     <div class="tbl-est-name">${esc(o.establishment_name)}</div>
                     <div class="tbl-est-addr"><i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>${esc(o.establishment_address || '')}</div>
                 </td>
-                <td>${itemsHtml || '<span style="color:#a0aec0;font-size:12px;">—</span>'}</td>
+                <td>${itemsHtml || '<span style="color:#a0aec0;font-size:12px;">—</span>'}${stockBanner || ''}</td>
                 <td>
                     <span class="tbl-total">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
                 </td>
@@ -2292,8 +2473,11 @@
                              </button>`;
                 }
             } else {
-                // Timer still running — show Pay Now only
-                html += `<button class="tbl-btn tbl-btn-pay" onclick="payOrder(${o.id})">
+                // Timer still running — show Pay Now (disabled if stock issue)
+                const payDisabled = o._hasStockIssue ? 'btn-disabled' : '';
+                const payTitle    = o._hasStockIssue ? 'title="Some items are out of stock"' : '';
+                html += `<button class="tbl-btn tbl-btn-pay ${payDisabled}" ${payTitle}
+                                 onclick="${o._hasStockIssue ? 'void(0)' : 'payOrder(' + o.id + ')'}">
                             <i class="fas fa-credit-card"></i> Pay Now
                          </button>`;
             }

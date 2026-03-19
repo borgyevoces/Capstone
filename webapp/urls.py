@@ -120,6 +120,8 @@ urlpatterns = [
                   path('api/user/transactions/', views.get_user_transaction_history, name='user_transactions'),
                   path('api/reorder/<int:order_id>/', views.reorder_items, name='reorder_items'),
                   path('api/order/<int:order_id>/', views.get_order_details, name='get_order_details'),
+                  path('api/order/<int:order_id>/check-stock/', views.check_order_stock, name='check_order_stock'),
+                  path('api/food-establishment/orders/<int:order_id>/remove-item/<int:item_id>/', views.owner_remove_order_item, name='owner_remove_order_item'),
 
                   # 5. Review Submission & Management
                   path('food_establishment/<int:establishment_id>/submit_review/', views.submit_review,

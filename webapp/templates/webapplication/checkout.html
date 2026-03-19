@@ -14,6 +14,34 @@
    ============================================================ */
 body { background: #f5f5f5 !important; }
 
+/* ── Real-time stock warning banner ── */
+#stock-warning-banner {
+    display: none;
+    background: #FEF2F2;
+    border: 1.5px solid #FECACA;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    grid-column: 1 / -1;
+}
+#stock-warning-banner.visible { display: block; }
+#stock-warning-banner .swb-title {
+    font-weight: 700;
+    color: #B91C1C;
+    font-size: 0.97rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+#stock-warning-banner ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #7F1D1D;
+    font-size: 0.88rem;
+}
+#stock-warning-banner ul li { margin-bottom: 2px; }
+
 .checkout-wrapper {
     max-width: 1100px;
     margin: 0 auto;
@@ -670,6 +698,14 @@ body { background: #f5f5f5 !important; }
 {% endblock %}
 
 {% block content %}
+<div id="stock-warning-banner" role="alert">
+    <div class="swb-title">
+        <i class="fas fa-exclamation-triangle"></i>
+        Some items in your order are no longer available
+    </div>
+    <ul id="stock-warning-list"></ul>
+</div>
+
 <div class="checkout-wrapper">
 
     <!-- ── Page Header ── -->
@@ -993,9 +1029,68 @@ body { background: #f5f5f5 !important; }
                      || '{{ order.id }}';
 
     // Endpoint URLs — resolved server-side so they always match urls.py
-    const URL_CREATE_GCASH = "{% url 'create_gcash_payment_link' %}";
-    const URL_CREATE_CASH  = "{% url 'create_cash_order' %}";
-    const URL_CHECK_STATUS = "{% url 'check_order_status' %}";
+    const URL_CREATE_GCASH  = "{% url 'create_gcash_payment_link' %}";
+    const URL_CREATE_CASH   = "{% url 'create_cash_order' %}";
+    const URL_CHECK_STATUS  = "{% url 'check_order_status' %}";
+    const URL_CHECK_STOCK   = `/api/order/${ORDER_ID}/check-stock/`;
+
+    // ── Real-time stock availability polling ───────────────────
+    // Poll every 8 seconds so the customer sees immediately when
+    // another order has consumed the same items.
+    let _stockWarningActive = false;
+
+    function _pollStock() {
+        fetch(URL_CHECK_STOCK, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data) return;
+
+            const banner   = document.getElementById('stock-warning-banner');
+            const list     = document.getElementById('stock-warning-list');
+            const payBtns  = document.querySelectorAll('.btn-payment-method');
+
+            if (!data.available) {
+                // Build item list for banner
+                list.innerHTML = data.items
+                    .filter(i => !i.sufficient)
+                    .map(i =>
+                        `<li><strong>${i.name}</strong> — you need ${i.ordered_qty}, ` +
+                        (i.available_qty === 0
+                            ? 'this item is now <strong>out of stock</strong>'
+                            : `only <strong>${i.available_qty}</strong> left`) +
+                        `</li>`
+                    ).join('');
+                banner.classList.add('visible');
+
+                // Disable payment buttons to prevent the customer from paying
+                payBtns.forEach(b => {
+                    b.disabled = true;
+                    b.style.opacity = '0.5';
+                    b.style.cursor  = 'not-allowed';
+                    b.title = 'Some items are no longer available';
+                });
+                _stockWarningActive = true;
+            } else {
+                // Stock restored or was never a problem — clear the warning
+                banner.classList.remove('visible');
+                payBtns.forEach(b => {
+                    b.disabled = false;
+                    b.style.opacity  = '';
+                    b.style.cursor   = '';
+                    b.title = '';
+                });
+                _stockWarningActive = false;
+            }
+        })
+        .catch(() => { /* silent — server may be momentarily unavailable */ });
+    }
+
+    // Run immediately on load, then every 8 seconds
+    _pollStock();
+    const _stockPollInterval = setInterval(_pollStock, 8000);
+
+    // Stop polling when the user navigates away
+    window.addEventListener('pagehide', () => clearInterval(_stockPollInterval));
 
     // ✅ Back-navigation guard — if user arrives here via browser back button
     // after order is already confirmed/preparing, redirect them to My Orders.
@@ -1026,6 +1121,12 @@ body { background: #f5f5f5 !important; }
     // Open modal
     // ----------------------------------------------------------
     window.openPolicyModal = function (type) {
+        // Block if stock is insufficient — buttons should already be disabled
+        // but this is an extra safety net in case the DOM state was inconsistent.
+        if (_stockWarningActive) {
+            _toast('⚠️ Cannot proceed — some items are no longer available. Please go back and update your order.', 'error');
+            return;
+        }
         _pendingType = type;
 
         // Personalise header title

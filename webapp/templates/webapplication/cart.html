@@ -363,6 +363,7 @@ html body .establishment-cart-box.active-cart {
                                  id="cart-item-{{ item.id }}"
                                  data-order-id="{{ cart.order.id }}"
                                  data-item-id="{{ item.id }}"
+                                 data-menu-item-id="{{ item.menu_item.id }}"
                                  data-max-stock="{{ item.menu_item.quantity }}"
                                  data-unit-price="{{ item.menu_item.price }}"
                                  data-qty="{{ item.quantity }}"
@@ -604,6 +605,8 @@ html body .establishment-cart-box.active-cart {
 
         // Initial summary render on page load
         window.rebuildOrderSummary();
+        // Initial stock check — flag any OOS items already in cart
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
     });
 
     // ============================================================
@@ -816,11 +819,14 @@ html body .establishment-cart-box.active-cart {
         }
 
         window.rebuildOrderSummary();
+        // Re-evaluate checkout button after checkbox change
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
     };
 
     // Rebuild summary when cart.js fires quantity update event
     document.addEventListener('cart:quantityUpdated', function() {
         window.rebuildOrderSummary();
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
     });
 
     // ============================================================

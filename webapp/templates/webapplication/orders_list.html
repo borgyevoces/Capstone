@@ -202,6 +202,48 @@
     }
     .btn-reject:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); box-shadow: 0 2px 6px rgba(220,38,38,.3); }
 
+    /* ── Owner to_pay — real-time stock warning ── */
+    .owner-stock-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 5px;
+        margin-left: 5px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .owner-stock-chip.low  { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .owner-stock-chip.out  { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    .owner-stock-banner {
+        display: none;
+        background: #FEF2F2;
+        border: 1.5px solid #FECACA;
+        border-radius: 7px;
+        padding: 7px 11px;
+        margin-top: 7px;
+        font-size: 11.5px;
+        color: #7F1D1D;
+        font-weight: 600;
+    }
+    .owner-stock-banner.visible { display: block; }
+    .btn-remove-item {
+        background: none;
+        border: 1px solid #FECACA;
+        color: #B91C1C;
+        border-radius: 5px;
+        padding: 2px 7px;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-left: 6px;
+        vertical-align: middle;
+        transition: background .15s;
+    }
+    .btn-remove-item:hover { background: #FEE2E2; }
+
     /* Owner-side countdown timer chip */
     .owner-timer-chip {
         display: inline-flex;
@@ -1255,11 +1297,37 @@
             const paymentIcon  = o.payment_method === 'cash' ? 'fa-money-bill-wave' : 'fa-mobile-alt';
             const paymentClass = o.payment_method === 'cash' ? 'payment-cash' : 'payment-gcash';
 
+            // Show per-item stock chips on BOTH request and to_pay tabs
+            const isOwnerStockTab = currentTab === 'to_pay' || currentTab === 'request';
             const itemsList = (o.items && o.items.length > 0)
-                ? o.items.map(i =>
-                    `<div class="row-item"><span class="row-item-name">${esc(i.name)}</span><span class="row-item-qty">×${i.quantity}</span><span class="row-item-price">₱${parseFloat(i.price).toFixed(2)}</span></div>`
-                  ).join('') + `<div class="row-item-total">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
+                ? o.items.map(i => {
+                    let chip = '';
+                    let removeBtn = '';
+                    if (isOwnerStockTab && typeof i.available_stock === 'number') {
+                        if (i.available_stock === 0) {
+                            chip = `<span class="owner-stock-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
+                        } else if (i.available_stock < i.quantity) {
+                            chip = `<span class="owner-stock-chip low"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+                        }
+                        // No per-item Remove button — action button swaps to Reject automatically
+                    }
+                    return `<div class="row-item" id="order-item-row-${i.order_item_id || ''}"><span class="row-item-name">${esc(i.name)}</span><span class="row-item-qty">×${i.quantity}</span><span class="row-item-price">₱${parseFloat(i.price).toFixed(2)}</span>${chip}${removeBtn}</div>`;
+                  }).join('') + `<div class="row-item-total" id="order-total-${o.id}">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
                 : '<span style="color:#a0aec0;font-size:12px;">—</span>';
+
+            // Stock issue flag and banner for request + to_pay rows
+            const ownerHasStockIssue = isOwnerStockTab && (o.items || []).some(i =>
+                typeof i.available_stock === 'number' && i.available_stock < i.quantity
+            );
+            o._hasStockIssue = ownerHasStockIssue;
+            const bannerMsg = currentTab === 'request'
+                ? '<i class="fas fa-exclamation-triangle"></i> Some items ran out of stock — remove them or reject the order.'
+                : '<i class="fas fa-exclamation-triangle"></i> Stock insufficient — consider rejecting this order so the customer can reorder.';
+            const ownerStockBanner = isOwnerStockTab
+                ? `<div class="owner-stock-banner${ownerHasStockIssue ? ' visible' : ''}" id="owner-stock-banner-${o.id}">
+                       ${bannerMsg}
+                   </div>`
+                : '';
 
             // ── 8-minute countdown for to_pay orders ──
             // Timer starts from updated_at (when owner accepted = moved to to_pay)
@@ -1281,15 +1349,29 @@
 
             const timerExpired = currentTab === 'to_pay' && (new Date(o.updated_at || o.created_at).getTime() + 8*60*1000) <= Date.now();
 
-            const actionBtn = next && currentTab !== 'to_pay'
-                ? `<button class="action-btn ${currentTab === 'request' ? 'btn-move btn-accept' : 'btn-move'}" onclick="moveOrder(${o.id})">
-                       <i class="fas fa-${currentTab === 'request' ? 'check' : 'arrow-right'}"></i> ${currentTab === 'request' ? 'Accept' : LABELS[next]}
-                   </button>`
-                : currentTab === 'to_pay'
-                ? `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
-                       <i class="fas fa-times"></i> Reject
-                   </button>`
-                : `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
+            // request tab: if ANY item is out of stock/insufficient → Reject only, no Accept
+            let actionBtn;
+            if (currentTab === 'request') {
+                if (ownerHasStockIssue) {
+                    actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="directRemoveOrder(${o.id}, this)">
+                        <i class="fas fa-trash-alt"></i> Remove
+                    </button>`;
+                } else {
+                    actionBtn = `<button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
+                        <i class="fas fa-check"></i> Accept
+                    </button>`;
+                }
+            } else if (next && currentTab !== 'to_pay') {
+                actionBtn = `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
+                    <i class="fas fa-arrow-right"></i> ${LABELS[next]}
+                </button>`;
+            } else if (currentTab === 'to_pay') {
+                actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
+                    <i class="fas fa-times"></i> Reject
+                </button>`;
+            } else {
+                actionBtn = `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
+            }
 
             rows += `
                 <tr class="order-row" data-id="${o.id}">
@@ -1313,6 +1395,7 @@
                     </td>` : ''}
                     <td class="col-items">
                         <div class="row-items-list">${itemsList}</div>
+                        ${ownerStockBanner || ''}
                     </td>
                     <td class="col-status">
                         <span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>
@@ -1688,7 +1771,45 @@
     // ==========================================
     // REJECT ORDER (owner) — restores stock
     // ==========================================
-    function rejectOrder(orderId) {
+    // ── Direct Remove for out-of-stock request orders ────────────────────────
+    // No confirm modal — owner clicks once, row is gone immediately.
+    // Sends the reject API with the stock reason pre-filled.
+    // The client's WS handler keeps the row visible on their side.
+    function directRemoveOrder(orderId, btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        const reason = 'The item you ordered is currently out of stock.';
+        fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body:    JSON.stringify({ reason })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Order #${orderId} removed — customer notified.`, 'success');
+                removeOrderRow(orderId);
+            } else {
+                showToast(data.message || 'Could not remove order.', 'error');
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove';
+                }
+            }
+        })
+        .catch(() => {
+            showToast('Network error. Please try again.', 'error');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove';
+            }
+        });
+    }
+
+        function rejectOrder(orderId) {
         const reasonWrap   = document.getElementById('confirmReasonWrap');
         const reasonSelect = document.getElementById('rejectReasonSelect');
         const reasonInput  = document.getElementById('confirmReasonInput');
@@ -1977,6 +2098,76 @@
 
 <script>
 // ============================================================
+// ============================================================
+// OWNER REMOVE ITEM FROM REQUEST ORDER
+// Removes a single out-of-stock item from a 'request' order.
+// If it was the last item, the order is auto-cancelled.
+// ============================================================
+function ownerRemoveOrderItem(orderId, orderItemId, btnEl) {
+    if (!confirm('Remove this item from the order?')) return;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    const csrfToken = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+    fetch(`/api/food-establishment/orders/${orderId}/remove-item/${orderItemId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message || 'Could not remove item.');
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="fas fa-times"></i> Remove';
+            return;
+        }
+        if (data.order_cancelled) {
+            // Whole order gone — fade out the row
+            const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+            if (row) {
+                row.style.transition = 'opacity 0.3s';
+                row.style.opacity = '0';
+                setTimeout(() => { row.remove(); renderOrders(); }, 320);
+            }
+            // Remove from in-memory orders array
+            const idx = orders.findIndex(o => o.id === orderId);
+            if (idx !== -1) orders.splice(idx, 1);
+            updateTabCounts();
+        } else {
+            // Item removed — update the in-memory order and re-render the row
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.items = (order.items || []).filter(i => i.order_item_id !== orderItemId);
+                order.total_amount = data.new_total;
+                // Update total display in DOM without full re-render
+                const totalEl = document.getElementById('order-total-' + orderId);
+                if (totalEl) totalEl.innerHTML = 'Total: <strong>₱' + parseFloat(data.new_total).toFixed(2) + '</strong>';
+            }
+            // Fade out just the item row
+            const itemRow = document.getElementById('order-item-row-' + orderItemId);
+            if (itemRow) {
+                itemRow.style.transition = 'opacity 0.25s';
+                itemRow.style.opacity = '0';
+                setTimeout(() => itemRow.remove(), 260);
+            }
+            // Re-evaluate banner
+            const stillHasIssue = order && (order.items || []).some(i =>
+                typeof i.available_stock === 'number' && i.available_stock < i.quantity
+            );
+            const banner = document.getElementById('owner-stock-banner-' + orderId);
+            if (banner) {
+                if (stillHasIssue) banner.classList.add('visible');
+                else banner.classList.remove('visible');
+            }
+        }
+    })
+    .catch(() => {
+        btnEl.disabled = false;
+        btnEl.innerHTML = '<i class="fas fa-times"></i> Remove';
+        alert('Network error — please try again.');
+    });
+}
+
 // ✅ REALTIME INVENTORY — Owner Orders List WebSocket
 // Connects to this establishment's inventory channel.
 // When stock changes (order placed or cancelled/rejected),
@@ -1995,12 +2186,102 @@
         ws.onmessage = function (e) {
             try {
                 const data = JSON.parse(e.data);
-                if (data.type === 'quantity_update') {
-                    // Reload the orders list so counts and statuses are fresh.
-                    // This is lightweight (just an API call) and keeps the table in sync
-                    // when another browser session triggers a stock change.
-                    if (typeof loadOrders === 'function') loadOrders();
+                if (data.type !== 'quantity_update') return;
+
+                // ── Real-time stock chip update for to_pay rows ──────────
+                // data.updates = [{ menu_item_id, new_quantity }, ...]
+                // Update in-memory order data and DOM chips without full reload.
+                // Update stock chips for BOTH 'request' and 'to_pay' tab rows live
+                if (Array.isArray(data.updates) && (currentTab === 'to_pay' || currentTab === 'request')) {
+                    const stockMap = {};
+                    data.updates.forEach(u => { stockMap[u.menu_item_id] = u.new_quantity; });
+
+                    orders.forEach(order => {
+                        if (order.status !== currentTab) return;
+                        let anyChange = false;
+
+                        (order.items || []).forEach(item => {
+                            if (Object.prototype.hasOwnProperty.call(stockMap, item.menu_item_id)) {
+                                item.available_stock = stockMap[item.menu_item_id];
+                                anyChange = true;
+                            }
+                        });
+                        if (!anyChange) return;
+
+                        const nowHasIssue = (order.items || []).some(i =>
+                            typeof i.available_stock === 'number' && i.available_stock < i.quantity
+                        );
+
+                        // Update banner
+                        const banner = document.getElementById('owner-stock-banner-' + order.id);
+                        if (banner) {
+                            if (nowHasIssue) banner.classList.add('visible');
+                            else banner.classList.remove('visible');
+                        }
+
+                        // Update per-item chips and remove buttons
+                        const row = document.querySelector('tr.order-row[data-id="' + order.id + '"]');
+                        if (row) {
+                            (order.items || []).forEach(item => {
+                                row.querySelectorAll('.row-item').forEach(lineEl => {
+                                    const nameEl = lineEl.querySelector('.row-item-name');
+                                    if (!nameEl || nameEl.textContent !== item.name) return;
+
+                                    // Remove old chip and remove button
+                                    const oldChip = lineEl.querySelector('.owner-stock-chip');
+                                    if (oldChip) oldChip.remove();
+                                    const oldBtn = lineEl.querySelector('.btn-remove-item');
+                                    if (oldBtn) oldBtn.remove();
+
+                                    if (typeof item.available_stock === 'number' && item.available_stock < item.quantity) {
+                                        // Add chip
+                                        const chip = document.createElement('span');
+                                        chip.className = item.available_stock === 0
+                                            ? 'owner-stock-chip out'
+                                            : 'owner-stock-chip low';
+                                        chip.innerHTML = item.available_stock === 0
+                                            ? '<i class="fas fa-times-circle"></i> Out of stock'
+                                            : '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
+                                        lineEl.appendChild(chip);
+
+                                        // No per-item Remove — action button swaps to Reject
+                                    }
+                                });
+                            });
+                        }
+
+                        // Swap Accept ↔ Reject button live in the actions cell
+                        if (currentTab === 'request') {
+                            const existingBtn = document.getElementById('accept-btn-' + order.id)
+                                             || document.getElementById('reject-btn-' + order.id);
+                            if (existingBtn && existingBtn.parentElement) {
+                                const parent = existingBtn.parentElement;
+                                if (nowHasIssue && existingBtn.id === 'accept-btn-' + order.id) {
+                                    // Stock problem — replace Accept with Remove (no modal)
+                                    const rejBtn = document.createElement('button');
+                                    rejBtn.className = 'action-btn btn-reject';
+                                    rejBtn.id = 'reject-btn-' + order.id;
+                                    rejBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove';
+                                    rejBtn.onclick = function () { directRemoveOrder(order.id, rejBtn); };
+                                    parent.replaceChild(rejBtn, existingBtn);
+                                } else if (!nowHasIssue && existingBtn.id === 'reject-btn-' + order.id) {
+                                    // Stock restored — put Accept back
+                                    const accBtn = document.createElement('button');
+                                    accBtn.className = 'action-btn btn-move btn-accept';
+                                    accBtn.id = 'accept-btn-' + order.id;
+                                    accBtn.innerHTML = '<i class="fas fa-check"></i> Accept';
+                                    accBtn.onclick = function () { moveOrder(order.id); };
+                                    parent.replaceChild(accBtn, existingBtn);
+                                }
+                            }
+                        }
+
+                        order._hasStockIssue = nowHasIssue;
+                    });
                 }
+
+                // Always reload to keep counts and other tabs in sync
+                if (typeof loadOrders === 'function') loadOrders();
             } catch (_) {}
         };
         ws.onclose = function () { setTimeout(connect, 3000); };

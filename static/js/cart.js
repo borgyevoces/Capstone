@@ -379,6 +379,32 @@ function sendOrderRequest() {
         return;
     }
 
+    // ── Final stock check before submitting ────────────────────────────────
+    // Prevent sending if any checked item is out of stock or over-qty.
+    // (The button should already be disabled by _updateCheckoutButtonStockState,
+    // but this is a safety net in case the DOM state is inconsistent.)
+    let stockBlockMsg = '';
+    document.querySelectorAll('.item-checkbox:checked').forEach(function (chk) {
+        if (stockBlockMsg) return;
+        const itemId  = chk.getAttribute('data-item-id');
+        const cartRow = document.getElementById('cart-item-' + itemId);
+        if (!cartRow) return;
+        const maxStock   = parseInt(cartRow.dataset.maxStock || '999', 10);
+        const qtyEl      = cartRow.querySelector('.quantity-value');
+        const currentQty = qtyEl ? parseInt(qtyEl.textContent, 10) : 1;
+        const itemName   = (cartRow.querySelector('.item-name') || {}).textContent || 'An item';
+        if (maxStock <= 0) {
+            stockBlockMsg = `"${itemName.trim()}" is out of stock. Remove it or uncheck it before sending.`;
+        } else if (currentQty > maxStock) {
+            stockBlockMsg = `"${itemName.trim()}" only has ${maxStock} left. Please reduce the quantity.`;
+        }
+    });
+    if (stockBlockMsg) {
+        showMessage('⚠ ' + stockBlockMsg, 'error');
+        _updateCheckoutButtonStockState();
+        return;
+    }
+
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
@@ -735,81 +761,164 @@ function getCheckedItemIds() {
         updates.forEach(function ({ menu_item_id, new_quantity }) {
             const newQty = parseInt(new_quantity, 10);
 
-            // Find every cart item row that corresponds to this menu item
-            // The cart item row uses data-menu-item-id or we check data-item-id on the row
-            // and match against the hidden menu-item reference
-            document.querySelectorAll('.cart-item-row, [id^="cart-item-"]').forEach(function (row) {
-                const menuItemIdAttr = row.dataset.menuItemId || row.dataset.menuItemid;
-                const cartItemId     = row.id ? row.id.replace('cart-item-', '') : null;
+            // Match rows via data-menu-item-id (set in cart.html template).
+            // Fall back to the legacy id-based scan for older cached HTML.
+            document.querySelectorAll('[id^="cart-item-"]').forEach(function (row) {
+                const menuItemIdAttr = row.dataset.menuItemId
+                    ? parseInt(row.dataset.menuItemId, 10)
+                    : null;
 
-                // Try to find a match via data-menu-item-id, or by checking
-                // that the increase/decrease buttons reference a matching cart item
-                let matched = false;
-                if (menuItemIdAttr && parseInt(menuItemIdAttr) === menu_item_id) {
-                    matched = true;
-                }
+                // Only process rows that belong to this menu item
+                if (menuItemIdAttr !== null && menuItemIdAttr !== menu_item_id) return;
 
-                // Also update via the max-stock attribute on the row
-                const maxStockAttr = parseInt(row.dataset.maxStock || '999');
-                // Only flag rows where the stored stock matches this item
-                // (best we can do without menu_item_id on the row is to update all rows
-                //  that have this value as max — so we update the max-stock attribute)
+                const cartItemId = row.id.replace('cart-item-', '');
+                const increaseBtn = document.querySelector(`.btn-increase[data-item-id="${cartItemId}"]`);
+                const qtyEl       = document.querySelector(`.quantity-value[data-item-id="${cartItemId}"]`);
 
-                if (cartItemId) {
-                    const increaseBtn = document.querySelector(`.btn-increase[data-item-id="${cartItemId}"]`);
-                    const qtyEl       = document.querySelector(`.quantity-value[data-item-id="${cartItemId}"]`);
+                if (!increaseBtn || !qtyEl) return;
 
-                    if (increaseBtn && qtyEl) {
-                        // Update the max stock stored on the row
-                        row.dataset.maxStock = newQty;
+                // Update the max-stock attribute and the visible "N available" count
+                row.dataset.maxStock = newQty;
+                const stockCountEl = row.querySelector('.stock-count');
+                if (stockCountEl) stockCountEl.textContent = newQty;
 
-                        const currentCartQty = parseInt(qtyEl.textContent) || 1;
+                const currentCartQty = parseInt(qtyEl.textContent) || 1;
 
-                        if (newQty <= 0) {
-                            // Out of stock — disable increase and mark the row
-                            increaseBtn.disabled = true;
-                            increaseBtn.style.opacity = '0.4';
-                            row.style.opacity = '0.6';
-                            showCartStockWarning(row, 0);
-                        } else if (currentCartQty > newQty) {
-                            // Cart has more than available — clamp and warn
-                            increaseBtn.disabled = false;
-                            increaseBtn.style.opacity = '';
-                            row.style.opacity = '';
-                            updateQuantityRealTime(cartItemId, newQty);
-                            showCartStockWarning(row, newQty);
-                        } else {
-                            // Stock is fine — re-enable
-                            increaseBtn.disabled = false;
-                            increaseBtn.style.opacity = '';
-                            row.style.opacity = '';
-                            clearCartStockWarning(row);
-                        }
-                    }
+                if (newQty <= 0) {
+                    // Out of stock — disable increase, dim row
+                    increaseBtn.disabled = true;
+                    increaseBtn.style.opacity = '0.4';
+                    row.style.opacity = '0.6';
+                    showCartStockWarning(row, 0);
+                } else if (currentCartQty > newQty) {
+                    // Cart qty exceeds new stock — clamp and warn
+                    increaseBtn.disabled = false;
+                    increaseBtn.style.opacity = '';
+                    row.style.opacity = '';
+                    updateQuantityRealTime(cartItemId, newQty);
+                    showCartStockWarning(row, newQty);
+                } else {
+                    // Sufficient stock — clear any warning
+                    increaseBtn.disabled = newQty <= currentCartQty;
+                    increaseBtn.style.opacity = '';
+                    row.style.opacity = '';
+                    clearCartStockWarning(row);
                 }
             });
         });
     }
 
     function showCartStockWarning(row, availableQty) {
+        // Update or create the warning chip
         let warn = row.querySelector('.cart-stock-warn');
         if (!warn) {
             warn = document.createElement('div');
             warn.className = 'cart-stock-warn';
-            warn.style.cssText = 'color:#dc2626;font-size:11px;font-weight:600;margin-top:3px;';
-            const nameEl = row.querySelector('.item-name, .item-details, .cart-item-name');
-            if (nameEl) nameEl.after(warn);
+            warn.style.cssText = [
+                'display:inline-flex', 'align-items:center', 'gap:5px',
+                'font-size:11.5px', 'font-weight:700', 'padding:3px 9px',
+                'border-radius:6px', 'margin-top:5px',
+            ].join(';');
+            const detailsEl = row.querySelector('.item-details');
+            if (detailsEl) detailsEl.appendChild(warn);
             else row.appendChild(warn);
         }
-        warn.textContent = availableQty <= 0
-            ? '⚠ This item is now out of stock'
-            : `⚠ Only ${availableQty} left — qty adjusted`;
+        if (availableQty <= 0) {
+            warn.style.background = '#FEE2E2';
+            warn.style.color      = '#991B1B';
+            warn.style.border     = '1px solid #FECACA';
+            warn.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
+        } else {
+            warn.style.background = '#FEF3C7';
+            warn.style.color      = '#92400E';
+            warn.style.border     = '1px solid #FDE68A';
+            warn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${availableQty} left`;
+        }
+
+        // Turn the "N available" line red/amber so it's immediately obvious
+        const stockLine = row.querySelector('.item-stock');
+        if (stockLine) {
+            stockLine.style.color = availableQty <= 0 ? '#991B1B' : '#92400E';
+        }
+
+        // After any stock change, re-evaluate the checkout button state
+        _updateCheckoutButtonStockState();
     }
 
     function clearCartStockWarning(row) {
         const warn = row.querySelector('.cart-stock-warn');
         if (warn) warn.remove();
+
+        // Restore "N available" line to its original green colour
+        const stockLine = row.querySelector('.item-stock');
+        if (stockLine) stockLine.style.color = '';
+
+        // Re-evaluate checkout button — might be clearable now
+        _updateCheckoutButtonStockState();
     }
+
+    // ── Evaluate all checked items for stock issues ──────────────────────────
+    // Disables the Send Order Request button and shows a banner if any checked
+    // item is out of stock or has fewer units available than the cart quantity.
+    function _updateCheckoutButtonStockState() {
+        const btn = document.getElementById('initial-checkout-btn');
+        if (!btn) return;
+
+        // Only scan checked items
+        let hasIssue = false;
+        let issueMsg = '';
+
+        document.querySelectorAll('.item-checkbox:checked').forEach(function (chk) {
+            const itemId  = chk.getAttribute('data-item-id');
+            const cartRow = document.getElementById('cart-item-' + itemId);
+            if (!cartRow) return;
+            const maxStock      = parseInt(cartRow.dataset.maxStock || '999', 10);
+            const qtyEl         = cartRow.querySelector('.quantity-value');
+            const currentQty    = qtyEl ? parseInt(qtyEl.textContent, 10) : 1;
+            const itemName      = (cartRow.querySelector('.item-name') || {}).textContent || 'An item';
+
+            if (maxStock <= 0) {
+                hasIssue = true;
+                issueMsg = issueMsg || `"${itemName.trim()}" is out of stock — remove it or uncheck it to continue.`;
+            } else if (currentQty > maxStock) {
+                hasIssue = true;
+                issueMsg = issueMsg || `"${itemName.trim()}" only has ${maxStock} left — adjust the quantity.`;
+            }
+        });
+
+        // Update or create the global stock warning banner above the button
+        const footer = document.getElementById('summary-footer');
+        if (footer) {
+            let banner = document.getElementById('cart-global-stock-banner');
+            if (hasIssue) {
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'cart-global-stock-banner';
+                    banner.style.cssText = [
+                        'background:#FEF2F2', 'border:1.5px solid #FECACA',
+                        'border-radius:8px', 'padding:9px 13px', 'margin-bottom:10px',
+                        'font-size:12px', 'color:#7F1D1D', 'font-weight:600',
+                        'display:flex', 'align-items:flex-start', 'gap:7px',
+                    ].join(';');
+                    // Insert above the checkout button
+                    btn.before(banner);
+                }
+                banner.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-top:2px;flex-shrink:0;"></i><span>' + issueMsg + '</span>';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor  = 'not-allowed';
+                btn.title = 'Resolve stock issues before sending order';
+            } else {
+                if (banner) banner.remove();
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor  = '';
+                btn.title = '';
+            }
+        }
+    }
+    // Expose so cart.html inline code can call it after checkbox changes
+    window._updateCheckoutButtonStockState = _updateCheckoutButtonStockState;
 
     // Subscribe to all establishment cart boxes present on the page
     document.addEventListener('DOMContentLoaded', function () {

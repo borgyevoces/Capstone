@@ -381,6 +381,14 @@ class Order(models.Model):
     payment_confirmed_at = models.DateTimeField(null=True, blank=True)
     paymongo_checkout_id = models.CharField(max_length=100, blank=True, null=True)
 
+    # ✅ Idempotency guard — True once _deduct_stock_and_clear_cart has run for
+    # this order. Prevents double-deduction when multiple code paths (payment
+    # webhook + owner moving to 'preparing') could otherwise both call the helper.
+    stock_deducted = models.BooleanField(
+        default=False,
+        help_text="Set to True after menu-item quantities have been deducted for this order."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
