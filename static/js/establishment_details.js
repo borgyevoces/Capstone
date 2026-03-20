@@ -2,6 +2,9 @@
 // ESTABLISHMENT DETAILS JS - COMPLETE WITH BUY NOW PAYMONGO
 // =======================================================
 
+// Tracks how many of the open modal item are already in a pending order request
+let modalInRequest = 0;
+
 // Global helper to get CSRF token
 function getCookie(name) {
     let cookieValue = null;
@@ -189,6 +192,9 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 // =======================================================
 // ✅ MODAL BUY NOW — adds to cart then redirects to /cart/
 // =======================================================
+// =======================================================
+// ✅ BUY NOW — adds to cart then redirects to /cart/
+// =======================================================
 window.handleModalBuyNow = function(button) {
     console.log('⚡ Buy Now button clicked');
 
@@ -198,19 +204,19 @@ window.handleModalBuyNow = function(button) {
         return;
     }
 
-    const modalItemId = document.getElementById('modalItemId');
+    const modalItemId      = document.getElementById('modalItemId');
     const itemQuantityInput = document.getElementById('itemQuantity');
-    const modalItemTitle = document.getElementById('itemDetailModalTitle');
-    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+    const modalItemTitle   = document.getElementById('itemDetailModalTitle');
+    const maxQuantity      = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
 
     if (!modalItemId || !itemQuantityInput) {
         showMessage('Error: Unable to process purchase', 'error');
         return;
     }
 
-    const itemId = modalItemId.value;
+    const itemId   = modalItemId.value;
     const quantity = parseInt(itemQuantityInput.value) || 1;
-    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+    const itemName = modalItemTitle ? modalItemTitle.textContent.trim() : 'Item';
 
     if (quantity > maxQuantity) {
         showMessage(`Only ${maxQuantity} item(s) available in stock`, 'error');
@@ -221,17 +227,15 @@ window.handleModalBuyNow = function(button) {
         return;
     }
 
-    // Show loading
     const originalHTML = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
 
     const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
+    const formData  = new FormData();
     formData.append('menu_item_id', itemId);
     formData.append('quantity', quantity);
 
-    // Step 1: Add to cart
     fetch('/cart/add/', {
         method: 'POST',
         body: formData,
@@ -243,15 +247,16 @@ window.handleModalBuyNow = function(button) {
         return response.json();
     })
     .then(data => {
-        if (data.success) {
-            // Update cart badge
-            if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
-            showMessage(`${itemName} added! Redirecting to cart...`, 'success');
-            // Step 2: Redirect to cart page where payment buttons are shown
-            setTimeout(() => { window.location.href = '/cart/'; }, 800);
-        } else {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+
+        if (!data.success) {
             throw new Error(data.message || 'Failed to add item to cart');
         }
+
+        if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
+        showMessage(`${itemName} added! Redirecting to cart...`, 'success');
+        setTimeout(() => { window.location.href = '/cart/'; }, 800);
     })
     .catch(error => {
         console.error('❌ Buy Now error:', error);
@@ -327,7 +332,7 @@ window.handleModalAddToCart = function(button) {
     })
     .then(data => {
         if (data.success) {
-            // ✅ Go directly to cart — no toast, no delay
+            if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
             window.location.href = '/cart/';
         } else {
             showMessage(data.message || 'Failed to add item', 'error');
@@ -409,12 +414,9 @@ window.handleQuickAddToCart = function(button, event) {
                 'success',
                 {
                     text: '🛒 View Cart',
-                    onClick: () => {
-                        window.location.href = '/cart/';
-                    }
+                    onClick: () => { window.location.href = '/cart/'; }
                 }
             );
-
             if (typeof updateCartBadge === 'function') {
                 updateCartBadge(data.cart_count);
             }
@@ -516,6 +518,50 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         console.log('✅ Modal opened');
     }
 
+    // ── Reset request info banner ──────────────────────────────────
+    const reqInfo     = document.getElementById('modalRequestInfo');
+    const reqInfoText = document.getElementById('modalRequestInfoText');
+    if (reqInfo) reqInfo.style.display = 'none';
+
+    // ── Fetch existing request qty for this item ───────────────────
+    const estId = document.getElementById('modalEstablishmentId')
+                    ? document.getElementById('modalEstablishmentId').value
+                    : (typeof ESTABLISHMENT_ID !== 'undefined' ? ESTABLISHMENT_ID : null);
+
+    if (estId && typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
+        fetch(`/api/request-qtys/?establishment_id=${estId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const inRequest = data.qtys[String(itemId)] || 0;
+            modalInRequest = inRequest;
+            if (inRequest > 0 && reqInfo && reqInfoText) {
+                const remaining = itemQuantity - inRequest;
+                const maxInput = document.getElementById('modalMaxQuantity');
+                const qtyInput = document.getElementById('itemQuantity');
+                if (remaining <= 0) {
+                    reqInfoText.textContent =
+                        `You already have ${inRequest}x of this item in a pending order request (max stock reached).`;
+                    if (maxInput) maxInput.value = 0;
+                    if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
+                } else {
+                    reqInfoText.textContent =
+                        `You already have ${inRequest}x in a pending request — you can add up to ${remaining} more.`;
+                    if (maxInput) maxInput.value = remaining;
+                    if (qtyInput) {
+                        if (parseInt(qtyInput.value) > remaining) qtyInput.value = remaining;
+                        qtyInput.disabled = false;
+                    }
+                }
+                reqInfo.style.display = 'block';
+            }
+        })
+        .catch(() => { /* silent — non-critical */ });
+    }
+
     // Highlight the intended action button based on mode
     if (mode && addToCartBtn && buyNowBtn) {
         addToCartBtn.style.outline = '';
@@ -544,6 +590,15 @@ window.closeItemDetailModal = function() {
     if (quantityWarning) {
         quantityWarning.classList.remove('show');
     }
+
+    // Reset request info banner
+    const reqInfo = document.getElementById('modalRequestInfo');
+    if (reqInfo) reqInfo.style.display = 'none';
+
+    // Reset pending-request tracking so next modal open starts fresh
+    modalInRequest = 0;
+    const qtyInput = document.getElementById('itemQuantity');
+    if (qtyInput) qtyInput.disabled = false;
 };
 
 // Handle click outside modal box

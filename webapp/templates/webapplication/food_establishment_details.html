@@ -1758,6 +1758,11 @@
                 <div id="quantityWarning" class="quantity-warning">
                     ⚠ Maximum quantity reached
                 </div>
+                <!-- Existing request order info — shown when user already has a pending request -->
+                <div id="modalRequestInfo" style="display:none;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;color:#92400e;">
+                    <i class="fas fa-info-circle" style="color:#d97706;margin-right:6px;"></i>
+                    <span id="modalRequestInfoText"></span>
+                </div>
 
                 <!-- Actions -->
                 <div class="item-modal-actions">
@@ -1782,6 +1787,7 @@
             <!-- Hidden fields -->
             <input type="hidden" id="modalItemId" value="">
             <input type="hidden" id="modalMaxQuantity" value="0">
+            <input type="hidden" id="modalEstablishmentId" value="{{ establishment.id }}">
         </div>
     </div>
 

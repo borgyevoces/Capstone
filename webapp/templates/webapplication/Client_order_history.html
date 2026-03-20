@@ -2070,9 +2070,11 @@
                             if (!anyChange) return;
 
                             // Re-check if this order now has a stock problem
-                            const nowHasIssue = (order.items || []).some(function (i) {
+                            // Banner only shows when MORE THAN ONE item is out of stock
+                            const nowOutOfStockCount = (order.items || []).filter(function (i) {
                                 return typeof i.available_stock === 'number' && i.available_stock < i.quantity;
-                            });
+                            }).length;
+                            const nowHasIssue = nowOutOfStockCount > 1;
 
                             // Update the banner div in the DOM without full re-render
                             const banner = document.getElementById('stock-banner-' + order.id);
@@ -2235,9 +2237,10 @@
             }).join('');
 
         // Check if any item has insufficient stock (request + to_pay)
-        const hasStockIssue = isStockWarnOrder && (o.items || []).some(i =>
-            typeof i.available_stock === 'number' && i.available_stock < i.quantity
-        );
+        const outOfStockCount = isStockWarnOrder
+            ? (o.items || []).filter(i => typeof i.available_stock === 'number' && i.available_stock < i.quantity).length
+            : 0;
+        const hasStockIssue = outOfStockCount > 1;
         const stockBannerMsg = o.status === 'request'
             ? 'Some items ran out of stock — your order request may not be accepted. Consider cancelling and reordering.'
             : 'Some items ran out of stock — you may not be able to pay for this order. Contact the establishment or cancel and reorder.';
@@ -2572,6 +2575,11 @@
                     clearInterval(timerMap[orderId].id);
                     delete timerMap[orderId];
                 }
+                // ✅ Always clear from localStorage — prevents row from reappearing
+                // on refresh when the owner had previously cancelled (lsSaveCancelled)
+                // and the client now permanently dismisses it.
+                lsRemoveCancelled(orderId);
+
                 // Fade row out — server already restored stock + broadcasted WS
                 fadeOutRow(orderId, function () {
                     allOrders = allOrders.filter(function (o) { return o.id !== orderId; });

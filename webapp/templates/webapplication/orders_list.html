@@ -184,10 +184,12 @@
     }
 
     .action-btn {
-        padding: 6px 11px; border: none; border-radius: 7px;
-        font-weight: 600; font-size: 12px; cursor: pointer;
+        padding: 8px 16px; border: none; border-radius: 9px;
+        font-weight: 700; font-size: 13px; cursor: pointer;
         transition: all 0.2s ease; display: inline-flex;
-        align-items: center; gap: 4px; white-space: nowrap; text-decoration: none;
+        align-items: center; gap: 6px; white-space: nowrap;
+        text-decoration: none; min-width: 90px; justify-content: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
     }
 
     .awaiting-btn {
@@ -195,12 +197,23 @@
         border: 1px solid #e2e8f0; cursor: default; font-size: 11px;
     }
 
-    /* Reject button — appears after 8-min timer expires */
+    /* Reject button */
     .btn-reject {
-        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        background: #c0392b;
         color: white;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 700;
+        min-width: 120px;
+        border-radius: 10px;
+        box-shadow: none;
+        letter-spacing: 0.01em;
     }
-    .btn-reject:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); box-shadow: 0 2px 6px rgba(220,38,38,.3); }
+    .btn-reject:hover {
+        background: #a93226;
+        box-shadow: none;
+        transform: none;
+    }
 
     /* ── Owner to_pay — real-time stock warning ── */
     .owner-stock-chip {
@@ -251,17 +264,43 @@
         gap: 5px;
         background: #fff7ed;
         border: 1px solid #fed7aa;
-        color: #92400e;
-        font-size: 11px;
+        color: #c2410c;
+        font-size: 13px;
         font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
+        padding: 6px 12px;
+        border-radius: 8px;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
-    .owner-timer-chip.urgent  { background:#fee2e2; border-color:#fca5a5; color:#991b1b; animation: timerPulse 1s infinite; }
-    .owner-timer-chip.expired { background:#f3f4f6; border-color:#e5e7eb; color:#6b7280; }
+    .owner-timer-chip i { font-size: 12px; }
+    .owner-timer-chip.urgent  {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #b91c1c;
+        animation: timerPulse 1s infinite;
+    }
+    .owner-timer-chip.expired {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #9ca3af;
+    }
     @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+    .col-elapsed { text-align: center; vertical-align: middle; }
+    .elapsed-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+    .elapsed-chip i { font-size: 11px; color: #94a3b8; }
 
     .btn-view {
         background: #4a5568;
@@ -1400,9 +1439,19 @@
                     <td class="col-status">
                         <span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>
                     </td>
+                    ${currentTab !== 'completed' ? `<td class="col-elapsed">
+                        <span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
+                            <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
+                        </span>
+                    </td>` : ''}
                     <td class="col-actions">
                         ${currentTab === 'completed' ? `<button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button>` : ''}
-                        ${currentTab === 'to_pay' ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">${timerCellHtml}${actionBtn}</div>` : actionBtn}
+                        ${currentTab === 'to_pay'
+                            ? `<div style="display:flex;flex-direction:row;align-items:center;gap:10px;">
+                                   ${timerCellHtml}
+                                   ${actionBtn}
+                               </div>`
+                            : actionBtn}
                     </td>
                 </tr>
             `;
@@ -1419,6 +1468,7 @@
                         ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
+                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">Time</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -2027,6 +2077,28 @@
             minute: '2-digit'
         });
     }
+
+    function formatElapsed(dateString) {
+        const diffMs = Date.now() - new Date(dateString).getTime();
+        if (isNaN(diffMs) || diffMs < 0) return '—';
+        const mins  = Math.floor(diffMs / 60000);
+        const hours = Math.floor(mins / 60);
+        const days  = Math.floor(hours / 24);
+        if (days  >= 1) return `${days}d ${hours % 24}h`;
+        if (hours >= 1) return `${hours}h ${mins % 60}m`;
+        if (mins  >= 1) return `${mins}m`;
+        return 'just now';
+    }
+
+    // Tick all elapsed chips every 60 seconds
+    setInterval(function () {
+        document.querySelectorAll('.elapsed-chip[data-since]').forEach(function (chip) {
+            const icon = chip.querySelector('i');
+            chip.textContent = '';
+            if (icon) chip.appendChild(icon);
+            chip.appendChild(document.createTextNode(' ' + formatElapsed(chip.dataset.since)));
+        });
+    }, 60000);
 
     function esc(text) {
         const div = document.createElement('div');

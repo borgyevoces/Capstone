@@ -654,12 +654,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = e.target.closest('.btn-increase');
             const itemId = button.dataset.itemId;
             const cartItem = document.querySelector(`#cart-item-${itemId}`);
-            const maxStock = parseInt(cartItem.dataset.maxStock);
-            const quantityEl = cartItem.querySelector(`.quantity-value[data-item-id="${itemId}"]`);
-            const currentQty = parseInt(quantityEl.textContent);
+            // Use remaining-qty (accounts for existing request order) if available,
+            // otherwise fall back to max-stock
+            const remainingQty = parseInt(cartItem.dataset.remainingQty);
+            const maxStock     = parseInt(cartItem.dataset.maxStock);
+            const effectiveMax = !isNaN(remainingQty) ? remainingQty : maxStock;
+            const quantityEl   = cartItem.querySelector(`.quantity-value[data-item-id="${itemId}"]`);
+            const currentQty   = parseInt(quantityEl.textContent);
 
-            if (currentQty < maxStock) {
+            if (currentQty < effectiveMax) {
                 updateQuantityRealTime(itemId, currentQty + 1);
+            } else if (!isNaN(remainingQty) && remainingQty < maxStock) {
+                showMessage(
+                    `You already have ${maxStock - remainingQty} of this item in a pending order request. ` +
+                    `You can only add ${remainingQty} more.`,
+                    'warning'
+                );
             }
         }
     });

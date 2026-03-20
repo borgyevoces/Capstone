@@ -754,6 +754,11 @@
                         <button class="qb" onclick="chgQ(1)"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
+                <!-- Existing request order info -->
+                <div id="ksModalRequestInfo" style="display:none;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;color:#92400e;">
+                    <i class="fas fa-info-circle" style="color:#d97706;margin-right:6px;"></i>
+                    <span id="ksModalRequestInfoText"></span>
+                </div>
                 <div class="mar" id="modalActions">
                     {% if user.is_authenticated %}
                     <button class="macb" id="addToCartBtn" onclick="addToCartFromModal()">

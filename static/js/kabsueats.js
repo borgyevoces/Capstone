@@ -14,6 +14,7 @@ let esMapData = []; // real establishment data for map
 
 // ── MODAL STATE ──
 let currentModalItem = null;
+let currentModalInRequest = 0;   // qty already in a pending order for the modal item
 
 // ── SEARCH STATE ──
 let searchDebounceTimer = null;
@@ -1767,9 +1768,14 @@ function openMod(id) {
     // ✅ Enable/disable order buttons based on establishment status and stock
     applyModOrderState(st, d.quantity);
 
-    document.getElementById('mqty').value = 1;
+
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
+
+    // ── Reset request info banner ──────────────────────────────────
+    const ksInfo     = document.getElementById('ksModalRequestInfo');
+    const ksInfoText = document.getElementById('ksModalRequestInfoText');
+    if (ksInfo) ksInfo.style.display = 'none';
 
     // Fetch fresh status from backend
     fetch(URLS.bestsellers)
@@ -1788,6 +1794,39 @@ function openMod(id) {
             applyModOrderState(freshSt, currentModalItem ? currentModalItem.quantity : 0);
         })
         .catch(() => {});
+
+    // ── Fetch existing request qty for this item ───────────────────
+    if (IS_AUTHENTICATED && d.establishment && d.establishment.id) {
+        fetch(`/api/request-qtys/?establishment_id=${d.establishment.id}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const inRequest = data.qtys[String(d.id)] || 0;
+            currentModalInRequest = inRequest;
+            const qtyInput = document.getElementById('mqty');
+            if (inRequest > 0 && ksInfo && ksInfoText) {
+                const remaining = d.quantity - inRequest;
+                if (remaining <= 0) {
+                    ksInfoText.textContent =
+                        `You already have ${inRequest}x of this item in a pending order request (max stock reached).`;
+                    if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
+                } else {
+                    ksInfoText.textContent =
+                        `You already have ${inRequest}x in a pending request — you can add up to ${remaining} more.`;
+                    if (qtyInput) {
+                        qtyInput.max = remaining;
+                        if (parseInt(qtyInput.value) > remaining) qtyInput.value = remaining;
+                        qtyInput.disabled = false;
+                    }
+                }
+                ksInfo.style.display = 'block';
+            }
+        })
+        .catch(() => {});
+    }
 }
 
 // ✅ Helper: enable/disable Add to Cart & Buy Now buttons in the bestseller modal
@@ -1815,12 +1854,16 @@ function closeMod() {
     document.getElementById('bsMod').classList.remove('on');
     document.body.style.overflow = '';
     currentModalItem = null;
+    currentModalInRequest = 0;
+    const ksInfo = document.getElementById('ksModalRequestInfo');
+    if (ksInfo) ksInfo.style.display = 'none';
 }
 
 function chgQ(d) {
     const e = document.getElementById('mqty');
-    const max = currentModalItem ? currentModalItem.quantity : 99;
-    e.value = Math.max(1, Math.min(parseInt(e.value) + d, max));
+    const totalStock = currentModalItem ? currentModalItem.quantity : 99;
+    const effectiveMax = Math.max(0, totalStock - currentModalInRequest);
+    e.value = Math.max(1, Math.min(parseInt(e.value) + d, effectiveMax));
 }
 
 // ============================================
@@ -1841,12 +1884,13 @@ function addToCartFromModal() {
     })
     .then(r => r.json())
     .then(data => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
+
         if (data.success) {
-            // ✅ Always go directly to cart on success — no blocking, no toast
+            // Add to Cart always goes to cart — no exceeded check
             window.location.href = URLS.cart;
         } else {
             showToast(data.message || 'Could not add to cart.', 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
         }
     })
     .catch(() => {
@@ -1873,11 +1917,12 @@ function buyNowFromModal() {
     })
     .then(r => r.json())
     .then(data => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
+
         if (data.success) {
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
         }
     })
     .catch(() => {

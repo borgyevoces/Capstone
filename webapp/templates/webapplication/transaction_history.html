@@ -5,1741 +5,946 @@
 
 {% block extra_css %}
 <style>
-    /* ========================================
-       GLOBAL STYLES - scoped to avoid breaking navbar
-    ======================================== */
-    .page-container *,
-    .page-container *::before,
-    .page-container *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-    body {
-        background: white;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .th-wrap {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: #f8f9fb;
         min-height: 100vh;
+        padding: 28px 32px 48px;
+        color: #1a1d23;
     }
 
-    /* ========================================
-       NAVBAR FIX - ensure all navbar buttons are clickable
-    ======================================== */
-    .navbar {
-        z-index: 1100 !important;
-        position: fixed !important;
-    }
-
-    .notification-toggle-btn,
-    .chat-toggle-btn,
-    .navbar-btn,
-    .navbar-actions,
-    .navbar-dropdown {
-        pointer-events: auto !important;
-        z-index: 1101 !important;
-        position: relative !important;
-    }
-
-    /* ========================================
-       PAGE CONTAINER
-    ======================================== */
-    .page-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 24px;
-        margin-top: 20px;
-        position: relative;
-        z-index: 0;
-    }
-
-    /* ========================================
-       PAGE HEADER
-    ======================================== */
-    .page-header {
-        text-align: center;
-        padding: 12px 20px;
-        margin-bottom: 20px;
-    }
-
-    .header-top {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 4px;
-    }
-
-    .page-title-section {
+    /* ── Header ── */
+    .th-header {
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
     }
-
-    .title-icon {
-        font-size: 24px;
-        color: #2d3748;
+    .th-header h1 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1a1d23;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
+    .th-header h1 i { color: #b91c1c; font-size: 20px; }
+    .th-header-sub { font-size: 13px; color: #6b7280; font-weight: 400; margin-top: 2px; }
 
-    .page-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #2d3748;
-        margin: 0;
+    /* ── Period Tabs ── */
+    .period-tabs {
+        display: flex;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 4px;
+        gap: 2px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
-
-    .page-subtitle {
-        color: #718096;
+    .period-tab {
+        padding: 8px 20px;
+        border-radius: 9px;
+        border: none;
+        background: transparent;
+        font-family: 'Plus Jakarta Sans', sans-serif;
         font-size: 13px;
-        margin-top: 4px;
-        font-weight: 400;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all .18s;
     }
-
-    .header-actions {
-        display: none;
+    .period-tab.active {
+        background: #b91c1c;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(185,28,28,.25);
     }
+    .period-tab:hover:not(.active) { background: #f3f4f6; color: #374151; }
 
-    /* ========================================
-       STATISTICS CARDS
-    ======================================== */
+    /* ── Stats Grid ── */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
-        margin-bottom: 20px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
     }
-
     .stat-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 14px 16px;
-        border: 1px solid #e9ecef;
-        transition: all 0.2s ease;
-        position: relative;
-    }
-
-    .stat-card::before {
-        display: none;
-    }
-
-    .stat-card:hover {
-        border-color: #B71C1C;
-        box-shadow: 0 2px 8px rgba(183, 28, 28, 0.1);
-    }
-
-    .stat-card.revenue {
-        border-left: 3px solid #059669;
-    }
-
-    .stat-card.transactions {
-        border-left: 3px solid #3b82f6;
-    }
-
-    .stat-card.monthly {
-        border-left: 3px solid #f59e0b;
-    }
-
-    .stat-card.success-rate {
-        border-left: 3px solid #8b5cf6;
-    }
-
-    .stat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .stat-label {
-        font-size: 11px;
-        color: #868e96;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .stat-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: white;
-    }
-
-    .stat-card.revenue .stat-icon {
-        background: #059669;
-    }
-
-    .stat-card.transactions .stat-icon {
-        background: #3b82f6;
-    }
-
-    .stat-card.monthly .stat-icon {
-        background: #f59e0b;
-    }
-
-    .stat-card.success-rate .stat-icon {
-        background: #8b5cf6;
-    }
-
-    .stat-value {
-        font-size: 24px;
-        font-weight: 800;
-        color: #1a1a1a;
-        margin-bottom: 6px;
-        line-height: 1;
-    }
-
-    .stat-change {
-        font-size: 10px;
-        font-weight: 600;
-        padding: 3px 8px;
-        border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-    }
-
-    .stat-change.positive {
-        background: #d1fae5;
-        color: #059669;
-    }
-
-    .stat-change.neutral {
-        background: #e5e7eb;
-        color: #6b7280;
-    }
-
-    /* ========================================
-       TRANSACTIONS CONTENT
-    ======================================== */
-    .transactions-content {
-        background: white;
-        border-radius: 8px;
-        padding: 16px;
-        border: 1px solid #e9ecef;
-    }
-
-    .transactions-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .transactions-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #2d3748;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .transactions-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    /* ========================================
-       BUTTONS
-    ======================================== */
-    .btn {
-        padding: 7px 14px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
-        border: none;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .btn-primary {
-        background: #B71C1C;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #991515;
-    }
-
-    .btn-secondary {
-        background: white;
-        color: #495057;
-        border: 1px solid #dee2e6;
-    }
-
-    .btn-secondary:hover {
-        border-color: #B71C1C;
-        color: #B71C1C;
-    }
-
-    .btn-success {
-        background: #059669;
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: #047857;
-    }
-
-    .btn-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 1px solid #dee2e6;
-        background: white;
-        color: #495057;
-    }
-
-    .btn-icon:hover {
-        border-color: #B71C1C;
-        color: #B71C1C;
-    }
-
-    /* ========================================
-       FILTERS
-    ======================================== */
-    .transactions-filters {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 14px;
-        margin-bottom: 16px;
-        display: none;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-        border: 1px solid #e9ecef;
-    }
-
-    .transactions-filters.show {
-        display: grid;
-    }
-
-    .filter-group {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 20px 22px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+        transition: box-shadow .2s;
     }
-
-    .filter-group label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+    .stat-top {
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: space-between;
     }
-
-    .filter-group select,
-    .filter-group input {
-        padding: 12px 16px;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 14px;
-        outline: none;
-        transition: all 0.2s;
-        background: white;
-        font-weight: 500;
-    }
-
-    .filter-group select:focus,
-    .filter-group input:focus {
-        border-color: #B71C1C;
-        box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 12px;
-        align-items: flex-end;
-    }
-
-    /* ========================================
-       TABLE STYLES
-    ======================================== */
-    .table-container {
-        overflow-x: auto;
-        border-radius: 12px;
-        border: 1px solid #f3f4f6;
-    }
-
-    .transactions-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-    .transactions-table thead {
-        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-    }
-
-    .transactions-table th {
-        padding: 18px 16px;
-        text-align: left;
-        font-weight: 700;
-        color: #374151;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e5e7eb;
-        white-space: nowrap;
-    }
-
-    .transactions-table td {
-        padding: 20px 16px;
-        border-bottom: 1px solid #f3f4f6;
-        color: #1f2937;
-        vertical-align: middle;
-    }
-
-    .transactions-table tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    .transactions-table tbody tr:hover {
-        background: #f9fafb;
-        transform: scale(1.01);
-    }
-
-    /* ========================================
-       TABLE BADGES & LABELS
-    ======================================== */
-    .transaction-id {
-        font-family: 'Courier New', monospace;
-        font-weight: 700;
-        color: #B71C1C;
-        font-size: 15px;
-    }
-
-    .payment-method-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        border-radius: 20px;
+    .stat-label {
         font-size: 12px;
         font-weight: 700;
+        color: #9ca3af;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: .06em;
     }
-
-    .payment-method-badge.gcash {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        color: #059669;
-    }
-
-    .payment-method-badge.paymaya {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        color: #2563eb;
-    }
-
-    .payment-method-badge.cash {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #d97706;
-    }
-
-    .payment-method-badge.card {
-        background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
-        color: #7c3aed;
-    }
-
-    .payment-method-badge i {
-        font-size: 14px;
-    }
-
-    .transaction-status-badge {
-        display: inline-block;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .transaction-status-badge.completed {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        color: #059669;
-    }
-
-    .transaction-status-badge.pending {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #d97706;
-    }
-
-    .transaction-status-badge.failed,
-    .transaction-status-badge.cancelled {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        color: #dc2626;
-    }
-
-    .transaction-status-badge.processing {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        color: #2563eb;
-    }
-
-    .transaction-amount {
-        font-weight: 700;
-        color: #059669;
-        font-size: 16px;
-    }
-
-    .customer-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .customer-avatar {
+    .stat-icon {
         width: 36px;
         height: 36px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #B71C1C 0%, #c62828 100%);
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 14px;
+        font-size: 15px;
     }
-
-    .customer-name {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .transaction-date {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .date-text {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .time-text {
-        font-size: 12px;
-        color: #6b7280;
-    }
-
-    /* ========================================
-       ACTION BUTTONS IN TABLE
-    ======================================== */
-    .btn-details {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.3s ease;
-        border: none;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-    }
-
-    .btn-details:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-details i {
-        font-size: 14px;
-    }
-
-    /* ========================================
-       LOADING & EMPTY STATES
-    ======================================== */
-    .loading-state,
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        color: #6b7280;
-    }
-
-    .loading-state i {
-        font-size: 64px;
-        margin-bottom: 24px;
-        color: #B71C1C;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .empty-state i {
-        font-size: 80px;
-        color: #e5e7eb;
-        margin-bottom: 24px;
-    }
-
-    .empty-state h3 {
-        font-size: 28px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 12px;
-    }
-
-    .empty-state p {
-        font-size: 16px;
-        color: #6b7280;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    /* ========================================
-       MODAL STYLES
-    ======================================== */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(5px);
-        animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    .modal-content {
-        background: white;
-        margin: 5% auto;
-        padding: 0;
-        width: 90%;
-        max-width: 700px;
-        border-radius: 24px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        animation: slideUp 0.3s ease;
-        overflow: hidden;
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateY(50px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    .modal-header {
-        background: linear-gradient(135deg, #B71C1C 0%, #c62828 100%);
-        color: white;
-        padding: 32px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-header h2 {
-        font-size: 28px;
+    .stat-icon.red    { background: #fee2e2; color: #b91c1c; }
+    .stat-icon.orange { background: #ffedd5; color: #c2410c; }
+    .stat-icon.green  { background: #d1fae5; color: #047857; }
+    .stat-icon.blue   { background: #dbeafe; color: #1d4ed8; }
+    .stat-value {
+        font-size: 26px;
         font-weight: 800;
-        margin: 0;
+        color: #1a1d23;
+        line-height: 1;
+    }
+    .stat-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 20px;
+        width: fit-content;
+    }
+    .stat-badge.up   { background: #d1fae5; color: #047857; }
+    .stat-badge.down { background: #fee2e2; color: #b91c1c; }
+    .stat-badge.neutral { background: #f3f4f6; color: #6b7280; }
+
+    /* ── Charts Row ── */
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .chart-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 22px 24px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .chart-card-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-    }
-
-    .close-modal {
-        color: white;
-        font-size: 32px;
-        font-weight: 300;
-        cursor: pointer;
-        transition: all 0.2s;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .close-modal:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: rotate(90deg);
-    }
-
-    .modal-body {
-        padding: 32px;
-    }
-
-    .detail-row {
-        display: flex;
         justify-content: space-between;
-        align-items: center;
-        padding: 16px 0;
-        border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 18px;
     }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        font-weight: 600;
-        color: #6b7280;
+    .chart-card-title {
         font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .detail-value {
-        font-weight: 600;
-        color: #1f2937;
-        font-size: 16px;
-        text-align: right;
-    }
-
-    .order-items-section {
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 2px dashed #e5e7eb;
-    }
-
-    .order-items-title {
-        font-size: 18px;
         font-weight: 700;
-        color: #1a1a1a;
-        margin-bottom: 16px;
+        color: #1a1d23;
+    }
+    .chart-card-sub {
+        font-size: 11px;
+        color: #9ca3af;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* Top items list */
+    .top-items-list { display: flex; flex-direction: column; gap: 10px; }
+    .top-item-row {
         display: flex;
         align-items: center;
         gap: 10px;
     }
-
-    .order-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background: #f9fafb;
-        border-radius: 10px;
-        margin-bottom: 10px;
-    }
-
-    .order-item span:first-child {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .order-item span:last-child {
+    .top-item-rank {
+        width: 22px;
+        height: 22px;
+        background: #f3f4f6;
+        border-radius: 6px;
+        font-size: 11px;
         font-weight: 700;
-        color: #059669;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
+    .top-item-rank.gold   { background: #fef9c3; color: #a16207; }
+    .top-item-rank.silver { background: #f1f5f9; color: #475569; }
+    .top-item-rank.bronze { background: #ffedd5; color: #c2410c; }
+    .top-item-info { flex: 1; min-width: 0; }
+    .top-item-name { font-size: 13px; font-weight: 600; color: #1a1d23; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-item-count { font-size: 11px; color: #9ca3af; }
+    .top-item-bar-wrap { width: 70px; height: 6px; background: #f3f4f6; border-radius: 3px; overflow: hidden; }
+    .top-item-bar { height: 100%; background: #b91c1c; border-radius: 3px; transition: width .4s; }
+    .top-item-amount { font-size: 13px; font-weight: 700; color: #1a1d23; flex-shrink: 0; }
 
-    /* ========================================
-       RESPONSIVE DESIGN
-    ======================================== */
-    @media (max-width: 1024px) {
-        .page-title { font-size: 22px; }
-        .stat-value  { font-size: 28px; }
+    /* ── Transactions Table Section ── */
+    .txn-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+        overflow: hidden;
     }
-
-    /* ==========================================
-       PHONE VIEW (max-width: 768px)
-       ========================================== */
-    @media (max-width: 768px) {
-
-        /* --- Layout --- */
-        .page-container {
-            padding: 0 12px 32px;
-            margin-top: 12px;
-        }
-
-        /* --- Header --- */
-        .page-header {
-            padding: 12px 4px 16px;
-            margin-bottom: 14px;
-        }
-
-        .page-title-section {
-            gap: 10px;
-        }
-
-        .title-icon {
-            font-size: 20px;
-        }
-
-        .page-title {
-            font-size: 18px;
-        }
-
-        .page-subtitle {
-            font-size: 12px;
-        }
-
-        /* --- Stats: single column on phone --- */
-        .stats-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-
-        .stat-card {
-            padding: 8px 10px 6px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        /* Reflow: icon top-right, label top-left */
-        .stat-header {
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .stat-label {
-            font-size: 9px;
-            letter-spacing: 0.2px;
-            line-height: 1.3;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #868e96;
-            flex: 1;
-            padding-right: 6px;
-        }
-
-        .stat-icon {
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
-            font-size: 14px;
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-
-        .stat-value {
-            font-size: 16px;
-            font-weight: 800;
-            margin-bottom: 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.1;
-        }
-
-        .stat-change {
-            font-size: 8px;
-            padding: 1px 5px;
-            align-self: flex-start;
-        }
-
-        /* --- Transactions content box --- */
-        .transactions-content {
-            padding: 12px;
-            border-radius: 10px;
-        }
-
-        /* --- Header row: title + action buttons --- */
-        .transactions-header {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .transactions-title {
-            font-size: 15px;
-        }
-
-        .transactions-actions {
-            display: flex;
-            flex-direction: row;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .transactions-actions .btn {
-            flex: 1;
-            justify-content: center;
-            padding: 8px 10px;
-            font-size: 12px;
-            width: auto;
-        }
-
-        /* --- Filters: single column, compact --- */
-        .transactions-filters {
-            grid-template-columns: 1fr;
-            gap: 10px;
-            padding: 12px;
-        }
-
-        .filter-group label {
-            font-size: 12px;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 9px 12px;
-            font-size: 13px;
-            border-radius: 8px;
-        }
-
-        .filter-actions {
-            flex-direction: row;
-            gap: 8px;
-        }
-
-        .filter-actions .btn {
-            flex: 1;
-            justify-content: center;
-        }
-
-        /* --- TABLE → CARD LIST on mobile --- */
-        /* Hide the table entirely */
-        .table-container {
-            display: none !important;
-        }
-
-        /* Show mobile cards instead */
-        .mobile-transaction-list {
-            display: flex !important;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* --- Each transaction as a card --- */
-        .txn-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 14px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-
-        .txn-card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .txn-card-left { display: flex; flex-direction: column; gap: 4px; }
-
-        .txn-card-id {
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-            color: #B71C1C;
-            font-size: 15px;
-        }
-
-        .txn-card-date {
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        .txn-card-amount {
-            font-size: 18px;
-            font-weight: 800;
-            color: #059669;
-        }
-
-        .txn-card-middle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .txn-card-customer {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .txn-card-customer .customer-avatar {
-            width: 30px;
-            height: 30px;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-
-        .txn-card-customer .customer-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1f2937;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 140px;
-        }
-
-        .txn-card-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .txn-card-badges {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .txn-card-badges .payment-method-badge,
-        .txn-card-badges .transaction-status-badge {
-            font-size: 10px;
-            padding: 4px 8px;
-        }
-
-        .txn-card-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            padding: 7px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            flex-shrink: 0;
-        }
-
-        /* --- Loading / empty states compact --- */
-        .loading-state,
-        .empty-state {
-            padding: 40px 16px;
-        }
-
-        .loading-state i { font-size: 40px; margin-bottom: 14px; }
-        .empty-state i   { font-size: 48px; margin-bottom: 14px; }
-        .empty-state h3  { font-size: 18px; }
-        .empty-state p   { font-size: 13px; }
-
-        /* --- Modal: bottom sheet --- */
-        .modal {
-            align-items: flex-end !important;
-            flex-direction: column !important;
-            justify-content: flex-end !important;
-        }
-
-        .modal[style*="block"] {
-            display: flex !important;
-        }
-
-        .modal-content {
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            border-radius: 20px 20px 0 0;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: sheetUp 0.28s ease;
-        }
-
-        @keyframes sheetUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
-        }
-
-        .modal-header {
-            padding: 20px;
-            border-radius: 20px 20px 0 0;
-        }
-
-        .modal-header h2 {
-            font-size: 18px;
-        }
-
-        .modal-body {
-            padding: 16px 20px 28px;
-        }
-
-        .detail-row {
-            padding: 12px 0;
-        }
-
-        .detail-label {
-            font-size: 12px;
-        }
-
-        .detail-value {
-            font-size: 14px;
-        }
-
-        .order-items-title {
-            font-size: 15px;
-        }
-
-        .order-item {
-            padding: 10px 12px;
-            font-size: 13px;
-        }
+    .txn-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        flex-wrap: wrap;
+        gap: 10px;
     }
-
-    /* Extra small phones */
-    @media (max-width: 380px) {
-        .stats-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .stat-value {
-            font-size: 16px;
-        }
-
-        .txn-card-amount {
-            font-size: 15px;
-        }
-
-        .txn-card-customer .customer-name {
-            max-width: 100px;
-        }
+    .txn-section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a1d23;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
+    .txn-section-title i { color: #b91c1c; }
+    .txn-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .txn-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+        background: #fff;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all .15s;
+    }
+    .txn-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+    .txn-btn.primary { background: #b91c1c; color: #fff; border-color: #b91c1c; }
+    .txn-btn.primary:hover { background: #991b1b; border-color: #991b1b; }
 
-    /* Hide mobile cards on desktop */
-    .mobile-transaction-list {
+    /* Filter bar */
+    .filter-bar {
         display: none;
+        padding: 14px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+    .filter-bar.show { display: flex; }
+    .filter-field { display: flex; flex-direction: column; gap: 4px; }
+    .filter-field label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; }
+    .filter-field select,
+    .filter-field input {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: #fff;
+        color: #374151;
+        outline: none;
+        min-width: 130px;
+    }
+    .filter-field select:focus,
+    .filter-field input:focus { border-color: #b91c1c; }
+
+    /* Table */
+    .txn-table-wrap { overflow-x: auto; }
+    .txn-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .txn-table thead tr {
+        background: #fafafa;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .txn-table th {
+        padding: 11px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .txn-table td {
+        padding: 13px 16px;
+        border-bottom: 1px solid #f9fafb;
+        vertical-align: middle;
+        color: #374151;
+    }
+    .txn-table tbody tr:hover { background: #fafafa; }
+    .txn-table tbody tr:last-child td { border-bottom: none; }
+
+    .order-id-badge {
+        font-weight: 700;
+        color: #b91c1c;
+        font-size: 13px;
+    }
+    .date-col { display: flex; flex-direction: column; gap: 1px; }
+    .date-col .d { font-weight: 600; color: #1a1d23; }
+    .date-col .t { font-size: 11px; color: #9ca3af; }
+
+    .pay-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .pay-badge.gcash   { background: #dbeafe; color: #1d4ed8; }
+    .pay-badge.cash    { background: #d1fae5; color: #047857; }
+    .pay-badge.card    { background: #ede9fe; color: #6d28d9; }
+    .pay-badge.paymaya { background: #fce7f3; color: #9d174d; }
+
+    .cust-cell { display: flex; align-items: center; gap: 8px; }
+    .cust-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b7280;
+        flex-shrink: 0;
+    }
+    .cust-name { font-weight: 600; color: #1a1d23; font-size: 13px; }
+
+    .amount-cell { font-weight: 700; color: #1a1d23; }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .status-badge.completed { background: #d1fae5; color: #047857; }
+    .status-badge.pending   { background: #fef9c3; color: #a16207; }
+    .status-badge.failed    { background: #fee2e2; color: #b91c1c; }
+    .status-badge.refunded  { background: #ede9fe; color: #6d28d9; }
+
+    .view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        border: 1px solid #e5e7eb;
+        border-radius: 7px;
+        background: #fff;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all .15s;
+        white-space: nowrap;
+    }
+    .view-btn:hover { background: #f3f4f6; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 56px 24px;
+        color: #9ca3af;
+    }
+    .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; }
+    .empty-state h3 { font-size: 16px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; }
+
+    /* Loading */
+    .loading-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #9ca3af;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .spin { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Modal ── */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: #fff;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        overflow: hidden;
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .modal-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #1a1d23;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-title i { color: #b91c1c; }
+    .modal-close {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: none;
+        background: #f3f4f6;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #6b7280;
+        transition: background .15s;
+    }
+    .modal-close:hover { background: #e5e7eb; }
+    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; }
+    .detail-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .detail-label { font-size: 12px; color: #9ca3af; font-weight: 600; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+    .detail-value { font-size: 13px; font-weight: 600; color: #1a1d23; text-align: right; }
+    .detail-divider { height: 1px; background: #f3f4f6; }
+    .order-items-section { background: #fafafa; border-radius: 10px; padding: 14px; }
+    .order-items-title { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .order-item { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid #e5e7eb; color: #374151; }
+    .order-item:last-child { border-bottom: none; }
+    .modal-amount { font-size: 26px; font-weight: 800; color: #047857; text-align: center; padding: 10px 0; }
+
+    @media (max-width: 900px) {
+        .th-wrap { padding: 16px 16px 40px; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .charts-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .period-tabs { gap: 0; }
+        .period-tab { padding: 7px 12px; font-size: 12px; }
+        .th-header { flex-direction: column; align-items: flex-start; }
+        .stat-value { font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block main_content %}
-<main class="main-content">
-<div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-top">
-            <div class="page-title-section">
-                <div class="title-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                </div>
-                <div>
-                    <h1 class="page-title">Transaction History</h1>
-                    <p class="page-subtitle">Manage and track all your payment transactions</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <a href="{% url 'food_establishment_dashboard' %}" class="btn btn-primary">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
-                <button class="btn btn-success" onclick="loadTransactions()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
+<div class="th-wrap">
+
+    <!-- Header -->
+    <div class="th-header">
+        <div>
+            <h1><i class="fas fa-chart-line"></i> Transaction History</h1>
+            <div class="th-header-sub">Track all payments and revenue for {{ establishment.name }}</div>
+        </div>
+        <div class="period-tabs">
+            <button class="period-tab active" onclick="setPeriod('daily', this)">Daily</button>
+            <button class="period-tab" onclick="setPeriod('weekly', this)">Weekly</button>
+            <button class="period-tab" onclick="setPeriod('monthly', this)">Monthly</button>
+            <button class="period-tab" onclick="setPeriod('yearly', this)">Yearly</button>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- Stats Grid -->
     <div class="stats-grid">
-        <div class="stat-card revenue">
-            <div class="stat-header">
-                <span class="stat-label">Total Revenue</span>
-                <div class="stat-icon">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Revenue</span>
+                <div class="stat-icon red"><i class="fas fa-peso-sign"></i></div>
             </div>
-            <div class="stat-value" id="totalRevenue">₱0.00</div>
-            <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> All time
-            </span>
+            <div class="stat-value" id="st-revenue">₱0.00</div>
+            <div class="stat-badge neutral" id="st-revenue-sub">This period</div>
         </div>
-
-        <div class="stat-card transactions">
-            <div class="stat-header">
-                <span class="stat-label">Total Transactions</span>
-                <div class="stat-icon">
-                    <i class="fas fa-receipt"></i>
-                </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Orders</span>
+                <div class="stat-icon orange"><i class="fas fa-receipt"></i></div>
             </div>
-            <div class="stat-value" id="totalTransactions">0</div>
-            <span class="stat-change neutral">
-                <i class="fas fa-chart-line"></i> All time
-            </span>
+            <div class="stat-value" id="st-orders">0</div>
+            <div class="stat-badge neutral" id="st-orders-sub">Completed</div>
         </div>
-
-        <div class="stat-card monthly">
-            <div class="stat-header">
-                <span class="stat-label">This Month</span>
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Items Sold</span>
+                <div class="stat-icon green"><i class="fas fa-box"></i></div>
             </div>
-            <div class="stat-value" id="monthlyRevenue">₱0.00</div>
-            <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> Current
-            </span>
+            <div class="stat-value" id="st-items">0</div>
+            <div class="stat-badge neutral" id="st-items-sub">Units</div>
         </div>
-
-        <div class="stat-card success-rate">
-            <div class="stat-header">
-                <span class="stat-label">Success Rate</span>
-                <div class="stat-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+        <div class="stat-card">
+            <div class="stat-top">
+                <span class="stat-label">Avg Order</span>
+                <div class="stat-icon blue"><i class="fas fa-chart-bar"></i></div>
             </div>
-            <div class="stat-value" id="successRate">0%</div>
-            <span class="stat-change positive">
-                <i class="fas fa-thumbs-up"></i> Rate
-            </span>
+            <div class="stat-value" id="st-avg">₱0.00</div>
+            <div class="stat-badge neutral" id="st-avg-sub">Per transaction</div>
         </div>
     </div>
 
-    <!-- Transactions Content -->
-    <div class="transactions-content">
-        <div class="transactions-header">
-            <h2 class="transactions-title">
-                <i class="fas fa-list"></i>
-                All Transactions
-            </h2>
-            <div class="transactions-actions">
-                <button class="btn btn-secondary" onclick="toggleFilters()">
-                    <i class="fas fa-filter"></i> Filters
-                </button>
-                <button class="btn btn-secondary" onclick="exportTransactions()">
-                    <i class="fas fa-download"></i> Export CSV
-                </button>
+    <!-- Charts -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title" id="chart-title">Hourly Revenue</div>
+                    <div class="chart-card-sub" id="chart-sub">Today's performance</div>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <div class="chart-card-title">Top Items</div>
+                    <div class="chart-card-sub">Best sellers this period</div>
+                </div>
+            </div>
+            <div class="top-items-list" id="top-items-list">
+                <div class="empty-state" style="padding:20px 0;"><i class="fas fa-box-open" style="font-size:28px;margin-bottom:8px;"></i><p>No data yet</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="txn-section">
+        <div class="txn-section-header">
+            <div class="txn-section-title">
+                <i class="fas fa-list-ul"></i>
+                Transactions
+                <span id="txn-count-badge" style="background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;"></span>
+            </div>
+            <div class="txn-actions">
+                <button class="txn-btn" onclick="toggleFilters()"><i class="fas fa-sliders-h"></i> Filter</button>
+                <button class="txn-btn" onclick="exportTransactions()"><i class="fas fa-download"></i> Export CSV</button>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="transactions-filters" id="transactionsFilters">
-            <div class="filter-group">
-                <label>
-                    <i class="fas fa-credit-card"></i> Payment Method
-                </label>
+        <!-- Filter Bar -->
+        <div class="filter-bar" id="filterBar">
+            <div class="filter-field">
+                <label>Payment</label>
                 <select id="paymentMethodFilter" onchange="applyFilters()">
                     <option value="all">All Methods</option>
                     <option value="gcash">GCash</option>
-                    <option value="paymaya">PayMaya</option>
                     <option value="cash">Cash</option>
-                    <option value="card">Credit/Debit Card</option>
+                    <option value="card">Card</option>
+                    <option value="paymaya">PayMaya</option>
                 </select>
             </div>
-
-            <div class="filter-group">
-                <label>
-                    <i class="fas fa-check-circle"></i> Status
-                </label>
+            <div class="filter-field">
+                <label>Status</label>
                 <select id="statusFilter" onchange="applyFilters()">
                     <option value="all">All Statuses</option>
                     <option value="completed">Completed</option>
                     <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
                     <option value="failed">Failed</option>
-                    <option value="cancelled">Cancelled</option>
                 </select>
             </div>
-
-            <div class="filter-group">
-                <label>
-                    <i class="fas fa-calendar-day"></i> From Date
-                </label>
+            <div class="filter-field">
+                <label>From</label>
                 <input type="date" id="dateFromFilter" onchange="applyFilters()">
             </div>
-
-            <div class="filter-group">
-                <label>
-                    <i class="fas fa-calendar-day"></i> To Date
-                </label>
+            <div class="filter-field">
+                <label>To</label>
                 <input type="date" id="dateToFilter" onchange="applyFilters()">
             </div>
-
-            <div class="filter-actions">
-                <button class="btn btn-primary" onclick="applyFilters()">
-                    <i class="fas fa-search"></i> Apply
-                </button>
-                <button class="btn btn-secondary" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Clear
-                </button>
+            <div class="filter-field" style="flex-direction:row;align-items:flex-end;gap:6px;">
+                <button class="txn-btn" onclick="clearFilters()"><i class="fas fa-times"></i> Clear</button>
             </div>
         </div>
 
-        <!-- Transactions List -->
-        <div id="transactionsListContainer">
+        <!-- Table Container -->
+        <div id="txnContainer">
             <div class="loading-state">
-                <i class="fas fa-spinner"></i>
-                <h3>Loading Transactions...</h3>
-                <p>Please wait while we fetch your transaction data.</p>
+                <i class="fas fa-circle-notch spin"></i> Loading transactions…
             </div>
         </div>
     </div>
 </div>
 
-<!-- Transaction Details Modal -->
-<div id="transactionModal" class="modal">
-    <div class="modal-content">
+<!-- Transaction Detail Modal -->
+<div class="modal-overlay" id="txnModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
         <div class="modal-header">
-            <h2>
-                <i class="fas fa-file-invoice"></i>
-                Transaction Details
-            </h2>
-            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-title"><i class="fas fa-receipt"></i> Transaction Details</div>
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Dynamic content will be loaded here -->
-        </div>
+        <div class="modal-body" id="modalBody"></div>
     </div>
 </div>
-</main>
-{% endblock %}
 
-{% block extra_scripts %}
-{{ block.super }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-// Global variable to store all transactions
+'use strict';
+
 let allTransactions = [];
+let filteredTransactions = [];
+let currentPeriod = 'daily';
+let revenueChart = null;
 
-// Load transactions on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadTransactions();
-});
+// ─── Period helpers ───────────────────────────────────────────
+const periodConfig = {
+    daily:   { chartTitle: 'Hourly Revenue',  chartSub: "Today's performance",    groupFn: hourLabel,   labels: hourLabels() },
+    weekly:  { chartTitle: 'Daily Revenue',   chartSub: 'Last 7 days',            groupFn: weekDayKey,  labels: weekDayLabels()  },
+    monthly: { chartTitle: 'Daily Revenue',   chartSub: 'This month',             groupFn: dayOfMonth,  labels: monthDayLabels() },
+    yearly:  { chartTitle: 'Monthly Revenue', chartSub: 'This year',              groupFn: monthLabel,  labels: monthLabels() },
+};
 
-/**
- * Load transactions from the API
- */
+// Use payment_confirmed_at when available (actual revenue date), fall back to created_at
+function txnDate(t) {
+    return new Date(t.payment_confirmed_at || t.created_at);
+}
+
+function hourLabels() {
+    return Array.from({length: 24}, (_, i) => String(i).padStart(2,'0')+':00');
+}
+// Returns last 7 dates as 'MM/DD' keys, oldest first
+function weekDayLabels() {
+    return Array.from({length:7}, (_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - 6 + i); d.setHours(0,0,0,0);
+        return (d.getMonth()+1) + '/' + d.getDate();
+    });
+}
+function monthDayLabels() {
+    const d = new Date(); const n = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    return Array.from({length:n},(_,i)=>String(i+1));
+}
+function monthLabels() {
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+}
+
+function hourLabel(t)    { return String(txnDate(t).getHours()).padStart(2,'0')+':00'; }
+function weekDayKey(t)   { const d = txnDate(t); return (d.getMonth()+1) + '/' + d.getDate(); }
+function dayOfMonth(t)   { return String(txnDate(t).getDate()); }
+function monthLabel(t)   { return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][txnDate(t).getMonth()]; }
+
+function filterByPeriod(txns, period) {
+    const now = new Date();
+    return txns.filter(t => {
+        const d = txnDate(t);
+        if (period === 'daily')   return d.toDateString() === now.toDateString();
+        if (period === 'weekly') {
+            const wk = new Date(now); wk.setDate(now.getDate()-6); wk.setHours(0,0,0,0);
+            return d >= wk;
+        }
+        if (period === 'monthly') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        if (period === 'yearly')  return d.getFullYear() === now.getFullYear();
+        return true;
+    });
+}
+
+// ─── Load transactions ────────────────────────────────────────
 function loadTransactions() {
-    document.getElementById('transactionsListContainer').innerHTML = `
-        <div class="loading-state">
-            <i class="fas fa-spinner"></i>
-            <h3>Loading Transactions...</h3>
-            <p>Please wait while we fetch your transaction data.</p>
-        </div>
-    `;
-
     fetch('{% url "get_establishment_transactions" %}')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch transactions');
-            }
-            return response.json();
-        })
+        .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
         .then(data => {
             if (data.success) {
                 allTransactions = data.transactions || [];
-                updateStatistics(data.statistics || {});
-                displayTransactions(allTransactions);
-            } else {
-                throw new Error(data.message || 'Failed to load transactions');
-            }
+                refreshView();
+            } else throw new Error(data.message || 'Failed');
         })
-        .catch(error => {
-            console.error('Error loading transactions:', error);
-            document.getElementById('transactionsListContainer').innerHTML = `
+        .catch(err => {
+            document.getElementById('txnContainer').innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-exclamation-circle"></i>
-                    <h3>Error Loading Transactions</h3>
-                    <p>${error.message || 'There was a problem loading your transactions. Please try again.'}</p>
-                    <button class="btn btn-success" onclick="loadTransactions()" style="margin-top: 20px;">
+                    <h3>Could Not Load Transactions</h3>
+                    <p>${err.message}</p>
+                    <button class="txn-btn primary" onclick="loadTransactions()" style="margin-top:16px;">
                         <i class="fas fa-sync-alt"></i> Retry
                     </button>
-                </div>
-            `;
+                </div>`;
         });
 }
 
-/**
- * Update statistics cards with data
- */
-function updateStatistics(stats) {
-    document.getElementById('totalRevenue').textContent =
-        '₱' + parseFloat(stats.total_revenue || 0).toLocaleString('en-PH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-
-    document.getElementById('totalTransactions').textContent = stats.total_transactions || 0;
-
-    document.getElementById('monthlyRevenue').textContent =
-        '₱' + parseFloat(stats.monthly_revenue || 0).toLocaleString('en-PH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-
-    document.getElementById('successRate').textContent = (stats.success_rate || 0) + '%';
+// ─── Period tab switch ────────────────────────────────────────
+function setPeriod(period, btn) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    refreshView();
 }
 
-/**
- * Display transactions in the table
- */
-function displayTransactions(transactions) {
-    const container = document.getElementById('transactionsListContainer');
+// ─── Refresh everything for current period ────────────────────
+function refreshView() {
+    const periodTxns = filterByPeriod(allTransactions, currentPeriod);
+    filteredTransactions = applyLocalFilters(periodTxns);
 
-    if (!transactions || transactions.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-receipt"></i>
-                <h3>No Transactions Yet</h3>
-                <p>Your payment transactions will appear here once customers complete their orders.</p>
-            </div>
-        `;
+    updateStats(periodTxns);
+    updateChart(periodTxns);
+    updateTopItems(periodTxns);
+    renderTable(filteredTransactions);
+}
+
+// ─── Stats ────────────────────────────────────────────────────
+function fmt(n) {
+    return '₱' + parseFloat(n||0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function updateStats(txns) {
+    const revenue = txns.reduce((s, t) => s + parseFloat(t.amount||0), 0);
+    const orders  = txns.length;
+    const items   = txns.reduce((s, t) => s + (t.items||[]).reduce((ss, i) => ss + (i.quantity||1), 0), 0);
+    const avg     = orders > 0 ? revenue / orders : 0;
+
+    const periodLabel = {daily:'Today', weekly:'This week', monthly:'This month', yearly:'This year'}[currentPeriod];
+
+    document.getElementById('st-revenue').textContent = fmt(revenue);
+    document.getElementById('st-orders').textContent  = orders;
+    document.getElementById('st-items').textContent   = items;
+    document.getElementById('st-avg').textContent     = fmt(avg);
+
+    ['st-revenue-sub','st-orders-sub','st-items-sub','st-avg-sub'].forEach(id => {
+        document.getElementById(id).textContent = periodLabel;
+        document.getElementById(id).className = 'stat-badge neutral';
+    });
+}
+
+// ─── Chart ───────────────────────────────────────────────────
+function updateChart(txns) {
+    const cfg = periodConfig[currentPeriod];
+    document.getElementById('chart-title').textContent = cfg.chartTitle;
+    document.getElementById('chart-sub').textContent   = cfg.chartSub;
+
+    // Group revenue by bucket
+    const map = {};
+    cfg.labels.forEach(l => { map[l] = 0; });
+    txns.forEach(t => {
+        const key = cfg.groupFn(t);
+        if (map[key] !== undefined) map[key] += parseFloat(t.amount||0);
+    });
+    const values = cfg.labels.map(l => map[l]);
+
+    if (revenueChart) revenueChart.destroy();
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 200);
+    grad.addColorStop(0, 'rgba(185,28,28,.18)');
+    grad.addColorStop(1, 'rgba(185,28,28,0)');
+
+    revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: cfg.labels,
+            datasets: [{
+                data: values,
+                borderColor: '#b91c1c',
+                borderWidth: 2.5,
+                backgroundColor: grad,
+                fill: true,
+                tension: 0.42,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#b91c1c',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: {
+                callbacks: { label: ctx => ' ₱' + ctx.parsed.y.toLocaleString('en-PH', {minimumFractionDigits:2}) }
+            }},
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9ca3af', maxTicksLimit: 8 } },
+                y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 }, color: '#9ca3af',
+                    callback: v => '₱' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v)
+                }, beginAtZero: true }
+            },
+            interaction: { intersect: false, mode: 'index' }
+        }
+    });
+}
+
+// ─── Top items ────────────────────────────────────────────────
+function updateTopItems(txns) {
+    const map = {};
+    txns.forEach(t => {
+        (t.items||[]).forEach(i => {
+            if (!map[i.name]) map[i.name] = { qty: 0, rev: 0 };
+            map[i.name].qty += (i.quantity||1);
+            map[i.name].rev += parseFloat(i.total||0);
+        });
+    });
+    const sorted = Object.entries(map).sort((a,b) => b[1].rev - a[1].rev).slice(0, 5);
+    const maxRev = sorted[0]?.[1]?.rev || 1;
+    const rankClass = ['gold','silver','bronze'];
+    const el = document.getElementById('top-items-list');
+    if (!sorted.length) {
+        el.innerHTML = '<div class="empty-state" style="padding:20px 0;"><i class="fas fa-box-open" style="font-size:28px;margin-bottom:8px;"></i><p>No items yet</p></div>';
         return;
     }
-
-    let html = `
-        <div class="table-container">
-            <table class="transactions-table">
-                <thead>
-                    <tr>
-                        <th><i class="fas fa-hashtag"></i> Order ID</th>
-                        <th><i class="fas fa-calendar"></i> Date & Time</th>
-                        <th><i class="fas fa-credit-card"></i> Payment Method</th>
-                        <th><i class="fas fa-user"></i> Customer</th>
-                        <th><i class="fas fa-money-bill"></i> Amount</th>
-                        <th><i class="fas fa-info-circle"></i> Status</th>
-                        <th><i class="fas fa-cog"></i> Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    transactions.forEach(transaction => {
-        const date = new Date(transaction.created_at);
-        const formattedDate = date.toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-        const formattedTime = date.toLocaleTimeString('en-PH', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        // Get payment method icon
-        const paymentIcons = {
-            'gcash': 'fa-mobile-alt',
-            'paymaya': 'fa-wallet',
-            'cash': 'fa-money-bill-wave',
-            'card': 'fa-credit-card'
-        };
-        const paymentIcon = paymentIcons[transaction.payment_method.toLowerCase()] || 'fa-credit-card';
-
-        // Get customer initials
-        const customerName = transaction.customer_name || 'Guest';
-        const initials = customerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
-        html += `
-            <tr>
-                <td><span class="transaction-id">#${transaction.order_id}</span></td>
-                <td>
-                    <div class="transaction-date">
-                        <span class="date-text">${formattedDate}</span>
-                        <span class="time-text"><i class="far fa-clock"></i> ${formattedTime}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">
-                        <i class="fas ${paymentIcon}"></i>
-                        ${transaction.payment_method_display}
-                    </span>
-                </td>
-                <td>
-                    <div class="customer-info">
-                        <div class="customer-avatar">${initials}</div>
-                        <span class="customer-name">${customerName}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="transaction-amount">
-                        ₱${parseFloat(transaction.amount).toLocaleString('en-PH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        })}
-                    </span>
-                </td>
-                <td>
-                    <span class="transaction-status-badge ${transaction.status.toLowerCase()}">
-                        ${transaction.status}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn-details" onclick='viewTransaction(${JSON.stringify(transaction).replace(/'/g, "&#39;")})'>
-                        <i class="fas fa-eye"></i> View
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    // ── Mobile card list (shown on phone, hidden on desktop via CSS) ──
-    let mobileHtml = '<div class="mobile-transaction-list">';
-    transactions.forEach(transaction => {
-        const date = new Date(transaction.created_at);
-        const formattedDate = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-        const formattedTime = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-        const paymentIcons = { gcash:'fa-mobile-alt', paymaya:'fa-wallet', cash:'fa-money-bill-wave', card:'fa-credit-card' };
-        const paymentIcon = paymentIcons[transaction.payment_method.toLowerCase()] || 'fa-credit-card';
-        const customerName = transaction.customer_name || 'Guest';
-        const initials = customerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
-        mobileHtml += `
-            <div class="txn-card">
-                <div class="txn-card-top">
-                    <div class="txn-card-left">
-                        <span class="txn-card-id">#${transaction.order_id}</span>
-                        <span class="txn-card-date"><i class="far fa-clock"></i> ${formattedDate}, ${formattedTime}</span>
-                    </div>
-                    <span class="txn-card-amount">&#8369;${parseFloat(transaction.amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div class="txn-card-middle">
-                    <div class="txn-card-customer">
-                        <div class="customer-avatar">${initials}</div>
-                        <span class="customer-name">${customerName}</span>
-                    </div>
-                </div>
-                <div class="txn-card-bottom">
-                    <div class="txn-card-badges">
-                        <span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">
-                            <i class="fas ${paymentIcon}"></i> ${transaction.payment_method_display}
-                        </span>
-                        <span class="transaction-status-badge ${transaction.status.toLowerCase()}">
-                            ${transaction.status}
-                        </span>
-                    </div>
-                    <button class="txn-card-btn" onclick='viewTransaction(${JSON.stringify(transaction).replace(/'/g, "&#39;")})'>
-                        <i class="fas fa-eye"></i> View
-                    </button>
-                </div>
+    el.innerHTML = sorted.map(([name, d], i) => `
+        <div class="top-item-row">
+            <div class="top-item-rank ${rankClass[i]||''}">${i+1}</div>
+            <div class="top-item-info">
+                <div class="top-item-name">${esc(name)}</div>
+                <div class="top-item-count">${d.qty} sold</div>
             </div>
-        `;
-    });
-    mobileHtml += '</div>';
-
-    container.innerHTML = html + mobileHtml;
+            <div class="top-item-bar-wrap"><div class="top-item-bar" style="width:${Math.round(d.rev/maxRev*100)}%"></div></div>
+            <div class="top-item-amount">${fmt(d.rev)}</div>
+        </div>`).join('');
 }
 
-/**
- * Toggle filters visibility
- */
+// ─── Table ───────────────────────────────────────────────────
+function renderTable(txns) {
+    document.getElementById('txn-count-badge').textContent = txns.length;
+    const cont = document.getElementById('txnContainer');
+    if (!txns.length) {
+        cont.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><h3>No Transactions</h3><p>No transactions found for this period.</p></div>`;
+        return;
+    }
+    const payIcons = {gcash:'fa-mobile-alt', cash:'fa-money-bill-wave', card:'fa-credit-card', paymaya:'fa-wallet'};
+    const rows = txns.map(t => {
+        const d = txnDate(t);
+        const dateStr = d.toLocaleDateString('en-PH', {month:'short', day:'numeric', year:'numeric'});
+        const timeStr = d.toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'});
+        const pm = (t.payment_method||'cash').toLowerCase();
+        const icon = payIcons[pm] || 'fa-credit-card';
+        const initials = (t.customer_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        const status = (t.status||'completed').toLowerCase();
+        return `<tr>
+            <td><span class="order-id-badge">#${t.order_id}</span></td>
+            <td><div class="date-col"><span class="d">${dateStr}</span><span class="t"><i class="far fa-clock"></i> ${timeStr}</span></div></td>
+            <td><span class="pay-badge ${pm}"><i class="fas ${icon}"></i> ${t.payment_method_display||t.payment_method}</span></td>
+            <td><div class="cust-cell"><div class="cust-avatar">${initials}</div><span class="cust-name">${esc(t.customer_name||'Guest')}</span></div></td>
+            <td><span class="amount-cell">${fmt(t.amount)}</span></td>
+            <td><span class="status-badge ${status}">${t.status}</span></td>
+            <td><button class="view-btn" onclick='viewTransaction(${JSON.stringify(t).replace(/'/g,"&#39;")})'><i class="fas fa-eye"></i> View</button></td>
+        </tr>`;
+    }).join('');
+
+    cont.innerHTML = `<div class="txn-table-wrap"><table class="txn-table">
+        <thead><tr>
+            <th>Order</th><th>Date & Time</th><th>Payment</th>
+            <th>Customer</th><th>Amount</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ─── Filters ─────────────────────────────────────────────────
 function toggleFilters() {
-    const filters = document.getElementById('transactionsFilters');
-    filters.classList.toggle('show');
+    document.getElementById('filterBar').classList.toggle('show');
 }
-
-/**
- * Apply filters to transactions
- */
+function applyLocalFilters(txns) {
+    const pm   = document.getElementById('paymentMethodFilter')?.value || 'all';
+    const st   = document.getElementById('statusFilter')?.value || 'all';
+    const from = document.getElementById('dateFromFilter')?.value;
+    const to   = document.getElementById('dateToFilter')?.value;
+    return txns.filter(t => {
+        if (pm !== 'all' && t.payment_method.toLowerCase() !== pm) return false;
+        if (st !== 'all' && t.status.toLowerCase() !== st) return false;
+        if (from && txnDate(t) < new Date(from)) return false;
+        if (to) { const end = new Date(to); end.setHours(23,59,59,999); if (txnDate(t) > end) return false; }
+        return true;
+    });
+}
 function applyFilters() {
-    const paymentMethod = document.getElementById('paymentMethodFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    const dateFrom = document.getElementById('dateFromFilter').value;
-    const dateTo = document.getElementById('dateToFilter').value;
-
-    let filtered = allTransactions;
-
-    if (paymentMethod !== 'all') {
-        filtered = filtered.filter(t => t.payment_method.toLowerCase() === paymentMethod);
-    }
-
-    if (status !== 'all') {
-        filtered = filtered.filter(t => t.status.toLowerCase() === status);
-    }
-
-    if (dateFrom) {
-        filtered = filtered.filter(t => new Date(t.created_at) >= new Date(dateFrom));
-    }
-
-    if (dateTo) {
-        const endDate = new Date(dateTo);
-        endDate.setHours(23, 59, 59, 999);
-        filtered = filtered.filter(t => new Date(t.created_at) <= endDate);
-    }
-
-    displayTransactions(filtered);
+    const periodTxns = filterByPeriod(allTransactions, currentPeriod);
+    filteredTransactions = applyLocalFilters(periodTxns);
+    renderTable(filteredTransactions);
 }
-
-/**
- * Clear all filters
- */
 function clearFilters() {
     document.getElementById('paymentMethodFilter').value = 'all';
     document.getElementById('statusFilter').value = 'all';
     document.getElementById('dateFromFilter').value = '';
     document.getElementById('dateToFilter').value = '';
-    displayTransactions(allTransactions);
+    applyFilters();
 }
 
-/**
- * Export transactions to CSV
- */
+// ─── Export ──────────────────────────────────────────────────
 function exportTransactions() {
-    if (allTransactions.length === 0) {
-        alert('No transactions to export');
-        return;
-    }
-
-    // Create CSV content
+    const data = filteredTransactions.length ? filteredTransactions : filterByPeriod(allTransactions, currentPeriod);
+    if (!data.length) { alert('No transactions to export'); return; }
     let csv = 'Order ID,Date,Time,Payment Method,Customer,Amount,Status,Reference\n';
-
-    allTransactions.forEach(t => {
-        const date = new Date(t.created_at);
-        const formattedDate = date.toLocaleDateString('en-PH');
-        const formattedTime = date.toLocaleTimeString('en-PH');
-
-        csv += `${t.order_id},"${formattedDate}","${formattedTime}","${t.payment_method_display}","${t.customer_name || 'Guest'}",${t.amount},"${t.status}","${t.reference_number || 'N/A'}"\n`;
+    data.forEach(t => {
+        const d = txnDate(t);
+        csv += `${t.order_id},"${d.toLocaleDateString('en-PH')}","${d.toLocaleTimeString('en-PH')}","${t.payment_method_display||t.payment_method}","${t.customer_name||'Guest'}",${t.amount},"${t.status}","${t.reference_number||'N/A'}"\n`;
     });
-
-    // Download CSV
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
+        download: `transactions_${currentPeriod}_${new Date().toISOString().split('T')[0]}.csv`
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-/**
- * View transaction details in modal
- */
-function viewTransaction(transaction) {
-    const modal = document.getElementById('transactionModal');
-    const modalBody = document.getElementById('modalBody');
-
-    const date = new Date(transaction.created_at);
-    const formattedDateTime = date.toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-
-    // Get payment method icon
-    const paymentIcons = {
-        'gcash': 'fa-mobile-alt',
-        'paymaya': 'fa-wallet',
-        'cash': 'fa-money-bill-wave',
-        'card': 'fa-credit-card'
-    };
-    const paymentIcon = paymentIcons[transaction.payment_method.toLowerCase()] || 'fa-credit-card';
+// ─── Modal ───────────────────────────────────────────────────
+function viewTransaction(t) {
+    const payIcons = {gcash:'fa-mobile-alt', cash:'fa-money-bill-wave', card:'fa-credit-card', paymaya:'fa-wallet'};
+    const pm = (t.payment_method||'cash').toLowerCase();
+    const icon = payIcons[pm] || 'fa-credit-card';
+    const d = txnDate(t);
+    const dateStr = d.toLocaleDateString('en-PH', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'});
 
     let itemsHtml = '';
-    if (transaction.items && transaction.items.length > 0) {
-        itemsHtml = `
-            <div class="order-items-section">
-                <div class="order-items-title">
-                    <i class="fas fa-shopping-bag"></i>
-                    Order Items
-                </div>
-        `;
-        transaction.items.forEach(item => {
-            itemsHtml += `
-                <div class="order-item">
-                    <span><strong>${item.quantity}x</strong> ${item.name}</span>
-                    <span>₱${parseFloat(item.total).toLocaleString('en-PH', {
-                        minimumFractionDigits: 2
-                    })}</span>
-                </div>
-            `;
-        });
-        itemsHtml += '</div>';
+    if (t.items && t.items.length) {
+        itemsHtml = `<div class="detail-divider"></div>
+        <div class="order-items-section">
+            <div class="order-items-title"><i class="fas fa-shopping-bag"></i> Order Items</div>
+            ${t.items.map(i => `<div class="order-item"><span><strong>${i.quantity}×</strong> ${esc(i.name)}</span><span>${fmt(i.total)}</span></div>`).join('')}
+        </div>`;
     }
 
-    modalBody.innerHTML = `
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-hashtag"></i> Order ID</span>
-            <span class="detail-value transaction-id">#${transaction.order_id}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-calendar"></i> Date & Time</span>
-            <span class="detail-value">${formattedDateTime}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-user"></i> Customer</span>
-            <span class="detail-value">${transaction.customer_name || 'Guest'}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-credit-card"></i> Payment Method</span>
-            <span class="detail-value">
-                <span class="payment-method-badge ${transaction.payment_method.toLowerCase()}">
-                    <i class="fas ${paymentIcon}"></i>
-                    ${transaction.payment_method_display}
-                </span>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-barcode"></i> Reference Number</span>
-            <span class="detail-value" style="font-family: 'Courier New', monospace;">
-                ${transaction.reference_number || 'N/A'}
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-info-circle"></i> Status</span>
-            <span class="detail-value">
-                <span class="transaction-status-badge ${transaction.status.toLowerCase()}">
-                    ${transaction.status}
-                </span>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-money-bill-wave"></i> Total Amount</span>
-            <span class="detail-value" style="color: #059669; font-size: 24px; font-weight: 800;">
-                ₱${parseFloat(transaction.amount).toLocaleString('en-PH', {
-                    minimumFractionDigits: 2
-                })}
-            </span>
-        </div>
-        ${itemsHtml}
-    `;
-
-    modal.style.display = window.innerWidth <= 768 ? 'flex' : 'block';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="modal-amount">${fmt(t.amount)}</div>
+        <div class="detail-divider"></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-hashtag"></i> Order ID</span><span class="detail-value" style="color:#b91c1c;font-weight:800;">#${t.order_id}</span></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-calendar"></i> Date & Time</span><span class="detail-value">${dateStr}</span></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-user"></i> Customer</span><span class="detail-value">${esc(t.customer_name||'Guest')}</span></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-credit-card"></i> Payment</span><span class="detail-value"><span class="pay-badge ${pm}"><i class="fas ${icon}"></i> ${t.payment_method_display||t.payment_method}</span></span></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-barcode"></i> Reference</span><span class="detail-value" style="font-family:monospace;">${t.reference_number||'N/A'}</span></div>
+        <div class="detail-row"><span class="detail-label"><i class="fas fa-info-circle"></i> Status</span><span class="detail-value"><span class="status-badge ${(t.status||'').toLowerCase()}">${t.status}</span></span></div>
+        ${itemsHtml}`;
+    document.getElementById('txnModal').classList.add('show');
 }
+function closeModal() { document.getElementById('txnModal').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-/**
- * Close modal
- */
-function closeModal() {
-    document.getElementById('transactionModal').style.display = 'none';
-}
+// ─── Helpers ─────────────────────────────────────────────────
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('transactionModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Keyboard shortcut: ESC to close modal
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeModal();
-    }
-});
+// ─── Init ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadTransactions);
 </script>
 {% endblock %}

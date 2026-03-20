@@ -25,6 +25,7 @@ urlpatterns = [
                   # ✅ NEW: Bestsellers API Endpoint
                   path('api/bestsellers/', views.get_bestsellers, name='get_bestsellers'),
                   path('api/search-menu-items/', views.search_menu_items, name='search_menu_items'),
+                  path('api/request-qtys/', views.get_request_qtys, name='get_request_qtys'),
                   # ✅ REALTIME: live status/menu/rating for individual establishment (details page)
                   path('api/establishment/<int:establishment_id>/realtime/', views.get_establishment_realtime, name='get_establishment_realtime'),
                   # ✅ REALTIME: lightweight status for all establishment cards (main page)

@@ -3644,6 +3644,28 @@ def add_to_cart(request):
                 'message': f'{menu_item.name} is out of stock.'
             }, status=400)
 
+        # ✅ Block if customer has already committed max stock across request + to_pay orders
+        committed_qty = OrderItem.objects.filter(
+            order__user=request.user,
+            order__establishment=establishment,
+            order__status__in=('request', 'to_pay'),
+            menu_item=menu_item,
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        remaining_stock = max(0, menu_item.quantity - committed_qty)
+        if remaining_stock <= 0:
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    f'You already have {committed_qty}x {menu_item.name} in an active order '
+                    f'(max stock is {menu_item.quantity}). '
+                    f'Wait for it to be fulfilled before ordering more.'
+                )
+            }, status=400)
+
+        stacked_on_request = False
+        existing_request_qty = 0
+        request_order_qty = 0  # qty in the request order only — used for accurate display message
+
         with transaction.atomic():
             # ── Find the best existing open order to stack items onto ────
             # Priority 1: an existing PENDING (cart) order for this establishment
@@ -3651,19 +3673,53 @@ def add_to_cart(request):
             #             acceptance — customer is adding more items before the
             #             owner has acted on the original request.
             # If neither exists, create a fresh PENDING order.
-            order = (
-                Order.objects.filter(
-                    user=request.user,
-                    establishment=establishment,
-                    status='PENDING'
-                ).order_by('-created_at').first()
-                or
-                Order.objects.filter(
-                    user=request.user,
-                    establishment=establishment,
-                    status='request'
-                ).order_by('-created_at').first()
-            )
+            pending_order = Order.objects.filter(
+                user=request.user,
+                establishment=establishment,
+                status='PENDING'
+            ).order_by('-created_at').first()
+
+            request_order = Order.objects.filter(
+                user=request.user,
+                establishment=establishment,
+                status='request'
+            ).order_by('-created_at').first()
+
+            order = pending_order or request_order
+
+            # ── Check if stacking on a 'request' order ────────────────────
+            if request_order:
+                stacked_on_request = True
+                existing_req_item = OrderItem.objects.filter(
+                    order=request_order,
+                    menu_item=menu_item
+                ).first()
+                # request_order_qty = qty in the request order ONLY (for display in modal message)
+                request_order_qty  = existing_req_item.quantity if existing_req_item else 0
+                # existing_request_qty = combined total (request + pending cart) used for the
+                # combined > max_stock check on the frontend
+                existing_request_qty = request_order_qty
+
+                if pending_order:
+                    pending_item = OrderItem.objects.filter(
+                        order=pending_order,
+                        menu_item=menu_item
+                    ).first()
+                    if pending_item:
+                        existing_request_qty += pending_item.quantity
+
+                # Always route new items into a PENDING cart order so cart
+                # is never empty — merge happens at create_cash_order time.
+                if not pending_order:
+                    order = Order.objects.create(
+                        user=request.user,
+                        establishment=establishment,
+                        status='PENDING',
+                        total_amount=0,
+                    )
+                    pending_order = order
+                else:
+                    order = pending_order
 
             if order is None:
                 order = Order.objects.create(
@@ -3716,7 +3772,18 @@ def add_to_cart(request):
         return JsonResponse({
             'success': True,
             'message': f'{actual_qty}x {menu_item.name} added to cart',
-            'cart_count': total_cart_count
+            'cart_count': total_cart_count,
+            # ── Extra info for the cart page ──────────────────────────────
+            # stacked_on_request = True means the customer already has a
+            # submitted (pending-owner) 'request' order for this establishment.
+            # The new item goes into a PENDING cart order as usual, but when
+            # the customer hits "Request Order" on the cart page the two orders
+            # will be merged.  We surface these flags so the cart page can
+            # show the customer an appropriate informational message.
+            'stacked_on_request': stacked_on_request,
+            'existing_request_qty': existing_request_qty,  # combined (request + pending) — for combined > max check
+            'request_order_qty': request_order_qty,         # request order only — for accurate display message
+            'max_stock': menu_item.quantity,
         })
 
     except ValueError:
@@ -4916,6 +4983,7 @@ def view_cart(request):
     """
     Display all cart items grouped by establishment
     ✅ FIXED: Proper queryset and error handling
+    ✅ Shows remaining requestable quantity per item when a 'request' order exists
     """
     try:
         # Get all pending orders for current user
@@ -4936,11 +5004,56 @@ def view_cart(request):
             cart_item_count = sum(item.quantity for item in items)
             total_cart_count += cart_item_count
 
+            # ── Check for active orders ('request' or 'to_pay') for this establishment ──
+            # Compute how many more of each item the customer can still add
+            # (max_stock − already committed across request + to_pay orders).
+            active_orders = Order.objects.filter(
+                user=request.user,
+                establishment=order.establishment,
+                status__in=('request', 'to_pay'),
+            ).prefetch_related('orderitem_set__menu_item')
+
+            # Build a map: menu_item_id → total qty already committed
+            request_qty_map = {}
+            has_active_order = False
+            for active_order in active_orders:
+                has_active_order = True
+                for req_item in active_order.orderitem_set.all():
+                    mid = req_item.menu_item_id
+                    request_qty_map[mid] = request_qty_map.get(mid, 0) + req_item.quantity
+
+            # Annotate each cart item with remaining_allowed and existing_request_qty
+            enriched_items = []
+            items_to_delete = []
+            for item in items:
+                mid = item.menu_item_id
+                max_stock = item.menu_item.quantity
+                in_request = request_qty_map.get(mid, 0)
+                remaining = max(0, max_stock - in_request)
+                # Clamp cart qty to remaining allowed (auto-fix over-qty)
+                clamped_qty = min(item.quantity, remaining) if has_active_order else item.quantity
+
+                # Auto-remove items that have 0 remaining — no point keeping them
+                if clamped_qty <= 0 and has_active_order:
+                    items_to_delete.append(item.id)
+                    continue
+
+                item.display_qty        = clamped_qty
+                item.remaining_allowed  = remaining if has_active_order else max_stock
+                item.existing_req_qty   = in_request
+                item.has_request_limit  = has_active_order and in_request > 0
+                enriched_items.append(item)
+
+            # Delete zero-remaining items from the DB quietly
+            if items_to_delete:
+                OrderItem.objects.filter(id__in=items_to_delete).delete()
+
             carts_data.append({
-                'establishment': order.establishment,
-                'order': order,
-                'items': items,
-                'item_count': cart_item_count
+                'establishment':      order.establishment,
+                'order':              order,
+                'items':              enriched_items,
+                'item_count':         cart_item_count,
+                'has_request_order':  has_active_order,
             })
 
         context = {
@@ -5514,15 +5627,17 @@ def get_establishment_orders(request):
             items = []
             items_preview = []
 
+            out_of_stock_count = 0
             for order_item in order.orderitem_set.all():
+                is_out = order_item.menu_item.quantity < order_item.quantity
+                if is_out:
+                    out_of_stock_count += 1
                 items.append({
                     'name':            order_item.menu_item.name,
                     'quantity':        order_item.quantity,
                     'price':           str(order_item.price_at_order),
                     'menu_item_id':    order_item.menu_item.id,
-                    'order_item_id':   order_item.id,   # needed for owner remove-item button
-                    # Live stock at query time — used by owner request/to_pay rows to warn
-                    # when another order has consumed the same item.
+                    'order_item_id':   order_item.id,
                     'available_stock': order_item.menu_item.quantity,
                 })
                 items_preview.append(f"{order_item.quantity}x {order_item.menu_item.name}")
@@ -5552,6 +5667,7 @@ def get_establishment_orders(request):
                 'items_count': order.get_item_count(),
                 'items_preview': preview_text,
                 'items': items,
+                'out_of_stock_item_count': out_of_stock_count,  # 0=none, 1=show Remove, 2+=show banner only
                 'created_at': order.created_at.isoformat(),
                 'updated_at': order.updated_at.isoformat(),
                 'gcash_reference': order.gcash_reference_number or '',
@@ -5797,23 +5913,38 @@ def update_order_status(request, order_id):
                 order_items = list(
                     order.orderitem_set.select_related('menu_item').all()
                 )
-                insufficient = []
+                insufficient_ids = []
+                insufficient_names = []
                 for oi in order_items:
                     mi = oi.menu_item
                     if mi.quantity < oi.quantity:
-                        insufficient.append(
-                            f"{mi.name} (need {oi.quantity}, only {mi.quantity} left)"
-                        )
-                if insufficient:
-                    return JsonResponse({
-                        'success': False,
-                        'message': (
-                            'Cannot accept order — some items are out of stock: '
-                            + ', '.join(insufficient)
-                            + '. Please reject this order so the customer can reorder.'
-                        ),
-                        'insufficient_stock': insufficient,
-                    }, status=409)
+                        insufficient_ids.append(oi.id)
+                        insufficient_names.append(mi.name)
+
+                if insufficient_ids:
+                    # Auto-remove only the out-of-stock items so the rest can proceed
+                    order.orderitem_set.filter(id__in=insufficient_ids).delete()
+                    # Refresh remaining valid items
+                    order_items = list(
+                        order.orderitem_set.select_related('menu_item').all()
+                    )
+                    if not order_items:
+                        # Every item was out of stock — cannot accept at all
+                        return JsonResponse({
+                            'success': False,
+                            'message': (
+                                'Cannot accept order — all items are out of stock: '
+                                + ', '.join(insufficient_names)
+                                + '. Please reject this order so the customer can reorder.'
+                            ),
+                            'insufficient_stock': insufficient_names,
+                        }, status=409)
+                    # Recalculate total with the remaining valid items
+                    new_total = sum(
+                        oi.quantity * oi.price_at_order for oi in order_items
+                    )
+                    order.total_amount = new_total
+                    order.save(update_fields=['total_amount'])
 
             order.status = new_status
             order.save(update_fields=['status', 'updated_at'])
@@ -6354,6 +6485,107 @@ def create_cash_order(request):
                 new_status = 'preparing'
             else:
                 new_status = 'request'
+
+            # ── Existing-request-order merge / block logic ─────────────────
+            # Only applies when the cart order is PENDING (new submission from cart).
+            # If the customer already has a 'request' order for the same establishment
+            # that the owner has NOT yet accepted, we must merge the items rather than
+            # creating a second parallel request.
+            #
+            # Rules:
+            #   1. For each item in the cart being submitted, check whether the same
+            #      menu item already exists in the existing 'request' order.
+            #   2. If combined quantity would EXCEED the menu item's max stock →
+            #      BLOCK the submission entirely and return an error message.
+            #   3. If combined quantity is within max stock → MERGE: add the new
+            #      quantities onto the existing request order items, delete the
+            #      PENDING cart order, and return a success + info message.
+            if order.status == 'PENDING' and new_status == 'request':
+                existing_request = Order.objects.filter(
+                    user=request.user,
+                    establishment=order.establishment,
+                    status='request'
+                ).order_by('-created_at').first()
+
+                if existing_request:
+                    # Determine which cart items we're about to submit
+                    selected_item_ids_raw = request.POST.getlist('selected_item_ids[]')
+                    selected_item_ids = [int(i) for i in selected_item_ids_raw if str(i).isdigit()]
+                    if selected_item_ids:
+                        cart_items_to_submit = order.orderitem_set.filter(id__in=selected_item_ids)
+                    else:
+                        cart_items_to_submit = order.orderitem_set.all()
+
+                    # ── Step 1: Auto-clamp each cart item's qty to what's actually remaining ──
+                    # Build a lookup of existing request quantities once, to avoid repeated DB hits.
+                    req_qty_map = {}
+                    for req_oi in existing_request.orderitem_set.select_related('menu_item').all():
+                        req_qty_map[req_oi.menu_item_id] = req_oi.quantity
+
+                    # Clamp in memory — do NOT save yet; we use the clamped value during merge.
+                    clamped_qtys = {}  # cart_oi.id → clamped quantity
+                    for cart_oi in cart_items_to_submit:
+                        menu_item = cart_oi.menu_item
+                        existing_qty = req_qty_map.get(menu_item.id, 0)
+                        remaining = max(0, menu_item.quantity - existing_qty)
+                        clamped_qtys[cart_oi.id] = min(cart_oi.quantity, remaining)
+
+                    # ── Step 2: Merge — stack clamped quantities onto existing request ─
+                    for cart_oi in cart_items_to_submit:
+                        qty_to_add = clamped_qtys.get(cart_oi.id, 0)
+                        if qty_to_add <= 0:
+                            continue  # nothing left to add for this item — skip silently
+                        menu_item = cart_oi.menu_item
+                        existing_req_item = OrderItem.objects.filter(
+                            order=existing_request,
+                            menu_item=menu_item
+                        ).first()
+                        if existing_req_item:
+                            existing_req_item.quantity = min(
+                                existing_req_item.quantity + qty_to_add,
+                                menu_item.quantity
+                            )
+                            existing_req_item.save()
+                        else:
+                            OrderItem.objects.create(
+                                order=existing_request,
+                                menu_item=menu_item,
+                                quantity=qty_to_add,
+                                price_at_order=cart_oi.price_at_order,
+                            )
+
+                    # Recalculate total of the existing request order
+                    new_total = sum(
+                        oi.quantity * oi.price_at_order
+                        for oi in existing_request.orderitem_set.all()
+                    )
+                    existing_request.total_amount = new_total
+                    existing_request.save(update_fields=['total_amount'])
+
+                    # Remove submitted items from the PENDING cart order
+                    if selected_item_ids:
+                        order.orderitem_set.filter(id__in=selected_item_ids).delete()
+                    else:
+                        order.orderitem_set.all().delete()
+
+                    # Delete the (now empty) PENDING cart order
+                    if not order.orderitem_set.exists():
+                        order.delete()
+
+                    # Broadcast the update
+                    _broadcast_order_status_update(existing_request, existing_request.status)
+
+                    return JsonResponse({
+                        'success': True,
+                        'merged': True,
+                        'message': (
+                            'Your order has been updated! The items have been added to your '
+                            'existing pending order request. The establishment will be notified.'
+                        ),
+                        'order_id': existing_request.id,
+                    })
+
+            # ── End of merge/block logic ───────────────────────────────────
 
             # ✅ Handle partial selection (only checked items go into the new order)
             # selected_item_ids[] are OrderItem IDs the user checked in the cart.
@@ -7417,6 +7649,47 @@ def get_all_establishments_status(request):
         import logging
         logging.getLogger(__name__).error(f'get_all_establishments_status error: {e}')
         return JsonResponse({'error': 'database_unavailable'}, status=503)
+
+
+def get_request_qtys(request):
+    """
+    Returns a map of menu_item_id → qty already committed in the user's active
+    orders (status 'request' OR 'to_pay') for a given establishment.
+    Used by the item detail modals on both the kabsueats home page and the
+    establishment details page so customers can see how many of each item
+    they've already requested/accepted before adding more.
+
+    Query params:
+        establishment_id  (required)
+
+    Response:
+        { "success": true, "qtys": { "<menu_item_id>": <qty>, ... } }
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'qtys': {}})
+
+    establishment_id = request.GET.get('establishment_id')
+    if not establishment_id:
+        return JsonResponse({'success': False, 'message': 'establishment_id required'}, status=400)
+
+    try:
+        # Include both 'request' (pending acceptance) and 'to_pay' (accepted, awaiting payment)
+        active_orders = Order.objects.filter(
+            user=request.user,
+            establishment_id=establishment_id,
+            status__in=('request', 'to_pay'),
+        ).prefetch_related('orderitem_set')
+
+        qtys = {}
+        for order in active_orders:
+            for oi in order.orderitem_set.all():
+                key = str(oi.menu_item_id)
+                qtys[key] = qtys.get(key, 0) + oi.quantity
+
+        return JsonResponse({'success': True, 'qtys': qtys})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'qtys': {}, 'error': str(e)})
 
 
 def get_bestsellers(request):

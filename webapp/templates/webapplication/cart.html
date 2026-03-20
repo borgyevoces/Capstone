@@ -365,8 +365,9 @@ html body .establishment-cart-box.active-cart {
                                  data-item-id="{{ item.id }}"
                                  data-menu-item-id="{{ item.menu_item.id }}"
                                  data-max-stock="{{ item.menu_item.quantity }}"
+                                 data-remaining-qty="{{ item.remaining_allowed }}"
                                  data-unit-price="{{ item.menu_item.price }}"
-                                 data-qty="{{ item.quantity }}"
+                                 data-qty="{{ item.display_qty }}"
                                  data-name="{{ item.menu_item.name|escapejs }}">
 
                                 <!-- Item Checkbox -->
@@ -399,6 +400,12 @@ html body .establishment-cart-box.active-cart {
                                         <i class="fas fa-box"></i>
                                         <span class="stock-count">{{ item.menu_item.quantity }}</span> available
                                     </p>
+                                    {% if item.has_request_limit %}
+                                    <p class="item-request-limit" style="font-size:12px;color:#d97706;margin-top:3px;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ item.existing_req_qty }} already requested &mdash; max {{ item.remaining_allowed }} more
+                                    </p>
+                                    {% endif %}
                                 </div>
 
                                 <!-- Quantity Controls -->
@@ -406,16 +413,16 @@ html body .establishment-cart-box.active-cart {
                                     <button type="button"
                                             class="quantity-btn btn-decrease"
                                             data-item-id="{{ item.id }}"
-                                            {% if item.quantity <= 1 %}disabled{% endif %}>
+                                            {% if item.display_qty <= 1 %}disabled{% endif %}>
                                         <i class="fas fa-minus"></i>
                                     </button>
 
-                                    <span class="quantity-value" data-item-id="{{ item.id }}">{{ item.quantity }}</span>
+                                    <span class="quantity-value" data-item-id="{{ item.id }}">{{ item.display_qty }}</span>
 
                                     <button type="button"
                                             class="quantity-btn btn-increase"
                                             data-item-id="{{ item.id }}"
-                                            {% if item.quantity >= item.menu_item.quantity %}disabled{% endif %}>
+                                            {% if item.display_qty >= item.remaining_allowed %}disabled{% endif %}>
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
