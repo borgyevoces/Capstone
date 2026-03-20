@@ -138,10 +138,20 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=60,       # ✅ reduced from 600 — avoids stale SSL connections
             conn_health_checks=True,
         )
     }
+    # ✅ Fix: SSL SYSCALL / EOF errors on Render during migrations and cold starts
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS'].update({
+        'connect_timeout': 10,
+        'sslmode': 'require',
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 5,
+        'keepalives_count': 3,
+    })
 else:
     print("📊 Using SQLite database (Local)")
     DATABASES = {
