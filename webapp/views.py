@@ -1811,7 +1811,7 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
         from python_http_client.exceptions import HTTPError
 
         MAX_RETRIES = 3
-        RETRY_DELAYS = [0, 1, 2]  # seconds between retries
+        RETRY_DELAYS = [0, 0.5, 1]  # ✅ reduced: was [0,1,2] — background thread, short retries ok
 
         for attempt in range(MAX_RETRIES):
             try:
@@ -2811,62 +2811,37 @@ The KabsuEats Team
         """
 
         # ============================================================================
-        # SEND EMAIL WITH DETAILED ERROR LOGGING
+        # SEND EMAIL IN BACKGROUND THREAD — respond to user instantly
         # ============================================================================
-        try:
-            print("📤 Calling send_mail function...")
+        import threading
 
-            result = send_mail(
-                subject='KabsuEats Business Registration - Verification Code',
-                message=text_message,
-                from_email=from_email,
-                recipient_list=[email],
-                fail_silently=False,  # Don't suppress errors
-                html_message=html_content
-            )
+        def _send_otp_email():
+            try:
+                print("📤 [BG] Sending OTP email...")
+                result = send_mail(
+                    subject='KabsuEats Business Registration - Verification Code',
+                    message=text_message,
+                    from_email=from_email,
+                    recipient_list=[email],
+                    fail_silently=True,  # Suppress errors in background thread
+                    html_message=html_content
+                )
+                if result and result > 0:
+                    print(f"✅ [BG] OTP email sent successfully to {email}")
+                else:
+                    print(f"⚠️ [BG] Email send returned 0 — check SendGrid config")
+            except Exception as email_error:
+                print(f"❌ [BG] OTP email error: {email_error}")
+                import traceback
+                traceback.print_exc()
 
-            print(f"📬 Email send result: {result}")
+        threading.Thread(target=_send_otp_email, daemon=True).start()
 
-            if result and result > 0:
-                print(f"✅ OTP email sent successfully to {email}")
-                return JsonResponse({
-                    'success': True,
-                    'message': 'OTP sent successfully to your email'
-                })
-            else:
-                print(f"⚠️ Email send returned 0 or None")
-                return JsonResponse({
-                    'success': True,
-                    'warning': 'OTP generated but email may be delayed',
-                    'message': 'OTP generated. Check spam folder if not received.',
-                    'debug_otp': otp_code  # REMOVE IN PRODUCTION
-                })
-
-        except Exception as email_error:
-            print(f"❌ Email sending error: {email_error}")
-            import traceback
-            traceback.print_exc()
-
-            # Check specific error types
-            error_msg = str(email_error).lower()
-
-            if 'authentication' in error_msg or '535' in error_msg:
-                hint = "Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in .env"
-            elif 'connection' in error_msg or 'timeout' in error_msg:
-                hint = "Check EMAIL_HOST and EMAIL_PORT settings"
-            elif 'sendgrid' in error_msg or '403' in error_msg:
-                hint = "Check SENDGRID_API_KEY and verify sender email in SendGrid dashboard"
-            else:
-                hint = "Check email configuration in .env file"
-
-            return JsonResponse({
-                'success': True,
-                'warning': 'OTP generated but email failed',
-                'error_details': str(email_error),
-                'hint': hint,
-                'debug_otp': otp_code,  # REMOVE IN PRODUCTION
-                'message': 'OTP generated. Email may be delayed.'
-            })
+        # ✅ Return success IMMEDIATELY — don't wait for email
+        return JsonResponse({
+            'success': True,
+            'message': 'OTP sent successfully to your email'
+        })
 
     except Exception as outer_error:
         print(f"❌ Outer exception in send_otp: {outer_error}")
