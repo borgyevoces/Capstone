@@ -3322,7 +3322,7 @@ function applyDetailsInventoryUpdate(updates) {
 
                         // Get current user's profile picture URL
                         // We embed it server-side so it's always correct
-                        let profilePicUrl = '{% if request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{{ current_user_gravatar }}{% endif %}';
+                        let profilePicUrl = '{% if request.user.profile and request.user.profile.profile_image %}{{ request.user.profile.profile_image.url }}{% else %}{{ current_user_gravatar }}{% endif %}';
                         const existingUserCard = document.querySelector('.review-card.review-card--mine .review-card__avatar img');
                         if (existingUserCard) profilePicUrl = existingUserCard.getAttribute('src');
 
@@ -3638,42 +3638,48 @@ window.setPriceFilter = function(val, btn) {
 </script>
 
 <script>
-// ── Cart badge — use base template's existing cart badge ──
+// ── Cart badge — init from server instantly, keep fresh, accept direct count ──
 (function() {
-    // Find the base template's cart badge (id set by base template)
-    function getCartBadge() {
-        return document.getElementById('cart-count-badge');
-    }
-
-    function initCartBadge() {
-        // Get initial count from the hidden init span
-        const initEl = document.getElementById('cart-count-init');
-        if (!initEl) return;
-        const count = parseInt(initEl.dataset.count) || 0;
-        const badge = getCartBadge();
-        if (!badge) return;
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'flex';
-        }
-    }
-
-    // Override updateCartBadge to update base template's badge
-    window.updateCartBadge = function(count) {
-        const badge = getCartBadge();
-        if (badge) {
-            badge.textContent = count;
+    function applyCount(count) {
+        count = parseInt(count) || 0;
+        document.querySelectorAll('#cart-count-badge, .cart-count-badge').forEach(function(badge) {
+            badge.textContent   = count > 99 ? '99+' : count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
             if (count > 0) {
-                badge.style.display = 'flex';
                 badge.classList.add('badge-pulse');
-                setTimeout(() => badge.classList.remove('badge-pulse'), 500);
-            } else {
-                badge.style.display = 'none';
+                setTimeout(function() { badge.classList.remove('badge-pulse'); }, 500);
             }
+        });
+    }
+
+    function refreshBadge() {
+        var url = (typeof URLS !== 'undefined' && URLS.cartCount) ? URLS.cartCount : null;
+        if (!url) return;
+        fetch(url, { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                applyCount(data.cart_count != null ? data.cart_count : (data.count != null ? data.count : 0));
+            })
+            .catch(function() {});
+    }
+
+    // Accept a direct count number OR just trigger a re-fetch
+    window.updateCartBadge = function(countOrTrigger) {
+        if (typeof countOrTrigger === 'number') {
+            applyCount(countOrTrigger);
+        } else {
+            refreshBadge();
         }
     };
 
-    document.addEventListener('DOMContentLoaded', initCartBadge);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply server-rendered count immediately — zero network delay
+        var initEl = document.getElementById('cart-count-init');
+        if (initEl) applyCount(parseInt(initEl.dataset.count || 0));
+        // Verify after short delay so URLS object is ready
+        setTimeout(refreshBadge, 400);
+        setInterval(refreshBadge, 15000);
+    });
 })();
 </script>
 

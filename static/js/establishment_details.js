@@ -3,7 +3,10 @@
 // =======================================================
 
 // Tracks how many of the open modal item are already in a pending order request
-let modalInRequest = 0;
+let modalInRequest  = 0;
+let modalInCart     = 0;   // qty already in PENDING cart for the open modal item
+let estCartQtyCache = {};  // { itemId: qty } — PENDING cart qty, preloaded on page load
+let estReqQtyCache  = {};  // { itemId: qty } — request/to_pay committed qty, preloaded
 
 // Global helper to get CSRF token
 function getCookie(name) {
@@ -23,21 +26,49 @@ function getCookie(name) {
 window.getCookie = getCookie;
 
 // =======================================================
-// CART BADGE UPDATE
+// CART BADGE UPDATE — mirrors kabsueats.js exactly
+// Accepts a number (apply immediately) OR no arg (fetch from server)
 // =======================================================
-window.updateCartBadge = function(count) {
-    const badge = document.getElementById('cart-count-badge');
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = 'flex';  // flex for centering
-            badge.classList.add('badge-pulse');
-            setTimeout(() => badge.classList.remove('badge-pulse'), 600);
-        } else {
-            badge.style.display = 'none';
-        }
+window.updateCartBadge = function(countOrTrigger) {
+    if (typeof countOrTrigger === 'number') {
+        _applyEstCartBadgeCount(countOrTrigger, true);
+    } else {
+        _refreshEstCartBadge();
     }
 };
+
+function _applyEstCartBadgeCount(count, animate) {
+    count = parseInt(count) || 0;
+    document.querySelectorAll('#cart-count-badge, .cart-count-badge').forEach(function(badge) {
+        const prev = parseInt(badge.textContent, 10) || 0;
+        badge.textContent   = count > 99 ? '99+' : count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+        if (animate && count !== prev && count > 0) {
+            badge.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
+            badge.style.transform  = 'scale(1.6)';
+            setTimeout(function() { badge.style.transform = 'scale(1)'; }, 200);
+        }
+    });
+    // Broadcast to kabsueats.js cross-tab system if available
+    if (typeof window.setCartBadgeCount === 'function') {
+        window.setCartBadgeCount(count, animate !== false);
+    }
+}
+
+function _refreshEstCartBadge() {
+    var url = (typeof URLS !== 'undefined' && URLS.cartCount) ? URLS.cartCount : null;
+    if (!url) return;
+    fetch(url, { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var count = parseInt(
+                data.cart_count != null ? data.cart_count : (data.count != null ? data.count : 0),
+                10
+            );
+            _applyEstCartBadgeCount(count, false);
+        })
+        .catch(function() {});
+}
 
 // =======================================================
 // SHOW MESSAGE/NOTIFICATION
@@ -196,7 +227,6 @@ function showCustomNotification(message, type = 'success', actionButton = null) 
 // ✅ BUY NOW — adds to cart then redirects to /cart/
 // =======================================================
 window.handleModalBuyNow = function(button) {
-    console.log('⚡ Buy Now button clicked');
 
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
         showMessage('Please log in to make a purchase', 'warning');
@@ -267,91 +297,226 @@ window.handleModalBuyNow = function(button) {
 };
 
 // =======================================================
-// ✅ MODAL ADD TO CART - WITH QUANTITY VALIDATION
+// ✅ MODAL ADD TO CART — exact mirror of kabsueats addToCartFromModal
+// • Button is NEVER disabled (fire-and-forget)
+// • Fly animation fires on every successful add
+// • Modal stays open the whole time
+// • canAdd tracked locally, same pattern as kabsueats currentModalInCart
 // =======================================================
 window.handleModalAddToCart = function(button) {
-    console.log('🛒 Add to Cart button clicked');
-
-    // Check authentication
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
         showMessage('Please log in to add items to cart', 'warning');
-        setTimeout(() => {
-            window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-        }, 1500);
+        setTimeout(function() { window.location.href = LOGIN_REGISTER_URL || '/accounts/login/'; }, 1500);
         return;
     }
 
-    const modalItemId = document.getElementById('modalItemId');
-    const itemQuantityInput = document.getElementById('itemQuantity');
-    const modalItemTitle = document.getElementById('itemDetailModalTitle');
-    const maxQuantity = parseInt(document.getElementById('modalMaxQuantity').value) || 0;
+    const mqtyEl        = document.getElementById('itemQuantity');
+    const maxQtyInput   = document.getElementById('modalMaxQuantity');
+    const modalEl       = document.getElementById('itemDetailModal');
+    const modalItemIdEl = document.getElementById('modalItemId');
 
-    if (!modalItemId || !itemQuantityInput) {
-        console.error('❌ Modal elements not found');
-        showMessage('Error: Unable to add item to cart', 'error');
+    if (!modalItemIdEl || !mqtyEl) return;
+
+    // qty input disabled means cart is already full — go straight to cart
+    if (parseInt(mqtyEl.value) <= 0 || mqtyEl.disabled) {
+        window.location.href = '/cart/';
         return;
     }
 
-    const itemId = modalItemId.value;
-    const quantity = parseInt(itemQuantityInput.value) || 1;
-    const itemName = modalItemTitle ? modalItemTitle.textContent : 'Item';
+    const itemId   = modalItemIdEl.value;
+    const qty      = parseInt(mqtyEl.value) || 1;
+    const maxStock = modalEl ? parseInt(modalEl.dataset.maxStock || 0) : 0;
 
-    if (quantity < 1) {
-        showMessage('Please select a valid quantity', 'error');
-        return;
-    }
-
-    console.log(`🛒 Adding to cart: Item ${itemId}, Quantity ${quantity}`);
-
-    const originalHTML = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
+    // ── Fire — NEVER disable the button (same as kabsueats) ──────────
     const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
+    const formData  = new FormData();
     formData.append('menu_item_id', itemId);
-    formData.append('quantity', quantity);
+    formData.append('quantity', qty);
 
     fetch('/cart/add/', {
         method: 'POST',
         body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
     })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error('Please log in to add items to cart');
-            }
+    .then(function(r) {
+        if (!r.ok) {
+            if (r.status === 403) throw new Error('Please log in to add items to cart');
             throw new Error('Server error');
         }
-        return response.json();
+        return r.json();
     })
-    .then(data => {
+    .then(function(data) {
         if (data.success) {
-            if (typeof updateCartBadge === 'function') updateCartBadge(data.cart_count);
-            window.location.href = '/cart/';
+            // 1. Badge — prefer setCartBadgeCount (cross-tab broadcast, same as kabsueats)
+            if (typeof data.cart_count === 'number') {
+                if (typeof window.setCartBadgeCount === 'function') {
+                    window.setCartBadgeCount(data.cart_count, true);
+                } else {
+                    window.updateCartBadge(data.cart_count);
+                }
+            } else {
+                window.updateCartBadge(true);
+            }
+
+            // 2. Fly animation — modal stays OPEN (same as kabsueats _flyToCart)
+            _flyToCartFromModal();
+
+            // 3. Local running total — same as kabsueats currentModalInCart
+            estCartQtyCache[String(itemId)] = (parseInt(estCartQtyCache[String(itemId)] || 0)) + qty;
+            const inCart = parseInt(estCartQtyCache[String(itemId)]);
+            const canAdd = Math.max(0, maxStock - inCart);
+
+            const reqInfo = document.getElementById('modalRequestInfo');
+            const reqText = document.getElementById('modalRequestInfoText');
+
+            if (canAdd <= 0) {
+                // Cart full — switch button to "Go to Cart" only, no banner
+                if (mqtyEl) { mqtyEl.value = 1; mqtyEl.disabled = true; }
+                if (maxQtyInput) maxQtyInput.value = 0;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart';
+                button.style.background = '#dc2626';
+                button.onclick = function(e) { e.preventDefault(); window.location.href = '/cart/'; };
+            } else {
+                // Still has room — cap qty silently, keep button active
+                if (maxQtyInput) maxQtyInput.value = canAdd;
+                if (mqtyEl) {
+                    mqtyEl.max = canAdd;
+                    if (parseInt(mqtyEl.value) > canAdd) mqtyEl.value = 1;
+                }
+            }
+
         } else {
-            showMessage(data.message || 'Failed to add item', 'error');
-            button.disabled = false;
-            button.innerHTML = originalHTML;
+            showMessage(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-        button.disabled = false;
-        button.innerHTML = originalHTML;
-        if (error.message.includes('log in')) {
-            setTimeout(() => {
-                window.location.href = LOGIN_REGISTER_URL || '/accounts/login/';
-            }, 2000);
+    .catch(function(error) {
+        showMessage('Network error. Please try again.', 'error');
+        if (error.message && error.message.includes('log in')) {
+            setTimeout(function() { window.location.href = LOGIN_REGISTER_URL || '/accounts/login/'; }, 2000);
         }
     });
 };
+
+// ── Flying-to-cart animation — robust with multiple fallbacks ──
+// imgEl: optional source element to fly from (defaults to #modalItemImage)
+function _flyToCartFromModal(imgEl) {
+    // Target for END POSITION (where the bubble flies to):
+    // Use the <i> icon for precise center, fall back up the chain
+    const flyTarget =
+        document.querySelector('.client-sidebar .cart-link .csb-ico i.fa-shopping-cart') ||
+        document.querySelector('.client-sidebar .cart-link .csb-ico') ||
+        document.querySelector('.client-sidebar .cart-link') ||
+        document.querySelector('#cart-count-badge') ||
+        document.querySelector('.cart-badge');
+
+    // Target for POP-BOUNCE on landing (always the .csb-ico span for best visual)
+    const bounceTarget =
+        document.querySelector('.client-sidebar .cart-link .csb-ico') ||
+        flyTarget;
+
+    const modalImg = imgEl || document.getElementById('modalItemImage');
+    const src = (modalImg && modalImg.src) ? modalImg.src : '';
+
+    // Start position — centre of modal image, or viewport centre
+    let startX, startY;
+    if (modalImg) {
+        const r = modalImg.getBoundingClientRect();
+        startX = r.left + r.width  / 2 - 26;
+        startY = r.top  + r.height / 2 - 26;
+    } else {
+        startX = window.innerWidth  / 2 - 26;
+        startY = window.innerHeight / 2 - 26;
+    }
+
+    // End position — use flyTarget rect if on-screen, else top-right corner fallback
+    let endX, endY;
+    if (flyTarget) {
+        const cartRect = flyTarget.getBoundingClientRect();
+        if (cartRect.width > 0 && cartRect.height > 0 &&
+            cartRect.top >= -10 && cartRect.left >= -10 &&
+            cartRect.bottom <= window.innerHeight + 10 &&
+            cartRect.right  <= window.innerWidth  + 10) {
+            endX = cartRect.left + cartRect.width  / 2 - 26;
+            endY = cartRect.top  + cartRect.height / 2 - 26;
+        } else {
+            // Off-screen (sidebar collapsed on mobile)
+            endX = window.innerWidth  - 60;
+            endY = 20;
+        }
+    } else {
+        endX = window.innerWidth  - 60;
+        endY = 20;
+    }
+
+    // Build the flying bubble — same style as kabsueats
+    const fly = document.createElement('div');
+    fly.style.cssText = [
+        'position:fixed',
+        'width:52px',
+        'height:52px',
+        'border-radius:50%',
+        'overflow:hidden',
+        'background:#B71C1C',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'z-index:999999',
+        'pointer-events:none',
+        'box-shadow:0 4px 16px rgba(183,28,28,.5)',
+        'transition:none',
+    ].join(';');
+
+    if (src) {
+        fly.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    } else {
+        fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:20px;"></i>';
+    }
+
+    document.body.appendChild(fly);
+    fly.style.left = startX + 'px';
+    fly.style.top  = startY + 'px';
+
+    const duration  = 600;
+    const startTime = performance.now();
+
+    function step(now) {
+        const elapsed  = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const t = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        const arc  = Math.sin(Math.PI * progress) * -80;
+        const curX = startX + (endX - startX) * t;
+        const curY = startY + (endY - startY) * t + arc;
+        const scale = 1 - 0.5 * t;
+
+        fly.style.left      = curX + 'px';
+        fly.style.top       = curY + 'px';
+        fly.style.transform = 'scale(' + scale + ')';
+        fly.style.opacity   = (1 - progress * 0.3).toString();
+
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            fly.remove();
+            if (bounceTarget) _popEstCartIcon(bounceTarget);
+        }
+    }
+    requestAnimationFrame(step);
+}
+
+// Pop-bounce the cart icon on landing — same as kabsueats _popCartIcon
+function _popEstCartIcon(el) {
+    if (!el) return;
+    el.style.transition = 'transform .18s cubic-bezier(.34,1.56,.64,1)';
+    el.style.transform  = 'scale(1.45)';
+    setTimeout(function() {
+        el.style.transform = 'scale(1)';
+        setTimeout(function() { el.style.transition = ''; }, 200);
+    }, 180);
+}
 
 // =======================================================
 // ✅ QUICK ADD TO CART (FROM MENU LIST)
@@ -361,7 +526,6 @@ window.handleQuickAddToCart = function(button, event) {
         event.stopPropagation();
     }
 
-    console.log('🛒 Quick Add to Cart clicked');
 
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && !IS_USER_AUTHENTICATED) {
         showMessage('Please log in to add items to cart', 'warning');
@@ -417,8 +581,14 @@ window.handleQuickAddToCart = function(button, event) {
                     onClick: () => { window.location.href = '/cart/'; }
                 }
             );
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
+            if (typeof data.cart_count === 'number') {
+                if (typeof window.setCartBadgeCount === 'function') {
+                    window.setCartBadgeCount(data.cart_count, true);
+                } else {
+                    window.updateCartBadge(data.cart_count);
+                }
+            } else {
+                window.updateCartBadge();
             }
         } else {
             showMessage(data.message || 'Failed to add item', 'error');
@@ -445,7 +615,6 @@ window.handleQuickAddToCart = function(button, event) {
 // =======================================================
 // mode: 'cart' | 'buynow' — optional, used to visually highlight the intended action
 window.openItemDetailModal = function(menuItemElement, mode) {
-    console.log('🔍 Opening item detail modal, mode:', mode);
 
     const itemId = menuItemElement.dataset.itemId;
     const itemName = menuItemElement.dataset.itemName;
@@ -455,7 +624,6 @@ window.openItemDetailModal = function(menuItemElement, mode) {
     const itemQuantity = parseInt(menuItemElement.dataset.itemQuantity) || 0;
     const isTopSeller = menuItemElement.dataset.isTopSeller === 'true';
 
-    console.log('Item details:', { itemId, itemName, itemPrice, itemQuantity });
 
     const modalItemId = document.getElementById('modalItemId');
     const modalItemTitle = document.getElementById('itemDetailModalTitle');
@@ -471,8 +639,32 @@ window.openItemDetailModal = function(menuItemElement, mode) {
     if (modalItemImage) modalItemImage.src = itemImageUrl;
     if (modalItemPrice) modalItemPrice.textContent = '₱' + parseFloat(itemPrice).toFixed(2);
     if (modalItemDescription) modalItemDescription.textContent = itemDescription;
-    if (itemQuantityInput) itemQuantityInput.value = 1;
+    if (itemQuantityInput) { itemQuantityInput.value = 1; itemQuantityInput.disabled = false; itemQuantityInput.removeAttribute('max'); }
     if (modalMaxQuantity) modalMaxQuantity.value = itemQuantity;
+
+    // Store original maxStock for use by handleModalAddToCart
+    const itemDetailModal = document.getElementById('itemDetailModal');
+    if (itemDetailModal) itemDetailModal.dataset.maxStock = itemQuantity;
+
+    // Reset Add to Cart button to original state
+    const addToCartBtn = document.getElementById('modalAddToCartBtn');
+    if (addToCartBtn) {
+        addToCartBtn.innerHTML        = '<i class="fas fa-cart-plus"></i> Add to Cart';
+        addToCartBtn.style.background = '';
+        addToCartBtn.style.opacity    = itemQuantity > 0 ? '1' : '0.5';
+        addToCartBtn.disabled         = itemQuantity <= 0;
+        // ⚠️ Do NOT set .onclick = null — that wipes the HTML onclick="handleModalAddToCart(this)" attribute.
+        // Instead remove any JS-assigned overrides by cloning the button.
+        const freshBtn = addToCartBtn.cloneNode(true);
+        addToCartBtn.parentNode.replaceChild(freshBtn, addToCartBtn);
+    }
+
+    // Reset banner
+    const reqInfoReset = document.getElementById('modalRequestInfo');
+    if (reqInfoReset) reqInfoReset.style.display = 'none';
+
+    // Reset local cache for this item so running total starts fresh per open
+    if (typeof estCartQtyCache !== 'undefined') delete estCartQtyCache[String(itemId)];
 
     // Best seller badge
     if (bestSellerBadge) {
@@ -501,21 +693,16 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         estStatus.textContent = 'Open';
     }
 
-    const addToCartBtn = document.getElementById('modalAddToCartBtn');
     const buyNowBtn = document.getElementById('modalBuyNowBtn');
-
     if (itemQuantity <= 0) {
-        if (addToCartBtn) { addToCartBtn.disabled = true; addToCartBtn.style.opacity = '0.5'; }
         if (buyNowBtn) { buyNowBtn.disabled = true; buyNowBtn.style.opacity = '0.5'; }
     } else {
-        if (addToCartBtn) { addToCartBtn.disabled = false; addToCartBtn.style.opacity = '1'; }
         if (buyNowBtn) { buyNowBtn.disabled = false; buyNowBtn.style.opacity = '1'; }
     }
 
-    const itemDetailModal = document.getElementById('itemDetailModal');
-    if (itemDetailModal) {
-        itemDetailModal.classList.add('open');
-        console.log('✅ Modal opened');
+    const itemDetailModalEl = document.getElementById('itemDetailModal');
+    if (itemDetailModalEl) {
+        itemDetailModalEl.classList.add('open');
     }
 
     // ── Reset request info banner ──────────────────────────────────
@@ -523,43 +710,9 @@ window.openItemDetailModal = function(menuItemElement, mode) {
     const reqInfoText = document.getElementById('modalRequestInfoText');
     if (reqInfo) reqInfo.style.display = 'none';
 
-    // ── Fetch existing request qty for this item ───────────────────
-    const estId = document.getElementById('modalEstablishmentId')
-                    ? document.getElementById('modalEstablishmentId').value
-                    : (typeof ESTABLISHMENT_ID !== 'undefined' ? ESTABLISHMENT_ID : null);
-
-    if (estId && typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
-        fetch(`/api/request-qtys/?establishment_id=${estId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-            const inRequest = data.qtys[String(itemId)] || 0;
-            modalInRequest = inRequest;
-            if (inRequest > 0 && reqInfo && reqInfoText) {
-                const remaining = itemQuantity - inRequest;
-                const maxInput = document.getElementById('modalMaxQuantity');
-                const qtyInput = document.getElementById('itemQuantity');
-                if (remaining <= 0) {
-                    reqInfoText.textContent =
-                        `You already have ${inRequest}x of this item in a pending order request (max stock reached).`;
-                    if (maxInput) maxInput.value = 0;
-                    if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
-                } else {
-                    reqInfoText.textContent =
-                        `You already have ${inRequest}x in a pending request — you can add up to ${remaining} more.`;
-                    if (maxInput) maxInput.value = remaining;
-                    if (qtyInput) {
-                        if (parseInt(qtyInput.value) > remaining) qtyInput.value = remaining;
-                        qtyInput.disabled = false;
-                    }
-                }
-                reqInfo.style.display = 'block';
-            }
-        })
-        .catch(() => { /* silent — non-critical */ });
+    // ── Read from preloaded estCartQtyCache — INSTANT ──────────────
+    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
+        _applyEstCartQtyToModal(itemId, itemQuantity, reqInfo, reqInfoText);
     }
 
     // Highlight the intended action button based on mode
@@ -582,7 +735,6 @@ window.closeItemDetailModal = function() {
     const itemDetailModal = document.getElementById('itemDetailModal');
     if (itemDetailModal) {
         itemDetailModal.classList.remove('open');
-        console.log('✅ Modal closed');
     }
 
     // Reset quantity warning
@@ -595,10 +747,35 @@ window.closeItemDetailModal = function() {
     const reqInfo = document.getElementById('modalRequestInfo');
     if (reqInfo) reqInfo.style.display = 'none';
 
-    // Reset pending-request tracking so next modal open starts fresh
+    // Reset tracking so next modal open starts fresh
     modalInRequest = 0;
+    modalInCart    = 0;
+    // Note: estCartQtyCache and estReqQtyCache are page-level, kept for next open
     const qtyInput = document.getElementById('itemQuantity');
-    if (qtyInput) qtyInput.disabled = false;
+    if (qtyInput) { qtyInput.disabled = false; qtyInput.value = 1; qtyInput.removeAttribute('max'); }
+
+    // Reset info banner styles
+    const reqInfoReset = document.getElementById('modalRequestInfo');
+    if (reqInfoReset) {
+        reqInfoReset.style.display     = 'none';
+        reqInfoReset.style.background  = '';
+        reqInfoReset.style.borderColor = '';
+        reqInfoReset.style.color       = '';
+    }
+
+    // Reset Add to Cart button back to original
+    const addToCartBtnClose = document.getElementById('modalAddToCartBtn');
+    if (addToCartBtnClose) {
+        // Clone to strip any JS-assigned onclick overrides without wiping the HTML attribute
+        const freshBtn = addToCartBtnClose.cloneNode(true);
+        freshBtn.innerHTML        = '<i class="fas fa-cart-plus"></i> Add to Cart';
+        freshBtn.style.background = '';
+        freshBtn.style.opacity    = '';
+        freshBtn.disabled         = false;
+        addToCartBtnClose.parentNode.replaceChild(freshBtn, addToCartBtnClose);
+    }
+    const maxInput = document.getElementById('modalMaxQuantity');
+    if (maxInput) maxInput.value = '';
 };
 
 // Handle click outside modal box
@@ -607,6 +784,41 @@ window.handleItemModalOutsideClick = function(event) {
         closeItemDetailModal();
     }
 };
+
+// Silently applies cart qty limits — no banners shown, just caps qty input and switches button if max reached
+function _applyEstCartQtyToModal(itemId, maxStock, reqInfo, reqInfoText) {
+    const key        = String(itemId);
+    const inCart     = parseInt(estCartQtyCache[key] || 0);
+    modalInCart      = inCart;
+
+    const addToCartBtn = document.getElementById('modalAddToCartBtn');
+    const maxInput     = document.getElementById('modalMaxQuantity');
+    const qtyInput     = document.getElementById('itemQuantity');
+    const canAdd       = Math.max(0, maxStock - inCart);
+
+    // Always hide banner
+    if (reqInfo) reqInfo.style.display = 'none';
+
+    if (canAdd <= 0) {
+        // Already at max — switch button to "Go to Cart", disable qty input
+        if (qtyInput) { qtyInput.value = 1; qtyInput.disabled = true; }
+        if (maxInput) maxInput.value = 0;
+        if (addToCartBtn) {
+            addToCartBtn.innerHTML        = '<i class="fas fa-shopping-cart"></i> Go to Cart';
+            addToCartBtn.style.background = '#dc2626';
+            addToCartBtn.disabled         = false;
+            addToCartBtn.onclick          = function() { window.location.href = '/cart/'; };
+        }
+    } else {
+        // Still has room — silently cap the qty input max
+        if (maxInput) maxInput.value = canAdd;
+        if (qtyInput) {
+            qtyInput.max      = canAdd;
+            qtyInput.disabled = false;
+            if (parseInt(qtyInput.value) > canAdd) qtyInput.value = 1;
+        }
+    }
+}
 
 // ✅ UPDATE QUANTITY WITH VALIDATION
 window.updateModalQuantity = function(change) {
@@ -641,17 +853,15 @@ window.updateModalQuantity = function(change) {
     }
 
     itemQuantityInput.value = newQuantity;
-    console.log(`📊 Quantity updated: ${newQuantity} / ${maxQuantity}`);
 };
 
-// Close modal on outside click (handled in HTML via handleItemModalOutsideClick)
-// Kept for settings modal compatibility
-window.onclick = function(event) {
+// Close settings modal on outside click — use addEventListener to avoid overriding other handlers
+document.addEventListener('click', function(event) {
     const settingsModal = document.getElementById("settingsModal");
-    if (event.target === settingsModal && settingsModal) {
+    if (settingsModal && event.target === settingsModal) {
         settingsModal.style.display = "none";
     }
-};
+});
 
 // =======================================================
 // INITIALIZE ON PAGE LOAD
@@ -758,33 +968,44 @@ function showClientMsgToast(count) {
     }, 5000);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Establishment details JS loaded successfully');
+// Preload PENDING cart qtys + request/to_pay qtys for this establishment
+function refreshEstCartQtyCache() {
+    if (typeof IS_USER_AUTHENTICATED === 'undefined' || !IS_USER_AUTHENTICATED) return;
+    const estIdEl = document.getElementById('modalEstablishmentId');
+    const estId   = estIdEl ? estIdEl.value : (typeof ESTABLISHMENT_ID !== 'undefined' ? ESTABLISHMENT_ID : null);
+    if (!estId) return;
 
+    // These paths must be registered in urls.py — see urls_to_add.py snippet
+    const pendingUrl = '/api/pending-cart-qtys/?establishment_id=' + estId;
+    const requestUrl = '/api/request-qtys/?establishment_id=' + estId;
+
+    fetch(pendingUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : { qtys: {} })
+        .catch(() => ({ qtys: {} }))
+        .then(function(data) { if (data.qtys) estCartQtyCache = data.qtys; });
+
+    fetch(requestUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : { qtys: {} })
+        .catch(() => ({ qtys: {} }))
+        .then(function(data) { if (data.qtys) estReqQtyCache = data.qtys; });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     // ✅ Start polling for unread messages every 10s
     if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
         pollClientUnreadMessages();
         setInterval(pollClientUnreadMessages, 10000);
     }
 
-    // Load cart count on page load
-    if (typeof IS_USER_AUTHENTICATED !== 'undefined' && IS_USER_AUTHENTICATED) {
-        fetch('/cart/count/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
-        })
-        .catch(error => console.error('Error loading cart count:', error));
-    }
+    // ✅ Preload cart qty cache on page load
+    refreshEstCartQtyCache();
+    setInterval(refreshEstCartQtyCache, 30000);
+
+    // ✅ Sync cart badge count on page load — fetch from server after a short delay
+    // so URLS (from the base template) is ready. Mirrors kabsueats.js behavior.
+    setTimeout(function() { _refreshEstCartBadge(); }, 400);
+    // Keep badge fresh every 15s while user stays on the page
+    setInterval(function() { _refreshEstCartBadge(); }, 15000);
 });
 // =======================================================
 // PROFILE DROPDOWN FUNCTIONS
@@ -853,10 +1074,4 @@ if (typeof window.previewImage === 'undefined') {
     };
 }
 
-// Close modals on clicking outside content
-window.onclick = function(event) {
-    const settingsModal = document.getElementById("settingsModal");
-    if (event.target === settingsModal && settingsModal) {
-        settingsModal.style.display = "none";
-    }
-};
+// (settings modal outside-click is handled by the addEventListener above)

@@ -67,9 +67,138 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .pd-ico.so { background: var(--red-light); color: var(--red); }
 
 /* ============================================ */
+/* PAGE LAYOUT (sidebar + main)                 */
+/* ============================================ */
+.page-layout {
+    display: flex;
+    align-items: flex-start;
+    min-height: calc(100vh - 62px);
+    position: relative;
+}
+
+/* ============================================ */
+/* CLIENT LEFT SIDEBAR                          */
+/* ============================================ */
+.client-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--g200);
+    position: sticky;
+    top: 62px; /* navbar height */
+    height: calc(100vh - 62px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    z-index: 100;
+    box-shadow: 2px 0 8px rgba(0,0,0,.04);
+}
+
+.csb-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 12px;
+}
+
+.csb-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--g700);
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    transition: background .2s, color .2s;
+    cursor: pointer;
+}
+.csb-item:hover {
+    background: var(--red-light);
+    color: var(--red);
+}
+.csb-item.active {
+    background: var(--red);
+    color: #fff;
+}
+.csb-item.active .csb-ico { color: #fff; }
+.csb-item.active:hover { background: var(--red-dark); }
+
+.csb-ico {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--g100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: var(--g600);
+    flex-shrink: 0;
+    transition: background .2s, color .2s;
+    position: relative;
+}
+.csb-item:hover .csb-ico {
+    background: var(--red-light);
+    color: var(--red);
+}
+.csb-item.active .csb-ico {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+.csb-lbl {
+    flex: 1;
+}
+
+/* Cart badge inside sidebar icon */
+.csb-ico .cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--red);
+    color: #fff;
+    border-radius: 50%;
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 2px solid #fff;
+    line-height: 1;
+}
+.csb-item.active .csb-ico .cart-badge {
+    border-color: var(--red);
+    background: #fff;
+    color: var(--red);
+}
+
+/* ============================================ */
+/* BS INLINE TITLE (replaces dropdown)          */
+/* ============================================ */
+.bs-inline-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--g800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+.bs-inline-title i { color: var(--orange); font-size: 18px; }
+
+/* ============================================ */
 /* MAIN CONTENT                                 */
 /* ============================================ */
-.main { max-width: 1440px; margin: 0 auto; padding: 0 28px; }
+.main { flex: 1; max-width: 1440px; margin: 0 auto; padding: 0 28px; min-width: 0; }
+.main.main-with-sidebar { max-width: none; width: 100%; }
+
 .no-est-msg { text-align: center; padding: 40px; color: #9ca3af; font-size: 15px; grid-column: 1 / -1; }
 
 /* ============================================ */

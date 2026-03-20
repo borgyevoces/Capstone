@@ -1,0 +1,900 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>View Map — KabsuEats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}">
+    <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}">
+    <style>
+    /* ── Map page content wrapper ── */
+    .map-page-content {
+        padding: 24px 28px 40px;
+        flex: 1;
+    }
+    .map-page-header { margin-bottom: 20px; }
+    .map-page-header h1 {
+        font-size: 22px; font-weight: 800; color: var(--g900);
+        font-family: 'Poppins', sans-serif;
+        display: flex; align-items: center; gap: 10px;
+        margin: 0 0 4px;
+    }
+    .map-page-header h1 i { color: var(--red); }
+    .map-page-header p { font-size: 13px; color: var(--g400); margin: 0; font-family: 'Poppins', sans-serif; }
+    .map-page-card {
+        background: #fff; border-radius: 16px;
+        border: 1px solid var(--g200);
+        box-shadow: var(--sh1); overflow: hidden;
+    }
+    /* ── Map layout ── */
+    .map-layout { display: flex; align-items: stretch; height: calc(100vh - 200px); min-height: 500px; }
+    .map-cat-sidebar {
+        width: 220px; flex-shrink: 0; background: #fff;
+        border-right: 1px solid #f0f0f0;
+        padding: 14px 10px; display: flex; flex-direction: column;
+        gap: 8px; overflow-y: auto;
+    }
+    .mcs-header {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.6px; color: var(--g400);
+        padding: 0 2px 8px; border-bottom: 1.5px solid #f0f0f0;
+    }
+    .mcs-header i { font-size: 10px; }
+    .map-right { flex: 1; min-width: 0; }
+    .map-wrap  { position: relative; height: 100%; }
+    #esMap     { width: 100%; height: 100%; }
+
+    /* ── Category checkbox pills ── */
+    .map-cat-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px 0; }
+    .mcf-btn.mcf-all { grid-column: 1 / -1; }
+    .mcf-btn {
+        display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+        border-radius: 7px; border: 1.5px solid #d1d5db; background: #fff;
+        color: #374151; font-size: 11px; font-weight: 600;
+        font-family: 'Poppins', sans-serif; cursor: pointer;
+        transition: border-color .15s, background .15s, color .15s;
+        white-space: nowrap; text-align: left; width: 100%; line-height: 1.3;
+    }
+    .mcf-check {
+        width: 15px; height: 15px; border-radius: 3px;
+        border: 1.5px solid #d1d5db; background: #fff; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        transition: border-color .15s, background .15s;
+    }
+    .mcf-check::after {
+        content: ''; display: none; width: 4px; height: 7px;
+        border: 2px solid #fff; border-top: none; border-left: none;
+        transform: rotate(45deg) translate(-1px,-1px);
+    }
+    .mcf-btn:hover               { border-color: var(--red); background: #fff8f8; color: var(--red); }
+    .mcf-btn:hover .mcf-check    { border-color: var(--red); }
+    .mcf-btn.active              { border-color: var(--red); background: #fff8f8; color: var(--red); }
+    .mcf-btn.active .mcf-check   { background: var(--red); border-color: var(--red); }
+    .mcf-btn.active .mcf-check::after { display: block; }
+    .mcf-btn.mcf-all.active      { background: var(--red); color: #fff; border-color: var(--red); }
+    .mcf-btn.mcf-all.active .mcf-check { background: rgba(255,255,255,.3); border-color: rgba(255,255,255,.6); }
+    .mcf-btn.mcf-all.active .mcf-check::after { display: block; }
+
+    /* ── Map controls (layer + route btns stacked) ── */
+    .map-ctrl-stack {
+        position: absolute; top: 14px; right: 14px; z-index: 1000;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .map-ctrl-stack .map-layer-btn,
+    .map-ctrl-stack .map-route-btn { position: static !important; top: auto !important; right: auto !important; }
+    .map-route-btn {
+        width: 42px; height: 42px; background: #fff; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 12px rgba(0,0,0,.18); cursor: pointer;
+        border: 1px solid #e5e7eb; font-size: 17px; color: #1967d2; transition: .2s;
+    }
+    .map-route-btn:hover  { background: #f0f4ff; }
+    .map-route-btn.active { background: #1967d2; color: #fff; border-color: #1967d2; }
+
+    /* ── Route guide panel ── */
+    #routeGuide {
+        position: absolute; top: 14px; right: 66px; z-index: 1090;
+        width: 280px; max-width: calc(100vw - 100px);
+        background: #fff; border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.12), 0 6px 24px rgba(0,0,0,.14);
+        border: 1px solid #e5e7eb;
+        display: none; flex-direction: column; overflow: hidden;
+        font-family: 'Poppins', sans-serif; animation: rgIn .22s ease;
+    }
+    @keyframes rgIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+    #routeGuide.show { display: flex; }
+    #rgHeader { padding:11px 12px 10px; background:#fff; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    #rgHeaderInner { display:flex; align-items:center; gap:9px; flex:1; min-width:0; }
+    #rgIcon { width:32px; height:32px; background:#1967d2; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; flex-shrink:0; }
+    #rgDestName { font-size:12px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #rgSubtitle { font-size:10.5px; color:#9ca3af; margin-top:1px; }
+    #rgClose { width:26px; height:26px; background:#f3f4f6; border:none; border-radius:6px; cursor:pointer; font-size:11px; color:#6b7280; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:.15s; }
+    #rgClose:hover { background:#fee2e2; color:#B71C1C; }
+    #rgSummary { display:flex; align-items:center; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #f1f5f9; }
+    .rg-stat { flex:1; text-align:center; }
+    .rg-stat-divider { width:1px; height:30px; background:#e5e7eb; }
+    .rg-stat-lbl { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#9ca3af; margin-bottom:2px; }
+    .rg-stat-val { font-size:15px; font-weight:800; line-height:1; }
+    .rg-dist { color:#1967d2; }
+    .rg-time { color:#16a34a; }
+    #rgLoading { padding:18px 14px; font-size:12px; color:#6b7280; display:flex; align-items:center; gap:8px; justify-content:center; }
+    #rgSteps { max-height:260px; overflow-y:auto; padding:4px 0 2px; }
+    #rgSteps::-webkit-scrollbar { width:3px; }
+    #rgSteps::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:2px; }
+    .rg-step { display:flex; align-items:flex-start; gap:10px; padding:7px 12px; transition:background .12s; position:relative; }
+    .rg-step:hover { background:#f8fafc; }
+    .rg-step:not(:last-child)::after { content:''; position:absolute; left:22px; top:32px; bottom:-7px; width:2px; background:#e5e7eb; }
+    .rg-ico { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; flex-shrink:0; margin-top:2px; border:2px solid #e5e7eb; background:#fff; color:#6b7280; z-index:1; }
+    .rg-ico.depart { border-color:#bbf7d0; background:#f0fdf4; color:#16a34a; }
+    .rg-ico.left   { border-color:#bfdbfe; background:#eff6ff; color:#1967d2; }
+    .rg-ico.right  { border-color:#bbf7d0; background:#f0fdf4; color:#16a34a; }
+    .rg-ico.uturn  { border-color:#fde68a; background:#fefce8; color:#b45309; }
+    .rg-ico.arrive { border-color:#fca5a5; background:#fef2f2; color:#B71C1C; }
+    .rg-step-body { flex:1; min-width:0; }
+    .rg-step-name { font-size:11.5px; font-weight:600; color:#1f2937; line-height:1.4; }
+    .rg-step-dist { font-size:10px; color:#9ca3af; margin-top:1px; }
+    #rgFooter { padding:8px 10px 10px; border-top:1px solid #f1f5f9; }
+    #rgClearBtn { width:100%; padding:9px; background:#fff; color:#dc2626; border:1.5px solid #fca5a5; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; transition:.15s; }
+    #rgClearBtn:hover { background:#fef2f2; border-color:#dc2626; }
+
+    /* ── Connection Overlay ── */
+    #connectionOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(4px); display:none; }
+    #connectionOverlay.active { display:flex !important; }
+    #connectionOverlayBox { background:#fff; border-radius:18px; padding:40px 32px; text-align:center; max-width:380px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.25); }
+    #connectionOverlayBox h3 { font-size:1.2rem; font-weight:800; color:#111; margin:16px 0 8px; font-family:'Poppins',sans-serif; }
+    #connectionOverlayBox p { color:#6B7280; font-size:0.88rem; margin:0 0 20px; font-family:'Poppins',sans-serif; }
+    #connRetryBtn { background:linear-gradient(135deg,#B71C1C,#7f1111); color:#fff; border:none; padding:11px 28px; border-radius:50px; font-weight:700; cursor:pointer; font-size:0.92rem; font-family:'Poppins',sans-serif; display:none; }
+    .conn-spinner { width:36px; height:36px; border:4px solid #f0f0f0; border-top-color:#B71C1C; border-radius:50%; animation:connSpin .75s linear infinite; display:none; margin:0 auto; }
+    @keyframes connSpin { to { transform:rotate(360deg); } }
+    .conn-icon-offline,.conn-icon-db { font-size:1.8rem; color:#B71C1C; display:none; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+        .map-page-content { padding: 14px 14px 60px; }
+        .map-layout { height: calc(100vh - 220px); min-height: 400px; flex-direction: column; }
+        .map-cat-sidebar { width:100%; height:auto; max-height:100px; border-right:none; border-bottom:1px solid #f0f0f0; flex-direction:row; flex-wrap:wrap; padding:6px 8px; gap:4px; overflow-x:auto; overflow-y:hidden; }
+        .mcs-header { display: none; }
+        .map-right { flex: 1; }
+        .client-sidebar { display: none; }
+        .page-layout { display: block; }
+        .main.main-with-sidebar { width: 100%; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- Django Messages -->
+{% if messages %}
+<div class="messages-container" id="messagesContainer">
+    {% for message in messages %}{% if 'owner_only' not in message.extra_tags %}
+    <div class="message-alert {{ message.tags }}">
+        <span class="message-icon">
+            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+            {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+        </span>
+        <span class="message-text">{{ message }}</span>
+        <button class="message-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    </div>
+    {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<!-- NAVBAR -->
+<header class="navbar">
+    <a href="{% url 'kabsueats_home' %}" class="brand">KabsuEats</a>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <!-- ✅ Order Notification Bell -->
+            <div style="position:relative;" id="notifBellWrap">
+                <button id="orderNotifBellBtn" onclick="toggleOrderNotifPanel()" title="Order Updates" style="
+                    width:38px;height:38px;border-radius:50%;border:none;
+                    background:rgba(183,28,28,0.08);color:#b71c1c;
+                    display:flex;align-items:center;justify-content:center;
+                    cursor:pointer;font-size:16px;position:relative;
+                    transition:background 0.2s;
+                ">
+                    <i class="fas fa-bell"></i>
+                    <span id="orderNotifBadge" style="
+                        display:none;position:absolute;top:-3px;right:-3px;
+                        background:#b71c1c;color:#fff;border-radius:50%;
+                        min-width:17px;height:17px;font-size:9px;font-weight:700;
+                        align-items:center;justify-content:center;
+                        padding:0 3px;border:2px solid #fff;line-height:1;
+                    "></span>
+                </button>
+            </div>
+            <div class="pcont" id="pcont">
+            <div class="pav" id="pavBtn" title="Profile">
+                {% if user.profile and user.profile.profile_image %}
+                    <img src="{{ user.profile.profile_image.url }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                {% endif %}
+            </div>
+            <div id="pdrop" class="pdrop">
+                <div class="pd-hdr">
+                    <div class="pd-av">
+                        {% if user.profile and user.profile.profile_image %}
+                            <img src="{{ user.profile.profile_image.url }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="pd-name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="pd-email">{{ user.email }}</span>
+                    </div>
+                </div>
+                <div class="pd-div"></div>
+                <a href="#" class="pd-item" id="editProf">
+                    <span class="pd-ico edit"><i class="fas fa-user-edit"></i></span> Edit Profile
+                </a>
+                <div class="pd-div"></div>
+                <a href="{% url 'user_logout' %}" class="pd-item logout">
+                    <span class="pd-ico so"><i class="fas fa-sign-out-alt"></i></span> Log Out
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <a href="{% url 'user_login_register' %}#login" class="nib"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="{% url 'user_login_register' %}#register" class="nib login-btn">Register</a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- PAGE LAYOUT -->
+<div class="page-layout">
+
+<!-- LEFT SIDEBAR — always visible -->
+<aside class="client-sidebar" id="clientSidebar">
+    <nav class="csb-nav">
+        <a href="{% url 'kabsueats_home' %}" class="csb-item">
+            <span class="csb-ico"><i class="fas fa-home"></i></span>
+            <span class="csb-lbl">Home</span>
+        </a>
+        <a href="{% url 'view_cart' %}" class="csb-item" style="position:relative;">
+            <span class="csb-ico" style="position:relative;">
+                <i class="fas fa-shopping-cart"></i>
+                {% if user.is_authenticated %}
+                <span class="cart-badge" id="cart-count-badge" style="display:{% if cart_count and cart_count > 0 %}flex{% else %}none{% endif %};">{{ cart_count|default:"0" }}</span>
+                {% endif %}
+            </span>
+            <span class="csb-lbl">Cart</span>
+        </a>
+        <a href="{% url 'order_history' %}" class="csb-item">
+            <span class="csb-ico"><i class="fas fa-receipt"></i></span>
+            <span class="csb-lbl">My Orders</span>
+        </a>
+        <a href="{% url 'kabsueats_map' %}" class="csb-item active">
+            <span class="csb-ico"><i class="fas fa-map-marked-alt"></i></span>
+            <span class="csb-lbl">View Map</span>
+        </a>
+    </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main main-with-sidebar">
+<div class="map-page-content">
+
+    <div class="map-page-header">
+        <h1><i class="fas fa-map-marked-alt"></i> Establishment Map</h1>
+        <p>See all food establishments near CvSU-Bacoor — tap a pin to view details or get directions.</p>
+    </div>
+
+    <div class="map-page-card">
+        <div class="map-layout">
+
+            <!-- LEFT: Category Sidebar -->
+            <div class="map-cat-sidebar" id="mapCatSidebar">
+                <div class="mcs-header">
+                    <i class="fas fa-tag"></i>
+                    <span>Filter by Category</span>
+                </div>
+                <div class="map-cat-filter" id="mapCatFilter">
+                    <button class="mcf-btn mcf-all active" onclick="filterMapCategory('__all__', this)">
+                        <span class="mcf-check"></span>
+                        <span>All</span>
+                    </button>
+                    <!-- Category buttons injected by JS -->
+                </div>
+            </div>
+
+            <!-- RIGHT: Map -->
+            <div class="map-right">
+                <div class="map-wrap">
+                    <div id="esMap"></div>
+
+                    <!-- Control Stack -->
+                    <div class="map-ctrl-stack">
+                        <div class="map-layer-btn" id="mapLayerBtn" onclick="toggleLayerPanel()" title="Map Layers">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="map-route-btn" id="mapRouteBtn" onclick="toggleRouteGuide()" title="Directions" style="display:none;">
+                            <i class="fas fa-directions"></i>
+                        </div>
+                    </div>
+
+                    <!-- Layer Panel -->
+                    <div class="map-layer-panel" id="mapLayerPanel">
+                        <div class="mlp-title">Map Type</div>
+                        <button class="mlp-opt on" id="mts-hybrid"    onclick="switchTile('hybrid')">   <i class="fas fa-layer-group"></i> Hybrid</button>
+                        <button class="mlp-opt"    id="mts-street"    onclick="switchTile('street')">   <i class="fas fa-road"></i> Street</button>
+                        <button class="mlp-opt"    id="mts-satellite" onclick="switchTile('satellite')"><i class="fas fa-satellite"></i> Satellite</button>
+                        <button class="mlp-opt"    id="mts-terrain"   onclick="switchTile('terrain')">  <i class="fas fa-mountain"></i> Terrain</button>
+                    </div>
+
+                    <!-- Show My Location -->
+                    <button class="map-loc-btn" id="mapLocBtn" onclick="showMyLocation()">
+                        <i class="fas fa-location-arrow"></i> Show My Location
+                    </button>
+
+                    <!-- 500m legend -->
+                    <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
+
+                    <!-- Route Guide Panel -->
+                    <div id="routeGuide">
+                        <div id="rgHeader">
+                            <div id="rgHeaderInner">
+                                <div id="rgIcon"><i class="fas fa-directions"></i></div>
+                                <div>
+                                    <div id="rgDestName">Directions</div>
+                                    <div id="rgSubtitle">Walking directions</div>
+                                </div>
+                            </div>
+                            <button id="rgClose" onclick="closeRouteGuide()" title="Close"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="rgSummary" style="display:none;">
+                            <div class="rg-stat">
+                                <div class="rg-stat-lbl">Distance</div>
+                                <div class="rg-stat-val rg-dist" id="rgDist">—</div>
+                            </div>
+                            <div class="rg-stat-divider"></div>
+                            <div class="rg-stat">
+                                <div class="rg-stat-lbl">Walk time</div>
+                                <div class="rg-stat-val rg-time" id="rgTime">—</div>
+                            </div>
+                        </div>
+                        <div id="rgLoading"><i class="fas fa-spinner fa-spin"></i> Getting route…</div>
+                        <div id="rgSteps"></div>
+                        <div id="rgFooter" style="display:none;">
+                            <button id="rgClearBtn" onclick="closeRouteGuide()">
+                                <i class="fas fa-times-circle"></i> Clear Route
+                            </button>
+                        </div>
+                    </div>
+
+                </div><!-- /.map-wrap -->
+            </div><!-- /.map-right -->
+
+        </div><!-- /.map-layout -->
+    </div><!-- /.map-page-card -->
+
+</div><!-- /.map-page-content -->
+</main>
+
+</div><!-- /.page-layout -->
+
+<!-- EDIT PROFILE MODAL -->
+<div class="sover" id="setMod">
+    <div class="sbox">
+        <span class="scls" onclick="closeSet()">&times;</span>
+        <div class="stitle">Update Profile</div>
+        <form id="profileUpdateForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="fg" style="text-align:center">
+                <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;overflow:hidden;border:3px solid var(--g200);" id="profilePreview">
+                    {% if user.is_authenticated and user.profile and user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" style="width:100%;height:100%;object-fit:cover;">
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="fg">
+                <label>Change Profile Picture:</label>
+                <input type="file" name="profile_picture" accept="image/*" id="profileImgInput" onchange="previewProfileImg(this)">
+            </div>
+            <div class="fg">
+                <label>Email Address:</label>
+                <input type="email" value="{{ user.email|default:'' }}" readonly style="background:#f3f4f6;cursor:not-allowed">
+            </div>
+            <div style="margin-top:20px;text-align:center">
+                <button type="button" class="svbtn" id="saveProfileBtn" onclick="saveProfile()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CSRF Token -->
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+<!-- Django data for JS -->
+<script>
+    const URLS = {
+        bestsellers:   "{% url 'get_bestsellers' %}",
+        addToCart:     "{% url 'add_to_cart' %}",
+        cartCount:     "{% url 'get_cart_count' %}",
+        nearbyEst:     "{% url 'get_nearby_establishments' %}",
+        searchMenu:    "{% url 'search_menu_items' %}",
+        estDetail:     "/food_establishment/",
+        createCash:    "{% url 'create_cash_order' %}",
+        cart:          "{% url 'view_cart' %}",
+        login:         "{% url 'user_login_register' %}",
+        updateProfile: "{% url 'update_profile' %}",
+        allEstStatus:        "{% url 'get_all_establishments_status' %}",
+        userNotifications:   "{% url 'get_user_order_notifications' %}",
+        markNotifsRead:      "{% url 'mark_user_notifications_read' %}",
+    };
+    const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    const CVSU = {
+        lat: {{ CVSU_LATITUDE|default:"14.412768" }},
+        lng: {{ CVSU_LONGITUDE|default:"120.981348" }}
+    };
+    const RADIUS = 500;
+
+    window.EST_ALL_DATA = {
+        {% for est in food_establishments %}
+        {{ est.id }}: {
+            name: "{{ est.name|escapejs }}",
+            address: "{{ est.address|default:''|escapejs }}",
+            image: "{% if est.image %}{{ est.image.url }}{% endif %}",
+            status: "{{ est.calculated_status|lower }}",
+            lat: {{ est.latitude|default:"null" }},
+            lng: {{ est.longitude|default:"null" }},
+            categories: "{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %},{% endif %}{{ est.other_category|lower|escapejs }}{% endif %}",
+            other_category: "{{ est.other_category|default:''|lower|escapejs }}",
+            other_amenity: "{{ est.other_amenity|default:''|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    window.SUGGEST_DATA = {
+        establishments: [{% for est in food_establishments %}{"id":{{ est.id }},"name":"{{ est.name|escapejs }}","status":"{{ est.calculated_status|lower }}"}{% if not forloop.last %},{% endif %}{% endfor %}],
+        categories: [{% for cat in all_categories %}"{{ cat.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+    };
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<!-- Connection Overlay -->
+<div id="connectionOverlay">
+    <div id="connectionOverlayBox">
+        <i class="fas fa-wifi conn-icon-offline" id="connIconOffline"></i>
+        <i class="fas fa-database conn-icon-db" id="connIconDb"></i>
+        <div class="conn-spinner" id="connSpinner"></div>
+        <h3 id="connTitle">Connecting...</h3>
+        <p id="connMsg">Please wait while we reconnect.</p>
+        <button id="connRetryBtn" onclick="window._connRetry()">
+            <i class="fas fa-redo"></i> Try Again
+        </button>
+    </div>
+</div>
+<script>
+(function(){
+    'use strict';
+    var overlay=document.getElementById('connectionOverlay'),titleEl=document.getElementById('connTitle'),
+        msgEl=document.getElementById('connMsg'),retryBtn=document.getElementById('connRetryBtn'),
+        spinner=document.getElementById('connSpinner'),offIcon=document.getElementById('connIconOffline'),
+        dbIcon=document.getElementById('connIconDb'),_retryFn=null;
+    window.showConnectionOverlay=function(title,msg,retryFn,iconType){
+        titleEl.textContent=title||'Connecting...';msgEl.textContent=msg||'Please wait while we reconnect.';
+        _retryFn=retryFn||null;spinner.style.display='none';offIcon.style.display='none';dbIcon.style.display='none';
+        if(iconType==='db'){dbIcon.style.display='block';}else if(iconType==='offline'||!navigator.onLine){offIcon.style.display='block';}else{spinner.style.display='block';}
+        retryBtn.style.display=_retryFn?'inline-block':'none';overlay.classList.add('active');document.body.style.overflow='hidden';
+    };
+    window.hideConnectionOverlay=function(){overlay.classList.remove('active');document.body.style.overflow='';_retryFn=null;};
+    window._connRetry=function(){retryBtn.style.display='none';spinner.style.display='block';offIcon.style.display='none';dbIcon.style.display='none';titleEl.textContent='Retrying...';msgEl.textContent='Trying to reconnect, please wait.';setTimeout(function(){if(_retryFn)_retryFn();},600);};
+    window.addEventListener('offline',function(){window.showConnectionOverlay('No Internet Connection','Your internet connection was lost.',function(){if(navigator.onLine){window.hideConnectionOverlay();window.location.reload();}else{titleEl.textContent='Still Offline';msgEl.textContent='No internet detected.';}}, 'offline');});
+    window.addEventListener('online',function(){if(overlay.classList.contains('active')){titleEl.textContent='Connection Restored!';msgEl.textContent='You\'re back online. Reloading...';spinner.style.display='block';offIcon.style.display='none';dbIcon.style.display='none';retryBtn.style.display='none';setTimeout(function(){window.hideConnectionOverlay();window.location.reload();},1500);}});
+    {% if db_error %}document.addEventListener('DOMContentLoaded',function(){if(window.showDatabaseErrorOverlay)window.showDatabaseErrorOverlay();});{% endif %}
+}());
+</script>
+
+<script src="{% static 'js/kabsueats.js' %}"></script>
+
+<script>
+// ============================================================
+// MAP PAGE — init map + category filter + routing
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+    // Profile dropdown
+    initProfile();
+
+    // Init Leaflet map immediately (it's the whole point of this page)
+    if (!mapReady) { initMap(); mapReady = true; }
+
+    // Extra invalidateSize after full paint
+    window.addEventListener('load', function () {
+        setTimeout(function(){ if(mapInst) mapInst.invalidateSize(); }, 300);
+    });
+
+    // Build category filter sidebar buttons
+    initMapCatFilter();
+
+    // ✅ Cart badge — load immediately + poll every 10s
+    updateCartBadge();
+    var _mapCartTimer = setInterval(updateCartBadge, 10000);
+
+    // Pause polling when tab hidden, resume when visible
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            clearInterval(_mapCartTimer);
+        } else {
+            updateCartBadge();
+            _mapCartTimer = setInterval(updateCartBadge, 10000);
+        }
+    });
+
+    // Global click handlers for dropdowns
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#pcont')) {
+            const pd = document.getElementById('pdrop');
+            if (pd) pd.classList.remove('show');
+        }
+        if (!e.target.closest('.map-layer-btn') && !e.target.closest('.map-layer-panel')) {
+            const lp = document.getElementById('mapLayerPanel');
+            if (lp) lp.classList.remove('show');
+        }
+        if (e.target === document.getElementById('setMod')) closeSet();
+    });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSet(); });
+});
+
+// ── Category Filter ──
+function initMapCatFilter() {
+    const container = document.getElementById('mapCatFilter');
+    if (!container || !window.SUGGEST_DATA || !SUGGEST_DATA.categories) return;
+
+    SUGGEST_DATA.categories.forEach(function(cat) {
+        const btn = document.createElement('button');
+        btn.className = 'mcf-btn';
+        btn.setAttribute('data-cat', cat.toLowerCase());
+        btn.innerHTML = '<span class="mcf-check"></span><span>' + cat + '</span>';
+        btn.onclick = function() { filterMapCategory(cat.toLowerCase(), this); };
+        container.appendChild(btn);
+    });
+
+    window._mapActiveCats = new Set();
+
+    window.filterMapCategory = function(cat, btn) {
+        const allBtn = container.querySelector('.mcf-all');
+        if (cat === '__all__') {
+            window._mapActiveCats.clear();
+            container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(b => b.classList.remove('active'));
+            allBtn.classList.add('active');
+        } else {
+            if (window._mapActiveCats.has(cat)) { window._mapActiveCats.delete(cat); btn.classList.remove('active'); }
+            else { window._mapActiveCats.add(cat); btn.classList.add('active'); }
+            allBtn.classList.toggle('active', window._mapActiveCats.size === 0);
+        }
+        applyMapCatFilter();
+    };
+
+    window.applyMapCatFilter = function() {
+        const active = window._mapActiveCats;
+        if (typeof esMapData === 'undefined' || typeof renderMarkers !== 'function') return;
+        mapFilterState.cats = active.size === 0 ? null : Array.from(active);
+        renderMarkers(_applyFiltersWithCats(esMapData));
+    };
+
+    function _applyFiltersWithCats(data) {
+        const saved = mapFilterState.cat;
+        mapFilterState.cat = '';
+        let result = applyFiltersToData(data);
+        mapFilterState.cat = saved;
+        if (mapFilterState.cats && mapFilterState.cats.length > 0) {
+            result = result.filter(function(e) {
+                const ec = (e.categories||'').toLowerCase(), eo = (e.other_category||'').toLowerCase();
+                return mapFilterState.cats.some(function(c){ return ec.includes(c)||eo.includes(c); });
+            });
+        }
+        return result;
+    }
+}
+
+// ── Routing System (OSRM) — identical to kabsueats.html ──
+window._routeLayer = null; window._routeExtraLayers = []; window._userLat = null; window._userLng = null;
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function(pos){ window._userLat=pos.coords.latitude; window._userLng=pos.coords.longitude; }, null, { enableHighAccuracy:true, maximumAge:15000 });
+}
+window.toggleRouteGuide = function() {
+    var guide=document.getElementById('routeGuide'), btn=document.getElementById('mapRouteBtn');
+    if(!guide) return;
+    if(guide.classList.contains('show')){ guide.classList.remove('show'); if(btn) btn.classList.remove('active'); }
+    else { guide.classList.add('show'); if(btn) btn.classList.add('active'); }
+};
+window.showRouteTo = function(destLat, destLng, destName) {
+    if (!window._userLat || !window._userLng) {
+        if (!navigator.geolocation) { if(typeof showToast==='function') showToast('Geolocation not supported.','error'); return; }
+        if(typeof showToast==='function') showToast('Getting your location…','info');
+        navigator.geolocation.getCurrentPosition(
+            function(pos){ window._userLat=pos.coords.latitude; window._userLng=pos.coords.longitude; window.showRouteTo(destLat,destLng,destName); },
+            function(){ if(typeof showToast==='function') showToast('Could not get location. Allow location access.','error'); },
+            { timeout:8000, maximumAge:30000 }
+        );
+        return;
+    }
+    var guide=document.getElementById('routeGuide'), rgLoading=document.getElementById('rgLoading'),
+        rgSteps=document.getElementById('rgSteps'), rgSummary=document.getElementById('rgSummary'),
+        rgFooter=document.getElementById('rgFooter'), rgDest=document.getElementById('rgDestName'),
+        rgDist=document.getElementById('rgDist'), rgTime=document.getElementById('rgTime'),
+        btn=document.getElementById('mapRouteBtn');
+    rgDest.textContent=destName; document.getElementById('rgSubtitle').textContent='Calculating…';
+    rgSummary.style.display='none'; rgFooter.style.display='none'; rgSteps.innerHTML='';
+    rgLoading.style.display='flex'; guide.classList.add('show'); btn.style.display='flex'; btn.classList.add('active');
+    _clearRouteLayers();
+    fetch('https://router.project-osrm.org/route/v1/walking/'+window._userLng+','+window._userLat+';'+destLng+','+destLat+'?overview=full&geometries=geojson&steps=true')
+        .then(function(r){return r.json();})
+        .then(function(data){
+            if(!data.routes||!data.routes.length) throw new Error('no route');
+            var route=data.routes[0], coords=route.geometry.coordinates.map(function(c){return[c[1],c[0]];});
+            var shadow=L.polyline(coords,{color:'#1967d2',weight:10,opacity:0.15,lineJoin:'round',lineCap:'round'}).addTo(mapInst);
+            window._routeLayer=L.polyline(coords,{color:'#1967d2',weight:5,opacity:1,lineJoin:'round',lineCap:'round'}).addTo(mapInst);
+            var center=L.polyline(coords,{color:'#ffffff',weight:2,opacity:0.5,lineJoin:'round',lineCap:'round',dashArray:'1 8'}).addTo(mapInst);
+            window._routeExtraLayers=[shadow,center];
+            mapInst.fitBounds(window._routeLayer.getBounds(),{padding:[50,50],animate:true});
+            var dM=route.distance, dS=route.duration;
+            rgDist.textContent=dM<1000?Math.round(dM)+'m':(dM/1000).toFixed(1)+'km';
+            rgTime.textContent=dS<60?Math.round(dS)+'s':dS<3600?Math.round(dS/60)+' min':Math.floor(dS/3600)+'h '+Math.round((dS%3600)/60)+'m';
+            document.getElementById('rgSubtitle').textContent='Walking directions';
+            rgSummary.style.display='flex'; rgLoading.style.display='none';
+            var allSteps=[]; (route.legs||[]).forEach(function(leg){(leg.steps||[]).forEach(function(s){allSteps.push(s);});});
+            rgSteps.innerHTML='';
+            allSteps.forEach(function(step,idx){
+                var type=(step.maneuver||{}).type||'', mod=(step.maneuver||{}).modifier||'', name=step.name||'', dist=step.distance||0;
+                var dLbl=dist<5?'':dist<1000?Math.round(dist)+'m':(dist/1000).toFixed(1)+'km';
+                var ic='', ih='<i class="fas fa-arrow-up"></i>';
+                if(type==='depart'){ic='depart';ih='<i class="fas fa-walking"></i>';}
+                else if(type==='arrive'){ic='arrive';ih='<i class="fas fa-map-marker-alt"></i>';}
+                else if(mod&&mod.includes('left')){ic='left';ih='<i class="fas fa-arrow-left"></i>';}
+                else if(mod&&mod.includes('right')){ic='right';ih='<i class="fas fa-arrow-right"></i>';}
+                else if(mod==='uturn'){ic='uturn';ih='<i class="fas fa-undo-alt"></i>';}
+                var label='';
+                if(type==='depart') label='Head '+(mod||'forward')+(name?' on '+name:'');
+                else if(type==='arrive') label='Arrive at '+(name||destName);
+                else if(type==='turn') label='Turn '+mod+(name?' onto '+name:'');
+                else if(type==='new name') label='Continue onto '+name;
+                else if(type==='continue') label='Continue'+(name?' on '+name:'');
+                else if(type==='roundabout') label='Enter roundabout'+(name?' \u2014 '+name:'');
+                else label=(_cap(type)||'Go')+(mod?' '+mod:'')+(name?' on '+name:'');
+                var div=document.createElement('div');
+                div.className='rg-step'+(idx===allSteps.length-1?' rg-step-last':'');
+                div.innerHTML='<div class="rg-ico '+ic+'">'+ih+'</div><div class="rg-step-body"><div class="rg-step-name">'+_escHtml(label)+'</div>'+(dLbl?'<div class="rg-step-dist">'+dLbl+'</div>':'')+'</div>';
+                rgSteps.appendChild(div);
+            });
+            rgFooter.style.display='block';
+        })
+        .catch(function(){
+            _clearRouteLayers();
+            window._routeLayer=L.polyline([[window._userLat,window._userLng],[destLat,destLng]],{color:'#1967d2',weight:4,opacity:0.8,dashArray:'10 8',lineJoin:'round'}).addTo(mapInst);
+            mapInst.fitBounds(window._routeLayer.getBounds(),{padding:[50,50]});
+            document.getElementById('rgSubtitle').textContent='Straight-line estimate';
+            rgLoading.style.display='none';
+            rgSteps.innerHTML='<div class="rg-step rg-step-last"><div class="rg-ico depart"><i class="fas fa-walking"></i></div><div class="rg-step-body"><div class="rg-step-name">Head towards '+_escHtml(destName)+'</div><div class="rg-step-dist">Straight-line estimate</div></div></div>';
+            rgFooter.style.display='block';
+        });
+};
+window.closeRouteGuide=function(){
+    var guide=document.getElementById('routeGuide'),btn=document.getElementById('mapRouteBtn');
+    if(guide) guide.classList.remove('show'); if(btn) btn.classList.remove('active');
+    _clearRouteLayers();
+};
+function _clearRouteLayers(){
+    if(window._routeLayer&&mapInst){try{mapInst.removeLayer(window._routeLayer);}catch(e){} window._routeLayer=null;}
+    (window._routeExtraLayers||[]).forEach(function(l){try{mapInst.removeLayer(l);}catch(e){}});
+    window._routeExtraLayers=[];
+}
+function _cap(s)     { return s?s.charAt(0).toUpperCase()+s.slice(1):''; }
+function _escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cap(s)      { return _cap(s); }
+function escHtml(s)  { return _escHtml(s); }
+</script>
+
+
+<!-- ============================================================
+     ORDER NOTIFICATION DROPDOWN PANEL (map page)
+     ============================================================ -->
+<div id="orderNotifPanel" style="
+    display:none;
+    position:fixed;
+    top:64px;
+    right:16px;
+    width:360px;
+    max-height:480px;
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.18);
+    z-index:99999;
+    overflow:hidden;
+    flex-direction:column;
+    font-family:'Poppins',sans-serif;
+">
+    <div style="padding:16px 18px 12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;background:#b71c1c;border-radius:16px 16px 0 0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-bell" style="color:#fff;font-size:15px;"></i>
+            <span style="font-weight:700;font-size:14px;color:#fff;">Order Updates</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <button id="markAllReadBtn" onclick="markAllOrderNotifsRead()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;padding:4px 10px;font-family:inherit;">Mark all read</button>
+            <button onclick="closeOrderNotifPanel()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0;">&times;</button>
+        </div>
+    </div>
+    <div id="orderNotifList" style="overflow-y:auto;flex:1;max-height:380px;">
+        <div id="orderNotifEmpty" style="padding:36px 20px;text-align:center;color:#9ca3af;font-size:13px;">
+            <i class="fas fa-bell-slash" style="font-size:28px;margin-bottom:10px;display:block;opacity:0.4;"></i>
+            No order updates yet.
+        </div>
+    </div>
+</div>
+
+<style>
+.on-item{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid #f7f7f7;cursor:pointer;transition:background 0.15s;text-decoration:none;}
+.on-item:hover{background:#fafafa;}
+.on-item.unread{background:#fff8f8;}
+.on-ico{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.on-body{flex:1;min-width:0;}
+.on-msg{font-size:12.5px;font-weight:600;color:#1f2937;line-height:1.4;margin-bottom:3px;}
+.on-item.unread .on-msg{color:#b71c1c;}
+.on-meta{font-size:11px;color:#9ca3af;display:flex;gap:8px;align-items:center;}
+.on-dot{width:7px;height:7px;border-radius:50%;background:#b71c1c;flex-shrink:0;}
+@keyframes notifBounce{0%,100%{transform:scale(1);}30%{transform:scale(1.4);}60%{transform:scale(0.9);}}
+.notif-bounce{animation:notifBounce 0.5s ease;}
+</style>
+
+<script>
+// ── Notification panel logic (map page copy) ──────────────────────────
+let _orderNotifTimer     = null;
+let _orderNotifPanelOpen = false;
+let _lastOrderNotifCount = 0;
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (!IS_AUTHENTICATED) return;
+
+    document.addEventListener('click', function (e) {
+        const panel = document.getElementById('orderNotifPanel');
+        const bell  = document.getElementById('orderNotifBellBtn');
+        if (panel && _orderNotifPanelOpen &&
+            !panel.contains(e.target) &&
+            !(bell && bell.contains(e.target))) {
+            closeOrderNotifPanel();
+        }
+    });
+
+    const bellBtn = document.getElementById('orderNotifBellBtn');
+    if (bellBtn) {
+        bellBtn.addEventListener('mouseenter', function() { this.style.background = 'rgba(183,28,28,0.15)'; });
+        bellBtn.addEventListener('mouseleave', function() { this.style.background = 'rgba(183,28,28,0.08)'; });
+    }
+
+    fetchOrderNotifications();
+    _orderNotifTimer = setInterval(fetchOrderNotifications, 15000);
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { clearInterval(_orderNotifTimer); }
+        else { fetchOrderNotifications(); _orderNotifTimer = setInterval(fetchOrderNotifications, 15000); }
+    });
+});
+
+function fetchOrderNotifications() {
+    if (typeof URLS === 'undefined' || !URLS.userNotifications) return;
+    fetch(URLS.userNotifications, { credentials: 'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+            var count = data.unread_count || 0;
+            _setOrderNotifBadge(count);
+            if (count > _lastOrderNotifCount && _lastOrderNotifCount >= 0) {
+                var badge = document.getElementById('orderNotifBadge');
+                if (badge) { badge.classList.remove('notif-bounce'); void badge.offsetWidth; badge.classList.add('notif-bounce'); }
+                _playNotifTick();
+            }
+            _lastOrderNotifCount = count;
+            if (_orderNotifPanelOpen) _renderOrderNotifList(data.notifications);
+        }).catch(function(){});
+}
+
+function toggleOrderNotifPanel() {
+    _orderNotifPanelOpen ? closeOrderNotifPanel() : openOrderNotifPanel();
+}
+
+function openOrderNotifPanel() {
+    var panel = document.getElementById('orderNotifPanel');
+    if (!panel) return;
+    panel.style.display = 'flex';
+    _orderNotifPanelOpen = true;
+    if (typeof URLS !== 'undefined' && URLS.userNotifications) {
+        fetch(URLS.userNotifications, { credentials: 'same-origin' })
+            .then(function(r){ return r.json(); })
+            .then(function(data){ if (data.success) _renderOrderNotifList(data.notifications); })
+            .catch(function(){});
+    }
+}
+
+function closeOrderNotifPanel() {
+    var panel = document.getElementById('orderNotifPanel');
+    if (panel) panel.style.display = 'none';
+    _orderNotifPanelOpen = false;
+}
+
+var STATUS_TAB_MAP_MAP = {
+    'to_pay':'to_pay','PENDING':'to_pay','preparing':'preparing','to_claim':'to_claim',
+    'completed':'completed','cancelled':'completed','CANCELLED':'completed',
+    'request':'request','order_received':'preparing','PAID':'to_pay'
+};
+
+function _renderOrderNotifList(notifications) {
+    var list  = document.getElementById('orderNotifList');
+    var empty = document.getElementById('orderNotifEmpty');
+    if (!list) return;
+    if (!notifications || !notifications.length) {
+        if (empty) empty.style.display = 'block';
+        list.querySelectorAll('.on-item').forEach(function(el){ el.remove(); });
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    var html = notifications.map(function(n) {
+        var unreadClass = n.is_read ? '' : 'unread';
+        var dot = n.is_read ? '' : '<span class="on-dot"></span>';
+        var tab = STATUS_TAB_MAP_MAP[n.order_status] || 'request';
+        var href = '/my-purchases/?tab=' + tab;
+        return '<a href="' + href + '" class="on-item ' + unreadClass + '" data-id="' + n.id + '" onclick="closeOrderNotifPanel()">' +
+            '<div class="on-ico" style="background:' + n.color + '22;"><i class="fas ' + n.icon + '" style="color:' + n.color + ';"></i></div>' +
+            '<div class="on-body"><div class="on-msg">' + (n.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+            '<div class="on-meta">' + dot + '<span>' + (n.est_name||'').replace(/&/g,'&amp;') + '</span><span>•</span><span>' + (n.time_ago||'') + '</span></div></div></a>';
+    }).join('');
+    list.querySelectorAll('.on-item').forEach(function(el){ el.remove(); });
+    var frag = document.createRange().createContextualFragment(html);
+    list.appendChild(frag);
+}
+
+function markAllOrderNotifsRead() {
+    if (typeof URLS === 'undefined' || !URLS.markNotifsRead) return;
+    fetch(URLS.markNotifsRead, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.getElementById('csrfToken') ? document.getElementById('csrfToken').value : '' },
+        credentials: 'same-origin'
+    }).then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            _setOrderNotifBadge(0); _lastOrderNotifCount = 0;
+            document.querySelectorAll('.on-item.unread').forEach(function(el){
+                el.classList.remove('unread');
+                var dot = el.querySelector('.on-dot'); if (dot) dot.remove();
+            });
+        }
+    }).catch(function(){});
+}
+
+function _setOrderNotifBadge(count) {
+    var badge = document.getElementById('orderNotifBadge');
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count > 99 ? '99+' : String(count); badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+}
+
+function _playNotifTick() {
+    try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
+    } catch(e){}
+}
+</script>
+
+</body>
+</html>

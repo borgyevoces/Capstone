@@ -41,7 +41,7 @@
         background-position: center;
         color: white;
         border-radius: 12px;
-        overflow: hidden;
+        overflow: visible;       /* allow amenities to overflow/anchor outside */
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
@@ -137,6 +137,7 @@
     /* ================== NEW TWO COLUMN LAYOUT ================== */
     .details-container {
         display: block;
+        position: relative;  /* anchor for amenities absolute positioning */
     }
 
     /* ── Two-column layout: left stack (location + amenities) | right (reviews) ── */
@@ -161,13 +162,7 @@
     }
 
     .top-info-grid .amenities-section {
-        flex: 1;                 /* grow to fill left column evenly */
-        display: flex;
-        flex-direction: column;
-    }
-
-    .top-info-grid .amenities-section .amenities-list {
-        flex: 1;
+        display: none;           /* pulled out of grid — positioned on hero instead */
     }
 
     /* Right column: reviews — same total height as left column */
@@ -373,19 +368,61 @@
         margin-right: 8px;
     }
 
-    .amenities-section.section-card{
+    /* ── Amenities: bottom-right of hero, transparent bg, green pills ── */
+    .amenities-section.section-card {
         position: absolute;
-        top: 260px;
-        right: 100px;
-        background-color: transparent;
+        /* hero is 350px, details-container starts right after, so climb up by (350px - padding) */
+        top: calc(-350px + 20px);
+        bottom: auto;
+        right: 20px;
+        background: transparent;
+        box-shadow: none;
+        padding: 18px 22px;
         color: white;
+        width: 340px;
+        z-index: 20;
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+        /* align bottom edge with bottom of hero */
+        height: 310px;
+        justify-content: flex-end;
     }
-    .amenities-list{
-        margin: 0px;
+    .amenities-section.section-card li,
+    .amenities-section.section-card h2 {
+        pointer-events: auto;
     }
-    .amenities-section h2{
-        font-size: 30px;
+    .amenities-section h2 {
+        font-size: 1.4em;
+        font-weight: 800;
         color: white;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+        margin-bottom: 10px;
+        border-bottom: none;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+    .amenities-section .amenities-list {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .amenities-section .amenities-list li {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1.5px solid #6ee7b7;
+        font-size: 0.92em;
+        padding: 7px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        text-shadow: none;
+    }
+    .amenities-section .amenities-list li i {
+        color: #059669;
+        margin-right: 6px;
     }
 
     /* ================================================================= */
@@ -533,8 +570,8 @@
 
     .menu-list {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);  /* Changed from 4 to 5 columns */
-        gap: 18px;  /* Reduced from 25px */
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
     }
 
     .menu-item {

@@ -168,6 +168,26 @@ function updateQuantityRealTime(itemId, newQuantity) {
     const cartBox = cartItem.closest('.establishment-cart-box');
     updateOrderSummary(cartBox);
 
+    // ✅ UPDATE CART BADGE REALTIME — recalculate total quantity from DOM
+    (function () {
+        let total = 0;
+        document.querySelectorAll('.quantity-value').forEach(function (el) {
+            total += parseInt(el.textContent, 10) || 0;
+        });
+        // Use shared setCartBadgeCount if available (broadcasts to all tabs via localStorage)
+        if (typeof window.setCartBadgeCount === 'function') {
+            window.setCartBadgeCount(total, true);
+        } else {
+            document.querySelectorAll('#cart-count-badge, .cart-count-badge').forEach(function (badge) {
+                badge.textContent = total;
+                badge.style.display = total > 0 ? 'flex' : 'none';
+                badge.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
+                badge.style.transform = 'scale(1.4)';
+                setTimeout(function () { badge.style.transform = 'scale(1)'; }, 200);
+            });
+        }
+    })();
+
     // ✅ SEND TO SERVER (Background)
     updateCartItemQuantity(itemId, newQuantity);
 }

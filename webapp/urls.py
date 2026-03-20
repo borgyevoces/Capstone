@@ -17,6 +17,7 @@ urlpatterns = [
 
                   # 1. Main Browsing & Information
                   path('', views.kabsueats_main_view, name='kabsueats_home'),
+                  path('map/', views.kabsueats_map_view, name='kabsueats_map'),
                   path('food_establishment/<int:establishment_id>/', views.food_establishment_details,
                        name='food_establishment_details'),
                   path('view-directions/<int:establishment_id>/', views.view_directions, name='view_directions'),
@@ -86,7 +87,8 @@ urlpatterns = [
 
                   # Order Confirmation
                   path('order/confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
-
+                  # ✅ FIXED: added views. prefix, removed duplicate get_request_qtys
+                  path('api/pending-cart-qtys/', views.get_pending_cart_qtys, name='get_pending_cart_qtys'),
                   # Owner Side
                   path('api/food-establishment/orders/', views.get_establishment_orders,
                        name='api_establishment_orders'),
@@ -185,6 +187,10 @@ urlpatterns = [
                   path('owner/chat/messages/<int:customer_id>/<int:establishment_id>/', views.get_chat_messages_api,
                        name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
+
+                  # ✅ Client order status notifications
+                  path('api/user/order-notifications/', views.get_user_order_notifications, name='get_user_order_notifications'),
+                  path('api/user/order-notifications/mark-read/', views.mark_user_notifications_read, name='mark_user_notifications_read'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

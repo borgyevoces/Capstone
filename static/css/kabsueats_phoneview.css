@@ -127,6 +127,8 @@
 
     /* ---------- MAIN ---------- */
     .main { max-width: 100%; margin: 0; padding: 0 14px; }
+    .main.main-with-sidebar { max-width: 100%; width: 100%; }
+    .page-layout { display: block; }
 
     /* ---------- HERO SEARCH ---------- */
     .hero { padding: 22px 0 32px; text-align: center; }
@@ -594,4 +596,33 @@
 @keyframes slideUpIn {
     from { opacity: 0; transform: translateX(-50%) translateY(20px); }
     to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+/* ============================================
+   SIDEBAR — mobile: hide sidebar, use bottom nav
+   ============================================ */
+@media (max-width: 768px) {
+    .client-sidebar {
+        display: none;
+    }
+    .page-layout {
+        flex-direction: column;
+    }
+    .main.main-with-sidebar {
+        width: 100%;
+    }
+    /* Bottom nav for mobile */
+    .client-sidebar-mobile {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid var(--g200);
+        z-index: 1100;
+        height: 58px;
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+    }
 }

@@ -369,6 +369,14 @@ def google_callback(request):
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
 
+            # ✅ Ensure UserProfile exists for Google-registered users
+            # (signal may not fire in all environments)
+            try:
+                from .models import UserProfile
+                UserProfile.objects.get_or_create(user=user)
+            except Exception:
+                pass
+
             messages.success(request, f'✨ Welcome to KabsuEats, {user.username}! Your account has been created.')
             return redirect('kabsueats_home')
     except Exception as e:
@@ -634,12 +642,26 @@ def password_reset_complete_redirect(request):
     })
 
 
+
+def _ensure_user_profile(user):
+    """
+    Ensure UserProfile exists for a user — safe to call on every request.
+    Google OAuth users may not have a profile created via signal.
+    """
+    if user and user.is_authenticated:
+        try:
+            UserProfile.objects.get_or_create(user=user)
+        except Exception:
+            pass
+
+
 def kabsueats_main_view(request):
     """
     Central view for displaying all food establishments with various filters.
     ✅ FIXED: Real-time status calculation on every page load
     ✅ FIXED: Only shows is_active=True establishments
     """
+    _ensure_user_profile(request.user)
     from datetime import datetime
 
     category_name = request.GET.get('category', '')
@@ -751,7 +773,7 @@ def kabsueats_main_view(request):
         # Include both PENDING (cart) and 'request' (submitted, awaiting owner) orders
         cart_count = OrderItem.objects.filter(
             order__user=request.user,
-            order__status__in=('PENDING', 'request')
+            order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
     context = {
@@ -765,8 +787,82 @@ def kabsueats_main_view(request):
     }
     return render(request, 'webapplication/kabsueats.html', context)
 
-@login_required(login_url='user_login_register')
-def search_food_establishments(request):
+
+def kabsueats_map_view(request):
+    """
+    Standalone map page — shows all food establishments on a Leaflet map.
+    Uses the same establishment data as kabsueats_main_view.
+    """
+    from datetime import datetime
+
+    all_categories = Category.objects.all().order_by('name')
+    food_establishments_queryset = FoodEstablishment.objects.filter(is_active=True)
+
+    ref_lat = 14.4607
+    ref_lon = 120.9822
+
+    try:
+        from zoneinfo import ZoneInfo
+        current_time = datetime.now(ZoneInfo('Asia/Manila')).time()
+    except Exception:
+        try:
+            import pytz
+            current_time = datetime.now(pytz.timezone('Asia/Manila')).time()
+        except Exception:
+            current_time = datetime.now().time()
+
+    food_establishments_with_data = []
+    try:
+        food_establishments_queryset = list(food_establishments_queryset)
+    except Exception as db_err:
+        import logging
+        logging.getLogger(__name__).error(f"DB connection failed in kabsueats_map_view: {db_err}")
+        return render(request, 'webapplication/map.html', {
+            'food_establishments': [],
+            'all_categories': [],
+            'db_error': True,
+        })
+
+    for est in food_establishments_queryset:
+        if est.latitude is not None and est.longitude is not None:
+            distance_km = haversine(ref_lat, ref_lon, est.latitude, est.longitude)
+            est.distance_meters = distance_km * 1000
+            est.distance = distance_km
+        else:
+            est.distance_meters = 0
+            est.distance = 0
+
+        rating_data = est.reviews.aggregate(Avg('rating'), Count('id'))
+        est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
+        est.review_count = rating_data['id__count']
+
+        if est.opening_time and est.closing_time:
+            if est.opening_time <= est.closing_time:
+                est.calculated_status = "Open" if est.opening_time <= current_time <= est.closing_time else "Closed"
+            else:
+                est.calculated_status = "Open" if current_time >= est.opening_time or current_time <= est.closing_time else "Closed"
+        else:
+            est.calculated_status = "Closed"
+
+        food_establishments_with_data.append(est)
+
+    food_establishments_sorted = sorted(food_establishments_with_data, key=lambda x: x.distance)
+
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='PENDING'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+    context = {
+        'food_establishments': food_establishments_sorted,
+        'all_categories': all_categories,
+        'cart_count': cart_count,
+        'CVSU_LATITUDE': 14.412768,
+        'CVSU_LONGITUDE': 120.981348,
+    }
+    return render(request, 'webapplication/map.html', context)
     query = request.GET.get('q', '')
     if query:
         food_establishments = FoodEstablishment.objects.filter(name__icontains=query)
@@ -967,6 +1063,7 @@ def get_gravatar_url(email, size=80):
 
 
 def food_establishment_details(request, establishment_id):
+    _ensure_user_profile(request.user)
     establishment = get_object_or_404(
         FoodEstablishment.objects.annotate(
             average_rating=Avg('reviews__rating'),
@@ -1029,6 +1126,15 @@ def food_establishment_details(request, establishment_id):
     if request.user.is_authenticated:
         current_user_gravatar = get_gravatar_url(request.user.email or request.user.username)
 
+    # ✅ Cart badge — count pending cart items so the sidebar badge shows instantly on page load
+    # (same query used by kabsueats_home and get_cart_count)
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='PENDING'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
@@ -1040,6 +1146,7 @@ def food_establishment_details(request, establishment_id):
         'reviews': other_reviews,
         'is_guest': not request.user.is_authenticated,
         'current_user_gravatar': current_user_gravatar,
+        'cart_count': cart_count,  # ✅ powers #cart-count-badge on initial render
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
@@ -3765,7 +3872,7 @@ def add_to_cart(request):
         # Calculate total cart count across PENDING + request orders
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
-            order__status__in=('PENDING', 'request')
+            order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         actual_qty = min(quantity, menu_item.quantity)
@@ -3903,7 +4010,7 @@ def update_cart_item(request):
         # Calculate total cart count (PENDING cart + request orders awaiting acceptance)
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
-            order__status__in=('PENDING', 'request')
+            order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         return JsonResponse({
@@ -3979,7 +4086,7 @@ def remove_from_cart(request):
         # Calculate total cart count (PENDING cart + request orders awaiting acceptance)
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
-            order__status__in=('PENDING', 'request')
+            order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         return JsonResponse({
@@ -4001,7 +4108,6 @@ def remove_from_cart(request):
 
 
 @login_required
-@require_POST
 def get_cart_count(request):
     """
     Get current cart count for the user
@@ -4049,7 +4155,7 @@ def clear_establishment_cart(request):
         # Calculate remaining cart count (PENDING + request)
         total_cart_count = OrderItem.objects.filter(
             order__user=request.user,
-            order__status__in=('PENDING', 'request')
+            order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         return JsonResponse({
@@ -4701,6 +4807,85 @@ def get_notifications(request):
         }, status=500)
 
 
+@login_required
+def get_user_order_notifications(request):
+    """
+    Returns order status notifications for the logged-in customer.
+    Uses the existing OrderNotification model, filtered by order__user.
+    """
+    try:
+        notifications_qs = OrderNotification.objects.filter(
+            order__user=request.user
+        ).select_related(
+            'order__establishment',
+            'order__user'
+        ).order_by('-created_at')[:30]
+
+        unread_count = OrderNotification.objects.filter(
+            order__user=request.user,
+            is_read=False
+        ).count()
+
+        STATUS_ICONS = {
+            'to_pay':        ('fa-check-circle',   '#16a34a', 'Order Accepted'),
+            'preparing':     ('fa-fire',            '#f59e0b', 'Being Prepared'),
+            'to_claim':      ('fa-bell',            '#2563eb', 'Ready for Pickup'),
+            'completed':     ('fa-flag-checkered',  '#6d28d9', 'Completed'),
+            'cancelled':     ('fa-times-circle',    '#dc2626', 'Cancelled'),
+            'order_cancelled':('fa-times-circle',   '#dc2626', 'Cancelled'),
+            'order_update':  ('fa-info-circle',     '#6b7280', 'Update'),
+            'new_order':     ('fa-shopping-bag',    '#b71c1c', 'New Order'),
+            'payment_confirmed': ('fa-credit-card', '#16a34a', 'Payment Confirmed'),
+        }
+
+        data = []
+        for n in notifications_qs:
+            order_status = n.order.status
+            notif_type   = n.notification_type
+            # pick icon by notif_type first, fallback to order status
+            icon_key = notif_type if notif_type in STATUS_ICONS else order_status
+            icon, color, label = STATUS_ICONS.get(icon_key, ('fa-info-circle', '#6b7280', 'Update'))
+            data.append({
+                'id':           n.id,
+                'message':      n.message,
+                'is_read':      n.is_read,
+                'time_ago':     get_time_ago(n.created_at),
+                'created_at':   n.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'order_id':     n.order.id,
+                'order_status': order_status,
+                'est_name':     n.order.establishment.name,
+                'icon':         icon,
+                'color':        color,
+                'label':        label,
+            })
+
+        return JsonResponse({
+            'success':      True,
+            'notifications': data,
+            'unread_count': unread_count,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def mark_user_notifications_read(request):
+    """
+    Mark all unread order notifications as read for the logged-in customer.
+    """
+    try:
+        updated = OrderNotification.objects.filter(
+            order__user=request.user,
+            is_read=False
+        ).update(is_read=True, read_at=timezone.now())
+        return JsonResponse({'success': True, 'marked': updated})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 def get_time_ago(timestamp):
     """
     Convert timestamp to human-readable time ago
@@ -4978,13 +5163,18 @@ def gcash_payment_success(request):
         return redirect('view_cart')
 
 
-@login_required
 def view_cart(request):
+    _ensure_user_profile(request.user)
     """
-    Display all cart items grouped by establishment
-    ✅ FIXED: Proper queryset and error handling
-    ✅ Shows remaining requestable quantity per item when a 'request' order exists
+    Display all cart items grouped by establishment.
+    Accessible without login — shows empty cart for unauthenticated users.
     """
+    if not request.user.is_authenticated:
+        return render(request, 'webapplication/cart.html', {
+            'carts_data': [],
+            'total_cart_count': 0,
+            'cart_count': 0,
+        })
     try:
         # Get all pending orders for current user
         all_carts = Order.objects.filter(
@@ -7130,11 +7320,11 @@ def get_establishment_transaction_statistics(request):
 # ==========================================
 
 
-@login_required
 def order_history_view(request):
+    _ensure_user_profile(request.user)
     """
-    Display the order history page for the logged-in user
-    Template: Client_order_history.html
+    Display the order history page.
+    Accessible without login — shows empty state for unauthenticated users.
     """
     cart_count = 0
     if request.user.is_authenticated:
@@ -7154,7 +7344,7 @@ def get_user_transaction_history(request):
     Endpoint: /api/user/transactions/
     """
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'Login required'}, status=401)
+        return JsonResponse({'success': True, 'orders': []})
 
     try:
         # Get all orders for the user that have been formally submitted (status = 'request' or beyond).
@@ -7682,6 +7872,45 @@ def get_request_qtys(request):
 
         qtys = {}
         for order in active_orders:
+            for oi in order.orderitem_set.all():
+                key = str(oi.menu_item_id)
+                qtys[key] = qtys.get(key, 0) + oi.quantity
+
+        return JsonResponse({'success': True, 'qtys': qtys})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'qtys': {}, 'error': str(e)})
+
+
+def get_pending_cart_qtys(request):
+    """
+    Returns a map of menu_item_id → qty already in the user's PENDING cart
+    for a given establishment.
+    Used by item detail modals so customers can see how many of each item
+    they already have in their cart before adding more.
+
+    Query params:
+        establishment_id  (required)
+
+    Response:
+        { "success": true, "qtys": { "<menu_item_id>": <qty>, ... } }
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'qtys': {}})
+
+    establishment_id = request.GET.get('establishment_id')
+    if not establishment_id:
+        return JsonResponse({'success': False, 'message': 'establishment_id required'}, status=400)
+
+    try:
+        pending_orders = Order.objects.filter(
+            user=request.user,
+            establishment_id=establishment_id,
+            status='PENDING',
+        ).prefetch_related('orderitem_set')
+
+        qtys = {}
+        for order in pending_orders:
             for oi in order.orderitem_set.all():
                 key = str(oi.menu_item_id)
                 qtys[key] = qtys.get(key, 0) + oi.quantity

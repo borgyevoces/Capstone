@@ -1716,6 +1716,27 @@
         })();
 
         loadOrders();
+
+        // ✅ Auto-switch to the tab specified by ?tab= URL param (from notification click)
+        (function applyTabFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const tab = params.get('tab');
+                const valid = ['request','to_pay','preparing','to_claim','completed'];
+                if (tab && valid.includes(tab)) {
+                    // Wait for orders to load before switching tab
+                    // switchTab is safe to call early — it just sets the active button
+                    // and filterOrders will re-run after allOrders is populated
+                    currentFilter = tab;
+                    document.querySelectorAll('.order-tab').forEach(function(t) {
+                        t.classList.toggle('active', t.dataset.status === tab);
+                    });
+                    // Clean the URL so back/refresh doesn't re-trigger
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            } catch (e) {}
+        })();
+
         // ✅ REALTIME: WS handles instant pushes — keep 30s poll as fallback only
         setInterval(loadOrders, 30000);
         document.addEventListener('visibilitychange', function () {
@@ -1930,10 +1951,6 @@
 
         fetch('/api/user/transactions/')
             .then(function (r) {
-                if (r.status === 401 || r.redirected) {
-                    window.location.href = '/accounts/login/';
-                    return null;
-                }
                 // Safe JSON parse — avoids crash if body is HTML/empty
                 return r.text().then(function (text) {
                     try { return JSON.parse(text); }

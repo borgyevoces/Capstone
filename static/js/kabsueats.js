@@ -15,6 +15,7 @@ let esMapData = []; // real establishment data for map
 // ── MODAL STATE ──
 let currentModalItem = null;
 let currentModalInRequest = 0;   // qty already in a pending order for the modal item
+let currentModalInCart    = 0;   // qty already in PENDING cart for the modal item
 
 // ── SEARCH STATE ──
 let searchDebounceTimer = null;
@@ -33,6 +34,7 @@ function getCsrf() {
 // ── Status Real-time Refresh Timers ──
 let statusRefreshTimer    = null;
 let estStatusRefreshTimer = null;
+let cartRefreshTimer      = null;
 
 // ✅ last_modified trackers — detect dashboard changes for instant client sync
 let bsLastModified  = {};  // { establishment_id: timestamp } for bestsellers
@@ -57,6 +59,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ✅ Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
 
+    // ✅ Cart badge real-time polling every 10 seconds
+    cartRefreshTimer = setInterval(updateCartBadge, 3000);
+
     // ✅ Bestseller status refresh every 30 seconds
     statusRefreshTimer = setInterval(refreshBestsellerStatuses, 30000);
 
@@ -68,11 +73,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.hidden) {
             clearInterval(statusRefreshTimer);
             clearInterval(estStatusRefreshTimer);
+            clearInterval(cartRefreshTimer);
         } else {
             refreshBestsellerStatuses();
             refreshEstablishmentCardStatuses();
+            updateCartBadge();
             statusRefreshTimer    = setInterval(refreshBestsellerStatuses, 30000);
             estStatusRefreshTimer = setInterval(refreshEstablishmentCardStatuses, 30000);
+            cartRefreshTimer      = setInterval(updateCartBadge, 3000);
         }
     });
 });
@@ -240,15 +248,17 @@ function fetchBestsellers() {
                 const estIds = [...new Set(bsData.map(x => x.establishment && x.establishment.id).filter(Boolean))];
                 estIds.forEach(id => subscribeInventoryWs(id));
             } else {
-                document.getElementById('cTrack').innerHTML =
-                    '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
-                document.getElementById('cPrev').disabled = true;
-                document.getElementById('cNext').disabled = true;
+                const _ct = document.getElementById('cTrack');
+                const _cp = document.getElementById('cPrev');
+                const _cn = document.getElementById('cNext');
+                if (_ct) _ct.innerHTML = '<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No bestseller items at the moment. Check back soon!</div>';
+                if (_cp) _cp.disabled = true;
+                if (_cn) _cn.disabled = true;
             }
         })
         .catch(() => {
-            document.getElementById('cTrack').innerHTML =
-                '<div style="padding:40px;color:#ef4444;font-size:14px;text-align:center;width:100%"><i class="fas fa-exclamation-circle"></i> Failed to load bestsellers.</div>';
+            const _ct = document.getElementById('cTrack');
+            if (_ct) _ct.innerHTML = '<div style="padding:40px;color:#ef4444;font-size:14px;text-align:center;width:100%"><i class="fas fa-exclamation-circle"></i> Failed to load bestsellers.</div>';
         });
 }
 
@@ -573,53 +583,11 @@ function toggleGrid() {
 }
 
 // ============================================
-// VIEW SWITCHER: BESTSELLERS ↔ MAP
+// VIEW SWITCHER — stubs (map is now its own page)
 // ============================================
-function toggleDD() {
-    document.getElementById('ddPanel').classList.toggle('show');
-    document.getElementById('ddBtn').classList.toggle('open');
-}
-function closeDD() {
-    document.getElementById('ddPanel').classList.remove('show');
-    document.getElementById('ddBtn').classList.remove('open');
-}
-
-function setView(v) {
-    closeDD();
-    const cw = document.getElementById('carouselWrap');
-    const ms = document.getElementById('mapSection');
-    const gv = document.getElementById('gvBtn');
-    const db = document.getElementById('ddBtn');
-    const dl = document.getElementById('ddLabel');
-    const dbs = document.getElementById('ddBS');
-    const dmap = document.getElementById('ddMap');
-
-    if (v === 'bs') {
-        cw.style.display = '';
-        ms.classList.remove('on');
-        gv.style.display = 'flex';
-        dbs.classList.add('sel'); dmap.classList.remove('sel');
-        dl.textContent = 'Best Sellers';
-        db.classList.remove('mapmode');
-        db.querySelector('i').className = 'fas fa-trophy';
-        if (mapPollTimer) { clearInterval(mapPollTimer); mapPollTimer = null; }
-    } else {
-        cw.style.display = 'none';
-        ms.classList.add('on');
-        gv.style.display = 'none';
-        dbs.classList.remove('sel'); dmap.classList.add('sel');
-        dl.textContent = 'View Map';
-        db.classList.add('mapmode');
-        db.querySelector('i').className = 'fas fa-map';
-        if (!mapReady) { initMap(); mapReady = true; }
-        else {
-            setTimeout(() => mapInst && mapInst.invalidateSize(), 120);
-            fetchMapEstablishments();
-            if (!mapPollTimer) mapPollTimer = setInterval(fetchMapEstablishments, 30000);
-        }
-    }
-    curView = v;
-}
+function toggleDD() {}
+function closeDD()  {}
+function setView(v) {}
 
 
 // ============================================
@@ -1538,8 +1506,8 @@ function doMenuSearch(q) {
     showBsSection();
 
     // Show loading in carousel
-    document.getElementById('cTrack').innerHTML =
-        '<div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>'.repeat(5);
+    const _ctrack = document.getElementById('cTrack');
+    if (_ctrack) _ctrack.innerHTML = '<div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>'.repeat(5);
 
     // Update BS title
     const bsTitle = document.getElementById('bsTitle');
@@ -1572,8 +1540,8 @@ function doMenuSearch(q) {
             const filtered = bsData.filter(d => d.name.toLowerCase().includes(qLow));
             renderBS(filtered, true);
             if (filtered.length === 0) {
-                document.getElementById('cTrack').innerHTML =
-                    `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No menu items found for "${escHtml(q)}"</div>`;
+                const _ctrk2 = document.getElementById('cTrack');
+                if (_ctrk2) _ctrk2.innerHTML = `<div style="padding:40px;color:#9ca3af;font-size:14px;text-align:center;width:100%">No menu items found for "${escHtml(q)}"</div>`;
             }
         });
 }
@@ -1795,37 +1763,45 @@ function openMod(id) {
         })
         .catch(() => {});
 
-    // ── Fetch existing request qty for this item ───────────────────
+    // ── Fetch PENDING cart qty for this item ──────────────────────
     if (IS_AUTHENTICATED && d.establishment && d.establishment.id) {
-        fetch(`/api/request-qtys/?establishment_id=${d.establishment.id}`, {
+        const estId   = d.establishment.id;
+        const itemKey = String(d.id);
+
+        fetch(`/api/pending-cart-qtys/?establishment_id=${estId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin'
         })
         .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-            const inRequest = data.qtys[String(d.id)] || 0;
-            currentModalInRequest = inRequest;
+        .catch(() => ({ success: false, qtys: {} }))
+        .then(function(cartData) {
+            const inCart  = (cartData.qtys || {})[itemKey] || 0;
+            currentModalInCart = inCart;
+
             const qtyInput = document.getElementById('mqty');
-            if (inRequest > 0 && ksInfo && ksInfoText) {
-                const remaining = d.quantity - inRequest;
-                if (remaining <= 0) {
-                    ksInfoText.textContent =
-                        `You already have ${inRequest}x of this item in a pending order request (max stock reached).`;
-                    if (qtyInput) { qtyInput.value = 0; qtyInput.disabled = true; }
-                } else {
-                    ksInfoText.textContent =
-                        `You already have ${inRequest}x in a pending request — you can add up to ${remaining} more.`;
-                    if (qtyInput) {
-                        qtyInput.max = remaining;
-                        if (parseInt(qtyInput.value) > remaining) qtyInput.value = remaining;
-                        qtyInput.disabled = false;
-                    }
+            const addBtn   = document.getElementById('addToCartBtn');
+            const maxStock = d.quantity;
+            const remaining = Math.max(0, maxStock - inCart);
+
+            // Never show the info banner — just silently adjust state
+            if (remaining <= 0) {
+                // Already at max — switch button to "Go to Cart"
+                if (qtyInput) { qtyInput.value = 1; qtyInput.disabled = true; }
+                if (addBtn) {
+                    addBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart';
+                    addBtn.style.background = '#dc2626';
+                    addBtn.disabled = false;
+                    addBtn.onclick = function(e) { e.preventDefault(); window.location.href = '/cart/'; };
                 }
-                ksInfo.style.display = 'block';
+            } else {
+                // Still has room — cap qty input silently, keep button active
+                if (qtyInput) {
+                    qtyInput.max = remaining;
+                    qtyInput.disabled = false;
+                    if (parseInt(qtyInput.value) > remaining) qtyInput.value = 1;
+                }
             }
-        })
-        .catch(() => {});
+        });
     }
 }
 
@@ -1857,12 +1833,24 @@ function closeMod() {
     currentModalInRequest = 0;
     const ksInfo = document.getElementById('ksModalRequestInfo');
     if (ksInfo) ksInfo.style.display = 'none';
+    currentModalInCart = 0;
+
+    // ✅ Reset qty input and Add to Cart button for next open
+    const mqtyEl = document.getElementById('mqty');
+    if (mqtyEl) { mqtyEl.value = 1; mqtyEl.disabled = false; mqtyEl.removeAttribute('max'); }
+    const addBtn = document.getElementById('addToCartBtn');
+    if (addBtn) {
+        addBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+        addBtn.style.background = '';
+        addBtn.onclick = null;
+    }
 }
 
 function chgQ(d) {
     const e = document.getElementById('mqty');
     const totalStock = currentModalItem ? currentModalItem.quantity : 99;
-    const effectiveMax = Math.max(0, totalStock - currentModalInRequest);
+    // Cap by remaining slots: stock minus what's already in cart
+    const effectiveMax = Math.max(0, totalStock - currentModalInCart);
     e.value = Math.max(1, Math.min(parseInt(e.value) + d, effectiveMax));
 }
 
@@ -1872,11 +1860,20 @@ function chgQ(d) {
 function addToCartFromModal() {
     if (!IS_AUTHENTICATED) { window.location.href = URLS.login; return; }
     if (!currentModalItem) return;
-    const qty = parseInt(document.getElementById('mqty').value) || 1;
 
-    const btn = document.getElementById('addToCartBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...'; }
+    const mqtyEl   = document.getElementById('mqty');
+    const btn      = document.getElementById('addToCartBtn');
+    const maxStock = currentModalItem.quantity;
 
+    // Already at max — go to cart
+    if (!mqtyEl || parseInt(mqtyEl.value) <= 0 || mqtyEl.disabled) {
+        window.location.href = '/cart/';
+        return;
+    }
+
+    const qty = parseInt(mqtyEl.value) || 1;
+
+    // ── Fire the request ──────────────────────────────────────────
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -1884,19 +1881,143 @@ function addToCartFromModal() {
     })
     .then(r => r.json())
     .then(data => {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
-
         if (data.success) {
-            // Add to Cart always goes to cart — no exceeded check
-            window.location.href = URLS.cart;
+            // 1. Update badge
+            if (typeof data.cart_count === 'number') {
+                window.setCartBadgeCount(data.cart_count, true);
+            } else {
+                updateCartBadge(true);
+            }
+
+            // 2. Fly animation — modal stays OPEN
+            _flyToCart();
+
+            // 3. Update local running total
+            currentModalInCart = (currentModalInCart || 0) + qty;
+            const canAdd = Math.max(0, maxStock - currentModalInCart);
+
+            if (canAdd <= 0) {
+                // Cart is now full — switch button to "Go to Cart" only
+                if (mqtyEl) { mqtyEl.value = 1; mqtyEl.disabled = true; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart';
+                    btn.style.background = '#dc2626';
+                    btn.onclick = function(e) { e.preventDefault(); window.location.href = '/cart/'; };
+                }
+            } else {
+                // Still has room — cap qty silently, button stays active (no banner)
+                if (mqtyEl) { mqtyEl.max = canAdd; if (parseInt(mqtyEl.value) > canAdd) mqtyEl.value = 1; }
+            }
+
         } else {
             showToast(data.message || 'Could not add to cart.', 'error');
         }
     })
-    .catch(() => {
-        showToast('Network error. Please try again.', 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
-    });
+    .catch(() => showToast('Network error. Please try again.', 'error'));
+}
+
+// ── Flying-to-cart animation ──
+// imgEl: optional source element to fly from (defaults to #mImg)
+function _flyToCart(imgEl) {
+    // Find the cart icon in the sidebar
+    const cartLink = document.querySelector('.client-sidebar .cart-link .csb-ico');
+    if (!cartLink) return;
+
+    // Get source image — use passed element or fall back to modal image
+    const modalImg = imgEl || document.getElementById('mImg');
+    const src = (modalImg && modalImg.src) ? modalImg.src : '';
+
+    // Start position: centre of the source image element (if visible), else viewport centre
+    let startX, startY;
+    if (modalImg) {
+        const r = modalImg.getBoundingClientRect();
+        startX = r.left + r.width  / 2 - 26;
+        startY = r.top  + r.height / 2 - 26;
+    } else {
+        startX = window.innerWidth  / 2 - 26;
+        startY = window.innerHeight / 2 - 26;
+    }
+
+    // Create the flying element
+    const fly = document.createElement('div');
+    fly.style.cssText = [
+        'position:fixed',
+        'width:52px',
+        'height:52px',
+        'border-radius:50%',
+        'overflow:hidden',
+        'background:#B71C1C',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'z-index:999999',
+        'pointer-events:none',
+        'box-shadow:0 4px 16px rgba(183,28,28,.5)',
+        'transition:none',
+    ].join(';');
+
+    if (src) {
+        fly.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    } else {
+        fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:20px;"></i>';
+    }
+    document.body.appendChild(fly);
+
+    fly.style.left = startX + 'px';
+    fly.style.top  = startY + 'px';
+
+    // Target position: cart icon in sidebar
+    const cartRect = cartLink.getBoundingClientRect();
+    const endX = cartRect.left + cartRect.width  / 2 - 26;
+    const endY = cartRect.top  + cartRect.height / 2 - 26;
+
+    // Animate via requestAnimationFrame for smooth arc
+    const duration = 600; // ms
+    const startTime = performance.now();
+
+    function step(now) {
+        const elapsed  = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-in-out cubic
+        const t = progress < 0.5 ? 4*progress*progress*progress : 1 - Math.pow(-2*progress+2,3)/2;
+        // Arc: add upward curve via sine
+        const arc = Math.sin(Math.PI * progress) * -80;
+        const curX = startX + (endX - startX) * t;
+        const curY = startY + (endY - startY) * t + arc;
+        const scale = 1 - 0.5 * t; // shrink as it approaches cart
+
+        fly.style.left      = curX + 'px';
+        fly.style.top       = curY + 'px';
+        fly.style.transform = 'scale(' + scale + ')';
+        fly.style.opacity   = (1 - progress * 0.3).toString();
+
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            // Remove fly element and pop-bounce the cart icon
+            fly.remove();
+            _popCartIcon(cartLink);
+        }
+    }
+    requestAnimationFrame(step);
+}
+
+// ── Pop-bounce the cart icon when item lands ──
+function _popCartIcon(el) {
+    if (!el) return;
+    el.style.transition = 'transform .18s cubic-bezier(.34,1.56,.64,1)';
+    el.style.transform  = 'scale(1.45)';
+    setTimeout(function() {
+        el.style.transform = 'scale(1)';
+        setTimeout(function() { el.style.transition = ''; }, 200);
+    }, 180);
+}
+
+// ── Update sidebar cart badge count from backend ──
+function _updateCartBadgeSidebar() {
+    // Alias — delegates to the unified real-time updater
+    updateCartBadge(true);
 }
 
 // ============================================
@@ -1932,17 +2053,58 @@ function buyNowFromModal() {
 }
 
 // ============================================
-// UPDATE CART BADGE
+// UPDATE CART BADGE — Real-time via localStorage broadcast + fast polling
 // ============================================
-function updateCartBadge() {
-    if (!IS_AUTHENTICATED) return;
+
+// Internal helper: apply a count value to all badge elements
+function _applyCartBadgeCount(count, animate) {
+    document.querySelectorAll('#cart-count-badge, .cart-count-badge').forEach(function(badge) {
+        const prev = parseInt(badge.textContent, 10) || 0;
+        badge.textContent   = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+        if (animate && count !== prev) {
+            badge.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
+            badge.style.transform  = 'scale(1.6)';
+            setTimeout(function() { badge.style.transform = 'scale(1)'; }, 200);
+        }
+    });
+}
+
+// Broadcast a new count to all open tabs via localStorage
+function _broadcastCartCount(count) {
+    try {
+        localStorage.setItem('kabsu_cart_count', JSON.stringify({ count: count, ts: Date.now() }));
+    } catch(e) {}
+}
+
+// Expose so cart.js and other modules can push a known count instantly
+window.setCartBadgeCount = function(count, animate) {
+    _applyCartBadgeCount(count, animate !== false);
+    _broadcastCartCount(count);
+};
+
+// Listen for badge updates broadcast from other tabs or from cart.js
+window.addEventListener('storage', function(e) {
+    if (e.key !== 'kabsu_cart_count') return;
+    try {
+        const payload = JSON.parse(e.newValue);
+        if (payload && typeof payload.count === 'number') {
+            _applyCartBadgeCount(payload.count, true);
+        }
+    } catch(e) {}
+});
+
+function updateCartBadge(animate) {
+    if (typeof IS_AUTHENTICATED !== 'undefined' && !IS_AUTHENTICATED) return;
+    if (typeof URLS === 'undefined' || !URLS.cartCount) return;
     fetch(URLS.cartCount)
         .then(r => r.json())
         .then(data => {
-            const badge = document.getElementById('cartBadge');
-            if (badge) badge.textContent = data.cart_count ?? data.count ?? 0;
+            const count = parseInt(data.cart_count ?? data.count ?? 0, 10);
+            _applyCartBadgeCount(count, !!animate);
+            _broadcastCartCount(count);
         })
-        .catch(() => {});
+        .catch(function() {});
 }
 
 // ============================================
@@ -2134,4 +2296,237 @@ function initEstablishmentCards() {
             child.style.pointerEvents = 'none';
         });
     });
+}
+// ============================================
+// ORDER STATUS NOTIFICATIONS — CLIENT SIDE
+// Real-time polling every 15s for order updates
+// ============================================
+
+let _orderNotifTimer     = null;
+let _orderNotifPanelOpen = false;
+let _lastOrderNotifCount = 0;
+
+// ── Init on DOM ready ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    if (!IS_AUTHENTICATED) return;
+
+    // Close panel on outside click — exclude bell button and panel itself
+    document.addEventListener('click', function (e) {
+        const panel = document.getElementById('orderNotifPanel');
+        const bell  = document.getElementById('orderNotifBellBtn');
+        if (panel && _orderNotifPanelOpen &&
+            !panel.contains(e.target) &&
+            !(bell && bell.contains(e.target))) {
+            closeOrderNotifPanel();
+        }
+    });
+
+    // Bell button hover style
+    const bellBtn = document.getElementById('orderNotifBellBtn');
+    if (bellBtn) {
+        bellBtn.addEventListener('mouseenter', function() { this.style.background = 'rgba(183,28,28,0.15)'; });
+        bellBtn.addEventListener('mouseleave', function() { this.style.background = 'rgba(183,28,28,0.08)'; });
+    }
+
+    // Initial fetch + start polling
+    fetchOrderNotifications();
+    _orderNotifTimer = setInterval(fetchOrderNotifications, 15000);
+
+    // Pause/resume with tab visibility
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            clearInterval(_orderNotifTimer);
+        } else {
+            fetchOrderNotifications();
+            _orderNotifTimer = setInterval(fetchOrderNotifications, 15000);
+        }
+    });
+});
+
+// ── Fetch notifications from backend ──────────────────────────────────
+function fetchOrderNotifications() {
+    if (typeof URLS === 'undefined' || !URLS.userNotifications) return;
+
+    fetch(URLS.userNotifications, { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) return;
+
+            const count = data.unread_count || 0;
+
+            // Update badge
+            _setOrderNotifBadge(count);
+
+            // Bounce badge if new notifications arrived
+            if (count > _lastOrderNotifCount && _lastOrderNotifCount >= 0) {
+                const badge = document.getElementById('orderNotifBadge');
+                if (badge) {
+                    badge.classList.remove('notif-bounce');
+                    void badge.offsetWidth; // reflow
+                    badge.classList.add('notif-bounce');
+                }
+                // Play a subtle sound cue (if browser allows)
+                _playNotifTick();
+            }
+            _lastOrderNotifCount = count;
+
+            // If panel is open, refresh its content live
+            if (_orderNotifPanelOpen) {
+                _renderOrderNotifList(data.notifications);
+            }
+        })
+        .catch(function () {});
+}
+
+// ── Toggle panel open/close ────────────────────────────────────────────
+function toggleOrderNotifPanel() {
+    if (_orderNotifPanelOpen) {
+        closeOrderNotifPanel();
+    } else {
+        openOrderNotifPanel();
+    }
+}
+
+function openOrderNotifPanel() {
+    const panel = document.getElementById('orderNotifPanel');
+    if (!panel) return;
+    panel.style.display = 'flex';
+    _orderNotifPanelOpen = true;
+
+    // Fetch fresh data and render
+    if (typeof URLS !== 'undefined' && URLS.userNotifications) {
+        fetch(URLS.userNotifications, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) _renderOrderNotifList(data.notifications);
+            })
+            .catch(function () {});
+    }
+}
+
+function closeOrderNotifPanel() {
+    const panel = document.getElementById('orderNotifPanel');
+    if (panel) panel.style.display = 'none';
+    _orderNotifPanelOpen = false;
+}
+
+// ── Render the notification list inside the panel ──────────────────────
+function _renderOrderNotifList(notifications) {
+    const list  = document.getElementById('orderNotifList');
+    const empty = document.getElementById('orderNotifEmpty');
+    if (!list) return;
+
+    if (!notifications || notifications.length === 0) {
+        if (empty) empty.style.display = 'block';
+        // Remove all .on-item elements
+        list.querySelectorAll('.on-item').forEach(function (el) { el.remove(); });
+        return;
+    }
+
+    if (empty) empty.style.display = 'none';
+
+    // Build HTML
+    // Map order status to the correct tab on the order history page
+    const STATUS_TAB_MAP = {
+        'to_pay':        'to_pay',
+        'PENDING':       'to_pay',
+        'preparing':     'preparing',
+        'to_claim':      'to_claim',
+        'completed':     'completed',
+        'cancelled':     'completed',
+        'CANCELLED':     'completed',
+        'request':       'request',
+        'order_received':'preparing',
+        'PAID':          'to_pay',
+    };
+
+    const html = notifications.map(function (n) {
+        const unreadClass = n.is_read ? '' : 'unread';
+        const dot = n.is_read ? '' : '<span class="on-dot"></span>';
+        const tab = STATUS_TAB_MAP[n.order_status] || 'request';
+        const href = '/my-purchases/?tab=' + tab;
+        return (
+            '<a href="' + href + '" class="on-item ' + unreadClass + '" ' +
+            'data-id="' + n.id + '" onclick="closeOrderNotifPanel()">' +
+            '<div class="on-ico" style="background:' + n.color + '22;">' +
+            '<i class="fas ' + n.icon + '" style="color:' + n.color + ';"></i>' +
+            '</div>' +
+            '<div class="on-body">' +
+            '<div class="on-msg">' + _escHtml(n.message) + '</div>' +
+            '<div class="on-meta">' + dot +
+            '<span>' + _escHtml(n.est_name) + '</span>' +
+            '<span>•</span>' +
+            '<span>' + _escHtml(n.time_ago) + '</span>' +
+            '</div>' +
+            '</div>' +
+            '</a>'
+        );
+    }).join('');
+
+    // Replace only the notification items (keep empty div)
+    list.querySelectorAll('.on-item').forEach(function (el) { el.remove(); });
+    const frag = document.createRange().createContextualFragment(html);
+    list.appendChild(frag);
+}
+
+// ── Mark all as read ───────────────────────────────────────────────────
+function markAllOrderNotifsRead() {
+    if (typeof URLS === 'undefined' || !URLS.markNotifsRead) return;
+
+    fetch(URLS.markNotifsRead, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        credentials: 'same-origin'
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.success) {
+            _setOrderNotifBadge(0);
+            _lastOrderNotifCount = 0;
+            // Re-render with all read
+            document.querySelectorAll('.on-item.unread').forEach(function (el) {
+                el.classList.remove('unread');
+                const dot = el.querySelector('.on-dot');
+                if (dot) dot.remove();
+            });
+        }
+    })
+    .catch(function () {});
+}
+
+// ── Update badge count ─────────────────────────────────────────────────
+function _setOrderNotifBadge(count) {
+    const badge = document.getElementById('orderNotifBadge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent   = count > 99 ? '99+' : String(count);
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ── Subtle tick sound on new notification ─────────────────────────────
+function _playNotifTick() {
+    try {
+        const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type      = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+    } catch (e) { /* AudioContext blocked — silent */ }
+}
+
+// ── Escape HTML helper (local copy so no dependency on escHtml) ────────
+function _escHtml(str) {
+    return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
