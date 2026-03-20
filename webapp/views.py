@@ -258,157 +258,16 @@ def user_logout(request):
 
 
 def google_login(request):
-    # ✅ FIX: Force correct redirect URI based on actual request host (para hindi mag-loading sa Render)
-    redirect_uri = request.build_absolute_uri('/accounts/google/callback/')
-    request.session['google_redirect_uri'] = redirect_uri  # i-save para gamitin sa callback
-
     params = {
         'response_type': 'code',
         'client_id': settings.GOOGLE_CLIENT_ID,
-        'redirect_uri': redirect_uri,
+        'redirect_uri': settings.GOOGLE_REDIRECT_URI,
         'scope': 'openid email profile',
-        'access_type': 'offline',
-        'prompt': 'select_account',
-        # ✅ Para laging mag-show ng account picker (hindi mag-auto-redirect na walang laman)
+        'access_type': 'offline'
     }
     google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
     return redirect(google_auth_url)
 
-
-def google_callback(request):
-    User = get_user_model()
-    code = request.GET.get('code')
-
-    if not code:
-        messages.error(request, 'Google authentication failed. Please try again.')
-        return redirect('user_login_register')
-
-    # ✅ FIX: Gamitin ang redirect_uri na na-save sa session (consistent sa google_login)
-    redirect_uri = request.session.get('google_redirect_uri') or request.build_absolute_uri(
-        '/accounts/google/callback/')
-
-    token_url = 'https://oauth2.googleapis.com/token'
-    token_params = {
-        'code': code,
-        'client_id': settings.GOOGLE_CLIENT_ID,
-        'client_secret': settings.GOOGLE_CLIENT_SECRET,
-        'redirect_uri': redirect_uri,
-        'grant_type': 'authorization_code',
-    }
-
-    try:
-        # ✅ FIX: Dagdag na timeout=10 para hindi mag-loading habang buhay
-        token_response = requests.post(token_url, data=token_params, timeout=10)
-
-        try:
-            token_response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            logging.getLogger('django').error(
-                f"Google token endpoint error: status={token_response.status_code} body={token_response.text}"
-            )
-            if getattr(settings, 'DEBUG', False):
-                messages.error(request,
-                               f'Google token exchange failed (status {token_response.status_code}): {token_response.text}')
-            else:
-                messages.error(request, 'Google sign-in failed. Please try again.')
-            return redirect('user_login_register')
-
-        try:
-            token_data = token_response.json()
-        except json.JSONDecodeError:
-            logging.getLogger('django').error(
-                f"Google token endpoint returned non-JSON: {token_response.text}"
-            )
-            messages.error(request, 'Failed to decode Google token response.')
-            return redirect('user_login_register')
-
-        access_token = token_data.get('access_token')
-
-        if not access_token:
-            logging.getLogger('django').error(f"No access_token in token response: {token_data}")
-            messages.error(request, 'Failed to get Google access token.')
-            return redirect('user_login_register')
-
-        user_info_url = 'https://www.googleapis.com/oauth2/v2/userinfo'
-        headers = {'Authorization': f'Bearer {access_token}'}
-
-        # ✅ FIX: Dagdag na timeout=10 dito rin
-        user_info_response = requests.get(user_info_url, headers=headers, timeout=10)
-
-        try:
-            user_info_response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            logging.getLogger('django').error(
-                f"Google userinfo error: status={user_info_response.status_code} body={user_info_response.text}"
-            )
-            if getattr(settings, 'DEBUG', False):
-                messages.error(request,
-                               f'Google userinfo request failed (status {user_info_response.status_code}): {user_info_response.text}')
-            else:
-                messages.error(request, 'Failed to get Google user info. Please try again.')
-            return redirect('user_login_register')
-
-        try:
-            user_info = user_info_response.json()
-        except json.JSONDecodeError:
-            logging.getLogger('django').error(f"Google userinfo returned non-JSON: {user_info_response.text}")
-            messages.error(request, 'Failed to decode Google user info response.')
-            return redirect('user_login_register')
-
-    except requests.exceptions.Timeout:
-        # ✅ FIX: Specific timeout error para malaman ng user kung bakit nag-fail
-        logging.getLogger('django').error('Google OAuth request timed out')
-        messages.error(request, 'Google sign-in timed out. Please try again.')
-        return redirect('user_login_register')
-
-    except requests.exceptions.RequestException as e:
-        logging.getLogger('django').exception('Exception during Google OAuth flow')
-        messages.error(request, f'An error occurred during Google authentication: {e}')
-        return redirect('user_login_register')
-
-    email = user_info.get('email')
-
-    if not email:
-        messages.error(request, 'Could not retrieve email from Google. Please try again.')
-        return redirect('user_login_register')
-
-    try:
-        user = User.objects.filter(email=email).first()
-        if user:
-            user.backend = 'django.contrib.auth.backends.ModelBackend'
-            login(request, user)
-
-            subject = "Login Successful via Google"
-            message = f"Hello {user.username},\n\nThis is to confirm that your account was logged in using your Google account."
-            send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
-
-            messages.success(request, f'🎉 Welcome back, {user.username}!')
-            return redirect('kabsueats_home')
-        else:
-            username = email.split('@')[0]
-            base_username = username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}_{counter}"
-                counter += 1
-
-            user = User.objects.create_user(username=username, email=email)
-            user.backend = 'django.contrib.auth.backends.ModelBackend'
-            login(request, user)
-
-            # ✅ Ensure UserProfile exists for Google-registered users
-            try:
-                from .models import UserProfile
-                UserProfile.objects.get_or_create(user=user)
-            except Exception:
-                pass
-
-            messages.success(request, f'✨ Welcome to KabsuEats, {user.username}! Your account has been created.')
-            return redirect('kabsueats_home')
-
-    except Exception as e:
-        messages.error(request, f'An error occurred while retrieving user data: {e}')
-        return redirect('user_login_register')
 
 def google_callback(request):
     User = get_user_model()
