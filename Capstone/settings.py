@@ -297,6 +297,14 @@ DEFAULT_FROM_EMAIL = SENDER_EMAIL or 'noreply@kabsueats.com'
 # ============================================================================
 # LOGGING (for debugging)
 # ============================================================================
+
+# ✅ FIX: Render has no persistent filesystem — never use FileHandler in production.
+# Locally, create the logs/ dir automatically so it works without manual setup.
+_LOG_DIR = os.path.join(BASE_DIR, 'logs')
+_USE_FILE_HANDLER = DEBUG and not os.getenv('DATABASE_URL')  # local only, never on Render
+if _USE_FILE_HANDLER:
+    os.makedirs(_LOG_DIR, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -325,12 +333,13 @@ LOGGING = {
             'filters': ['suppress_cancelled'],
             'formatter': 'verbose' if DEBUG else 'simple',
         },
+        # ✅ File handler only used locally (never on Render — no persistent disk)
         'file': {
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'filename': os.path.join(_LOG_DIR, 'django.log'),
             'formatter': 'verbose',
             'filters': ['suppress_cancelled'],
-        } if not DEBUG else {
+        } if _USE_FILE_HANDLER else {
             'class': 'logging.NullHandler',
         },
     },
