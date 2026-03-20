@@ -1,3 +1,6 @@
+/* Mobile bottom nav — hidden by default, only shown on mobile */
+.mob-bottom-nav { display: none; }
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap');
 
 /* ============================================
@@ -51,6 +54,12 @@
     body {
         background: #fff; margin: 0; font-family: 'Poppins', sans-serif;
         color: var(--g800); overflow-x: hidden; min-height: 100vh;
+    }
+
+
+    /* ── Hide navbar bell on mobile — bottom nav has Updates tab instead ── */
+    #notifBellWrap {
+        display: none !important;
     }
 
     /* ---------- NAVBAR ---------- */
@@ -235,22 +244,32 @@
 
     /* ---------- BESTSELLERS SECTION ---------- */
     .bs-section { background: transparent; padding: 0 0 20px; margin: 0 0 16px; }
-    .bs-title-row { margin-bottom: 14px; padding: 14px 0 6px; }
+
+    /* Title row + Grid View button on same row, button pinned to right */
+    .bs-title-row {
+        display: flex; align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px; padding: 14px 0 0;
+    }
     .bs-title {
         font-size: 14px; font-weight: 500; color: var(--g700);
-        display: flex; align-items: center; justify-content: flex-start;
-        gap: 12px; margin: 0; text-align: left; letter-spacing: 0;
-        line-height: 1.4;
+        display: flex; align-items: flex-start; justify-content: flex-start;
+        gap: 10px; margin: 0; text-align: left; letter-spacing: 0;
+        line-height: 1.4; flex: 1; min-width: 0;
     }
-    /* Fire icon — simple, small */
+    /* Fire icon */
     .bs-title i {
         width: 28px; height: 28px; min-width: 28px; border-radius: 8px;
         background: #ff6b35;
         display: inline-flex; align-items: center; justify-content: center;
         color: #fff; font-size: 13px; flex-shrink: 0;
-        box-shadow: none;
+        box-shadow: none; margin-top: 1px;
     }
-    .bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    /* Grid View button — inline with title, pinned right */
+    .bs-controls {
+        display: contents; /* merge into bs-title-row flow */
+    }
 
     /* Dropdown button */
     .ddw { position: relative; display: inline-block; }
@@ -282,14 +301,20 @@
     .ddo-title { font-size: 12px; font-weight: 700; color: var(--g800); margin-bottom: 2px; }
     .ddo-desc  { font-size: 10px; color: var(--g400); line-height: 1.4; }
 
-    /* Grid View button */
+    /* Grid View button — small, right side of title row */
     .gv-btn {
-        padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
-        cursor: pointer; border: 2px solid var(--g200); background: transparent;
-        color: var(--g800); display: flex; align-items: center; gap: 6px;
-        font-family: 'Poppins', sans-serif; transition: .25s;
+        padding: 4px 10px; height: 28px; border-radius: 6px;
+        font-size: 11px; font-weight: 600;
+        cursor: pointer; border: 1.5px solid var(--g300); background: #fff;
+        color: var(--g700); display: inline-flex; align-items: center; gap: 5px;
+        font-family: 'Poppins', sans-serif; transition: .2s;
+        flex-shrink: 0; align-self: flex-start; margin-top: 2px;
+        white-space: nowrap;
     }
-    .gv-btn:hover, .gv-btn.on { background: var(--red); border-color: var(--red); }
+    .gv-btn i { font-size: 11px; }
+    .gv-btn:hover, .gv-btn.on {
+        background: var(--red); border-color: var(--red); color: #fff;
+    }
 
     /* Carousel */
     #carouselWrap { position: relative; padding: 0; }
@@ -579,7 +604,8 @@
     .sk-card { min-width: 155px; max-width: 155px; }
     .sk-img { height: 80px; }
     .bs-title { font-size: 13px; }
-    .dd-btn, .gv-btn { padding: 6px 10px; font-size: 11px; }
+    .dd-btn { padding: 5px 9px; font-size: 11px; }
+    .gv-btn { padding: 3px 8px; height: 26px; font-size: 10px; }
 }
 
 /* Landscape */
@@ -598,31 +624,165 @@
     to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 /* ============================================
-   SIDEBAR — mobile: hide sidebar, use bottom nav
+   SIDEBAR + BOTTOM NAV — mobile
    ============================================ */
 @media (max-width: 768px) {
-    .client-sidebar {
-        display: none;
-    }
-    .page-layout {
-        flex-direction: column;
-    }
+
+    /* Hide desktop sidebar */
+    .client-sidebar { display: none !important; }
+
+    .page-layout { flex-direction: column; }
+    .main,
     .main.main-with-sidebar {
         width: 100%;
+        padding-bottom: 72px; /* space for bottom nav */
     }
-    /* Bottom nav for mobile */
-    .client-sidebar-mobile {
+
+    /* ── Mobile Bottom Navigation Bar ── */
+    .mob-bottom-nav {
         display: flex;
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        bottom: 0; left: 0; right: 0;
+        height: 62px;
         background: #fff;
         border-top: 1px solid var(--g200);
-        z-index: 1100;
-        height: 58px;
+        z-index: 1200;
         justify-content: space-around;
-        align-items: center;
-        box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+        align-items: stretch;
+        box-shadow: 0 -4px 20px rgba(0,0,0,.10);
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
+
+    .mob-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        text-decoration: none;
+        color: var(--g400);
+        font-family: 'Poppins', sans-serif;
+        transition: color .2s;
+        cursor: pointer;
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mob-nav-item.active,
+    .mob-nav-item:active {
+        color: var(--red);
+    }
+
+    .mob-nav-ico {
+        font-size: 20px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .mob-nav-item.active .mob-nav-ico {
+        transform: scale(1.15);
+        color: var(--red);
+    }
+
+    .mob-nav-lbl {
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1;
+        color: inherit;
+    }
+
+    /* Active indicator pill */
+    .mob-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 28px;
+        height: 3px;
+        background: var(--red);
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* Cart badge on mobile nav */
+    .mob-bottom-nav .cart-badge {
+        position: absolute;
+        top: -5px; right: -8px;
+        background: var(--red); color: #fff;
+        border-radius: 50%; min-width: 16px; height: 16px;
+        font-size: 8px; font-weight: 700;
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 0 3px; border: 2px solid #fff; line-height: 1;
+    }
+
+    /* Order notification panel — full width bottom sheet on mobile */
+    #orderNotifPanel {
+        top: auto !important;
+        bottom: 62px !important;
+        right: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 70vh !important;
+    }
+}
+
+/* ============================================================
+   IMPROVED MOBILE STYLES — main page improvements
+   ============================================================ */
+@media (max-width: 768px) {
+
+    /* Bestseller cards — horizontal scroll, nice cards */
+    .bsc {
+        min-width: 170px !important;
+        max-width: 170px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,.08) !important;
+        border: 1.5px solid var(--g100) !important;
+    }
+    .bsc-img { height: 110px !important; }
+    .bsc-body { padding: 10px !important; }
+    .bsc-name { font-size: 12px !important; font-weight: 700 !important; line-height: 1.3 !important; }
+    .bsc-price { font-size: 14px !important; color: var(--red) !important; font-weight: 800 !important; }
+    .bsc-btn {
+        width: 100% !important; padding: 8px !important;
+        font-size: 11px !important; border-radius: 8px !important;
+        background: linear-gradient(135deg, var(--red), var(--red-dark)) !important;
+        color: #fff !important; border: none !important;
+        display: flex !important; align-items: center !important;
+        justify-content: center !important; gap: 5px !important;
+        cursor: pointer !important; font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
+    }
+
+    /* Establishment cards — clean 2-col */
+    .estc { border-radius: 10px !important; }
+    .estc-img { height: 110px !important; border-radius: 10px 10px 0 0 !important; }
+    .estc-body { padding: 8px 10px 10px !important; }
+    .estc-name { font-size: 12.5px !important; }
+
+    /* Hero search bar — improved */
+    .hs-cont {
+        border-radius: 14px !important;
+        border: 1.5px solid var(--g200) !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,.06) !important;
+    }
+    .hs-inp { padding: 13px 44px 13px 44px !important; font-size: 14px !important; }
+
+    /* Section title */
+    .sec-title { font-size: 18px !important; margin: 20px 0 14px !important; }
+
+    /* Filter bar */
+    #catFilt { font-size: 12px !important; padding: 9px 28px 9px 30px !important; }
+
+    /* Navbar improvement — tighter */
+    .navbar { height: 52px !important; padding: 0 14px !important; }
+    .brand { font-size: 20px !important; }
 }

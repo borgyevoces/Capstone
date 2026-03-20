@@ -2442,3 +2442,175 @@
         flex-wrap: wrap !important;
     }
 }
+
+/* ============================================================
+   IMPROVED MOBILE STYLES — establishment detail page
+   ============================================================ */
+@media (max-width: 768px) {
+
+    #food-details-page {
+        padding: 0 0 80px; /* bottom space for mobile nav */
+    }
+
+    /* ── Hero ── */
+    .establishment-hero {
+        height: 220px !important;
+        border-radius: 0 !important;
+    }
+
+    .hero-overlay {
+        padding: 20px 16px !important;
+        align-items: flex-end !important;
+    }
+
+    .hero-content h1 {
+        font-size: 1.7em !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Rating row on hero */
+    .average-rating-display {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+    }
+    .rating-number {
+        font-size: 1em !important;
+        margin-right: 4px !important;
+    }
+    .review-count-text { font-size: 0.85em !important; }
+    .star-rating-main .fas.fa-star.filled,
+    .star-rating-main .far.fa-star { font-size: 1em !important; }
+
+    /* Status badge */
+    #detailStatusBadge {
+        font-size: 0.75em !important;
+        padding: 4px 10px !important;
+    }
+
+    /* ── Amenities on hero — hide on mobile, show in section card ── */
+    .amenities-section.section-card {
+        position: static !important;
+        background: #fff !important;
+        color: #333 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        margin: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        pointer-events: auto !important;
+        display: flex !important;
+    }
+    .amenities-section h2 {
+        color: #333 !important;
+        font-size: 0.85em !important;
+        text-shadow: none !important;
+    }
+    .amenities-section .amenities-list li {
+        background: #d1fae5 !important;
+        color: #065f46 !important;
+        border: 1.5px solid #6ee7b7 !important;
+        font-size: 0.8em !important;
+    }
+    .amenities-section .amenities-list li i { color: #059669 !important; }
+
+    /* ── Top info grid — stack vertically ── */
+    .top-info-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        margin: 14px 12px 14px !important;
+    }
+
+    .section-card {
+        padding: 16px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* ── Contact info cards ── */
+    .contact-info-card {
+        padding: 10px 12px !important;
+        border-radius: 8px !important;
+        gap: 10px !important;
+    }
+    .contact-icon-wrap {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        font-size: 0.85em !important;
+    }
+    .contact-label { font-size: 0.65em !important; }
+    .contact-value { font-size: 0.78em !important; }
+
+    /* ── Menu section ── */
+    .menu-section.section-card,
+    #menu-section {
+        padding: 16px 12px !important;
+        margin: 0 12px 14px !important;
+        border-radius: 12px !important;
+    }
+
+    /* ── Menu items — 2 column grid ── */
+    .menu-list {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .menu-item {
+        border-radius: 10px !important;
+    }
+
+    .menu-item-image-wrapper {
+        height: 110px !important;
+    }
+
+    /* ── Reviews ── */
+    .reviews-section {
+        margin: 0 12px 14px !important;
+    }
+
+    /* ── Item detail modal — full screen bottom sheet ── */
+    .item-modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    .item-modal-box {
+        border-radius: 20px 20px 0 0 !important;
+        flex-direction: column !important;
+        max-height: 92vh !important;
+        width: 100% !important;
+        overflow-y: auto !important;
+    }
+    .item-modal-image-panel {
+        height: 220px !important;
+        border-radius: 20px 20px 0 0 !important;
+        overflow: hidden !important;
+    }
+    .item-modal-image {
+        border-radius: 20px 20px 0 0 !important;
+    }
+    .item-modal-info-panel {
+        padding: 16px 18px 24px !important;
+    }
+    .item-modal-name { font-size: 1.2em !important; }
+    .item-modal-actions {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .item-modal-btn-cart,
+    .item-modal-btn-buynow {
+        width: 100% !important;
+        padding: 14px !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 { font-size: 1.4em !important; }
+    .menu-list { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    .menu-item-image-wrapper { height: 95px !important; }
+}

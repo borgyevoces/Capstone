@@ -167,6 +167,11 @@
         .main.main-with-sidebar { width: 100%; }
     }
     </style>
+<style>
+@media (max-width: 768px) {
+    #notifBellWrap { display: none !important; }
+}
+</style>
 </head>
 <body>
 
@@ -895,6 +900,48 @@ function _playNotifTick() {
     } catch(e){}
 }
 </script>
+
+
+<!-- ============================================================
+     MOBILE BOTTOM NAVIGATION BAR
+     ============================================================ -->
+<nav class="mob-bottom-nav" id="mobBottomNav">
+    <a href="{% url 'kabsueats_home' %}" class="mob-nav-item">
+        <span class="mob-nav-ico"><i class="fas fa-home"></i></span>
+        <span class="mob-nav-lbl">Home</span>
+    </a>
+    <a href="{% url 'view_cart' %}" class="mob-nav-item" style="position:relative;">
+        <span class="mob-nav-ico" style="position:relative;">
+            <i class="fas fa-shopping-cart"></i>
+            {% if user.is_authenticated %}
+            <span class="cart-badge" id="cart-count-badge-mob" style="display:{% if cart_count and cart_count > 0 %}flex{% else %}none{% endif %};">{{ cart_count|default:"0" }}</span>
+            {% endif %}
+        </span>
+        <span class="mob-nav-lbl">Cart</span>
+    </a>
+    <a href="{% url 'order_history' %}" class="mob-nav-item">
+        <span class="mob-nav-ico"><i class="fas fa-receipt"></i></span>
+        <span class="mob-nav-lbl">Orders</span>
+    </a>
+    <a href="{% url 'kabsueats_map' %}" class="mob-nav-item active">
+        <span class="mob-nav-ico"><i class="fas fa-map-marked-alt"></i></span>
+        <span class="mob-nav-lbl">Map</span>
+    </a>
+    {% if user.is_authenticated %}
+    <button class="mob-nav-item" onclick="toggleOrderNotifPanel()" style="background:none;border:none;cursor:pointer;padding:0;" id="mobNotifBtn">
+        <span class="mob-nav-ico" style="position:relative;">
+            <i class="fas fa-bell"></i>
+            <span id="orderNotifBadgeMob" style="display:none;position:absolute;top:-4px;right:-6px;background:#b71c1c;color:#fff;border-radius:50%;min-width:15px;height:15px;font-size:8px;font-weight:700;align-items:center;justify-content:center;padding:0 2px;border:2px solid #fff;line-height:1;"></span>
+        </span>
+        <span class="mob-nav-lbl">Updates</span>
+    </button>
+    {% else %}
+    <a href="{% url 'user_login_register' %}#login" class="mob-nav-item">
+        <span class="mob-nav-ico"><i class="fas fa-sign-in-alt"></i></span>
+        <span class="mob-nav-lbl">Login</span>
+    </a>
+    {% endif %}
+</nav>
 
 </body>
 </html>

@@ -2310,13 +2310,15 @@ let _lastOrderNotifCount = 0;
 document.addEventListener('DOMContentLoaded', function () {
     if (!IS_AUTHENTICATED) return;
 
-    // Close panel on outside click — exclude bell button and panel itself
+    // Close panel on outside click — exclude both desktop bell and mobile Updates button
     document.addEventListener('click', function (e) {
-        const panel = document.getElementById('orderNotifPanel');
-        const bell  = document.getElementById('orderNotifBellBtn');
+        const panel    = document.getElementById('orderNotifPanel');
+        const bell     = document.getElementById('orderNotifBellBtn');
+        const mobBtn   = document.getElementById('mobNotifBtn');
         if (panel && _orderNotifPanelOpen &&
             !panel.contains(e.target) &&
-            !(bell && bell.contains(e.target))) {
+            !(bell   && bell.contains(e.target)) &&
+            !(mobBtn && mobBtn.contains(e.target))) {
             closeOrderNotifPanel();
         }
     });
@@ -2496,14 +2498,16 @@ function markAllOrderNotifsRead() {
 
 // ── Update badge count ─────────────────────────────────────────────────
 function _setOrderNotifBadge(count) {
-    const badge = document.getElementById('orderNotifBadge');
-    if (!badge) return;
-    if (count > 0) {
-        badge.textContent   = count > 99 ? '99+' : String(count);
-        badge.style.display = 'flex';
-    } else {
-        badge.style.display = 'none';
-    }
+    ['orderNotifBadge', 'orderNotifBadgeMob'].forEach(function(id) {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent   = count > 99 ? '99+' : String(count);
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
 }
 
 // ── Subtle tick sound on new notification ─────────────────────────────
