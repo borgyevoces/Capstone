@@ -683,19 +683,23 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // Establishment open/closed status
+    // ✅ FIX: Gamitin ang actual EST_STATUS mula sa server (hindi na hardcoded "Open")
     const estStatus = document.getElementById('itemModalEstStatus');
+    const isEstOpen = (typeof EST_STATUS !== 'undefined') && EST_STATUS === 'Open';
     if (estStatus) {
-        const now = new Date();
-        const hour = now.getHours();
-        // Simple check — ideally server-provided; fallback visual
-        estStatus.className = 'item-modal-est-status open';
-        estStatus.textContent = 'Open';
+        estStatus.className = 'item-modal-est-status ' + (isEstOpen ? 'open' : 'closed');
+        estStatus.innerHTML = isEstOpen ? 'Open' : 'Closed';
     }
 
     const buyNowBtn = document.getElementById('modalBuyNowBtn');
-    if (itemQuantity <= 0) {
+    if (itemQuantity <= 0 || !isEstOpen) {
+        // Disable both buttons kung out of stock O closed ang establishment
         if (buyNowBtn) { buyNowBtn.disabled = true; buyNowBtn.style.opacity = '0.5'; }
+        const addToCartBtnStatus = document.getElementById('modalAddToCartBtn');
+        if (addToCartBtnStatus && !isEstOpen) {
+            addToCartBtnStatus.disabled = true;
+            addToCartBtnStatus.style.opacity = '0.5';
+        }
     } else {
         if (buyNowBtn) { buyNowBtn.disabled = false; buyNowBtn.style.opacity = '1'; }
     }

@@ -4122,58 +4122,9 @@
         setTimeout(function () { if (_retryFn) _retryFn(); }, 600);
     };
 
-    var _origFetch = window.fetch;
-    window.fetch = function (url, opts) {
-        return _origFetch(url, opts)
-            .then(function (res) {
-                if (res.status === 503) {
-                    window.showConnectionOverlay(
-                        'Database Unavailable',
-                        'Our database is temporarily unreachable. Please try again in a moment.',
-                        function () { window.location.reload(); },
-                        'db'
-                    );
-                } else if (res.status === 502 || res.status === 504) {
-                    window.showConnectionOverlay(
-                        'Server Unavailable',
-                        'The server is temporarily down. Please wait a moment.',
-                        function () { window.location.reload(); },
-                        'spinner'
-                    );
-                }
-                return res;
-            })
-            .catch(function (err) {
-                var offline = !navigator.onLine;
-                window.showConnectionOverlay(
-                    offline ? 'No Internet Connection' : 'Connection Problem',
-                    offline
-                        ? 'Please check your internet connection and try again.'
-                        : 'Something went wrong with the connection. Please wait.',
-                    function () {
-                        if (navigator.onLine) { window.location.reload(); }
-                        else {
-                            titleEl.textContent = 'Still Offline';
-                            msgEl.textContent   = 'No internet detected. Please check your connection.';
-                        }
-                    },
-                    offline ? 'offline' : 'spinner'
-                );
-                throw err;
-            });
-    };
+    // ✅ Connection overlay disabled — no longer shown to users
 
-    window.addEventListener('offline', function () {
-        window.showConnectionOverlay(
-            'No Internet Connection',
-            'Your internet connection was lost. Please check your connection.',
-            function () {
-                if (navigator.onLine) { window.hideConnectionOverlay(); window.location.reload(); }
-                else { titleEl.textContent = 'Still Offline'; msgEl.textContent = 'No internet detected.'; }
-            },
-            'offline'
-        );
-    });
+    // offline event — overlay disabled
 
     window.addEventListener('online', function () {
         if (overlay.classList.contains('active')) {
@@ -4187,11 +4138,7 @@
         }
     });
 
-    {% if db_error %}
-    document.addEventListener('DOMContentLoaded', function () {
-        if (window.showDatabaseErrorOverlay) window.showDatabaseErrorOverlay();
-    });
-    {% endif %}
+    {# db_error overlay disabled #}
 }());
 </script>
 

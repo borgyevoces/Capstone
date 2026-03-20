@@ -158,6 +158,22 @@
     /* ── Mobile ── */
     @media (max-width: 768px) {
         .map-page-content { padding: 14px 14px 60px; }
+        /* ✅ FIX: Button sa kanan — orange, hindi black */
+        .map-loc-btn {
+            bottom: 14px !important;
+            right: 14px !important;
+            left: auto !important;
+            transform: none !important;
+            background: #f97316 !important;
+            box-shadow: 0 4px 12px rgba(249,115,22,.4) !important;
+            z-index: 1001 !important;
+        }
+        /* ✅ FIX: 500m legend sa kaliwa para hindi mag-overlap */
+        .mleg {
+            bottom: 14px !important;
+            left: 10px !important;
+            right: auto !important;
+        }
         .map-layout { height: calc(100vh - 220px); min-height: 400px; flex-direction: column; }
         .map-cat-sidebar { width:100%; height:auto; max-height:100px; border-right:none; border-bottom:1px solid #f0f0f0; flex-direction:row; flex-wrap:wrap; padding:6px 8px; gap:4px; overflow-x:auto; overflow-y:hidden; }
         .mcs-header { display: none; }
