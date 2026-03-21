@@ -405,9 +405,36 @@ function setupAddMenuItemForm() {
         const name = formData.get('name');
         const price = formData.get('price');
         const description = formData.get('description');
+        const quantity = formData.get('quantity');
 
         if (!name || !price || !description) {
             showNotification('❌ Please fill in all required fields', 'error');
+            return false;
+        }
+
+        // ✅ Price validation — must be positive, max 2 decimal places
+        const priceVal = parseFloat(price);
+        if (isNaN(priceVal) || priceVal <= 0) {
+            showNotification('❌ Price must be a valid number greater than 0', 'error');
+            document.getElementById('id_price').focus();
+            return false;
+        }
+        if (!/^\d+(\.\d{1,2})?$/.test(price.trim())) {
+            showNotification('❌ Price can only have up to 2 decimal places (e.g. 12.50)', 'error');
+            document.getElementById('id_price').focus();
+            return false;
+        }
+        if (priceVal > 99999) {
+            showNotification('❌ Price seems too high. Please check the value.', 'error');
+            document.getElementById('id_price').focus();
+            return false;
+        }
+
+        // ✅ Quantity validation — minimum 1
+        const qtyVal = parseInt(quantity);
+        if (isNaN(qtyVal) || qtyVal < 1) {
+            showNotification('❌ Quantity must be at least 1', 'error');
+            document.getElementById('id_quantity').focus();
             return false;
         }
 
@@ -512,6 +539,10 @@ function setupAddMenuItemForm() {
 // ==========================================
 // ADD MENU ITEM TO GRID (REAL-TIME)
 // ==========================================
+
+// ✅ Shared default image — inline SVG so it always renders even with no static files
+const DEFAULT_MENU_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E";
+
 function addMenuItemToGrid(item) {
     console.log('➕ Adding item to grid:', item.id);
 
@@ -529,6 +560,11 @@ function addMenuItemToGrid(item) {
         return;
     }
 
+    // ✅ Use item image if available, otherwise use the SVG default
+    const imgSrc = (item.image_url && item.image_url.trim())
+        ? item.image_url
+        : DEFAULT_MENU_IMG;
+
     const menuCard = document.createElement('div');
     menuCard.className = 'menu-card';
     menuCard.dataset.itemId = item.id;
@@ -540,7 +576,9 @@ function addMenuItemToGrid(item) {
 
     menuCard.innerHTML = `
         <div class="menu-image">
-            <img src="${item.image_url || '/static/images/default_menu_item.png'}" alt="${item.name}">
+            <img src="${imgSrc}"
+                 alt="${item.name}"
+                 onerror="this.src='${DEFAULT_MENU_IMG}'">
             <div class="badges-container">
                 ${item.is_top_seller ? '<span class="badge bestseller"><i class="fas fa-award"></i> Best Seller</span>' : ''}
                 ${item.quantity > 0 ?
@@ -691,6 +729,33 @@ function setupEditMenuItemForm() {
             const formData = new FormData(this);
             const submitButton = this.querySelector('button[type="submit"]');
             const originalText = submitButton.innerHTML;
+
+            // ✅ Validate price
+            const price = formData.get('price');
+            const priceVal = parseFloat(price);
+            if (isNaN(priceVal) || priceVal <= 0) {
+                showNotification('❌ Price must be a valid number greater than 0', 'error');
+                document.getElementById('edit_item_price').focus();
+                return false;
+            }
+            if (!/^\d+(\.\d{1,2})?$/.test(price.trim())) {
+                showNotification('❌ Price can only have up to 2 decimal places (e.g. 12.50)', 'error');
+                document.getElementById('edit_item_price').focus();
+                return false;
+            }
+            if (priceVal > 99999) {
+                showNotification('❌ Price seems too high. Please check the value.', 'error');
+                document.getElementById('edit_item_price').focus();
+                return false;
+            }
+
+            // ✅ Validate quantity — minimum 1
+            const qty = parseInt(formData.get('quantity'));
+            if (isNaN(qty) || qty < 1) {
+                showNotification('❌ Quantity must be at least 1', 'error');
+                document.getElementById('id_quantity_edit').focus();
+                return false;
+            }
 
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
@@ -855,7 +920,7 @@ function openEditModal(itemId) {
     document.getElementById('edit_item_name').value = itemCard.dataset.itemName || '';
     document.getElementById('edit_item_description').value = itemCard.dataset.itemDescription || '';
     document.getElementById('edit_item_price').value = itemCard.dataset.itemPrice || '';
-    document.getElementById('id_quantity_edit').value = itemCard.dataset.itemQuantity || 0;
+    document.getElementById('id_quantity_edit').value = Math.max(1, parseInt(itemCard.dataset.itemQuantity) || 1);
 
     const imageUrl = itemCard.dataset.itemImageUrl || '';
     const currentImg = document.getElementById('edit_current_item_image');

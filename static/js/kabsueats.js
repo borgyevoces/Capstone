@@ -1711,7 +1711,22 @@ function openMod(id) {
     if (!d) return;
 
     currentModalItem = d;
-        const imgSrc = d.image || 'https://placehold.co/300x300/f3f4f6/d1d5db?text=Food';
+    currentModalInCart = 0;  // ✅ Reset immediately when switching items
+
+    // ✅ Reset Add to Cart button IMMEDIATELY before async fetch
+    const _addBtnReset = document.getElementById('addToCartBtn');
+    if (_addBtnReset) {
+        _addBtnReset.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+        _addBtnReset.style.background = '';
+        _addBtnReset.style.opacity = '1';
+        _addBtnReset.disabled = false;
+        _addBtnReset.onclick = function(e){ addToCartFromModal(); };
+        _addBtnReset.title = '';
+    }
+    const _mqtyReset = document.getElementById('mqty');
+    if (_mqtyReset) { _mqtyReset.value = 1; _mqtyReset.disabled = false; _mqtyReset.removeAttribute('max'); }
+
+    const imgSrc = d.image || 'https://placehold.co/300x300/f3f4f6/d1d5db?text=Food';
     document.getElementById('mImg').src = imgSrc;
 
     // Show/hide Best Seller badge on modal
@@ -1806,6 +1821,7 @@ function openMod(id) {
                 if (addBtn) {
                     addBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart';
                     addBtn.style.background = '#dc2626';
+                    addBtn.style.opacity = '1';
                     addBtn.disabled = false;
                     addBtn.onclick = function(e) { e.preventDefault(); window.location.href = '/cart/'; };
                 }
@@ -1815,6 +1831,15 @@ function openMod(id) {
                     qtyInput.max = remaining;
                     qtyInput.disabled = false;
                     if (parseInt(qtyInput.value) > remaining) qtyInput.value = 1;
+                }
+                // ✅ Ensure Add to Cart is properly restored (not stuck as "Go to Cart")
+                if (addBtn) {
+                    addBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+                    addBtn.style.background = '';
+                    addBtn.style.opacity = '1';
+                    addBtn.disabled = false;
+                    addBtn.onclick = function(e){ addToCartFromModal(); };
+                    addBtn.title = '';
                 }
             }
         });
@@ -1922,8 +1947,16 @@ function addToCartFromModal() {
                     btn.onclick = function(e) { e.preventDefault(); window.location.href = '/cart/'; };
                 }
             } else {
-                // Still has room — cap qty silently, button stays active (no banner)
+                // Still has room — keep Add to Cart button active
                 if (mqtyEl) { mqtyEl.max = canAdd; if (parseInt(mqtyEl.value) > canAdd) mqtyEl.value = 1; }
+                // ✅ Make sure button is still "Add to Cart" and clickable
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+                    btn.style.background = '';
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                    btn.onclick = function(e){ addToCartFromModal(); };
+                }
             }
 
         } else {

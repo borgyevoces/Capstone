@@ -973,22 +973,369 @@ html body .establishment-cart-box.active-cart {
 <script src="{% static 'js/cart.js' %}"></script>
 
 <script>
-    // ── Re-hook cart.js quantity updates to refresh our summary ──
-    (function() {
-        const observer = new MutationObserver(function() {
-            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-        });
-        document.querySelectorAll('.quantity-value').forEach(function(el) {
-            observer.observe(el, { childList: true, characterData: true, subtree: true });
-        });
+// ============================================================
+// ✅ CART ACTIONS — quantity +/−, remove item, clear cart
+// Defined here so they always work even if static cart.js
+// is missing or broken.
+// ============================================================
 
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('.btn-decrease, .btn-increase');
-            if (!btn) return;
-            setTimeout(function() {
-                if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-            }, 500);
+// ── CSRF helper ────────────────────────────────────────────
+function _cartCsrf() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value
+        || (document.cookie.match(/csrftoken=([^;]+)/) || [])[1]
+        || '';
+}
+
+// ── Update "N items" header count ─────────────────────────
+function _cartUpdateCount(n) {
+    const el = document.querySelector('.cart-item-count');
+    if (el) el.textContent = n + ' item' + (n === 1 ? '' : 's');
+}
+
+// ── Update navbar cart badge ───────────────────────────────
+function _cartUpdateBadge(n) {
+    document.querySelectorAll(
+        '#cartBadge,.cart-badge,[id*="cart-badge"],[class*="cart-badge"]'
+    ).forEach(function(el) {
+        el.textContent = n;
+        el.style.display = n > 0 ? '' : 'none';
+    });
+}
+
+// ── Show empty-cart state when nothing remains ─────────────
+function _cartShowEmptyIfNeeded() {
+    if (!document.querySelector('.establishment-cart-box')) {
+        const c = document.getElementById('cart-page-container');
+        if (c) c.innerHTML =
+            '<div class="empty-cart-message">' +
+            '<div class="empty-cart-icon"><i class="fas fa-shopping-cart"></i></div>' +
+            '<h2>Your cart is empty</h2>' +
+            '<p>Add items to your cart to get started!</p>' +
+            '<a href="/" class="btn-back-to-home"><i class="fas fa-store"></i> Browse Establishments</a>' +
+            '</div>';
+    }
+}
+
+// ============================================================
+// QUANTITY +/− BUTTONS
+// ============================================================
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-increase, .btn-decrease');
+    if (!btn) return;
+
+    const cartItem    = btn.closest('.cart-item');
+    if (!cartItem) return;
+    const orderItemId = cartItem.dataset.itemId;
+    const maxStock    = parseInt(cartItem.dataset.maxStock  || cartItem.dataset.remainingQty || 999, 10);
+    const isIncrease  = btn.classList.contains('btn-increase');
+    const qtyEl       = cartItem.querySelector('.quantity-value[data-item-id="' + orderItemId + '"]');
+    if (!qtyEl) return;
+
+    let currentQty = parseInt(qtyEl.textContent, 10) || 1;
+    let newQty     = isIncrease ? currentQty + 1 : currentQty - 1;
+
+    // Clamp
+    if (newQty < 1) newQty = 1;
+    if (isIncrease && newQty > maxStock) {
+        newQty = maxStock;
+        if (newQty === currentQty) return; // already at max
+    }
+    if (newQty === currentQty) return;
+
+    // Optimistic UI update
+    qtyEl.textContent = newQty;
+
+    // Update subtotal immediately
+    const unitPrice = parseFloat(cartItem.dataset.unitPrice || 0);
+    const subTotalEl = document.getElementById('item-total-' + orderItemId);
+    if (subTotalEl && unitPrice) {
+        subTotalEl.textContent = '₱' + (unitPrice * newQty).toFixed(2);
+    }
+
+    // Enable/disable buttons
+    const decBtn = cartItem.querySelector('.btn-decrease');
+    const incBtn = cartItem.querySelector('.btn-increase');
+    if (decBtn) decBtn.disabled = (newQty <= 1);
+    if (incBtn) incBtn.disabled = (newQty >= maxStock);
+
+    // Rebuild order summary
+    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+    if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+
+    // Send to server
+    const fd = new FormData();
+    fd.append('order_item_id', orderItemId);
+    fd.append('quantity', newQty);
+
+    fetch("{% url 'update_cart_item' %}", {
+        method:      'POST',
+        body:        fd,
+        headers:     { 'X-CSRFToken': _cartCsrf() },
+        credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            // Revert on failure
+            qtyEl.textContent = currentQty;
+            if (subTotalEl && unitPrice) {
+                subTotalEl.textContent = '₱' + (unitPrice * currentQty).toFixed(2);
+            }
+            if (decBtn) decBtn.disabled = (currentQty <= 1);
+            if (incBtn) incBtn.disabled = (currentQty >= maxStock);
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            alert(data.message || 'Could not update quantity.');
+        } else {
+            _cartUpdateCount(data.cart_count || 0);
+            _cartUpdateBadge(data.cart_count || 0);
+        }
+    })
+    .catch(function() {
+        // Revert silently on network error
+        qtyEl.textContent = currentQty;
+        if (subTotalEl && unitPrice) {
+            subTotalEl.textContent = '₱' + (unitPrice * currentQty).toFixed(2);
+        }
+        if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+    });
+});
+
+// ============================================================
+// REMOVE SINGLE ITEM
+// Called by onclick="removeItemFromCart({{ item.id }})"
+// ============================================================
+window.removeItemFromCart = function(orderItemId) {
+    const cartItemEl = document.getElementById('cart-item-' + orderItemId);
+    if (cartItemEl) {
+        const n = cartItemEl.querySelector('.item-name');
+        window._pendingRemoveItemName = n ? n.textContent.trim() : 'this item';
+    }
+
+    window.customConfirm('Remove Item', '', 'Yes, Remove', 'Keep It', function(confirmed) {
+        if (!confirmed) return;
+
+        const btn = cartItemEl ? cartItemEl.querySelector('.remove-item-btn') : null;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+        const fd = new FormData();
+        fd.append('order_item_id', orderItemId);
+
+        fetch("{% url 'remove_from_cart' %}", {
+            method: 'POST', body: fd,
+            headers: { 'X-CSRFToken': _cartCsrf() }, credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                alert(data.message || 'Could not remove item.');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
+                return;
+            }
+            // Animate item row out
+            if (cartItemEl) {
+                cartItemEl.style.transition = 'opacity 0.28s, transform 0.28s';
+                cartItemEl.style.opacity    = '0';
+                cartItemEl.style.transform  = 'translateX(20px)';
+                setTimeout(function() {
+                    cartItemEl.remove();
+                    if (data.order_deleted) {
+                        const estBox = document.querySelector(
+                            '.establishment-cart-box[data-establishment-id="' + data.establishment_id + '"]'
+                        );
+                        if (estBox) {
+                            estBox.style.transition = 'opacity 0.3s';
+                            estBox.style.opacity    = '0';
+                            setTimeout(function() { estBox.remove(); _cartShowEmptyIfNeeded(); }, 320);
+                        } else { _cartShowEmptyIfNeeded(); }
+                    }
+                    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+                    _cartUpdateCount(data.cart_count || 0);
+                    _cartUpdateBadge(data.cart_count || 0);
+                }, 300);
+            }
+        })
+        .catch(function() {
+            alert('Network error. Please try again.');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
         });
-    })();
+    });
+};
+
+// ============================================================
+// CLEAR ALL ITEMS FOR AN ESTABLISHMENT (trash icon)
+// Called by onclick="clearEstablishmentCart({{ cart.establishment.id }})"
+// ============================================================
+window.clearEstablishmentCart = function(establishmentId) {
+    const estBox = document.querySelector(
+        '.establishment-cart-box[data-establishment-id="' + establishmentId + '"]'
+    );
+    if (estBox) {
+        const n = estBox.querySelector('.cart-establishment-info h2');
+        window._pendingClearEstabName = n ? n.textContent.trim() : 'this establishment';
+    }
+
+    window.customConfirm('Clear Cart', '', 'Clear All', 'Cancel', function(confirmed) {
+        if (!confirmed) return;
+
+        const clearBtn = estBox ? estBox.querySelector('.clear-establishment-btn') : null;
+        if (clearBtn) { clearBtn.disabled = true; clearBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+        const fd = new FormData();
+        fd.append('establishment_id', establishmentId);
+
+        fetch("{% url 'clear_establishment_cart' %}", {
+            method: 'POST', body: fd,
+            headers: { 'X-CSRFToken': _cartCsrf() }, credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                alert(data.message || 'Could not clear cart.');
+                if (clearBtn) { clearBtn.disabled = false; clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+                return;
+            }
+            if (estBox) {
+                estBox.style.transition = 'opacity 0.35s, transform 0.35s';
+                estBox.style.opacity    = '0';
+                estBox.style.transform  = 'translateX(30px)';
+                setTimeout(function() {
+                    estBox.remove();
+                    _cartShowEmptyIfNeeded();
+                    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+                    _cartUpdateCount(data.cart_count || 0);
+                    _cartUpdateBadge(data.cart_count || 0);
+                }, 380);
+            }
+        })
+        .catch(function() {
+            alert('Network error. Please try again.');
+            if (clearBtn) { clearBtn.disabled = false; clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+        });
+    });
+};
+
+// ── Re-hook summary rebuild on quantity change ─────────────
+(function() {
+    const observer = new MutationObserver(function() {
+        if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+    });
+    document.querySelectorAll('.quantity-value').forEach(function(el) {
+        observer.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+})();
+</script>
+
+<script>
+// ============================================================
+// ✅ REALTIME — Inventory WebSocket for Cart Page
+// ============================================================
+(function initCartInventoryWs() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+
+    function showCartToast(msg, type) {
+        let c = document.getElementById('_cartToastContainer');
+        if (!c) {
+            c = document.createElement('div');
+            c.id = '_cartToastContainer';
+            c.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:340px;';
+            document.body.appendChild(c);
+        }
+        const bg = type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#22c55e';
+        const t  = document.createElement('div');
+        t.style.cssText = 'background:' + bg + ';color:#fff;padding:12px 16px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.18);line-height:1.5;opacity:1;transition:opacity .4s;';
+        t.innerHTML = msg;
+        c.appendChild(t);
+        setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 400); }, 5000);
+    }
+
+    function handleInventoryUpdate(data) {
+        if (data.type !== 'quantity_update' || !Array.isArray(data.updates)) return;
+        data.updates.forEach(function(upd) {
+            const menuItemId   = String(upd.menu_item_id);
+            const newQty       = parseInt(upd.new_quantity, 10);
+            const isDeleted    = upd.deleted === true;
+            const itemName     = upd.item_name || 'An item';
+            const deleteReason = upd.delete_reason || '';
+
+            document.querySelectorAll('.cart-item[data-menu-item-id="' + menuItemId + '"]')
+                .forEach(function(cartItem) {
+                    if (isDeleted) {
+                        cartItem.style.transition    = 'opacity 0.35s';
+                        cartItem.style.opacity       = '0.5';
+                        cartItem.style.pointerEvents = 'none';
+                        cartItem.querySelectorAll('.quantity-btn,.item-checkbox').forEach(function(el) { el.disabled = true; });
+
+                        const details = cartItem.querySelector('.item-details');
+                        if (details && !details.querySelector('.cart-item-deleted-banner')) {
+                            const banner = document.createElement('div');
+                            banner.className = 'cart-item-deleted-banner';
+                            banner.style.cssText = 'margin-top:8px;display:flex;align-items:flex-start;gap:6px;background:#fff5f5;border:1px solid #fecaca;border-radius:7px;padding:7px 10px;font-size:12px;color:#7f1d1d;font-weight:500;line-height:1.5;animation:cartBannerIn 0.25s ease;';
+                            banner.innerHTML = '<i class="fas fa-ban" style="color:#B71C1C;flex-shrink:0;margin-top:2px;font-size:11px;"></i><span>' +
+                                (deleteReason ? '<strong>Removed by establishment</strong> — ' + deleteReason : '<strong>This item was removed from the menu</strong>.') + '</span>';
+                            details.appendChild(banner);
+                        }
+
+                        const nameEl = cartItem.querySelector('.item-name');
+                        if (nameEl) { nameEl.style.textDecoration = 'line-through'; nameEl.style.color = '#9ca3af'; }
+
+                        const stockCount = cartItem.querySelector('.stock-count');
+                        if (stockCount) stockCount.textContent = 'Removed';
+                        const stockP = cartItem.querySelector('.item-stock');
+                        if (stockP) stockP.style.color = '#ef4444';
+
+                        const chk = cartItem.querySelector('.item-checkbox');
+                        if (chk) { chk.checked = false; chk.disabled = true; chk.dispatchEvent(new Event('change', { bubbles: true })); }
+
+                        showCartToast('🚫 <strong>"' + itemName + '"</strong> was removed from the menu.' +
+                            (deleteReason ? '<br><span style="font-size:12px;opacity:.9;">Reason: ' + deleteReason + '</span>' : ''), 'error');
+                    } else {
+                        const sc = cartItem.querySelector('.stock-count');
+                        if (sc) sc.textContent = newQty;
+                        cartItem.dataset.maxStock = newQty;
+
+                        if (newQty === 0) {
+                            const inc = cartItem.querySelector('.btn-increase');
+                            if (inc) inc.disabled = true;
+                            if (!cartItem.querySelector('.cart-oos-chip')) {
+                                const chip = document.createElement('span');
+                                chip.className = 'cart-oos-chip';
+                                chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-top:4px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;';
+                                chip.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
+                                const d = cartItem.querySelector('.item-details');
+                                if (d) d.appendChild(chip);
+                            }
+                        } else {
+                            const chip = cartItem.querySelector('.cart-oos-chip');
+                            if (chip) chip.remove();
+                            const currentQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
+                            const inc = cartItem.querySelector('.btn-increase');
+                            if (inc && currentQty < newQty) inc.disabled = false;
+                        }
+                    }
+                });
+        });
+    }
+
+    document.querySelectorAll('.establishment-cart-box[data-establishment-id]').forEach(function(box) {
+        const estId = box.getAttribute('data-establishment-id');
+        if (!estId) return;
+        let ws;
+        function connect() {
+            ws = new WebSocket(proto + '://' + location.host + '/ws/inventory/' + estId + '/');
+            ws.onopen    = function() { console.log('🛒 [Cart WS] → est #' + estId); };
+            ws.onmessage = function(e) { try { handleInventoryUpdate(JSON.parse(e.data)); } catch(err) {} };
+            ws.onclose   = function() { setTimeout(connect, 3000); };
+            ws.onerror   = function() { ws.close(); };
+        }
+        connect();
+    });
+
+    if (!document.getElementById('_cartWsStyles')) {
+        const s = document.createElement('style');
+        s.id = '_cartWsStyles';
+        s.textContent = '@keyframes cartBannerIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}';
+        document.head.appendChild(s);
+    }
+})();
 </script>
 {% endblock %}

@@ -620,15 +620,6 @@
                 font-size: 12px;
             }
         }
-                width: 36px;
-                height: 36px;
-            }
-
-            .customer-initial {
-                font-size: 14px;
-            }
-        }
-
         .notification-toggle-btn {
             position: relative;
             background: transparent;
@@ -668,7 +659,7 @@
             background: #f0f0f0 !important;
         }
 
-        /* ── Same size on mobile too ── */
+        /*  Same size on mobile too  */
         @media (max-width: 768px) {
             .notification-toggle-btn,
             .chat-toggle-btn,
@@ -1078,7 +1069,7 @@
         }
 
         /* ========================================
-           ✅ PINNED SECTION STYLES - REDESIGNED
+            PINNED SECTION STYLES - REDESIGNED
            ======================================== */
 
         .owner-pinned-section {
@@ -1302,7 +1293,7 @@
         }
 
         .chat-message.pinned .chat-message-bubble::before {
-            content: '📌 ';
+            content: ' ';
             margin-right: 4px;
         }
 
@@ -1631,7 +1622,7 @@
         }
 
         .chat-message.deleted .chat-message-bubble::before {
-            content: '🚫 ';
+            content: ' ';
         }
 
         .pinned-messages-modal {
@@ -1871,74 +1862,154 @@
             animation: slideUp 0.3s ease;
         }
 
-        /* Compact style for menu item delete and toggle seller modals */
+        /* Compact style for menu item delete modal  shows reason dropdown immediately */
         #menuItemDeleteModal .delete-modal,
         #toggleSellerModal .delete-modal {
-            max-width: 380px;
-            padding: 24px;
+            max-width: 440px;
+            padding: 18px 20px 16px;
             border-radius: 14px;
         }
 
         #menuItemDeleteModal .delete-modal-header,
         #toggleSellerModal .delete-modal-header {
-            margin-bottom: 16px;
-            gap: 12px;
+            margin-bottom: 10px;
+            gap: 10px;
         }
 
         #menuItemDeleteModal .delete-modal-icon,
         #toggleSellerModal .delete-modal-icon {
-            width: 44px;
-            height: 44px;
-            font-size: 20px;
+            width: 38px;
+            height: 38px;
+            font-size: 17px;
             flex-shrink: 0;
         }
 
         #menuItemDeleteModal .delete-modal-title h3,
         #toggleSellerModal .delete-modal-title h3 {
-            font-size: 18px;
+            font-size: 16px;
+            margin: 0 0 2px;
         }
 
         #menuItemDeleteModal .delete-modal-title p,
         #toggleSellerModal .delete-modal-title p {
-            font-size: 13px;
+            font-size: 12px;
+            margin: 0;
         }
 
         #menuItemDeleteModal .delete-modal-body,
         #toggleSellerModal .delete-modal-body {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         #menuItemDeleteModal .delete-warning,
         #toggleSellerModal .delete-warning {
-            padding: 12px;
+            padding: 9px 12px;
             margin-bottom: 0;
         }
 
         #menuItemDeleteModal .delete-warning p,
         #toggleSellerModal .delete-warning p {
-            font-size: 13px;
+            font-size: 12.5px;
         }
 
-        #menuItemDeleteModal .delete-consequences,
+        /*  delete-consequences VISIBLE for menuItemDeleteModal (reason dropdown) */
+        /* toggleSellerModal keeps consequences hidden */
         #toggleSellerModal .delete-consequences {
             display: none;
         }
 
+        #menuItemDeleteModal .delete-consequences {
+            background: transparent;
+            padding: 0;
+            margin-top: 10px;
+        }
+
         #menuItemDeleteModal .delete-modal-actions,
         #toggleSellerModal .delete-modal-actions {
-            gap: 10px;
+            gap: 8px;
+            margin-top: 12px;
         }
 
         #menuItemDeleteModal .btn-cancel,
         #menuItemDeleteModal .btn-delete,
         #toggleSellerModal .btn-cancel,
         #toggleSellerModal .btn-delete {
-            padding: 10px 18px;
-            font-size: 14px;
+            padding: 9px 16px;
+            font-size: 13px;
         }
-        /* Confirm buttons always use red base — specific colors set via JS for toggle */
+        /* Confirm buttons always use red base */
         #menuItemDeleteModal .btn-delete {
             background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+        }
+
+        /*  Delete reason dropdown  */
+        .delete-reason-select {
+            width: 100%;
+            margin-top: 6px;
+            padding: 9px 34px 9px 11px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #2d3748;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 11px center;
+            transition: border-color .2s, box-shadow .2s;
+            font-family: inherit;
+        }
+        .delete-reason-select:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183,28,28,.1);
+        }
+        .delete-reason-select.invalid {
+            border-color: #B71C1C !important;
+            box-shadow: 0 0 0 3px rgba(183,28,28,.12) !important;
+            animation: drShake 0.3s ease;
+        }
+        .delete-reason-textarea {
+            display: none;
+            width: 100%;
+            margin-top: 6px;
+            padding: 8px 10px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-family: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+            color: #2d3748;
+            min-height: 58px;
+            transition: border-color .2s;
+        }
+        .delete-reason-textarea:focus {
+            outline: none;
+            border-color: #B71C1C;
+            box-shadow: 0 0 0 3px rgba(183,28,28,.1);
+        }
+        .delete-reason-textarea.invalid {
+            border-color: #B71C1C !important;
+            box-shadow: 0 0 0 3px rgba(183,28,28,.12) !important;
+        }
+        .delete-reason-error {
+            display: none;
+            margin-top: 5px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #B71C1C;
+            align-items: center;
+            gap: 4px;
+        }
+        .delete-reason-error.show { display: flex; }
+        @keyframes drShake {
+            0%,100%{ transform:translateX(0); }
+            20%,60%{ transform:translateX(-4px); }
+            40%,80%{ transform:translateX(4px); }
         }
 
         .delete-modal-header {
@@ -2757,7 +2828,7 @@
     text-align: center;
 }
 
-/* Profile button — no border, no circle, just plain icon */
+/* Profile button  no border, no circle, just plain icon */
 .navbar-btn {
     display: flex;
     align-items: center;
@@ -2814,34 +2885,39 @@
             opacity: 0 !important;
         }
 
+        /* Desktop stat card icon colors  matched by mobile too */
         .top-action-btn.total-items-card .btn-icon {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
             color: white;
+            box-shadow: 0 4px 14px rgba(245,158,11,.35);
         }
 
         .top-action-btn.bestsellers-card .btn-icon {
             background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
             color: white;
+            box-shadow: 0 4px 14px rgba(139,92,246,.35);
         }
 
         .stats-number {
-            font-size: 28px !important;
-            font-weight: 700 !important;
-            color: #1f2937 !important;
+            font-size: 32px !important;
+            font-weight: 800 !important;
+            color: #111827 !important;
+            line-height: 1 !important;
         }
 
         .stats-card .btn-label {
-            font-size: 14px !important;
-            color: #6b7280 !important;
+            font-size: 12px !important;
+            color: #9ca3af !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.6px !important;
         }
 
         .stats-icon-items, .stats-icon-bestsellers {
-            font-size: 24px;
+            font-size: 22px;
         }
 
         /* ==========================================
            MODAL CLOSE BUTTON FIX
-           Ensures X button is always visible inside modal
            ========================================== */
         .modal-content {
             position: relative !important;
@@ -2867,6 +2943,14 @@
             line-height: 1 !important;
         }
 
+        /* Show × even when button content is empty */
+        .modal-close:empty::after {
+            content: '\00D7';
+            font-size: 22px;
+            line-height: 1;
+            color: inherit;
+        }
+
         .modal-close:hover {
             background: #dc2626 !important;
             color: white !important;
@@ -2887,8 +2971,7 @@
         }
 
         /* ==========================================
-           MESSAGES: HIDE NAV BUTTON ON MOBILE,
-           SHOW FLOATING CIRCLE BUTTON INSTEAD
+           MESSAGES: HIDE NAV BUTTON ON MOBILE
            ========================================== */
         @media (max-width: 768px) {
             .chat-toggle-btn {
@@ -2896,12 +2979,11 @@
             }
         }
 
-        /* Float button — mobile only */
+        /* Float button  mobile only */
         .chat-float-btn {
             display: none;
         }
 
-        /* Hide float button when chat panel is open */
         .chat-panel.open ~ .chat-float-btn,
         body.chat-open .chat-float-btn {
             display: none !important;
@@ -2956,42 +3038,55 @@
                 line-height: 1;
             }
         }
+
         /* ==========================================
-           ADD MENU ITEM BUTTON - IMPROVED MOBILE LAYOUT
+           MOBILE TOP BUTTONS  same colors as desktop
            ========================================== */
         @media (max-width: 768px) {
             .top-action-buttons {
                 display: grid !important;
                 grid-template-columns: 1fr 1fr !important;
                 grid-template-rows: auto auto !important;
-                gap: 12px !important;
-                padding: 0 16px !important;
-                margin-bottom: 20px !important;
+                gap: 10px !important;
+                padding: 0 !important;
+                margin-bottom: 16px !important;
             }
 
-            /* Add Menu Item spans full width on top */
+            /* Add Menu Item  full width top row, green fill */
             .top-action-btn.add-item-btn {
                 grid-column: 1 / -1 !important;
                 max-width: 100% !important;
-                padding: 18px 20px !important;
-                justify-content: center !important;
+                padding: 15px 18px !important;
+                justify-content: flex-start !important;
                 background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-                border-color: #10b981 !important;
-                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35) !important;
+                border-color: #059669 !important;
+                box-shadow: 0 4px 16px rgba(16,185,129,.35) !important;
+                border-radius: 14px !important;
             }
 
             .top-action-btn.add-item-btn .btn-icon {
-                background: rgba(255,255,255,0.25) !important;
+                background: rgba(255,255,255,.2) !important;
                 box-shadow: none !important;
                 color: white !important;
+                width: 42px !important;
+                height: 42px !important;
+                font-size: 20px !important;
             }
 
-            .top-action-btn.add-item-btn .btn-label,
-            .top-action-btn.add-item-btn .btn-desc {
+            .top-action-btn.add-item-btn .btn-label {
                 color: white !important;
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                text-transform: none !important;
+                letter-spacing: 0 !important;
             }
 
-            /* Stats cards sit side by side below */
+            .top-action-btn.add-item-btn .btn-desc {
+                color: rgba(255,255,255,.8) !important;
+                font-size: 12px !important;
+            }
+
+            /* Stats cards  same icon colors as desktop */
             .top-action-btn.stats-card {
                 flex: unset !important;
                 max-width: 100% !important;
@@ -3000,12 +3095,25 @@
                 align-items: center !important;
                 text-align: center !important;
                 gap: 8px !important;
+                border-radius: 14px !important;
+                background: white !important;
+            }
+
+            /* Total Items  amber (same as desktop) */
+            .top-action-btn.total-items-card {
+                border-top: 3px solid #f59e0b !important;
+            }
+
+            /* Top Sellers  purple (same as desktop) */
+            .top-action-btn.bestsellers-card {
+                border-top: 3px solid #8b5cf6 !important;
             }
 
             .top-action-btn.stats-card .btn-icon {
-                width: 42px !important;
-                height: 42px !important;
+                width: 44px !important;
+                height: 44px !important;
                 font-size: 20px !important;
+                border-radius: 12px !important;
             }
 
             .top-action-btn.stats-card .btn-text {
@@ -3013,15 +3121,20 @@
             }
 
             .top-action-btn.stats-card .btn-label {
-                font-size: 13px !important;
+                font-size: 11px !important;
+                color: #9ca3af !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
             }
 
             .top-action-btn.stats-card .btn-desc.stats-number {
-                font-size: 22px !important;
+                font-size: 26px !important;
+                font-weight: 800 !important;
+                color: #111827 !important;
+                line-height: 1.1 !important;
             }
         }
-
-</style>
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -3146,7 +3259,7 @@
                     <i class="fas fa-circle"></i> Status
                 </div>
                 <div class="profile-detail-value">
-                    {# ✅ REALTIME: updated every 60s by status_updater.js #}
+                    {#  REALTIME: updated every 60s by status_updater.js #}
                     <span id="establishmentStatus"
                           class="status-badge status-{{ establishment.calculated_status|lower }}"
                           data-opening-time="{{ establishment.opening_time|time:'H:i'|default:'' }}"
@@ -3211,15 +3324,29 @@
             </div>
             <div class="delete-modal-title">
                 <h3>Delete Menu Item?</h3>
-                <p>This action cannot be undone</p>
+                <p>Customers with active orders will be notified</p>
             </div>
         </div>
         <div class="delete-modal-body">
             <div class="delete-warning">
-                <p><i class="fas fa-info-circle"></i> You are about to permanently delete <strong id="menuItemDeleteName"></strong></p>
+                <p><i class="fas fa-info-circle"></i> Permanently delete <strong id="menuItemDeleteName"></strong></p>
             </div>
             <div class="delete-consequences">
-                <p style="margin:0;color:#6b7280;font-size:14px;">This menu item will be removed from your menu and will no longer be visible to customers.</p>
+                <p style="margin:0 0 4px;color:#374151;font-size:12px;font-weight:600;">
+                    <i class="fas fa-comment-alt" style="color:#B71C1C;margin-right:4px;"></i>Reason <span style="color:#9ca3af;font-weight:400;">(shown to customer)</span>:
+                </p>
+                <select id="menuItemDeleteReasonSelect" class="delete-reason-select" onchange="onDeleteReasonChange()">
+                    <option value=""> Choose a reason </option>
+                    <option value="The item you ordered is currently out of stock.">The item you ordered is currently out of stock.</option>
+                    <option value="This item is no longer available on our menu.">This item is no longer available on our menu.</option>
+                    <option value="We are temporarily unable to prepare this item.">We are temporarily unable to prepare this item.</option>
+                    <option value="The ingredients for this item are unavailable.">The ingredients for this item are unavailable.</option>
+                    <option value="Other (please specify)">Other (please specify)</option>
+                </select>
+                <textarea id="menuItemDeleteReasonText" class="delete-reason-textarea" placeholder="Please describe your reason..."></textarea>
+                <div id="menuItemDeleteReasonError" class="delete-reason-error">
+                    <i class="fas fa-exclamation-circle"></i> Please select or enter a reason.
+                </div>
             </div>
         </div>
         <div class="delete-modal-actions">
@@ -3445,7 +3572,7 @@
         </div>
     </div>
 
-    <!-- ✅ REDESIGNED: PINNED MESSAGE SECTION -->
+    <!--  REDESIGNED: PINNED MESSAGE SECTION -->
     <div class="owner-pinned-section" id="ownerPinnedSection">
         <div class="owner-pinned-section-header">
             <span class="owner-pinned-section-title">
@@ -3555,7 +3682,7 @@
                     <div class="menu-info">
                         <div class="menu-name">{{ item.name }}</div>
                         <div class="menu-desc">{{ item.description }}</div>
-                        <div class="menu-price">₱{{ item.price|floatformat:2 }}</div>
+                        <div class="menu-price">{{ item.price|floatformat:2 }}</div>
                         <div class="menu-actions">
                             <button class="action-btn edit" onclick="openEditModal('{{ item.id }}')">
                                 <i class="fas fa-pen"></i> Edit
@@ -3587,7 +3714,7 @@
 
 <div class="modal" id="viewStoreDetailsModal">
     <div class="modal-content" style="max-width: 450px;">
-        <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('viewStoreDetailsModal')"></button>
         <h2><i class="fas fa-info-circle"></i> Store Details</h2>
         <div style="display: flex; flex-direction: column; gap: 16px;">
             <!-- Category -->
@@ -3638,7 +3765,7 @@
 
 <div class="modal" id="updateStoreDetailsModal">
     <div class="modal-content" style="max-width: 600px;">
-        <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('updateStoreDetailsModal')"></button>
         <h2><i class="fas fa-edit"></i> Update Store Details</h2>
         <form method="POST" enctype="multipart/form-data" class="modal-form" id="updateStoreDetailsForm"
               action="{% url 'update_establishment_details_ajax' pk=pk %}">
@@ -3771,12 +3898,12 @@
 </div>
 
 <div class="modal" id="addMenuItemModal">
-    <div class="modal-content" style="max-width: 500px;">
-        <button class="modal-close" onclick="closeModal('addMenuItemModal')">×</button>
+    <div class="modal-content" style="max-width: 460px;">
+        <button class="modal-close" onclick="closeModal('addMenuItemModal')"></button>
         <h2><i class="fas fa-plus"></i> Add New Menu Item</h2>
 
         <div id="debugInfo"
-             style="display:none; background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
+             style="display:none; background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-radius: 5px; font-size: 12px;">
             <strong>Debug:</strong> <span id="debugMessage"></span>
         </div>
 
@@ -3792,23 +3919,25 @@
 
             <div class="form-group">
                 <label for="id_description">Description *</label>
-                <textarea name="description" id="id_description" required rows="3"></textarea>
+                <textarea name="description" id="id_description" required rows="2"></textarea>
             </div>
 
-            <div class="form-group">
-                <label for="id_price">Price (₱) *</label>
-                <input type="number" name="price" id="id_price" step="0.01" min="0" required>
-            </div>
+            <div class="form-group-row">
+                <div class="form-group">
+                    <label for="id_price">Price (₱) *</label>
+                    <input type="number" name="price" id="id_price" step="0.01" min="0.01" max="99999" required placeholder="e.g. 120.00">
+                </div>
 
-            <div class="form-group">
-                <label for="id_quantity">Quantity</label>
-                <input type="number" name="quantity" id="id_quantity" min="0" value="0">
+                <div class="form-group">
+                    <label for="id_quantity">Quantity *</label>
+                    <input type="number" name="quantity" id="id_quantity" min="1" value="1" required placeholder="Enter available quantity">
+                </div>
             </div>
 
             <div class="form-group">
                 <label for="id_image">Image (Optional)</label>
                 <input type="file" name="image" id="id_image" accept="image/*">
-                <small style="color: #666; font-size: 12px;">Recommended: JPG or PNG, max 5MB</small>
+                <small style="color: #666; font-size: 11px;">Recommended: JPG or PNG, max 5MB</small>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
@@ -3820,7 +3949,7 @@
 
 <div class="modal" id="editMenuItemModal">
     <div class="modal-content" style="max-width: 500px;">
-        <button class="modal-close" onclick="closeModal('editMenuItemModal')">×</button>
+        <button class="modal-close" onclick="closeModal('editMenuItemModal')"></button>
         <h2><i class="fas fa-edit"></i> Edit Menu Item</h2>
         <form id="editMenuItemForm" method="post" action="" enctype="multipart/form-data" class="modal-form">
             {% csrf_token %}
@@ -3833,13 +3962,15 @@
                 <label for="edit_item_description">Description</label>
                 <textarea name="description" id="edit_item_description" required></textarea>
             </div>
-            <div class="form-group">
-                <label for="edit_item_price">Price</label>
-                <input type="text" name="price" id="edit_item_price" required>
-            </div>
-            <div class="form-group">
-                <label for="id_quantity_edit">Quantity</label>
-                <input type="number" name="quantity" id="id_quantity_edit" min="0" value="0">
+            <div class="form-group-row">
+                <div class="form-group">
+                    <label for="edit_item_price">Price (₱) *</label>
+                    <input type="number" name="price" id="edit_item_price" step="0.01" min="0.01" max="99999" required placeholder="e.g. 120.00">
+                </div>
+                <div class="form-group">
+                    <label for="id_quantity_edit">Quantity *</label>
+                    <input type="number" name="quantity" id="id_quantity_edit" min="1" value="1" required>
+                </div>
             </div>
             <div class="form-group">
                 <label for="edit_item_image">New Image</label>
@@ -3856,7 +3987,7 @@
 
 <div class="modal" id="storeReviewsModal">
     <div class="modal-content" style="max-width: 600px; max-height: 70vh;">
-        <button class="modal-close" onclick="closeModal('storeReviewsModal')">×</button>
+        <button class="modal-close" onclick="closeModal('storeReviewsModal')"></button>
         <h2><i class="fas fa-star"></i> Customer Reviews</h2>
         <div style="display: flex; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
             <div>
@@ -3904,21 +4035,21 @@
 </div>
 
 <div class="modal" id="ownerProfileImageModal" style="background: rgba(0, 0, 0, 0.9);">
-    <button class="modal-close" onclick="closeModal('ownerProfileImageModal')" style="color: white;">×</button>
+    <button class="modal-close" onclick="closeModal('ownerProfileImageModal')" style="color: white;"></button>
     <img id="ownerModalImageView" src="" alt="Profile"
          style="max-width: 90%; max-height: 90vh; border-radius: var(--radius);">
 </div>
 
 <div class="modal" id="mapModal">
     <div class="modal-content" style="max-width: 900px; padding: 16px;">
-        <button class="modal-close" onclick="closeModal('mapModal')">×</button>
+        <button class="modal-close" onclick="closeModal('mapModal')"></button>
 
         <h2 style="margin-bottom: 8px;">
             <i class="fas fa-map-marker-alt"></i> Set Establishment Location
         </h2>
 
         <p style="color: #666; font-size: 14px; margin-bottom: 12px;">
-            📍 Click or drag the pin inside the red circle (500m from CvSU-Bacoor)
+             Click or drag the pin inside the red circle (500m from CvSU-Bacoor)
         </p>
 
         <!-- Current Location Display - Simplified & Responsive -->
@@ -3926,7 +4057,7 @@
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div class="location-icon"
                      style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-                    📍
+
                 </div>
                 <div style="flex: 1; min-width: 0;">
                     <div class="location-label"
@@ -3939,9 +4070,9 @@
                     </div>
                     <div class="location-status" style="font-size: 11px; opacity: 0.8; margin-top: 2px;">
                         {% if has_location %}
-                        ✓ Location is set
+                         Location is set
                         {% else %}
-                        ⚠ Please pin location
+                         Please pin location
                         {% endif %}
                     </div>
                 </div>
@@ -3951,7 +4082,7 @@
         <!-- Address Display - Simplified & Responsive -->
         <div class="address-display-card" id="geocodedAddressDisplay" style="display: none;">
             <div style="display: flex; align-items: start; gap: 10px;">
-                <div class="address-icon" style="font-size: 22px; flex-shrink: 0;">🏠</div>
+                <div class="address-icon" style="font-size: 22px; flex-shrink: 0;"></div>
                 <div style="flex: 1; min-width: 0;">
                     <div class="address-title"
                          style="font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 12px;">
@@ -4053,7 +4184,7 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- overlay div kept for JS compatibility — permanently hidden -->
+<!-- overlay div kept for JS compatibility  permanently hidden -->
 <div id="connectionOverlay" style="display:none!important;"></div>
 <script>
 (function () {
@@ -4068,7 +4199,7 @@
 <script src="{% static 'js/food_establishment_dashboard.js' %}"></script>
 
 <!-- ============================================================
-     DASHBOARD OVERRIDES — must run AFTER food_establishment_dashboard.js
+     DASHBOARD OVERRIDES  must run AFTER food_establishment_dashboard.js
      ============================================================ -->
 <script>
 // ====================================================
@@ -4084,17 +4215,34 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ====================================================
-// MENU ITEM DELETE — Custom modal (replaces confirm())
+// MENU ITEM DELETE  compact modal with reason
 // ====================================================
 let _pendingDeleteItemId = null;
 
 window.deleteMenuItem = function(itemId, button) {
     _pendingDeleteItemId = itemId;
-    const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
+    const card     = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+    const itemName = card ? (card.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
     document.getElementById('menuItemDeleteName').textContent = '"' + itemName + '"';
+    const sel = document.getElementById('menuItemDeleteReasonSelect');
+    const txt = document.getElementById('menuItemDeleteReasonText');
+    const err = document.getElementById('menuItemDeleteReasonError');
+    if (sel) { sel.value = ''; sel.classList.remove('invalid'); }
+    if (txt) { txt.value = ''; txt.style.display = 'none'; txt.classList.remove('invalid'); }
+    if (err) err.classList.remove('show');
     document.getElementById('menuItemDeleteModal').classList.add('active');
 };
+
+function onDeleteReasonChange() {
+    const sel = document.getElementById('menuItemDeleteReasonSelect');
+    const txt = document.getElementById('menuItemDeleteReasonText');
+    const err = document.getElementById('menuItemDeleteReasonError');
+    if (!sel || !txt) return;
+    txt.style.display = sel.value === 'Other (please specify)' ? 'block' : 'none';
+    sel.classList.remove('invalid');
+    txt.classList.remove('invalid');
+    if (err) err.classList.remove('show');
+}
 
 function closeMenuItemDeleteModal() {
     document.getElementById('menuItemDeleteModal').classList.remove('active');
@@ -4105,42 +4253,66 @@ function confirmMenuItemDelete() {
     const itemId = _pendingDeleteItemId;
     if (!itemId) return;
 
+    const sel = document.getElementById('menuItemDeleteReasonSelect');
+    const txt = document.getElementById('menuItemDeleteReasonText');
+    const err = document.getElementById('menuItemDeleteReasonError');
+
+    let reason = sel ? sel.value.trim() : '';
+    if (reason === 'Other (please specify)') {
+        reason = txt ? txt.value.trim() : '';
+        if (!reason) {
+            if (txt) txt.classList.add('invalid');
+            if (err) err.classList.add('show');
+            if (txt) txt.focus();
+            return;
+        }
+    }
+    if (!reason) {
+        if (sel) sel.classList.add('invalid');
+        if (err) err.classList.add('show');
+        return;
+    }
+
     const confirmBtn = document.getElementById('confirmMenuItemDeleteBtn');
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
 
     fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }
+        method:  'POST',
+        headers: {
+            'X-CSRFToken':      getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type':     'application/json'
+        },
+        body: JSON.stringify({ delete_reason: reason })
     })
     .then(r => r.json())
     .then(data => {
         closeMenuItemDeleteModal();
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-
         if (data.success) {
-            const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-            if (menuCard) {
-                menuCard.style.animation = 'fadeOut 0.35s ease forwards';
+            const card = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
+            if (card) {
+                card.style.animation = 'fadeOut 0.35s ease forwards';
                 setTimeout(() => {
-                    menuCard.remove();
+                    card.remove();
                     if (!document.querySelectorAll('.menu-card').length) {
                         const grid = document.querySelector('.menu-grid');
                         if (grid) grid.innerHTML = `<div class="no-items" style="grid-column:1/-1;"><i class="fas fa-inbox"></i><p>No menu items yet. Add your first item!</p></div>`;
                     }
                 }, 350);
             }
-            showNotification('✅ ' + data.message, 'success');
+            showNotification(' ' + data.message, 'success');
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to delete item'), 'error');
+            showNotification(' ' + (data.message || 'Failed to delete item'), 'error');
         }
     })
     .catch(() => {
         closeMenuItemDeleteModal();
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-        showNotification('❌ An error occurred while deleting', 'error');
+        showNotification(' An error occurred while deleting', 'error');
     });
 }
 
@@ -4170,7 +4342,7 @@ function getCookie(name) {
 }
 
 // ====================================================
-// BEST SELLER TOGGLE — CLEAN REWRITE
+// BEST SELLER TOGGLE  CLEAN REWRITE
 // ====================================================
 
 // Stores the item ID currently pending confirmation
@@ -4286,11 +4458,11 @@ function confirmToggleSeller() {
             if (typeof fetchRealtimeStats === 'function') fetchRealtimeStats(); else if (typeof updateStoreStats === 'function') updateStoreStats();
 
             // 5. Show success notification
-            const icon = data.is_top_seller ? '⭐' : '✅';
+            const icon = data.is_top_seller ? '' : '';
             showNotification(icon + ' ' + data.message, 'success');
 
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to update. Please try again.'), 'error');
+            showNotification(' ' + (data.message || 'Failed to update. Please try again.'), 'error');
         }
     })
     .catch(function(err) {
@@ -4298,7 +4470,7 @@ function confirmToggleSeller() {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-award"></i> Yes, Mark it';
         console.error('Best Seller toggle error:', err);
-        showNotification('❌ Connection error. Please check your internet and try again.', 'error');
+        showNotification(' Connection error. Please check your internet and try again.', 'error');
     });
 }
 
@@ -4516,7 +4688,7 @@ function confirmToggleSeller() {
             }
             updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
         }, 300);
-        // Mark as read on server (no dismiss endpoint — use mark-read to prevent re-showing as unread)
+        // Mark as read on server (no dismiss endpoint  use mark-read to prevent re-showing as unread)
         fetch(`/api/notifications/${notificationId}/mark-read/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
@@ -4574,7 +4746,7 @@ function confirmToggleSeller() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // Realtime: poll every 15s — update badge, reload panel if open
+    // Realtime: poll every 15s  update badge, reload panel if open
     setInterval(() => {
         fetch('/api/notifications/', {
             method: 'GET',
@@ -4793,7 +4965,7 @@ function confirmToggleSeller() {
 
                     updateOwnerPinnedSection();
                 } else {
-                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Start the conversation! 💬</div>';
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Start the conversation! </div>';
                 }
 
                 scrollToBottom();
@@ -4815,7 +4987,7 @@ function confirmToggleSeller() {
         chatSocket = new WebSocket(wsUrl);
 
         chatSocket.onopen = function(e) {
-            console.log('✅ Chat connected');
+            console.log(' Chat connected');
         };
 
         chatSocket.onmessage = function(e) {
@@ -4996,7 +5168,7 @@ function confirmToggleSeller() {
 
         contextMenu.classList.add('active');
 
-        // ✅ FIX: Delay listening for clicks slightly
+        //  FIX: Delay listening for clicks slightly
         setTimeout(() => {
             document.addEventListener('click', hideOwnerContextMenu);
             document.addEventListener('touchstart', hideOwnerContextMenu);
@@ -5006,7 +5178,7 @@ function confirmToggleSeller() {
     function hideOwnerContextMenu(e) {
         const contextMenu = document.getElementById('ownerMessageContextMenu');
 
-        // ✅ CRITICAL FIX: Don't close if clicking INSIDE the menu
+        //  CRITICAL FIX: Don't close if clicking INSIDE the menu
         if (contextMenu && contextMenu.contains(e.target)) {
             return;
         }
@@ -5019,14 +5191,14 @@ function confirmToggleSeller() {
     function updateChatBadge(count) {
         const displayVal = count > 99 ? '99+' : String(count);
 
-        // Desktop: navbar badge — always set textContent so MutationObserver syncs
+        // Desktop: navbar badge  always set textContent so MutationObserver syncs
         const navBadge = document.getElementById('chatBadge');
         if (navBadge) {
             navBadge.textContent = displayVal;
             navBadge.style.display = count > 0 ? 'flex' : 'none';
         }
 
-        // Mobile: floating FAB badge — directly update with count
+        // Mobile: floating FAB badge  directly update with count
         const floatBadge = document.getElementById('chatFloatBadge');
         if (floatBadge) {
             if (count > 0) {
@@ -5057,7 +5229,7 @@ function confirmToggleSeller() {
     // ==========================================
 
     function pinOwnerMessage() {
-        // ✅ FORCE CLOSE MENU MANUALLY (Since we prevented auto-close inside menu)
+        //  FORCE CLOSE MENU MANUALLY (Since we prevented auto-close inside menu)
         const contextMenu = document.getElementById('ownerMessageContextMenu');
         contextMenu.classList.remove('active');
         document.removeEventListener('click', hideOwnerContextMenu);
@@ -5140,7 +5312,7 @@ function confirmToggleSeller() {
         updateOwnerPinnedSection();
     }
 
-    // ✅ UPDATED TOGGLE FUNCTION
+    //  UPDATED TOGGLE FUNCTION
     function toggleOwnerPinnedSection() {
         const list = document.getElementById('ownerPinnedMessagesList');
         const icon = document.querySelector('.owner-pinned-collapse i');
@@ -5200,7 +5372,7 @@ function confirmToggleSeller() {
     // ==========================================
 
     function openOwnerUnsendModal() {
-        // ✅ FORCE CLOSE MENU MANUALLY
+        //  FORCE CLOSE MENU MANUALLY
         const contextMenu = document.getElementById('ownerMessageContextMenu');
         contextMenu.classList.remove('active');
         document.removeEventListener('click', hideOwnerContextMenu);
@@ -5292,7 +5464,7 @@ function confirmToggleSeller() {
     }
 
     function debugLog(message) {
-        console.log('🔍 DEBUG:', message);
+        console.log(' DEBUG:', message);
         const debugDiv = document.getElementById('debugInfo');
         const debugMsg = document.getElementById('debugMessage');
         if (debugDiv && debugMsg) {
@@ -5532,75 +5704,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ====================================================
-// MENU ITEM DELETE — Custom modal (replaces confirm())
+// MENU ITEM DELETE  (defined above, duplicate removed)
 // ====================================================
-let _pendingDeleteItemId = null;
-
-window.deleteMenuItem = function(itemId, button) {
-    _pendingDeleteItemId = itemId;
-    const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-    const itemName = menuCard ? (menuCard.querySelector('.menu-name')?.textContent?.trim() || 'this item') : 'this item';
-    document.getElementById('menuItemDeleteName').textContent = '"' + itemName + '"';
-    document.getElementById('menuItemDeleteModal').classList.add('active');
-};
-
-function closeMenuItemDeleteModal() {
-    document.getElementById('menuItemDeleteModal').classList.remove('active');
-    _pendingDeleteItemId = null;
-}
-
-function confirmMenuItemDelete() {
-    const itemId = _pendingDeleteItemId;
-    if (!itemId) return;
-
-    const confirmBtn = document.getElementById('confirmMenuItemDeleteBtn');
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-
-    fetch(`/owner/dashboard/delete_menu_item/${itemId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        closeMenuItemDeleteModal();
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-
-        if (data.success) {
-            const menuCard = document.querySelector(`.menu-card[data-item-id="${itemId}"]`);
-            if (menuCard) {
-                menuCard.style.animation = 'fadeOut 0.35s ease forwards';
-                setTimeout(() => {
-                    menuCard.remove();
-                    if (!document.querySelectorAll('.menu-card').length) {
-                        const grid = document.querySelector('.menu-grid');
-                        if (grid) grid.innerHTML = `<div class="no-items" style="grid-column:1/-1;"><i class="fas fa-inbox"></i><p>No menu items yet. Add your first item!</p></div>`;
-                    }
-                }, 350);
-            }
-            showNotification('✅ ' + data.message, 'success');
-        } else {
-            showNotification('❌ ' + (data.message || 'Failed to delete item'), 'error');
-        }
-    })
-    .catch(() => {
-        closeMenuItemDeleteModal();
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Yes, Delete';
-        showNotification('❌ An error occurred while deleting', 'error');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const _d = document.getElementById('menuItemDeleteModal');
-    if (_d) _d.addEventListener('click', function(e) { if (e.target === this) closeMenuItemDeleteModal(); });
-    const _t = document.getElementById('toggleSellerModal');
-    if (_t) _t.addEventListener('click', function(e) { if (e.target === this) closeToggleSellerModal(); });
-});
 
 // Sync float chat badge with navbar chat badge
-// ✅ FIXED: check count value, not display state (nav btn hidden on mobile)
+//  FIXED: check count value, not display state (nav btn hidden on mobile)
 (function syncChatFloatBadge() {
     const navBadge = document.getElementById('chatBadge');
     const floatBadge = document.getElementById('chatFloatBadge');
@@ -5609,7 +5717,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function update() {
         const text = navBadge.textContent.trim();
         const count = parseInt(text) || 0;
-        // Use count value only — ignore display state (nav btn is hidden on mobile)
+        // Use count value only  ignore display state (nav btn is hidden on mobile)
         if (count > 0) {
             floatBadge.textContent = text;
             floatBadge.style.display = 'flex';
@@ -5627,7 +5735,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 // ============================================================
-// ✅ REALTIME INVENTORY — Owner Dashboard WebSocket
+//  REALTIME INVENTORY  Owner Dashboard WebSocket
 // When any order deducts or restores stock for THIS establishment,
 // the menu cards update instantly without a page refresh.
 // ============================================================

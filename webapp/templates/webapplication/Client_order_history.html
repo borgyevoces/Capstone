@@ -1684,17 +1684,26 @@
     function lsSaveCancelled(order) {
         try {
             const store = lsGetAll();
+            // ✅ FIX: If we already have a saved entry with items, keep those items.
+            // The inventory WS may strip items from allOrders before/after this save,
+            // so we always prefer the non-empty snapshot.
+            const existing = store[order.id];
+            const savedItems = (order.items && order.items.length > 0)
+                ? order.items
+                : (existing && existing.items && existing.items.length > 0)
+                    ? existing.items
+                    : [];
             store[order.id] = {
                 id:                order.id,
                 status:            order.status === 'request' ? 'request' : 'to_pay',
                 _expired:          true,
-                _cancelledByOwner: order._cancelledByOwner === true,  // strict — never default to true
+                _cancelledByOwner: order._cancelledByOwner === true,
                 _cancelReason:     order._cancelReason     || '',
                 // preserve display fields
                 establishment_name:    order.establishment_name    || '',
                 establishment_address: order.establishment_address || '',
                 establishment_id:      order.establishment_id      || null,
-                items:                 order.items                  || [],
+                items:                 savedItems,
                 total_amount:          order.total_amount           || 0,
                 created_at:            order.created_at             || '',
                 updated_at:            order.updated_at             || '',
@@ -1720,6 +1729,29 @@
 
     function lsGetCancelledOrders() {
         return Object.values(lsGetAll());
+    }
+
+    // ============================================================
+    // LOCALSTORAGE — permanently dismissed orders
+    // When the client clicks Remove on an owner-cancelled row,
+    // we record the orderId here so it NEVER re-appears on refresh,
+    // even if the server still returns it in /api/user/transactions/.
+    // ============================================================
+    const LS_DISMISSED_KEY = 'kabsueats_dismissed_' + (CURRENT_USER_ID || 'guest');
+
+    function lsDismiss(orderId) {
+        try {
+            const store = JSON.parse(localStorage.getItem(LS_DISMISSED_KEY) || '{}');
+            store[String(orderId)] = Date.now();
+            localStorage.setItem(LS_DISMISSED_KEY, JSON.stringify(store));
+        } catch (e) {}
+    }
+
+    function lsIsDismissed(orderId) {
+        try {
+            const store = JSON.parse(localStorage.getItem(LS_DISMISSED_KEY) || '{}');
+            return !!store[String(orderId)];
+        } catch (e) { return false; }
     }
 
     // ============================================================
@@ -1826,6 +1858,58 @@
             ws.onmessage = function (e) {
                 try {
                     const d = JSON.parse(e.data);
+
+                    // ── ✅ REALTIME: Owner removed a single item from a request order ──
+                    // type='order_item_removed' is sent by _broadcast_order_item_removed()
+                    // in views.py when the owner deletes one item but keeps the order alive.
+                    if (d.type === 'order_item_removed') {
+                        const orderId     = d.order_id;
+                        const removedName = d.item_name || 'An item';
+                        const newTotal    = parseFloat(d.new_total || 0);
+
+                        // 1. Update in-memory order — remove item by name match
+                        const order = allOrders.find(function (o) { return o.id === orderId; });
+                        if (order) {
+                            order.items = (order.items || []).filter(function (i) {
+                                return (i.name || '').trim() !== removedName.trim();
+                            });
+                            order.total_amount = newTotal;
+                        }
+
+                        // 2. Update DOM: strike out the removed item line in the table row
+                        const orderRow = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                        if (orderRow) {
+                            orderRow.querySelectorAll('.tbl-item-line').forEach(function (line) {
+                                const nameEl = line.querySelector('strong');
+                                if (!nameEl || nameEl.textContent.trim() !== removedName.trim()) return;
+                                // Animate the line out, then mark it as removed
+                                line.style.transition = 'opacity 0.35s';
+                                line.style.opacity = '0.4';
+                                line.style.textDecoration = 'line-through';
+                                // Remove old stock chips and add "Removed by establishment" chip
+                                line.querySelectorAll('.stock-warn-chip').forEach(function (c) { c.remove(); });
+                                var chip = document.createElement('span');
+                                chip.className = 'stock-warn-chip out';
+                                chip.style.marginLeft = '6px';
+                                chip.innerHTML = '<i class="fas fa-ban"></i> Removed by establishment';
+                                line.appendChild(chip);
+                            });
+
+                            // 3. Update total cell in the same row
+                            var totalEl = orderRow.querySelector('.tbl-total');
+                            if (totalEl) totalEl.textContent = '₱' + newTotal.toFixed(2);
+                        }
+
+                        // 4. Toast warning so client sees it even if on another tab
+                        showOrderToast(
+                            '⚠️ "' + removedName + '" was removed from Order #' + orderId +
+                            ' by the establishment. Your order has been updated.',
+                            'warning'
+                        );
+                        return; // handled — don't fall through to order_status_update logic
+                    }
+                    // ── end order_item_removed ──
+
                     if (d.type !== 'order_status_update') return;
 
                     const orderId   = d.order_id;
@@ -1860,7 +1944,9 @@
                                 allOrders[idx]._expired           = true;
                                 allOrders[idx]._cancelReason      = reason;
                                 allOrders[idx]._cancelledByOwner  = true;
-                                // Persist to localStorage so row survives page refresh
+                                // ✅ FIX: Snapshot items NOW (before inventory WS may strip them)
+                                // lsSaveCancelled stores items so they survive page refresh.
+                                // Pass a copy with current items intact.
                                 lsSaveCancelled(allOrders[idx]);
                             }
 
@@ -1870,7 +1956,9 @@
                                 delete timerMap[orderId];
                             }
 
-                            // Update the status cell — show "Cancelled by Owner" badge + reason
+                            // ✅ Update the status cell — show "Cancelled by Owner" badge + reason.
+                            // This works for BOTH to_pay AND request orders when the owner
+                            // deletes a menu item with a reason (item deletion cancels the order).
                             const statusCell = document.getElementById('status-cell-' + orderId);
                             if (statusCell) {
                                 statusCell.innerHTML = buildCancelledByOwnerBadge(reason);
@@ -2009,7 +2097,9 @@
                         // Only preserve rows that were actually cancelled by owner
                         // (have the _expired flag set) — don't preserve normal request rows
                         // that just haven't appeared in this poll yet.
-                        return isWatchedStatus && notInFreshData && existing._expired === true;
+                        // ✅ Also skip orders the client has permanently dismissed.
+                        return isWatchedStatus && notInFreshData && existing._expired === true
+                            && !lsIsDismissed(existing.id);
                     }).map(function (o) {
                         return Object.assign({}, o, {
                             _expired:          true,
@@ -2019,28 +2109,34 @@
                     });
 
                     // Also merge any fresh orders that are in to_pay — keep their client flags
-                    const freshWithFlags = data.orders.map(function (fresh) {
-                        // Check in-memory first, then localStorage
-                        const existing = allOrders.find(function (e) { return e.id === fresh.id; });
-                        const lsEntry  = lsCancelled.find(function (e) { return e.id === fresh.id; });
-                        const src      = (existing && (existing._cancelledByOwner || existing._expired))
-                                         ? existing : lsEntry;
-                        if (src) {
-                            return Object.assign({}, fresh, {
-                                status:            src.status,
-                                _expired:          src._expired,
-                                _cancelledByOwner: src._cancelledByOwner,
-                                _cancelReason:     src._cancelReason
-                            });
-                        }
-                        return fresh;
-                    });
+                    // ✅ Skip orders the client has permanently dismissed (owner-cancelled to_pay
+                    // orders stay in DB as to_pay but the client already dismissed them).
+                    const freshWithFlags = data.orders
+                        .filter(function (fresh) { return !lsIsDismissed(fresh.id); })
+                        .map(function (fresh) {
+                            // Check in-memory first, then localStorage
+                            const existing = allOrders.find(function (e) { return e.id === fresh.id; });
+                            const lsEntry  = lsCancelled.find(function (e) { return e.id === fresh.id; });
+                            const src      = (existing && (existing._cancelledByOwner || existing._expired))
+                                             ? existing : lsEntry;
+                            if (src) {
+                                return Object.assign({}, fresh, {
+                                    status:            src.status,
+                                    _expired:          src._expired,
+                                    _cancelledByOwner: src._cancelledByOwner,
+                                    _cancelReason:     src._cancelReason
+                                });
+                            }
+                            return fresh;
+                        });
 
                     // Add any localStorage cancelled orders not returned by server at all
+                    // ✅ Also skip dismissed ones here.
                     const serverIds    = data.orders.map(function (o) { return o.id; });
                     const memIds       = preservedCancelled.map(function (o) { return o.id; });
                     const lsOnlyRows   = lsCancelled.filter(function (o) {
-                        return !serverIds.includes(o.id) && !memIds.includes(o.id);
+                        return !serverIds.includes(o.id) && !memIds.includes(o.id)
+                            && !lsIsDismissed(o.id);
                     });
 
                     allOrders = freshWithFlags.concat(preservedCancelled).concat(lsOnlyRows);
@@ -2375,18 +2471,25 @@
             const actions = buildClientActions(o, statusCellExpired);
 
             // Status cell: badge + timer on one line
-            // Only show "Cancelled by Owner" if flag is true AND there is a real reason
+            // ✅ FIX: Check _cancelledByOwner for ALL statuses (including 'request')
+            // so item-deletion cancellations are shown correctly even after re-render.
             const reallyOwnerCancelled = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
-            const statusCell = (o.status === 'to_pay' || o.status === 'PENDING')
-                ? (statusCellExpired
-                    ? (reallyOwnerCancelled
-                        ? buildCancelledByOwnerBadge(o._cancelReason)
-                        : buildTimesUpBadge())
+
+            let statusCell;
+            if (reallyOwnerCancelled) {
+                // Owner cancelled this order (e.g. deleted a menu item) — show badge + reason
+                // for both 'request' and 'to_pay' orders regardless of timer state.
+                statusCell = buildCancelledByOwnerBadge(o._cancelReason);
+            } else if (o.status === 'to_pay' || o.status === 'PENDING') {
+                statusCell = statusCellExpired
+                    ? buildTimesUpBadge()
                     : `<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:4px;">
                            <span class="order-status-badge status-${o.status}" id="status-badge-${o.id}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>
                            ${timerHtml}
-                       </div>`)
-                : `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
+                       </div>`;
+            } else {
+                statusCell = `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
+            }
 
             const showActions = o.status !== 'preparing' && o.status !== 'to_claim';
             // Show payment badge for preparing, to_claim, completed
@@ -2551,9 +2654,18 @@
         let html = '';
 
         if (o.status === 'request') {
-            html += `<button class="tbl-btn tbl-btn-cancel" onclick="askCancelOrder(${o.id})">
-                        <i class="fas fa-times"></i> Cancel
-                     </button>`;
+            // ✅ FIX: If owner cancelled this request (item deleted), show Remove only.
+            // Otherwise show the normal Cancel button.
+            const ownerCancelledRequest = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
+            if (ownerCancelledRequest) {
+                html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                            <i class="fas fa-times"></i> Remove
+                         </button>`;
+            } else {
+                html += `<button class="tbl-btn tbl-btn-cancel" onclick="askCancelOrder(${o.id})">
+                            <i class="fas fa-times"></i> Cancel
+                         </button>`;
+            }
         }
 
         if (o.status === 'to_pay' || o.status === 'PENDING') {
@@ -2608,9 +2720,10 @@
     }
 
     // ============================================================
-    // HELPER — swap a to_pay row's actions to Re-order / Cancel
+    // HELPER — swap a row's actions to Remove (owner-cancelled)
+    // or Re-order + Remove (timer expired).
     // Called when the 8-min timer expires OR when owner cancels.
-    // The row stays in the to_pay tab so the customer can decide.
+    // Works for both 'to_pay' and 'request' rows.
     // ============================================================
     function swapToExpiredActions(orderId) {
         const actCell = document.getElementById('actions-cell-' + orderId);
@@ -2623,7 +2736,7 @@
             (orderEntry._cancelReason || '').trim().length > 0;
 
         if (reallyOwnerCancelled) {
-            // Owner cancelled with reason — Remove only
+            // Owner cancelled (item deleted or rejected with reason) — Remove only
             actCell.innerHTML =
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
                 '    <i class="fas fa-times"></i> Remove' +
@@ -2886,7 +2999,30 @@
     // No additional API call needed here — just dismiss the row and clear localStorage.
     function doRemoveCancelledRow(orderId, btn) {
         if (btn) btn.disabled = true;
+
+        // ✅ Permanently dismiss — survives all refreshes and 30s polls.
+        // lsRemoveCancelled removes from the "show cancelled" store.
+        // lsDismiss adds to the "never show again" store.
         lsRemoveCancelled(orderId);
+        lsDismiss(orderId);
+
+        // ✅ If the order is still 'to_pay' in the DB (owner deleted item but
+        // couldn't cancel it server-side), cancel it now so it doesn't keep
+        // appearing on future /api/user/transactions/ polls.
+        const orderEntry = allOrders.find(function (o) { return o.id === orderId; });
+        const isToPay    = orderEntry && (orderEntry.status === 'to_pay' || orderEntry.status === 'PENDING');
+        const ownerCanc  = orderEntry && orderEntry._cancelledByOwner === true;
+        if (isToPay && ownerCanc) {
+            // Fire-and-forget — cancel the order in DB so server stops returning it
+            fetch('/api/order/' + orderId + '/cancel/', {
+                method:  'POST',
+                headers: {
+                    'X-CSRFToken':  getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            }).catch(function () { /* silent — dismissed anyway */ });
+        }
+
         fadeOutRow(orderId, function () {
             allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
             updateOrderCounts();

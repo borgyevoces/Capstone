@@ -2258,6 +2258,34 @@ function ownerRemoveOrderItem(orderId, orderItemId, btnEl) {
         ws.onmessage = function (e) {
             try {
                 const data = JSON.parse(e.data);
+
+                // ── ✅ REALTIME: Echo of owner's own item-removal back through WS ──
+                // Keeps the in-memory orders[] array in sync so tab counts and
+                // totals remain accurate even if the page wasn't refreshed.
+                // type='order_item_removed' is sent by _broadcast_order_item_removed() in views.py
+                if (data.type === 'order_item_removed') {
+                    const orderId     = data.order_id;
+                    const removedName = data.item_name || '';
+                    const newTotal    = parseFloat(data.new_total || 0);
+
+                    const order = orders.find(function (o) { return o.id === orderId; });
+                    if (order) {
+                        // Remove the item from in-memory list by name match
+                        order.items = (order.items || []).filter(function (i) {
+                            return (i.name || '').trim() !== removedName.trim();
+                        });
+                        order.total_amount = newTotal;
+
+                        // Update total display in the DOM row if it's still visible
+                        const totalEl = document.getElementById('order-total-' + orderId);
+                        if (totalEl) {
+                            totalEl.innerHTML = 'Total: <strong>₱' + newTotal.toFixed(2) + '</strong>';
+                        }
+                    }
+                    return; // handled — don't fall through
+                }
+                // ── end order_item_removed ──
+
                 if (data.type !== 'quantity_update') return;
 
                 // ── Real-time stock chip update for to_pay rows ──────────

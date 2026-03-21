@@ -3206,8 +3206,26 @@ def food_establishment_dashboard(request):
 
         # UPDATE STORE DETAILS
         elif 'update_status' in request.POST:
-            # Your existing update code here
-            pass
+            try:
+                status_form = FoodEstablishmentUpdateForm(request.POST, request.FILES, instance=establishment)
+                if status_form.is_valid():
+                    status_form.save()
+                    invalidate_establishment_cache(establishment.id)
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                        return JsonResponse({'success': True, 'message': 'Store details updated successfully!'})
+                    messages.success(request, 'Store details updated successfully!')
+                else:
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                        errors = {field: [str(e) for e in errs] for field, errs in status_form.errors.items()}
+                        return JsonResponse({'success': False, 'errors': errors}, status=400)
+                    for field, errs in status_form.errors.items():
+                        for error in errs:
+                            messages.error(request, f"{field}: {error}")
+            except Exception as e:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': str(e)}, status=500)
+                messages.error(request, f"Error updating store details: {str(e)}")
+            return redirect('food_establishment_dashboard')
 
     # GET request
     status_form = FoodEstablishmentUpdateForm(instance=establishment)
@@ -3249,15 +3267,21 @@ def toggle_item_availability(request, item_id):
 @require_POST
 @transaction.atomic
 def delete_menu_item(request, item_id):
-    """Delete a menu item - AJAX-enabled with real-time response"""
+    """
+    Delete a menu item.
+    1. Reads { delete_reason } from the JSON body (sent by the dashboard modal).
+    2. Finds all active 'request' orders that contain this item.
+    3. Cancels those orders (status → 'cancelled') so the client order history
+       shows "Cancelled by Owner" with the delete reason in real time.
+    4. Broadcasts order_status_update (with cancel_reason) to each affected user
+       so buildCancelledByOwnerBadge(reason) renders immediately on the client.
+    5. Broadcasts the inventory quantity_update (deleted=True) for any cart pages.
+    """
     establishment_id = request.session.get('food_establishment_id')
 
     if not establishment_id:
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'You must be logged in as an owner.'
-            }, status=403)
+            return JsonResponse({'success': False, 'message': 'You must be logged in as an owner.'}, status=403)
         messages.error(request, "You must be logged in as an owner.")
         return redirect('owner_login')
 
@@ -3265,40 +3289,115 @@ def delete_menu_item(request, item_id):
         food_establishment = get_object_or_404(FoodEstablishment, pk=establishment_id)
         menu_item = get_object_or_404(MenuItem, pk=item_id, food_establishment=food_establishment)
         item_name = menu_item.name
-        _est_id_for_cache = menu_item.food_establishment_id  # ✅ save before deletion
+        _est_id_for_cache = menu_item.food_establishment_id
 
-        # Manually delete related OrderItems first
+        # ── 1. Read delete reason from JSON body ─────────────────────
+        delete_reason = ''
+        try:
+            body = json.loads(request.body or '{}')
+            delete_reason = str(body.get('delete_reason', '')).strip()
+        except Exception:
+            delete_reason = request.POST.get('delete_reason', '').strip()
+
+        if not delete_reason:
+            delete_reason = f'"{item_name}" was removed from the menu.'
+
+        # ── 2. Collect affected orders BEFORE deleting anything ──────
+        # 'request' orders → cancel them fully (not yet accepted/paid)
+        # 'to_pay' orders  → notify client only (timer stops, reason shown,
+        #                     Pay Now removed) but do NOT force-cancel since
+        #                     payment may already be in flight. The client
+        #                     will see "Cancelled by Owner" + reason + Remove.
+        affected_request_orders = []
+        affected_topay_orders   = []
+        try:
+            for oi in OrderItem.objects.filter(
+                menu_item=menu_item,
+                order__status__in=['request', 'to_pay']
+            ).select_related('order__user', 'order__establishment').distinct():
+                if oi.order.status == 'request':
+                    affected_request_orders.append(oi.order)
+                else:
+                    affected_topay_orders.append(oi.order)
+        except Exception as _e:
+            print(f"WARNING: Could not collect affected orders: {_e}")
+
+        # Merge for broadcast loop
+        affected_orders = affected_request_orders + affected_topay_orders
+
+        # ── 3. Cancel 'request' orders in DB (to_pay left as-is) ────
+        for order in affected_request_orders:
+            try:
+                with transaction.atomic():
+                    order.status = 'cancelled'
+                    order.save(update_fields=['status', 'updated_at'])
+            except Exception as _ce:
+                print(f"WARNING: Could not cancel order #{order.id}: {_ce}")
+
+        # ── 4. Delete ALL related OrderItems (includes non-request) ──
         try:
             related_order_items = OrderItem.objects.filter(menu_item=menu_item)
             if related_order_items.exists():
                 print(f"Deleting {related_order_items.count()} related OrderItem(s) for menu item {item_id}...")
                 related_order_items.delete()
-                print("Related OrderItem(s) deleted.")
         except Exception as e:
-            print(f"WARNING: Could not manually delete related OrderItems: {e}")
-            pass
+            print(f"WARNING: Could not delete related OrderItems: {e}")
 
-        # Use low-level _raw_delete() to bypass broken ORM cascade checks
+        # ── 5. Delete the menu item itself ───────────────────────────
         MenuItem.objects.filter(pk=item_id)._raw_delete(using=MenuItem.objects.db)
-        invalidate_establishment_cache(_est_id_for_cache)  # ✅ instant client sync
+        invalidate_establishment_cache(_est_id_for_cache)
 
-        # ✅ Broadcast item_deleted event so cart page notifies clients in realtime
+        # ── 6. Broadcast to all affected users via WS ────────────────
         try:
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             if channel_layer:
-                async_to_sync(channel_layer.group_send)(
+                sync_send = async_to_sync(channel_layer.group_send)
+
+                # 6a. Inventory channel — updates cart pages + dashboard badges
+                sync_send(
                     f'inventory_{_est_id_for_cache}',
                     {
-                        'type': 'inventory.quantity_update',
-                        'updates': [{'menu_item_id': item_id, 'new_quantity': -1, 'deleted': True, 'item_name': item_name}]
+                        'type':    'inventory.quantity_update',
+                        'updates': [{
+                            'menu_item_id': item_id,
+                            'new_quantity': -1,
+                            'deleted':      True,
+                            'item_name':    item_name,
+                            'delete_reason': delete_reason,
+                        }]
                     }
                 )
+
+                # 6b. Per-user order_status_update — triggers buildCancelledByOwnerBadge
+                # on the client order history page with the real reason text.
+                # Sent for BOTH 'request' (cancelled) and 'to_pay' (timer stopped, reason shown).
+                seen = set()
+                for order in affected_orders:
+                    uid = order.user_id
+                    if uid in seen:
+                        continue
+                    seen.add(uid)
+                    cancel_msg = f'Menu item "{item_name}" was deleted by the establishment. Reason: {delete_reason}'
+                    try:
+                        sync_send(
+                            f'order_status_user_{uid}',
+                            {
+                                'type':             'order.status.update',
+                                'order_id':         order.id,
+                                'new_status':       'cancelled',
+                                'establishment_id': _est_id_for_cache,
+                                'user_id':          uid,
+                                'cancel_reason':    cancel_msg,
+                            }
+                        )
+                    except Exception as _ue:
+                        print(f"WARNING: WS push failed for user {uid}: {_ue}")
+
         except Exception as e:
             print(f"WARNING: Could not broadcast item deletion: {e}")
 
-        # Return JSON for AJAX requests
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
@@ -5937,7 +6036,11 @@ def owner_remove_order_item(request, order_id, item_id):
             else:
                 # Recalculate total
                 order.update_total()
-                # Notify customer of item removal
+                # ✅ Broadcast realtime item-removed event to client AND owner WS
+                _broadcast_order_item_removed(
+                    order, item_name, item_id, order.total_amount
+                )
+                # Notify customer via DB notification
                 try:
                     OrderNotification.objects.create(
                         establishment=establishment,
@@ -6510,6 +6613,40 @@ def _broadcast_order_status_update(order, new_status, cancel_reason=''):
         sync_send(f'order_status_user_{order.user_id}', payload)
     except Exception as e:
         print(f"WARNING _broadcast_order_status_update: {e}")
+
+
+def _broadcast_order_item_removed(order, item_name, order_item_id, new_total):
+    """
+    Broadcast a single-item removal event (partial order edit) to:
+      • The owner's establishment group  →  order_status_establishment_<est_id>
+      • The customer's user group        →  order_status_user_<user_id>
+
+    Called from owner_remove_order_item when only ONE item is deleted
+    from a 'request' order (not a full cancellation).
+    The client-side WS handler (initClientOrderStatusWs) uses type='order_item_removed'
+    to strike out the removed item row and update the order total in real time.
+    """
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            return
+        payload = {
+            'type':             'order.item.removed',   # dots → method name in consumer
+            'order_id':         order.id,
+            'order_item_id':    order_item_id,
+            'item_name':        item_name,
+            'new_total':        str(new_total),
+            'establishment_id': order.establishment_id,
+            'user_id':          order.user_id,
+        }
+        sync_send = async_to_sync(channel_layer.group_send)
+        # Notify both owner dashboard and customer order history page
+        sync_send(f'order_status_establishment_{order.establishment_id}', payload)
+        sync_send(f'order_status_user_{order.user_id}', payload)
+    except Exception as e:
+        print(f"WARNING _broadcast_order_item_removed: {e}")
 
 
 @login_required
