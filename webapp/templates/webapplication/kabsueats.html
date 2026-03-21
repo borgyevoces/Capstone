@@ -797,91 +797,16 @@
 <!-- ============================================================
      CONNECTION OVERLAY — must load BEFORE kabsueats.js
      ============================================================ -->
-<div id="connectionOverlay">
-    <div id="connectionOverlayBox">
-        <i class="fas fa-wifi conn-icon-offline" id="connIconOffline"></i>
-        <i class="fas fa-database conn-icon-db" id="connIconDb"></i>
-        <div class="conn-spinner" id="connSpinner"></div>
-        <h3 id="connTitle">Connecting...</h3>
-        <p id="connMsg">Please wait while we reconnect.</p>
-        <button id="connRetryBtn" onclick="window._connRetry()">
-            <i class="fas fa-redo"></i> Try Again
-        </button>
-    </div>
-</div>
+<!-- overlay div kept for JS compatibility — permanently hidden -->
+<div id="connectionOverlay" style="display:none!important;"></div>
 <script>
 (function () {
     'use strict';
-    var overlay  = document.getElementById('connectionOverlay');
-    var titleEl  = document.getElementById('connTitle');
-    var msgEl    = document.getElementById('connMsg');
-    var retryBtn = document.getElementById('connRetryBtn');
-    var spinner  = document.getElementById('connSpinner');
-    var offIcon  = document.getElementById('connIconOffline');
-    var dbIcon   = document.getElementById('connIconDb');
-    var _retryFn = null;
-
-    window.showConnectionOverlay = function (title, msg, retryFn, iconType) {
-        titleEl.textContent  = title || 'Connecting...';
-        msgEl.textContent    = msg   || 'Please wait while we reconnect.';
-        _retryFn             = retryFn || null;
-        spinner.style.display = 'none';
-        offIcon.style.display = 'none';
-        dbIcon.style.display  = 'none';
-        if (iconType === 'db') {
-            dbIcon.style.display = 'block';
-        } else if (iconType === 'offline' || !navigator.onLine) {
-            offIcon.style.display = 'block';
-        } else {
-            spinner.style.display = 'block';
-        }
-        retryBtn.style.display = _retryFn ? 'inline-block' : 'none';
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    };
-
-    window.showDatabaseErrorOverlay = function () {
-        window.showConnectionOverlay(
-            'Database Unavailable',
-            'Our database is temporarily unreachable. Please try again in a moment.',
-            function () { window.location.reload(); },
-            'db'
-        );
-    };
-
-    window.hideConnectionOverlay = function () {
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-        _retryFn = null;
-    };
-
-    window._connRetry = function () {
-        retryBtn.style.display = 'none';
-        spinner.style.display  = 'block';
-        offIcon.style.display  = 'none';
-        dbIcon.style.display   = 'none';
-        titleEl.textContent    = 'Retrying...';
-        msgEl.textContent      = 'Trying to reconnect, please wait.';
-        setTimeout(function () { if (_retryFn) _retryFn(); }, 600);
-    };
-
-    // DB error overlay removed — fails silently
-
-    // offline event — overlay disabled
-
-    window.addEventListener('online', function () {
-        if (overlay.classList.contains('active')) {
-            titleEl.textContent    = 'Connection Restored!';
-            msgEl.textContent      = 'You\'re back online. Reloading the page...';
-            spinner.style.display  = 'block';
-            offIcon.style.display  = 'none';
-            dbIcon.style.display   = 'none';
-            retryBtn.style.display = 'none';
-            setTimeout(function () { window.hideConnectionOverlay(); window.location.reload(); }, 1500);
-        }
-    });
-
-    {# db_error overlay disabled #}
+    // ✅ Overlay permanently disabled — functions kept as stubs so kabsueats.js doesn't error
+    window.showConnectionOverlay  = function () {};
+    window.showDatabaseErrorOverlay = function () {};
+    window.hideConnectionOverlay  = function () {};
+    window._connRetry             = function () {};
 }());
 </script>
 
