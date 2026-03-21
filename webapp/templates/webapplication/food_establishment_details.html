@@ -1572,13 +1572,13 @@
          data-item-id="{{ item.id }}"
          data-item-name="{{ item.name }}"
          data-item-description="{{ item.description|default:'No description provided.'|escapejs }}"
-         data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+         data-item-image-url="{% if item.image %}{{ item.image.url }}{% else %}/static/images/menu_default.png{% endif %}"
          data-item-quantity="{{ item.quantity|default:0 }}"
          onclick="openItemDetailModal(this)">
 
         <!-- Image Container with Badges -->
         <div class="menu-item-image-wrapper">
-            <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/menu_default.png' %}{% endif %}"
+            <img src="{% if item.image %}{{ item.image.url }}{% else %}/static/images/menu_default.png{% endif %}"
                  alt="{{ item.name }}" class="menu-item-image">
 
             <!-- Top Left: Best Seller Badge -->
@@ -2230,7 +2230,6 @@
     // ✅ REALTIME: 24-hour time strings for client-side status calculation
     const EST_OPENING_24H = "{{ establishment.opening_time|time:'H:i'|default:'' }}";
     const EST_CLOSING_24H = "{{ establishment.closing_time|time:'H:i'|default:'' }}";
-    // ✅ FIX: Pass actual establishment status from server to JS
     var EST_STATUS = "{{ establishment.status|default:'Closed' }}";
     // ✅ REALTIME: backend polling URL for live menu/rating data
     const ESTABLISHMENT_REALTIME_URL = "{% url 'get_establishment_realtime' establishment.id %}";
