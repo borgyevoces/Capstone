@@ -35,10 +35,10 @@
     /* ── Map layout ── */
     .map-layout { display: flex; align-items: stretch; height: calc(100vh - 200px); min-height: 500px; }
     .map-cat-sidebar {
-        width: 220px; flex-shrink: 0; background: #fff;
+        width: 260px; flex-shrink: 0; background: #fff;
         border-right: 1px solid #f0f0f0;
-        padding: 14px 10px; display: flex; flex-direction: column;
-        gap: 8px; overflow-y: auto;
+        padding: 14px 12px; display: flex; flex-direction: column;
+        gap: 8px; overflow-y: auto; overflow-x: hidden;
     }
     .mcs-header {
         display: flex; align-items: center; gap: 7px;
@@ -52,8 +52,8 @@
     #esMap     { width: 100%; height: 100%; }
 
     /* ── Category checkbox pills ── */
-    .map-cat-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px 0; }
-    .mcf-btn.mcf-all { grid-column: 1 / -1; }
+    .map-cat-filter { display: grid; grid-template-columns: 1fr; gap: 5px; padding: 4px 0; }
+    .mcf-btn.mcf-all { grid-column: 1 / -1; font-size: 12px; }
     .mcf-btn {
         display: flex; align-items: center; gap: 6px; padding: 6px 8px;
         border-radius: 7px; border: 1.5px solid #d1d5db; background: #fff;
