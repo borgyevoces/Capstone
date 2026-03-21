@@ -683,48 +683,38 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // ✅ FIX: Use EST_STATUS from server — also fetch fresh status from realtime API
+    // ✅ FIX: Use EST_STATUS from server (set in HTML template) for accurate status
     const estStatus = document.getElementById('itemModalEstStatus');
-    const isEstOpen = (typeof EST_STATUS !== 'undefined') && EST_STATUS === 'Open';
-    if (estStatus) {
-        estStatus.className = 'item-modal-est-status ' + (isEstOpen ? 'open' : 'closed');
-        estStatus.textContent = isEstOpen ? 'Open' : 'Closed';
+    const buyNowBtn    = document.getElementById('modalBuyNowBtn');
+    const addToCartBtnEl = document.getElementById('modalAddToCartBtn');
+
+    // Helper to apply status + button state
+    function _applyEstStatus(statusStr) {
+        const isOpen = statusStr === 'Open';
+        if (estStatus) {
+            estStatus.className = 'item-modal-est-status ' + (isOpen ? 'open' : 'closed');
+            estStatus.textContent = isOpen ? 'Open' : 'Closed';
+        }
+        const canOrder = isOpen && itemQuantity > 0;
+        if (buyNowBtn)      { buyNowBtn.disabled = !canOrder;    buyNowBtn.style.opacity = canOrder ? '1' : '0.5'; }
+        if (addToCartBtnEl) { addToCartBtnEl.disabled = !canOrder; addToCartBtnEl.style.opacity = canOrder ? '1' : '0.5'; }
     }
-    // Also fetch fresh status from realtime endpoint to ensure accuracy
+
+    // Apply immediately from template value (if set), default to Open so buttons are usable
+    const initialStatus = (typeof EST_STATUS !== 'undefined') ? EST_STATUS : 'Open';
+    _applyEstStatus(initialStatus);
+
+    // ✅ Fetch fresh status from realtime API — update once response arrives
     if (typeof ESTABLISHMENT_REALTIME_URL !== 'undefined') {
         fetch(ESTABLISHMENT_REALTIME_URL, { credentials: 'same-origin' })
             .then(r => r.json())
             .then(data => {
                 if (!data.success) return;
-                const freshStatus = data.status || 'Closed';
-                // Update global EST_STATUS so next modal open is also accurate
-                if (typeof window !== 'undefined') window.EST_STATUS = freshStatus;
+                const freshStatus = data.status || 'Open';
                 EST_STATUS = freshStatus;
-                const freshOpen = freshStatus === 'Open';
-                const el = document.getElementById('itemModalEstStatus');
-                if (el) {
-                    el.className = 'item-modal-est-status ' + (freshOpen ? 'open' : 'closed');
-                    el.textContent = freshOpen ? 'Open' : 'Closed';
-                }
-                // Update buttons too
-                const addBtn = document.getElementById('modalAddToCartBtn');
-                const buyBtn = document.getElementById('modalBuyNowBtn');
-                const qty = parseInt(document.getElementById('modalMaxQuantity')?.value || 0);
-                const canOrder = freshOpen && qty > 0;
-                if (addBtn && !freshOpen) { addBtn.disabled = true; addBtn.style.opacity = '0.5'; }
-                if (buyBtn) { buyBtn.disabled = !canOrder; buyBtn.style.opacity = canOrder ? '1' : '0.5'; }
+                _applyEstStatus(freshStatus);
             })
             .catch(() => {});
-    }
-
-    // ✅ FIX: Disable buttons if establishment is closed OR out of stock
-    const buyNowBtn = document.getElementById('modalBuyNowBtn');
-    const addToCartBtnEl = document.getElementById('modalAddToCartBtn');
-    const canOrder = isEstOpen && itemQuantity > 0;
-    if (buyNowBtn)    { buyNowBtn.disabled = !canOrder;    buyNowBtn.style.opacity = canOrder ? '1' : '0.5'; }
-    if (addToCartBtnEl && !isEstOpen) {
-        addToCartBtnEl.disabled = true;
-        addToCartBtnEl.style.opacity = '0.5';
     }
 
     const itemDetailModalEl = document.getElementById('itemDetailModal');
