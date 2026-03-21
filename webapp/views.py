@@ -3282,6 +3282,22 @@ def delete_menu_item(request, item_id):
         MenuItem.objects.filter(pk=item_id)._raw_delete(using=MenuItem.objects.db)
         invalidate_establishment_cache(_est_id_for_cache)  # ✅ instant client sync
 
+        # ✅ Broadcast item_deleted event so cart page notifies clients in realtime
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'inventory_{_est_id_for_cache}',
+                    {
+                        'type': 'inventory.quantity_update',
+                        'updates': [{'menu_item_id': item_id, 'new_quantity': -1, 'deleted': True, 'item_name': item_name}]
+                    }
+                )
+        except Exception as e:
+            print(f"WARNING: Could not broadcast item deletion: {e}")
+
         # Return JSON for AJAX requests
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({

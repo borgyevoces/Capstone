@@ -788,7 +788,68 @@ function getCheckedItemIds() {
     }
 
     function applyCartInventoryUpdate(updates) {
-        updates.forEach(function ({ menu_item_id, new_quantity }) {
+        updates.forEach(function ({ menu_item_id, new_quantity, deleted, item_name }) {
+
+            // ✅ Handle item deleted by owner — notify client and remove from cart
+            if (deleted === true) {
+                let found = false;
+                document.querySelectorAll('[id^="cart-item-"]').forEach(function (row) {
+                    const menuItemIdAttr = row.dataset.menuItemId
+                        ? parseInt(row.dataset.menuItemId, 10)
+                        : null;
+                    if (menuItemIdAttr !== menu_item_id) return;
+                    found = true;
+
+                    // Show toast notification
+                    const name = item_name || 'An item';
+                    showDeletedItemToast(name);
+
+                    // Visually mark row as deleted then fade out
+                    row.style.transition = 'opacity 0.4s, background 0.4s';
+                    row.style.background = '#fee2e2';
+                    row.style.opacity    = '0.5';
+                    row.style.pointerEvents = 'none';
+
+                    // Add "removed by owner" label
+                    let label = row.querySelector('.owner-deleted-label');
+                    if (!label) {
+                        label = document.createElement('div');
+                        label.className = 'owner-deleted-label';
+                        label.style.cssText = 'color:#991b1b;font-size:11.5px;font-weight:700;margin-top:4px;';
+                        label.innerHTML = '<i class="fas fa-ban"></i> Removed by establishment';
+                        const details = row.querySelector('.item-details');
+                        if (details) details.appendChild(label);
+                    }
+
+                    // Auto-remove from cart after 4s
+                    setTimeout(function () {
+                        const cartItemId = row.id.replace('cart-item-', '');
+                        fetch('/cart/remove/', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCsrfToken(),
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: 'cart_item_id=' + cartItemId,
+                            credentials: 'same-origin'
+                        }).then(function () {
+                            row.style.opacity = '0';
+                            setTimeout(function () {
+                                row.remove();
+                                // Reload if cart is now empty
+                                if (!document.querySelector('[id^="cart-item-"]')) {
+                                    window.location.reload();
+                                }
+                            }, 400);
+                        }).catch(function () {
+                            row.remove();
+                        });
+                    }, 4000);
+                });
+                return; // Don't process quantity update for deleted items
+            }
+
             const newQty = parseInt(new_quantity, 10);
 
             // Match rows via data-menu-item-id (set in cart.html template).
@@ -957,3 +1018,36 @@ function getCheckedItemIds() {
         });
     });
 })();
+
+// ✅ Show toast when owner deletes a cart item
+function showDeletedItemToast(itemName) {
+    const existing = document.getElementById('ownerDeletedToast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'ownerDeletedToast';
+    toast.style.cssText = [
+        'position:fixed', 'top:80px', 'right:20px', 'z-index:99999',
+        'background:#fff', 'border-left:4px solid #dc2626',
+        'border-radius:12px', 'padding:14px 18px',
+        'box-shadow:0 4px 20px rgba(0,0,0,0.15)',
+        'display:flex', 'align-items:center', 'gap:12px',
+        'font-family:Poppins,sans-serif', 'max-width:360px',
+        'animation:slideInRight 0.3s ease-out'
+    ].join(';');
+    toast.innerHTML = `
+        <i class="fas fa-exclamation-circle" style="color:#dc2626;font-size:20px;flex-shrink:0;"></i>
+        <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;color:#111;">Item Removed by Establishment</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">"${itemName}" is no longer available and will be removed from your cart.</div>
+        </div>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;">×</button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(function () {
+        if (toast.parentElement) {
+            toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+            setTimeout(function () { toast.remove(); }, 300);
+        }
+    }, 6000);
+}
