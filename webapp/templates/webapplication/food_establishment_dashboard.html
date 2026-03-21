@@ -3160,6 +3160,10 @@
             <i class="fas fa-history"></i>
             <span>Transactions</span>
         </a>
+        <a href="{% url 'store_ratings' %}" class="sidebar-item {% if request.resolver_match.url_name == 'store_ratings' %}active{% endif %}">
+            <i class="fas fa-star"></i>
+            <span>Ratings</span>
+        </a>
     </div>
 
 </div>

@@ -189,6 +189,7 @@ urlpatterns = [
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
 
                   # ✅ Client order status notifications
+                  path('owner/ratings/', views.store_ratings, name='store_ratings'),
                   path('api/user/order-notifications/', views.get_user_order_notifications, name='get_user_order_notifications'),
                   path('api/user/order-notifications/mark-read/', views.mark_user_notifications_read, name='mark_user_notifications_read'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3422,8 +3422,35 @@ def delete_menu_item(request, item_id):
 
 
 @login_required(login_url='owner_login')
+@login_required(login_url='owner_login')
+def store_ratings(request):
+    """
+    Full-page ratings & reviews dashboard for the food establishment owner.
+    URL:      /owner/ratings/
+    Template: webapplication/store_ratings.html
+    """
+    establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+    reviews = Review.objects.filter(
+        establishment=establishment
+    ).select_related('user').order_by('-created_at')
+
+    rating_data    = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    average_rating = round(rating_data['avg'] or 0, 1)
+    total_reviews  = rating_data['count'] or 0
+
+    context = {
+        'establishment':  establishment,
+        'reviews':        reviews,
+        'average_rating': average_rating,
+        'total_reviews':  total_reviews,
+        'pk':             establishment.pk,
+    }
+    return render(request, 'webapplication/store_ratings.html', context)
+
+
 def store_reviews_view(request):
     """
+    Legacy view — kept for backward compatibility.
     Renders the page for the food establishment owner to view their store's reviews.
     """
     establishment_id = request.session.get('food_establishment_id')

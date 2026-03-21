@@ -1079,22 +1079,19 @@
     ========================================== */
     .rating-modal-overlay {
         display: none;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: rgba(0,0,0,0.55) !important;
-        z-index: 99999 !important;
-        align-items: center !important;
-        justify-content: center !important;
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.55);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
         padding: 16px;
         backdrop-filter: blur(3px);
-        margin: 0 !important;
+        margin: 0;
     }
-    .rating-modal-overlay.open { display: flex !important; }
+    .rating-modal-overlay.open { display: flex; }
 
     .rating-modal {
         background: white;
@@ -1319,8 +1316,8 @@
     }
 
     @media (max-width: 480px) {
-        .rating-modal { border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; }
-        .rating-modal-overlay.open { align-items: flex-end; padding: 0; }
+        .rating-modal { border-radius: 20px; max-width: 95%; }
+        .rating-modal-overlay.open { align-items: center; padding: 16px; }
     }
 
     /* ==========================================
@@ -1562,41 +1559,6 @@
         <div class="confirm-btns">
             <button class="confirm-btn-no" onclick="closeCancelConfirm()">No, Keep It</button>
             <button class="confirm-btn-yes" id="cancelConfirmYes">Yes, Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- ====================================================
-     RATING MODAL
-===================================================== -->
-<div class="rating-modal-overlay" id="ratingModalOverlay" onclick="handleRatingOverlayClick(event)" style="display:none;">
-    <div class="rating-modal">
-        <div class="rating-modal-header">
-            <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:4px;"></i> Rate Your Experience</h3>
-            <button class="rating-modal-close-btn" onclick="closeRatingModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="rating-modal-body">
-            <p class="rating-modal-subtitle">How was your experience at this establishment?</p>
-            <div class="rating-stars-row" id="ratingStarsRow">
-                <i class="far fa-star r-star" data-val="1"></i>
-                <i class="far fa-star r-star" data-val="2"></i>
-                <i class="far fa-star r-star" data-val="3"></i>
-                <i class="far fa-star r-star" data-val="4"></i>
-                <i class="far fa-star r-star" data-val="5"></i>
-            </div>
-            <p class="rating-label-txt" id="ratingLabelTxt">&nbsp;</p>
-            <div class="rating-comment-group">
-                <label for="ratingCommentBox">Comment <span style="color:#9ca3af;font-weight:400;">(optional)</span></label>
-                <textarea id="ratingCommentBox" placeholder="Tell us about your experience..."></textarea>
-            </div>
-        </div>
-        <div class="rating-modal-footer">
-            <button class="rating-cancel-btn" onclick="closeRatingModal()">Cancel</button>
-            <button class="rating-submit-btn" id="ratingSubmitBtn" onclick="submitRatingNow()">
-                <i class="fas fa-paper-plane"></i> Submit Review
-            </button>
         </div>
     </div>
 </div>
@@ -3111,7 +3073,7 @@
 <!-- ====================================================
      RATING MODAL  (unchanged — kept in full)
 ===================================================== -->
-<div class="rating-modal-overlay" id="ratingModalOverlay" onclick="handleRatingOverlayClick(event)" style="display:none;">
+<div class="rating-modal-overlay" id="ratingModalOverlay" onclick="handleRatingOverlayClick(event)">
     <div class="rating-modal">
         <div class="rating-modal-header">
             <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:4px;"></i> Rate Your Experience</h3>
@@ -3155,27 +3117,7 @@
     </div>
 </div>
 
-<!-- Reorder Modal -->
-<div class="reorder-modal-overlay" id="reorderModal" onclick="handleReorderOverlayClick(event)">
-    <div class="reorder-modal" onclick="event.stopPropagation()">
-        <div class="reorder-modal-topbar">
-            <button class="reorder-modal-close" onclick="closeReorderModal()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="reorder-modal-body" id="reorderModalItems"></div>
-        <div id="reorderConflictWarning" class="reorder-conflict-warning" style="display:none; margin: 0 20px 12px;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>Some items may be from a different establishment than what's in your cart. Proceeding will start a new cart.</span>
-        </div>
-        <div class="reorder-modal-footer">
-            <button class="reorder-atc-btn" id="reorderAtcBtn" onclick="submitReorder('cart')">
-                <i class="fas fa-shopping-cart"></i> Add to Cart
-            </button>
-            <button class="reorder-buy-btn" id="reorderBuyBtn" onclick="submitReorder('buy')">
-                <i class="fas fa-bolt"></i> Buy Now
-            </button>
-        </div>
-    </div>
-</div>
+
 
 <script>
     // ============================================================
@@ -3194,13 +3136,13 @@
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
         const overlay = document.getElementById('ratingModalOverlay');
-        overlay.style.display = 'flex';
+        overlay.style.cssText = 'display:flex; position:fixed; inset:0; width:100vw; height:100vh; background:rgba(0,0,0,0.55); z-index:99999; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px); margin:0;';
         overlay.classList.add('open');
     }
 
     function closeRatingModal() {
         const overlay = document.getElementById('ratingModalOverlay');
-        overlay.style.display = 'none';
+        overlay.style.cssText = 'display:none;';
         overlay.classList.remove('open');
     }
 
@@ -3270,67 +3212,191 @@
     // ============================================================
     let reorderCurrentOrder = null;
 
+    // ============================================================
+    // REORDER MODAL — Realtime stock + flying cart animation
+    // ============================================================
+    let _reorderOrderId   = null;
+    let _reorderStockPoll = null;   // setInterval handle for realtime polling
+
+    // Flying-cart animation: animate a cart emoji flying to the navbar cart icon
+    function flyToCart(originEl) {
+        const cartIcon = document.querySelector('.cart-icon, .nav-cart, [href*="cart"] i, a[href*="/cart/"] i, .fa-shopping-cart');
+        const target   = cartIcon ? cartIcon.getBoundingClientRect() : { left: window.innerWidth - 60, top: 20 };
+        const origin   = originEl.getBoundingClientRect();
+
+        const flyer = document.createElement('div');
+        flyer.textContent = '🛒';
+        flyer.style.cssText = [
+            'position:fixed',
+            `left:${origin.left + origin.width/2}px`,
+            `top:${origin.top + origin.height/2}px`,
+            'font-size:28px',
+            'z-index:999999',
+            'pointer-events:none',
+            'transition:left 0.7s cubic-bezier(.4,0,.2,1),top 0.7s cubic-bezier(.4,0,.2,1),opacity 0.7s,transform 0.7s',
+            'transform:scale(1)',
+            'opacity:1',
+        ].join(';');
+        document.body.appendChild(flyer);
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                flyer.style.left    = `${target.left}px`;
+                flyer.style.top     = `${target.top}px`;
+                flyer.style.opacity = '0';
+                flyer.style.transform = 'scale(0.3)';
+            });
+        });
+        setTimeout(() => flyer.remove(), 800);
+    }
+
+    // Build/refresh the item cards inside the modal using latest stock data
+    function _renderReorderItems(orderData) {
+        const container = document.getElementById('reorderModalItems');
+        if (!container) return;
+
+        // Preserve current qty selections made by user
+        const savedQtys = {};
+        document.querySelectorAll('.reorder-qty-val[id^="rqv-"]').forEach(el => {
+            savedQtys[el.id.replace('rqv-', '')] = parseInt(el.textContent) || 1;
+        });
+
+        container.innerHTML = (orderData.items || []).map(item => {
+            const itemId   = String(item.id || item.menu_item_id || '');
+            const stock    = typeof item.available_stock === 'number' ? item.available_stock : 0;
+            const inStock  = stock > 0;
+            const badgeCls = inStock ? 'badge-in-stock' : 'badge-out-stock';
+            const badgeTxt = inStock ? `${stock} in stock` : 'Out of stock';
+            const curQty   = savedQtys[itemId] || item.quantity || 1;
+            const maxQty   = inStock ? Math.min(stock, 99) : 0;
+            const safeQty  = Math.min(curQty, maxQty || 1);
+
+            return `
+            <div class="reorder-item-card ${inStock ? '' : 'unavailable'}"
+                 data-item-id="${itemId}"
+                 data-max-stock="${maxQty}">
+                <div class="reorder-item-hero">
+                    ${item.image
+                        ? `<img src="${item.image}" alt="${esc(item.name)}"
+                               onerror="this.parentNode.innerHTML='<span class=reorder-item-hero-placeholder>🍽️</span>'">`
+                        : '<span class="reorder-item-hero-placeholder">🍽️</span>'}
+                </div>
+                <div class="reorder-item-title-row">
+                    <div class="reorder-item-title">${esc(item.name)}</div>
+                    <span class="reorder-item-badge ${badgeCls}" id="rstock-${itemId}">${esc(badgeTxt)}</span>
+                </div>
+                <div class="reorder-item-price-big">₱${parseFloat(item.price || 0).toFixed(2)}</div>
+                ${inStock ? `
+                <div class="reorder-qty-row">
+                    <span class="reorder-qty-label">Quantity</span>
+                    <div class="reorder-qty-ctrl">
+                        <button class="reorder-qty-btn" onclick="reorderChg('${itemId}',-1)">−</button>
+                        <span class="reorder-qty-val" id="rqv-${itemId}">${safeQty}</span>
+                        <button class="reorder-qty-btn" onclick="reorderChg('${itemId}',1)">+</button>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // Poll /api/order/<id>/ and update badges + qty caps without full re-render
+    function _pollReorderStock() {
+        if (!_reorderOrderId) return;
+        fetch(`/api/order/${_reorderOrderId}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success || !data.order) return;
+                reorderCurrentOrder = data.order;
+
+                (data.order.items || []).forEach(item => {
+                    const itemId  = String(item.id || item.menu_item_id || '');
+                    const stock   = typeof item.available_stock === 'number' ? item.available_stock : 0;
+                    const inStock = stock > 0;
+
+                    // Update badge
+                    const badge = document.getElementById(`rstock-${itemId}`);
+                    if (badge) {
+                        badge.textContent  = inStock ? `${stock} in stock` : 'Out of stock';
+                        badge.className    = `reorder-item-badge ${inStock ? 'badge-in-stock' : 'badge-out-stock'}`;
+                    }
+
+                    // Update card unavailable state
+                    const card = document.querySelector(`.reorder-item-card[data-item-id="${itemId}"]`);
+                    if (card) {
+                        card.classList.toggle('unavailable', !inStock);
+                        card.dataset.maxStock = stock;
+                    }
+
+                    // Cap qty to new stock
+                    const qtyEl = document.getElementById(`rqv-${itemId}`);
+                    if (qtyEl && stock > 0) {
+                        const cur = parseInt(qtyEl.textContent) || 1;
+                        if (cur > stock) qtyEl.textContent = stock;
+                    }
+                });
+            })
+            .catch(() => {});  // silent fail on poll
+    }
+
     function showReorderModal(orderId) {
+        _reorderOrderId     = orderId;
+        reorderCurrentOrder = null;
+
         const modal   = document.getElementById('reorderModal');
         const items   = document.getElementById('reorderModalItems');
         const warning = document.getElementById('reorderConflictWarning');
         const atcBtn  = document.getElementById('reorderAtcBtn');
         const buyBtn  = document.getElementById('reorderBuyBtn');
-        reorderCurrentOrder = null;
+
         modal.style.display = 'flex';
         items.innerHTML = `<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i><span>Loading items...</span></div>`;
-        warning.style.display = 'none';
+        if (warning) warning.style.display = 'none';
         atcBtn.disabled = false; buyBtn.disabled = false;
         atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
         buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
 
+        // Stop any previous poll
+        if (_reorderStockPoll) { clearInterval(_reorderStockPoll); _reorderStockPoll = null; }
+
         fetch(`/api/order/${orderId}/`)
             .then(r => r.json())
             .then(data => {
-                if (!data.success || !data.order) { items.innerHTML='<div class="reorder-loading">Failed to load items.</div>'; return; }
+                if (!data.success || !data.order) {
+                    items.innerHTML = '<div class="reorder-loading">Failed to load items.</div>';
+                    return;
+                }
                 reorderCurrentOrder = data.order;
-                const order = data.order;
-                items.innerHTML = (order.items||[]).map(item => {
-                    const inStock  = (item.current_quantity || 0) > 0;
-                    const badgeCls = inStock ? 'badge-in-stock' : 'badge-out-stock';
-                    const badgeTxt = inStock ? `${item.current_quantity} in stock` : 'Out of stock';
-                    return `
-                    <div class="reorder-item-card ${inStock?'':'unavailable'}" data-item-id="${item.menu_item_id||item.id}">
-                        <div class="reorder-item-hero">
-                            ${item.image ? `<img src="${item.image}" alt="${esc(item.name)}" onerror="this.parentNode.innerHTML='<span class=reorder-item-hero-placeholder>🍽️</span>'">` : '<span class="reorder-item-hero-placeholder">🍽️</span>'}
-                        </div>
-                        <div class="reorder-item-title-row">
-                            <div class="reorder-item-title">${esc(item.name)}</div>
-                            <span class="reorder-item-badge ${badgeCls}">${esc(badgeTxt)}</span>
-                        </div>
-                        <div class="reorder-item-price-big">₱${parseFloat(item.price||item.price_at_order||0).toFixed(2)}</div>
-                        ${inStock ? `
-                        <div class="reorder-qty-row">
-                            <span class="reorder-qty-label">Quantity</span>
-                            <div class="reorder-qty-ctrl">
-                                <button class="reorder-qty-btn" onclick="reorderChg(${item.menu_item_id||item.id},-1)">−</button>
-                                <span class="reorder-qty-val" id="rqv-${item.menu_item_id||item.id}">${item.quantity}</span>
-                                <button class="reorder-qty-btn" onclick="reorderChg(${item.menu_item_id||item.id},1)">+</button>
-                            </div>
-                        </div>` : ''}
-                    </div>`;
-                }).join('');
+                _renderReorderItems(data.order);
+
+                // Start realtime stock poll every 5 seconds
+                _reorderStockPoll = setInterval(_pollReorderStock, 5000);
             })
-            .catch(() => { items.innerHTML='<div class="reorder-loading">Error loading items.</div>'; });
+            .catch(() => { items.innerHTML = '<div class="reorder-loading">Error loading items.</div>'; });
     }
 
     function reorderChg(itemId, delta) {
-        const el = document.getElementById(`rqv-${itemId}`);
+        const el  = document.getElementById(`rqv-${itemId}`);
         if (!el) return;
+        const max = parseInt(
+            document.querySelector(`.reorder-item-card[data-item-id="${itemId}"]`)?.dataset.maxStock || '99'
+        );
         let v = parseInt(el.textContent) + delta;
-        if (v < 1) v = 1;
+        if (v < 1)   v = 1;
+        if (v > max) v = max;
         el.textContent = v;
     }
 
-    function closeReorderModal() { document.getElementById('reorderModal').style.display='none'; }
-    function handleReorderOverlayClick(e) { if (e.target===document.getElementById('reorderModal')) closeReorderModal(); }
+    function closeReorderModal() {
+        const modal = document.getElementById('reorderModal');
+        if (modal) modal.style.display = 'none';
+        if (_reorderStockPoll) { clearInterval(_reorderStockPoll); _reorderStockPoll = null; }
+        _reorderOrderId = null;
+    }
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById('reorderModal')) closeReorderModal();
+    }
 
-    function submitReorder(mode) {
+    function doReorder(mode) {
         if (!reorderCurrentOrder) return;
         const atcBtn = document.getElementById('reorderAtcBtn');
         const buyBtn = document.getElementById('reorderBuyBtn');
@@ -3341,24 +3407,72 @@
         cards.forEach(card => {
             const id  = card.dataset.itemId;
             const qty = parseInt(document.getElementById(`rqv-${id}`)?.textContent || '1');
-            items.push({ menu_item_id: id, quantity: qty });
+            if (id && qty > 0) items.push({ menu_item_id: id, quantity: qty });
         });
-        if (!items.length) { atcBtn.disabled=false; buyBtn.disabled=false; closeReorderModal(); return; }
 
+        if (!items.length) {
+            atcBtn.disabled = false; buyBtn.disabled = false;
+            closeReorderModal();
+            return;
+        }
+
+        if (mode === 'cart') {
+            atcBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        } else {
+            buyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Please wait...';
+        }
+
+        // Add items sequentially
         let chain = Promise.resolve();
+        let anyError = false;
         items.forEach(item => {
             chain = chain.then(() =>
                 fetch('/cart/add/', {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
                     body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity })
-                }).then(r => r.json())
+                })
+                .then(r => r.json())
+                .then(res => { if (!res.success) anyError = true; })
             );
         });
+
         chain.then(() => {
-            closeReorderModal();
-            window.location.href = mode==='buy' ? '/cart/?pay=1' : '/cart/';
-        }).catch(() => { atcBtn.disabled=false; buyBtn.disabled=false; });
+            if (mode === 'cart') {
+                // Flying cart animation from the Add to Cart button
+                flyToCart(atcBtn);
+                closeReorderModal();
+                // Update cart count badge if present
+                setTimeout(() => {
+                    fetch('/cart/count/')
+                        .then(r => r.json())
+                        .then(d => {
+                            const badge = document.querySelector('.cart-count, .cart-badge, #cartCount, [data-cart-count]');
+                            if (badge && d.count !== undefined) badge.textContent = d.count;
+                        })
+                        .catch(() => {});
+                }, 400);
+                if (anyError) {
+                    showOrderToast('Some items could not be added (out of stock or limit reached).', 'warning');
+                } else {
+                    showOrderToast('Items added to cart!', 'success');
+                }
+            } else {
+                closeReorderModal();
+                window.location.href = '/cart/?pay=1';
+            }
+        }).catch(() => {
+            atcBtn.disabled = false; buyBtn.disabled = false;
+            atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+            buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+            showOrderToast('Network error. Please try again.', 'error');
+        });
     }
+
+    // Legacy alias (used by older HTML in the file)
+    function submitReorder(mode) { doReorder(mode); }
 </script>
 {% endblock %}
