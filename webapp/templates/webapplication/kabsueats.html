@@ -72,24 +72,18 @@
     /* ============================================================
        GLOBAL CONNECTION OVERLAY
        ============================================================ */
-    /* ✅ Blur actual page content in-place on DB error */
-    .page-layout.db-blurred {
-        filter: blur(4px);
-        pointer-events: none;
-        user-select: none;
-        transition: filter 0.3s ease;
-    }
+
     #connectionOverlay {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.35);
+        background: transparent;
         z-index: 999999;
         align-items: center;
         justify-content: center;
         display: none;
     }
     #connectionOverlay.active {
-        display: flex !important;
+        display: none !important;
     }
     #connectionOverlayBox {
         background: #fff;
@@ -871,81 +865,7 @@
         setTimeout(function () { if (_retryFn) _retryFn(); }, 600);
     };
 
-    // ✅ Blur current page in-place on DB error — no navigation away
-    var _origFetch = window.fetch;
-    var _fail503 = 0, _failNet = 0, _THRESHOLD = 1, _cooldownUntil = 0;
-    var _retryTimer = null;
-
-    function _canShow() {
-        return !overlay.classList.contains('active') && Date.now() > _cooldownUntil;
-    }
-    function _blurPage(on) {
-        var el = document.querySelector('.page-layout');
-        if (el) { if (on) el.classList.add('db-blurred'); else el.classList.remove('db-blurred'); }
-    }
-    // ✅ Auto-retry every 15s — when DB recovers, un-blur and continue automatically
-    function _startAutoRetry() {
-        if (_retryTimer) return;
-        _retryTimer = setInterval(function () {
-            _origFetch('/api/establishments/status/', { credentials: 'same-origin' })
-                .then(function (r) {
-                    if (r.ok) {
-                        window.hideConnectionOverlay();
-                        window.location.reload();
-                    }
-                }).catch(function () {});
-        }, 15000);
-    }
-    var _origHide = window.hideConnectionOverlay;
-    window.hideConnectionOverlay = function () {
-        _origHide(); _blurPage(false);
-        _fail503 = 0; _failNet = 0;
-        if (_retryTimer) { clearInterval(_retryTimer); _retryTimer = null; }
-        _cooldownUntil = Date.now() + 5 * 60 * 1000;
-    };
-    window.fetch = function (url, opts) {
-        return _origFetch(url, opts)
-            .then(function (res) {
-                if (res.status === 503) {
-                    _fail503++; _failNet = 0;
-                    if (_fail503 >= _THRESHOLD && _canShow()) {
-                        _blurPage(true);
-                        window.showConnectionOverlay('Database Unavailable',
-                            'Our database is temporarily unreachable. Retrying automatically...',
-                            function () { _fail503 = 0; _blurPage(false); window.location.reload(); }, 'db');
-                        _startAutoRetry();
-                    }
-                } else if (res.status === 502 || res.status === 504) {
-                    _fail503++; _failNet = 0;
-                    if (_fail503 >= _THRESHOLD && _canShow()) {
-                        _blurPage(true);
-                        window.showConnectionOverlay('Server Unavailable',
-                            'The server is temporarily down. Retrying automatically...',
-                            function () { _fail503 = 0; _blurPage(false); window.location.reload(); }, 'spinner');
-                        _startAutoRetry();
-                    }
-                } else {
-                    _fail503 = 0; _failNet = 0;
-                    if (overlay.classList.contains('active')) window.hideConnectionOverlay();
-                }
-                return res;
-            })
-            .catch(function (err) {
-                _failNet++; _fail503 = 0;
-                if (_failNet >= _THRESHOLD && _canShow()) {
-                    var offline = !navigator.onLine;
-                    _blurPage(true);
-                    window.showConnectionOverlay(
-                        offline ? 'No Internet Connection' : 'Connection Problem',
-                        offline ? 'Please check your internet connection.' : 'Something went wrong. Please wait.',
-                        function () { _failNet = 0; _blurPage(false);
-                            if (navigator.onLine) { window.location.reload(); }
-                            else { titleEl.textContent = 'Still Offline'; msgEl.textContent = 'No internet detected.'; }
-                        }, offline ? 'offline' : 'spinner');
-                }
-                throw err;
-            });
-    };
+    // DB error overlay removed — fails silently
 
     // offline event — overlay disabled
 

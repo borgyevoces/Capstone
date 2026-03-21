@@ -170,9 +170,37 @@ _FALLBACK_HTML = """<!DOCTYPE html>
       <div class="db-icon"><i class="fas fa-database"></i></div>
       <h3>Database Unavailable</h3>
       <p>Our database is temporarily unreachable.<br>Please try again in a moment.</p>
-      <button class="btn" onclick="location.reload()">
+      <button class="btn" id="retryBtn" onclick="tryAgain()">
         <i class="fas fa-redo"></i> Try Again
       </button>
+  <script>
+    function tryAgain() {
+      var btn = document.getElementById('retryBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+      // Ping a lightweight endpoint first
+      fetch('/api/establishments/status/', { method: 'GET', credentials: 'same-origin' })
+        .then(function(r) {
+          if (r.ok) {
+            // DB is back — reload to actual page
+            window.location.reload();
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
+          }
+        })
+        .catch(function() {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
+        });
+    }
+    // Auto-retry every 15s silently
+    setInterval(function() {
+      fetch('/api/establishments/status/', { method: 'GET', credentials: 'same-origin' })
+        .then(function(r) { if (r.ok) window.location.reload(); })
+        .catch(function() {});
+    }, 15000);
+  </script>
     </div>
   </div>
 </body>
