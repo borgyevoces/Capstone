@@ -4124,7 +4124,8 @@
 
     // ✅ Blur current page in-place on DB error — no navigation away
     var _origFetch = window.fetch;
-    var _fail503 = 0, _failNet = 0, _THRESHOLD = 5, _cooldownUntil = 0;
+    var _fail503 = 0, _failNet = 0, _THRESHOLD = 1, _cooldownUntil = 0;
+    var _retryTimer = null;
 
     function _canShow() {
         return !overlay.classList.contains('active') && Date.now() > _cooldownUntil;
@@ -4133,10 +4134,24 @@
         var el = document.querySelector('.main-content');
         if (el) { if (on) el.classList.add('db-blurred'); else el.classList.remove('db-blurred'); }
     }
+    // ✅ Auto-retry every 15s — when DB recovers, un-blur and continue automatically
+    function _startAutoRetry() {
+        if (_retryTimer) return;
+        _retryTimer = setInterval(function () {
+            _origFetch('/api/establishments/status/', { credentials: 'same-origin' })
+                .then(function (r) {
+                    if (r.ok) {
+                        window.hideConnectionOverlay();
+                        window.location.reload();
+                    }
+                }).catch(function () {});
+        }, 15000);
+    }
     var _origHide = window.hideConnectionOverlay;
     window.hideConnectionOverlay = function () {
         _origHide(); _blurPage(false);
         _fail503 = 0; _failNet = 0;
+        if (_retryTimer) { clearInterval(_retryTimer); _retryTimer = null; }
         _cooldownUntil = Date.now() + 5 * 60 * 1000;
     };
     window.fetch = function (url, opts) {
@@ -4147,16 +4162,18 @@
                     if (_fail503 >= _THRESHOLD && _canShow()) {
                         _blurPage(true);
                         window.showConnectionOverlay('Database Unavailable',
-                            'Our database is temporarily unreachable. Please try again in a moment.',
+                            'Our database is temporarily unreachable. Retrying automatically...',
                             function () { _fail503 = 0; _blurPage(false); window.location.reload(); }, 'db');
+                        _startAutoRetry();
                     }
                 } else if (res.status === 502 || res.status === 504) {
                     _fail503++; _failNet = 0;
                     if (_fail503 >= _THRESHOLD && _canShow()) {
                         _blurPage(true);
                         window.showConnectionOverlay('Server Unavailable',
-                            'The server is temporarily down. Please wait a moment.',
+                            'The server is temporarily down. Retrying automatically...',
                             function () { _fail503 = 0; _blurPage(false); window.location.reload(); }, 'spinner');
+                        _startAutoRetry();
                     }
                 } else {
                     _fail503 = 0; _failNet = 0;

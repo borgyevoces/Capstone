@@ -683,12 +683,38 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // ✅ FIX: Use EST_STATUS from server (set in HTML template) for accurate status
+    // ✅ FIX: Use EST_STATUS from server — also fetch fresh status from realtime API
     const estStatus = document.getElementById('itemModalEstStatus');
     const isEstOpen = (typeof EST_STATUS !== 'undefined') && EST_STATUS === 'Open';
     if (estStatus) {
         estStatus.className = 'item-modal-est-status ' + (isEstOpen ? 'open' : 'closed');
         estStatus.textContent = isEstOpen ? 'Open' : 'Closed';
+    }
+    // Also fetch fresh status from realtime endpoint to ensure accuracy
+    if (typeof ESTABLISHMENT_REALTIME_URL !== 'undefined') {
+        fetch(ESTABLISHMENT_REALTIME_URL, { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                const freshStatus = data.status || 'Closed';
+                // Update global EST_STATUS so next modal open is also accurate
+                if (typeof window !== 'undefined') window.EST_STATUS = freshStatus;
+                EST_STATUS = freshStatus;
+                const freshOpen = freshStatus === 'Open';
+                const el = document.getElementById('itemModalEstStatus');
+                if (el) {
+                    el.className = 'item-modal-est-status ' + (freshOpen ? 'open' : 'closed');
+                    el.textContent = freshOpen ? 'Open' : 'Closed';
+                }
+                // Update buttons too
+                const addBtn = document.getElementById('modalAddToCartBtn');
+                const buyBtn = document.getElementById('modalBuyNowBtn');
+                const qty = parseInt(document.getElementById('modalMaxQuantity')?.value || 0);
+                const canOrder = freshOpen && qty > 0;
+                if (addBtn && !freshOpen) { addBtn.disabled = true; addBtn.style.opacity = '0.5'; }
+                if (buyBtn) { buyBtn.disabled = !canOrder; buyBtn.style.opacity = canOrder ? '1' : '0.5'; }
+            })
+            .catch(() => {});
     }
 
     // ✅ FIX: Disable buttons if establishment is closed OR out of stock

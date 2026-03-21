@@ -60,12 +60,12 @@ class DatabaseErrorMiddleware:
 
     def _db_error_response(self, request):
         """
-        - API/fetch calls → JSON 503 silent
-        - Page requests   → JSON 503 so JS blurs the current page in-place
+        - AJAX/fetch calls  → JSON 503 so JS blurs the current page in-place
+        - Direct page visit → JSON 503 as well (browser stays on same URL,
+          JS fetch interceptor will catch it on next poll and blur in-place)
         """
         import json
 
-        # All requests → JSON 503 so JS handles blur+overlay in-place on the current page
         logger.error(f"[DatabaseErrorMiddleware] DB unavailable: {request.path}")
         return HttpResponse(
             json.dumps({'error': 'database_unavailable', 'message': 'Our database is temporarily unavailable.'}),
@@ -74,7 +74,7 @@ class DatabaseErrorMiddleware:
         )
 
 
-# ── _FALLBACK_HTML kept for import compatibility but no longer used ──
+# ── _FALLBACK_HTML kept for compatibility ──
 _FALLBACK_HTML = ""
 
 

@@ -2230,8 +2230,8 @@
     // ✅ REALTIME: 24-hour time strings for client-side status calculation
     const EST_OPENING_24H = "{{ establishment.opening_time|time:'H:i'|default:'' }}";
     const EST_CLOSING_24H = "{{ establishment.closing_time|time:'H:i'|default:'' }}";
-    // 2705 FIX: Actual establishment status mula sa database 2014 ginagamit sa modal para accurate ang Open/Closed
-    const EST_STATUS = "{{ establishment.status|default:'Closed' }}";
+    // ✅ FIX: Pass actual establishment status from server to JS
+    var EST_STATUS = "{{ establishment.status|default:'Closed' }}";
     // ✅ REALTIME: backend polling URL for live menu/rating data
     const ESTABLISHMENT_REALTIME_URL = "{% url 'get_establishment_realtime' establishment.id %}";
 </script>
