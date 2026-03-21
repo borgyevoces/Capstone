@@ -1745,23 +1745,39 @@ function openMod(id) {
     const ksInfoText = document.getElementById('ksModalRequestInfoText');
     if (ksInfo) ksInfo.style.display = 'none';
 
-    // Fetch fresh status from backend
-    fetch(URLS.bestsellers)
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-            const fresh = data.bestsellers.find(x => x.id === id);
-            if (!fresh) return;
-            const idx = bsData.findIndex(x => x.id === id);
-            if (idx !== -1) bsData[idx].establishment.status = fresh.establishment.status;
-            currentModalItem = (idx !== -1 ? bsData[idx] : currentModalItem);
-            const freshSt = (fresh.establishment.status || 'closed').toLowerCase();
-            const el = document.getElementById('mEstS');
-            if (el) { el.className = `mests ${freshSt}`; el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`; }
-            // ✅ Re-apply button state with the fresh status
-            applyModOrderState(freshSt, currentModalItem ? currentModalItem.quantity : 0);
-        })
-        .catch(() => {});
+    // ✅ FIX: Fetch fresh establishment status directly from allEstStatus API
+    // (not from bestsellers — that only covers bestseller items, not all menu items)
+    const estId = d.establishment && d.establishment.id;
+    if (estId) {
+        const statusUrl = (typeof URLS !== 'undefined' && URLS.allEstStatus)
+            ? URLS.allEstStatus : '/api/establishments/status/';
+        fetch(statusUrl)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success || !data.establishments) return;
+                const freshEst = data.establishments.find(x => x.id === estId);
+                if (!freshEst) return;
+                const freshSt = (freshEst.status || 'closed').toLowerCase();
+                // Update cached data
+                if (currentModalItem && currentModalItem.establishment) {
+                    currentModalItem.establishment.status = freshEst.status;
+                }
+                bsData.forEach(item => {
+                    if (item.establishment && item.establishment.id === estId) {
+                        item.establishment.status = freshEst.status;
+                    }
+                });
+                // Update modal status badge
+                const el = document.getElementById('mEstS');
+                if (el) {
+                    el.className = `mests ${freshSt}`;
+                    el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${cap(freshSt)}`;
+                }
+                // Apply button state with accurate status
+                applyModOrderState(freshSt, currentModalItem ? currentModalItem.quantity : 0);
+            })
+            .catch(() => {});
+    }
 
     // ── Fetch PENDING cart qty for this item ──────────────────────
     if (IS_AUTHENTICATED && d.establishment && d.establishment.id) {

@@ -683,25 +683,22 @@ window.openItemDetailModal = function(menuItemElement, mode) {
         }
     }
 
-    // ✅ FIX: Gamitin ang actual EST_STATUS mula sa server (hindi na hardcoded "Open")
+    // ✅ FIX: Use EST_STATUS from server (set in HTML template) for accurate status
     const estStatus = document.getElementById('itemModalEstStatus');
     const isEstOpen = (typeof EST_STATUS !== 'undefined') && EST_STATUS === 'Open';
     if (estStatus) {
         estStatus.className = 'item-modal-est-status ' + (isEstOpen ? 'open' : 'closed');
-        estStatus.innerHTML = isEstOpen ? 'Open' : 'Closed';
+        estStatus.textContent = isEstOpen ? 'Open' : 'Closed';
     }
 
+    // ✅ FIX: Disable buttons if establishment is closed OR out of stock
     const buyNowBtn = document.getElementById('modalBuyNowBtn');
-    if (itemQuantity <= 0 || !isEstOpen) {
-        // Disable both buttons kung out of stock O closed ang establishment
-        if (buyNowBtn) { buyNowBtn.disabled = true; buyNowBtn.style.opacity = '0.5'; }
-        const addToCartBtnStatus = document.getElementById('modalAddToCartBtn');
-        if (addToCartBtnStatus && !isEstOpen) {
-            addToCartBtnStatus.disabled = true;
-            addToCartBtnStatus.style.opacity = '0.5';
-        }
-    } else {
-        if (buyNowBtn) { buyNowBtn.disabled = false; buyNowBtn.style.opacity = '1'; }
+    const addToCartBtnEl = document.getElementById('modalAddToCartBtn');
+    const canOrder = isEstOpen && itemQuantity > 0;
+    if (buyNowBtn)    { buyNowBtn.disabled = !canOrder;    buyNowBtn.style.opacity = canOrder ? '1' : '0.5'; }
+    if (addToCartBtnEl && !isEstOpen) {
+        addToCartBtnEl.disabled = true;
+        addToCartBtnEl.style.opacity = '0.5';
     }
 
     const itemDetailModalEl = document.getElementById('itemDetailModal');

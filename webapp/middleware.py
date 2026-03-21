@@ -60,84 +60,22 @@ class DatabaseErrorMiddleware:
 
     def _db_error_response(self, request):
         """
-        - API/fetch calls → JSON 503 (JS fetch interceptor shows modal)
-        - Owner dashboard  → food_establishment_dashboard.html with db_error=True
-        - All other pages  → kabsueats.html with db_error=True
-        - Fallback         → inline HTML if template fails
+        - API/fetch calls → JSON 503 silent
+        - Page requests   → JSON 503 so JS blurs the current page in-place
         """
         import json
 
-        # ── API / fetch calls → JSON 503
-        is_ajax = (
-            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-            or request.path.startswith('/api/')
-            or request.headers.get('Accept', '').startswith('application/json')
+        # All requests → JSON 503 so JS handles blur+overlay in-place on the current page
+        logger.error(f"[DatabaseErrorMiddleware] DB unavailable: {request.path}")
+        return HttpResponse(
+            json.dumps({'error': 'database_unavailable', 'message': 'Our database is temporarily unavailable.'}),
+            status=503,
+            content_type='application/json'
         )
-        if is_ajax:
-            return HttpResponse(
-                json.dumps({'error': 'database_unavailable', 'message': 'Our database is temporarily unavailable.'}),
-                status=503,
-                content_type='application/json'
-            )
-
-        # ── Pick the right template based on URL
-        path = request.path
-        if path.startswith('/food_establishment/dashboard') or path.startswith('/owner/'):
-            template = 'webapplication/food_establishment_dashboard.html'
-            context  = {'db_error': True, 'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.'}
-        else:
-            template = 'webapplication/kabsueats.html'
-            context  = {'db_error': True, 'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.', 'food_establishments': [], 'all_categories': []}
-
-        try:
-            html = render_to_string(template, context, request=request)
-            return HttpResponse(html, status=503)
-        except Exception as tmpl_err:
-            logger.error(f"[DatabaseErrorMiddleware] Template render failed: {tmpl_err}")
-            return HttpResponse(_FALLBACK_HTML, status=503, content_type='text/html; charset=utf-8')
 
 
-# ── Fallback HTML — modal overlay style, no template dependencies ─────────────
-_FALLBACK_HTML = """<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KabsuEats</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Poppins',Arial,sans-serif;background:#f3f4f6;min-height:100vh;}
-    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);
-             backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-             display:flex;align-items:center;justify-content:center;z-index:999999;}
-    .box{background:#fff;border-radius:18px;padding:40px 32px;max-width:380px;
-         width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.25);
-         animation:pop .25s cubic-bezier(.34,1.56,.64,1);}
-    @keyframes pop{from{transform:scale(.88) translateY(16px);opacity:0}
-                   to{transform:scale(1) translateY(0);opacity:1}}
-    .db-icon{font-size:2.2rem;color:#B71C1C;margin-bottom:12px;}
-    h3{font-size:1.15rem;font-weight:800;color:#111;margin:0 0 8px;}
-    p{color:#6B7280;font-size:.88rem;line-height:1.55;margin:0 0 20px;}
-    .btn{background:linear-gradient(135deg,#B71C1C,#7f1111);color:#fff;border:none;
-         padding:11px 28px;border-radius:50px;font-weight:700;font-size:.92rem;
-         cursor:pointer;transition:transform .2s;}
-    .btn:hover{transform:scale(1.04);}
-  </style>
-</head>
-<body>
-  <div id="overlay">
-    <div class="box">
-      <div class="db-icon"><i class="fas fa-database"></i></div>
-      <h3>Database Unavailable</h3>
-      <p>Our database is temporarily unreachable.<br>Please try again in a moment.</p>
-      <button class="btn" onclick="location.reload()">
-        <i class="fas fa-redo"></i> Try Again
-      </button>
-    </div>
-  </div>
-</body>
-</html>"""
+# ── _FALLBACK_HTML kept for import compatibility but no longer used ──
+_FALLBACK_HTML = ""
 
 
 # ============================================================
