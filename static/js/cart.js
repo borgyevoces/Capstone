@@ -1,1053 +1,993 @@
-// =======================================================
-// MULTI-ESTABLISHMENT CART SYSTEM - REAL-TIME UPDATES
-// =======================================================
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load static custom_filters webapp_filters %}
 
-// =======================================================
-// ADD TO CART FUNCTION
-// =======================================================
-function addToCart(menuItemId, button) {
-    const quantityInput = document.querySelector(`input[name="quantity_${menuItemId}"]`);
-    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+{# ✅ ADDED: Hide Search Bar Logic #}
+{% block search_visibility_control %}
+{% with show_search=False %}{% endwith %}
+{% endblock search_visibility_control %}
 
-    if (quantity < 1) {
-        showMessage('Please select at least 1 item', 'warning');
-        return;
-    }
+{% block title %}Shopping Cart - KabsuEats{% endblock %}
 
-    const originalHTML = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+{% block extra_css %}
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('menu_item_id', menuItemId);
-    formData.append('quantity', quantity);
-
-    fetch('/cart/add/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Server error: ' + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showMessage(data.message || 'Item added to cart!', 'success');
-
-            // Update cart badge with total count across all establishments
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
-
-            // Reset quantity input
-            if (quantityInput) {
-                quantityInput.value = 1;
-            }
-        } else {
-            showMessage(data.message || 'Failed to add item to cart.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred while adding to cart.', 'error');
-    })
-    .finally(() => {
-        button.disabled = false;
-        button.innerHTML = originalHTML;
-    });
+<style>
+@media (max-width: 768px) {
+    .main, .main.main-with-sidebar { padding-bottom: 80px !important; }
 }
-window.addToCart = addToCart;
+</style>
+<link rel="stylesheet" href="{% static 'css/cart_page.css' %}" />
+<style>
+/* CART OVERRIDE - Inline styles beat any cached external CSS */
+body{background:#ffffff!important}
+.cart-establishment-info{background:#ffffff!important;background-image:none!important;padding:18px 24px!important;display:flex!important;align-items:center!important;gap:12px!important;position:relative!important;border-bottom:2px solid #f0f0f0!important}
+.cart-establishment-info i.fa-store{color:#B71C1C!important;opacity:1!important;font-size:1.4rem!important}
+.cart-establishment-info h2{color:#111!important;font-weight:700!important;margin:0!important;flex:1!important}
+.clear-establishment-btn{background:#f0f0f0!important;border:1px solid #ddd!important;color:#555!important}
+.clear-establishment-btn:hover{background:#B71C1C!important;border-color:#B71C1C!important}
+.establishment-cart-box{background:#fff!important;border-radius:12px!important;overflow:hidden!important}
+.establishment-cart-box:hover{box-shadow:0 5px 18px rgba(0,0,0,.13)!important;transform:translateY(-2px)!important}
+.cart-item{background:#fff!important;border-bottom:1px solid #f0f0f0!important;display:flex!important;align-items:center!important;gap:20px!important;padding:20px 24px!important}
+.cart-item:hover{background:#fafafa!important}
+.item-name{color:#111!important;font-weight:700!important}
+.item-price{color:#555!important}
+.item-stock{color:#16a34a!important}
+.item-subtotal{color:#B71C1C!important;font-weight:700!important}
+.remove-item-btn{background:transparent!important;border:none!important;color:#999!important;cursor:pointer!important;font-size:.82rem!important;padding:4px 8px!important;border-radius:4px!important;display:flex!important;align-items:center!important;gap:5px!important;transition:all .2s ease!important}.remove-item-btn:hover{color:#B71C1C!important;background:#fff0f0!important}
+.quantity-btn{background:#fff!important;border:1.5px solid #ccc!important;color:#111!important;box-shadow:none!important}
+.quantity-btn:hover:not(:disabled){background:#111!important;border-color:#111!important;color:#fff!important}
+.quantity-value{color:#111!important}
+.cart-summary{background:#fff!important;border:1px solid #e5e5e5!important}
+.summary-title{color:#111!important}
+.summary-establishment-name{color:#111!important;background:#f8f8f8!important;border:1px solid #e0e0e0!important;font-weight:700!important}
+.summary-line{color:#555!important}
+.summary-line strong,.grand-total-line strong{color:#111!important}
+.grand-total-amount{color:#111!important;font-weight:700!important}
+#initial-checkout-btn,.btn-checkout-main,.summary-content #initial-checkout-btn{
+  width:100%!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+  padding:16px 24px!important;margin-top:20px!important;font-size:1rem!important;font-weight:700!important;
+  color:#fff!important;background:#B71C1C!important;background-image:none!important;
+  border:none!important;border-radius:10px!important;cursor:pointer!important;
+  box-shadow:0 4px 14px rgba(183,28,28,.3)!important;text-transform:uppercase!important;letter-spacing:.5px!important;
+  box-sizing:border-box!important;outline:none!important;-webkit-appearance:none!important;line-height:normal!important}
+#initial-checkout-btn:hover,.btn-checkout-main:hover{background:#8B0000!important;transform:translateY(-2px)!important;box-shadow:0 6px 20px rgba(183,28,28,.4)!important}
+#initial-checkout-btn:disabled,.btn-checkout-main:disabled{background:#ccc!important;cursor:not-allowed!important;transform:none!important;box-shadow:none!important}
+.payment-method-section{border-top:2px solid #f0f0f0!important;padding-top:20px!important;margin-top:20px!important}
+.payment-method-title{color:#111!important;font-size:.85rem!important;font-weight:700!important;text-transform:uppercase!important;text-align:center!important;margin-bottom:14px!important;letter-spacing:.6px!important}
+.btn-paymongo{border:2px solid #B71C1C!important;background:#fff5f5!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border-radius:10px!important;cursor:pointer!important;margin-bottom:10px!important;transition:all .25s ease!important}
+.btn-paymongo i{color:#B71C1C!important;font-size:1.5rem!important}
+.btn-paymongo:hover:not(:disabled){background:#B71C1C!important;transform:translateY(-2px)!important;box-shadow:0 4px 14px rgba(183,28,28,.3)!important}
+.btn-paymongo:hover:not(:disabled) i,.btn-paymongo:hover:not(:disabled) .payment-method-name,.btn-paymongo:hover:not(:disabled) .payment-method-desc{color:#fff!important}
+.btn-cash{border:2px solid #16a34a!important;background:#f0fdf4!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border-radius:10px!important;cursor:pointer!important;margin-bottom:0!important;transition:all .25s ease!important}
+.btn-cash i{color:#16a34a!important;font-size:1.5rem!important}
+.btn-cash:hover:not(:disabled){background:#16a34a!important;transform:translateY(-2px)!important;box-shadow:0 4px 14px rgba(22,163,74,.3)!important}
+.btn-cash:hover:not(:disabled) i,.btn-cash:hover:not(:disabled) .payment-method-name,.btn-cash:hover:not(:disabled) .payment-method-desc{color:#fff!important}
+.payment-method-info{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:2px!important;flex:1!important;min-width:0!important}
+.payment-method-name{font-weight:700!important;font-size:.95rem!important;color:#111!important;white-space:nowrap!important}
+.payment-method-desc{font-size:.78rem!important;color:#666!important;white-space:nowrap!important}
+.security-badge{background:#f8f8f8!important;color:#888!important;margin-top:16px!important;padding:10px!important;border-radius:8px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;font-size:.8rem!important}
+.security-badge i{color:#16a34a!important}
+.continue-shopping{color:#333!important;background:#fff!important;border:1.5px solid #e0e0e0!important;display:block!important;text-align:center!important;padding:14px!important;font-weight:600!important;text-decoration:none!important;border-radius:8px!important;transition:all .2s ease!important}
+.continue-shopping:hover{color:#B71C1C!important;background:#fff5f5!important;border-color:#B71C1C!important}
+.btn-back-to-home{background:#B71C1C!important;color:#fff!important}
+.btn-back-to-home:hover{background:#8B0000!important}
+@media(max-width:968px){.cart-main-wrapper{grid-template-columns:1fr!important}.cart-summary-sticky{position:static!important}}
+@media(max-width:768px){
+  .cart-item{display:grid!important;grid-template-columns:80px 1fr!important;grid-template-rows:auto auto!important;gap:12px!important;padding:16px!important}
+  .item-image,.item-image-placeholder{width:80px!important;height:80px!important;grid-row:1!important;grid-column:1!important}
+  .item-details{grid-row:1!important;grid-column:2!important}
+  .item-quantity-controls{grid-row:2!important;grid-column:1/2!important;justify-self:start!important}
+  .item-subtotal-section{grid-row:2!important;grid-column:2!important;justify-self:end!important}
+}
 
-// =======================================================
-// REMOVE ITEM FROM CART
-// =======================================================
-async function removeItemFromCart(orderItemId) {
-    const confirmed = await showConfirmModal(
-        'Remove Item',
-        'Are you sure you want to remove this item from your cart?',
-        'Yes, Remove',
-        'Cancel'
-    );
+/* ── CHECKBOXES ── */
+.item-checkbox-wrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-right: 4px;
+}
+.item-checkbox, .estab-select-all {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #B71C1C;
+    flex-shrink: 0;
+}
+.estab-select-all-wrap {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+}
+.estab-select-all {
+    accent-color: #B71C1C;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.cart-item.item-unchecked {
+    opacity: 0.45;
+}
 
-    if (!confirmed) return;
+/* ── Establishment box dimmed when unchecked ── */
+.establishment-cart-box.estab-unchecked .cart-establishment-info {
+    opacity: 0.55;
+}
+.establishment-cart-box.estab-unchecked .cart-items-list {
+    opacity: 0.45;
+    pointer-events: none;
+}
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('order_item_id', orderItemId);
+/* ── Establishment name link ── */
+.estab-name-link {
+    color: #111;
+    text-decoration: none;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.estab-name-link:hover {
+    color: #B71C1C;
+}
+.estab-name-link .ext-icon {
+    font-size: 0.6rem;
+    color: #B71C1C;
+    opacity: 0.7;
+    vertical-align: middle;
+}
 
-    fetch('/cart/remove/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showMessage(data.message || 'Item removed from cart', 'success');
+/* KILL ALL BORDERS ON CART BOX - HIGHEST PRIORITY */
+html body #cart-page-container .establishment-cart-box,
+html body #cart-page-container .establishment-cart-box:hover,
+html body #cart-page-container .establishment-cart-box.active-cart,
+html body .establishment-cart-box,
+html body .establishment-cart-box:hover,
+html body .establishment-cart-box.active-cart {
+    border: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+}
 
-            // Remove item row with animation
-            const itemRow = document.querySelector(`#cart-item-${orderItemId}`);
-            if (itemRow) {
-                itemRow.style.opacity = '0';
-                itemRow.style.transform = 'translateX(-20px)';
+/* ── Multi-establishment Order Summary ── */
+.summary-empty-msg {
+    text-align: center;
+    color: #9CA3AF;
+    font-size: 0.88rem;
+    padding: 20px 0;
+}
+.summary-estab-block {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.summary-estab-block:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+.summary-estab-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #111;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.summary-estab-label i { color: #B71C1C; font-size: 0.85rem; }
+.summary-item-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: #555;
+    padding: 3px 4px;
+}
+.summary-item-line .item-label { flex: 1; }
+.summary-item-line .item-amt   { font-weight: 600; color: #111; white-space: nowrap; }
+.summary-estab-subtotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.83rem;
+    color: #777;
+    padding: 6px 4px 0;
+    border-top: 1px dashed #eee;
+    margin-top: 4px;
+}
+.summary-grand-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111;
+    padding: 14px 0 0;
+    border-top: 2px solid #f0f0f0;
+    margin-top: 10px;
+}
+.summary-grand-total-row .total-amt { color: #111; }
 
-                setTimeout(() => {
-                    const cartBox = itemRow.closest('.establishment-cart-box');
-                    const establishmentId = cartBox.dataset.establishmentId;
+/* ============================================
+   CONFIRMATION MODAL
+   ============================================ */
+.cart-confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+.cart-confirm-overlay.open {
+    display: flex;
+    animation: ccFadeIn .18s ease;
+}
+@keyframes ccFadeIn {
+    from { opacity:0; }
+    to   { opacity:1; }
+}
+.cart-confirm-box {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+    overflow: hidden;
+    animation: ccSlideUp .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes ccSlideUp {
+    from { transform: translateY(24px) scale(.97); opacity:0; }
+    to   { transform: translateY(0) scale(1);      opacity:1; }
+}
+.cart-confirm-icon-band {
+    padding: 32px 24px 14px;
+    display: flex;
+    justify-content: center;
+}
+.cart-confirm-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+.cart-confirm-icon.icon-remove { background:#fff0f0; color:#B71C1C; }
+.cart-confirm-icon.icon-clear  { background:#fff3e0; color:#e65100; }
+.cart-confirm-text {
+    padding: 0 28px 26px;
+    text-align: center;
+}
+.cart-confirm-text h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 8px;
+}
+.cart-confirm-text p {
+    font-size: 13.5px;
+    color: #666;
+    margin: 0;
+    line-height: 1.55;
+}
+.cart-confirm-item-name {
+    font-weight: 700;
+    color: #111;
+}
+.cart-confirm-actions {
+    display: flex;
+    border-top: 1px solid #f0f0f0;
+}
+.cart-confirm-actions button {
+    flex: 1;
+    padding: 16px 12px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: inherit;
+}
+.cc-cancel-btn {
+    color: #555 !important;
+    border-right: 1px solid #f0f0f0 !important;
+}
+.cc-cancel-btn:hover { background: #f8f8f8 !important; }
+.cc-confirm-btn.btn-danger  { color: #B71C1C !important; }
+.cc-confirm-btn.btn-danger:hover  { background: #fff0f0 !important; }
+.cc-confirm-btn.btn-warning { color: #e65100 !important; }
+.cc-confirm-btn.btn-warning:hover { background: #fff3e0 !important; }
+</style>
+{% endblock %}
 
-                    itemRow.remove();
+{% block content %}
 
-                    // Check if establishment cart is now empty
-                    const remainingItems = cartBox.querySelectorAll('.cart-item');
+<div id="cart-page-container">
 
-                    if (remainingItems.length === 0 || data.order_deleted) {
-                        // Remove entire establishment box
-                        cartBox.remove();
+    {% if carts_data %}
+        <!-- Cart Header -->
+        <div class="cart-header">
+            <h1>Shopping Cart</h1>
+            <span class="cart-item-count">{{ total_cart_count }} item{{ total_cart_count|pluralize }}</span>
+        </div>
 
-                        // Select next available establishment
-                        const nextCart = document.querySelector('.establishment-cart-box');
-                        if (nextCart) {
-                            selectEstablishment(nextCart.dataset.establishmentId);
-                        }
-                    } else {
-                        // Update summary for this establishment
-                        updateOrderSummary(cartBox);
-                    }
+        <!-- Main Cart Layout -->
+        <div class="cart-main-wrapper">
 
-                    // Update cart badge
-                    if (typeof updateCartBadge === 'function') {
-                        updateCartBadge(data.cart_count);
-                    }
+            <!-- Left Column: All Establishment Carts -->
+            <div class="all-carts-container">
 
-                    // Reload if no items left at all
-                    if (data.cart_count === 0) {
-                        window.location.reload();
-                    }
-                }, 300);
+                {% for cart in carts_data %}
+                <div class="establishment-cart-box"
+                     data-establishment-id="{{ cart.establishment.id }}"
+                     data-order-id="{{ cart.order.id }}">
+
+                    <!-- Establishment Header -->
+                    <div class="cart-establishment-info">
+                        <label class="estab-select-all-wrap" onclick="event.stopPropagation()">
+                            <input type="checkbox"
+                                   class="estab-select-all"
+                                   data-establishment-id="{{ cart.establishment.id }}"
+                                   checked
+                                   onchange="toggleEstablishmentItems(this)">
+                        </label>
+                        <i class="fas fa-store"></i>
+                        <h2>
+                            <a href="{% url 'food_establishment_details' cart.establishment.id %}"
+                               class="estab-name-link"
+                               target="_self"
+                               onclick="event.stopPropagation()">
+                                {{ cart.establishment.name }}
+                            </a>
+                        </h2>
+                        <button type="button"
+                                class="clear-establishment-btn"
+                                onclick="clearEstablishmentCart({{ cart.establishment.id }})"
+                                title="Clear this cart">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Cart Items List -->
+                    <div class="cart-items-list">
+                        {% for item in cart.items %}
+                            <div class="cart-item"
+                                 id="cart-item-{{ item.id }}"
+                                 data-order-id="{{ cart.order.id }}"
+                                 data-item-id="{{ item.id }}"
+                                 data-menu-item-id="{{ item.menu_item.id }}"
+                                 data-max-stock="{{ item.menu_item.quantity }}"
+                                 data-remaining-qty="{{ item.remaining_allowed }}"
+                                 data-unit-price="{{ item.menu_item.price }}"
+                                 data-qty="{{ item.display_qty }}"
+                                 data-name="{{ item.menu_item.name|escapejs }}">
+
+                                <!-- Item Checkbox -->
+                                <div class="item-checkbox-wrap" onclick="event.stopPropagation()">
+                                    <input type="checkbox"
+                                           class="item-checkbox"
+                                           data-item-id="{{ item.id }}"
+                                           data-order-id="{{ cart.order.id }}"
+                                           data-establishment-id="{{ cart.establishment.id }}"
+                                           checked
+                                           onchange="onItemCheckboxChange(this)">
+                                </div>
+
+                                <!-- Item Image -->
+                                <img src="{% if item.menu_item.image %}{{ item.menu_item.image.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E{% endif %}" alt="{{ item.menu_item.name }}" class="item-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E'">
+                                {% endif %}
+
+                                <!-- Item Details -->
+                                <div class="item-details">
+                                    <h3 class="item-name">{{ item.menu_item.name }}</h3>
+                                    <p class="item-price" data-unit-price="{{ item.menu_item.price }}">₱{{ item.menu_item.price|floatformat:2 }} each</p>
+                                    <p class="item-stock">
+                                        <i class="fas fa-box"></i>
+                                        <span class="stock-count">{{ item.menu_item.quantity }}</span> available
+                                    </p>
+                                    {% if item.has_request_limit %}
+                                    <p class="item-request-limit" style="font-size:12px;color:#d97706;margin-top:3px;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ item.existing_req_qty }} already requested &mdash; max {{ item.remaining_allowed }} more
+                                    </p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Quantity Controls -->
+                                <div class="item-quantity-controls">
+                                    <button type="button"
+                                            class="quantity-btn btn-decrease"
+                                            data-item-id="{{ item.id }}"
+                                            {% if item.display_qty <= 1 %}disabled{% endif %}>
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+
+                                    <span class="quantity-value" data-item-id="{{ item.id }}">{{ item.display_qty }}</span>
+
+                                    <button type="button"
+                                            class="quantity-btn btn-increase"
+                                            data-item-id="{{ item.id }}"
+                                            {% if item.display_qty >= item.remaining_allowed %}disabled{% endif %}>
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Item Subtotal & Remove -->
+                                <div class="item-subtotal-section">
+                                    <span class="item-subtotal" id="item-total-{{ item.id }}">
+                                        ₱{{ item.total_price|floatformat:2 }}
+                                    </span>
+                                    <button type="button"
+                                            class="remove-item-btn"
+                                            onclick="removeItemFromCart({{ item.id }})">
+                                        <i class="fas fa-trash-alt"></i>
+                                        Remove
+                                    </button>
+                                </div>
+
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <!-- Right Column: Order Summary (Sticky) -->
+            <div class="cart-summary-sticky">
+                <div class="cart-summary" id="active-order-summary">
+                    <h2 class="summary-title">Order Summary</h2>
+
+                    <!-- Dynamic summary rendered by JS -->
+                    <div id="summary-body">
+                        <p class="summary-empty-msg">Check an establishment to see order details.</p>
+                    </div>
+
+                    <!-- Grand total + button (hidden when nothing checked) -->
+                    <div id="summary-footer" style="display:none;">
+                        <div class="summary-grand-total-row">
+                            <strong>Total</strong>
+                            <span class="total-amt" id="summary-grand-total">₱0.00</span>
+                        </div>
+
+                        <button type="button"
+                                class="btn-checkout-main"
+                                id="initial-checkout-btn"
+                                onclick="sendOrderRequest()">
+                            <i class="fas fa-paper-plane"></i>
+                            Send Order Request
+                        </button>
+
+                        <div class="security-badge">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Owner will confirm your request</span>
+                        </div>
+                    </div>
+
+                    <!-- Shown only when nothing is checked -->
+                    <div id="summary-no-selection" style="display:none; text-align:center; padding: 12px 0;">
+                        <p style="color:#9CA3AF; font-size:0.85rem;">
+                            <i class="fas fa-mouse-pointer" style="margin-right:5px;"></i>
+                            Check an establishment above to include it in your order.
+                        </p>
+                    </div>
+                </div>
+
+                <a href="{% url 'kabsueats_home' %}" class="continue-shopping">
+                    <i class="fas fa-arrow-left"></i> Back To Dashboard
+                </a>
+            </div>
+
+        </div>
+
+    {% else %}
+        <!-- Empty Cart State -->
+        <div class="empty-cart-message">
+            <div class="empty-cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h2>Your cart is empty</h2>
+            <p>Add items to your cart to get started!</p>
+            <a href="{% url 'kabsueats_home' %}" class="btn-back-to-home">
+                <i class="fas fa-store"></i> Browse Establishments
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- ============================================================
+     REMOVE ITEM CONFIRMATION MODAL
+     ============================================================ -->
+<div class="cart-confirm-overlay" id="ccRemoveModal">
+    <div class="cart-confirm-box">
+        <div class="cart-confirm-icon-band">
+            <div class="cart-confirm-icon icon-remove">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text">
+            <h3>Remove Item</h3>
+            <p>Remove <span class="cart-confirm-item-name" id="ccRemoveItemName">this item</span> from your cart?</p>
+        </div>
+        <div class="cart-confirm-actions">
+            <button class="cc-cancel-btn"  id="ccRemoveCancelBtn">Keep It</button>
+            <button class="cc-confirm-btn btn-danger" id="ccRemoveConfirmBtn">
+                <i class="fas fa-trash-alt" style="margin-right:5px;font-size:12px;"></i>Yes, Remove
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     CLEAR ESTABLISHMENT CART CONFIRMATION MODAL
+     ============================================================ -->
+<div class="cart-confirm-overlay" id="ccClearModal">
+    <div class="cart-confirm-box">
+        <div class="cart-confirm-icon-band">
+            <div class="cart-confirm-icon icon-clear">
+                <i class="fas fa-trash"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text">
+            <h3>Clear Cart</h3>
+            <p>Remove all items from <span class="cart-confirm-item-name" id="ccClearEstabName">this establishment</span>?<br>This cannot be undone.</p>
+        </div>
+        <div class="cart-confirm-actions">
+            <button class="cc-cancel-btn"  id="ccClearCancelBtn">Cancel</button>
+            <button class="cc-confirm-btn btn-warning" id="ccClearConfirmBtn">
+                <i class="fas fa-trash" style="margin-right:5px;font-size:12px;"></i>Clear All
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     ORDER REQUEST SUCCESS MODAL
+     ============================================================ -->
+<div class="cart-confirm-overlay" id="orderRequestModal">
+    <div class="cart-confirm-box" style="max-width:420px;">
+        <div class="cart-confirm-icon-band" style="padding:36px 24px 16px;">
+            <div class="cart-confirm-icon" style="background:#f0fdf4;color:#16a34a;width:80px;height:80px;font-size:36px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text" style="padding:0 28px 10px;">
+            <h3 style="font-size:19px;margin-bottom:10px;">Order Request Sent!</h3>
+            <p style="font-size:14px;line-height:1.6;color:#555;">
+                Your order request has been sent to the establishment.<br>
+                Please wait while the owner reviews and accepts your order.<br><br>
+                <span style="display:inline-flex;align-items:center;gap:6px;background:#fef9c3;color:#713f12;padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px;">
+                    <i class="fas fa-clock"></i> Waiting for owner to accept…
+                </span>
+            </p>
+            <p style="font-size:12.5px;color:#999;margin-top:14px;">
+                Once accepted, you will see a <strong>Pay Now</strong> button in your order history.
+            </p>
+        </div>
+        <div class="cart-confirm-actions" style="border-top:1px solid #f0f0f0;padding:4px 0;display:flex;flex-direction:column;gap:0;">
+            <a href="{% url 'order_history' %}"
+               style="flex:1;padding:16px 12px;border:none;background:transparent;font-size:14px;font-weight:700;cursor:pointer;color:#B71C1C;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:background .15s;">
+                <i class="fas fa-list-alt"></i> Go to My Orders
+            </a>
+            <button onclick="closeOrderRequestModal()"
+                    style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;">
+                Continue Shopping
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-scroll to payment section when redirected from "Buy Now" button
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('pay') === '1') {
+            setTimeout(function () {
+                const firstEstablishment = document.querySelector('.establishment-cart-box');
+                if (firstEstablishment) {
+                    firstEstablishment.click();
+                }
+            }, 300);
+        }
+
+        // Initial summary render on page load
+        window.rebuildOrderSummary();
+        // Initial stock check — flag any OOS items already in cart
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+    });
+
+    // ============================================================
+    // CUSTOM CONFIRM MODAL — replaces browser confirm()
+    // ============================================================
+    window.customConfirm = function(title, message, confirmText, cancelText, resolve) {
+        const isRemove = title.toLowerCase().includes('remove');
+        const modalId  = isRemove ? 'ccRemoveModal'  : 'ccClearModal';
+        const cnfBtnId = isRemove ? 'ccRemoveConfirmBtn' : 'ccClearConfirmBtn';
+        const cncBtnId = isRemove ? 'ccRemoveCancelBtn'  : 'ccClearCancelBtn';
+
+        const overlay  = document.getElementById(modalId);
+        const cnfBtn   = document.getElementById(cnfBtnId);
+        const cncBtn   = document.getElementById(cncBtnId);
+
+        if (!overlay) { resolve(window.confirm(message)); return; }
+
+        if (isRemove) {
+            const nameEl = document.getElementById('ccRemoveItemName');
+            if (nameEl) {
+                const itemName = window._pendingRemoveItemName || 'this item';
+                nameEl.textContent = itemName;
+                window._pendingRemoveItemName = null;
             }
         } else {
-            showMessage(data.message || 'Error removing item', 'error');
-            window.location.reload();
+            const estabEl = document.getElementById('ccClearEstabName');
+            if (estabEl) {
+                const estabName = window._pendingClearEstabName || 'this establishment';
+                estabEl.textContent = estabName;
+                window._pendingClearEstabName = null;
+            }
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred during removal', 'error');
-    });
-}
-window.removeItemFromCart = removeItemFromCart;
 
-// =======================================================
-// REAL-TIME QUANTITY UPDATE FUNCTION
-// =======================================================
-function updateQuantityRealTime(itemId, newQuantity) {
-    const cartItem = document.querySelector(`#cart-item-${itemId}`);
-    const quantityEl = cartItem.querySelector(`.quantity-value[data-item-id="${itemId}"]`);
-    const subtotalEl = cartItem.querySelector(`#item-total-${itemId}`);
-    const unitPriceEl = cartItem.querySelector('.item-price');
-    const unitPrice = parseFloat(unitPriceEl.dataset.unitPrice);
-    const maxStock = parseInt(cartItem.dataset.maxStock);
+        if (confirmText) cnfBtn.childNodes[cnfBtn.childNodes.length - 1].textContent = confirmText;
+        if (cancelText)  cncBtn.textContent = cancelText;
 
-    // ✅ INSTANT UI UPDATE (Optimistic)
-    quantityEl.textContent = newQuantity;
-    const newSubtotal = (unitPrice * newQuantity).toFixed(2);
-    subtotalEl.textContent = `₱${newSubtotal}`;
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
 
-    // Update button states
-    const decreaseBtn = cartItem.querySelector('.btn-decrease');
-    const increaseBtn = cartItem.querySelector('.btn-increase');
+        function cleanup() {
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            cnfBtn.removeEventListener('click', onConfirm);
+            cncBtn.removeEventListener('click', onCancel);
+            overlay.removeEventListener('click', onOverlay);
+            document.removeEventListener('keydown', onKey);
+        }
 
-    decreaseBtn.disabled = newQuantity <= 1;
-    increaseBtn.disabled = newQuantity >= maxStock;
+        function onConfirm() { cleanup(); resolve(true); }
+        function onCancel()  { cleanup(); resolve(false); }
+        function onOverlay(e) { if (e.target === overlay) { cleanup(); resolve(false); } }
+        function onKey(e)    { if (e.key === 'Escape') { cleanup(); resolve(false); } }
 
-    // Update establishment summary
-    const cartBox = cartItem.closest('.establishment-cart-box');
-    updateOrderSummary(cartBox);
+        cnfBtn.addEventListener('click', onConfirm);
+        cncBtn.addEventListener('click', onCancel);
+        overlay.addEventListener('click', onOverlay);
+        document.addEventListener('keydown', onKey);
+    };
 
-    // ✅ UPDATE CART BADGE REALTIME — recalculate total quantity from DOM
-    (function () {
-        let total = 0;
-        document.querySelectorAll('.quantity-value').forEach(function (el) {
-            total += parseInt(el.textContent, 10) || 0;
-        });
-        // Use shared setCartBadgeCount if available (broadcasts to all tabs via localStorage)
-        if (typeof window.setCartBadgeCount === 'function') {
-            window.setCartBadgeCount(total, true);
-        } else {
-            document.querySelectorAll('#cart-count-badge, .cart-count-badge').forEach(function (badge) {
-                badge.textContent = total;
-                badge.style.display = total > 0 ? 'flex' : 'none';
-                badge.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
-                badge.style.transform = 'scale(1.4)';
-                setTimeout(function () { badge.style.transform = 'scale(1)'; }, 200);
+    // ── Intercept remove/clear to capture name before modal opens ──
+    document.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.remove-item-btn');
+        if (removeBtn) {
+            const cartItem = removeBtn.closest('.cart-item');
+            if (cartItem) {
+                const nameEl = cartItem.querySelector('.item-name');
+                window._pendingRemoveItemName = nameEl ? nameEl.textContent.trim() : 'this item';
+            }
+        }
+        const clearBtn = e.target.closest('.clear-establishment-btn');
+        if (clearBtn) {
+            const estabBox = clearBtn.closest('.establishment-cart-box');
+            if (estabBox) {
+                const nameEl = estabBox.querySelector('.cart-establishment-info h2');
+                window._pendingClearEstabName = nameEl ? nameEl.textContent.trim() : 'this establishment';
+            }
+        }
+    }, true);
+
+    // ============================================================
+    // ORDER SUMMARY — rebuilt dynamically from checked items
+    // Exposed on window so ALL script blocks can call it safely
+    // ============================================================
+    window.rebuildOrderSummary = function() {
+        const summaryBody   = document.getElementById('summary-body');
+        const summaryFooter = document.getElementById('summary-footer');
+        const summaryNoSel  = document.getElementById('summary-no-selection');
+        const grandTotalEl  = document.getElementById('summary-grand-total');
+
+        const estabBoxes = document.querySelectorAll('.establishment-cart-box');
+        let html       = '';
+        let grandTotal = 0;
+        let anyChecked = false;
+
+        estabBoxes.forEach(function(box) {
+            const estabNameEl = box.querySelector('.cart-establishment-info h2');
+            if (!estabNameEl) return;
+
+            // SOLE source of truth: count checked item checkboxes directly.
+            // Never gate on estabChk.indeterminate — it is write-only in browsers;
+            // reading it back after a programmatic set is unreliable.
+            const checkedItems = box.querySelectorAll('.item-checkbox:checked');
+            if (checkedItems.length === 0) return;
+
+            anyChecked = true;
+            let estabSubtotal = 0;
+            let itemsHtml = '';
+
+            checkedItems.forEach(function(itemChk) {
+                const itemId   = itemChk.getAttribute('data-item-id');
+                const cartItem = document.getElementById('cart-item-' + itemId);
+                if (!cartItem) return;
+
+                const name     = cartItem.getAttribute('data-name') || cartItem.querySelector('.item-name')?.textContent?.trim() || 'Item';
+                const qty      = parseInt(cartItem.querySelector('.quantity-value')?.textContent || cartItem.getAttribute('data-qty') || '1');
+                const price    = parseFloat(cartItem.getAttribute('data-unit-price') || '0');
+                const subtotal = qty * price;
+                estabSubtotal += subtotal;
+
+                itemsHtml += `
+                    <div class="summary-item-line">
+                        <span class="item-label">${name} ×${qty}</span>
+                        <span class="item-amt">₱${subtotal.toFixed(2)}</span>
+                    </div>`;
             });
-        }
-    })();
 
-    // ✅ SEND TO SERVER (Background)
-    updateCartItemQuantity(itemId, newQuantity);
-}
-window.updateQuantityRealTime = updateQuantityRealTime;
+            grandTotal += estabSubtotal;
 
-// =======================================================
-// UPDATE CART ITEM QUANTITY (Background Server Call)
-// =======================================================
-function updateCartItemQuantity(orderItemId, newQuantity) {
-    if (newQuantity < 1) {
-        return; // Already handled in UI
-    }
+            const estabNameText = estabNameEl.querySelector('.estab-name-link')?.firstChild?.textContent?.trim()
+                                || estabNameEl.textContent.trim();
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('order_item_id', orderItemId);
-    formData.append('quantity', newQuantity);
+            html += `
+                <div class="summary-estab-block">
+                    <div class="summary-estab-label">
+                        <i class="fas fa-store"></i>
+                        ${estabNameText}
+                    </div>
+                    ${itemsHtml}
+                    <div class="summary-estab-subtotal">
+                        <span>Subtotal</span>
+                        <strong>₱${estabSubtotal.toFixed(2)}</strong>
+                    </div>
+                </div>`;
+        });
 
-    fetch('/cart/update/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update cart badge
-            if (typeof updateCartBadge === 'function' && data.cart_count !== undefined) {
-                updateCartBadge(data.cart_count);
-            }
+        if (anyChecked) {
+            summaryBody.innerHTML       = html;
+            summaryFooter.style.display = 'block';
+            summaryNoSel.style.display  = 'none';
+            grandTotalEl.textContent    = '₱' + grandTotal.toFixed(2);
         } else {
-            // Rollback on error
-            showMessage('Error: ' + data.message, 'error');
-            window.location.reload();
+            summaryBody.innerHTML       = '<p class="summary-empty-msg">Check an establishment to see order details.</p>';
+            summaryFooter.style.display = 'none';
+            summaryNoSel.style.display  = 'none';
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred while updating quantity', 'error');
-    });
-}
+    };
 
-// =======================================================
-// CLEAR ENTIRE ESTABLISHMENT CART
-// =======================================================
-async function clearEstablishmentCart(establishmentId) {
-    const confirmed = await showConfirmModal(
-        'Clear Cart',
-        'Are you sure you want to remove all items from this establishment?',
-        'Yes, Clear All',
-        'Cancel'
-    );
+    // ============================================================
+    // CHECKBOX HANDLERS
+    // ============================================================
 
-    if (!confirmed) return;
+    // Establishment header checkbox — check/uncheck ALL items inside
+    window.toggleEstablishmentItems = function(estabChk) {
+        const estabId = estabChk.getAttribute('data-establishment-id');
+        const box     = document.querySelector(`.establishment-cart-box[data-establishment-id="${estabId}"]`);
+        if (!box) return;
 
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('establishment_id', establishmentId);
+        const checked = estabChk.checked;
 
-    fetch('/cart/clear-establishment/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showMessage(data.message || 'Cart cleared successfully', 'success');
+        // Sync all item checkboxes to match the establishment checkbox
+        box.querySelectorAll('.item-checkbox').forEach(function(chk) {
+            chk.checked = checked;
+            const cartItem = chk.closest('.cart-item');
+            if (cartItem) cartItem.classList.toggle('item-unchecked', !checked);
+        });
 
-            // Remove the entire establishment box
-            const cartBox = document.querySelector(`.establishment-cart-box[data-establishment-id="${establishmentId}"]`);
-            if (cartBox) {
-                cartBox.remove();
-            }
+        box.classList.toggle('estab-unchecked', !checked);
 
-            // Update cart badge
-            if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count);
-            }
+        // Rebuild immediately — realtime update
+        window.rebuildOrderSummary();
+    };
 
-            // Reload if no items left
-            if (data.cart_count === 0) {
-                window.location.reload();
-            } else {
-                // Select next available establishment
-                const nextCart = document.querySelector('.establishment-cart-box');
-                if (nextCart) {
-                    selectEstablishment(nextCart.dataset.establishmentId);
+    // Individual item checkbox — update parent estab checkbox state then rebuild
+    window.onItemCheckboxChange = function(itemChk) {
+        const estabId  = itemChk.getAttribute('data-establishment-id');
+        const cartItem = itemChk.closest('.cart-item');
+        if (cartItem) cartItem.classList.toggle('item-unchecked', !itemChk.checked);
+
+        const box = document.querySelector(`.establishment-cart-box[data-establishment-id="${estabId}"]`);
+        if (box) {
+            const allItems     = box.querySelectorAll('.item-checkbox');
+            const checkedItems = box.querySelectorAll('.item-checkbox:checked');
+            const estabChk     = box.querySelector('.estab-select-all');
+            if (estabChk) {
+                if (checkedItems.length === 0) {
+                    estabChk.checked       = false;
+                    estabChk.indeterminate = false;
+                    box.classList.add('estab-unchecked');
+                } else if (checkedItems.length === allItems.length) {
+                    estabChk.checked       = true;
+                    estabChk.indeterminate = false;
+                    box.classList.remove('estab-unchecked');
+                } else {
+                    // Partially checked — indeterminate visual only (do NOT read back)
+                    estabChk.checked       = false;
+                    estabChk.indeterminate = true;
+                    box.classList.remove('estab-unchecked');
                 }
             }
-        } else {
-            showMessage(data.message || 'Error clearing cart', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('An error occurred during cart clearance', 'error');
-    });
-}
-window.clearEstablishmentCart = clearEstablishmentCart;
-
-// =======================================================
-// SELECT ESTABLISHMENT CART (Visual Feedback)
-// =======================================================
-function selectEstablishment(establishmentId) {
-    // Remove active state from all boxes
-    document.querySelectorAll('.establishment-cart-box').forEach(box => {
-        box.classList.remove('active-cart');
-    });
-
-    // Add active state to selected box
-    const selectedBox = document.querySelector(`.establishment-cart-box[data-establishment-id="${establishmentId}"]`);
-    if (selectedBox) {
-        selectedBox.classList.add('active-cart');
-
-        // Store the active order ID
-        const firstItem = selectedBox.querySelector('.cart-item');
-        if (firstItem) {
-            window.activeOrderId = firstItem.dataset.orderId;
         }
 
-        // ✅ Always reset: show checkout button, hide payment options
-        const checkoutBtn = document.getElementById('initial-checkout-btn');
-        const paymentSection = document.getElementById('payment-method-section');
-        if (checkoutBtn) checkoutBtn.style.setProperty('display', 'flex', 'important');
-        if (paymentSection) paymentSection.style.setProperty('display', 'none', 'important');
+        window.rebuildOrderSummary();
+        // Re-evaluate checkout button after checkbox change
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+    };
 
-        // Update summary
-        updateOrderSummary(selectedBox);
-    }
-}
-window.selectEstablishment = selectEstablishment;
-
-// =======================================================
-// UPDATE ORDER SUMMARY
-// =======================================================
-function updateOrderSummary(cartBox) {
-    const establishmentName = cartBox.querySelector('.cart-establishment-info h2').textContent;
-    const items = cartBox.querySelectorAll('.cart-item');
-
-    let subtotal = 0;
-    let itemCount = 0;
-
-    items.forEach(item => {
-        // Only count checked items
-        const checkbox = item.querySelector('.item-checkbox');
-        if (checkbox && !checkbox.checked) return;
-
-        const priceText = item.querySelector('.item-subtotal').textContent;
-        const price = parseFloat(priceText.replace('₱', '').replace(',', ''));
-        const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-
-        subtotal += price;
-        itemCount += quantity;
+    // Rebuild summary when cart.js fires quantity update event
+    document.addEventListener('cart:quantityUpdated', function() {
+        window.rebuildOrderSummary();
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
     });
 
-    // Update summary display
-    const summaryContainer = document.querySelector('#active-order-summary');
-    const nameEl = summaryContainer.querySelector('.summary-establishment-name');
-    const countEl = summaryContainer.querySelector('.summary-item-count');
-    const subtotalEl = summaryContainer.querySelector('.summary-subtotal');
-    const totalEl = summaryContainer.querySelector('.grand-total-amount');
+    // ============================================================
+    // SEND ORDER REQUEST — only for CHECKED establishments/items
+    // Unchecked establishments and items stay in cart untouched
+    // ============================================================
+    window.sendOrderRequest = function() {
+        const btn = document.getElementById('initial-checkout-btn');
 
-    if (nameEl) nameEl.textContent = establishmentName;
-    if (countEl) countEl.textContent = `(${itemCount} items)`;
-    if (subtotalEl) subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
-    if (totalEl) totalEl.textContent = `₱${subtotal.toFixed(2)}`;
+        const estabBoxes   = document.querySelectorAll('.establishment-cart-box');
+        const ordersToSend = [];
 
-    // Show summary content
-    const instruction = summaryContainer.querySelector('.summary-instruction');
-    const content = summaryContainer.querySelector('.summary-content');
+        estabBoxes.forEach(function(box) {
+            const estabChk = box.querySelector('.estab-select-all');
+            if (!estabChk) return;
 
-    if (instruction) instruction.style.display = 'none';
-    if (content) content.style.display = 'block';
-}
-window.updateOrderSummary = updateOrderSummary;
+            const checkedItemChks = box.querySelectorAll('.item-checkbox:checked');
+            if (checkedItemChks.length === 0) return;
 
-// =======================================================
-// SEND ORDER REQUEST — checkbox-aware, multi-establishment
-// Only sends checked items. Unchecked items stay in cart.
-// =======================================================
-function sendOrderRequest() {
-    const btn = document.getElementById('initial-checkout-btn');
+            const orderId   = box.getAttribute('data-order-id');
+            const estabId   = box.getAttribute('data-establishment-id');
+            const estabName = box.querySelector('.cart-establishment-info h2')?.textContent?.trim() || '';
 
-    // Collect every establishment box that has at least one checked item
-    const estabBoxes   = document.querySelectorAll('.establishment-cart-box');
-    const ordersToSend = [];
+            const itemIds = [];
+            checkedItemChks.forEach(function(chk) {
+                const id = chk.getAttribute('data-item-id');
+                if (id) itemIds.push(id);
+            });
 
-    estabBoxes.forEach(function(box) {
-        const checkedItemChks = box.querySelectorAll('.item-checkbox:checked');
-        if (checkedItemChks.length === 0) return;
-
-        const orderId   = box.getAttribute('data-order-id');
-        const estabName = (box.querySelector('.cart-establishment-info h2') || {}).textContent || '';
-        const itemIds   = [];
-
-        checkedItemChks.forEach(function(chk) {
-            const id = chk.getAttribute('data-item-id');
-            if (id) itemIds.push(id);
+            if (orderId && itemIds.length > 0) {
+                ordersToSend.push({ orderId, estabId, estabName, itemIds, box });
+            }
         });
 
-        if (orderId && itemIds.length > 0) {
-            ordersToSend.push({ orderId, estabName: estabName.trim(), itemIds, box });
+        if (ordersToSend.length === 0) {
+            alert('Please check at least one establishment to place an order.');
+            return;
         }
-    });
 
-    if (ordersToSend.length === 0) {
-        showMessage('Please check at least one item to place an order.', 'warning');
-        return;
-    }
-
-    // ── Final stock check before submitting ────────────────────────────────
-    // Prevent sending if any checked item is out of stock or over-qty.
-    // (The button should already be disabled by _updateCheckoutButtonStockState,
-    // but this is a safety net in case the DOM state is inconsistent.)
-    let stockBlockMsg = '';
-    document.querySelectorAll('.item-checkbox:checked').forEach(function (chk) {
-        if (stockBlockMsg) return;
-        const itemId  = chk.getAttribute('data-item-id');
-        const cartRow = document.getElementById('cart-item-' + itemId);
-        if (!cartRow) return;
-        const maxStock   = parseInt(cartRow.dataset.maxStock || '999', 10);
-        const qtyEl      = cartRow.querySelector('.quantity-value');
-        const currentQty = qtyEl ? parseInt(qtyEl.textContent, 10) : 1;
-        const itemName   = (cartRow.querySelector('.item-name') || {}).textContent || 'An item';
-        if (maxStock <= 0) {
-            stockBlockMsg = `"${itemName.trim()}" is out of stock. Remove it or uncheck it before sending.`;
-        } else if (currentQty > maxStock) {
-            stockBlockMsg = `"${itemName.trim()}" only has ${maxStock} left. Please reduce the quantity.`;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
         }
-    });
-    if (stockBlockMsg) {
-        showMessage('⚠ ' + stockBlockMsg, 'error');
-        _updateCheckoutButtonStockState();
-        return;
-    }
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-    }
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                       || document.cookie.match(/csrftoken=([^;]+)/)?.[1]
+                       || '';
 
-    const csrfToken = getCookie('csrftoken');
-    let idx = 0;
-    const successBoxes = [];
+        const URL_SEND = "{% url 'create_cash_order' %}";
 
-    function sendNext() {
-        if (idx >= ordersToSend.length) {
-            // Remove only checked item rows; keep box if unchecked items remain
-            successBoxes.forEach(function(box) {
-                // Remove the checked item rows
-                box.querySelectorAll('.item-checkbox:checked').forEach(function(chk) {
-                    var row = chk.closest('.cart-item');
-                    if (row) row.remove();
-                });
-                // Only remove whole box if no items remain
-                var remaining = box.querySelectorAll('.cart-item');
-                if (remaining.length === 0) {
+        let idx = 0;
+        const successBoxes = [];
+
+        function sendNext() {
+            if (idx >= ordersToSend.length) {
+                // Animate out sent establishment boxes
+                successBoxes.forEach(function(box) {
                     box.style.transition = 'opacity 0.35s, transform 0.35s';
                     box.style.opacity    = '0';
                     box.style.transform  = 'translateX(30px)';
                     setTimeout(function() { box.remove(); }, 380);
-                }
-            });
+                });
 
-            setTimeout(function() {
-                if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-                const modal = document.getElementById('orderRequestModal');
-                if (modal) {
-                    modal.classList.add('open');
-                    document.body.style.overflow = 'hidden';
+                setTimeout(function() {
+                    window.rebuildOrderSummary();
+                    const modal = document.getElementById('orderRequestModal');
+                    if (modal) {
+                        modal.classList.add('open');
+                        document.body.style.overflow = 'hidden';
+                    }
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
+                    }
+                }, 400);
+                return;
+            }
+
+            const { orderId, itemIds, box, estabName } = ordersToSend[idx];
+            idx++;
+
+            const fd = new FormData();
+            fd.append('order_id', orderId);
+            itemIds.forEach(function(id) {
+                fd.append('selected_item_ids[]', id);
+            });
+            // No source param → defaults to 'cart' → status = 'request'
+
+            fetch(URL_SEND, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-CSRFToken': csrfToken },
+                credentials: 'same-origin'
+            })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.text().then(function(text) {
+                        let msg = 'Server error ' + r.status;
+                        try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
+                        throw new Error(msg);
+                    });
                 }
+                return r.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    successBoxes.push(box);
+                    sendNext();
+                } else {
+                    throw new Error(data.message || 'Failed to send order for ' + estabName);
+                }
+            })
+            .catch(function(err) {
+                console.error('Order request error:', err);
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
                 }
-            }, 400);
-            return;
-        }
-
-        const entry = ordersToSend[idx];
-        idx++;
-
-        const fd = new FormData();
-        fd.append('order_id', entry.orderId);
-        // Send ONLY the checked item IDs — backend creates a new order for these
-        // and leaves unchecked items in the original PENDING cart order untouched
-        entry.itemIds.forEach(function(id) { fd.append('selected_item_ids[]', id); });
-
-        fetch('/payment/create-cash-order/', {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-CSRFToken': csrfToken },
-            credentials: 'same-origin'
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                successBoxes.push(entry.box);
-                sendNext();
-            } else {
-                throw new Error(data.message || 'Failed to send order for ' + entry.estabName);
-            }
-        })
-        .catch(function(err) {
-            console.error('Order request error:', err);
-            showMessage('Error sending order for ' + entry.estabName + ': ' + err.message, 'error');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
-            }
-        });
-    }
-
-    sendNext();
-}
-window.sendOrderRequest = sendOrderRequest;
-
-function closeOrderRequestModal() {
-    const modal = document.getElementById('orderRequestModal');
-    if (modal) {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-}
-window.closeOrderRequestModal = closeOrderRequestModal;
-
-// Keep proceedToCheckout as legacy alias
-function proceedToCheckout() {
-    sendOrderRequest();
-}
-window.proceedToCheckout = proceedToCheckout;
-
-// =======================================================
-// ✅ NEW: PROCEED TO PAYMONGO (ONLINE PAYMENT)
-// =======================================================
-function proceedToPayMongoCheckout(button) {
-    if (!window.activeOrderId) {
-        showMessage('Please select an establishment to checkout', 'warning');
-        return;
-    }
-
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <div class="payment-method-info"><span class="payment-method-name">Loading...</span></div>';
-
-    // Redirect to custom KabsuEats checkout page
-    window.location.href = '/checkout/?order_id=' + window.activeOrderId;
-}
-window.proceedToPayMongoCheckout = proceedToPayMongoCheckout;
-
-// =======================================================
-// ✅ NEW: PROCEED TO CASH PAYMENT
-// =======================================================
-function proceedToCashPayment(button) {
-    if (!window.activeOrderId) {
-        showMessage('Please select an establishment to checkout', 'warning');
-        return;
-    }
-
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Order...';
-
-    const csrfToken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('order_id', window.activeOrderId);
-
-    fetch('/payment/create-cash-order/', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken },
-        credentials: 'same-origin'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Server error: ' + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showMessage('Order placed successfully!', 'success');
-            // Redirect to success page
-            setTimeout(() => {
-                window.location.href = '/payment/success/?order_id=' + window.activeOrderId + '&payment_method=cash';
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Failed to place order');
-        }
-    })
-    .catch(error => {
-        console.error('Cash Payment Error:', error);
-        showMessage('Error: ' + error.message, 'error');
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-money-bill-wave"></i><div class="payment-method-info"><span class="payment-method-name">Cash Payment</span><span class="payment-method-desc">Pay when you claim</span></div>';
-    });
-}
-window.proceedToCashPayment = proceedToCashPayment;
-
-// =======================================================
-// HELPER FUNCTION: Get CSRF Token
-// =======================================================
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// =======================================================
-// HELPER FUNCTION: Show Confirm Modal
-// =======================================================
-async function showConfirmModal(title, message, confirmText, cancelText) {
-    return new Promise((resolve) => {
-        if (typeof window.customConfirm === 'function') {
-            window.customConfirm(title, message, confirmText, cancelText, resolve);
-        } else {
-            resolve(confirm(message));
-        }
-    });
-}
-
-// =======================================================
-// HELPER FUNCTION: Show Message
-// =======================================================
-function showMessage(message, type = 'info') {
-    if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-    } else if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type);
-    } else {
-        alert(message);
-    }
-}
-
-// =======================================================
-// PAGE LOAD INITIALIZATION - REAL-TIME QUANTITY CONTROLS
-// =======================================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-select first establishment on page load
-    const firstCart = document.querySelector('.establishment-cart-box');
-    if (firstCart) {
-        const establishmentId = firstCart.dataset.establishmentId;
-        selectEstablishment(establishmentId);
-    }
-
-    // Make establishment boxes clickable
-    document.querySelectorAll('.establishment-cart-box').forEach(box => {
-        box.addEventListener('click', function(e) {
-            // Don't trigger if clicking buttons or controls
-            if (e.target.closest('.quantity-btn, .remove-item-btn, .clear-establishment-btn')) {
-                return;
-            }
-
-            const establishmentId = this.dataset.establishmentId;
-            selectEstablishment(establishmentId);
-        });
-    });
-
-    // ✅ REAL-TIME QUANTITY CONTROLS - Event Delegation
-    document.addEventListener('click', function(e) {
-        // Handle DECREASE button
-        if (e.target.closest('.btn-decrease')) {
-            const button = e.target.closest('.btn-decrease');
-            const itemId = button.dataset.itemId;
-            const cartItem = document.querySelector(`#cart-item-${itemId}`);
-            const quantityEl = cartItem.querySelector(`.quantity-value[data-item-id="${itemId}"]`);
-            const currentQty = parseInt(quantityEl.textContent);
-
-            if (currentQty > 1) {
-                updateQuantityRealTime(itemId, currentQty - 1);
-            }
-        }
-
-        // Handle INCREASE button
-        if (e.target.closest('.btn-increase')) {
-            const button = e.target.closest('.btn-increase');
-            const itemId = button.dataset.itemId;
-            const cartItem = document.querySelector(`#cart-item-${itemId}`);
-            // Use remaining-qty (accounts for existing request order) if available,
-            // otherwise fall back to max-stock
-            const remainingQty = parseInt(cartItem.dataset.remainingQty);
-            const maxStock     = parseInt(cartItem.dataset.maxStock);
-            const effectiveMax = !isNaN(remainingQty) ? remainingQty : maxStock;
-            const quantityEl   = cartItem.querySelector(`.quantity-value[data-item-id="${itemId}"]`);
-            const currentQty   = parseInt(quantityEl.textContent);
-
-            if (currentQty < effectiveMax) {
-                updateQuantityRealTime(itemId, currentQty + 1);
-            } else if (!isNaN(remainingQty) && remainingQty < maxStock) {
-                showMessage(
-                    `You already have ${maxStock - remainingQty} of this item in a pending order request. ` +
-                    `You can only add ${remainingQty} more.`,
-                    'warning'
-                );
-            }
-        }
-    });
-});
-
-console.log('✅ Multi-Establishment Cart JS with Payment Method Selection loaded successfully');
-
-// =======================================================
-// ✅ CHECKBOX LOGIC
-// =======================================================
-
-// Called when a single item checkbox changes
-function onItemCheckboxChange(checkbox) {
-    const cartItem = checkbox.closest('.cart-item');
-    if (cartItem) {
-        cartItem.classList.toggle('item-unchecked', !checkbox.checked);
-    }
-
-    const cartBox = checkbox.closest('.establishment-cart-box');
-    if (cartBox) {
-        updateEstabSelectAll(cartBox);
-        // Dim establishment box if all items unchecked
-        const anyChecked = cartBox.querySelectorAll('.item-checkbox:checked').length > 0;
-        cartBox.classList.toggle('estab-unchecked', !anyChecked);
-    }
-
-    // ✅ Rebuild full summary realtime — covers ALL establishments
-    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-}
-window.onItemCheckboxChange = onItemCheckboxChange;
-
-// Called when establishment "Select All" checkbox changes
-function toggleEstablishmentItems(selectAllCheckbox) {
-    const cartBox = selectAllCheckbox.closest('.establishment-cart-box');
-    if (!cartBox) return;
-
-    const checked = selectAllCheckbox.checked;
-
-    cartBox.querySelectorAll('.item-checkbox').forEach(function(cb) {
-        cb.checked = checked;
-        const cartItem = cb.closest('.cart-item');
-        if (cartItem) cartItem.classList.toggle('item-unchecked', !checked);
-    });
-
-    cartBox.classList.toggle('estab-unchecked', !checked);
-
-    // ✅ Rebuild full summary realtime — covers ALL establishments
-    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-}
-window.toggleEstablishmentItems = toggleEstablishmentItems;
-
-// Sync the "Select All" checkbox based on individual item states
-function updateEstabSelectAll(cartBox) {
-    const selectAll = cartBox.querySelector('.estab-select-all');
-    if (!selectAll) return;
-    const allBoxes = cartBox.querySelectorAll('.item-checkbox');
-    const checkedBoxes = cartBox.querySelectorAll('.item-checkbox:checked');
-    selectAll.checked = allBoxes.length === checkedBoxes.length;
-    selectAll.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length;
-}
-
-// Get only checked item IDs for the active cart (used by payment functions)
-function getCheckedItemIds() {
-    const activeBox = document.querySelector('.establishment-cart-box.active-cart');
-    if (!activeBox) return [];
-    const checked = activeBox.querySelectorAll('.item-checkbox:checked');
-    return Array.from(checked).map(cb => cb.dataset.itemId);
-}
-
-// ============================================================
-// ✅ REALTIME INVENTORY — WebSocket per establishment
-// Subscribes to each establishment cart box on the page.
-// When stock changes, warns user if their cart qty exceeds
-// new available stock and updates the max on qty controls.
-// ============================================================
-(function initCartInventoryWs() {
-    const cartInventoryWs = {};
-
-    function subscribeCart(estId) {
-        if (!estId || cartInventoryWs[estId]) return;
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        const ws = new WebSocket(`${proto}://${location.host}/ws/inventory/${estId}/`);
-
-        ws.onmessage = function (e) {
-            try {
-                const data = JSON.parse(e.data);
-                if (data.type === 'quantity_update') applyCartInventoryUpdate(data.updates);
-            } catch (_) {}
-        };
-        ws.onclose = function () {
-            delete cartInventoryWs[estId];
-            setTimeout(() => subscribeCart(estId), 3000);
-        };
-        ws.onerror = function () { ws.close(); };
-        cartInventoryWs[estId] = ws;
-    }
-
-    function applyCartInventoryUpdate(updates) {
-        updates.forEach(function ({ menu_item_id, new_quantity, deleted, item_name }) {
-
-            // ✅ Handle item deleted by owner — notify client and remove from cart
-            if (deleted === true) {
-                let found = false;
-                document.querySelectorAll('[id^="cart-item-"]').forEach(function (row) {
-                    const menuItemIdAttr = row.dataset.menuItemId
-                        ? parseInt(row.dataset.menuItemId, 10)
-                        : null;
-                    if (menuItemIdAttr !== menu_item_id) return;
-                    found = true;
-
-                    // Show toast notification
-                    const name = item_name || 'An item';
-                    showDeletedItemToast(name);
-
-                    // Visually mark row as deleted then fade out
-                    row.style.transition = 'opacity 0.4s, background 0.4s';
-                    row.style.background = '#fee2e2';
-                    row.style.opacity    = '0.5';
-                    row.style.pointerEvents = 'none';
-
-                    // Add "removed by owner" label
-                    let label = row.querySelector('.owner-deleted-label');
-                    if (!label) {
-                        label = document.createElement('div');
-                        label.className = 'owner-deleted-label';
-                        label.style.cssText = 'color:#991b1b;font-size:11.5px;font-weight:700;margin-top:4px;';
-                        label.innerHTML = '<i class="fas fa-ban"></i> Removed by establishment';
-                        const details = row.querySelector('.item-details');
-                        if (details) details.appendChild(label);
-                    }
-
-                    // Auto-remove from cart after 4s
-                    setTimeout(function () {
-                        const cartItemId = row.id.replace('cart-item-', '');
-                        fetch('/cart/remove/', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': getCsrfToken(),
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: 'cart_item_id=' + cartItemId,
-                            credentials: 'same-origin'
-                        }).then(function () {
-                            row.style.opacity = '0';
-                            setTimeout(function () {
-                                row.remove();
-                                // Reload if cart is now empty
-                                if (!document.querySelector('[id^="cart-item-"]')) {
-                                    window.location.reload();
-                                }
-                            }, 400);
-                        }).catch(function () {
-                            row.remove();
-                        });
-                    }, 4000);
-                });
-                return; // Don't process quantity update for deleted items
-            }
-
-            const newQty = parseInt(new_quantity, 10);
-
-            // Match rows via data-menu-item-id (set in cart.html template).
-            // Fall back to the legacy id-based scan for older cached HTML.
-            document.querySelectorAll('[id^="cart-item-"]').forEach(function (row) {
-                const menuItemIdAttr = row.dataset.menuItemId
-                    ? parseInt(row.dataset.menuItemId, 10)
-                    : null;
-
-                // Only process rows that belong to this menu item
-                if (menuItemIdAttr !== null && menuItemIdAttr !== menu_item_id) return;
-
-                const cartItemId = row.id.replace('cart-item-', '');
-                const increaseBtn = document.querySelector(`.btn-increase[data-item-id="${cartItemId}"]`);
-                const qtyEl       = document.querySelector(`.quantity-value[data-item-id="${cartItemId}"]`);
-
-                if (!increaseBtn || !qtyEl) return;
-
-                // Update the max-stock attribute and the visible "N available" count
-                row.dataset.maxStock = newQty;
-                const stockCountEl = row.querySelector('.stock-count');
-                if (stockCountEl) stockCountEl.textContent = newQty;
-
-                const currentCartQty = parseInt(qtyEl.textContent) || 1;
-
-                if (newQty <= 0) {
-                    // Out of stock — disable increase, dim row
-                    increaseBtn.disabled = true;
-                    increaseBtn.style.opacity = '0.4';
-                    row.style.opacity = '0.6';
-                    showCartStockWarning(row, 0);
-                } else if (currentCartQty > newQty) {
-                    // Cart qty exceeds new stock — clamp and warn
-                    increaseBtn.disabled = false;
-                    increaseBtn.style.opacity = '';
-                    row.style.opacity = '';
-                    updateQuantityRealTime(cartItemId, newQty);
-                    showCartStockWarning(row, newQty);
-                } else {
-                    // Sufficient stock — clear any warning
-                    increaseBtn.disabled = newQty <= currentCartQty;
-                    increaseBtn.style.opacity = '';
-                    row.style.opacity = '';
-                    clearCartStockWarning(row);
-                }
+                alert('Error sending order for ' + estabName + ': ' + err.message);
             });
+        }
+
+        sendNext();
+    };
+
+    // Close the order success modal
+    window.closeOrderRequestModal = function() {
+        const modal = document.getElementById('orderRequestModal');
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        window.location.reload();
+    };
+
+</script>
+<script src="{% static 'js/cart.js' %}"></script>
+
+<script>
+    // ── Re-hook cart.js quantity updates to refresh our summary ──
+    (function() {
+        const observer = new MutationObserver(function() {
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
         });
-    }
-
-    function showCartStockWarning(row, availableQty) {
-        // Update or create the warning chip
-        let warn = row.querySelector('.cart-stock-warn');
-        if (!warn) {
-            warn = document.createElement('div');
-            warn.className = 'cart-stock-warn';
-            warn.style.cssText = [
-                'display:inline-flex', 'align-items:center', 'gap:5px',
-                'font-size:11.5px', 'font-weight:700', 'padding:3px 9px',
-                'border-radius:6px', 'margin-top:5px',
-            ].join(';');
-            const detailsEl = row.querySelector('.item-details');
-            if (detailsEl) detailsEl.appendChild(warn);
-            else row.appendChild(warn);
-        }
-        if (availableQty <= 0) {
-            warn.style.background = '#FEE2E2';
-            warn.style.color      = '#991B1B';
-            warn.style.border     = '1px solid #FECACA';
-            warn.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
-        } else {
-            warn.style.background = '#FEF3C7';
-            warn.style.color      = '#92400E';
-            warn.style.border     = '1px solid #FDE68A';
-            warn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${availableQty} left`;
-        }
-
-        // Turn the "N available" line red/amber so it's immediately obvious
-        const stockLine = row.querySelector('.item-stock');
-        if (stockLine) {
-            stockLine.style.color = availableQty <= 0 ? '#991B1B' : '#92400E';
-        }
-
-        // After any stock change, re-evaluate the checkout button state
-        _updateCheckoutButtonStockState();
-    }
-
-    function clearCartStockWarning(row) {
-        const warn = row.querySelector('.cart-stock-warn');
-        if (warn) warn.remove();
-
-        // Restore "N available" line to its original green colour
-        const stockLine = row.querySelector('.item-stock');
-        if (stockLine) stockLine.style.color = '';
-
-        // Re-evaluate checkout button — might be clearable now
-        _updateCheckoutButtonStockState();
-    }
-
-    // ── Evaluate all checked items for stock issues ──────────────────────────
-    // Disables the Send Order Request button and shows a banner if any checked
-    // item is out of stock or has fewer units available than the cart quantity.
-    function _updateCheckoutButtonStockState() {
-        const btn = document.getElementById('initial-checkout-btn');
-        if (!btn) return;
-
-        // Only scan checked items
-        let hasIssue = false;
-        let issueMsg = '';
-
-        document.querySelectorAll('.item-checkbox:checked').forEach(function (chk) {
-            const itemId  = chk.getAttribute('data-item-id');
-            const cartRow = document.getElementById('cart-item-' + itemId);
-            if (!cartRow) return;
-            const maxStock      = parseInt(cartRow.dataset.maxStock || '999', 10);
-            const qtyEl         = cartRow.querySelector('.quantity-value');
-            const currentQty    = qtyEl ? parseInt(qtyEl.textContent, 10) : 1;
-            const itemName      = (cartRow.querySelector('.item-name') || {}).textContent || 'An item';
-
-            if (maxStock <= 0) {
-                hasIssue = true;
-                issueMsg = issueMsg || `"${itemName.trim()}" is out of stock — remove it or uncheck it to continue.`;
-            } else if (currentQty > maxStock) {
-                hasIssue = true;
-                issueMsg = issueMsg || `"${itemName.trim()}" only has ${maxStock} left — adjust the quantity.`;
-            }
+        document.querySelectorAll('.quantity-value').forEach(function(el) {
+            observer.observe(el, { childList: true, characterData: true, subtree: true });
         });
 
-        // Update or create the global stock warning banner above the button
-        const footer = document.getElementById('summary-footer');
-        if (footer) {
-            let banner = document.getElementById('cart-global-stock-banner');
-            if (hasIssue) {
-                if (!banner) {
-                    banner = document.createElement('div');
-                    banner.id = 'cart-global-stock-banner';
-                    banner.style.cssText = [
-                        'background:#FEF2F2', 'border:1.5px solid #FECACA',
-                        'border-radius:8px', 'padding:9px 13px', 'margin-bottom:10px',
-                        'font-size:12px', 'color:#7F1D1D', 'font-weight:600',
-                        'display:flex', 'align-items:flex-start', 'gap:7px',
-                    ].join(';');
-                    // Insert above the checkout button
-                    btn.before(banner);
-                }
-                banner.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-top:2px;flex-shrink:0;"></i><span>' + issueMsg + '</span>';
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor  = 'not-allowed';
-                btn.title = 'Resolve stock issues before sending order';
-            } else {
-                if (banner) banner.remove();
-                btn.disabled = false;
-                btn.style.opacity = '';
-                btn.style.cursor  = '';
-                btn.title = '';
-            }
-        }
-    }
-    // Expose so cart.html inline code can call it after checkbox changes
-    window._updateCheckoutButtonStockState = _updateCheckoutButtonStockState;
-
-    // Subscribe to all establishment cart boxes present on the page
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.establishment-cart-box[data-establishment-id]').forEach(function (box) {
-            subscribeCart(box.dataset.establishmentId);
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-decrease, .btn-increase');
+            if (!btn) return;
+            setTimeout(function() {
+                if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            }, 500);
         });
-    });
-})();
-
-// ✅ Show toast when owner deletes a cart item
-function showDeletedItemToast(itemName) {
-    const existing = document.getElementById('ownerDeletedToast');
-    if (existing) existing.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'ownerDeletedToast';
-    toast.style.cssText = [
-        'position:fixed', 'top:80px', 'right:20px', 'z-index:99999',
-        'background:#fff', 'border-left:4px solid #dc2626',
-        'border-radius:12px', 'padding:14px 18px',
-        'box-shadow:0 4px 20px rgba(0,0,0,0.15)',
-        'display:flex', 'align-items:center', 'gap:12px',
-        'font-family:Poppins,sans-serif', 'max-width:360px',
-        'animation:slideInRight 0.3s ease-out'
-    ].join(';');
-    toast.innerHTML = `
-        <i class="fas fa-exclamation-circle" style="color:#dc2626;font-size:20px;flex-shrink:0;"></i>
-        <div style="flex:1;">
-            <div style="font-size:13px;font-weight:700;color:#111;">Item Removed by Establishment</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:2px;">"${itemName}" is no longer available and will be removed from your cart.</div>
-        </div>
-        <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;">×</button>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(function () {
-        if (toast.parentElement) {
-            toast.style.animation = 'slideInRight 0.3s ease-out reverse';
-            setTimeout(function () { toast.remove(); }, 300);
-        }
-    }, 6000);
-}
+    })();
+</script>
+{% endblock %}

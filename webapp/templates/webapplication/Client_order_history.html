@@ -2100,6 +2100,65 @@
                         const stockMap = {};
                         d.updates.forEach(function (upd) { stockMap[upd.menu_item_id] = upd.new_quantity; });
 
+                        // ✅ Handle item deleted by owner — notify client in realtime
+                        d.updates.forEach(function (upd) {
+                            if (!upd.deleted) return;
+                            const deletedMenuItemId = upd.menu_item_id;
+                            const deletedItemName   = upd.item_name || 'An item';
+
+                            // Show toast notification
+                            showOrderToast(
+                                '⚠️ "' + deletedItemName + '" was removed by the establishment. ' +
+                                'Your order request has been updated.',
+                                'warning'
+                            );
+
+                            // Update allOrders in-memory — remove deleted item from order items
+                            allOrders.forEach(function (order) {
+                                if (order.status !== 'request' && order.status !== 'to_pay' && order.status !== 'PENDING') return;
+                                const before = (order.items || []).length;
+                                order.items = (order.items || []).filter(function (i) {
+                                    return i.menu_item_id !== deletedMenuItemId;
+                                });
+                                if (order.items.length === before) return; // item not in this order
+
+                                // Find the item row in the DOM and mark it as deleted
+                                const orderRow = document.querySelector('tr.order-row[data-id="' + order.id + '"]');
+                                if (orderRow) {
+                                    const lines = orderRow.querySelectorAll('.tbl-item-line');
+                                    lines.forEach(function (line) {
+                                        const nameEl = line.querySelector('strong');
+                                        if (!nameEl) return;
+                                        if (nameEl.textContent.trim() === deletedItemName) {
+                                            // Strike through and mark deleted
+                                            line.style.opacity = '0.5';
+                                            line.style.textDecoration = 'line-through';
+                                            // Remove existing chips
+                                            line.querySelectorAll('.stock-warn-chip').forEach(function (el) { el.remove(); });
+                                            // Add "Removed" chip
+                                            const chip = document.createElement('span');
+                                            chip.className = 'stock-warn-chip out';
+                                            chip.style.marginLeft = '6px';
+                                            chip.innerHTML = '<i class="fas fa-ban"></i> Removed by establishment';
+                                            line.appendChild(chip);
+                                        }
+                                    });
+                                }
+
+                                // Recalculate total for this order
+                                const newTotal = (order.items || []).reduce(function (sum, i) {
+                                    return sum + (parseFloat(i.price) * parseInt(i.quantity));
+                                }, 0);
+
+                                // Update total cell in DOM
+                                const orderRowForTotal = document.querySelector('tr.order-row[data-id="' + order.id + '"]');
+                                if (orderRowForTotal && order.items.length > 0) {
+                                    const totalEl = orderRowForTotal.querySelector('.tbl-total');
+                                    if (totalEl) totalEl.textContent = '₱' + newTotal.toFixed(2);
+                                }
+                            });
+                        });
+
                         allOrders.forEach(function (order) {
                             // Update chips for both request and to_pay orders
                             if (order.status !== 'to_pay' && order.status !== 'PENDING' && order.status !== 'request') return;

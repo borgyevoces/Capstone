@@ -3097,7 +3097,7 @@
         <div class="profile-modal-body">
             <!-- Profile Image -->
             <div class="profile-image-section">
-                <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                <img src="{% if establishment.image %}{{ establishment.image.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='180' viewBox='0 0 400 180'%3E%3Crect width='400' height='180' fill='%23f3f4f6'/%3E%3Ctext x='200' y='100' text-anchor='middle' fill='%23d1d5db' font-size='48' font-family='sans-serif'%3E%F0%9F%8F%AA%3C/text%3E%3C/svg%3E{% endif %}"
                      alt="{{ establishment.name }}"
                      class="profile-modal-image">
             </div>
@@ -3537,7 +3537,7 @@
                      data-item-quantity="{{ item.quantity|default:0 }}"
                      data-item-image-url="{% if item.image %}{{ item.image.url }}{% endif %}">
                     <div class="menu-image">
-                        <img src="{% if item.image %}{{ item.image.url }}{% else %}{% static 'images/default_menu_item.png' %}{% endif %}"
+                        <img src="{% if item.image %}{{ item.image.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E{% endif %}"
                              alt="{{ item.name }}">
                         <div class="badges-container">
                             {% if item.is_top_seller %}

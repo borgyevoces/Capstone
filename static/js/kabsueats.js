@@ -464,7 +464,7 @@ function renderBS(data, isSearchResult = false) {
 
     track.innerHTML = data.map(d => {
         const st = (d.establishment.status || 'closed').toLowerCase();
-        const imgSrc = d.image || 'https://via.placeholder.com/280x180?text=' + encodeURIComponent(d.name);
+        const imgSrc = d.image || 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E';
         const estImg = EST_IMG_MAP[d.establishment.id] || '';
         const estIconHtml = estImg
             ? `<img src="${estImg}" alt="${escHtml(d.establishment.name)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-utensils\\'></i>'">`
@@ -480,7 +480,7 @@ function renderBS(data, isSearchResult = false) {
         <div class="bsc" onclick="openMod(${d.id})">
             <div class="bsc-img">
                 <img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/280x180?text=Food'">
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E'">
                 ${badgeHtml}
             </div>
             <div class="bsc-body">
@@ -1711,7 +1711,7 @@ function openMod(id) {
     if (!d) return;
 
     currentModalItem = d;
-    const imgSrc = d.image || 'https://via.placeholder.com/400x380?text=' + encodeURIComponent(d.name);
+    const imgSrc = d.image || 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E';
     document.getElementById('mImg').src = imgSrc;
 
     // Show/hide Best Seller badge on modal
