@@ -710,6 +710,88 @@ function initStep2() {
     const lat = sessionStorage.getItem('latitude');
     const lng = sessionStorage.getItem('longitude');
 
+    // ============================================================
+    // SAVE STEP 2 DRAFT — real-time save to sessionStorage
+    // ============================================================
+    function saveDraft() {
+        const selectedCategories = Array.from(form.querySelectorAll('input[name="categories"]:checked'))
+            .map(el => el.value);
+        const selectedAmenities = Array.from(form.querySelectorAll('input[name="amenities"]:checked'))
+            .map(el => el.value);
+        const selectedPayments = Array.from(form.querySelectorAll('input[name="payment_methods"]:checked'))
+            .map(el => el.value);
+
+        const draft = {
+            name: form.querySelector('#name').value,
+            opening_time: form.querySelector('#opening_time').value,
+            closing_time: form.querySelector('#closing_time').value,
+            categories: selectedCategories,
+            amenities: selectedAmenities,
+            paymentMethods: selectedPayments,
+            other_category_text: document.getElementById('other_category_text')?.value || '',
+            other_amenity_text: document.getElementById('other_amenity_text')?.value || '',
+        };
+        sessionStorage.setItem('step2Draft', JSON.stringify(draft));
+    }
+
+    // ============================================================
+    // RESTORE STEP 2 DRAFT — called on page load
+    // ============================================================
+    function restoreDraft() {
+        const saved = sessionStorage.getItem('step2Draft');
+        if (!saved) return;
+        const draft = JSON.parse(saved);
+
+        // Text fields
+        if (draft.name) form.querySelector('#name').value = draft.name;
+        if (draft.opening_time) form.querySelector('#opening_time').value = draft.opening_time;
+        if (draft.closing_time) form.querySelector('#closing_time').value = draft.closing_time;
+
+        // Categories checkboxes
+        if (draft.categories) {
+            draft.categories.forEach(val => {
+                const cb = form.querySelector(`input[name="categories"][value="${val}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+
+        // "Other" category text
+        const categoryOtherCb = document.getElementById('category_other');
+        if (categoryOtherCb && categoryOtherCb.checked) {
+            const otherContainer = document.getElementById('other-category-container');
+            const otherInput = document.getElementById('other_category_text');
+            if (otherContainer) otherContainer.classList.add('show');
+            if (otherInput && draft.other_category_text) otherInput.value = draft.other_category_text;
+        }
+
+        // Amenities checkboxes
+        if (draft.amenities) {
+            draft.amenities.forEach(val => {
+                const cb = form.querySelector(`input[name="amenities"][value="${val}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+
+        // "Other" amenity text
+        const amenityOtherCb = document.getElementById('amenity_other');
+        if (amenityOtherCb && amenityOtherCb.checked) {
+            const otherContainer = document.getElementById('other-amenity-container');
+            const otherInput = document.getElementById('other_amenity_text');
+            if (otherContainer) otherContainer.classList.add('show');
+            if (otherInput && draft.other_amenity_text) otherInput.value = draft.other_amenity_text;
+        }
+
+        // Payment methods checkboxes
+        if (draft.paymentMethods) {
+            draft.paymentMethods.forEach(val => {
+                const cb = form.querySelector(`input[name="payment_methods"][value="${val}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+
+        // Note: image cannot be restored from sessionStorage for security reasons
+    }
+
     // Fetch and auto-fill address from coordinates
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
         .then(res => res.json())
@@ -876,6 +958,14 @@ function initStep2() {
     form.addEventListener('input', validateForm);
     form.addEventListener('change', validateForm);
 
+    // ✅ Save draft on every change
+    form.addEventListener('input', saveDraft);
+    form.addEventListener('change', saveDraft);
+
+    // ✅ Restore draft on page load (back button / refresh)
+    restoreDraft();
+    validateForm();
+
     // ============================================================
     // BACK BUTTON
     // ============================================================
@@ -933,6 +1023,8 @@ function initStep2() {
 
         // Handle image upload
         const fileInput = document.getElementById('establishment_image');
+
+    // ✅ Save draft before proceeding to Step 3
         if (fileInput.files.length > 0) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -948,9 +1040,6 @@ function initStep2() {
             alert('⚠️ Please upload your establishment image.');
         }
     });
-
-    // Initial validation
-    validateForm();
 }
 
 /* ============================================================
@@ -988,6 +1077,41 @@ function initStep3() {
     let resendInterval = null;
 
     function validateInputs() {
+        const emailVal = emailInput.value.trim();
+        const emailErrEl = document.getElementById('email-error-msg');
+        const passErrEl = document.getElementById('password-error-msg');
+        const retypeErrEl = document.getElementById('retype-error-msg');
+
+        // Reset email border on typing
+        emailInput.style.borderColor = '';
+
+        // --- Email validation ---
+        let emailError = '';
+        if (emailVal === '') {
+            emailError = ''; // Huwag mag-show ng error kung blangko pa lang
+        } else if (!emailVal.includes('@')) {
+            emailError = '❌ Missing "@" symbol (e.g. juan@gmail.com)';
+        } else if (emailVal.endsWith('@')) {
+            emailError = '❌ Please enter a domain after "@" (e.g. @gmail.com)';
+        } else if (!emailInput.validity.valid) {
+            emailError = '❌ Invalid email format (e.g. juan@gmail.com)';
+        }
+        if (emailErrEl) emailErrEl.textContent = emailError;
+
+        // --- Password validation ---
+        let passwordError = '';
+        if (passwordInput.value.length > 0 && passwordInput.value.length < 8) {
+            passwordError = '❌ Password must be at least 8 characters';
+        }
+        if (passErrEl) passErrEl.textContent = passwordError;
+
+        // --- Retype password validation ---
+        let retypeError = '';
+        if (retypeInput.value.length > 0 && passwordInput.value !== retypeInput.value) {
+            retypeError = '❌ Passwords do not match';
+        }
+        if (retypeErrEl) retypeErrEl.textContent = retypeError;
+
         const ok = passwordInput.value.length >= 8 &&
                    passwordInput.value === retypeInput.value &&
                    emailInput.validity.valid;
@@ -1013,10 +1137,11 @@ function initStep3() {
                 otpTimer.textContent = '0:00';
                 otpTimer.style.color = '#dc2626';
                 otpTimerLabel.textContent = 'OTP expired!';
-                otpTimerContainer.style.background = '#fee2e2';
+                otpTimerContainer.style.background = '';
                 otpError.textContent = 'OTP has expired. Please request a new one.';
                 document.getElementById('verify-otp-btn').disabled = true;
                 resendOtpBtn.disabled = false;
+                resendOtpBtn.style.color = '#e53935';
                 return;
             }
 
@@ -1027,7 +1152,6 @@ function initStep3() {
             // Change color to orange when less than 2 minutes
             if (remaining < 120000) {
                 otpTimer.style.color = '#f59e0b';
-                otpTimerContainer.style.background = '#fef3c7';
             }
         }, 1000);
     }
@@ -1089,7 +1213,17 @@ function initStep3() {
                 otpTimerLabel.textContent = 'OTP expires in:';
                 otpTimerContainer.style.background = '#f0f9ff';
             } else {
-                alert('Failed to send OTP: ' + (data.error || 'Unknown error'));
+                // ✅ Show inline error under email field instead of alert
+                const emailErrEl = document.getElementById('email-error-msg');
+                const errorMsg = data.error || 'Failed to send OTP. Please try again.';
+                if (emailErrEl) {
+                    emailErrEl.textContent = '❌ ' + errorMsg;
+                    // Highlight the email input
+                    emailInput.style.borderColor = '#e53935';
+                    emailInput.focus();
+                } else {
+                    alert(errorMsg);
+                }
                 console.error('Failed to send OTP:', data.error);
             }
         })
@@ -1164,6 +1298,30 @@ function initStep3() {
         if (e.target === successModal) successModal.style.display = 'none';
     });
 
+    // ✅ X button — close modal, stop timers, keep Step 1 & 2 data intact
+    const closeOtpBtn = document.getElementById('close-otp-modal-btn');
+    if (closeOtpBtn) {
+        closeOtpBtn.addEventListener('click', () => {
+            // Stop timers
+            if (timerInterval) clearInterval(timerInterval);
+            if (resendInterval) clearInterval(resendInterval);
+
+            // Hide modal and reset OTP fields
+            otpModal.style.display = 'none';
+            document.getElementById('otp-input').value = '';
+            otpError.textContent = '';
+            otpTimer.textContent = '10:00';
+            otpTimer.style.color = '#e53935';
+            otpTimerLabel.textContent = 'Expires in';
+            document.getElementById('verify-otp-btn').disabled = false;
+            resendOtpBtn.disabled = true;
+            resendCountdown.textContent = '';
+
+            // NOTE: latitude, longitude, step2Draft, establishmentDetails
+            // are intentionally NOT cleared — Step 1 & 2 data stays safe.
+        });
+    }
+
     // ✅ OTP Form Submission (with CSRF)
     otpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1211,8 +1369,7 @@ function initStep3() {
             if (timerInterval) clearInterval(timerInterval);
             if (resendInterval) clearInterval(resendInterval);
 
-            sessionStorage.clear();
-            otpModal.style.display = 'none';
+            sessionStorage.clear(); // clears step2Draft, step3Credentials, establishmentDetails, etc.            otpModal.style.display = 'none';
             successModal.style.display = 'flex';
             setTimeout(() => window.location.href = result.redirect_url, 2000);
         } catch (err) {

@@ -2705,6 +2705,14 @@ def send_otp(request):
         if not re.match(email_pattern, email):
             return JsonResponse({'error': 'Invalid email format'}, status=400)
 
+        # ✅ CHECK IF EMAIL IS ALREADY REGISTERED
+        User = get_user_model()
+        if User.objects.filter(email__iexact=email).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'This email is already registered. Please use a different email or login instead.'
+            }, status=400)
+
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999)).zfill(6)
 
