@@ -1,0 +1,740 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+
+{% block title %}My Receipts — KabsuEats{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page ── */
+.rp-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 28px 18px 80px;
+}
+
+/* ── Header ── */
+.rp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.rp-header-left h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0a0a0a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 3px;
+}
+.rp-header-left h1 i { color: #16a34a; font-size: 1.3rem; }
+.rp-header-left p { font-size: 0.85rem; color: #6b7280; }
+
+/* ── Order receipt card ── */
+.rp-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.rp-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); }
+
+/* Card header */
+.rp-card-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #fafbfc;
+    border-bottom: 1px solid #f1f3f5;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.rp-card-hd-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.rp-order-num {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #B71C1C;
+}
+.rp-date {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.rp-status-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.rp-status-badge.request       { background:#fef9c3;color:#92400e; }
+.rp-status-badge.to_pay        { background:#fee2e2;color:#991b1b; }
+.rp-status-badge.preparing,
+.rp-status-badge.order_received { background:#dbeafe;color:#1e40af; }
+.rp-status-badge.to_claim      { background:#e9d5ff;color:#6b21a8; }
+.rp-status-badge.completed     { background:#d1fae5;color:#065f46; }
+
+.rp-view-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.rp-view-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+
+/* Card body */
+.rp-card-body {
+    padding: 16px 20px;
+}
+.rp-estab-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f3f5;
+}
+.rp-estab-img {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.rp-estab-ph {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    background: #f1f3f5;
+    display: flex; align-items: center; justify-content: center;
+    color: #9ca3af; font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.rp-estab-name { font-weight: 700; font-size: 0.9rem; color: #0a0a0a; }
+.rp-estab-addr { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+
+/* Items list */
+.rp-items { display: flex; flex-direction: column; gap: 6px; }
+.rp-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.84rem;
+    color: #374151;
+}
+.rp-item-name { font-weight: 500; }
+.rp-item-price { font-weight: 700; color: #B71C1C; }
+
+/* Total row */
+.rp-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #e5e7eb;
+}
+.rp-total-label { font-size: 0.85rem; font-weight: 600; color: #374151; }
+.rp-total-amt   { font-size: 1.1rem; font-weight: 800; color: #B71C1C; }
+
+/* ── Empty state ── */
+.rp-empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: #9ca3af;
+}
+.rp-empty i { font-size: 3rem; display: block; margin-bottom: 14px; opacity: 0.25; }
+.rp-empty h3 { font-size: 1.1rem; font-weight: 700; color: #374151; margin-bottom: 6px; }
+.rp-empty p  { font-size: 0.85rem; }
+
+/* ══════════════════════════════════════════
+   RECEIPT MODAL — Redesigned, fit, no-scroll
+══════════════════════════════════════════ */
+.rm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.6); z-index: 99999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(6px); padding: 16px;
+}
+.rm-overlay.open { display: flex; }
+
+.rm-modal {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%; max-width: 360px;
+    overflow: hidden;
+    box-shadow: 0 28px 70px rgba(0,0,0,.32);
+    animation: rmIn .24s cubic-bezier(.34,1.35,.64,1);
+}
+@keyframes rmIn {
+    from { transform:scale(.88) translateY(16px); opacity:0; }
+    to   { transform:scale(1) translateY(0); opacity:1; }
+}
+
+/* ── Top header band ── */
+.rm-header-strip {
+    background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
+    padding: 14px 18px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.rm-logo {
+    font-size: 0.9rem; font-weight: 800; color: #fff;
+    display: flex; align-items: center; gap: 6px; letter-spacing: .2px;
+}
+.rm-logo i { font-size: 0.85rem; opacity:.9; }
+.rm-status-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,.2); color: #fff;
+    border: 1px solid rgba(255,255,255,.4); border-radius: 20px;
+    padding: 3px 10px; font-size: 0.62rem; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+}
+.rm-status-chip i { font-size: 5px; }
+
+/* ── Ticket body ── */
+.rm-body { padding: 14px 18px 0; }
+
+/* Title */
+.rm-title-row {
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed #e5e7eb;
+    margin-bottom: 10px;
+}
+.rm-title { font-size: 1rem; font-weight: 800; color: #111; margin: 0 0 3px; }
+.rm-id    { font-size: 0.68rem; color: #aaa; letter-spacing: .1px; }
+
+/* Info rows — two-col grid */
+.rm-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+}
+.rm-row { display: contents; }
+.rm-row-lbl {
+    background: #fafafa;
+    color: #9ca3af; font-weight: 600; font-size: 0.67rem;
+    padding: 5px 10px 5px 10px; white-space: nowrap;
+    border-bottom: 1px solid #f0f0f0; line-height: 1.3;
+}
+.rm-row-val {
+    background: #fff;
+    font-weight: 600; color: #1a1a1a; font-size: 0.67rem;
+    padding: 5px 10px; text-align: right;
+    border-bottom: 1px solid #f0f0f0;
+    line-height: 1.3; word-break: break-word;
+}
+.rm-row:last-child .rm-row-lbl,
+.rm-row:last-child .rm-row-val { border-bottom: none; }
+
+/* Items section */
+.rm-items-hd {
+    font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; color: #bbb;
+    padding: 8px 0 4px; border-top: 2px dashed #e5e7eb;
+}
+.rm-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 3px 0; font-size: 0.72rem;
+}
+.rm-item-name  { color: #374151; font-weight: 500; }
+.rm-item-price { color: #B71C1C; font-weight: 700; }
+
+/* Total */
+.rm-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; margin-top: 8px;
+    background: #fff8f8; border-radius: 10px;
+    border: 1px solid #fde8e8;
+}
+.rm-total-lbl { font-size: 0.75rem; font-weight: 700; color: #374151; }
+.rm-total-amt { font-size: 1.05rem; font-weight: 800; color: #B71C1C; }
+
+/* Footer */
+.rm-footer {
+    text-align: center; padding: 8px 4px 12px;
+    margin-top: 8px;
+    font-size: 0.6rem; color: #bbb; line-height: 1.5;
+}
+.rm-footer-icon { font-size: 0.8rem; display: block; margin-bottom: 2px; }
+
+/* Actions */
+.rm-actions { display: flex; gap: 8px; padding: 0 14px 14px; }
+.rm-close {
+    flex: 1; padding: 9px 12px; background: #f3f4f6; color: #374151;
+    border: none; border-radius: 10px; font-weight: 600; font-size: 0.75rem;
+    cursor: pointer; transition: all .15s; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.rm-close:hover { background: #fee2e2; color: #B71C1C; }
+.rm-download {
+    flex: 2; padding: 9px 12px;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+    transition: opacity .15s; font-family: inherit;
+    box-shadow: 0 3px 10px rgba(22,163,74,.3);
+}
+.rm-download:hover { opacity: .88; }
+.rm-download:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rp-page">
+
+    <!-- Header -->
+    <div class="rp-header">
+        <div class="rp-header-left">
+            <h1><i class="fas fa-receipt"></i> My Receipts</h1>
+            <p>View and print receipts for all your orders</p>
+        </div>
+    </div>
+
+    <!-- Orders list -->
+    <div id="rpList">
+        {% if orders %}
+            {% for order in orders %}
+            <div class="rp-card" data-status="{{ order.status }}">
+
+                <!-- Card header -->
+                <div class="rp-card-hd">
+                    <div class="rp-card-hd-left">
+                        <div>
+                            <div class="rp-order-num">#{{ order.id }}</div>
+                            <div class="rp-date">
+                                <i class="fas fa-calendar-alt"></i>
+                                {{ order.created_at }}
+                            </div>
+                        </div>
+                        <span class="rp-status-badge {{ order.status }}">
+                            {{ order.status_label }}
+                        </span>
+                    </div>
+                    <button class="rp-view-btn"
+                            data-idx="{{ forloop.counter0 }}"
+                            onclick="openReceiptModal(parseInt(this.dataset.idx))">
+                        <i class="fas fa-receipt"></i> View Receipt
+                    </button>
+                </div>
+
+                <!-- Card body -->
+                <div class="rp-card-body">
+                    <!-- Establishment -->
+                    <div class="rp-estab-row">
+                        {% if order.establishment.image %}
+                            <img src="{{ order.establishment.image }}" class="rp-estab-img" alt="{{ order.establishment.name }}">
+                        {% else %}
+                            <div class="rp-estab-ph"><i class="fas fa-store"></i></div>
+                        {% endif %}
+                        <div>
+                            <div class="rp-estab-name">{{ order.establishment.name }}</div>
+                            {% if order.establishment.address %}
+                            <div class="rp-estab-addr">
+                                <i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>
+                                {{ order.establishment.address }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Items -->
+                    <div class="rp-items">
+                        {% for item in order.items %}
+                        <div class="rp-item">
+                            <span class="rp-item-name">{{ item.name }} × {{ item.quantity }}</span>
+                            <span class="rp-item-price">₱{{ item.subtotal|floatformat:2 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Total -->
+                    <div class="rp-total-row">
+                        <span class="rp-total-label">
+                            <i class="fas fa-wallet" style="color:#6b7280;margin-right:5px;"></i>
+                            {{ order.payment_method }}
+                        </span>
+                        <span class="rp-total-amt">₱{{ order.total_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="rp-empty">
+                <i class="fas fa-receipt"></i>
+                <h3>No receipts yet</h3>
+                <p>Your order receipts will appear here once you place an order.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Receipt Modal -->
+<div class="rm-overlay" id="rmOverlay" onclick="if(event.target===this)closeReceiptModal()">
+    <div class="rm-modal">
+        <div id="rmTicket"></div>
+        <div class="rm-actions">
+            <button class="rm-close" onclick="closeReceiptModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+            <button class="rm-download" id="rmDownloadBtn" onclick="downloadReceiptPDF()">
+                <i class="fas fa-download"></i> Download PDF
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ── Static order data (for order IDs) ─────────────────────────────────────
+const ORDERS_STATIC = {{ orders_json|safe }};
+
+// ── Open receipt modal — fetches REALTIME data from API ───────────────────
+function openReceiptModal(idx) {
+    const staticOrder = ORDERS_STATIC[idx];
+    if (!staticOrder) return;
+
+    const overlay = document.getElementById('rmOverlay');
+    const ticket  = document.getElementById('rmTicket');
+
+    // Show loading state immediately
+    ticket.innerHTML = `
+        <div style="text-align:center;padding:48px 24px;color:#9ca3af;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:12px;"></i>
+            <div style="font-size:.9rem;">Loading receipt...</div>
+        </div>`;
+    overlay.classList.add('open');
+
+    // Fetch realtime data from API
+    fetch('/api/order/' + staticOrder.id + '/')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success || !data.order) {
+                renderReceiptFromStatic(staticOrder);
+                return;
+            }
+            renderReceipt(data.order, staticOrder);
+        })
+        .catch(function() {
+            // Fallback to static data on network error
+            renderReceiptFromStatic(staticOrder);
+        });
+}
+
+// ── Render receipt from API data ──────────────────────────────────────────
+function renderReceipt(apiOrder, staticOrder) {
+    const statusColors = {
+        completed:      { bg:'#d1fae5', color:'#065f46' },
+        preparing:      { bg:'#dbeafe', color:'#1e40af' },
+        order_received: { bg:'#dbeafe', color:'#1e40af' },
+        to_claim:       { bg:'#e9d5ff', color:'#6b21a8' },
+        request:        { bg:'#fef9c3', color:'#92400e' },
+        to_pay:         { bg:'#fee2e2', color:'#991b1b' },
+    };
+
+    const status    = (apiOrder.status || staticOrder.status || '').toLowerCase();
+    const sc        = statusColors[status] || { bg:'#f1f3f5', color:'#374151' };
+    const statusLbl = staticOrder.status_label || status;
+
+    // Items from API
+    const items    = apiOrder.items || staticOrder.items || [];
+    const itemsHtml = items.map(function(item) {
+        const name     = esc(item.name || '');
+        const qty      = item.quantity || 1;
+        const subtotal = parseFloat(item.total_price || item.subtotal || 0).toFixed(2);
+        return `<div class="rm-item-row">
+            <span class="rm-item-name">${name} &times; ${qty}</span>
+            <span class="rm-item-price">&#8369;${subtotal}</span>
+        </div>`;
+    }).join('');
+
+    const total      = parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0).toFixed(2);
+    const estabName  = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
+    const payment    = staticOrder.payment_method || 'Cash on Pickup';
+    const reference  = apiOrder.gcash_reference || staticOrder.reference || '';
+    const dateStr    = staticOrder.created_at;
+    const orderId    = apiOrder.id || staticOrder.id;
+
+    document.getElementById('rmTicket').innerHTML = `
+        <div class="rm-header-strip">
+            <div class="rm-logo"><i class="fas fa-utensils"></i> KabsuEats</div>
+            <div class="rm-status-chip">
+                <i class="fas fa-circle"></i>&nbsp;${esc(statusLbl)}
+            </div>
+        </div>
+        <div class="rm-body">
+            <div class="rm-title-row">
+                <div class="rm-title">Order Receipt</div>
+                <div class="rm-id">Order #${orderId}&nbsp;&middot;&nbsp;${esc(dateStr)}</div>
+            </div>
+
+            <div class="rm-info-grid">
+                <div class="rm-row">
+                    <span class="rm-row-lbl">Customer</span>
+                    <span class="rm-row-val">{{ request.user.get_full_name|default:request.user.username|escapejs }}</span>
+                </div>
+                <div class="rm-row">
+                    <span class="rm-row-lbl">Email</span>
+                    <span class="rm-row-val">{{ request.user.email|escapejs }}</span>
+                </div>
+                <div class="rm-row">
+                    <span class="rm-row-lbl">Establishment</span>
+                    <span class="rm-row-val">${esc(estabName)}</span>
+                </div>
+                <div class="rm-row">
+                    <span class="rm-row-lbl">Payment</span>
+                    <span class="rm-row-val">${esc(payment)}</span>
+                </div>
+                ${reference ? `<div class="rm-row">
+                    <span class="rm-row-lbl">Reference</span>
+                    <span class="rm-row-val">${esc(reference)}</span>
+                </div>` : ''}
+            </div>
+
+            <div class="rm-items-hd">Items Ordered</div>
+            ${itemsHtml || '<div style="font-size:.68rem;color:#ccc;padding:3px 0;">No items found.</div>'}
+
+            <div class="rm-total-row">
+                <span class="rm-total-lbl">Total Amount</span>
+                <span class="rm-total-amt">&#8369;${total}</span>
+            </div>
+            <div class="rm-footer">
+                <span class="rm-footer-icon">🍽️</span>
+                Thank you for ordering at KabsuEats!<br>Show this receipt when claiming your order.
+            </div>
+        </div>`;
+}
+
+// ── Fallback: render from static (page-load) data ─────────────────────────
+function renderReceiptFromStatic(order) {
+    renderReceipt({
+        id:           order.id,
+        status:       order.status,
+        total_amount: order.total_amount,
+        items:        (order.items || []).map(function(i) {
+            return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
+        }),
+        establishment: { name: order.establishment.name },
+        gcash_reference: order.reference,
+    }, order);
+}
+
+// ── Download receipt as PDF ───────────────────────────────────────────────
+function downloadReceiptPDF() {
+    const ticket = document.getElementById('rmTicket');
+    const btn    = document.getElementById('rmDownloadBtn');
+    if (!ticket || !btn) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+    // Grab order number from header text for filename
+    const idEl = ticket.querySelector('.rm-id');
+    const orderNum = idEl ? idEl.textContent.replace(/[^0-9]/g, '').slice(0,10) : 'receipt';
+
+    html2canvas(ticket, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false
+    }).then(function(canvas) {
+        const { jsPDF } = window.jspdf;
+        const imgData   = canvas.toDataURL('image/png');
+        const pxW = canvas.width;
+        const pxH = canvas.height;
+
+        // Convert px → mm at 96dpi
+        const mmW = (pxW / 96) * 25.4;
+        const mmH = (pxH / 96) * 25.4;
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmW, mmH] });
+        pdf.addImage(imgData, 'PNG', 0, 0, mmW, mmH);
+        pdf.save('KabsuEats_Receipt_' + orderNum + '.pdf');
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+    }).catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+    });
+}
+
+// ── Close modal ───────────────────────────────────────────────────────────
+function closeReceiptModal() {
+    document.getElementById('rmOverlay').classList.remove('open');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReceiptModal();
+});
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════
+// REALTIME POLLING — refreshes cards + open modal live
+// ══════════════════════════════════════════════════════
+let _rtCurrentIdx    = null;   // index of currently open modal
+let _rtPollTimer     = null;   // setInterval handle
+let _rtOrders        = JSON.parse(JSON.stringify(ORDERS_STATIC)); // live copy
+
+const STATUS_LABELS = {
+    request:        'Order Request',
+    to_pay:         'To Pay',
+    order_received: 'Preparing',
+    preparing:      'Preparing',
+    to_claim:       'To Claim',
+    completed:      'Completed',
+};
+
+// ── Fetch all orders from API and sync cards ──────────────────────────────
+function _rtFetchAll() {
+    const ids = _rtOrders.map(function(o){ return o.id; });
+    if (!ids.length) return;
+
+    // Fire one request per order (reuse existing single-order API)
+    Promise.all(ids.map(function(id, idx) {
+        return fetch('/api/order/' + id + '/', { credentials: 'same-origin' })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if (!data.success || !data.order) return null;
+                return { idx: idx, order: data.order };
+            })
+            .catch(function(){ return null; });
+    })).then(function(results) {
+        results.forEach(function(res) {
+            if (!res) return;
+            const live = res.order;
+            const old  = _rtOrders[res.idx];
+
+            // Update status if changed
+            if (live.status && live.status !== old.status) {
+                old.status       = live.status;
+                old.status_label = STATUS_LABELS[live.status] || live.status;
+                _rtUpdateCard(res.idx, old);
+            }
+
+            // Update total
+            if (live.total_amount !== undefined) {
+                old.total_amount = parseFloat(live.total_amount);
+            }
+
+            // Update items
+            if (live.items && live.items.length) {
+                old.items = live.items.map(function(i) {
+                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
+                });
+            }
+        });
+
+        // If modal is open, silently re-render it with latest data
+        if (_rtCurrentIdx !== null) {
+            const refreshed = _rtOrders[_rtCurrentIdx];
+            if (refreshed) {
+                renderReceipt({
+                    id:              refreshed.id,
+                    status:          refreshed.status,
+                    total_amount:    refreshed.total_amount,
+                    items:           refreshed.items.map(function(i){
+                        return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
+                    }),
+                    establishment:   { name: refreshed.establishment.name },
+                    gcash_reference: refreshed.reference,
+                }, refreshed);
+            }
+        }
+    });
+}
+
+// ── Update a single card's status badge + total on the page ──────────────
+function _rtUpdateCard(idx, order) {
+    // Find the card by button data-idx
+    const btn = document.querySelector('.rp-view-btn[data-idx="' + idx + '"]');
+    if (!btn) return;
+    const card = btn.closest('.rp-card');
+    if (!card) return;
+
+    // Badge
+    const badge = card.querySelector('.rp-status-badge');
+    if (badge) {
+        badge.className = 'rp-status-badge ' + order.status;
+        badge.textContent = order.status_label;
+    }
+
+    // Total amount
+    const totalEl = card.querySelector('.rp-total-amt');
+    if (totalEl) {
+        totalEl.textContent = '₱' + parseFloat(order.total_amount).toFixed(2);
+    }
+
+    // Subtle flash animation to signal update
+    card.style.transition = 'box-shadow .3s';
+    card.style.boxShadow  = '0 0 0 2px #16a34a55';
+    setTimeout(function(){ card.style.boxShadow = ''; }, 1200);
+}
+
+// ── Override openReceiptModal to track open index ─────────────────────────
+const _origOpenReceiptModal = openReceiptModal;
+window.openReceiptModal = function(idx) {
+    _rtCurrentIdx = idx;
+    _origOpenReceiptModal(idx);
+};
+
+// ── Override closeReceiptModal to clear index ─────────────────────────────
+const _origCloseReceiptModal = closeReceiptModal;
+window.closeReceiptModal = function() {
+    _rtCurrentIdx = null;
+    _origCloseReceiptModal();
+};
+
+// ── Start polling on page load ────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    _rtFetchAll();                                    // immediate first fetch
+    _rtPollTimer = setInterval(_rtFetchAll, 15000);  // then every 15 seconds
+});
+
+// Stop polling when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(_rtPollTimer);
+    } else {
+        _rtFetchAll();
+        _rtPollTimer = setInterval(_rtFetchAll, 15000);
+    }
+});
+</script>
+{% endblock %}

@@ -188,7 +188,8 @@ urlpatterns = [
                        name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
 
-                  # ✅ Client order status notifications
+                  # ✅ Client order status
+                  path('my-receipts/', views.my_receipts_view, name='my_receipts'),
                   path('owner/ratings/', views.store_ratings, name='store_ratings'),
                   path('api/user/order-notifications/', views.get_user_order_notifications, name='get_user_order_notifications'),
                   path('api/user/order-notifications/mark-read/', views.mark_user_notifications_read, name='mark_user_notifications_read'),

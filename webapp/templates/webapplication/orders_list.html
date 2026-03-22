@@ -287,6 +287,7 @@
     @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
 
     .col-elapsed { text-align: center; vertical-align: middle; }
+    .col-time    { vertical-align: middle; white-space: nowrap; }
     .elapsed-chip {
         display: inline-flex;
         align-items: center;
@@ -1396,9 +1397,16 @@
                         <i class="fas fa-trash-alt"></i> Remove
                     </button>`;
                 } else {
-                    actionBtn = `<button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
-                        <i class="fas fa-check"></i> Accept
-                    </button>`;
+                    // Show Accept + Reject side by side
+                    actionBtn = `
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                            <button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>`;
                 }
             } else if (next && currentTab !== 'to_pay') {
                 actionBtn = `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
@@ -1421,7 +1429,9 @@
                     </td>
                     <td class="col-order">
                         <div class="row-order-num">#${o.id}</div>
-                        <div class="row-meta">${formatTime(o.created_at)}</div>
+                    </td>
+                    <td class="col-time">
+                        <div class="row-meta" style="font-weight:600;color:#374151;font-size:12px;">${formatTime(o.created_at)}</div>
                         <div class="row-meta">${formatDate(o.created_at)}</div>
                     </td>
                     <td class="col-customer">
@@ -1463,12 +1473,13 @@
                 <thead>
                     <tr style="box-shadow:0 1px 3px rgba(0,0,0,0.07);">
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;">Order</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Order</th>
+                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:110px;">Time</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
                         ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
-                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">Time</th>` : ''}
+                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">Elapsed</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -1864,6 +1875,13 @@
         const reasonSelect = document.getElementById('rejectReasonSelect');
         const reasonInput  = document.getElementById('confirmReasonInput');
 
+        // Determine if this is a request or to_pay order for better messaging
+        const orderData   = orders.find(o => o.id === orderId);
+        const isRequest   = orderData && orderData.status === 'request';
+        const modalMsg    = isRequest
+            ? `Reject order <strong>#${orderId}</strong>? The customer will be notified with your reason and can re-order.`
+            : `Reject order <strong>#${orderId}</strong>? The customer's reserved items will be returned to stock.`;
+
         // Reset state
         if (reasonSelect) reasonSelect.value = '';
         if (reasonInput)  { reasonInput.value = ''; reasonInput.style.display = 'none'; }
@@ -1871,7 +1889,7 @@
 
         showConfirmModal(
             'Reject Order',
-            `Reject order <strong>#${orderId}</strong>? The customer's reserved items will be returned to stock.`,
+            modalMsg,
             'Reject Order',
             () => {
                 // Read the reason captured by confirmModalOk BEFORE fields were reset
@@ -1895,7 +1913,7 @@
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        showToast(`Order #${orderId} rejected — stock restored.`, 'success');
+                        showToast(`Order #${orderId} rejected — customer has been notified.`, 'success');
                         removeOrderRow(orderId);
                     } else {
                         showToast(data.message || 'Could not reject order.', 'error');

@@ -396,10 +396,20 @@ html body .establishment-cart-box.active-cart {
                                 <div class="item-details">
                                     <h3 class="item-name">{{ item.menu_item.name }}</h3>
                                     <p class="item-price" data-unit-price="{{ item.menu_item.price }}">₱{{ item.menu_item.price|floatformat:2 }} each</p>
+                                    {% if item.menu_item.quantity <= 0 %}
+                                    <p class="item-stock" style="color:#ef4444!important;">
+                                        <i class="fas fa-box"></i>
+                                        <span class="stock-count">0</span> available
+                                    </p>
+                                    <span class="cart-oos-chip" style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;">
+                                        <i class="fas fa-times-circle"></i> Out of stock
+                                    </span>
+                                    {% else %}
                                     <p class="item-stock">
                                         <i class="fas fa-box"></i>
                                         <span class="stock-count">{{ item.menu_item.quantity }}</span> available
                                     </p>
+                                    {% endif %}
                                     {% if item.has_request_limit %}
                                     <p class="item-request-limit" style="font-size:12px;color:#d97706;margin-top:3px;">
                                         <i class="fas fa-exclamation-circle"></i>
@@ -612,7 +622,31 @@ html body .establishment-cart-box.active-cart {
 
         // Initial summary render on page load
         window.rebuildOrderSummary();
-        // Initial stock check — flag any OOS items already in cart
+        // Initial stock check — lock buttons, add OOS chip, flag any OOS items already in cart
+        document.querySelectorAll('.cart-item').forEach(function(cartItem) {
+            const rawMax = parseInt(cartItem.dataset.maxStock, 10);
+            if (!isNaN(rawMax) && rawMax <= 0) {
+                // Lock both quantity buttons
+                const inc = cartItem.querySelector('.btn-increase');
+                const dec = cartItem.querySelector('.btn-decrease');
+                if (inc) inc.disabled = true;
+                if (dec) dec.disabled = true;
+
+                // Turn stock text red
+                const stockP = cartItem.querySelector('.item-stock');
+                if (stockP) stockP.style.color = '#ef4444';
+
+                // Add OOS chip if not already present (fallback for template)
+                const details = cartItem.querySelector('.item-details');
+                if (details && !details.querySelector('.cart-oos-chip')) {
+                    const chip = document.createElement('span');
+                    chip.className = 'cart-oos-chip';
+                    chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-top:4px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;';
+                    chip.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
+                    details.appendChild(chip);
+                }
+            }
+        });
         if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
     });
 
@@ -837,6 +871,57 @@ html body .establishment-cart-box.active-cart {
     });
 
     // ============================================================
+    // CHECKOUT BUTTON STOCK GUARD
+    // Disables "Send Order Request" ONLY when a checked item has
+    // actual stock = 0 (truly out of stock via server/WebSocket).
+    // Also locks +/- quantity buttons on any OOS cart item.
+    // Called on page load, checkbox change, qty change, and WS update.
+    // ============================================================
+    window._updateCheckoutButtonStockState = function() {
+        const btn = document.getElementById('initial-checkout-btn');
+
+        let hasOos = false;
+
+        // Lock/unlock quantity buttons for ALL cart items based on their stock
+        document.querySelectorAll('.cart-item').forEach(function(cartItem) {
+            const rawMax = parseInt(cartItem.dataset.maxStock, 10);
+            const isOos  = !isNaN(rawMax) && rawMax <= 0;
+            const inc    = cartItem.querySelector('.btn-increase');
+            const dec    = cartItem.querySelector('.btn-decrease');
+            const curQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
+
+            if (isOos) {
+                // Lock both buttons completely when stock is 0
+                if (inc) inc.disabled = true;
+                if (dec) dec.disabled = true;
+            } else {
+                // Restore normal state based on qty limits
+                const remQty   = parseInt(cartItem.dataset.remainingQty, 10);
+                const effMax   = !isNaN(remQty) ? Math.min(remQty, rawMax) : rawMax;
+                if (inc) inc.disabled = (curQty >= effMax);
+                if (dec) dec.disabled = (curQty <= 1);
+            }
+        });
+
+        // Check if any CHECKED item is OOS — that blocks the Send button
+        document.querySelectorAll('.item-checkbox:checked').forEach(function(chk) {
+            const cartItem = document.getElementById('cart-item-' + chk.getAttribute('data-item-id'));
+            if (!cartItem) return;
+            const rawMax = parseInt(cartItem.dataset.maxStock, 10);
+            if (!isNaN(rawMax) && rawMax <= 0) hasOos = true;
+        });
+
+        if (!btn) return;
+        if (hasOos) {
+            btn.disabled = true;
+            btn.title    = 'One or more selected items are out of stock. Please remove them before ordering.';
+        } else {
+            btn.disabled = false;
+            btn.title    = '';
+        }
+    };
+
+    // ============================================================
     // SEND ORDER REQUEST — only for CHECKED establishments/items
     // Unchecked establishments and items stay in cart untouched
     // ============================================================
@@ -1026,7 +1111,11 @@ document.addEventListener('click', function(e) {
     const cartItem    = btn.closest('.cart-item');
     if (!cartItem) return;
     const orderItemId = cartItem.dataset.itemId;
-    const maxStock    = parseInt(cartItem.dataset.maxStock  || cartItem.dataset.remainingQty || 999, 10);
+    // Use remaining_allowed (data-remaining-qty) as the hard cap for +/−.
+    // Fall back to data-max-stock only when remaining-qty is not set.
+    const remainingQty = parseInt(cartItem.dataset.remainingQty, 10);
+    const rawMaxStock  = parseInt(cartItem.dataset.maxStock, 10);
+    const maxStock     = !isNaN(remainingQty) ? Math.min(remainingQty, rawMaxStock) : (!isNaN(rawMaxStock) ? rawMaxStock : 999);
     const isIncrease  = btn.classList.contains('btn-increase');
     const qtyEl       = cartItem.querySelector('.quantity-value[data-item-id="' + orderItemId + '"]');
     if (!qtyEl) return;
@@ -1291,11 +1380,23 @@ window.clearEstablishmentCart = function(establishmentId) {
                     } else {
                         const sc = cartItem.querySelector('.stock-count');
                         if (sc) sc.textContent = newQty;
+                        // Update the raw stock data attribute
                         cartItem.dataset.maxStock = newQty;
 
+                        // Effective cap = min(remaining_allowed, new raw stock)
+                        const remQty   = parseInt(cartItem.dataset.remainingQty, 10);
+                        const effMax   = !isNaN(remQty) ? Math.min(remQty, newQty) : newQty;
+                        const currentQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
+                        const inc = cartItem.querySelector('.btn-increase');
+                        const dec = cartItem.querySelector('.btn-decrease');
+
                         if (newQty === 0) {
-                            const inc = cartItem.querySelector('.btn-increase');
+                            // Fully lock both quantity buttons when OOS
                             if (inc) inc.disabled = true;
+                            if (dec) dec.disabled = true;
+                            // Turn stock text red
+                            const stockP = cartItem.querySelector('.item-stock');
+                            if (stockP) stockP.style.color = '#ef4444';
                             if (!cartItem.querySelector('.cart-oos-chip')) {
                                 const chip = document.createElement('span');
                                 chip.className = 'cart-oos-chip';
@@ -1304,13 +1405,20 @@ window.clearEstablishmentCart = function(establishmentId) {
                                 const d = cartItem.querySelector('.item-details');
                                 if (d) d.appendChild(chip);
                             }
+                            // Toast warning only once
+                            showCartToast('⚠️ <strong>"' + itemName + '"</strong> is now out of stock.', 'warning');
                         } else {
                             const chip = cartItem.querySelector('.cart-oos-chip');
                             if (chip) chip.remove();
-                            const currentQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
-                            const inc = cartItem.querySelector('.btn-increase');
-                            if (inc && currentQty < newQty) inc.disabled = false;
+                            // Restore stock text color
+                            const stockP = cartItem.querySelector('.item-stock');
+                            if (stockP) stockP.style.color = '';
+                            if (inc) inc.disabled = (currentQty >= effMax);
+                            if (dec) dec.disabled = (currentQty <= 1);
                         }
+
+                        // Always re-evaluate checkout button after any stock change
+                        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
                     }
                 });
         });

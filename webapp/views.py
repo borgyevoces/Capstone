@@ -7492,6 +7492,76 @@ def order_history_view(request):
         'cart_count': cart_count,
     })
 
+
+@login_required
+def my_receipts_view(request):
+    """
+    My Receipts page — shows all confirmed orders with printable receipts.
+    URL: /my-receipts/
+    """
+    orders = Order.objects.filter(
+        user=request.user
+    ).exclude(
+        status__in=['PENDING', 'cancelled', 'CANCELLED']
+    ).select_related(
+        'establishment'
+    ).prefetch_related(
+        Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
+    ).order_by('-created_at')
+
+    orders_data = []
+    for order in orders:
+        items = []
+        for oi in order.orderitem_set.all():
+            items.append({
+                'name':       oi.menu_item.name,
+                'quantity':   oi.quantity,
+                'price':      float(oi.price_at_order),
+                'subtotal':   float(oi.price_at_order * oi.quantity),
+                'image':      oi.menu_item.image.url if oi.menu_item.image else None,
+            })
+
+        status_map = {
+            'request': 'Order Request',
+            'to_pay': 'To Pay',
+            'order_received': 'Preparing',
+            'preparing': 'Preparing',
+            'to_claim': 'To Claim',
+            'completed': 'Completed',
+        }
+        status_label = status_map.get(order.status, order.status.capitalize())
+
+        payment_map = {
+            'cash': 'Cash on Pickup',
+            'gcash': 'GCash',
+            'paymaya': 'Maya',
+            'card': 'Card',
+        }
+        payment_label = payment_map.get(order.gcash_payment_method or '', 'Online Payment')
+
+        orders_data.append({
+            'id':              order.id,
+            'status':          order.status,
+            'status_label':    status_label,
+            'total_amount':    float(order.total_amount),
+            'payment_method':  payment_label,
+            'reference':       order.gcash_reference_number or '',
+            'created_at':      order.created_at.strftime('%b %d, %Y · %I:%M %p'),
+            'created_date':    order.created_at.strftime('%b %d, %Y'),
+            'establishment': {
+                'name':    order.establishment.name,
+                'address': order.establishment.address or '',
+                'image':   order.establishment.image.url if order.establishment.image else None,
+            },
+            'items': items,
+            'item_count': len(items),
+        })
+
+    return render(request, 'webapplication/my_receipts.html', {
+        'orders':      orders_data,
+        'orders_json': json.dumps(orders_data, ensure_ascii=False),
+    })
+
 def get_user_transaction_history(request):
     """
     API endpoint to get all orders for the logged-in user.

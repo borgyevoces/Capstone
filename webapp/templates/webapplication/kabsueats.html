@@ -15,6 +15,28 @@
     {% block extra_css %}{% endblock %}
 
     <style>
+    /* ── Navbar: force perfectly uniform gap between all 3 icon buttons ── */
+    .nav-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0 !important;          /* kill gap — use margin-right on each child instead */
+    }
+    /* Each of the 3 icon buttons gets identical right spacing */
+    .nav-right #myReceiptsNavBtn,
+    .nav-right #notifBellWrap {
+        margin: 0 20px 0 0 !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    /* Profile button — no extra margin after it */
+    .nav-right .pcont {
+        margin: 0 !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    </style>
+
+    <style>
     /* ── Smart Search: Menu Item badge in BS carousel ── */
     .bsc-badge-menu {
         background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
@@ -264,11 +286,28 @@
 <header class="navbar">
     <a href="{% url 'kabsueats_home' %}" class="brand">KabsuEats</a>
 
-    <div class="nav-right">
+    <div class="nav-right" style="display:flex;align-items:center;">
         {% block extra_nav_buttons %}{% endblock %}
         {% if user.is_authenticated %}
+            <!-- ✅ My Receipts Button -->
+            <a href="{% url 'my_receipts' %}"
+               id="myReceiptsNavBtn"
+               title="My Receipts & Order History"
+               style="
+                   width:38px;height:38px;border-radius:50%;border:none;
+                   background:rgba(22,163,74,0.10);color:#16a34a;
+                   display:flex;align-items:center;justify-content:center;
+                   cursor:pointer;font-size:15px;position:relative;
+                   transition:background 0.2s;text-decoration:none;
+               "
+               {% if request.resolver_match.url_name == 'my_receipts' %}
+               style="background:rgba(22,163,74,0.20);color:#166534;"
+               {% endif %}
+            >
+                <i class="fas fa-receipt"></i>
+            </a>
             <!-- ✅ Order Notification Bell -->
-            <div style="position:relative;" id="notifBellWrap">
+            <div style="position:relative;width:38px;height:38px;flex-shrink:0;" id="notifBellWrap">
                 <button id="orderNotifBellBtn" onclick="toggleOrderNotifPanel()" title="Order Updates" style="
                     width:38px;height:38px;border-radius:50%;border:none;
                     background:rgba(183,28,28,0.08);color:#b71c1c;
@@ -286,7 +325,7 @@
                     "></span>
                 </button>
             </div>
-            <div class="pcont" id="pcont">
+            <div class="pcont" id="pcont" style="margin:0;padding:0;">
                 <div class="pav" id="pavBtn" title="Profile">
                     {% if user.profile and user.profile.profile_image %}
                         <img src="{{ user.profile.profile_image.url }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
