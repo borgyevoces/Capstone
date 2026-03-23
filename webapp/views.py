@@ -5369,6 +5369,10 @@ def view_cart(request):
                 'items':              enriched_items,
                 'item_count':         cart_item_count,
                 'has_request_order':  has_active_order,
+                'is_open': get_current_status(
+                    order.establishment.opening_time,
+                    order.establishment.closing_time
+                ) == "Open",
             })
 
         context = {

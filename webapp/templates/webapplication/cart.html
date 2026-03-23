@@ -115,6 +115,22 @@ body{background:#ffffff!important}
     pointer-events: none;
 }
 
+/* ── Closed badge on establishment ── */
+.estab-closed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 /* ── Establishment name link ── */
 .estab-name-link {
     color: #111;
@@ -328,7 +344,8 @@ html body .establishment-cart-box.active-cart {
                 {% for cart in carts_data %}
                 <div class="establishment-cart-box"
                      data-establishment-id="{{ cart.establishment.id }}"
-                     data-order-id="{{ cart.order.id }}">
+                     data-order-id="{{ cart.order.id }}"
+                     data-is-open="{{ cart.is_open|yesno:'true,false' }}">
 
                     <!-- Establishment Header -->
                     <div class="cart-establishment-info">
@@ -348,6 +365,11 @@ html body .establishment-cart-box.active-cart {
                                 {{ cart.establishment.name }}
                             </a>
                         </h2>
+                        {% if not cart.is_open %}
+                        <span class="estab-closed-badge">
+                            <i class="fas fa-clock"></i> Closed
+                        </span>
+                        {% endif %}
                         <button type="button"
                                 class="clear-establishment-btn"
                                 onclick="clearEstablishmentCart({{ cart.establishment.id }})"
@@ -912,9 +934,46 @@ html body .establishment-cart-box.active-cart {
         });
 
         if (!btn) return;
-        if (hasOos) {
+
+        // Check if any CHECKED establishment is currently closed
+        let hasClosed = false;
+        let closedNames = [];
+        document.querySelectorAll('.establishment-cart-box').forEach(function(box) {
+            const isOpen = box.getAttribute('data-is-open') === 'true';
+            if (isOpen) return;
+            const checkedItems = box.querySelectorAll('.item-checkbox:checked');
+            if (checkedItems.length > 0) {
+                hasClosed = true;
+                const nameEl = box.querySelector('.cart-establishment-info h2 .estab-name-link');
+                const name = (nameEl ? nameEl.firstChild?.textContent?.trim() : null)
+                          || box.querySelector('.cart-establishment-info h2')?.textContent?.trim()
+                          || 'an establishment';
+                closedNames.push(name);
+            }
+        });
+
+        // Show/hide closed warning message below the button
+        let warn = document.getElementById('closed-estab-warning');
+        if (hasClosed) {
+            if (!warn) {
+                warn = document.createElement('p');
+                warn.id = 'closed-estab-warning';
+                warn.style.cssText = 'color:#991b1b;font-size:0.82rem;text-align:center;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;line-height:1.4;';
+                warn.innerHTML = '<i class="fas fa-store-slash" style="flex-shrink:0;"></i><span id="closed-warn-text"></span>';
+                btn.parentNode.insertBefore(warn, btn.nextSibling);
+            }
+            const label = closedNames.join(', ') + (closedNames.length === 1 ? ' is' : ' are') + ' currently closed. Uncheck to proceed.';
+            document.getElementById('closed-warn-text').textContent = label;
+            warn.style.display = 'flex';
+        } else {
+            if (warn) warn.style.display = 'none';
+        }
+
+        if (hasOos || hasClosed) {
             btn.disabled = true;
-            btn.title    = 'One or more selected items are out of stock. Please remove them before ordering.';
+            btn.title    = hasClosed
+                ? (closedNames[0] + ' is currently closed. Uncheck it to proceed.')
+                : 'One or more selected items are out of stock. Please remove them before ordering.';
         } else {
             btn.disabled = false;
             btn.title    = '';
@@ -955,6 +1014,16 @@ html body .establishment-cart-box.active-cart {
 
         if (ordersToSend.length === 0) {
             alert('Please check at least one establishment to place an order.');
+            return;
+        }
+
+        // Block if any checked establishment is currently closed
+        const closedOrders = ordersToSend.filter(function(o) {
+            return o.box.getAttribute('data-is-open') !== 'true';
+        });
+        if (closedOrders.length > 0) {
+            const names = closedOrders.map(function(o) { return o.estabName; }).join(', ');
+            alert(names + (closedOrders.length === 1 ? ' is' : ' are') + ' currently closed. Please uncheck closed establishments before sending your order.');
             return;
         }
 
