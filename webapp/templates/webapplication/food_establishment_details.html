@@ -6,7 +6,117 @@
 {% with show_search=False %}{% endwith %}
 {% endblock search_visibility_control %}
 
-{% block title %}{{ establishment.name }} - KabsuEats{% endblock %}
+{% block title %}{{ establishment.name }} - KabsuEats
+<script>
+// ============================================================
+// ✅ FAVORITES — establishment detail page
+// Heart buttons on menu items
+// ============================================================
+(function() {
+    'use strict';
+
+    const ESTABLISHMENT_ID = {{ establishment.id }};
+
+    // ── getCsrf helper (might already exist in base) ──────────────────────
+    function getCsrf() {
+        return document.getElementById('csrfToken')?.value || '';
+    }
+
+    // ── escHtml helper ───────────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Shared: show the global fav modal (defined in base kabsueats.html) ──
+    function showFavToast(type, action, name) {
+        // Try the global modal first (available because we extend kabsueats.html)
+        if (typeof showGlobalFavModal === 'function') {
+            showGlobalFavModal(type, action, name);
+            return;
+        }
+        // Fallback: simple browser notification
+        const msg = action === 'added'
+            ? `"${name}" ay na-save sa Favorites!`
+            : `"${name}" ay inalis sa Favorites.`;
+        if (typeof showToast === 'function') showToast(msg, action === 'added' ? 'success' : 'info');
+    }
+
+    // ── Load which menu items are already favorited ───────────────────────
+    function initDetailFavorites() {
+        const isAuth = {% if user.is_authenticated %}true{% else %}false{% endif %};
+        if (!isAuth) return;
+
+        const url = (typeof URLS !== 'undefined' && URLS.getFavStatus)
+            ? URLS.getFavStatus
+            : '/api/favorites/status/';
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status !== 'ok') return;
+                const favMenuIds = new Set(data.fav_menus || []);
+                window._favMenuIds = favMenuIds;  // sync with base JS
+
+                document.querySelectorAll('.menu-fav-heart-btn').forEach(btn => {
+                    const mid = parseInt(btn.getAttribute('data-menu-id'));
+                    if (favMenuIds.has(mid)) {
+                        btn.classList.add('fav-active');
+                        btn.title = 'Alisin sa Favorites';
+                    }
+                });
+            })
+            .catch(() => {});
+    }
+
+    // ── Toggle heart on a detail page menu item ───────────────────────────
+    window.toggleDetailFavMenu = function(menuId, menuName, btn) {
+        const url = (typeof URLS !== 'undefined' && URLS.toggleFavMenu)
+            ? URLS.toggleFavMenu
+            : '/api/favorites/toggle-menu/';
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+            body: JSON.stringify({ menu_item_id: menuId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'ok') return;
+
+            // Update ALL heart buttons for this menu id on the page
+            document.querySelectorAll(`#detailFavBtn-${menuId}, [data-menu-id="${menuId}"].menu-fav-heart-btn`).forEach(b => {
+                if (data.action === 'added') {
+                    b.classList.add('fav-active');
+                    b.title = 'Alisin sa Favorites';
+                    b.classList.add('fav-heart-pulse');
+                    setTimeout(() => b.classList.remove('fav-heart-pulse'), 450);
+                } else {
+                    b.classList.remove('fav-active');
+                    b.title = 'I-save sa Favorites';
+                }
+            });
+
+            // Sync with base window set
+            if (!window._favMenuIds) window._favMenuIds = new Set();
+            if (data.action === 'added') {
+                window._favMenuIds.add(menuId);
+            } else {
+                window._favMenuIds.delete(menuId);
+            }
+
+            showFavToast('heart', data.action, menuName);
+        })
+        .catch(() => {});
+    };
+
+    // ── Init on DOM ready ─────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', initDetailFavorites);
+})();
+</script>
+
+{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/establishment_detail_phoneview.css' %}"/>
@@ -1249,6 +1359,45 @@
         0%,100% { transform: scale(1); }
         50% { transform: scale(1.25); background: #8b0000; }
     }
+
+    /* ============================================================
+       FAVORITES: Heart button on menu items
+       ============================================================ */
+    .menu-item { position: relative; }
+
+    .menu-fav-heart-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 20;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.92);
+        color: #d1d5db;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: color 0.2s, transform 0.2s, background 0.2s;
+        backdrop-filter: blur(2px);
+    }
+    .menu-fav-heart-btn:hover { transform: scale(1.18); background: #fff0f0; }
+    .menu-fav-heart-btn.fav-active { color: #ef4444 !important; }
+
+    @keyframes detailHeartPulse {
+        0%   { transform: scale(1); }
+        35%  { transform: scale(1.55); }
+        65%  { transform: scale(0.85); }
+        100% { transform: scale(1); }
+    }
+    .fav-heart-pulse { animation: detailHeartPulse 0.42s ease; }
+
+    /* menu-item-image-wrapper already has position relative hopefully */
+    .menu-item-image-wrapper { position: relative !important; }
 </style>
 {% endblock %}
 
@@ -1597,6 +1746,17 @@
             <span class="badge-stock out-of-stock">
                 <i class="fas fa-times-circle"></i> Out of Stock
             </span>
+            {% endif %}
+            <!-- ✅ FAVORITES: Heart button -->
+            {% if user.is_authenticated %}
+            <button class="menu-fav-heart-btn"
+                    id="detailFavBtn-{{ item.id }}"
+                    data-menu-id="{{ item.id }}"
+                    data-menu-name="{{ item.name|escapejs }}"
+                    title="I-save sa Favorites"
+                    onclick="toggleDetailFavMenu({{ item.id }}, '{{ item.name|escapejs }}', this); event.preventDefault(); event.stopPropagation();">
+                <i class="fas fa-heart"></i>
+            </button>
             {% endif %}
         </div>
 

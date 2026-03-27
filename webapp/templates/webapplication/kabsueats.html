@@ -257,6 +257,168 @@
         display: block;
     }
     </style>
+
+    <!-- ✅ FAVORITES: Global styles for ⭐ star and ❤️ heart buttons + modal -->
+    <style>
+    /* ── Nav spacing: include favorites heart button in uniform gap ── */
+    .nav-right #favNavBtn {
+        margin: 0 20px 0 0 !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* ── Star button on establishment cards ── */
+    .est-fav-star-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 20;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.92);
+        color: #d1d5db;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: color 0.2s, transform 0.2s, background 0.2s;
+        backdrop-filter: blur(2px);
+    }
+    .est-fav-star-btn:hover { transform: scale(1.18); background: #fffbeb; }
+    .est-fav-star-btn.fav-active { color: #f59e0b !important; }
+
+    /* ── Heart button on bestseller carousel cards ── */
+    .bsc-heart-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 20;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.92);
+        color: #d1d5db;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: color 0.2s, transform 0.2s, background 0.2s;
+        backdrop-filter: blur(2px);
+    }
+    .bsc-heart-btn:hover { transform: scale(1.18); background: #fff0f0; }
+    .bsc-heart-btn.fav-active { color: #ef4444 !important; }
+
+    /* ── bsc-img needs position:relative for the heart btn ── */
+    .bsc-img { position: relative; }
+
+    /* ── est-card-wrap: wrapper for establishment card + star btn ── */
+    .est-card-wrap {
+        position: relative;
+        display: block;
+    }
+
+    /* ── Pulse animations ── */
+    @keyframes favStarPulse {
+        0%   { transform: scale(1); }
+        35%  { transform: scale(1.5); }
+        65%  { transform: scale(0.88); }
+        100% { transform: scale(1); }
+    }
+    @keyframes favHeartPulse {
+        0%   { transform: scale(1); }
+        35%  { transform: scale(1.55); }
+        65%  { transform: scale(0.85); }
+        100% { transform: scale(1); }
+    }
+    .fav-star-pulse { animation: favStarPulse 0.42s ease; }
+    .fav-heart-pulse { animation: favHeartPulse 0.42s ease; }
+
+    /* ── GLOBAL FAVORITES CONFIRMATION MODAL ── */
+    #globalFavModal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.42);
+        z-index: 9999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+    }
+    #globalFavModal.gfm-show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    #globalFavModalBox {
+        background: #fff;
+        border-radius: 22px;
+        padding: 30px 26px 24px;
+        max-width: 340px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+        transform: scale(0.86) translateY(18px);
+        transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+        font-family: 'Poppins', sans-serif;
+    }
+    #globalFavModal.gfm-show #globalFavModalBox {
+        transform: scale(1) translateY(0);
+    }
+    .gfm-icon-wrap {
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+        font-size: 25px;
+    }
+    .gfm-icon-wrap.gfm-star { background: linear-gradient(135deg,#fef9c3,#fef08a); color: #f59e0b; }
+    .gfm-icon-wrap.gfm-heart { background: linear-gradient(135deg,#fee2e2,#fecaca); color: #ef4444; }
+    .gfm-icon-wrap.gfm-remove { background: linear-gradient(135deg,#f3f4f6,#e5e7eb); color: #6b7280; }
+    #gfmTitle {
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: #1f2937;
+        margin: 0 0 7px;
+        font-family: 'Poppins', sans-serif;
+    }
+    #gfmMsg {
+        font-size: 0.83rem;
+        color: #6b7280;
+        margin: 0 0 20px;
+        line-height: 1.6;
+        font-family: 'Poppins', sans-serif;
+    }
+    #gfmMsg .gfm-name { font-weight: 700; color: #1f2937; }
+    .gfm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .gfm-ok-btn {
+        background: linear-gradient(135deg,#B71C1C,#7f1111);
+        color: #fff; border: none; border-radius: 50px;
+        padding: 9px 26px; font-weight: 700; font-size: 0.88rem;
+        cursor: pointer; font-family: 'Poppins', sans-serif;
+        transition: transform 0.18s;
+    }
+    .gfm-ok-btn:hover { transform: scale(1.05); }
+    .gfm-view-btn {
+        background: #f3f4f6; color: #374151; border: none; border-radius: 50px;
+        padding: 9px 20px; font-weight: 600; font-size: 0.88rem;
+        cursor: pointer; font-family: 'Poppins', sans-serif;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+        transition: background 0.18s;
+    }
+    .gfm-view-btn:hover { background: #e5e7eb; }
+    </style>
 </head>
 <body>
 
@@ -306,6 +468,22 @@
             >
                 <i class="fas fa-receipt"></i>
             </a>
+            <!-- ✅ Favorites Heart Button -->
+            {% if user.is_authenticated %}
+            <a href="{% url 'favorites_page' %}"
+               id="favNavBtn"
+               title="My Favorites"
+               style="
+                   width:38px;height:38px;border-radius:50%;border:none;
+                   background:rgba(245,158,11,0.10);color:#f59e0b;
+                   display:flex;align-items:center;justify-content:center;
+                   cursor:pointer;font-size:15px;position:relative;
+                   transition:background 0.2s;text-decoration:none;
+               "
+            >
+                <i class="fas fa-heart"></i>
+            </a>
+            {% endif %}
             <!-- ✅ Order Notification Bell -->
             <div style="position:relative;width:38px;height:38px;flex-shrink:0;" id="notifBellWrap">
                 <button id="orderNotifBellBtn" onclick="toggleOrderNotifPanel()" title="Order Updates" style="
@@ -391,6 +569,13 @@
             <span class="csb-ico"><i class="fas fa-map-marked-alt"></i></span>
             <span class="csb-lbl">View Map</span>
         </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'favorites_page' %}" class="csb-item {% if request.resolver_match.url_name == 'favorites_page' %}active{% endif %}"
+           style="{% if request.resolver_match.url_name == 'favorites_page' %}color:#f59e0b;{% endif %}">
+            <span class="csb-ico"><i class="fas fa-heart" style="color:#f59e0b;"></i></span>
+            <span class="csb-lbl">Favorites</span>
+        </a>
+        {% endif %}
     </nav>
 </aside>
 
@@ -568,6 +753,17 @@
     <div class="est-wrap">
         <div class="est-grid" id="estGrid">
             {% for est in food_establishments %}
+            <div class="est-card-wrap">
+            {% if user.is_authenticated %}
+            <button class="est-fav-star-btn"
+                    id="estFavBtn-{{ est.id }}"
+                    data-est-id="{{ est.id }}"
+                    data-est-name="{{ est.name|escapejs }}"
+                    title="I-save sa Favorites"
+                    onclick="toggleFavEstablishment({{ est.id }}, '{{ est.name|escapejs }}', this); event.preventDefault(); event.stopPropagation();">
+                <i class="fas fa-star"></i>
+            </button>
+            {% endif %}
             <a href="{% url 'food_establishment_details' est.id %}"
                class="estc food-est-item"
                data-id="{{ est.id }}"
@@ -578,7 +774,7 @@
                data-opening-time="{{ est.opening_time|time:'H:i'|default:'' }}"
                data-closing-time="{{ est.closing_time|time:'H:i'|default:'' }}"
                onclick="window.location.href='{% url 'food_establishment_details' est.id %}'; return true;"
-               style="text-decoration:none;cursor:pointer;pointer-events:auto;">
+               style="text-decoration:none;cursor:pointer;pointer-events:auto;display:block;">
 
                 {% if est.image %}
                     <img class="estc-img" src="{{ est.image.url }}" alt="{{ est.name }}" loading="lazy">
@@ -634,6 +830,7 @@
                 </div>
                 {% endif %}
             </a>
+            </div><!-- /.est-card-wrap -->
             {% empty %}
             <p class="no-est-msg">No food establishments found.</p>
             {% endfor %}
@@ -800,6 +997,13 @@
         allEstStatus:        "{% url 'get_all_establishments_status' %}",
         userNotifications:   "{% url 'get_user_order_notifications' %}",
         markNotifsRead:      "{% url 'mark_user_notifications_read' %}",
+        // ✅ FAVORITES
+        toggleFavEst:    "{% url 'toggle_favorite_establishment' %}",
+        toggleFavMenu:   "{% url 'toggle_favorite_menu' %}",
+        getFavEsts:      "{% url 'get_favorite_establishments' %}",
+        getFavMenus:     "{% url 'get_favorite_menus' %}",
+        getFavStatus:    "{% url 'get_favorites_status' %}",
+        favoritesPage:   "{% url 'favorites_page' %}",
     };
     const IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
     const CVSU = {
@@ -951,6 +1155,10 @@
         <span class="mob-nav-lbl">Map</span>
     </a>
     {% if user.is_authenticated %}
+    <a href="{% url 'favorites_page' %}" class="mob-nav-item {% if request.resolver_match.url_name == 'favorites_page' %}active{% endif %}" style="color:#f59e0b;">
+        <span class="mob-nav-ico"><i class="fas fa-heart" style="color:#f59e0b;"></i></span>
+        <span class="mob-nav-lbl">Favorites</span>
+    </a>
     <button class="mob-nav-item" onclick="toggleOrderNotifPanel()" style="background:none;border:none;cursor:pointer;padding:0;" id="mobNotifBtn">
         <span class="mob-nav-ico" style="position:relative;">
             <i class="fas fa-bell"></i>
@@ -965,6 +1173,26 @@
     </a>
     {% endif %}
 </nav>
+
+
+<!-- ============================================================
+     GLOBAL FAVORITES CONFIRMATION MODAL
+     ============================================================ -->
+<div id="globalFavModal">
+    <div id="globalFavModalBox">
+        <div class="gfm-icon-wrap gfm-star" id="gfmIconWrap">
+            <i class="fas fa-star" id="gfmIcon"></i>
+        </div>
+        <div id="gfmTitle">Na-save sa Favorites!</div>
+        <div id="gfmMsg"></div>
+        <div class="gfm-actions">
+            <button class="gfm-ok-btn" onclick="closeGlobalFavModal()">Sige!</button>
+            <a href="{% url 'favorites_page' %}" class="gfm-view-btn">
+                <i class="fas fa-heart" style="font-size:11px;"></i> View Favorites
+            </a>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

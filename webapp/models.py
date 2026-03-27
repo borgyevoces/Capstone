@@ -632,3 +632,57 @@ class OrderNotification(models.Model):
             self.is_read = True
             self.read_at = timezone.now()
             self.save()
+
+
+class FavoriteEstablishment(models.Model):
+    """
+    Tracks which establishments a user has starred as favorites.
+    Toggle: kung nandoon na → tanggalin; kung wala pa → idagdag.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_establishments'
+    )
+    establishment = models.ForeignKey(
+        'FoodEstablishment',
+        on_delete=models.CASCADE,
+        related_name='favorited_by'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'establishment')
+        ordering = ['-created_at']
+        verbose_name = "Favorite Establishment"
+        verbose_name_plural = "Favorite Establishments"
+
+    def __str__(self):
+        return f"{self.user.username} ♥ {self.establishment.name}"
+
+
+class FavoriteMenuItem(models.Model):
+    """
+    Tracks which menu items a user has hearted as favorites.
+    Toggle: kung nandoon na → tanggalin; kung wala pa → idagdag.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_menu_items'
+    )
+    menu_item = models.ForeignKey(
+        'MenuItem',
+        on_delete=models.CASCADE,
+        related_name='favorited_by'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'menu_item')
+        ordering = ['-created_at']
+        verbose_name = "Favorite Menu Item"
+        verbose_name_plural = "Favorite Menu Items"
+
+    def __str__(self):
+        return f"{self.user.username} ♥ {self.menu_item.name}"
