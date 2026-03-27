@@ -115,6 +115,25 @@ body{background:#ffffff!important}
     pointer-events: none;
 }
 
+/* ── Closed & locked establishment — stronger visual lock ── */
+.establishment-cart-box.estab-closed-locked {
+    background: #fafafa !important;
+}
+.establishment-cart-box.estab-closed-locked .cart-establishment-info {
+    opacity: 0.6 !important;
+    cursor: default !important;
+}
+.establishment-cart-box.estab-closed-locked .cart-items-list {
+    opacity: 0.35 !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+.establishment-cart-box.estab-closed-locked .estab-select-all,
+.establishment-cart-box.estab-closed-locked .item-checkbox {
+    cursor: not-allowed !important;
+    opacity: 0.4 !important;
+}
+
 /* ── Closed badge on establishment ── */
 .estab-closed-badge {
     display: inline-flex;
@@ -129,6 +148,11 @@ body{background:#ffffff!important}
     padding: 3px 9px;
     white-space: nowrap;
     flex-shrink: 0;
+}
+.estab-opens-at {
+    font-weight: 500;
+    opacity: 0.85;
+    font-size: 0.72rem;
 }
 
 /* ── Establishment name link ── */
@@ -345,7 +369,9 @@ html body .establishment-cart-box.active-cart {
                 <div class="establishment-cart-box"
                      data-establishment-id="{{ cart.establishment.id }}"
                      data-order-id="{{ cart.order.id }}"
-                     data-is-open="{{ cart.is_open|yesno:'true,false' }}">
+                     data-is-open="{{ cart.is_open|yesno:'true,false' }}"
+                     data-opening-time="{{ cart.opening_time_display|default:'' }}"
+                     data-closing-time="{{ cart.closing_time_display|default:'' }}">
 
                     <!-- Establishment Header -->
                     <div class="cart-establishment-info">
@@ -368,6 +394,9 @@ html body .establishment-cart-box.active-cart {
                         {% if not cart.is_open %}
                         <span class="estab-closed-badge">
                             <i class="fas fa-clock"></i> Closed
+                            {% if cart.opening_time_display %}
+                            <span class="estab-opens-at">· Opens {{ cart.opening_time_display }}</span>
+                            {% endif %}
                         </span>
                         {% endif %}
                         <button type="button"
@@ -642,6 +671,13 @@ html body .establishment-cart-box.active-cart {
             }, 300);
         }
 
+        // ── Auto-uncheck AND disable closed establishments on page load ─────
+        document.querySelectorAll('.establishment-cart-box').forEach(function(box) {
+            if (box.getAttribute('data-is-open') !== 'true') {
+                _lockClosedEstab(box);
+            }
+        });
+
         // Initial summary render on page load
         window.rebuildOrderSummary();
         // Initial stock check — lock buttons, add OOS chip, flag any OOS items already in cart
@@ -750,6 +786,48 @@ html body .establishment-cart-box.active-cart {
     }, true);
 
     // ============================================================
+    // HELPERS — lock/unlock closed/open establishments
+    // ============================================================
+    function _lockClosedEstab(box) {
+        // Uncheck + disable establishment header checkbox
+        const estabChk = box.querySelector('.estab-select-all');
+        if (estabChk) {
+            estabChk.checked       = false;
+            estabChk.indeterminate = false;
+            estabChk.disabled      = true;
+        }
+        box.classList.add('estab-unchecked', 'estab-closed-locked');
+
+        // Uncheck + disable all item checkboxes
+        box.querySelectorAll('.item-checkbox').forEach(function(chk) {
+            chk.checked  = false;
+            chk.disabled = true;
+        });
+        box.querySelectorAll('.cart-item').forEach(function(item) {
+            item.classList.add('item-unchecked');
+        });
+    }
+
+    function _unlockOpenEstab(box) {
+        // Re-enable + check establishment header checkbox
+        const estabChk = box.querySelector('.estab-select-all');
+        if (estabChk) {
+            estabChk.checked  = true;
+            estabChk.disabled = false;
+        }
+        box.classList.remove('estab-unchecked', 'estab-closed-locked');
+
+        // Re-enable + check all item checkboxes
+        box.querySelectorAll('.item-checkbox').forEach(function(chk) {
+            chk.checked  = true;
+            chk.disabled = false;
+        });
+        box.querySelectorAll('.cart-item').forEach(function(item) {
+            item.classList.remove('item-unchecked');
+        });
+    }
+
+    // ============================================================
     // ORDER SUMMARY — rebuilt dynamically from checked items
     // Exposed on window so ALL script blocks can call it safely
     // ============================================================
@@ -767,6 +845,9 @@ html body .establishment-cart-box.active-cart {
         estabBoxes.forEach(function(box) {
             const estabNameEl = box.querySelector('.cart-establishment-info h2');
             if (!estabNameEl) return;
+
+            // ── Skip closed establishments entirely — never include in summary ──
+            if (box.getAttribute('data-is-open') !== 'true') return;
 
             // SOLE source of truth: count checked item checkboxes directly.
             // Never gate on estabChk.indeterminate — it is write-only in browsers;
@@ -1513,6 +1594,77 @@ window.clearEstablishmentCart = function(establishmentId) {
         s.textContent = '@keyframes cartBannerIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}';
         document.head.appendChild(s);
     }
+
+    // ================================================================
+    // REALTIME OPEN/CLOSED POLLING
+    // Polls each establishment's status every 60 seconds.
+    // Updates data-is-open, the Closed badge, and re-evaluates button.
+    // ================================================================
+    (function initOpenClosedPolling() {
+        function applyClosedState(box, openingTime) {
+            box.setAttribute('data-is-open', 'false');
+            if (openingTime) box.setAttribute('data-opening-time', openingTime);
+            // Add or update badge
+            const header = box.querySelector('.cart-establishment-info');
+            let badge = header ? header.querySelector('.estab-closed-badge') : null;
+            const opensText = (openingTime || box.getAttribute('data-opening-time'))
+                ? ' <span class=\"estab-opens-at\">· Opens ' + (openingTime || box.getAttribute('data-opening-time')) + '</span>'
+                : '';
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'estab-closed-badge';
+                const h2 = header ? header.querySelector('h2') : null;
+                if (h2) h2.insertAdjacentElement('afterend', badge);
+            }
+            badge.innerHTML = '<i class=\"fas fa-clock\"></i> Closed' + opensText;
+            // Lock the establishment (uncheck + disable checkboxes)
+            _lockClosedEstab(box);
+            const estName = box.querySelector('.estab-name-link')?.firstChild?.textContent?.trim() || 'Establishment';
+            showCartToast('\uD83D\uDD12 <strong>' + estName + '</strong> is now closed.', 'warning');
+        }
+
+        function applyOpenState(box) {
+            box.setAttribute('data-is-open', 'true');
+            // Remove closed badge
+            box.querySelectorAll('.estab-closed-badge').forEach(function(b) { b.remove(); });
+            // Unlock the establishment (re-enable + recheck checkboxes)
+            _unlockOpenEstab(box);
+            const estName = box.querySelector('.estab-name-link')?.firstChild?.textContent?.trim() || 'Establishment';
+            showCartToast('\u2705 <strong>' + estName + '</strong> is now open!', 'success');
+        }
+
+        function pollAllEstablishments() {
+            document.querySelectorAll('.establishment-cart-box[data-establishment-id]').forEach(function(box) {
+                const estId = box.getAttribute('data-establishment-id');
+                if (!estId) return;
+
+                fetch('/api/establishment/' + estId + '/status/', {
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data) return;
+                    const wasOpen   = box.getAttribute('data-is-open') === 'true';
+                    const isNowOpen = data.status === 'Open';
+                    if (wasOpen === isNowOpen) return;
+
+                    if (isNowOpen) {
+                        applyOpenState(box);
+                    } else {
+                        applyClosedState(box, data.opening_time || null);
+                    }
+
+                    if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+                    if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+                })
+                .catch(function() {});
+            });
+        }
+
+        // Poll every 60 seconds
+        setInterval(pollAllEstablishments, 60000);
+    })();
 })();
 </script>
 {% endblock %}

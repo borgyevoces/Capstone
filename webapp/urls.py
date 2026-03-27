@@ -96,6 +96,11 @@ urlpatterns = [
                        name='api_update_order_status'),
                   path('api/food-establishment/orders/<int:order_id>/reject/', views.reject_order,
                        name='api_reject_order'),
+                  # ✅ NEW: Owner permanently dismisses client-cancelled orders
+                  path('api/food-establishment/orders/<int:order_id>/dismiss/', views.owner_dismiss_cancelled_order,
+                       name='api_dismiss_cancelled_order'),
+                  path('api/food-establishment/orders/dismiss-all-cancelled/', views.owner_dismiss_all_cancelled_orders,
+                       name='api_dismiss_all_cancelled_orders'),
                   path('api/order/<int:order_id>/cancel/', views.cancel_order,
                        name='api_cancel_order'),
                   path('api/order/<int:order_id>/re-request/', views.re_request_order,

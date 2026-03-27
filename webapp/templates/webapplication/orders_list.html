@@ -286,6 +286,34 @@
     }
     @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
 
+    /* Claim countdown timer chip (to_claim tab) */
+    .claim-timer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ede9fe;
+        border: 1px solid #c4b5fd;
+        color: #6b21a8;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .claim-timer-chip i { font-size: 12px; }
+    .claim-timer-chip.urgent {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #b91c1c;
+        animation: timerPulse 1s infinite;
+    }
+    .claim-timer-chip.expired {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #9ca3af;
+    }
+
     .col-elapsed { text-align: center; vertical-align: middle; }
     .col-time    { vertical-align: middle; white-space: nowrap; }
     .elapsed-chip {
@@ -336,6 +364,134 @@
         color: #065F46;
         cursor: default;
     }
+
+    /* Cancel button for to_claim orders */
+    .btn-cancel-claim {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1.5px solid #fda4af;
+        font-size: 12px;
+        padding: 7px 14px;
+        min-width: 90px;
+    }
+    .btn-cancel-claim:hover {
+        background: #ffe4e6;
+        border-color: #fb7185;
+    }
+
+    /* Cancel claim reason modal */
+    .cancel-claim-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 20000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .cancel-claim-modal-overlay.show { display: flex; }
+    .cancel-claim-modal {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 28px 24px;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
+    .cancel-claim-modal h3 {
+        font-size: 17px;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 0 0 6px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .cancel-claim-modal h3 i { color: #be123c; }
+    .cancel-claim-modal .modal-sub {
+        font-size: 13px;
+        color: #718096;
+        margin-bottom: 18px;
+    }
+    .cancel-claim-reason-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #4a5568;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .cancel-claim-reason-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #2d3748;
+        outline: none;
+        background: #f7fafc;
+        margin-bottom: 10px;
+        transition: border-color .2s;
+    }
+    .cancel-claim-reason-select:focus { border-color: #be123c; background: white; }
+    .cancel-claim-reason-select.invalid { border-color: #fc8181; }
+    .cancel-claim-other-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #2d3748;
+        outline: none;
+        resize: vertical;
+        min-height: 80px;
+        background: #f7fafc;
+        display: none;
+        transition: border-color .2s;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+    .cancel-claim-other-textarea:focus { border-color: #be123c; background: white; }
+    .cancel-claim-other-textarea.invalid { border-color: #fc8181; }
+    .cancel-claim-error {
+        font-size: 12px;
+        color: #c53030;
+        margin-bottom: 8px;
+        display: none;
+        font-weight: 600;
+    }
+    .cancel-claim-error.show { display: block; }
+    .cancel-claim-modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 6px;
+        justify-content: flex-end;
+    }
+    .cancel-claim-btn-dismiss {
+        padding: 10px 20px;
+        border: 1.5px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all .2s;
+    }
+    .cancel-claim-btn-dismiss:hover { background: #f7fafc; }
+    .cancel-claim-btn-confirm {
+        padding: 10px 22px;
+        background: #be123c;
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background .2s;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .cancel-claim-btn-confirm:hover { background: #9f1239; }
+    .cancel-claim-btn-confirm:disabled { opacity: .55; cursor: not-allowed; }
 
     .payment-info {
         display: flex;
@@ -417,6 +573,26 @@
 
     .bulk-action-btn:not(:disabled):hover {
         background: #991515;
+    }
+
+    /* Clear-All-Cancelled button in request tab */
+    .bulk-clear-cancelled-btn {
+        padding: 10px 18px;
+        background: #fff5f5;
+        color: #991b1b;
+        border: 1.5px solid #fca5a5;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: none;           /* hidden until there are cancelled rows */
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+    .bulk-clear-cancelled-btn:hover {
+        background: #fee2e2;
+        border-color: #f87171;
     }
 
     /* Empty State */
@@ -1068,10 +1244,18 @@
                 <input type="checkbox" class="checkbox" onchange="toggleAllOrders()">
                 <span id="selectionText">0 selected</span>
             </div>
-            <button class="bulk-action-btn" id="bulkBtn" onclick="bulkMove()" disabled>
-                <i class="fas fa-arrow-right"></i>
-                <span id="bulkText">Move to Next Step</span>
-            </button>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <!-- ✅ NEW: Clear All Cancelled — only visible in request tab when cancelled rows exist -->
+                <button class="bulk-clear-cancelled-btn" id="clearCancelledBtn"
+                        onclick="clearAllCancelledOrders()">
+                    <i class="fas fa-trash-alt"></i>
+                    <span id="clearCancelledText">Clear All Cancelled</span>
+                </button>
+                <button class="bulk-action-btn" id="bulkBtn" onclick="bulkMove()" disabled>
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="bulkText">Move to Next Step</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1088,34 +1272,52 @@
 </main>
 
 <!-- Custom Confirm Modal -->
+<!-- ✅ UNIFIED REJECT MODAL — same design for request / to_pay / to_claim -->
+<div class="cancel-claim-modal-overlay" id="unifiedRejectModal">
+    <div class="cancel-claim-modal">
+        <!-- Icon + Title row -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:#fee2e2;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-ban" style="color:#be123c;font-size:18px;"></i>
+            </div>
+            <div>
+                <h3 style="font-size:17px;font-weight:800;color:#1a202c;margin:0 0 2px;
+                           display:block;">Reject Order</h3>
+                <p class="modal-sub" id="unifiedRejectSubtext" style="margin:0;font-size:13px;color:#718096;"></p>
+            </div>
+        </div>
+        <hr style="border:none;border-top:1px solid #f0f0f0;margin:14px 0 16px;">
+        <div class="cancel-claim-reason-label">Reason for Rejection</div>
+        <select id="unifiedRejectSelect" class="cancel-claim-reason-select"
+                onchange="onUnifiedReasonChange(this.value)">
+            <!-- populated dynamically per tab -->
+        </select>
+        <textarea id="unifiedRejectOther" class="cancel-claim-other-textarea"
+                  placeholder="Please describe the reason for rejecting this order…"
+                  oninput="this.classList.remove('invalid');
+                           document.getElementById('unifiedRejectErr').classList.remove('show');"></textarea>
+        <p class="cancel-claim-error" id="unifiedRejectErr">
+            <i class="fas fa-exclamation-circle"></i> Please select or enter a reason before rejecting.
+        </p>
+        <div class="cancel-claim-modal-actions">
+            <button class="cancel-claim-btn-dismiss" onclick="closeUnifiedRejectModal()">
+                <i class="fas fa-arrow-left"></i> Go Back
+            </button>
+            <button class="cancel-claim-btn-confirm" id="unifiedRejectConfirmBtn"
+                    onclick="submitUnifiedReject()">
+                <i class="fas fa-ban"></i> Reject Order
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Generic Confirm Modal — used only for non-reject actions (e.g. bulk move) -->
 <div class="confirm-modal-overlay" id="confirmModal">
     <div class="confirm-modal-box">
-        <div class="confirm-modal-icon">
-            <i class="fas fa-question"></i>
-        </div>
+        <div class="confirm-modal-icon"><i class="fas fa-question"></i></div>
         <div class="confirm-modal-title" id="confirmModalTitle">Confirm Action</div>
         <div class="confirm-modal-message" id="confirmModalMessage">Are you sure?</div>
-        <!-- Reject reason picker — only shown for reject actions -->
-        <div id="confirmReasonWrap" style="display:none; margin-bottom:14px; text-align:left;">
-            <p style="font-size:12px;font-weight:700;color:#4a5568;margin:0 0 8px;">Select a reason:</p>
-            <select id="rejectReasonSelect" class="reject-reason-select"
-                    onchange="onRejectReasonChange(this.value)">
-                <option value="">— Choose a reason —</option>
-                <option value="The item you ordered is currently out of stock.">The item you ordered is currently out of stock.</option>
-                <option value="The establishment will be closing shortly and cannot process new orders.">The establishment will be closing shortly and cannot process new orders.</option>
-                <option value="We are temporarily unable to fulfill this order at the moment.">We are temporarily unable to fulfill this order at the moment.</option>
-                <option value="The establishment is experiencing high volume and cannot accommodate this order.">The establishment is experiencing high volume and cannot accommodate this order.</option>
-                <option value="other">Other (please specify)</option>
-            </select>
-            <textarea id="confirmReasonInput"
-                      class="reject-reason-textarea"
-                      placeholder="Please describe the reason for rejecting this order..."
-                      oninput="this.classList.remove('invalid'); document.getElementById('rejectReasonError').classList.remove('show');"></textarea>
-            <p class="reject-reason-error" id="rejectReasonError">
-                <i class="fas fa-exclamation-circle"></i>
-                <span id="rejectReasonErrorText">Please select or enter a reason before rejecting.</span>
-            </p>
-        </div>
         <div class="confirm-modal-actions">
             <button class="confirm-btn-cancel" onclick="closeConfirmModal()">
                 <i class="fas fa-times"></i> Cancel
@@ -1222,9 +1424,98 @@
                     const idx = orders.findIndex(function (o) { return o.id === orderId; });
 
                     if (newStatus === 'cancelled') {
-                        // ── Remove cancelled order row immediately ──────────
-                        if (idx !== -1) orders.splice(idx, 1);
-                        removeOrderRow(orderId);
+                        const cancelReason     = d.cancel_reason || '';
+                        const fromStatus       = d.cancelled_from_status || '';
+                        const cancelledByOwner = !!d.cancelled_by_owner;
+                        const orderEntry       = idx !== -1 ? orders[idx] : null;
+                        const wasRequest       = orderEntry && orderEntry.status === 'request';
+
+                        // ✅ If OWNER rejected the order — remove the row immediately.
+                        // Do NOT show 'Cancelled by Client' badge; this was an owner action.
+                        if (cancelledByOwner) {
+                            // Remove from in-memory array FIRST — prevents poll from re-adding
+                            if (idx !== -1) orders.splice(idx, 1);
+                            updateCounts();
+                            updateBulk();
+                            // Animate row out
+                            const existingRow = document.querySelector(`tr.order-row[data-id="${orderId}"]`);
+                            if (existingRow) {
+                                existingRow.style.transition = 'opacity .3s, transform .3s';
+                                existingRow.style.opacity    = '0';
+                                existingRow.style.transform  = 'translateX(16px)';
+                                setTimeout(() => {
+                                    existingRow.remove();
+                                    const tbody = document.querySelector('#ordersContainer tbody');
+                                    if (tbody && !tbody.querySelector('tr')) {
+                                        document.getElementById('ordersContainer').innerHTML = `
+                                            <div class="state-container">
+                                                <div class="state-icon"><i class="fas fa-inbox"></i></div>
+                                                <h3 class="state-title">No ${LABELS[currentTab]}</h3>
+                                                <p class="state-text">Orders will appear here when customers place them</p>
+                                            </div>`;
+                                    }
+                                }, 320);
+                            }
+
+                        // ✅ If CLIENT cancelled a 'request' order — DON'T remove row.
+                        // Show "Cancelled by Client" badge + reason in Status cell,
+                        // swap action buttons to a single Remove button.
+                        // Owner needs to see the reason and manually remove it.
+                        } else if (wasRequest) {
+                            // Update in-memory status and flag so loadOrders() preserves this row
+                            if (idx !== -1) {
+                                orders[idx].status = 'cancelled';
+                                orders[idx]._cancelledFromRequest = true;  // ✅ preserve across reloads
+                                orders[idx]._cancelReason = cancelReason;  // ✅ keep reason in memory
+                            }
+
+                            // Update Status cell → show Cancelled by Client badge + reason
+                            const statusCell = document.querySelector(
+                                `tr.order-row[data-id="${orderId}"] .col-status`
+                            );
+                            if (statusCell) {
+                                const displayReason = cancelReason || 'No reason provided.';
+                                statusCell.innerHTML = `
+                                    <div style="display:flex;flex-direction:column;gap:5px;">
+                                        <span class="order-status-badge status-cancelled"
+                                              style="background:#fee2e2;color:#991b1b;white-space:nowrap;">
+                                            <i class="fas fa-user-times"></i> Cancelled by Client
+                                        </span>
+                                        <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;
+                                                    padding:5px 8px;font-size:11px;color:#7f1d1d;font-weight:500;
+                                                    max-width:180px;line-height:1.4;">
+                                            <i class="fas fa-info-circle" style="color:#dc2626;margin-right:3px;"></i>
+                                            ${esc(displayReason)}
+                                        </div>
+                                    </div>`;
+                            }
+
+                            // Swap action buttons → Remove only
+                            const actionsCell = document.querySelector(
+                                `tr.order-row[data-id="${orderId}"] .order-actions, tr.order-row[data-id="${orderId}"] td:last-child`
+                            );
+                            if (actionsCell) {
+                                const safeReason = (cancelReason || 'No reason provided.').replace(/"/g, '&quot;');
+                                actionsCell.innerHTML = `
+                                    <button class="action-btn btn-reject"
+                                            data-cancel-reason="${safeReason}"
+                                            onclick="removeClientCancelledRow(${orderId}, this)">
+                                        <i class="fas fa-trash-alt"></i> Remove
+                                    </button>`;
+                            }
+
+                            showToast(`Order #${orderId} was cancelled by the client.`, 'warning');
+                            updateCounts();
+
+                        } else {
+                            // All other cancellations (to_pay, to_claim etc.) — remove row
+                            if (idx !== -1) orders.splice(idx, 1);
+                            removeOrderRow(orderId);
+                            // If on to_claim tab, reload to refresh quantities
+                            if (currentTab === 'to_claim') {
+                                loadOrders();
+                            }
+                        }
 
                     } else if (idx !== -1) {
                         // ── Status changed — move row if it's in wrong tab ──
@@ -1278,7 +1569,26 @@
             .then(data => {
                 console.log('Orders loaded:', data);
                 if (data.success && data.orders) {
-                    orders = data.orders;
+                    // ✅ FIX: Hydrate in-memory flags from API data so cancelled-by-client
+                    // request orders are shown in the request tab even after a page reload.
+                    // The API now returns cancelled_from_request + cancel_reason per order.
+                    data.orders.forEach(o => {
+                        if (o.cancelled_from_request) {
+                            o._cancelledFromRequest = true;
+                            o._cancelReason = o.cancel_reason || 'No reason provided.';
+                            // ✅ FIX: Detect owner-rejected request orders (vs client-cancelled)
+                            // cancelled_by_owner=True means the owner initiated the rejection
+                            o._rejectedByOwner = !!o.cancelled_by_owner;
+                        }
+                    });
+
+                    // Also preserve any in-memory cancelled rows not yet in the fresh API list
+                    // (e.g. cancelled via WS in this session before the owner removed them).
+                    const freshIds = new Set(data.orders.map(o => o.id));
+                    const preservedCancelled = orders.filter(
+                        o => o.status === 'cancelled' && o._cancelledFromRequest && !freshIds.has(o.id)
+                    );
+                    orders = data.orders.concat(preservedCancelled);
                     updateCounts();
                     renderOrders();
                 } else {
@@ -1296,7 +1606,12 @@
     // ==========================================
     function updateCounts() {
         Object.keys(LABELS).forEach(status => {
-            const count = orders.filter(o => (o.status || 'request') === status).length;
+            let count = orders.filter(o => (o.status || 'request') === status).length;
+            // ✅ FIX: Both client-cancelled AND owner-rejected request orders are shown inside
+            // the request tab — include them all in the request count.
+            if (status === 'request') {
+                count += orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
+            }
             const el = document.getElementById(`count-${status}`);
             if (el) el.textContent = count;
         });
@@ -1313,7 +1628,15 @@
     function renderOrders() {
         const container = document.getElementById('ordersContainer');
         const filtered = orders
-            .filter(o => (o.status || 'request') === currentTab)
+            .filter(o => {
+                // ✅ FIX: Show cancelled-by-client request orders inside the request tab
+                // so the owner can see the reason and manually dismiss them.
+                if (currentTab === 'request') {
+                    return (o.status || 'request') === 'request' ||
+                           (o.status === 'cancelled' && o._cancelledFromRequest);
+                }
+                return (o.status || 'request') === currentTab;
+            })
             .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
         if (filtered.length === 0) {
@@ -1369,12 +1692,13 @@
                    </div>`
                 : '';
 
-            // ── 8-minute countdown for to_pay orders ──
-            // Timer starts from updated_at (when owner accepted = moved to to_pay)
+            // ── 10-minute countdown for to_pay orders ──
+            // Timer starts from updated_at (when owner accepted = moved to to_pay,
+            // or reset when new items were merged into this to_pay order)
             let timerCellHtml = '';
             if (currentTab === 'to_pay') {
                 const acceptedAt  = new Date(o.updated_at || o.created_at);
-                const deadlineMs  = acceptedAt.getTime() + 8 * 60 * 1000;
+                const deadlineMs  = acceptedAt.getTime() + 10 * 60 * 1000;
                 const remaining   = deadlineMs - Date.now();
                 if (remaining > 0) {
                     const mm = Math.floor(remaining / 60000);
@@ -1387,7 +1711,65 @@
                 }
             }
 
-            const timerExpired = currentTab === 'to_pay' && (new Date(o.updated_at || o.created_at).getTime() + 8*60*1000) <= Date.now();
+            const timerExpired = currentTab === 'to_pay' && (new Date(o.updated_at || o.created_at).getTime() + 10*60*1000) <= Date.now();
+
+            // ── 30-minute claim countdown for to_claim orders ──
+            let claimTimerHtml = '';
+            if (currentTab === 'to_claim') {
+                const claimStartAt = new Date(o.updated_at || o.created_at);
+                const claimDeadlineMs = claimStartAt.getTime() + 30 * 60 * 1000;
+                const claimRemaining  = claimDeadlineMs - Date.now();
+                if (claimRemaining > 0) {
+                    const cmm = Math.floor(claimRemaining / 60000);
+                    const css = Math.floor((claimRemaining % 60000) / 1000);
+                    claimTimerHtml = `<span class="claim-timer-chip" id="ctimer-${o.id}" data-claim-deadline="${claimDeadlineMs}">
+                        <i class="fas fa-hourglass-half"></i> <span id="ctimer-val-${o.id}">${cmm}:${String(css).padStart(2,'0')}</span> left to claim
+                    </span>`;
+                } else {
+                    claimTimerHtml = `<span class="claim-timer-chip expired"><i class="fas fa-hourglass-end"></i> Claim window expired</span>`;
+                }
+            }
+
+            // ✅ FIX: If this order was cancelled by the client from 'request' status,
+            // override the status badge and action buttons before building the row.
+            let isCancelledByClient = o.status === 'cancelled' && o._cancelledFromRequest && !o._rejectedByOwner;
+            let isRejectedByOwner   = o.status === 'cancelled' && o._cancelledFromRequest && !!o._rejectedByOwner;
+            let clientCancelStatusHtml = '';
+            if (isCancelledByClient) {
+                const displayReason = esc(o._cancelReason || 'No reason provided.');
+                clientCancelStatusHtml = `
+                    <div style="display:flex;flex-direction:column;gap:5px;">
+                        <span class="order-status-badge status-cancelled"
+                              style="background:#fee2e2;color:#991b1b;white-space:nowrap;">
+                            <i class="fas fa-user-times"></i> Cancelled by Client
+                        </span>
+                        <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;
+                                    padding:5px 8px;font-size:11px;color:#7f1d1d;font-weight:500;
+                                    max-width:180px;line-height:1.4;">
+                            <i class="fas fa-info-circle" style="color:#dc2626;margin-right:3px;"></i>
+                            ${displayReason}
+                        </div>
+                    </div>`;
+            }
+
+            // ✅ NEW: "Rejected by You" status HTML for owner-rejected request orders
+            let ownerRejectedStatusHtml = '';
+            if (isRejectedByOwner) {
+                const displayReason = esc(o._cancelReason || 'No reason provided.');
+                ownerRejectedStatusHtml = `
+                    <div style="display:flex;flex-direction:column;gap:5px;">
+                        <span class="order-status-badge"
+                              style="background:#fef3c7;color:#92400e;white-space:nowrap;border:1px solid #fde68a;">
+                            <i class="fas fa-times-circle"></i> Rejected by You
+                        </span>
+                        <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;
+                                    padding:5px 8px;font-size:11px;color:#78350f;font-weight:500;
+                                    max-width:180px;line-height:1.4;">
+                            <i class="fas fa-comment-alt" style="color:#d97706;margin-right:3px;"></i>
+                            Reason: ${displayReason}
+                        </div>
+                    </div>`;
+            }
 
             // request tab: if ANY item is out of stock/insufficient → Reject only, no Accept
             let actionBtn;
@@ -1409,9 +1791,22 @@
                         </div>`;
                 }
             } else if (next && currentTab !== 'to_pay') {
-                actionBtn = `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
-                    <i class="fas fa-arrow-right"></i> ${LABELS[next]}
-                </button>`;
+                // to_claim tab: show Completed button + Reject button below it
+                if (currentTab === 'to_claim') {
+                    actionBtn = `
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <button class="action-btn btn-move" onclick="moveOrder(${o.id})">
+                                <i class="fas fa-check-circle"></i> ${LABELS[next]}
+                            </button>
+                            <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-${o.id}" onclick="cancelClaimOrder(${o.id})">
+                                <i class="fas fa-ban"></i> Reject
+                            </button>
+                        </div>`;
+                } else {
+                    actionBtn = `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
+                        <i class="fas fa-arrow-right"></i> ${LABELS[next]}
+                    </button>`;
+                }
             } else if (currentTab === 'to_pay') {
                 actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
                     <i class="fas fa-times"></i> Reject
@@ -1420,12 +1815,33 @@
                 actionBtn = `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
             }
 
+            // ✅ FIX: Override actionBtn for client-cancelled request rows
+            if (isCancelledByClient) {
+                const safeReason = (o._cancelReason || 'No reason provided.').replace(/"/g, '&quot;');
+                actionBtn = `<button class="action-btn btn-reject"
+                                     data-cancel-reason="${safeReason}"
+                                     onclick="removeClientCancelledRow(${o.id}, this)">
+                                 <i class="fas fa-trash-alt"></i> Remove
+                             </button>`;
+            }
+            // ✅ NEW: Override actionBtn for owner-rejected request rows — show Dismiss button
+            if (isRejectedByOwner) {
+                actionBtn = `<button class="action-btn btn-reject"
+                                     onclick="removeClientCancelledRow(${o.id}, this)"
+                                     title="Dismiss this rejected order">
+                                 <i class="fas fa-check"></i> Dismiss
+                             </button>`;
+            }
+
             rows += `
                 <tr class="order-row" data-id="${o.id}">
                     <td class="col-check">
-                        ${currentTab !== 'to_pay' ? `<input type="checkbox" class="checkbox" data-id="${o.id}"
-                               ${selectedOrders.has(o.id) ? 'checked' : ''}
-                               onchange="toggleSelectOrder(${o.id})">` : ''}
+                        ${currentTab !== 'to_pay' && !isCancelledByClient && !isRejectedByOwner
+                            ? `<input type="checkbox" class="checkbox" data-id="${o.id}"
+                                      ${selectedOrders.has(o.id) ? 'checked' : ''}
+                                      onchange="toggleSelectOrder(${o.id})">`
+                            : ''
+                        }
                     </td>
                     <td class="col-order">
                         <div class="row-order-num">#${o.id}</div>
@@ -1447,12 +1863,20 @@
                         ${ownerStockBanner || ''}
                     </td>
                     <td class="col-status">
-                        <span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>
+                        ${isCancelledByClient
+                            ? clientCancelStatusHtml
+                            : isRejectedByOwner
+                                ? ownerRejectedStatusHtml
+                                : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
+                        }
                     </td>
                     ${currentTab !== 'completed' ? `<td class="col-elapsed">
-                        <span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
-                            <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
-                        </span>
+                        ${currentTab === 'to_claim'
+                            ? claimTimerHtml
+                            : `<span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
+                                <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
+                               </span>`
+                        }
                     </td>` : ''}
                     <td class="col-actions">
                         ${currentTab === 'completed' ? `<button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button>` : ''}
@@ -1479,7 +1903,7 @@
                         ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
-                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">Elapsed</th>` : ''}
+                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">${currentTab === 'to_claim' ? 'Left to Claim' : 'Elapsed'}</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -1494,6 +1918,10 @@
             startOwnerTimers();
             // Auto-reject rows that were already expired when the page rendered
             autoRejectExpiredRows();
+        }
+        // ✅ Start 30-min claim countdown for to_claim rows
+        if (currentTab === 'to_claim') {
+            startClaimTimers();
         }
     }
 
@@ -1614,14 +2042,37 @@
             selectionInfo.style.visibility = currentTab === 'to_pay' ? 'hidden' : 'visible';
         }
 
+        // ✅ NEW: Show "Clear All Cancelled" button only in request tab when cancelled rows exist
+        const clearBtn = document.getElementById('clearCancelledBtn');
+        const clearTxt = document.getElementById('clearCancelledText');
+        if (clearBtn) {
+            const cancelledCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
+            if (currentTab === 'request' && cancelledCount > 0) {
+                clearBtn.style.display = 'flex';
+                if (clearTxt) clearTxt.textContent = `Clear All Cancelled (${cancelledCount})`;
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        }
+
         if (currentTab === 'to_pay') {
             btn.disabled = true;
             txt.textContent = 'Awaiting Client Payment';
         } else if (count > 0 && next) {
-            btn.disabled = false;
-            txt.textContent = currentTab === 'request'
-                ? `Accept ${count} Request${count > 1 ? 's' : ''}`
-                : `Move ${count} to ${LABELS[next]}`;
+            // ✅ FIX: Exclude BOTH client-cancelled AND owner-rejected rows from bulk accept
+            const acceptableSelected = Array.from(selectedOrders).filter(id => {
+                const o = orders.find(x => x.id === id);
+                return o && !(o.status === 'cancelled' && o._cancelledFromRequest);
+            });
+            if (acceptableSelected.length > 0) {
+                btn.disabled = false;
+                txt.textContent = currentTab === 'request'
+                    ? `Accept ${acceptableSelected.length} Request${acceptableSelected.length > 1 ? 's' : ''}`
+                    : `Move ${acceptableSelected.length} to ${LABELS[next]}`;
+            } else {
+                btn.disabled = true;
+                txt.textContent = currentTab === 'request' ? 'No Acceptable Requests Selected' : 'Move to Next Step';
+            }
         } else {
             btn.disabled = true;
             txt.textContent = 'Move to Next Step';
@@ -1645,66 +2096,14 @@
     }
 
     function confirmModalOk() {
-        // If the reject reason picker is visible, validate before proceeding
-        const reasonWrap = document.getElementById('confirmReasonWrap');
-        if (reasonWrap && reasonWrap.style.display !== 'none') {
-            const rs        = document.getElementById('rejectReasonSelect');
-            const ri        = document.getElementById('confirmReasonInput');
-            const errEl     = document.getElementById('rejectReasonError');
-            const errTxtEl  = document.getElementById('rejectReasonErrorText');
-            const selected  = rs ? rs.value : '';
-
-            // Clear previous invalid state
-            if (rs) rs.classList.remove('invalid');
-            if (ri) ri.classList.remove('invalid');
-            if (errEl) errEl.classList.remove('show');
-
-            if (!selected) {
-                if (rs) rs.classList.add('invalid');
-                if (errTxtEl) errTxtEl.textContent = 'Please select a reason before rejecting.';
-                if (errEl) errEl.classList.add('show');
-                return;
-            }
-
-            if (selected === 'other') {
-                const customReason = ri ? ri.value.trim() : '';
-                if (!customReason) {
-                    if (ri) ri.classList.add('invalid');
-                    if (errTxtEl) errTxtEl.textContent = 'Please describe the reason before rejecting.';
-                    if (errEl) errEl.classList.add('show');
-                    if (ri) ri.focus();
-                    return;
-                }
-            }
-        }
-
-        // ── CRITICAL: read values BEFORE closeConfirmModal resets the fields ──
-        const rsVal = document.getElementById('rejectReasonSelect')?.value || '';
-        const riVal = document.getElementById('confirmReasonInput')?.value?.trim() || '';
-
-        const cb = confirmCallback; // save BEFORE closeConfirmModal nulls it
+        const cb = confirmCallback;
         closeConfirmModal();
-
-        if (cb) {
-            // Pass the captured reason into the callback via a temporary global
-            window._capturedRejectReason = rsVal === 'other' ? riVal : rsVal;
-            cb();
-            delete window._capturedRejectReason;
-        }
+        if (cb) cb();
     }
 
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('show');
         confirmCallback = null;
-        // Reset reason dropdown + validation state whenever the modal closes
-        const reasonWrap = document.getElementById('confirmReasonWrap');
-        if (reasonWrap) reasonWrap.style.display = 'none';
-        const rs = document.getElementById('rejectReasonSelect');
-        if (rs) { rs.value = ''; rs.classList.remove('invalid'); }
-        const ri = document.getElementById('confirmReasonInput');
-        if (ri) { ri.value = ''; ri.style.display = 'none'; ri.classList.remove('invalid'); }
-        const errEl = document.getElementById('rejectReasonError');
-        if (errEl) errEl.classList.remove('show');
     }
 
     // ==========================================
@@ -1717,7 +2116,7 @@
         // Find all to_pay orders in memory that are already past deadline
         const expiredOrders = orders.filter(o => {
             if ((o.status || '') !== 'to_pay') return false;
-            const deadlineMs = new Date(o.updated_at || o.created_at).getTime() + 8 * 60 * 1000;
+            const deadlineMs = new Date(o.updated_at || o.created_at).getTime() + 10 * 60 * 1000;
             return Date.now() >= deadlineMs;
         });
 
@@ -1808,39 +2207,211 @@
     }
 
     // ==========================================
-    // REJECT REASON — dropdown change handler
+    // OWNER 30-MIN CLAIM COUNTDOWN TIMERS (to_claim tab)
     // ==========================================
-    function onRejectReasonChange(val) {
-        // Clear validation error when user picks something
-        const rs    = document.getElementById('rejectReasonSelect');
-        const errEl = document.getElementById('rejectReasonError');
-        if (rs)    rs.classList.remove('invalid');
-        if (errEl) errEl.classList.remove('show');
+    const claimTimerMap = {};  // orderId → intervalId
 
-        const textarea = document.getElementById('confirmReasonInput');
-        if (!textarea) return;
-        if (val === 'other') {
-            textarea.style.display = 'block';
-            textarea.focus();
-        } else {
-            textarea.style.display = 'none';
-            textarea.value = '';
-            textarea.classList.remove('invalid');
-        }
+    function startClaimTimers() {
+        // Clear any existing claim timers first
+        Object.values(claimTimerMap).forEach(id => clearInterval(id));
+        Object.keys(claimTimerMap).forEach(k => delete claimTimerMap[k]);
+
+        document.querySelectorAll('.claim-timer-chip[data-claim-deadline]').forEach(chip => {
+            const orderId     = chip.id.replace('ctimer-', '');
+            const deadlineMs  = parseInt(chip.dataset.claimDeadline, 10);
+
+            const tick = () => {
+                const rem    = deadlineMs - Date.now();
+                const valEl  = document.getElementById(`ctimer-val-${orderId}`);
+                const chipEl = document.getElementById(`ctimer-${orderId}`);
+
+                if (rem <= 0) {
+                    clearInterval(claimTimerMap[orderId]);
+                    if (chipEl) {
+                        chipEl.className = 'claim-timer-chip expired';
+                        chipEl.innerHTML = '<i class="fas fa-hourglass-end"></i> Claim window expired';
+                    }
+                    return;
+                }
+
+                const mm = Math.floor(rem / 60000);
+                const ss = Math.floor((rem % 60000) / 1000);
+                if (valEl) valEl.textContent = `${mm}:${String(ss).padStart(2, '0')}`;
+                if (chipEl) chipEl.className = rem <= 5 * 60 * 1000 ? 'claim-timer-chip urgent' : 'claim-timer-chip';
+            };
+
+            tick();
+            claimTimerMap[orderId] = setInterval(tick, 1000);
+        });
     }
 
-    // ==========================================
-    // REJECT ORDER (owner) — restores stock
-    // ==========================================
-    // ── Direct Remove for out-of-stock request orders ────────────────────────
-    // No confirm modal — owner clicks once, row is gone immediately.
-    // Sends the reject API with the stock reason pre-filled.
-    // The client's WS handler keeps the row visible on their side.
-    function directRemoveOrder(orderId, btnEl) {
-        if (btnEl) {
-            btnEl.disabled = true;
-            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    // ============================================================
+    // ✅ UNIFIED REJECT MODAL — same modal for request/to_pay/to_claim
+    // ============================================================
+    const _REJECT_OPTS = {
+        request: [
+            { v: 'Sorry, one or more items in your order are currently out of stock. Please reorder with available items.',                     l: 'Item(s) out of stock' },
+            { v: 'Sorry, we are closing soon and are unable to fulfill your order at this time. Please try again during operating hours.',       l: 'Closing soon' },
+            { v: 'Sorry, we are currently experiencing a high volume of orders and cannot accept new requests at this time. Please try later.', l: 'Too many orders / High volume' },
+            { v: 'Sorry, we are temporarily unable to fulfill your order due to operational issues. We apologize for the inconvenience.',        l: 'Operational issue' },
+            { v: 'Sorry, there was an ingredient or supply shortage and we cannot prepare your order. Please check our menu for alternatives.', l: 'Ingredient/supply shortage' },
+            { v: 'Sorry, your order contains items that are no longer available on our current menu. Please reorder with updated items.',        l: 'Items no longer on menu' },
+        ],
+        to_pay: [
+            { v: 'Sorry, one or more items in your order ran out of stock while awaiting payment. Please reorder with available items.',         l: 'Item(s) ran out of stock' },
+            { v: 'Sorry, the 10-minute payment window has lapsed. Please re-request your order to try again.',                                  l: 'Payment window expired' },
+            { v: 'Sorry, we are closing soon and can no longer hold this order. Please try again during operating hours.',                       l: 'Closing soon' },
+            { v: 'Sorry, we are unable to complete this transaction due to an operational issue. Please contact us or reorder.',                 l: 'Operational issue' },
+            { v: 'Sorry, your payment could not be verified. Please try again or contact the establishment directly.',                           l: 'Payment not verified' },
+        ],
+        to_claim: [
+            { v: 'Sorry, your order has been cancelled as you did not arrive within the claim window. Please reorder if you still wish to purchase.', l: 'Customer did not arrive in time' },
+            { v: 'Sorry, your order has been cancelled due to a payment discrepancy. Please contact the establishment for assistance.',               l: 'Payment discrepancy' },
+            { v: 'Sorry, we are closing and can no longer hold your order. Please reorder at your earliest convenience during operating hours.',      l: 'Establishment closing' },
+            { v: 'Sorry, your order items are no longer available due to unforeseen circumstances. We apologize for the inconvenience.',              l: 'Items no longer available' },
+            { v: 'Sorry, your order has been cancelled due to quality control concerns. Please reorder and we will serve you better next time.',      l: 'Quality control issue' },
+        ],
+    };
+    const _REJECT_HINT = {
+        request:  'The customer will be notified with your reason and can reorder.',
+        to_pay:   'Reserved stock will be returned to inventory. Customer will be notified.',
+        to_claim: 'The customer will be notified immediately with your reason.',
+    };
+
+    let _rejectTargetId  = null;
+    let _rejectTargetTab = null;
+
+    function openUnifiedRejectModal(orderId, fromTab) {
+        _rejectTargetId  = orderId;
+        _rejectTargetTab = fromTab || currentTab;
+
+        const opts = _REJECT_OPTS[_rejectTargetTab] || _REJECT_OPTS.request;
+        const hint = _REJECT_HINT[_rejectTargetTab] || '';
+
+        // Populate select options
+        const sel = document.getElementById('unifiedRejectSelect');
+        if (sel) {
+            sel.innerHTML = '<option value="">— Choose a reason —</option>'
+                + opts.map(o => `<option value="${o.v}">${o.l}</option>`).join('')
+                + '<option value="other">Other (please specify)</option>';
+            sel.value = '';
+            sel.classList.remove('invalid');
         }
+
+        // Reset textarea
+        const other = document.getElementById('unifiedRejectOther');
+        if (other) { other.value = ''; other.style.display = 'none'; other.classList.remove('invalid'); }
+
+        // Reset error
+        const err = document.getElementById('unifiedRejectErr');
+        if (err) err.classList.remove('show');
+
+        // Set subtext
+        const sub = document.getElementById('unifiedRejectSubtext');
+        if (sub) sub.innerHTML = `Order <strong>#${orderId}</strong> — ${hint}`;
+
+        // Reset button
+        const btn = document.getElementById('unifiedRejectConfirmBtn');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-ban"></i> Reject Order'; }
+
+        const modal = document.getElementById('unifiedRejectModal');
+        if (modal) modal.classList.add('show');
+    }
+
+    function closeUnifiedRejectModal() {
+        const modal = document.getElementById('unifiedRejectModal');
+        if (modal) modal.classList.remove('show');
+        const btn = document.getElementById('unifiedRejectConfirmBtn');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-ban"></i> Reject Order'; }
+        _rejectTargetId  = null;
+        _rejectTargetTab = null;
+    }
+
+    function onUnifiedReasonChange(val) {
+        const sel   = document.getElementById('unifiedRejectSelect');
+        const other = document.getElementById('unifiedRejectOther');
+        const err   = document.getElementById('unifiedRejectErr');
+        if (sel) sel.classList.remove('invalid');
+        if (err) err.classList.remove('show');
+        if (!other) return;
+        if (val === 'other') { other.style.display = 'block'; other.focus(); }
+        else { other.style.display = 'none'; other.value = ''; other.classList.remove('invalid'); }
+    }
+
+    function submitUnifiedReject() {
+        const orderId = _rejectTargetId;
+        if (!orderId) return;
+
+        const sel   = document.getElementById('unifiedRejectSelect');
+        const other = document.getElementById('unifiedRejectOther');
+        const err   = document.getElementById('unifiedRejectErr');
+        const btn   = document.getElementById('unifiedRejectConfirmBtn');
+
+        const selVal = sel ? sel.value : '';
+        const reason = selVal === 'other' ? (other ? other.value.trim() : '') : selVal;
+
+        if (!selVal) {
+            if (sel) sel.classList.add('invalid');
+            if (err) err.classList.add('show');
+            return;
+        }
+        if (selVal === 'other' && !reason) {
+            if (other) other.classList.add('invalid');
+            if (err)   err.classList.add('show');
+            return;
+        }
+
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rejecting…'; }
+
+        const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body:    JSON.stringify({ reason })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeUnifiedRejectModal();
+                orders = orders.filter(o => o.id !== orderId);
+                showToast(`Order #${orderId} rejected — customer has been notified.`, 'success');
+                removeOrderRow(orderId);
+            } else {
+                showToast(data.message || 'Could not reject order.', 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-ban"></i> Reject Order'; }
+            }
+        })
+        .catch(() => {
+            showToast('Network error. Please try again.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-ban"></i> Reject Order'; }
+        });
+    }
+
+    // Close on overlay click
+    document.getElementById('unifiedRejectModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeUnifiedRejectModal();
+    });
+
+    // ── Public entry points (called from onclick attributes in renderOrders) ──
+    /** Reject button in request tab and to_pay tab */
+    function rejectOrder(orderId) {
+        const o = orders.find(x => x.id === orderId);
+        openUnifiedRejectModal(orderId, (o && o.status) || currentTab);
+    }
+
+    /** Reject button in to_claim tab */
+    function cancelClaimOrder(orderId) {
+        openUnifiedRejectModal(orderId, 'to_claim');
+    }
+
+    // Backward-compat shims (old onclick strings may still reference these)
+    function closeCancelClaimModal()      { closeUnifiedRejectModal(); }
+    function onCancelClaimReasonChange(v) { onUnifiedReasonChange(v); }
+    function confirmCancelClaimOrder()    { submitUnifiedReject(); }
+
+    // ── Direct Remove for out-of-stock request orders (no modal) ─────────────
+    function directRemoveOrder(orderId, btnEl) {
+        if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
         const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
         const reason = 'The item you ordered is currently out of stock.';
         fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
@@ -1851,73 +2422,147 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                orders = orders.filter(o => o.id !== orderId);
                 showToast(`Order #${orderId} removed — customer notified.`, 'success');
                 removeOrderRow(orderId);
             } else {
                 showToast(data.message || 'Could not remove order.', 'error');
-                if (btnEl) {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove';
-                }
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
             }
         })
         .catch(() => {
             showToast('Network error. Please try again.', 'error');
-            if (btnEl) {
-                btnEl.disabled = false;
-                btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove';
-            }
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
         });
     }
 
-        function rejectOrder(orderId) {
-        const reasonWrap   = document.getElementById('confirmReasonWrap');
-        const reasonSelect = document.getElementById('rejectReasonSelect');
-        const reasonInput  = document.getElementById('confirmReasonInput');
+    // ── Owner removes a client-cancelled request row ─────────────────────────
+    // Client already cancelled the order (stock restored server-side).
+    // ✅ FIXED: Owner permanently dismisses a single client-cancelled row.
+    // Now calls the backend API so the dismissal survives page reloads.
+    function removeClientCancelledRow(orderId, btn) {
+        // ✅ FIX: One-click dismiss — no confirm modal.
+        // Remove from UI immediately, persist owner_dismissed=True in DB in background.
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        // Remove from memory immediately so poll cannot re-add this row
+        orders = orders.filter(o => o.id !== orderId);
+        updateCounts();
+        updateBulk();
+        // Animate row out immediately — don't wait for API response
+        const row = document.querySelector(`tr.order-row[data-id="${orderId}"]`);
+        if (row) {
+            row.style.transition = 'opacity .3s, transform .3s';
+            row.style.opacity    = '0';
+            row.style.transform  = 'translateX(16px)';
+            setTimeout(() => {
+                row.remove();
+                const tbody = document.querySelector('#ordersContainer tbody');
+                if (tbody && !tbody.querySelector('tr')) {
+                    document.getElementById('ordersContainer').innerHTML = `
+                        <div class="state-container">
+                            <div class="state-icon"><i class="fas fa-inbox"></i></div>
+                            <h3 class="state-title">No ${LABELS[currentTab]}</h3>
+                            <p class="state-text">Orders will appear here when customers place them</p>
+                        </div>`;
+                }
+            }, 320);
+        }
+        // Persist to DB in background
+        fetch(`/api/food-establishment/orders/${orderId}/dismiss/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Order #${orderId} removed.`, 'success');
+            } else {
+                showToast(data.message || 'Could not dismiss order — try refreshing.', 'error');
+            }
+        })
+        .catch(() => showToast('Network error. Please try again.', 'error'));
+    }
 
-        // Determine if this is a request or to_pay order for better messaging
-        const orderData   = orders.find(o => o.id === orderId);
-        const isRequest   = orderData && orderData.status === 'request';
-        const modalMsg    = isRequest
-            ? `Reject order <strong>#${orderId}</strong>? The customer will be notified with your reason and can re-order.`
-            : `Reject order <strong>#${orderId}</strong>? The customer's reserved items will be returned to stock.`;
+    // ✅ FIXED: Permanently dismiss ALL client-cancelled AND owner-rejected request rows.
+    // Calls the backend bulk dismiss API so dismissals survive page reloads.
+    function clearAllCancelledOrders() {
+        const cancelledOrders = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest);
+        const count = cancelledOrders.length;
+        if (count === 0) return;
 
-        // Reset state
-        if (reasonSelect) reasonSelect.value = '';
-        if (reasonInput)  { reasonInput.value = ''; reasonInput.style.display = 'none'; }
-        if (reasonWrap)   reasonWrap.style.display = 'block';
+        const listItems = cancelledOrders.map(o => {
+            const isOwnerRejected = !!o._rejectedByOwner;
+            const reason = esc(o._cancelReason || 'No reason provided.');
+            const labelStyle = isOwnerRejected
+                ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;'
+                : 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
+            const labelText = isOwnerRejected ? 'Rejected by You' : 'Cancelled by Client';
+            return `<li style="margin-bottom:8px;">
+                        <strong>#${o.id}</strong> — ${esc(o.customer_name || 'Unknown')}
+                        <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;
+                                     border-radius:20px;margin-left:5px;${labelStyle}">${labelText}</span>
+                        <div style="font-size:11px;color:#7f1d1d;margin-top:2px;padding-left:8px;">
+                            <i class="fas fa-info-circle" style="color:#dc2626;margin-right:3px;"></i>${reason}
+                        </div>
+                    </li>`;
+        }).join('');
 
         showConfirmModal(
-            'Reject Order',
-            modalMsg,
-            'Reject Order',
+            'Clear All Cancelled Orders',
+            `<div style="margin-bottom:10px;">
+                Permanently remove <strong>${count} cancelled order${count > 1 ? 's' : ''}</strong> from your Order Request list?
+             </div>
+             <ul style="list-style:none;padding:0;margin:0;max-height:200px;overflow-y:auto;
+                        background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;">
+                 ${listItems}
+             </ul>
+             <div style="margin-top:10px;font-size:12px;color:#718096;">
+                 These include client-cancelled and owner-rejected orders. They will be permanently removed and will not come back after page refresh.
+             </div>`,
+            `Clear ${count} Order${count > 1 ? 's' : ''}`,
             () => {
-                // Read the reason captured by confirmModalOk BEFORE fields were reset
-                const reason = (window._capturedRejectReason !== undefined)
-                    ? window._capturedRejectReason
-                    : (() => {
-                        const sel = document.getElementById('rejectReasonSelect');
-                        const inp = document.getElementById('confirmReasonInput');
-                        const s = sel ? sel.value : '';
-                        return s === 'other' ? (inp ? inp.value.trim() : '') : s;
-                    })();
-
-                fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
-                    method:  'POST',
+                // ✅ Call the backend bulk dismiss API first
+                fetch('/api/food-establishment/orders/dismiss-all-cancelled/', {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
-                    },
-                    body: JSON.stringify({ reason })
+                        'X-CSRFToken': getCsrf()
+                    }
                 })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.success) {
-                        showToast(`Order #${orderId} rejected — customer has been notified.`, 'success');
-                        removeOrderRow(orderId);
-                    } else {
-                        showToast(data.message || 'Could not reject order.', 'error');
+                    if (!data.success) {
+                        showToast(data.message || 'Could not dismiss orders.', 'error');
+                        return;
                     }
+                    // Animate all cancelled rows out of the DOM
+                    cancelledOrders.forEach(o => {
+                        orders = orders.filter(x => x.id !== o.id);
+                        const row = document.querySelector(`tr.order-row[data-id="${o.id}"]`);
+                        if (row) {
+                            row.style.transition = 'opacity .25s, transform .25s';
+                            row.style.opacity    = '0';
+                            row.style.transform  = 'translateX(16px)';
+                            setTimeout(() => row.remove(), 260);
+                        }
+                    });
+                    setTimeout(() => {
+                        updateCounts();
+                        updateBulk();
+                        const tbody = document.querySelector('#ordersContainer tbody');
+                        if (tbody && !tbody.querySelector('tr')) {
+                            document.getElementById('ordersContainer').innerHTML = `
+                                <div class="state-container">
+                                    <div class="state-icon"><i class="fas fa-inbox"></i></div>
+                                    <h3 class="state-title">No ${LABELS[currentTab]}</h3>
+                                    <p class="state-text">Orders will appear here when customers place them</p>
+                                </div>`;
+                        }
+                        showToast(`${data.dismissed_count} cancelled order${data.dismissed_count > 1 ? 's' : ''} permanently removed.`, 'success');
+                    }, 300);
                 })
                 .catch(() => showToast('Network error. Please try again.', 'error'));
             }
@@ -1981,6 +2626,13 @@
             return;
         }
 
+        // ✅ NEW: Block accepting an order that was already cancelled by the client
+        const orderEntry = orders.find(o => o.id === id);
+        if (orderEntry && orderEntry.status === 'cancelled' && orderEntry._cancelledFromRequest) {
+            showToast(`Order #${id} was already cancelled by the client and cannot be accepted.`, 'error');
+            return;
+        }
+
         showConfirmModal(
             currentTab === 'request' ? 'Accept Order Request' : 'Move Order',
             currentTab === 'request'
@@ -1995,8 +2647,16 @@
         const next = FLOW[currentTab];
         if (!next || selectedOrders.size === 0) return;
 
-        const ids = Array.from(selectedOrders);
+        // ✅ NEW: Exclude cancelled-by-client orders from bulk accept
+        const ids = Array.from(selectedOrders).filter(id => {
+            const o = orders.find(x => x.id === id);
+            return !(o && o.status === 'cancelled' && o._cancelledFromRequest);
+        });
         const count = ids.length;
+        if (count === 0) {
+            showToast('No acceptable orders selected. Cancelled orders cannot be accepted.', 'error');
+            return;
+        }
 
         showConfirmModal(
             currentTab === 'request' ? 'Accept Order Requests' : 'Move Multiple Orders',

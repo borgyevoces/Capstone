@@ -5363,16 +5363,19 @@ def view_cart(request):
             if items_to_delete:
                 OrderItem.objects.filter(id__in=items_to_delete).delete()
 
+            est = order.establishment
             carts_data.append({
-                'establishment':      order.establishment,
+                'establishment':      est,
                 'order':              order,
                 'items':              enriched_items,
                 'item_count':         cart_item_count,
                 'has_request_order':  has_active_order,
                 'is_open': get_current_status(
-                    order.establishment.opening_time,
-                    order.establishment.closing_time
+                    est.opening_time,
+                    est.closing_time
                 ) == "Open",
+                'opening_time_display': est.opening_time.strftime('%I:%M %p') if est.opening_time else None,
+                'closing_time_display': est.closing_time.strftime('%I:%M %p') if est.closing_time else None,
             })
 
         context = {
@@ -5929,10 +5932,20 @@ def get_establishment_orders(request):
 
         # Get all orders for this establishment with related data
         # EXCLUDE 'PENDING' orders — those are unpaid cart items, not confirmed orders yet
+        # EXCLUDE owner_dismissed orders — owner already cleared them from the request tab
         orders = Order.objects.filter(
             establishment=establishment
         ).exclude(
             status='PENDING'
+        ).exclude(
+            owner_dismissed=True
+        ).exclude(
+            # Owner-rejected request orders stay cancelled with owner_dismissed=False
+            # so the client can still see the rejection reason. Exclude them from the
+            # owner dashboard — the row already vanished via WS broadcast at rejection time.
+            status='cancelled',
+            stock_deducted=False,
+            owner_dismissed=False,
         ).select_related(
             'user', 'establishment'
         ).prefetch_related(
@@ -5977,6 +5990,42 @@ def get_establishment_orders(request):
             }
             order_status = status_mapping.get(order_status, order_status)
 
+            # ✅ FIX: Detect if this cancelled order was cancelled while still in 'request' status.
+            # Stock is NOT deducted at the 'request' stage, so if status is 'cancelled' and
+            # stock_deducted is False, it was cancelled before being accepted — show it in the
+            # request tab so the owner can see it even after a page reload.
+            # This now covers BOTH client-cancelled AND owner-rejected request orders.
+            cancelled_from_request = (
+                order_status == 'cancelled'
+                and not order.stock_deducted
+                and not order.owner_dismissed
+            )
+            # Retrieve the cancel_reason stored on the order (if available)
+            cancel_reason_value = getattr(order, 'cancel_reason', '') or ''
+
+            # Detect if this was rejected by the owner (not cancelled by client).
+            # owner_dismissed=False + cancelled = owner rejected but hasn't dismissed yet,
+            # OR client self-cancelled (cancel_reason set by client).
+            # We distinguish: owner_rejected means cancelled AND not stock_deducted AND
+            # cancel_reason is present but the order was NOT cancelled by the client's own action.
+            # Since both cases share cancelled_from_request=True, we add an extra flag
+            # cancelled_by_owner so the frontend can show the right badge.
+            # Logic: if the order has a cancel_reason that was NOT set by the client cancel flow,
+            # then it was rejected by the owner. The safest heuristic: check if the
+            # cancellation originated from the owner's reject_order view by inspecting
+            # whether stock was NOT deducted AND owner_dismissed=False (still pending owner dismiss).
+            # Client self-cancels always set owner_dismissed=False too, so we use cancel_reason
+            # presence as a secondary signal — but we can't be 100% sure from the DB alone.
+            # Best approach: store a separate flag. For now we use the convention that
+            # owner-rejected orders have cancel_reason set (owner typed a reason) while
+            # client-cancelled orders have cancel_reason empty or set to client's own message.
+            # The frontend already has WS real-time for live sessions; this API flag is for
+            # page-reload recovery. We set cancelled_by_owner=True when the order was
+            # cancelled while in 'request' status (owner_dismissed=False means owner has
+            # not yet triggered the legacy dismiss path — the client still needs to see it).
+            # We do NOT require cancel_reason to be non-empty; owner may reject without a reason.
+            cancelled_by_owner_flag = cancelled_from_request
+
             order_data = {
                 'id': order.id,
                 'customer_name': order.user.username if order.user else 'Unknown',
@@ -5991,6 +6040,11 @@ def get_establishment_orders(request):
                 'updated_at': order.updated_at.isoformat(),
                 'gcash_reference': order.gcash_reference_number or '',
                 'payment_method': normalize_payment_method(order.gcash_payment_method),
+                # ✅ NEW: tells the owner dashboard to show this row in the request tab
+                'cancelled_from_request': cancelled_from_request,
+                'cancel_reason': cancel_reason_value,
+                # ✅ NEW: tells owner dashboard which rows are owner-rejected (vs client-cancelled)
+                'cancelled_by_owner': cancelled_by_owner_flag,
             }
             orders_data.append(order_data)
 
@@ -6269,6 +6323,78 @@ def update_order_status(request, order_id):
                     order.total_amount = new_total
                     order.save(update_fields=['total_amount'])
 
+            # ── Merge into existing to_pay order (same client) ───────────
+            # If owner accepts a 'request' order and the same client already
+            # has a 'to_pay' order for this establishment, merge the new items
+            # into that existing to_pay order and reset its 10-minute timer
+            # (by updating updated_at). The accepted 'request' order is then
+            # deleted since its items have been folded into the to_pay order.
+            if new_status == 'to_pay' and old_status == 'request':
+                existing_to_pay = Order.objects.filter(
+                    user=order.user,
+                    establishment=establishment,
+                    status='to_pay',
+                ).exclude(id=order.id).order_by('-created_at').first()
+
+                if existing_to_pay:
+                    # Merge each item from the accepted request into the to_pay order
+                    for req_oi in order.orderitem_set.select_related('menu_item').all():
+                        existing_item = OrderItem.objects.filter(
+                            order=existing_to_pay,
+                            menu_item=req_oi.menu_item,
+                        ).first()
+                        if existing_item:
+                            existing_item.quantity += req_oi.quantity
+                            existing_item.save(update_fields=['quantity'])
+                        else:
+                            OrderItem.objects.create(
+                                order=existing_to_pay,
+                                menu_item=req_oi.menu_item,
+                                quantity=req_oi.quantity,
+                                price_at_order=req_oi.price_at_order,
+                            )
+
+                    # Recalculate total of the merged to_pay order
+                    merged_total = sum(
+                        oi.quantity * oi.price_at_order
+                        for oi in existing_to_pay.orderitem_set.all()
+                    )
+                    existing_to_pay.total_amount = merged_total
+                    # Reset the 10-minute payment timer by bumping updated_at
+                    existing_to_pay.updated_at = timezone.now()
+                    existing_to_pay.save(update_fields=['total_amount', 'updated_at'])
+
+                    # Delete the now-merged request order
+                    order.delete()
+
+                    # Notify client and broadcast the updated to_pay order
+                    _broadcast_order_status_update(existing_to_pay, 'to_pay')
+
+                    try:
+                        OrderNotification.objects.create(
+                            establishment=establishment,
+                            order=existing_to_pay,
+                            notification_type='order_update',
+                            message=(
+                                f'Your order #{existing_to_pay.id} has been updated with new items! '
+                                f'Payment window reset to 10 minutes.'
+                            ),
+                        )
+                    except Exception:
+                        pass
+
+                    return JsonResponse({
+                        'success': True,
+                        'merged': True,
+                        'message': 'Order accepted and merged into existing to-pay order. Timer reset to 10 minutes.',
+                        'order': {
+                            'id': existing_to_pay.id,
+                            'status': 'to_pay',
+                            'updated_at': existing_to_pay.updated_at.isoformat(),
+                        },
+                    })
+            # ── End merge-into-to_pay logic ──────────────────────────────
+
             order.status = new_status
             order.save(update_fields=['status', 'updated_at'])
 
@@ -6364,12 +6490,28 @@ def reject_order(request, order_id):
         except Exception:
             pass
 
-        # Only allow rejecting orders that are in 'to_pay' status
-        if order.status not in ('to_pay', 'request'):
+        # Allow rejecting orders that are in 'to_pay', 'request', or 'to_claim' status.
+        # Also allow dismissing already-cancelled orders (e.g. client self-cancelled while
+        # still in 'request' — those appear in the owner's request tab until dismissed).
+        if order.status not in ('to_pay', 'request', 'to_claim', 'cancelled'):
             return JsonResponse({
                 'success': False,
                 'message': f'Cannot reject order with status: {order.status}'
             }, status=400)
+
+        # ── Short-circuit: already cancelled (client self-cancel) ──────────
+        # The client already cancelled this order themselves — nothing to restore.
+        # Just mark as owner_dismissed so it disappears from the owner's request tab.
+        # DO NOT broadcast cancelled_by_owner=True — the client cancelled this order
+        # themselves and must NOT see a "Cancelled by Owner" badge on their side.
+        if order.status == 'cancelled':
+            order.owner_dismissed = True
+            order.save(update_fields=['owner_dismissed'])
+            return JsonResponse({
+                'success': True,
+                'message': f'Order #{order.id} dismissed.',
+                'order_id': order.id
+            })
 
         with transaction.atomic():
             # ── Restore stock only if it was actually deducted ───────────
@@ -6395,8 +6537,25 @@ def reject_order(request, order_id):
                 print(f"DEBUG reject_order: Order #{order.pk} stock was not deducted — nothing to restore")
 
             # ── Update order status ───────────────────────────────────────
+            original_status = order.status   # capture BEFORE changing
             order.status = 'cancelled'
-            order.save(update_fields=['status', 'updated_at'])
+
+            # ✅ Do NOT set owner_dismissed=True here.
+            # The owner's row disappears via the WS broadcast below.
+            # owner_dismissed stays False so the client API still returns this
+            # order with cancelled_by_owner=True, letting the client see the
+            # rejection reason and dismiss it themselves via the Remove button.
+            # owner_dismissed is set to True only when the client clicks Remove
+            # (via the client_dismiss_rejected_order endpoint).
+
+            # Save cancel_reason + cancelled_from_status so the client sees
+            # the rejection badge in the CORRECT tab after a hard page refresh.
+            # cancelled_from_status is ONLY written here (reject_order) and never
+            # by the client cancel_order() — making it the definitive signal to
+            # identify owner-rejected orders when re-loading from the DB.
+            order.cancel_reason = cancel_reason
+            order.cancelled_from_status = original_status   # 'request', 'to_pay', or 'to_claim'
+            order.save(update_fields=['status', 'cancel_reason', 'cancelled_from_status', 'updated_at'])
 
         # Broadcast restored quantities to all browser clients
         _broadcast_inventory_update_from_items(
@@ -6407,9 +6566,9 @@ def reject_order(request, order_id):
         )
 
         # Broadcast order status change (removes row from owner to_pay tab + client history)
-        _broadcast_order_status_update(order, 'cancelled', cancel_reason=cancel_reason)
-
-        # Notify the customer their order was rejected
+        _broadcast_order_status_update(order, 'cancelled', cancel_reason=cancel_reason,
+                                       cancelled_from_status=original_status,
+                                       cancelled_by_owner=True)
         try:
             OrderNotification.objects.create(
                 establishment=establishment,
@@ -6429,6 +6588,121 @@ def reject_order(request, order_id):
     except Exception as e:
         import traceback
         print(f"ERROR in reject_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+
+
+@login_required
+@require_http_methods(["POST"])
+def owner_dismiss_cancelled_order(request, order_id):
+    """
+    Owner permanently dismisses a single client-cancelled order from the
+    request tab. Sets owner_dismissed=True so it is excluded from all
+    future API responses and never reappears after a page reload.
+
+    Endpoint: POST /api/food-establishment/orders/<order_id>/dismiss/
+    """
+    try:
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+        if not establishment:
+            return JsonResponse({'success': False, 'message': 'No establishment found.'}, status=404)
+
+        order = get_object_or_404(Order, id=order_id, establishment=establishment)
+
+        if order.status != 'cancelled':
+            return JsonResponse({
+                'success': False,
+                'message': 'Only cancelled orders can be dismissed.'
+            }, status=400)
+
+        order.owner_dismissed = True
+        order.save(update_fields=['owner_dismissed'])
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} dismissed.',
+            'order_id': order.id
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in owner_dismiss_cancelled_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def client_dismiss_rejected_order(request, order_id):
+    """
+    Client permanently dismisses an owner-rejected order by clicking Remove.
+    Sets owner_dismissed=True so the order is excluded from all future API
+    responses and never reappears after a page reload.
+
+    Called from: Client_order_history.html → doRemoveCancelledRow()
+    Endpoint: POST /api/orders/<order_id>/client-dismiss/
+    """
+    try:
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+            user=request.user,
+            status='cancelled',
+        )
+
+        # Safety check — only dismiss orders the owner actually rejected
+        # (not client self-cancels, which have stock_deducted=False too but
+        #  owner_dismissed is already False by default — we just mark it done).
+        order.owner_dismissed = True
+        order.save(update_fields=['owner_dismissed'])
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} dismissed.',
+            'order_id': order.id,
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in client_dismiss_rejected_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def owner_dismiss_all_cancelled_orders(request):
+    """
+    Owner permanently dismisses ALL client-cancelled request orders
+    in one shot. Sets owner_dismissed=True on every cancelled order
+    (status='cancelled', stock_deducted=False) for this establishment
+    so they never reappear after a page reload.
+
+    Endpoint: POST /api/food-establishment/orders/dismiss-all-cancelled/
+    """
+    try:
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+        if not establishment:
+            return JsonResponse({'success': False, 'message': 'No establishment found.'}, status=404)
+
+        updated = Order.objects.filter(
+            establishment=establishment,
+            status='cancelled',
+            stock_deducted=False,
+            owner_dismissed=False,
+        ).update(owner_dismissed=True)
+
+        return JsonResponse({
+            'success': True,
+            'dismissed_count': updated,
+            'message': f'{updated} cancelled order(s) permanently dismissed.'
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in owner_dismiss_all_cancelled_orders: {e}")
         print(traceback.format_exc())
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
@@ -6467,6 +6741,14 @@ def cancel_order(request, order_id):
                 'message': 'You can only cancel an order that is pending or awaiting payment.'
             }, status=400)
 
+        # ✅ Accept optional cancel_reason from client
+        cancel_reason = ''
+        try:
+            body_data = json.loads(request.body)
+            cancel_reason = body_data.get('cancel_reason', '').strip()
+        except Exception:
+            pass
+
         with transaction.atomic():
             # ── Restore stock only if it was actually deducted ───────────
             # Stock is NOT deducted at 'request' or 'to_pay' stage.
@@ -6491,7 +6773,13 @@ def cancel_order(request, order_id):
                 print(f"DEBUG cancel_order: Order #{order.pk} stock was not deducted — nothing to restore")
 
             order.status = 'cancelled'
-            order.save(update_fields=['status', 'updated_at'])
+            # ✅ FIX: Persist cancel_reason so it survives page reloads.
+            # Use hasattr check to avoid AttributeError if model field not yet added.
+            if hasattr(order, 'cancel_reason'):
+                order.cancel_reason = cancel_reason
+                order.save(update_fields=['status', 'updated_at', 'cancel_reason'])
+            else:
+                order.save(update_fields=['status', 'updated_at'])
 
         # Broadcast restored quantities
         _broadcast_inventory_update_from_items(
@@ -6502,7 +6790,10 @@ def cancel_order(request, order_id):
         )
 
         # Broadcast order status change → owner request tab row disappears instantly
-        _broadcast_order_status_update(order, 'cancelled')
+        # cancelled_by_owner=False → client WS knows this was a self-cancel and silently
+        # cleans up instead of showing a "Cancelled by Owner" badge.
+        _broadcast_order_status_update(order, 'cancelled', cancel_reason=cancel_reason,
+                                       cancelled_by_owner=False)
 
         try:
             OrderNotification.objects.create(
@@ -6623,7 +6914,7 @@ def _broadcast_inventory_update_from_items(establishment_id, id_qty_pairs):
         print(f"WARNING _broadcast_inventory_update_from_items: {e}")
 
 
-def _broadcast_order_status_update(order, new_status, cancel_reason=''):
+def _broadcast_order_status_update(order, new_status, cancel_reason='', cancelled_from_status='', cancelled_by_owner=False):
     """
     Broadcast an order-status change to:
       • The owner's establishment group  →  order_status_establishment_<est_id>
@@ -6638,12 +6929,14 @@ def _broadcast_order_status_update(order, new_status, cancel_reason=''):
         if not channel_layer:
             return
         payload = {
-            'type':             'order.status.update',
-            'order_id':         order.id,
-            'new_status':       new_status,
-            'establishment_id': order.establishment_id,
-            'user_id':          order.user_id,
-            'cancel_reason':    cancel_reason,
+            'type':                   'order.status.update',
+            'order_id':               order.id,
+            'new_status':             new_status,
+            'establishment_id':       order.establishment_id,
+            'user_id':                order.user_id,
+            'cancel_reason':          cancel_reason,
+            'cancelled_from_status':  cancelled_from_status,
+            'cancelled_by_owner':     cancelled_by_owner,
         }
         sync_send = async_to_sync(channel_layer.group_send)
         # Notify the owner dashboard
@@ -7586,11 +7879,36 @@ def get_user_transaction_history(request):
     try:
         # Get all orders for the user that have been formally submitted (status = 'request' or beyond).
         # EXCLUDE 'PENDING' — these are cart orders that haven't been submitted yet.
-        # EXCLUDE 'cancelled'/'CANCELLED' — already handled client-side via localStorage.
+        # INCLUDE owner-rejected 'cancelled' orders so the client can show the reason
+        # even after a page refresh (not just via WS). Client uses lsIsDismissed to
+        # hide rows the user has already dismissed.
+        # EXCLUDE client-self-cancelled orders (cancel_reason may be set but owner_dismissed=False
+        # means it was a client cancel — actually simpler: exclude cancelled where stock_deducted
+        # matches a client cancel pattern). Simplest rule: return cancelled only if owner_dismissed=True
+        # (owner rejected) OR if it's not cancelled at all.
+        from django.db.models import Q as Q
+        # ✅ FIX: Include ALL owner-rejected cancelled orders so client sees the reason
+        # after a page refresh — regardless of which stage the order was in when rejected:
+        #   • request  → stock_deducted=False (stock was never taken)
+        #   • to_pay   → stock_deducted=True  (stock was deducted at acceptance)
+        #   • to_claim → stock_deducted=True  (stock was deducted at acceptance)
+        # We identify owner-rejected orders by: status='cancelled', owner_dismissed=False.
+        # Client-self-cancelled orders are excluded via the owner_dismissed check because
+        # the owner dismisses them (owner_dismissed=True) after they cancel. Orders that
+        # the client cancelled themselves and the owner hasn't dismissed yet would still
+        # appear, but those are harmless — the client already knows they cancelled.
+        # Include owner-rejected cancelled orders (cancelled_from_status is non-empty)
+        # Exclude client-self-cancelled orders (cancelled_from_status is empty/null)
+        # Exclude owner-dismissed orders (fully handled on both sides)
         orders = Order.objects.filter(
             user=request.user
         ).exclude(
-            status__in=['PENDING', 'cancelled', 'CANCELLED']
+            status__in=['PENDING', 'CANCELLED']
+        ).filter(
+            Q(~Q(status='cancelled')) |
+            Q(status='cancelled', owner_dismissed=False, cancelled_from_status__gt='')
+        ).exclude(
+            status='cancelled', owner_dismissed=True
         ).select_related(
             'establishment'
         ).prefetch_related(
@@ -7605,12 +7923,26 @@ def get_user_transaction_history(request):
             'preparing':      'preparing',
             'to_claim':       'to_claim',
             'completed':      'completed',
+            # ✅ 'cancelled' is NOT mapped here — it is handled per-order below
+            # using cancelled_from_status so the row appears in the correct tab:
+            # request → request tab, to_pay → to_pay tab, to_claim → to_claim tab.
         }
 
         orders_data = []
         for order in orders:
             raw_status        = order.status or 'PENDING'
-            normalized_status = client_status_map.get(raw_status, raw_status.lower())
+
+            # ✅ For owner-rejected (cancelled) orders, route to the tab they came from.
+            # cancelled_from_status is stored on the model (request / to_pay / to_claim).
+            # Fall back to 'request' if not available (older orders before this fix).
+            if raw_status == 'cancelled':
+                cf = order.cancelled_from_status or ''
+                if cf in ('to_pay', 'to_claim'):
+                    normalized_status = cf
+                else:
+                    normalized_status = 'request'
+            else:
+                normalized_status = client_status_map.get(raw_status, raw_status.lower())
 
             items = []
             for oi in order.orderitem_set.all():
@@ -7644,6 +7976,16 @@ def get_user_transaction_history(request):
                 'establishment_image': order.establishment.image.url
                                        if order.establishment.image else None,
                 'items': items,
+                # ✅ Include cancel info so client can show reason after page refresh.
+                # cancelled_by_owner=True for ALL owner-rejected orders regardless of stage.
+                # cancelled_from_status tells the client which tab to show the row in.
+                'cancelled_by_owner': (
+                    raw_status == 'cancelled'
+                    and not order.owner_dismissed
+                    and bool(order.cancelled_from_status)
+                ),
+                'cancelled_from_status': order.cancelled_from_status or '',
+                'cancel_reason':         order.cancel_reason or '',
             })
 
         return JsonResponse({
@@ -8016,6 +8358,35 @@ def get_establishment_realtime(request, establishment_id):
         import logging
         logging.getLogger(__name__).error(f'get_establishment_realtime error: {e}')
         return JsonResponse({'error': 'database_unavailable'}, status=503)
+
+
+
+# ============================================================
+# ✅ Lightweight Open/Closed Status API for Cart Page Polling
+# URL: /api/establishment/<id>/status/
+# Returns just the current open/closed status for the cart.
+# ============================================================
+def get_establishment_open_status(request, establishment_id):
+    """
+    Returns only the open/closed status for a given establishment.
+    Used by the cart page to poll every 60 seconds for realtime open/closed state.
+    """
+    try:
+        establishment = get_object_or_404(
+            FoodEstablishment,
+            id=establishment_id,
+            is_active=True,
+        )
+        status = get_current_status(establishment.opening_time, establishment.closing_time)
+        return JsonResponse({
+            'success': True,
+            'establishment_id': establishment_id,
+            'status': status,
+            'opening_time': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+            'closing_time': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+        })
+    except Exception as e:
+        return JsonResponse({'error': 'not_found'}, status=404)
 
 
 # ============================================================

@@ -1437,6 +1437,51 @@
         0%,100% { opacity:1; } 50% { opacity:.6; }
     }
 
+    /* 30-min claim countdown chip (to_claim tab — client side) */
+    .claim-countdown-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ede9fe;
+        border: 1px solid #c4b5fd;
+        color: #5b21b6;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: .02em;
+        white-space: nowrap;
+    }
+    .claim-countdown-chip.urgent { background:#fee2e2; border-color:#fca5a5; color:#991b1b; animation: timerPulse 1s infinite; }
+    .claim-countdown-chip.expired { background:#f3f4f6; border-color:#e5e7eb; color:#6b7280; }
+
+    /* Owner cancel notice shown in Left to Claim column */
+    .claim-cancel-notice {
+        background: #fff1f2;
+        border: 1.5px solid #fda4af;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 11.5px;
+        color: #9f1239;
+        max-width: 180px;
+    }
+    .claim-cancel-notice .ccn-title {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 800;
+        font-size: 12px;
+        margin-bottom: 4px;
+        color: #be123c;
+    }
+    .claim-cancel-notice .ccn-reason {
+        font-weight: 600;
+        color: #7f1d1d;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
     /* Awaiting chip */
     .awaiting-chip {
         display: inline-flex;
@@ -1550,12 +1595,42 @@
     </div>
 </div>
 
-<!-- Cancel Confirm Dialog -->
+<!-- Cancel Confirm Dialog — with reason -->
 <div class="confirm-overlay" id="cancelConfirmOverlay">
-    <div class="confirm-box">
+    <div class="confirm-box" style="max-width:420px;">
         <i class="big-icon fas fa-times-circle" style="color:#dc2626;"></i>
         <h3>Cancel Order?</h3>
-        <p>Are you sure you want to cancel this order? The items will be returned to stock.</p>
+        <p style="margin-bottom:14px;">Please select a reason for cancelling. The establishment will be notified.</p>
+
+        <!-- Reason dropdown -->
+        <div style="text-align:left;margin-bottom:6px;">
+            <label style="font-size:12px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;">
+                Reason for Cancellation
+            </label>
+        </div>
+        <select id="clientCancelReasonSelect"
+                style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;
+                       font-size:13px;color:#2d3748;background:#f8fafc;margin-bottom:8px;
+                       font-family:inherit;outline:none;cursor:pointer;"
+                onchange="onClientCancelReasonChange(this.value)">
+            <option value="">— Choose a reason —</option>
+            <option value="I changed my mind.">I changed my mind.</option>
+            <option value="I ordered by mistake.">I ordered by mistake.</option>
+            <option value="I want to change my order.">I want to change my order.</option>
+            <option value="The wait is too long.">The wait is too long.</option>
+            <option value="other">Other (please specify)</option>
+        </select>
+        <textarea id="clientCancelOtherInput"
+                  placeholder="Please describe your reason..."
+                  style="display:none;width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;
+                         border-radius:8px;font-size:13px;color:#2d3748;resize:vertical;
+                         min-height:72px;font-family:inherit;outline:none;box-sizing:border-box;
+                         margin-bottom:8px;"></textarea>
+        <p id="clientCancelReasonError"
+           style="display:none;font-size:12px;color:#dc2626;margin-bottom:10px;text-align:left;">
+            <i class="fas fa-exclamation-circle"></i> Please select or enter a reason.
+        </p>
+
         <div class="confirm-btns">
             <button class="confirm-btn-no" onclick="closeCancelConfirm()">No, Keep It</button>
             <button class="confirm-btn-yes" id="cancelConfirmYes">Yes, Cancel</button>
@@ -1657,10 +1732,15 @@
                     : [];
             store[order.id] = {
                 id:                order.id,
-                status:            order.status === 'request' ? 'request' : 'to_pay',
+                // ✅ FIX: preserve to_claim status — dati hard-coded 'to_pay' kaya
+                // pag nag-refresh, ang to_claim cancelled rows ay napunta sa wrong tab.
+                status:            order.status === 'request' ? 'request'
+                                 : order.status === 'to_claim' ? 'to_claim'
+                                 : 'to_pay',
                 _expired:          true,
                 _cancelledByOwner: order._cancelledByOwner === true,
                 _cancelReason:     order._cancelReason     || '',
+                _ownerPendingCancelReason: order._ownerPendingCancelReason || '',
                 // preserve display fields
                 establishment_name:    order.establishment_name    || '',
                 establishment_address: order.establishment_address || '',
@@ -1720,22 +1800,6 @@
     // INIT
     // ============================================================
     document.addEventListener('DOMContentLoaded', function () {
-        // ── Migrate stale localStorage data ──────────────────────
-        // Old buggy code saved _cancelledByOwner:true even for timer-expired orders.
-        // Fix: any entry with _cancelledByOwner:true but _cancelReason empty = timer-expired.
-        (function migrateLsData() {
-            try {
-                const store = lsGetAll();
-                let changed = false;
-                Object.values(store).forEach(function (entry) {
-                    if (entry._cancelledByOwner === true && !entry._cancelReason) {
-                        entry._cancelledByOwner = false;
-                        changed = true;
-                    }
-                });
-                if (changed) localStorage.setItem(LS_KEY, JSON.stringify(store));
-            } catch (e) {}
-        })();
 
         loadOrders();
 
@@ -1882,89 +1946,133 @@
                     const idx = allOrders.findIndex(function (o) { return o.id === orderId; });
 
                     if (newStatus === 'cancelled') {
-                        // ── RULE: to_pay rows NEVER disappear automatically. ──
-                        // Row stays on the to_pay tab until the client clicks
-                        // Re-order or Cancel. ONLY client button clicks remove a row.
+                        // ════════════════════════════════════════════════════════════
+                        // ROUTING RULE (owner rejections):
+                        //   rejected from request  → stays in REQUEST tab
+                        //   rejected from to_pay   → stays in TO PAY tab
+                        //   rejected from to_claim → stays in TO CLAIM tab
+                        //
+                        // cancelled_from_status (WS payload) is the authoritative source.
+                        // The client NEVER removes the row — they must click Remove.
+                        // ════════════════════════════════════════════════════════════
 
-                        const orderEntry     = idx !== -1 ? allOrders[idx] : null;
-                        // Keep rows visible for both to_pay AND request cancellations.
-                        // When an owner removes an out-of-stock request order, the
-                        // client should still see it so they can re-order or dismiss it.
-                        const wasToPayStatus = !orderEntry ||
-                            orderEntry.status === 'to_pay' ||
-                            orderEntry.status === 'PENDING' ||
-                            orderEntry.status === 'request';
+                        const orderEntry       = idx !== -1 ? allOrders[idx] : null;
+                        const cancelledByOwner = !!d.cancelled_by_owner;
+                        // Use cancelled_from_status first, then fall back to in-memory status
+                        const fromStatus       = d.cancelled_from_status
+                                              || (orderEntry && orderEntry.status)
+                                              || 'request';
 
-                        if (wasToPayStatus) {
-                            // Mark as expired in memory.
-                            // request orders stay in the request tab (status unchanged).
-                            // to_pay / PENDING orders are forced to 'to_pay' to stay visible there.
-                            if (idx !== -1) {
-                                const wasRequest = allOrders[idx].status === 'request';
-                                if (!wasRequest) allOrders[idx].status = 'to_pay';
-                                // ↑ request rows keep status='request' → remain in Request tab
-                                allOrders[idx]._expired           = true;
-                                allOrders[idx]._cancelReason      = reason;
-                                allOrders[idx]._cancelledByOwner  = true;
-                                // ✅ FIX: Snapshot items NOW (before inventory WS may strip them)
-                                // lsSaveCancelled stores items so they survive page refresh.
-                                // Pass a copy with current items intact.
-                                lsSaveCancelled(allOrders[idx]);
-                            }
-
-                            // Stop the countdown timer
-                            if (timerMap[orderId]) {
-                                clearInterval(timerMap[orderId].id);
-                                delete timerMap[orderId];
-                            }
-
-                            // ✅ Update the status cell — show "Cancelled by Owner" badge + reason.
-                            // This works for BOTH to_pay AND request orders when the owner
-                            // deletes a menu item with a reason (item deletion cancels the order).
-                            const statusCell = document.getElementById('status-cell-' + orderId);
-                            if (statusCell) {
-                                statusCell.innerHTML = buildCancelledByOwnerBadge(reason);
-                            } else {
-                                // Fallback: hide old badge + update timer chip
-                                const chipEl = document.getElementById('timer-' + orderId);
-                                if (chipEl) {
-                                    chipEl.className = 'timer-chip expired';
-                                    chipEl.innerHTML = '<i class="fas fa-clock"></i> Time\'s up';
-                                }
-                                const badge = document.getElementById('status-badge-' + orderId);
-                                if (badge) badge.style.display = 'none';
-                            }
-
-                            // Swap action buttons: Pay Now → Re-order + Cancel
-                            swapToExpiredActions(orderId);
-
-                            // Toast always — client may be on any tab
-                            const toastMsg = reason
-                                ? 'Order #' + orderId + ' cancelled by owner: ' + reason
-                                : (orderEntry && orderEntry.status === 'request'
-                                    ? 'Order #' + orderId + ' was removed by the establishment (item out of stock). You can re-order below.'
-                                    : 'Order #' + orderId + ' was cancelled. Re-order or cancel below.');
-                            showOrderToast(toastMsg, 'error');
+                        // ── Client cancelled their own request — ignore WS echo ──
+                        if (!cancelledByOwner && orderEntry && orderEntry.status === 'request') {
+                            if (idx !== -1) allOrders.splice(idx, 1);
+                            lsRemoveCancelled(orderId);
                             updateOrderCounts();
+                            return;
+                        }
 
-                        } else {
-                            // Not a to_pay order — safe to remove from view
+                        if (!cancelledByOwner) {
+                            // Non-owner cancellation (auto-expire etc.) — just remove row
                             if (idx !== -1) allOrders.splice(idx, 1);
                             const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
                             if (row) {
                                 row.style.transition = 'opacity 0.3s, transform 0.3s';
-                                row.style.opacity    = '0';
-                                row.style.transform  = 'translateX(14px)';
+                                row.style.opacity = '0'; row.style.transform = 'translateX(14px)';
                                 setTimeout(function () {
-                                    row.remove();
-                                    updateOrderCounts();
-                                    const tbody = document.querySelector('#ordersList tbody');
-                                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+                                    row.remove(); updateOrderCounts();
+                                    const tb = document.querySelector('#ordersList tbody');
+                                    if (tb && !tb.querySelector('tr')) filterOrders(currentFilter);
                                 }, 320);
-                            } else {
-                                updateOrderCounts();
+                            } else { updateOrderCounts(); }
+
+                        } else if (fromStatus === 'to_claim') {
+                            // ── Owner rejected a TO CLAIM order ──
+                            // Row stays in the to_claim tab. Client must click Remove.
+                            const displayReason = (reason && reason.trim())
+                                ? reason.trim() : 'Cancelled by establishment.';
+
+                            if (idx === -1) { loadOrders(); return; }
+                            allOrders[idx].status                    = 'to_claim'; // keep in this tab
+                            allOrders[idx]._cancelledByOwner         = true;
+                            allOrders[idx]._cancelReason             = displayReason;
+                            allOrders[idx]._ownerPendingCancelReason = displayReason;
+                            allOrders[idx]._expired                  = true;
+                            lsSaveCancelled(allOrders[idx]);
+
+                            // Freeze the countdown timer chip
+                            const timerValEl  = document.getElementById('claim-timer-val-' + orderId);
+                            const stoppedTime = timerValEl ? timerValEl.textContent : '—';
+                            const frozenChip  = `<div id="claim-col-${orderId}"><span class="claim-countdown-chip expired"><i class="fas fa-hourglass-end"></i> ${stoppedTime} left</span></div>`;
+                            const claimCol    = document.getElementById('claim-col-' + orderId);
+                            if (claimCol) { claimCol.outerHTML = frozenChip; }
+                            else {
+                                const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                                if (row) row.querySelectorAll('td').forEach(function(td) {
+                                    if (td.querySelector('.claim-countdown-chip') || td.querySelector('.claim-cancel-notice'))
+                                        td.innerHTML = frozenChip;
+                                });
                             }
+
+                            // Update Status cell → "Rejected by Establishment" badge + reason
+                            const scEl = document.getElementById('status-cell-' + orderId);
+                            if (scEl) scEl.innerHTML = buildCancelledByOwnerBadge(displayReason);
+
+                            // Add Remove button — create <td> if it doesn't exist yet
+                            let actCell = document.getElementById('actions-cell-' + orderId);
+                            if (actCell) {
+                                actCell.innerHTML = buildClaimCancelledActionsInner(orderId);
+                            } else {
+                                const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+                                if (row) {
+                                    const td = document.createElement('td');
+                                    td.style.textAlign = 'right';
+                                    td.innerHTML = `<div class="tbl-actions" id="actions-cell-${orderId}">${buildClaimCancelledActionsInner(orderId)}</div>`;
+                                    row.appendChild(td);
+                                }
+                            }
+
+                            showOrderToast('❌ Your order #' + orderId + ' was rejected by the establishment.' + (reason ? ' Reason: ' + reason : ''), 'error');
+                            updateOrderCounts();
+
+                        } else if (fromStatus === 'request') {
+                            // ── Owner rejected a REQUEST order ──
+                            // Row stays in the request tab. Client must click Remove.
+                            if (idx === -1) { loadOrders(); return; }
+                            allOrders[idx].status            = 'request'; // keep in this tab
+                            allOrders[idx]._cancelledByOwner = true;
+                            allOrders[idx]._cancelReason     = reason;
+                            allOrders[idx]._expired          = true;
+                            lsSaveCancelled(allOrders[idx]);
+
+                            // Stop payment timer if running
+                            if (timerMap[orderId]) { clearInterval(timerMap[orderId].id); delete timerMap[orderId]; }
+
+                            // Re-render — buildCancelledByOwnerBadge + Remove button render automatically
+                            filterOrders(currentFilter);
+
+                            showOrderToast('❌ Your order #' + orderId + ' was rejected: ' + (reason || 'No reason given.'), 'error');
+                            updateOrderCounts();
+
+                        } else {
+                            // ── Owner rejected a TO PAY order (or any other status) ──
+                            // Row stays in the to_pay tab. Client must click Remove.
+                            if (idx === -1) { loadOrders(); return; }
+                            allOrders[idx].status            = 'to_pay'; // keep in this tab
+                            allOrders[idx]._cancelledByOwner = true;
+                            allOrders[idx]._cancelReason     = reason;
+                            allOrders[idx]._expired          = true;
+                            lsSaveCancelled(allOrders[idx]);
+
+                            // Stop payment timer if running
+                            if (timerMap[orderId]) { clearInterval(timerMap[orderId].id); delete timerMap[orderId]; }
+
+                            // Re-render — buildCancelledByOwnerBadge + Remove button render automatically
+                            filterOrders(currentFilter);
+
+                            showOrderToast('❌ Your order #' + orderId + ' was rejected: ' + (reason || 'No reason given.'), 'error');
+                            updateOrderCounts();
                         }
+
                     } else if (idx !== -1) {
                         // ── Status advanced (request→to_pay, to_pay→preparing, etc.) ──
                         const prevStatus = allOrders[idx].status;
@@ -2048,45 +2156,76 @@
                     // Preserve rows the client hasn't acted on yet:
                     // • to_pay / PENDING: owner accepted then cancelled (expired timer etc.)
                     // • request: owner removed due to out-of-stock — client must still see it
-                    // Server never returns cancelled orders so we keep them from memory/localStorage.
+                    // • to_claim: owner cancelled while ready for pickup — client must still see it
+                    // Server now returns all owner-rejected cancelled orders, so preservedCancelled
+                    // is mainly needed for in-memory rows not yet returned by the API (race condition).
                     const preservedCancelled = allOrders.filter(function (existing) {
                         const isWatchedStatus = existing.status === 'to_pay'
                                              || existing.status === 'PENDING'
-                                             || existing.status === 'request';
+                                             || existing.status === 'request'
+                                             // ✅ to_claim AND to_pay owner-cancelled rows must survive refresh
+                                             || (existing._cancelledByOwner === true);
                         const notInFreshData  = !data.orders.find(function (fresh) {
                             return fresh.id === existing.id;
                         });
-                        // Only preserve rows that were actually cancelled by owner
-                        // (have the _expired flag set) — don't preserve normal request rows
-                        // that just haven't appeared in this poll yet.
+                        // Only preserve rows that were OWNER-cancelled (_cancelledByOwner=true).
+                        // Client-self-cancelled rows (_cancelledByOwner=false or unset) must NOT
+                        // be preserved — the client already dismissed them via doCancel().
                         // ✅ Also skip orders the client has permanently dismissed.
-                        return isWatchedStatus && notInFreshData && existing._expired === true
+                        return isWatchedStatus && notInFreshData
+                            && existing._expired === true
+                            && existing._cancelledByOwner === true
                             && !lsIsDismissed(existing.id);
                     }).map(function (o) {
                         return Object.assign({}, o, {
-                            _expired:          true,
-                            _cancelledByOwner: o._cancelledByOwner || false,
-                            _cancelReason:     o._cancelReason     || ''
+                            _expired:                  true,
+                            _cancelledByOwner:         o._cancelledByOwner || false,
+                            _cancelReason:             o._cancelReason     || '',
+                            _ownerPendingCancelReason: o._ownerPendingCancelReason || ''
                         });
                     });
 
-                    // Also merge any fresh orders that are in to_pay — keep their client flags
-                    // ✅ Skip orders the client has permanently dismissed (owner-cancelled to_pay
-                    // orders stay in DB as to_pay but the client already dismissed them).
+                    // Also merge any fresh orders — keep client flags, and hydrate
+                    // owner-rejected cancelled orders directly from API response.
+                    // ✅ Skip orders the client has permanently dismissed.
                     const freshWithFlags = data.orders
                         .filter(function (fresh) { return !lsIsDismissed(fresh.id); })
                         .map(function (fresh) {
-                            // Check in-memory first, then localStorage
+                            // Check in-memory first, then localStorage for existing flags
                             const existing = allOrders.find(function (e) { return e.id === fresh.id; });
                             const lsEntry  = lsCancelled.find(function (e) { return e.id === fresh.id; });
                             const src      = (existing && (existing._cancelledByOwner || existing._expired))
                                              ? existing : lsEntry;
+
+                            // ✅ FIX: Hydrate owner-rejected orders from API response.
+                            // The API now returns cancelled_by_owner=True + cancelled_from_status
+                            // for ALL owner-rejected orders (request, to_pay, to_claim).
+                            // Use cancelled_from_status to keep the row in the correct tab.
+                            if (fresh.cancelled_by_owner) {
+                                const fromStatus = fresh.cancelled_from_status || 'request';
+                                const isFromClaim = fromStatus === 'to_claim';
+                                return Object.assign({}, fresh, {
+                                    status:                    fromStatus,  // route to correct tab
+                                    _expired:                  true,
+                                    _cancelledByOwner:         true,
+                                    _cancelReason:             fresh.cancel_reason || '',
+                                    // to_claim rejections use _ownerPendingCancelReason so the
+                                    // existing isOwnerCancelledClaim branch renders correctly
+                                    _ownerPendingCancelReason: isFromClaim
+                                        ? (fresh.cancel_reason || 'Cancelled by establishment.')
+                                        : ''
+                                });
+                            }
+
                             if (src) {
                                 return Object.assign({}, fresh, {
-                                    status:            src.status,
-                                    _expired:          src._expired,
-                                    _cancelledByOwner: src._cancelledByOwner,
-                                    _cancelReason:     src._cancelReason
+                                    status:                    src.status,
+                                    _expired:                  src._expired,
+                                    _cancelledByOwner:         src._cancelledByOwner,
+                                    _cancelReason:             src._cancelReason,
+                                    // ✅ carry over _ownerPendingCancelReason so to_claim
+                                    // cancelled rows show the reason card after page refresh
+                                    _ownerPendingCancelReason: src._ownerPendingCancelReason || ''
                                 });
                             }
                             return fresh;
@@ -2386,18 +2525,23 @@
         const rows = orders.map(o => {
             // Show per-item stock chips on both 'request' and 'to_pay' orders
         const isStockWarnOrder = o.status === 'to_pay' || o.status === 'PENDING' || o.status === 'request';
-        const itemsHtml = (o.items || []).map(i => {
-                let stockChip = '';
-                if (isStockWarnOrder && typeof i.available_stock === 'number') {
-                    if (i.available_stock === 0) {
-                        stockChip = `<span class="stock-warn-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
-                    } else if (i.available_stock < i.quantity) {
-                        stockChip = `<span class="stock-warn-chip"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
-                    }
-                }
-                return `<div class="tbl-item-line"><strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}</div>`;
-            }).join('');
-
+const isOwnerRejected  = o._cancelledByOwner === true;
+const itemsHtml = (o.items || []).map(i => {
+        let stockChip = '';
+        if (isOwnerRejected) {
+            // Owner rejected this order — mark ALL items as rejected
+            stockChip = `<span class="stock-warn-chip out" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">` +
+                        `<i class="fas fa-ban"></i> Rejected</span>`;
+        } else if (isStockWarnOrder && typeof i.available_stock === 'number') {
+            if (i.available_stock === 0) {
+                stockChip = `<span class="stock-warn-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
+            } else if (i.available_stock < i.quantity) {
+                stockChip = `<span class="stock-warn-chip"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+            }
+        }
+        return `<div class="tbl-item-line" style="${isOwnerRejected ? 'opacity:0.6;text-decoration:line-through;' : ''}">` +
+               `<strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}</div>`;
+    }).join('');
         // Check if any item has insufficient stock (request + to_pay)
         const outOfStockCount = isStockWarnOrder
             ? (o.items || []).filter(i => typeof i.available_stock === 'number' && i.available_stock < i.quantity).length
@@ -2417,7 +2561,7 @@
             let statusCellExpired = false;
             if (o.status === 'to_pay' || o.status === 'PENDING') {
                 const acceptedAt = new Date(o.updated_at || o.created_at);
-                const deadlineMs = acceptedAt.getTime() + 8 * 60 * 1000;
+                const deadlineMs = acceptedAt.getTime() + 10 * 60 * 1000;
                 const remaining  = deadlineMs - Date.now();
                 // _expired flag = server cancelled it, client hasn't decided yet
                 if (o._expired || remaining <= 0) {
@@ -2428,20 +2572,75 @@
                 }
             }
 
+            // ── 30-minute claim countdown for to_claim orders ──
+            let claimTimerHtml = '';
+            if (o.status === 'to_claim') {
+                const ownerCancelReason = o._ownerPendingCancelReason || '';
+
+                if (ownerCancelReason) {
+                    // ✅ FIX: Owner cancelled — alisin ang notice sa Left to Claim column.
+                    // Mag-show lang ng stopped timer (hindi na gumagalaw), walang reason card dito.
+                    // Ang reason ay makikita na sa Status cell (buildCancelledByOwnerBadge).
+                    const claimStartAt   = new Date(o.updated_at || o.created_at);
+                    const claimDeadline  = claimStartAt.getTime() + 30 * 60 * 1000;
+                    const claimRemaining = claimDeadline - Date.now();
+                    const stoppedTime    = claimRemaining > 0 ? fmtMs(claimRemaining) : '0:00';
+                    claimTimerHtml = `
+                        <div id="claim-col-${o.id}">
+                            <span class="claim-countdown-chip expired">
+                                <i class="fas fa-hourglass-end"></i> ${stoppedTime} left
+                            </span>
+                        </div>`;
+                } else {
+                    const claimStartAt   = new Date(o.updated_at || o.created_at);
+                    const claimDeadline  = claimStartAt.getTime() + 30 * 60 * 1000;
+                    const claimRemaining = claimDeadline - Date.now();
+                    if (claimRemaining > 0) {
+                        claimTimerHtml = `
+                            <div id="claim-col-${o.id}">
+                                <span class="claim-countdown-chip" id="claim-timer-${o.id}" data-claim-deadline="${claimDeadline}">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <span id="claim-timer-val-${o.id}">${fmtMs(claimRemaining)}</span> left to claim
+                                </span>
+                            </div>`;
+                    } else {
+                        // Already expired on render — mark so actions show Remove
+                        o._claimExpired = true;
+                        claimTimerHtml = `
+                            <div id="claim-col-${o.id}">
+                                <span class="claim-countdown-chip expired">
+                                    <i class="fas fa-hourglass-end"></i> Claim window ended
+                                </span>
+                            </div>`;
+                    }
+                }
+            }
+
             // Set _hasStockIssue so buildClientActions can disable Pay Now
             o._hasStockIssue = hasStockIssue;
-            const actions = buildClientActions(o, statusCellExpired);
 
-            // Status cell: badge + timer on one line
-            // ✅ FIX: Check _cancelledByOwner for ALL statuses (including 'request')
-            // so item-deletion cancellations are shown correctly even after re-render.
-            const reallyOwnerCancelled = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
+            // ── Owner-rejection detection (unified for ALL tabs) ─────────────
+            // _cancelledByOwner is the single reliable flag. It is set from:
+            //   - WS broadcast: cancelled_by_owner=true
+            //   - API reload: cancelled_by_owner=true (from cancelled_from_status in DB)
+            const reallyOwnerCancelled = o._cancelledByOwner === true;
 
+            // to_claim: owner rejected — use _cancelledByOwner, NOT _ownerPendingCancelReason
+            // because _ownerPendingCancelReason can be empty if owner gave no reason.
+            const isOwnerCancelledClaim = o.status === 'to_claim' && reallyOwnerCancelled;
+            // Detect timer-expired to_claim: row stays visible, client must remove manually
+            const isClaimExpired = o.status === 'to_claim' && !!o._claimExpired;
+
+            const actions = (isOwnerCancelledClaim || isClaimExpired)
+                ? buildClaimCancelledActions(o.id)
+                : buildClientActions(o, statusCellExpired);
+
+            // Status cell: reallyOwnerCancelled covers request, to_pay AND to_claim
             let statusCell;
             if (reallyOwnerCancelled) {
-                // Owner cancelled this order (e.g. deleted a menu item) — show badge + reason
-                // for both 'request' and 'to_pay' orders regardless of timer state.
-                statusCell = buildCancelledByOwnerBadge(o._cancelReason);
+                // Unified rejection badge for ALL tabs
+                const rejReason = o._ownerPendingCancelReason || o._cancelReason || '';
+                statusCell = buildCancelledByOwnerBadge(rejReason);
             } else if (o.status === 'to_pay' || o.status === 'PENDING') {
                 statusCell = statusCellExpired
                     ? buildTimesUpBadge()
@@ -2449,11 +2648,14 @@
                            <span class="order-status-badge status-${o.status}" id="status-badge-${o.id}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>
                            ${timerHtml}
                        </div>`;
+            } else if (o.status === 'to_claim') {
+                statusCell = `<span class="order-status-badge status-to_claim">${getStatusIcon('to_claim')} ${getStatusText('to_claim')}</span>`;
             } else {
                 statusCell = `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
             }
 
-            const showActions = o.status !== 'preparing' && o.status !== 'to_claim';
+            // Show actions: hide for preparing + normal to_claim; show for owner-cancelled or expired to_claim
+            const showActions = o.status !== 'preparing' && (o.status !== 'to_claim' || isOwnerCancelledClaim || isClaimExpired);
             // Show payment badge for preparing, to_claim, completed
             const showPayment = o.status === 'preparing' || o.status === 'to_claim' || o.status === 'completed';
             const paymentBadge = showPayment ? buildPaymentBadge(o.payment_method || '') : '';
@@ -2473,17 +2675,23 @@
                     <span class="tbl-total">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
                 </td>
                 ${showPayment ? `<td>${paymentBadge}</td>` : ''}
+                ${o.status === 'to_claim' ? `<td style="text-align:center;">${claimTimerHtml}</td>` : ''}
                 <td>
                     <div id="status-cell-${o.id}">${statusCell}</div>
                 </td>
                 ${showActions ? `<td><div class="tbl-actions" id="actions-cell-${o.id}">${actions}</div></td>` : ''}
-            </tr>`;
+             </tr>`;
         }).join('');
 
-        // Hide actions column for preparing and to_claim tabs
-        const hideActions = currentFilter === 'preparing' || currentFilter === 'to_claim';
+        // Hide actions column for preparing + normal to_claim (but NOT when owner cancelled or timer expired)
+        const hasOwnerCancelledClaimRows = currentFilter === 'to_claim' &&
+            orders.some(o => o.status === 'to_claim' &&
+                (o._cancelledByOwner === true || !!o._claimExpired));
+        const hideActions = currentFilter === 'preparing' || (currentFilter === 'to_claim' && !hasOwnerCancelledClaimRows);
         // Show payment column for preparing, to_claim, completed
         const showPaymentCol = currentFilter === 'preparing' || currentFilter === 'to_claim' || currentFilter === 'completed';
+        // Show Left to Claim column only for to_claim tab
+        const showClaimCol = currentFilter === 'to_claim';
 
         container.innerHTML = `
             <div class="orders-table-wrap">
@@ -2495,6 +2703,7 @@
                             <th ${thS}>Items</th>
                             <th ${thS} style="width:100px;">Total</th>
                             ${showPaymentCol ? `<th ${thS} style="width:120px;">Payment</th>` : ''}
+                            ${showClaimCol ? `<th ${thS} style="width:140px;text-align:center;">Left to Claim</th>` : ''}
                             <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}min-width:180px;text-align:left;">Status</th>
                             ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:180px;text-align:right;">Actions</th>`}
                         </tr>
@@ -2507,7 +2716,7 @@
         orders.forEach(o => {
             if (o.status !== 'to_pay' && o.status !== 'PENDING') return;
             const acceptedAt = new Date(o.updated_at || o.created_at);
-            const deadlineMs = acceptedAt.getTime() + 8 * 60 * 1000;
+            const deadlineMs = acceptedAt.getTime() + 10 * 60 * 1000;
 
             if (Date.now() >= deadlineMs) return; // already expired on first render
 
@@ -2564,11 +2773,113 @@
 
             timerMap[o.id] = { id: intervalId, deadlineMs };
         });
+
+        // ── Start 30-min claim countdown timers for to_claim rows ──
+        orders.forEach(o => {
+            if (o.status !== 'to_claim') return;
+            // Skip owner-cancelled rows — they already have Remove button
+            if ((o._ownerPendingCancelReason || '').trim()) return;
+            const claimStartAt  = new Date(o.updated_at || o.created_at);
+            const claimDeadline = claimStartAt.getTime() + 30 * 60 * 1000;
+            if (Date.now() >= claimDeadline) return; // already expired on render
+
+            const claimIntervalId = setInterval(() => {
+                const rem    = claimDeadline - Date.now();
+                const valEl  = document.getElementById(`claim-timer-val-${o.id}`);
+                const chipEl = document.getElementById(`claim-timer-${o.id}`);
+                if (!valEl && !chipEl) { clearInterval(claimIntervalId); return; }
+
+                if (rem <= 0) {
+                    clearInterval(claimIntervalId);
+
+                    // 1. Update the Left to Claim chip to "Claim window ended"
+                    const claimCol = document.getElementById(`claim-col-${o.id}`);
+                    if (claimCol) {
+                        claimCol.innerHTML = `<span class="claim-countdown-chip expired">
+                            <i class="fas fa-hourglass-end"></i> Claim window ended
+                        </span>`;
+                    } else if (chipEl) {
+                        chipEl.className = 'claim-countdown-chip expired';
+                        chipEl.innerHTML = '<i class="fas fa-hourglass-end"></i> Claim window ended';
+                    }
+
+                    // 2. Mark in memory
+                    const idx = allOrders.findIndex(x => x.id === o.id);
+                    if (idx !== -1) allOrders[idx]._claimExpired = true;
+
+                    // 3. Reveal the Actions cell with a Remove button (realtime)
+                    let actionsCell = document.getElementById(`actions-cell-${o.id}`);
+                    if (actionsCell) {
+                        actionsCell.innerHTML = buildClaimCancelledActionsInner(o.id);
+                    } else {
+                        const row = document.querySelector(`tr.order-row[data-id="${o.id}"]`);
+                        if (row) {
+                            const newTd = document.createElement('td');
+                            newTd.style.textAlign = 'right';
+                            newTd.innerHTML = `<div class="tbl-actions" id="actions-cell-${o.id}">${buildClaimCancelledActionsInner(o.id)}</div>`;
+                            row.appendChild(newTd);
+                        }
+                    }
+
+                    return;
+                }
+
+                if (valEl) valEl.textContent = fmtMs(rem);
+                if (chipEl) chipEl.className = rem <= 5 * 60 * 1000 ? 'claim-countdown-chip urgent' : 'claim-countdown-chip';
+            }, 1000);
+        });
     }
 
     // ============================================================
     // CANCELLED-BY-OWNER STATUS BADGE BUILDER
     // ============================================================
+    function buildClaimOwnerCancelNotice(orderId, reason) {
+        const safeReason = esc(reason && reason.trim() ? reason.trim() : 'No specific reason provided.');
+        return `
+            <div class="claim-cancel-notice" id="claim-col-${orderId}">
+                <div class="ccn-title">
+                    <i class="fas fa-ban"></i> Rejected by Establishment
+                </div>
+                <div class="ccn-reason">"${safeReason}"</div>
+            </div>`;
+    }
+
+    // Build the full actions cell div wrapper for owner-cancelled claim rows
+    function buildClaimCancelledActions(orderId) {
+        return `<div class="tbl-actions" id="actions-cell-${orderId}">${buildClaimCancelledActionsInner(orderId)}</div>`;
+    }
+
+    // Just the button HTML (used when appending a new TD to the row)
+    function buildClaimCancelledActionsInner(orderId) {
+        return `<button class="tbl-btn tbl-btn-cancel" onclick="removeClaimCancelledRow(${orderId})">
+                    <i class="fas fa-times"></i> Remove
+                </button>`;
+    }
+
+    // Client dismisses an owner-cancelled to_claim row
+    function removeClaimCancelledRow(orderId) {
+        // ✅ FIX: Permanently dismiss — huwag nang mag-reappear kahit mag-refresh
+        lsRemoveCancelled(orderId);
+        lsDismiss(orderId);
+
+        const idx = allOrders.findIndex(function(o) { return o.id === orderId; });
+        if (idx !== -1) allOrders.splice(idx, 1);
+        const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
+        if (row) {
+            row.style.transition = 'opacity 0.35s, transform 0.35s';
+            row.style.opacity    = '0';
+            row.style.transform  = 'translateX(16px)';
+            setTimeout(function () {
+                row.remove();
+                updateOrderCounts();
+                const tbody = document.querySelector('#ordersList tbody');
+                if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
+            }, 370);
+        } else {
+            updateOrderCounts();
+        }
+    }
+
     function buildCancelledByOwnerBadge(reason) {
         const displayReason = (reason && reason.trim().length > 0)
             ? reason.trim()
@@ -2576,7 +2887,7 @@
         return `
             <div class="cancelled-owner-wrap">
                 <span class="order-status-badge status-cancelled-owner">
-                    <i class="fas fa-ban"></i> Cancelled by Owner
+                    <i class="fas fa-ban"></i> Rejected by Establishment
                 </span>
                 <div class="reason-inline">
                     <i class="fas fa-info-circle"></i>
@@ -2616,10 +2927,9 @@
         let html = '';
 
         if (o.status === 'request') {
-            // ✅ FIX: If owner cancelled this request (item deleted), show Remove only.
-            // Otherwise show the normal Cancel button.
-            const ownerCancelledRequest = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
-            if (ownerCancelledRequest) {
+            // ✅ If owner rejected this request order — show Remove only (no Re-order).
+            // Client can re-order manually from the establishment if they want.
+            if (o._cancelledByOwner === true) {
                 html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
                             <i class="fas fa-times"></i> Remove
                          </button>`;
@@ -2631,30 +2941,28 @@
         }
 
         if (o.status === 'to_pay' || o.status === 'PENDING') {
-            if (expired) {
-                // Only treat as owner-cancelled if flag is true AND there is a reason or explicit WS cancel.
-                // If _cancelledByOwner is true but _cancelReason is empty, treat as timer-expired
-                // (catches stale LS data from the old buggy code).
-                const reallyOwnerCancelled = o._cancelledByOwner === true && (o._cancelReason || '').trim().length > 0;
+            // ✅ FIX: Check owner-cancelled FIRST regardless of timer state.
+            // If the owner rejected this to_pay order (even while the 8-min timer
+            // was still running), show Remove only — never show Pay Now.
+            const ownerRejectedToPay = o._cancelledByOwner === true;
 
-                if (reallyOwnerCancelled) {
-                    // ── Owner cancelled with a reason ──
-                    // Show REMOVE ONLY — row is informational, stock already restored.
-                    html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
-                                <i class="fas fa-times"></i> Remove
-                             </button>`;
-                } else {
-                    // ── Timer expired (or owner cancelled without reason) ──
-                    // Re-order = re-request. Remove = dismiss row.
-                    html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(${o.id}, this)">
-                                <i class="fas fa-redo-alt"></i> Re-order
-                             </button>
-                             <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
-                                <i class="fas fa-times"></i> Remove
-                             </button>`;
-                }
+            if (ownerRejectedToPay) {
+                // ── Owner cancelled this to_pay order ──
+                // Show REMOVE ONLY — row is purely informational, stock already restored.
+                html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                            <i class="fas fa-times"></i> Remove
+                         </button>`;
+            } else if (expired) {
+                // ── Timer expired (owner did NOT cancel) ──
+                // Re-order = re-request. Remove = dismiss row.
+                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(${o.id}, this)">
+                            <i class="fas fa-redo-alt"></i> Re-order
+                         </button>
+                         <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                            <i class="fas fa-times"></i> Remove
+                         </button>`;
             } else {
-                // Timer still running — show Pay Now (disabled if stock issue)
+                // Timer still running and NOT owner-cancelled — show Pay Now
                 const payDisabled = o._hasStockIssue ? 'btn-disabled' : '';
                 const payTitle    = o._hasStockIssue ? 'title="Some items are out of stock"' : '';
                 html += `<button class="tbl-btn tbl-btn-pay ${payDisabled}" ${payTitle}
@@ -2692,13 +3000,12 @@
         if (!actCell) return;
 
         const orderEntry = allOrders.find(function (o) { return o.id === orderId; });
-        // Only treat as owner-cancelled if flag is true AND there is a reason
-        const reallyOwnerCancelled = orderEntry &&
-            orderEntry._cancelledByOwner === true &&
-            (orderEntry._cancelReason || '').trim().length > 0;
+        // ✅ FIX: Use _cancelledByOwner flag alone — don't require a non-empty reason.
+        // Owner may reject without providing a reason; the row should still show Remove.
+        const reallyOwnerCancelled = orderEntry && orderEntry._cancelledByOwner === true;
 
         if (reallyOwnerCancelled) {
-            // Owner cancelled (item deleted or rejected with reason) — Remove only
+            // Owner rejected — Remove only, no Re-order
             actCell.innerHTML =
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
                 '    <i class="fas fa-times"></i> Remove' +
@@ -2718,8 +3025,34 @@
     // ============================================================
     // CANCEL ORDER (CUSTOMER)
     // ============================================================
+    function onClientCancelReasonChange(val) {
+        const other = document.getElementById('clientCancelOtherInput');
+        const err   = document.getElementById('clientCancelReasonError');
+        if (err) err.style.display = 'none';
+        const sel = document.getElementById('clientCancelReasonSelect');
+        if (sel) sel.style.borderColor = '#e2e8f0';
+        if (!other) return;
+        if (val === 'other') {
+            other.style.display = 'block';
+            other.focus();
+        } else {
+            other.style.display = 'none';
+            other.value = '';
+        }
+    }
+
     function askCancelOrder(orderId) {
         cancelTargetId = orderId;
+        // Reset modal
+        const sel   = document.getElementById('clientCancelReasonSelect');
+        const other = document.getElementById('clientCancelOtherInput');
+        const err   = document.getElementById('clientCancelReasonError');
+        const btn   = document.getElementById('cancelConfirmYes');
+        if (sel)   { sel.value = ''; sel.style.borderColor = '#e2e8f0'; }
+        if (other) { other.value = ''; other.style.display = 'none'; other.style.borderColor = '#e2e8f0'; }
+        if (err)   err.style.display = 'none';
+        if (btn)   { btn.disabled = false; btn.innerHTML = 'Yes, Cancel'; }
+
         const overlay = document.getElementById('cancelConfirmOverlay');
         overlay.classList.add('open');
         document.getElementById('cancelConfirmYes').onclick = function () {
@@ -2730,9 +3063,30 @@
     function closeCancelConfirm() {
         document.getElementById('cancelConfirmOverlay').classList.remove('open');
         cancelTargetId = null;
+        // Reset button in case it was mid-submit
+        const btn = document.getElementById('cancelConfirmYes');
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Yes, Cancel'; }
     }
 
     function doCancel(orderId) {
+        // Validate reason
+        const sel    = document.getElementById('clientCancelReasonSelect');
+        const other  = document.getElementById('clientCancelOtherInput');
+        const err    = document.getElementById('clientCancelReasonError');
+        const selVal = sel ? sel.value : '';
+        let reason   = selVal === 'other' ? (other ? other.value.trim() : '') : selVal;
+
+        if (!selVal) {
+            if (sel) sel.style.borderColor = '#dc2626';
+            if (err) err.style.display = 'block';
+            return;
+        }
+        if (selVal === 'other' && !reason) {
+            if (other) other.style.borderColor = '#dc2626';
+            if (err) err.style.display = 'block';
+            return;
+        }
+
         const btn = document.getElementById('cancelConfirmYes');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
@@ -2740,6 +3094,7 @@
         fetch('/api/order/' + orderId + '/cancel/', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cancel_reason: reason })
         })
         .then(function (r) {
             return r.text().then(function (txt) {
@@ -2968,15 +3323,25 @@
         lsRemoveCancelled(orderId);
         lsDismiss(orderId);
 
-        // ✅ If the order is still 'to_pay' in the DB (owner deleted item but
-        // couldn't cancel it server-side), cancel it now so it doesn't keep
-        // appearing on future /api/user/transactions/ polls.
         const orderEntry = allOrders.find(function (o) { return o.id === orderId; });
         const isToPay    = orderEntry && (orderEntry.status === 'to_pay' || orderEntry.status === 'PENDING');
         const ownerCanc  = orderEntry && orderEntry._cancelledByOwner === true;
+        const isRequest  = orderEntry && orderEntry.status === 'request';
+
         if (isToPay && ownerCanc) {
             // Fire-and-forget — cancel the order in DB so server stops returning it
             fetch('/api/order/' + orderId + '/cancel/', {
+                method:  'POST',
+                headers: {
+                    'X-CSRFToken':  getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            }).catch(function () { /* silent — dismissed anyway */ });
+        } else if (isRequest && ownerCanc) {
+            // ✅ NEW: Tell the server the client has seen and dismissed the rejection.
+            // Sets owner_dismissed=True so the order is excluded from future API polls
+            // and never reappears after a page reload.
+            fetch('/api/orders/' + orderId + '/client-dismiss/', {
                 method:  'POST',
                 headers: {
                     'X-CSRFToken':  getCookie('csrftoken'),

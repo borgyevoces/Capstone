@@ -389,6 +389,35 @@ class Order(models.Model):
         help_text="Set to True after menu-item quantities have been deducted for this order."
     )
 
+    # ✅ NEW: owner_dismissed — True after the owner manually removes a
+    # cancelled-by-client order from the request tab. Excluded from the
+    # owner orders API so it never reappears after a page reload.
+    owner_dismissed = models.BooleanField(
+        default=False,
+        help_text="Set to True when the owner dismisses a client-cancelled order from the request tab."
+    )
+
+    # ✅ NEW: cancel_reason — stores the reason given by the client (or owner)
+    # when an order is cancelled. Shown in the owner's request tab status cell.
+    cancel_reason = models.TextField(
+        blank=True,
+        default='',
+        help_text="Reason provided when this order was cancelled."
+    )
+
+    # ✅ NEW: cancelled_from_status — records which status the order was in
+    # when the owner rejected it ('request', 'to_pay', or 'to_claim').
+    # This is the ONLY reliable way to route a rejected order to the correct
+    # tab on the client order history page after a hard page refresh.
+    # ONLY set by reject_order(). NEVER set by the client cancel_order().
+    # Empty string = client self-cancelled (no owner rejection).
+    cancelled_from_status = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text="Status the order was in when owner rejected it (request/to_pay/to_claim)."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

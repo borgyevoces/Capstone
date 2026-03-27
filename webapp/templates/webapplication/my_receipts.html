@@ -33,6 +33,37 @@
 .rp-header-left h1 i { color: #16a34a; font-size: 1.3rem; }
 .rp-header-left p { font-size: 0.85rem; color: #6b7280; }
 
+/* ── Live indicator ── */
+.rp-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+.rp-live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #16a34a;
+    animation: livePulse 1.4s infinite;
+}
+@keyframes livePulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.4; transform:scale(.7); }
+}
+.rp-live-badge.disconnected {
+    background: #fef2f2; border-color: #fecaca;
+    color: #b91c1c;
+}
+.rp-live-badge.disconnected .rp-live-dot {
+    background: #ef4444; animation: none;
+}
+
 /* ── Order receipt card ── */
 .rp-card {
     background: #fff;
@@ -81,12 +112,14 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
-.rp-status-badge.request       { background:#fef9c3;color:#92400e; }
-.rp-status-badge.to_pay        { background:#fee2e2;color:#991b1b; }
+.rp-status-badge.request        { background:#fef9c3;color:#92400e; }
+.rp-status-badge.to_pay         { background:#fee2e2;color:#991b1b; }
 .rp-status-badge.preparing,
 .rp-status-badge.order_received { background:#dbeafe;color:#1e40af; }
-.rp-status-badge.to_claim      { background:#e9d5ff;color:#6b21a8; }
-.rp-status-badge.completed     { background:#d1fae5;color:#065f46; }
+.rp-status-badge.to_claim       { background:#e9d5ff;color:#6b21a8; }
+.rp-status-badge.completed      { background:#d1fae5;color:#065f46; }
+.rp-status-badge.cancelled,
+.rp-status-badge.rejected       { background:#f1f5f9;color:#64748b; }
 
 .rp-view-btn {
     padding: 7px 14px;
@@ -142,7 +175,7 @@
     font-size: 0.84rem;
     color: #374151;
 }
-.rp-item-name { font-weight: 500; }
+.rp-item-name  { font-weight: 500; }
 .rp-item-price { font-weight: 700; color: #B71C1C; }
 
 /* Total row */
@@ -168,7 +201,7 @@
 .rp-empty p  { font-size: 0.85rem; }
 
 /* ══════════════════════════════════════════
-   RECEIPT MODAL — Redesigned, fit, no-scroll
+   RECEIPT MODAL
 ══════════════════════════════════════════ */
 .rm-overlay {
     display: none; position: fixed; inset: 0;
@@ -191,7 +224,7 @@
     to   { transform:scale(1) translateY(0); opacity:1; }
 }
 
-/* ── Top header band ── */
+/* Top header band */
 .rm-header-strip {
     background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
     padding: 14px 18px 12px;
@@ -211,7 +244,7 @@
 }
 .rm-status-chip i { font-size: 5px; }
 
-/* ── Ticket body ── */
+/* Ticket body */
 .rm-body { padding: 14px 18px 0; }
 
 /* Title */
@@ -224,7 +257,7 @@
 .rm-title { font-size: 1rem; font-weight: 800; color: #111; margin: 0 0 3px; }
 .rm-id    { font-size: 0.68rem; color: #aaa; letter-spacing: .1px; }
 
-/* Info rows — two-col grid */
+/* Info rows */
 .rm-info-grid {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -301,6 +334,14 @@
 }
 .rm-download:hover { opacity: .88; }
 .rm-download:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+/* Flash animation for updated cards */
+@keyframes cardFlash {
+    0%   { box-shadow: 0 0 0 0px #16a34a55; }
+    40%  { box-shadow: 0 0 0 3px #16a34a55; }
+    100% { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+}
+.rp-card.just-updated { animation: cardFlash .8s ease-out forwards; }
 </style>
 {% endblock %}
 
@@ -313,13 +354,18 @@
             <h1><i class="fas fa-receipt"></i> My Receipts</h1>
             <p>View and print receipts for all your orders</p>
         </div>
+        <!-- Live status badge -->
+        <div class="rp-live-badge" id="rpLiveBadge">
+            <div class="rp-live-dot"></div>
+            <span id="rpLiveText">Live</span>
+        </div>
     </div>
 
     <!-- Orders list -->
     <div id="rpList">
         {% if orders %}
             {% for order in orders %}
-            <div class="rp-card" data-status="{{ order.status }}">
+            <div class="rp-card" data-order-id="{{ order.id }}" data-status="{{ order.status }}">
 
                 <!-- Card header -->
                 <div class="rp-card-hd">
@@ -331,7 +377,7 @@
                                 {{ order.created_at }}
                             </div>
                         </div>
-                        <span class="rp-status-badge {{ order.status }}">
+                        <span class="rp-status-badge {{ order.status }}" id="rpBadge-{{ order.id }}">
                             {{ order.status_label }}
                         </span>
                     </div>
@@ -378,7 +424,7 @@
                             <i class="fas fa-wallet" style="color:#6b7280;margin-right:5px;"></i>
                             {{ order.payment_method }}
                         </span>
-                        <span class="rp-total-amt">₱{{ order.total_amount|floatformat:2 }}</span>
+                        <span class="rp-total-amt" id="rpTotal-{{ order.id }}">₱{{ order.total_amount|floatformat:2 }}</span>
                     </div>
                 </div>
 
@@ -416,18 +462,200 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ── Static order data (for order IDs) ─────────────────────────────────────
+// ── Static order data ──────────────────────────────────────────────────────
 const ORDERS_STATIC = {{ orders_json|safe }};
+const CURRENT_USER_ID = {{ request.user.id }};
 
-// ── Open receipt modal — fetches REALTIME data from API ───────────────────
+// Live copy of orders (updated by WebSocket + fallback polling)
+let _rtOrders = JSON.parse(JSON.stringify(ORDERS_STATIC));
+let _rtCurrentIdx = null;  // index of currently open modal
+
+const STATUS_LABELS = {
+    request:        'Order Request',
+    to_pay:         'To Pay',
+    order_received: 'Preparing',
+    preparing:      'Preparing',
+    to_claim:       'To Claim',
+    completed:      'Completed',
+    cancelled:      'Cancelled',
+    rejected:       'Rejected',
+};
+
+// ══════════════════════════════════════════════════════════════════════
+// WEBSOCKET — connects to OrderStatusConsumer (user scope)
+// Receives instant push when owner changes order status
+// ══════════════════════════════════════════════════════════════════════
+let _ws = null;
+let _wsReconnectTimer = null;
+let _wsReconnectDelay = 3000;  // start at 3s, doubles on each failure
+
+function _wsConnect() {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = protocol + '://' + window.location.host +
+                '/ws/order-status/user/user/' + CURRENT_USER_ID + '/';
+
+    _ws = new WebSocket(url);
+
+    _ws.onopen = function() {
+        _wsReconnectDelay = 3000;  // reset backoff on success
+        _setLiveBadge(true);
+        console.log('[Receipts] WebSocket connected');
+    };
+
+    _ws.onmessage = function(e) {
+        try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'order_status_update') {
+                _handleStatusPush(data);
+            }
+        } catch(err) {
+            console.warn('[Receipts] WS parse error', err);
+        }
+    };
+
+    _ws.onclose = function() {
+        _setLiveBadge(false);
+        console.log('[Receipts] WebSocket closed — reconnecting in', _wsReconnectDelay, 'ms');
+        // Exponential backoff reconnect (max 30s)
+        _wsReconnectTimer = setTimeout(function() {
+            _wsReconnectDelay = Math.min(_wsReconnectDelay * 2, 30000);
+            _wsConnect();
+        }, _wsReconnectDelay);
+    };
+
+    _ws.onerror = function() {
+        _ws.close();  // triggers onclose → reconnect
+    };
+}
+
+// ── Handle incoming order status push from WebSocket ─────────────────
+function _handleStatusPush(data) {
+    const orderId   = data.order_id;
+    const newStatus = data.new_status;
+    if (!orderId || !newStatus) return;
+
+    // Find matching order in local array
+    const idx = _rtOrders.findIndex(function(o) { return o.id === orderId; });
+    if (idx === -1) return;  // not this user's order on this page
+
+    const order = _rtOrders[idx];
+    const oldStatus = order.status;
+
+    if (oldStatus === newStatus) return;  // no change
+
+    // Update local state
+    order.status       = newStatus;
+    order.status_label = STATUS_LABELS[newStatus] || newStatus;
+
+    // Update the card on screen instantly
+    _rtUpdateCard(order);
+
+    // If this order's receipt modal is open, re-render it
+    if (_rtCurrentIdx === idx) {
+        _fetchAndRenderModal(idx);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FALLBACK POLLING — runs every 20s as safety net
+// (catches edge cases like server restart where WS missed a push)
+// ══════════════════════════════════════════════════════════════════════
+let _pollTimer = null;
+
+function _pollAll() {
+    const ids = _rtOrders.map(function(o) { return o.id; });
+    if (!ids.length) return;
+
+    Promise.all(ids.map(function(id, idx) {
+        return fetch('/api/order/' + id + '/', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success || !data.order) return null;
+                return { idx: idx, order: data.order };
+            })
+            .catch(function() { return null; });
+    })).then(function(results) {
+        results.forEach(function(res) {
+            if (!res) return;
+            const live  = res.order;
+            const local = _rtOrders[res.idx];
+
+            // Sync status
+            if (live.status && live.status !== local.status) {
+                local.status       = live.status;
+                local.status_label = STATUS_LABELS[live.status] || live.status;
+                _rtUpdateCard(local);
+            }
+
+            // Sync total + items
+            if (live.total_amount !== undefined) {
+                local.total_amount = parseFloat(live.total_amount);
+            }
+            if (live.items && live.items.length) {
+                local.items = live.items.map(function(i) {
+                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
+                });
+            }
+        });
+
+        // Refresh open modal silently
+        if (_rtCurrentIdx !== null) {
+            const o = _rtOrders[_rtCurrentIdx];
+            if (o) _renderReceiptFromLocal(o);
+        }
+    });
+}
+
+// ── Update a card's badge + total on screen ───────────────────────────
+function _rtUpdateCard(order) {
+    const card = document.querySelector('.rp-card[data-order-id="' + order.id + '"]');
+    if (!card) return;
+
+    // Badge
+    const badge = document.getElementById('rpBadge-' + order.id);
+    if (badge) {
+        badge.className  = 'rp-status-badge ' + order.status;
+        badge.textContent = order.status_label;
+    }
+
+    // Total
+    const totalEl = document.getElementById('rpTotal-' + order.id);
+    if (totalEl) {
+        totalEl.textContent = '₱' + parseFloat(order.total_amount || 0).toFixed(2);
+    }
+
+    // Flash the card to signal update
+    card.classList.remove('just-updated');
+    void card.offsetWidth;  // force reflow
+    card.classList.add('just-updated');
+    setTimeout(function() { card.classList.remove('just-updated'); }, 900);
+}
+
+// ── Live badge helper ─────────────────────────────────────────────────
+function _setLiveBadge(connected) {
+    const badge = document.getElementById('rpLiveBadge');
+    const text  = document.getElementById('rpLiveText');
+    if (!badge || !text) return;
+    if (connected) {
+        badge.classList.remove('disconnected');
+        text.textContent = 'Live';
+    } else {
+        badge.classList.add('disconnected');
+        text.textContent = 'Reconnecting…';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RECEIPT MODAL
+// ══════════════════════════════════════════════════════════════════════
 function openReceiptModal(idx) {
-    const staticOrder = ORDERS_STATIC[idx];
+    _rtCurrentIdx = idx;
+    const staticOrder = _rtOrders[idx];
     if (!staticOrder) return;
 
     const overlay = document.getElementById('rmOverlay');
     const ticket  = document.getElementById('rmTicket');
 
-    // Show loading state immediately
     ticket.innerHTML = `
         <div style="text-align:center;padding:48px 24px;color:#9ca3af;">
             <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:12px;"></i>
@@ -435,39 +663,59 @@ function openReceiptModal(idx) {
         </div>`;
     overlay.classList.add('open');
 
-    // Fetch realtime data from API
-    fetch('/api/order/' + staticOrder.id + '/')
+    _fetchAndRenderModal(idx);
+}
+
+function _fetchAndRenderModal(idx) {
+    const order = _rtOrders[idx];
+    if (!order) return;
+
+    fetch('/api/order/' + order.id + '/')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success || !data.order) {
-                renderReceiptFromStatic(staticOrder);
+                _renderReceiptFromLocal(order);
                 return;
             }
-            renderReceipt(data.order, staticOrder);
+            // Sync local state with fresh API data
+            if (data.order.status) {
+                order.status       = data.order.status;
+                order.status_label = STATUS_LABELS[data.order.status] || data.order.status;
+            }
+            if (data.order.total_amount !== undefined) {
+                order.total_amount = parseFloat(data.order.total_amount);
+            }
+            if (data.order.items && data.order.items.length) {
+                order.items = data.order.items.map(function(i) {
+                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
+                });
+            }
+            renderReceipt(data.order, order);
         })
         .catch(function() {
-            // Fallback to static data on network error
-            renderReceiptFromStatic(staticOrder);
+            _renderReceiptFromLocal(order);
         });
 }
 
-// ── Render receipt from API data ──────────────────────────────────────────
+function _renderReceiptFromLocal(order) {
+    renderReceipt({
+        id:              order.id,
+        status:          order.status,
+        total_amount:    order.total_amount,
+        items:           (order.items || []).map(function(i) {
+            return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
+        }),
+        establishment:   { name: order.establishment.name },
+        gcash_reference: order.reference,
+    }, order);
+}
+
+// ── Render receipt HTML into modal ────────────────────────────────────
 function renderReceipt(apiOrder, staticOrder) {
-    const statusColors = {
-        completed:      { bg:'#d1fae5', color:'#065f46' },
-        preparing:      { bg:'#dbeafe', color:'#1e40af' },
-        order_received: { bg:'#dbeafe', color:'#1e40af' },
-        to_claim:       { bg:'#e9d5ff', color:'#6b21a8' },
-        request:        { bg:'#fef9c3', color:'#92400e' },
-        to_pay:         { bg:'#fee2e2', color:'#991b1b' },
-    };
-
     const status    = (apiOrder.status || staticOrder.status || '').toLowerCase();
-    const sc        = statusColors[status] || { bg:'#f1f3f5', color:'#374151' };
-    const statusLbl = staticOrder.status_label || status;
+    const statusLbl = STATUS_LABELS[status] || staticOrder.status_label || status;
 
-    // Items from API
-    const items    = apiOrder.items || staticOrder.items || [];
+    const items = apiOrder.items || staticOrder.items || [];
     const itemsHtml = items.map(function(item) {
         const name     = esc(item.name || '');
         const qty      = item.quantity || 1;
@@ -478,12 +726,12 @@ function renderReceipt(apiOrder, staticOrder) {
         </div>`;
     }).join('');
 
-    const total      = parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0).toFixed(2);
-    const estabName  = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
-    const payment    = staticOrder.payment_method || 'Cash on Pickup';
-    const reference  = apiOrder.gcash_reference || staticOrder.reference || '';
-    const dateStr    = staticOrder.created_at;
-    const orderId    = apiOrder.id || staticOrder.id;
+    const total     = parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0).toFixed(2);
+    const estabName = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
+    const payment   = staticOrder.payment_method || 'Cash on Pickup';
+    const reference = apiOrder.gcash_reference || staticOrder.reference || '';
+    const dateStr   = staticOrder.created_at;
+    const orderId   = apiOrder.id || staticOrder.id;
 
     document.getElementById('rmTicket').innerHTML = `
         <div class="rm-header-strip">
@@ -535,21 +783,17 @@ function renderReceipt(apiOrder, staticOrder) {
         </div>`;
 }
 
-// ── Fallback: render from static (page-load) data ─────────────────────────
-function renderReceiptFromStatic(order) {
-    renderReceipt({
-        id:           order.id,
-        status:       order.status,
-        total_amount: order.total_amount,
-        items:        (order.items || []).map(function(i) {
-            return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
-        }),
-        establishment: { name: order.establishment.name },
-        gcash_reference: order.reference,
-    }, order);
+// ── Close modal ───────────────────────────────────────────────────────
+function closeReceiptModal() {
+    _rtCurrentIdx = null;
+    document.getElementById('rmOverlay').classList.remove('open');
 }
 
-// ── Download receipt as PDF ───────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReceiptModal();
+});
+
+// ── Download PDF ──────────────────────────────────────────────────────
 function downloadReceiptPDF() {
     const ticket = document.getElementById('rmTicket');
     const btn    = document.getElementById('rmDownloadBtn');
@@ -558,9 +802,8 @@ function downloadReceiptPDF() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
-    // Grab order number from header text for filename
-    const idEl = ticket.querySelector('.rm-id');
-    const orderNum = idEl ? idEl.textContent.replace(/[^0-9]/g, '').slice(0,10) : 'receipt';
+    const idEl    = ticket.querySelector('.rm-id');
+    const orderNum = idEl ? idEl.textContent.replace(/[^0-9]/g,'').slice(0,10) : 'receipt';
 
     html2canvas(ticket, {
         scale: 2,
@@ -570,17 +813,11 @@ function downloadReceiptPDF() {
     }).then(function(canvas) {
         const { jsPDF } = window.jspdf;
         const imgData   = canvas.toDataURL('image/png');
-        const pxW = canvas.width;
-        const pxH = canvas.height;
-
-        // Convert px → mm at 96dpi
-        const mmW = (pxW / 96) * 25.4;
-        const mmH = (pxH / 96) * 25.4;
-
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmW, mmH] });
+        const mmW = (canvas.width  / 96) * 25.4;
+        const mmH = (canvas.height / 96) * 25.4;
+        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[mmW, mmH] });
         pdf.addImage(imgData, 'PNG', 0, 0, mmW, mmH);
         pdf.save('KabsuEats_Receipt_' + orderNum + '.pdf');
-
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
     }).catch(function() {
@@ -589,15 +826,6 @@ function downloadReceiptPDF() {
     });
 }
 
-// ── Close modal ───────────────────────────────────────────────────────────
-function closeReceiptModal() {
-    document.getElementById('rmOverlay').classList.remove('open');
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeReceiptModal();
-});
-
 function esc(s) {
     if (!s) return '';
     const d = document.createElement('div');
@@ -605,135 +833,24 @@ function esc(s) {
     return d.innerHTML;
 }
 
-// ══════════════════════════════════════════════════════
-// REALTIME POLLING — refreshes cards + open modal live
-// ══════════════════════════════════════════════════════
-let _rtCurrentIdx    = null;   // index of currently open modal
-let _rtPollTimer     = null;   // setInterval handle
-let _rtOrders        = JSON.parse(JSON.stringify(ORDERS_STATIC)); // live copy
-
-const STATUS_LABELS = {
-    request:        'Order Request',
-    to_pay:         'To Pay',
-    order_received: 'Preparing',
-    preparing:      'Preparing',
-    to_claim:       'To Claim',
-    completed:      'Completed',
-};
-
-// ── Fetch all orders from API and sync cards ──────────────────────────────
-function _rtFetchAll() {
-    const ids = _rtOrders.map(function(o){ return o.id; });
-    if (!ids.length) return;
-
-    // Fire one request per order (reuse existing single-order API)
-    Promise.all(ids.map(function(id, idx) {
-        return fetch('/api/order/' + id + '/', { credentials: 'same-origin' })
-            .then(function(r){ return r.json(); })
-            .then(function(data){
-                if (!data.success || !data.order) return null;
-                return { idx: idx, order: data.order };
-            })
-            .catch(function(){ return null; });
-    })).then(function(results) {
-        results.forEach(function(res) {
-            if (!res) return;
-            const live = res.order;
-            const old  = _rtOrders[res.idx];
-
-            // Update status if changed
-            if (live.status && live.status !== old.status) {
-                old.status       = live.status;
-                old.status_label = STATUS_LABELS[live.status] || live.status;
-                _rtUpdateCard(res.idx, old);
-            }
-
-            // Update total
-            if (live.total_amount !== undefined) {
-                old.total_amount = parseFloat(live.total_amount);
-            }
-
-            // Update items
-            if (live.items && live.items.length) {
-                old.items = live.items.map(function(i) {
-                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
-                });
-            }
-        });
-
-        // If modal is open, silently re-render it with latest data
-        if (_rtCurrentIdx !== null) {
-            const refreshed = _rtOrders[_rtCurrentIdx];
-            if (refreshed) {
-                renderReceipt({
-                    id:              refreshed.id,
-                    status:          refreshed.status,
-                    total_amount:    refreshed.total_amount,
-                    items:           refreshed.items.map(function(i){
-                        return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
-                    }),
-                    establishment:   { name: refreshed.establishment.name },
-                    gcash_reference: refreshed.reference,
-                }, refreshed);
-            }
-        }
-    });
-}
-
-// ── Update a single card's status badge + total on the page ──────────────
-function _rtUpdateCard(idx, order) {
-    // Find the card by button data-idx
-    const btn = document.querySelector('.rp-view-btn[data-idx="' + idx + '"]');
-    if (!btn) return;
-    const card = btn.closest('.rp-card');
-    if (!card) return;
-
-    // Badge
-    const badge = card.querySelector('.rp-status-badge');
-    if (badge) {
-        badge.className = 'rp-status-badge ' + order.status;
-        badge.textContent = order.status_label;
-    }
-
-    // Total amount
-    const totalEl = card.querySelector('.rp-total-amt');
-    if (totalEl) {
-        totalEl.textContent = '₱' + parseFloat(order.total_amount).toFixed(2);
-    }
-
-    // Subtle flash animation to signal update
-    card.style.transition = 'box-shadow .3s';
-    card.style.boxShadow  = '0 0 0 2px #16a34a55';
-    setTimeout(function(){ card.style.boxShadow = ''; }, 1200);
-}
-
-// ── Override openReceiptModal to track open index ─────────────────────────
-const _origOpenReceiptModal = openReceiptModal;
-window.openReceiptModal = function(idx) {
-    _rtCurrentIdx = idx;
-    _origOpenReceiptModal(idx);
-};
-
-// ── Override closeReceiptModal to clear index ─────────────────────────────
-const _origCloseReceiptModal = closeReceiptModal;
-window.closeReceiptModal = function() {
-    _rtCurrentIdx = null;
-    _origCloseReceiptModal();
-};
-
-// ── Start polling on page load ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// INIT — on page load: connect WS + start fallback poll
+// ══════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
-    _rtFetchAll();                                    // immediate first fetch
-    _rtPollTimer = setInterval(_rtFetchAll, 15000);  // then every 15 seconds
+    if (ORDERS_STATIC.length > 0) {
+        _wsConnect();                                    // primary: WebSocket
+        _pollAll();                                      // immediate sync
+        _pollTimer = setInterval(_pollAll, 20000);       // fallback: every 20s
+    }
 });
 
-// Stop polling when tab is hidden, resume when visible
+// Pause polling/WS when tab hidden, resume when visible
 document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
-        clearInterval(_rtPollTimer);
+        clearInterval(_pollTimer);
     } else {
-        _rtFetchAll();
-        _rtPollTimer = setInterval(_rtFetchAll, 15000);
+        _pollAll();
+        _pollTimer = setInterval(_pollAll, 20000);
     }
 });
 </script>
