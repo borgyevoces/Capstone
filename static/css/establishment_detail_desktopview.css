@@ -629,7 +629,8 @@
 .badge-top-seller {
     position: absolute;
     top: 8px;
-    left: 8px;
+    right: 8px;
+    left: auto;
     z-index: 10;
     background: linear-gradient(135deg, #ff6633, #e84d1c);
     color: white;
@@ -647,44 +648,14 @@
 
 .badge-top-seller i {
     font-size: 1em;
-    color: #fff;
+    color: #fff700;
 }
 
 /* ============================================ */
-/* ✅ AVAILABLE BADGE - Top Right               */
+/* ✅ BADGE-STOCK — hidden, replaced by text    */
 /* ============================================ */
 .badge-stock {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 10;
-    font-size: 0.72em;
-    font-weight: 700;
-    padding: 5px 10px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 2px;  /* Reduced from 3px */
-
-    white-space: nowrap;
-}
-
-    /* Available - Green */
-    .badge-stock.available {
-    background: linear-gradient(135deg, #22a844, #1a9038);
-    color: white;
-    box-shadow: 0 3px 8px rgba(34,168,68,0.4);
-}
-
-    /* Out of Stock - Red */
-    .badge-stock.out-of-stock {
-    background: linear-gradient(135deg, #dc3545, #c82333);
-    color: white;
-    box-shadow: 0 3px 8px rgba(220,53,69,0.4);
-}
-
-    .badge-stock i {
-    font-size: 1em;
+    display: none !important;
 }
 
 

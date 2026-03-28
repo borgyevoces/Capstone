@@ -8633,3 +8633,27 @@ def search_menu_items(request):
 # ============================================================
 # BUY NOW — 2-STEP CHECKOUT FLOW
 # ============================================================
+
+def favorites_page(request):
+    """
+    Dedicated Favorites page.
+    No DB queries needed — all data lives in the browser's localStorage.
+    We still pass cart_count so the navbar badge works.
+    """
+    from django.shortcuts import render
+
+    cart_count = 0
+    if request.user.is_authenticated:
+        # Reuse your existing helper — adjust the import/call to match your codebase
+        try:
+            from .models import Cart  # adjust import path as needed
+            cart_count = Cart.objects.filter(
+                user=request.user,
+                status='pending'
+            ).values('menu_item').distinct().count()
+        except Exception:
+            cart_count = 0
+
+    return render(request, 'webapplication/favorites.html', {
+        'cart_count': cart_count,
+    })

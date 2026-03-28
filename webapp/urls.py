@@ -193,6 +193,8 @@ urlpatterns = [
                        name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
 
+                  path('favorites/', views.favorites_page, name='kabsueats_favorites'),
+
                   # ✅ Client order status
                   path('my-receipts/', views.my_receipts_view, name='my_receipts'),
                   path('owner/ratings/', views.store_ratings, name='store_ratings'),

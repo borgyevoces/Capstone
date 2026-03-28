@@ -278,10 +278,11 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* BESTSELLERS SECTION                          */
 /* ============================================ */
 .bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
-.bs-title-row { margin-bottom: 22px; padding: 28px 52px 4px; }
-.bs-title { font-size: 17px; font-weight: 600; color: var(--g700); display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; text-align: center; }
-.bs-title i { color: #ff6b35; font-size: 19px; }
-.bs-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding: 0 52px; }
+.bs-title-row { display: none; }
+.bs-title { font-size: 12px; font-weight: 500; color: var(--g600); display: flex; align-items: center; gap: 6px; margin: 4px 0 0 0; text-align: left; }
+.bs-title i { color: #ff6b35; font-size: 13px; }
+.bs-controls { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; padding: 28px 52px 0; }
+.bs-controls-left { display: flex; flex-direction: column; align-items: flex-start; }
 
 /* Dropdown */
 .ddw { position: relative; display: inline-block; }
@@ -633,7 +634,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
     .mts { flex-direction: row; top: auto; bottom: 12px; right: 12px; border-radius: 8px; }
 }
 @media (max-width: 480px) {
-    .bs-title { font-size: 14px; }
+    .bs-title { font-size: 11px; }
     .dd-btn, .gv-btn { padding: 8px 12px; font-size: 12px; }
     .est-grid { grid-template-columns: 1fr; }
 }

@@ -481,6 +481,21 @@ function renderBS(data, isSearchResult = false) {
                 <img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy"
                      onerror="this.src='https://placehold.co/300x300/f3f4f6/d1d5db?text=Food'">
                 ${badgeHtml}
+                <button class="menu-fav-heart-btn bsc-fav-btn"
+                        id="bscHeart-${d.id}"
+                        data-menu-id="${d.id}"
+                        data-menu-name="${escHtml(d.name)}"
+                        data-menu-image="${d.image || ''}"
+                        data-menu-price="${parseFloat(d.price).toFixed(2)}"
+                        data-est-name="${escHtml(d.establishment.name)}"
+                        data-est-id="${d.establishment.id}"
+                        data-est-url="/food_establishment/${d.establishment.id}/"
+                        title="Save to Favorites"
+                        onclick="event.stopPropagation(); toggleFavMenu(this)">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26Z" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${escHtml(d.name)}</div>
@@ -499,9 +514,11 @@ function renderBS(data, isSearchResult = false) {
                         </div>
                     </div>
                 </div>
-                <button class="bsc-btn" onclick="event.stopPropagation();openMod(${d.id})">
-                    <i class="fas fa-eye"></i> View Details
-                </button>
+                <div style="margin-top:auto;">
+                    <button class="bsc-btn" style="width:100%;" onclick="event.stopPropagation();openMod(${d.id})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -509,6 +526,8 @@ function renderBS(data, isSearchResult = false) {
     cidx = 0;
     updCar();
     updNav();
+    // Sync heart button states to localStorage
+    setTimeout(_syncFavMenuButtons, 60);
 }
 
 // ── Carousel helpers ──
@@ -1059,8 +1078,9 @@ function applyFilter() {
     const val = document.getElementById('catFilt').value.toLowerCase();
     document.querySelectorAll('.food-est-item').forEach(el => {
         const cat = (el.dataset.category || '').toLowerCase();
-        el.style.display = (!val || cat.includes(val)) ? '' : 'none';
-        // Remove any search match badges if user manually filters
+        const show = !val || cat.includes(val);
+        const wrap = el.closest('.est-card-wrap') || el;
+        wrap.style.display = show ? '' : 'none';
         const existing = el.querySelector('.est-match-badge');
         if (existing) existing.remove();
     });
@@ -1408,6 +1428,7 @@ function classifyQuery(q) {
 
 // ── Main search dispatcher ──
 function runSmartSearch(q) {
+    closeAsd(); // always close the suggestion dropdown when the actual search runs
     currentSearchQuery = q;
     const qLow = q.toLowerCase();
 
@@ -1462,7 +1483,8 @@ function doEstablishmentSearch(qLow) {
     document.querySelectorAll('.food-est-item').forEach(el => {
         const name = (el.dataset.name || '').toLowerCase();
         const isMatch = name.includes(qLow);
-        el.style.display = isMatch ? '' : 'none';
+        const wrap = el.closest('.est-card-wrap') || el;
+        wrap.style.display = isMatch ? '' : 'none';
         if (isMatch) { hasVisible = true; removeMatchBadge(el); }
     });
 
@@ -1484,7 +1506,8 @@ function doCategorySearch(qLow) {
         const cat = (el.dataset.category || '').toLowerCase();
         const name = (el.dataset.name || '').toLowerCase();
         const isMatch = cat.includes(qLow) || name.includes(qLow);
-        el.style.display = isMatch ? '' : 'none';
+        const wrap = el.closest('.est-card-wrap') || el;
+        wrap.style.display = isMatch ? '' : 'none';
         if (isMatch) { hasVisible = true; removeMatchBadge(el); }
     });
 
@@ -1555,8 +1578,11 @@ function sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow) {
     // Remove old match badges
     cards.forEach(c => removeMatchBadge(c));
 
-    // Show all cards
-    cards.forEach(c => { c.style.display = ''; });
+    // Show all cards (show the wrap)
+    cards.forEach(c => {
+        const wrap = c.closest('.est-card-wrap') || c;
+        wrap.style.display = '';
+    });
 
     // Sort: matched first
     cards.sort((a, b) => {
@@ -1576,7 +1602,8 @@ function sortEstablishmentsWithMatches(matchingEstIds, matchCount, qLow) {
             const cnt = matchCount[id] || 1;
             addMatchBadge(card, cnt, qLow);
         }
-        grid.appendChild(card);
+        const wrap = card.closest('.est-card-wrap') || card;
+        grid.appendChild(wrap);
     });
 }
 
@@ -1674,10 +1701,14 @@ function resetSearch() {
     if (grid) {
         grid.querySelectorAll('.food-est-item').forEach(card => {
             removeMatchBadge(card);
-            card.style.display = '';
+            const wrap = card.closest('.est-card-wrap') || card;
+            wrap.style.display = '';
         });
         if (grid._originalOrder && grid._originalOrder.length > 0) {
-            grid._originalOrder.forEach(c => grid.appendChild(c));
+            grid._originalOrder.forEach(c => {
+                const wrap = c.closest('.est-card-wrap') || c;
+                grid.appendChild(wrap);
+            });
         }
     }
 
@@ -2314,10 +2345,21 @@ window.addEventListener('resize', () => {
     if (asd && asd.classList.contains('open')) positionAsd();
 });
 
-// Reposition ASD on scroll (since navbar is sticky)
+// Close ASD on scroll — the search bar scrolls with the page but the navbar is sticky,
+// so repositioning the fixed dropdown causes it to overlap the navbar. Safest fix: close it.
 window.addEventListener('scroll', () => {
     const asd = document.getElementById('asd');
-    if (asd && asd.classList.contains('open')) positionAsd();
+    if (asd && asd.classList.contains('open')) {
+        const cont = document.getElementById('hsContEl');
+        if (!cont) { closeAsd(); return; }
+        const rect = cont.getBoundingClientRect();
+        // Close if search bar has scrolled behind the navbar (top < 60px) or off screen
+        if (rect.bottom < 60) {
+            closeAsd();
+        } else {
+            positionAsd();
+        }
+    }
 }, { passive: true });
 
 // ============================================
@@ -2590,3 +2632,247 @@ function _escHtml(str) {
 
 
 
+
+// ============================================
+// FAVORITES SYSTEM — LocalStorage persistence
+// Star = Establishments | Heart = Menu Items
+// ============================================
+
+const FAV_EST_KEY  = 'kabsu_fav_establishments';
+const FAV_MENU_KEY = 'kabsu_fav_menu_items';
+let _favActiveTab  = 'est'; // 'est' | 'menu'
+
+// ── LocalStorage helpers ──────────────────────────────────────────────
+
+function _getFavEsts() {
+    try { return JSON.parse(localStorage.getItem(FAV_EST_KEY) || '[]'); } catch(e) { return []; }
+}
+function _setFavEsts(arr) {
+    try { localStorage.setItem(FAV_EST_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+function _getFavMenus() {
+    try { return JSON.parse(localStorage.getItem(FAV_MENU_KEY) || '[]'); } catch(e) { return []; }
+}
+function _setFavMenus(arr) {
+    try { localStorage.setItem(FAV_MENU_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// ── Toggle establishment star ─────────────────────────────────────────
+
+function toggleFavEst(btn) {
+    const estId   = parseInt(btn.dataset.estId);
+    const estName = btn.dataset.estName;
+    const estImg  = btn.dataset.estImage  || '';
+    const estCat  = btn.dataset.estCategory || '';
+    const estUrl  = btn.dataset.estUrl    || '#';
+
+    let favs = _getFavEsts();
+    const idx = favs.findIndex(function(e) { return e.id === estId; });
+
+    if (idx !== -1) {
+        // Remove
+        favs.splice(idx, 1);
+        btn.classList.remove('fav-active', 'fav-pop');
+        btn.title = 'Save to Favorites';
+        void btn.offsetWidth;
+    } else {
+        // Add
+        favs.push({ id: estId, name: estName, image: estImg, category: estCat, url: estUrl });
+        btn.classList.add('fav-active');
+        btn.classList.remove('fav-pop');
+        void btn.offsetWidth;
+        btn.classList.add('fav-pop');
+        btn.title = 'Remove from Favorites';
+    }
+
+    _setFavEsts(favs);
+    _renderFavSection();
+    _showFavToast(idx !== -1
+        ? '<i class="fas fa-star" style="color:#eab308"></i> Removed from Favorites'
+        : '<i class="fas fa-star" style="color:#eab308"></i> Saved to Favorites!', idx !== -1 ? 'info' : 'success');
+}
+
+// ── Toggle menu item heart ────────────────────────────────────────────
+
+function toggleFavMenu(btn) {
+    const menuId   = parseInt(btn.dataset.menuId);
+    const menuName = btn.dataset.menuName;
+    const menuImg  = btn.dataset.menuImage  || '';
+    const menuPrice= btn.dataset.menuPrice  || '0';
+    const estName  = btn.dataset.estName    || '';
+    const estId    = parseInt(btn.dataset.estId || 0);
+    const estUrl   = btn.dataset.estUrl     || '#';
+
+    let favs = _getFavMenus();
+    const idx = favs.findIndex(function(m) { return m.id === menuId; });
+
+    if (idx !== -1) {
+        favs.splice(idx, 1);
+        btn.classList.remove('fav-active', 'fav-pop');
+        btn.title = 'Save to Favorites';
+        void btn.offsetWidth;
+    } else {
+        favs.push({ id: menuId, name: menuName, image: menuImg, price: menuPrice, estName: estName, estId: estId, estUrl: estUrl });
+        btn.classList.add('fav-active');
+        btn.classList.remove('fav-pop');
+        void btn.offsetWidth;
+        btn.classList.add('fav-pop');
+        btn.title = 'Remove from Favorites';
+    }
+
+    _setFavMenus(favs);
+    _renderFavSection();
+    _showFavToast(idx !== -1
+        ? '<i class="fas fa-heart" style="color:#ef4444"></i> Removed from Favorites'
+        : '<i class="fas fa-heart" style="color:#ef4444"></i> Saved to Favorites!', idx !== -1 ? 'info' : 'success');
+}
+
+// ── Collapse/expand favorites section ────────────────────────────────
+
+function toggleFavSection() {
+    const sec = document.getElementById('favSection');
+    if (!sec) return;
+    sec.classList.toggle('collapsed');
+    const btn = sec.querySelector('.fav-section-toggle-btn span');
+    if (btn) btn.textContent = sec.classList.contains('collapsed') ? 'Show' : 'Hide';
+}
+
+// ── Switch tab (est / menu) ───────────────────────────────────────────
+
+function switchFavTab(tab) {
+    _favActiveTab = tab;
+    document.getElementById('favTabEst').classList.toggle('active', tab === 'est');
+    document.getElementById('favTabMenu').classList.toggle('active', tab === 'menu');
+    _renderFavGrid();
+}
+
+// ── Remove single item from favorites grid ────────────────────────────
+
+function removeFavEst(estId, event) {
+    event.stopPropagation();
+    let favs = _getFavEsts();
+    favs = favs.filter(function(e) { return e.id !== estId; });
+    _setFavEsts(favs);
+    // Sync the star button on the card
+    const btn = document.getElementById('estStarBtn-' + estId);
+    if (btn) { btn.classList.remove('fav-active', 'fav-pop'); btn.title = 'Save to Favorites'; }
+    _renderFavSection();
+}
+
+function removeFavMenu(menuId, event) {
+    event.stopPropagation();
+    let favs = _getFavMenus();
+    favs = favs.filter(function(m) { return m.id !== menuId; });
+    _setFavMenus(favs);
+    _renderFavSection();
+}
+
+// ── Sync all heart buttons (menu items) to match LocalStorage ─────────
+
+function _syncFavMenuButtons() {
+    const favMenus = _getFavMenus();
+    const favIds   = new Set(favMenus.map(function(m) { return m.id; }));
+    document.querySelectorAll('.menu-fav-heart-btn[data-menu-id]').forEach(function(btn) {
+        const id = parseInt(btn.dataset.menuId);
+        if (favIds.has(id)) {
+            btn.classList.add('fav-active');
+            btn.title = 'Remove from Favorites';
+        } else {
+            btn.classList.remove('fav-active', 'fav-pop');
+            btn.title = 'Save to Favorites';
+        }
+    });
+}
+
+// ── Render the favorites section — now just updates badges ───────────
+
+function _renderFavSection() {
+    const ests  = _getFavEsts();
+    const menus = _getFavMenus();
+    const total = ests.length + menus.length;
+
+    // Update count stubs (kept for JS compat)
+    const tc = document.getElementById('favTotalCount');
+    const ec = document.getElementById('favEstCount');
+    const mc = document.getElementById('favMenuCount');
+    if (tc) tc.textContent = total;
+    if (ec) ec.textContent = ests.length;
+    if (mc) mc.textContent = menus.length;
+
+    // ── Sidebar badge ──
+    const sidebarBadge = document.getElementById('sidebar-fav-badge');
+    if (sidebarBadge) {
+        sidebarBadge.textContent = total;
+        sidebarBadge.style.display = total > 0 ? 'flex' : 'none';
+    }
+    // ── Mobile nav badge ──
+    const mobBadge = document.getElementById('mob-fav-badge');
+    if (mobBadge) {
+        mobBadge.textContent = total;
+        mobBadge.style.display = total > 0 ? 'flex' : 'none';
+    }
+
+    // Sync all heart buttons
+    _syncFavMenuButtons();
+}
+
+// ── _renderFavGrid: replaced by dedicated favorites.html page ─────────
+function _renderFavGrid() { /* no-op: rendering is done in favorites.html */ }
+
+// ── Sync all star buttons to match LocalStorage state ─────────────────
+
+function _syncFavButtons() {
+    const favEsts = _getFavEsts();
+    const favIds  = new Set(favEsts.map(function(e) { return e.id; }));
+    document.querySelectorAll('.est-fav-star-btn[data-est-id]').forEach(function(btn) {
+        const id = parseInt(btn.dataset.estId);
+        if (favIds.has(id)) {
+            btn.classList.add('fav-active');
+            btn.title = 'Remove from Favorites';
+        } else {
+            btn.classList.remove('fav-active');
+            btn.title = 'Save to Favorites';
+        }
+    });
+}
+
+// ── Tiny toast for favorites (reuses existing showToast if available) ─
+
+function _showFavToast(html, type) {
+    const colors  = { success: '#10b981', info: '#6b7280', error: '#ef4444' };
+    const bgColors = { success: '#f0fdf4', info: '#f9fafb', error: '#fef2f2' };
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;';
+        document.body.appendChild(container);
+    }
+    const t = document.createElement('div');
+    t.style.cssText = 'background:' + (bgColors[type]||'#fff') + ';border-left:5px solid ' + (colors[type]||'#6b7280') + ';border-radius:10px;padding:12px 18px;box-shadow:0 6px 24px rgba(0,0,0,0.13);display:flex;align-items:center;gap:10px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;color:#1f2937;min-width:220px;pointer-events:auto;animation:toastSlideIn .3s cubic-bezier(.34,1.56,.64,1);';
+    t.innerHTML = html;
+    container.appendChild(t);
+    setTimeout(function() {
+        t.style.transition = 'opacity .35s ease, transform .35s ease';
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-8px)';
+        setTimeout(function() { t.remove(); }, 380);
+    }, 2400);
+}
+
+// ── Init on DOM ready ─────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function() {
+    _syncFavButtons();       // sync establishment star buttons
+    _syncFavMenuButtons();   // sync menu item heart buttons
+    _renderFavSection();     // update badges
+
+    // Listen for cross-tab favorites changes
+    window.addEventListener('storage', function(e) {
+        if (e.key === FAV_EST_KEY || e.key === FAV_MENU_KEY) {
+            _syncFavButtons();
+            _syncFavMenuButtons();
+            _renderFavSection();
+        }
+    });
+});

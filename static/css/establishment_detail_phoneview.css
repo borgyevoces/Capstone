@@ -2450,6 +2450,15 @@
 
     #food-details-page {
         padding: 0 0 80px; /* bottom space for mobile nav */
+        background: #fff !important;
+    }
+
+    /* Remove grey background from page wrapper */
+    body,
+    .page-wrapper,
+    .main-content,
+    .content-wrapper {
+        background: #fff !important;
     }
 
     /* ── Hero ── */
@@ -2498,10 +2507,11 @@
         border-radius: 12px !important;
         padding: 16px !important;
         margin: 0 !important;
-        width: auto !important;
+        width: 100% !important;
         height: auto !important;
         pointer-events: auto !important;
         display: flex !important;
+        box-sizing: border-box !important;
     }
     .amenities-section h2 {
         color: #333 !important;
@@ -2521,7 +2531,7 @@
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
-        margin: 14px 12px 14px !important;
+        margin: 14px 6px 12px !important;
     }
 
     .section-card {
@@ -2532,10 +2542,17 @@
     }
 
     /* ── Contact info cards ── */
+    .contact-grid {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
     .contact-info-card {
         padding: 10px 12px !important;
         border-radius: 8px !important;
         gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     .contact-icon-wrap {
         width: 32px !important;
@@ -2550,7 +2567,7 @@
     .menu-section.section-card,
     #menu-section {
         padding: 16px 12px !important;
-        margin: 0 12px 14px !important;
+        margin: 0 6px 14px !important;
         border-radius: 12px !important;
     }
 
@@ -2570,7 +2587,13 @@
 
     /* ── Reviews ── */
     .reviews-section {
-        margin: 0 12px 14px !important;
+        margin: 0 !important;
+        background: #fff !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+        padding: 16px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
     }
 
     /* ── Item detail modal — full screen bottom sheet ── */

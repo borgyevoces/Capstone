@@ -1,0 +1,864 @@
+{% extends "webapplication/kabsueats.html" %}
+{% load static %}
+
+{% block title %}My Favorites - KabsuEats{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============================================================
+   FAVORITES PAGE — Full dedicated layout
+   ============================================================ */
+
+/* ── Page Header ── */
+.fav-page-hero {
+    background: linear-gradient(135deg, #92400e 0%, #b45309 40%, #eab308 100%);
+    border-radius: 20px;
+    padding: 32px 28px 28px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(234,179,8,0.25);
+    position: relative;
+    overflow: hidden;
+}
+.fav-page-hero::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 180px; height: 180px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 50%;
+}
+.fav-page-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: 40%;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+.fav-hero-left { display: flex; align-items: center; gap: 18px; z-index: 1; }
+.fav-hero-icon {
+    width: 60px; height: 60px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(255,255,255,0.25);
+}
+.fav-hero-title { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 4px; line-height: 1.2; }
+.fav-hero-sub   { font-family: 'Poppins', sans-serif; font-size: 13px; color: rgba(255,255,255,0.78); margin: 0; }
+.fav-hero-right { z-index: 1; }
+.fav-hero-total {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 12px; padding: 10px 20px; text-align: center;
+    backdrop-filter: blur(6px);
+}
+.fav-hero-total-num { font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
+.fav-hero-total-lbl { font-family: 'Poppins', sans-serif; font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Tab Bar ── */
+.fav-tab-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #f9fafb; border-radius: 14px; padding: 5px; border: 1.5px solid #f0f0f0; }
+.fav-tab-pill { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: #6b7280; transition: all 0.2s; }
+.fav-tab-pill.active { background: white; color: #92400e; box-shadow: 0 2px 12px rgba(0,0,0,0.09); }
+.fav-tab-pill.active.menu-tab { color: #dc2626; }
+.fav-tab-pill .ftp-badge { background: #e5e7eb; color: #6b7280; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
+.fav-tab-pill.active .ftp-badge { background: #fef3c7; color: #92400e; }
+.fav-tab-pill.active.menu-tab .ftp-badge { background: #fee2e2; color: #dc2626; }
+
+/* ── Sort / Filter Bar ── */
+.fav-filter-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.fav-search-wrap { flex: 1; min-width: 180px; position: relative; }
+.fav-search-inp { width: 100%; padding: 10px 14px 10px 38px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 13px; color: #374151; outline: none; background: white; transition: border-color 0.2s; box-sizing: border-box; }
+.fav-search-inp:focus { border-color: #eab308; box-shadow: 0 0 0 3px rgba(234,179,8,0.12); }
+.fav-search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; }
+.fav-sort-select { padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 13px; color: #374151; background: white; outline: none; cursor: pointer; }
+.fav-clear-btn { padding: 10px 16px; border-radius: 10px; border: 1.5px solid #fca5a5; background: #fff1f2; color: #dc2626; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; }
+.fav-clear-btn:hover { background: #fee2e2; }
+
+/* ── Grid ── */
+.fav-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+
+/* ── Establishment Card ── */
+.fav-est-card-lg { background: white; border: 1.5px solid #e5e7eb; border-radius: 16px; overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative; display: flex; flex-direction: column; text-decoration: none; }
+.fav-est-card-lg:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.11); border-color: #fde68a; }
+.fav-est-img-lg { width: 100%; height: 110px; object-fit: cover; display: block; background: #f3f4f6; }
+.fav-est-img-placeholder { width: 100%; height: 110px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); display: flex; align-items: center; justify-content: center; font-size: 36px; color: #d1d5db; }
+.fav-est-body-lg { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.fav-est-name-lg { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-est-cat-lg  { font-family: 'Poppins', sans-serif; font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-est-detail-row { display: flex; align-items: center; gap: 5px; font-family: 'Poppins', sans-serif; font-size: 10.5px; color: #6b7280; margin-top: 1px; }
+.fav-est-detail-row i { font-size: 9px; color: #9ca3af; flex-shrink: 0; }
+.fav-est-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 20px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700; margin-top: 4px; width: fit-content; }
+.fav-est-status-badge.open  { background: #dcfce7; color: #16a34a; }
+.fav-est-status-badge.open::before  { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+.fav-est-status-badge.closed { background: #fee2e2; color: #dc2626; }
+.fav-est-status-badge.closed::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #dc2626; }
+.fav-est-rating-row { display: flex; align-items: center; gap: 4px; font-family: 'Poppins', sans-serif; font-size: 10.5px; color: #6b7280; margin-top: 2px; }
+.fav-est-rating-row .fav-stars { color: #eab308; font-size: 10px; }
+.fav-est-visit-btn { margin: 0 14px 14px; padding: 9px; border-radius: 10px; background: linear-gradient(135deg, #92400e, #b45309); color: white; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; text-decoration: none; }
+.fav-est-visit-btn:hover { background: linear-gradient(135deg, #78350f, #92400e); }
+
+/* ── Menu Item Card ── */
+.fav-menu-card-lg { background: white; border: 1.5px solid #e5e7eb; border-radius: 16px; overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative; display: flex; flex-direction: column; }
+.fav-menu-card-lg:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.11); border-color: #fca5a5; }
+.fav-menu-img-lg { width: 100%; height: 110px; object-fit: cover; display: block; background: #f3f4f6; }
+.fav-menu-img-placeholder { width: 100%; height: 110px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); display: flex; align-items: center; justify-content: center; font-size: 36px; color: #d1d5db; }
+.fav-menu-body-lg { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.fav-menu-name-lg  { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-menu-price-lg { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; color: #B71C1C; }
+.fav-menu-est-lg   { font-family: 'Poppins', sans-serif; font-size: 10.5px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+.fav-menu-stock-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 20px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 600; margin-top: 3px; width: fit-content; }
+.fav-menu-stock-badge.in-stock  { background: #dcfce7; color: #16a34a; }
+.fav-menu-stock-badge.low-stock { background: #fef9c3; color: #b45309; }
+.fav-menu-stock-badge.out-stock { background: #fee2e2; color: #dc2626; }
+.fav-menu-est-status { font-family: 'Poppins', sans-serif; font-size: 10px; color: #9ca3af; margin-top: 1px; }
+.fav-menu-est-status.est-open   { color: #16a34a; }
+.fav-menu-est-status.est-closed { color: #dc2626; }
+.fav-menu-actions { display: flex; gap: 6px; margin: 0 14px 14px; }
+.fav-menu-go-btn {
+    flex: 1; padding: 9px 6px; border-radius: 10px;
+    background: linear-gradient(135deg, #B71C1C, #dc2626);
+    color: white; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.15s;
+}
+.fav-menu-go-btn:hover { background: linear-gradient(135deg, #7f1212, #B71C1C); }
+.fav-menu-order-btn {
+    flex: 1; padding: 9px 6px; border-radius: 10px;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: white; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.15s;
+}
+.fav-menu-order-btn:hover:not(:disabled) { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); }
+.fav-menu-order-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Remove button on cards ── */
+.fav-remove-btn-lg { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.92); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #9ca3af; transition: all 0.15s; z-index: 5; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.fav-remove-btn-lg:hover { background: #fee2e2; color: #dc2626; transform: scale(1.1); }
+.fav-est-star-badge  { position: absolute; top: 8px; left: 8px; background: #fef9c3; border: 1.5px solid #fde68a; border-radius: 20px; padding: 3px 9px 3px 7px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 4px; }
+.fav-menu-heart-badge { position: absolute; top: 8px; left: 8px; background: #fff1f2; border: 1.5px solid #fca5a5; border-radius: 20px; padding: 3px 9px 3px 7px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700; color: #B71C1C; display: flex; align-items: center; gap: 4px; }
+
+/* ── Empty / No results ── */
+.fav-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #9ca3af; font-family: 'Poppins', sans-serif; }
+.fav-empty-icon  { font-size: 56px; margin-bottom: 16px; opacity: 0.3; }
+.fav-empty-title { font-size: 16px; font-weight: 700; color: #374151; margin: 0 0 8px; }
+.fav-empty-sub   { font-size: 13px; color: #9ca3af; margin: 0 0 20px; max-width: 280px; line-height: 1.6; }
+.fav-empty-go-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px; background: linear-gradient(135deg, #92400e, #b45309); color: white; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+.fav-empty-go-btn:hover { background: linear-gradient(135deg, #78350f, #92400e); transform: translateY(-2px); }
+.fav-no-results { grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #9ca3af; font-family: 'Poppins', sans-serif; font-size: 13px; }
+
+/* ── Card entry animation ── */
+@keyframes favCardIn { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.fav-est-card-lg, .fav-menu-card-lg { animation: favCardIn 0.28s cubic-bezier(.34,1.4,.64,1); }
+
+/* ============================================================
+   ITEM ORDER MODAL
+   ============================================================ */
+.fav-item-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 99999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+}
+.fav-item-modal-overlay.open { display: flex; }
+.fav-item-modal-box {
+    background: #fff; border-radius: 20px;
+    max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;
+    display: flex; flex-wrap: wrap;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+    animation: favModalPop 0.3s cubic-bezier(.34,1.4,.64,1);
+    position: relative;
+}
+@keyframes favModalPop { from { transform: scale(0.88) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.fav-modal-img-panel { width: 260px; min-height: 260px; flex-shrink: 0; position: relative; background: #f3f4f6; border-radius: 20px 0 0 20px; overflow: hidden; }
+.fav-modal-img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; display: block; }
+.fav-modal-img-placeholder { width: 100%; height: 260px; display: flex; align-items: center; justify-content: center; font-size: 56px; color: #d1d5db; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); }
+.fav-modal-bs-badge { position: absolute; bottom: 12px; left: 12px; background: linear-gradient(135deg, #d97706, #eab308); color: white; padding: 5px 12px; border-radius: 20px; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.fav-modal-info-panel { flex: 1; min-width: 280px; padding: 24px 24px 20px; display: flex; flex-direction: column; gap: 0; position: relative; }
+.fav-modal-close-btn { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #f3f4f6; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #6b7280; transition: all 0.15s; z-index: 5; }
+.fav-modal-close-btn:hover { background: #fee2e2; color: #dc2626; }
+.fav-modal-item-name { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 800; color: #1f2937; margin: 0 32px 6px 0; line-height: 1.3; }
+.fav-modal-item-desc { font-family: 'Poppins', sans-serif; font-size: 12.5px; color: #6b7280; line-height: 1.6; margin: 0 0 12px; }
+.fav-modal-price-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.fav-modal-price { font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 800; color: #B71C1C; }
+.fav-modal-stock-badge { font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #dcfce7; color: #16a34a; }
+.fav-modal-stock-badge.out { background: #fee2e2; color: #dc2626; }
+.fav-modal-est-card { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+.fav-modal-est-name    { font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 6px; }
+.fav-modal-est-address { font-family: 'Poppins', sans-serif; font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+.fav-modal-est-hours   { font-family: 'Poppins', sans-serif; font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+.fav-modal-est-status { display: inline-flex; align-items: center; gap: 4px; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; width: fit-content; }
+.fav-modal-est-status.open   { background: #dcfce7; color: #16a34a; }
+.fav-modal-est-status.closed { background: #fee2e2; color: #dc2626; }
+.fav-modal-est-status.open::before   { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; margin-right: 3px; }
+.fav-modal-est-status.closed::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #dc2626; margin-right: 3px; }
+.fav-modal-qty-row   { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.fav-modal-qty-label { font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #374151; }
+.fav-modal-qty-group { display: flex; align-items: center; border: 1.5px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.fav-modal-qty-btn   { width: 34px; height: 34px; border: none; background: #f9fafb; cursor: pointer; font-size: 13px; color: #374151; transition: background 0.15s; display: flex; align-items: center; justify-content: center; }
+.fav-modal-qty-btn:hover { background: #e5e7eb; }
+.fav-modal-qty-input { width: 46px; height: 34px; border: none; border-left: 1.5px solid #e5e7eb; border-right: 1.5px solid #e5e7eb; text-align: center; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; color: #1f2937; outline: none; background: white; }
+.fav-modal-qty-warn  { font-family: 'Poppins', sans-serif; font-size: 11.5px; color: #dc2626; margin-bottom: 6px; display: none; }
+.fav-modal-qty-warn.show { display: block; }
+.fav-modal-req-info  { display: none; background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-family: 'Poppins', sans-serif; font-size: 12.5px; color: #92400e; }
+.fav-modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+.fav-modal-btn-cart {
+    flex: 1; padding: 12px; border-radius: 10px; background: #1e3a8a; color: white;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.18s;
+}
+.fav-modal-btn-cart:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
+.fav-modal-btn-cart:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.fav-modal-btn-buynow {
+    flex: 1; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, #16a34a, #15803d); color: white;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.18s;
+}
+.fav-modal-btn-buynow:hover:not(:disabled) { background: linear-gradient(135deg, #15803d, #166534); transform: translateY(-1px); }
+.fav-modal-btn-buynow:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.fav-modal-login-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 10px; background: #1f2937; color: white; text-decoration: none; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700; width: 100%; box-sizing: border-box; transition: background 0.15s; }
+.fav-modal-login-link:hover { background: #B71C1C; }
+
+@media (max-width: 580px) {
+    .fav-modal-img-panel { width: 100%; min-height: 180px; border-radius: 20px 20px 0 0; }
+    .fav-modal-img { min-height: 180px; height: 180px; }
+    .fav-modal-img-placeholder { height: 180px; }
+}
+@media (max-width: 600px) {
+    .fav-page-hero { flex-direction: column; align-items: flex-start; }
+    .fav-page-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; }
+    .fav-filter-row { flex-direction: column; }
+    .fav-search-wrap { min-width: 100%; }
+    .fav-tab-pill { font-size: 12px; padding: 10px 10px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="favoritesPage">
+
+    <!-- Hero Header -->
+    <div class="fav-page-hero">
+        <div class="fav-hero-left">
+            <div class="fav-hero-icon">⭐</div>
+            <div>
+                <h1 class="fav-hero-title">My Favorites</h1>
+                <p class="fav-hero-sub">Your saved establishments &amp; menu items</p>
+            </div>
+        </div>
+        <div class="fav-hero-right">
+            <div class="fav-hero-total">
+                <div class="fav-hero-total-num" id="favPageTotalNum">0</div>
+                <div class="fav-hero-total-lbl">Saved</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="fav-tab-bar">
+        <button class="fav-tab-pill active" id="favPageTabEst" onclick="favPageSwitchTab('est')">
+            <i class="fas fa-store"></i>
+            Establishments
+            <span class="ftp-badge" id="favPageEstBadge">0</span>
+        </button>
+        <button class="fav-tab-pill menu-tab" id="favPageTabMenu" onclick="favPageSwitchTab('menu')">
+            <i class="fas fa-heart"></i>
+            Menu Items
+            <span class="ftp-badge" id="favPageMenuBadge">0</span>
+        </button>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="fav-filter-row">
+        <div class="fav-search-wrap">
+            <i class="fas fa-search fav-search-ico"></i>
+            <input type="text" class="fav-search-inp" id="favPageSearch"
+                   placeholder="Search your favorites..."
+                   oninput="favPageFilter()">
+        </div>
+        <select class="fav-sort-select" id="favPageSort" onchange="favPageFilter()">
+            <option value="default">Sort: Default</option>
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="price-asc">Price: Low–High</option>
+            <option value="price-desc">Price: High–Low</option>
+        </select>
+        <button class="fav-clear-btn" onclick="favPageClearAll()">
+            <i class="fas fa-trash-alt"></i> Clear All
+        </button>
+    </div>
+
+    <!-- Grid -->
+    <div class="fav-page-grid" id="favPageGrid">
+        <!-- filled by JS -->
+    </div>
+
+</div>
+
+<!-- ============================================================
+     ITEM ORDER MODAL
+     ============================================================ -->
+<div id="favItemModal" class="fav-item-modal-overlay" onclick="if(event.target===this)closeFavItemModal()">
+    <div class="fav-item-modal-box">
+        <!-- Left: Image -->
+        <div class="fav-modal-img-panel">
+            <img id="favModalImg" src="" alt="" class="fav-modal-img"
+                 onerror="this.style.display='none';document.getElementById('favModalImgPh').style.display='flex'">
+            <div id="favModalImgPh" class="fav-modal-img-placeholder" style="display:none;"><i class="fas fa-utensils"></i></div>
+            <span id="favModalBsBadge" class="fav-modal-bs-badge" style="display:none;"><i class="fas fa-medal"></i> Best Seller</span>
+        </div>
+        <!-- Right: Info -->
+        <div class="fav-modal-info-panel">
+            <button class="fav-modal-close-btn" onclick="closeFavItemModal()"><i class="fas fa-times"></i></button>
+            <h2 id="favModalTitle" class="fav-modal-item-name">Menu Item</h2>
+            <p id="favModalDesc" class="fav-modal-item-desc"></p>
+            <div class="fav-modal-price-row">
+                <span id="favModalPrice" class="fav-modal-price">₱0.00</span>
+                <span id="favModalStockBadge" class="fav-modal-stock-badge"></span>
+            </div>
+            <!-- Establishment Info (realtime) -->
+            <div class="fav-modal-est-card">
+                <div class="fav-modal-est-name"><i class="fas fa-store" style="font-size:11px;color:#9ca3af;"></i><span id="favModalEstName">—</span></div>
+                <div class="fav-modal-est-address"><i class="fas fa-map-marker-alt"></i><span id="favModalEstAddress">—</span></div>
+                <div class="fav-modal-est-hours"><i class="fas fa-clock"></i><span id="favModalEstHours">—</span></div>
+                <div id="favModalEstStatus" class="fav-modal-est-status"></div>
+            </div>
+            {% if user.is_authenticated %}
+            <!-- Quantity -->
+            <div class="fav-modal-qty-row">
+                <span class="fav-modal-qty-label">Quantity:</span>
+                <div class="fav-modal-qty-group">
+                    <button type="button" class="fav-modal-qty-btn" onclick="favModalUpdateQty(-1)"><i class="fas fa-minus"></i></button>
+                    <input type="number" id="favModalQty" value="1" min="1" readonly class="fav-modal-qty-input">
+                    <button type="button" class="fav-modal-qty-btn" onclick="favModalUpdateQty(1)"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            <div id="favModalQtyWarn" class="fav-modal-qty-warn">⚠ Maximum quantity reached</div>
+            <div id="favModalReqInfo" class="fav-modal-req-info">
+                <i class="fas fa-info-circle" style="color:#d97706;margin-right:6px;"></i>
+                <span id="favModalReqInfoText"></span>
+            </div>
+            <div class="fav-modal-actions">
+                <button id="favModalCartBtn" class="fav-modal-btn-cart">
+                    <i class="fas fa-cart-plus"></i> Add to Cart
+                </button>
+                <button id="favModalBuyBtn" class="fav-modal-btn-buynow" onclick="favModalBuyNow(this)">
+                    <i class="fas fa-bolt"></i> Buy Now
+                </button>
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:16px 0 0;">
+                <p style="color:#718096;text-align:center;margin-bottom:12px;font-family:'Poppins',sans-serif;font-size:13px;">Log in or Sign Up to order.</p>
+                <a href="{% url 'user_login_register' %}" class="fav-modal-login-link"><i class="fas fa-sign-in-alt"></i> Log In / Sign Up</a>
+            </div>
+            {% endif %}
+        </div>
+        <!-- Hidden state -->
+        <input type="hidden" id="favModalItemId" value="">
+        <input type="hidden" id="favModalEstId"  value="">
+        <input type="hidden" id="favModalMaxQty" value="0">
+        <input type="hidden" id="favModalEstUrl" value="">
+    </div>
+</div>
+
+<script>
+// ============================================================
+// FAVORITES PAGE — realtime establishment + menu + order modal
+// ============================================================
+const FP_EST_KEY  = 'kabsu_fav_establishments';
+const FP_MENU_KEY = 'kabsu_fav_menu_items';
+let _fpTab = 'est';
+
+// ── Realtime cache ───────────────────────────────────────────
+let _fpEstRealtimeData  = {};  // estId → full data from allEstStatus
+let _fpMenuRealtimeData = {};  // menuItemId → { quantity, is_available, price, ... }
+let _fpEstStatusMap     = {};  // estId → 'Open' | 'Closed'
+
+function _fpGetEsts()   { try { return JSON.parse(localStorage.getItem(FP_EST_KEY)  || '[]'); } catch(e){ return []; } }
+function _fpGetMenus()  { try { return JSON.parse(localStorage.getItem(FP_MENU_KEY) || '[]'); } catch(e){ return []; } }
+function _fpSetEsts(a)  { try { localStorage.setItem(FP_EST_KEY,  JSON.stringify(a)); } catch(e){} }
+function _fpSetMenus(a) { try { localStorage.setItem(FP_MENU_KEY, JSON.stringify(a)); } catch(e){} }
+function _fpEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _fpStars(r) {
+    r = parseFloat(r)||0; const f=Math.floor(r),h=r%1>=0.5?1:0,e=5-f-h;
+    return '<span class="fav-stars">'+'<i class="fas fa-star"></i>'.repeat(f)+(h?'<i class="fas fa-star-half-alt"></i>':'')+'<i class="far fa-star"></i>'.repeat(e)+'</span>';
+}
+
+// ── Fetch all est status (used for Establishments tab + modal est info) ──
+function _fpFetchAllEstStatus() {
+    const url = (typeof URLS !== 'undefined' && URLS.allEstStatus) ? URLS.allEstStatus : '/api/establishments/status/';
+    fetch(url, { credentials:'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (!data.success || !Array.isArray(data.establishments)) return;
+            data.establishments.forEach(function(est) {
+                _fpEstRealtimeData[String(est.id)] = est;
+                _fpEstStatusMap[String(est.id)]    = est.status;
+            });
+            if (_fpTab === 'est') favPageFilter();
+            _fpSyncModalEstStatus();
+        })
+        .catch(function(){});
+}
+
+// ── Fetch menu items for one establishment ───────────────────
+function _fpFetchEstMenuItems(estId) {
+    fetch('/api/establishment/' + estId + '/realtime/', { credentials:'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (!data.success || !Array.isArray(data.menu_items)) return;
+            data.menu_items.forEach(function(m){ _fpMenuRealtimeData[String(m.id)] = m; });
+            if (data.status) {
+                _fpEstStatusMap[String(estId)] = data.status;
+                if (_fpEstRealtimeData[String(estId)]) _fpEstRealtimeData[String(estId)].status = data.status;
+            }
+            if (_fpTab === 'menu') favPageFilter();
+            _fpSyncModalEstStatus();
+        })
+        .catch(function(){});
+}
+
+// ── Refresh all saved menu items' est data ───────────────────
+function _fpRefreshAllMenuData() {
+    const estIds = [...new Set(_fpGetMenus().map(function(m){ return m.estId; }).filter(Boolean))];
+    estIds.forEach(function(id){ _fpFetchEstMenuItems(id); });
+}
+
+function favPageSwitchTab(tab) {
+    _fpTab = tab;
+    document.getElementById('favPageTabEst').classList.toggle('active',  tab === 'est');
+    document.getElementById('favPageTabMenu').classList.toggle('active', tab === 'menu');
+    favPageFilter();
+}
+
+function favPageFilter() {
+    const query = (document.getElementById('favPageSearch').value || '').toLowerCase().trim();
+    const sort  = document.getElementById('favPageSort').value;
+    const grid  = document.getElementById('favPageGrid');
+    const ests  = _fpGetEsts();
+    const menus = _fpGetMenus();
+
+    document.getElementById('favPageTotalNum').textContent  = ests.length + menus.length;
+    document.getElementById('favPageEstBadge').textContent  = ests.length;
+    document.getElementById('favPageMenuBadge').textContent = menus.length;
+
+    if (_fpTab === 'est') {
+        let items = ests.filter(function(e){ return !query || e.name.toLowerCase().includes(query) || (e.category||'').toLowerCase().includes(query); });
+        if (sort === 'name-asc')  items.sort(function(a,b){ return a.name.localeCompare(b.name); });
+        if (sort === 'name-desc') items.sort(function(a,b){ return b.name.localeCompare(a.name); });
+
+        if (!ests.length) {
+            grid.innerHTML = '<div class="fav-empty-state"><div class="fav-empty-icon">⭐</div><div class="fav-empty-title">No Favorite Establishments Yet</div><p class="fav-empty-sub">Click the ★ star button on any establishment card to save it here.</p><a href="{% url 'kabsueats_home' %}" class="fav-empty-go-btn"><i class="fas fa-store"></i> Browse Establishments</a></div>';
+            return;
+        }
+        if (!items.length) {
+            grid.innerHTML = '<div class="fav-no-results"><i class="fas fa-search" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.3;"></i>No results for "' + _fpEsc(query) + '"</div>';
+            return;
+        }
+
+        grid.innerHTML = items.map(function(e) {
+            const rt       = _fpEstRealtimeData[String(e.id)] || {};
+            const status   = rt.status || _fpEstStatusMap[String(e.id)] || '';
+            const isOpen   = status.toLowerCase() === 'open';
+            const name     = rt.name        || e.name;
+            const category = rt.categories  || e.category || 'Establishment';
+            const address  = rt.address     || e.address  || '';
+            const payment  = rt.payment_methods || '';
+            const rating   = rt.average_rating != null ? rt.average_rating : null;
+            const reviews  = rt.review_count   != null ? rt.review_count   : null;
+            const imgSrc   = rt.image_url || e.image || '';
+            const hours    = (rt.opening_time && rt.closing_time) ? rt.opening_time + ' – ' + rt.closing_time : '';
+
+            const imgHtml = imgSrc
+                ? `<img class="fav-est-img-lg" src="${_fpEsc(imgSrc)}" alt="${_fpEsc(name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="fav-est-img-placeholder" style="display:none;"><i class="fas fa-store"></i></div>`
+                : '<div class="fav-est-img-placeholder"><i class="fas fa-store"></i></div>';
+
+            const statusHtml  = status ? `<span class="fav-est-status-badge ${isOpen?'open':'closed'}">${isOpen?'Open':'Closed'}</span>` : '';
+            const ratingHtml  = rating !== null ? `<div class="fav-est-rating-row">${_fpStars(rating)} <span>${parseFloat(rating).toFixed(1)} (${reviews} review${reviews !== 1 ? 's' : ''})</span></div>` : '';
+            const hoursHtml   = hours   ? `<div class="fav-est-detail-row"><i class="fas fa-clock"></i><span>${_fpEsc(hours)}</span></div>` : '';
+            const payHtml     = payment ? `<div class="fav-est-detail-row"><i class="fas fa-credit-card"></i><span>${_fpEsc(payment)}</span></div>` : '';
+            const addrHtml    = address ? `<div class="fav-est-detail-row"><i class="fas fa-map-marker-alt"></i><span>${_fpEsc(address)}</span></div>` : '';
+
+            return `<div class="fav-est-card-lg" onclick="window.location.href='${_fpEsc(e.url)}'" title="${_fpEsc(name)}">
+                ${imgHtml}
+                <span class="fav-est-star-badge"><i class="fas fa-star" style="color:#eab308;font-size:9px;"></i> Saved</span>
+                <button class="fav-remove-btn-lg" onclick="fpRemoveEst(${e.id},event)" title="Remove"><i class="fas fa-times"></i></button>
+                <div class="fav-est-body-lg">
+                    <div class="fav-est-name-lg">${_fpEsc(name)}</div>
+                    <div class="fav-est-cat-lg">${_fpEsc(category)}</div>
+                    ${statusHtml}${ratingHtml}${addrHtml}${hoursHtml}${payHtml}
+                </div>
+                <a href="${_fpEsc(e.url)}" class="fav-est-visit-btn" onclick="event.stopPropagation()"><i class="fas fa-store"></i> Visit Store</a>
+            </div>`;
+        }).join('');
+
+    } else {
+        // ── MENU TAB ─────────────────────────────────────────
+        let items = menus.filter(function(m){ return !query || m.name.toLowerCase().includes(query) || (m.estName||'').toLowerCase().includes(query); });
+        if (sort === 'name-asc')   items.sort(function(a,b){ return a.name.localeCompare(b.name); });
+        if (sort === 'name-desc')  items.sort(function(a,b){ return b.name.localeCompare(a.name); });
+        if (sort === 'price-asc')  items.sort(function(a,b){ return parseFloat(a.price||0) - parseFloat(b.price||0); });
+        if (sort === 'price-desc') items.sort(function(a,b){ return parseFloat(b.price||0) - parseFloat(a.price||0); });
+
+        if (!menus.length) {
+            grid.innerHTML = '<div class="fav-empty-state"><div class="fav-empty-icon">❤️</div><div class="fav-empty-title">No Favorite Menu Items Yet</div><p class="fav-empty-sub">Click the ♥ heart button on any dish to save it here.</p><a href="{% url 'kabsueats_home' %}" class="fav-empty-go-btn"><i class="fas fa-utensils"></i> Browse Menus</a></div>';
+            return;
+        }
+        if (!items.length) {
+            grid.innerHTML = '<div class="fav-no-results"><i class="fas fa-search" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.3;"></i>No results for "' + _fpEsc(query) + '"</div>';
+            return;
+        }
+
+        grid.innerHTML = items.map(function(m) {
+            const rt        = _fpMenuRealtimeData[String(m.id)] || {};
+            const qty       = rt.quantity  != null ? rt.quantity  : (m.quantity  != null ? m.quantity  : 999);
+            const livePrice = rt.price     != null ? rt.price     : parseFloat(m.price||0);
+            const estStatus = _fpEstStatusMap[String(m.estId)] || '';
+            const isEstOpen = estStatus.toLowerCase() === 'open';
+            const canOrder  = qty > 0 && isEstOpen;
+
+            const scl = qty === 0 ? 'out-stock' : qty <= 5 ? 'low-stock' : 'in-stock';
+            const stk = qty === 0 ? '<i class="fas fa-times-circle"></i> Out of Stock'
+                      : qty <= 5 ? '<i class="fas fa-exclamation-triangle"></i> Only ' + qty + ' left'
+                      : '<i class="fas fa-check-circle"></i> In Stock (' + qty + ')';
+            const estStatusHtml = estStatus ? `<div class="fav-menu-est-status ${isEstOpen?'est-open':'est-closed'}"><i class="fas fa-circle" style="font-size:7px;margin-right:3px;"></i>${isEstOpen?'Store Open':'Store Closed'}</div>` : '';
+
+            const imgHtml = m.image && !m.image.includes('placehold')
+                ? `<img class="fav-menu-img-lg" src="${_fpEsc(m.image)}" alt="${_fpEsc(m.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="fav-menu-img-placeholder" style="display:none;"><i class="fas fa-utensils"></i></div>`
+                : '<div class="fav-menu-img-placeholder"><i class="fas fa-utensils"></i></div>';
+
+            // Encode item for onclick (safe JSON via data attribute workaround)
+            const mJson = JSON.stringify(m).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+            return `<div class="fav-menu-card-lg" title="${_fpEsc(m.name)}">
+                ${imgHtml}
+                <span class="fav-menu-heart-badge"><i class="fas fa-heart" style="color:#ef4444;font-size:9px;"></i> Saved</span>
+                <button class="fav-remove-btn-lg" onclick="fpRemoveMenu(${m.id},event)" title="Remove"><i class="fas fa-times"></i></button>
+                <div class="fav-menu-body-lg">
+                    <div class="fav-menu-name-lg">${_fpEsc(m.name)}</div>
+                    <div class="fav-menu-price-lg">₱${parseFloat(livePrice).toFixed(2)}</div>
+                    <div class="fav-menu-est-lg"><i class="fas fa-store" style="font-size:9px;"></i>${_fpEsc(m.estName||'')}</div>
+                    <span class="fav-menu-stock-badge ${scl}">${stk}</span>
+                    ${estStatusHtml}
+                </div>
+                <div class="fav-menu-actions">
+                    <button class="fav-menu-go-btn" onclick="event.stopPropagation();window.location.href='${_fpEsc(m.estUrl)}'"><i class="fas fa-store"></i> Store</button>
+                    <button class="fav-menu-order-btn" ${canOrder?'':'disabled'} onclick="event.stopPropagation();_fpOpenModal(${m.id})"><i class="fas fa-cart-plus"></i> Order</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+}
+
+// ── Open modal by id (lookup from localStorage) ──────────────
+function _fpOpenModal(menuId) {
+    const m = _fpGetMenus().find(function(x){ return x.id === menuId || String(x.id) === String(menuId); });
+    if (!m) return;
+    openFavItemModal(m);
+}
+
+function fpRemoveEst(estId, event) {
+    event.stopPropagation();
+    _fpSetEsts(_fpGetEsts().filter(function(e){ return e.id !== estId; }));
+    favPageFilter();
+}
+function fpRemoveMenu(menuId, event) {
+    event.stopPropagation();
+    _fpSetMenus(_fpGetMenus().filter(function(m){ return m.id !== menuId; }));
+    favPageFilter();
+}
+function favPageClearAll() {
+    if (!confirm('Remove all ' + (_fpTab === 'est' ? 'establishment' : 'menu item') + ' favorites?')) return;
+    if (_fpTab === 'est') {
+        _fpSetEsts([]);
+        document.querySelectorAll('.est-fav-star-btn').forEach(function(b){ b.classList.remove('fav-active','fav-pop'); });
+    } else {
+        _fpSetMenus([]);
+        document.querySelectorAll('.menu-fav-heart-btn').forEach(function(b){ b.classList.remove('fav-active','fav-pop'); });
+    }
+    favPageFilter();
+}
+
+// ============================================================
+// ITEM ORDER MODAL
+// ============================================================
+let _favModalMaxStock = 0;
+let _favModalEstId    = '';
+let _favModalCartQty  = 0;
+
+function openFavItemModal(m) {
+    const rt  = _fpMenuRealtimeData[String(m.id)] || {};
+    const qty = rt.quantity  != null ? rt.quantity  : (m.quantity  != null ? m.quantity  : 0);
+    const livePrice = rt.price != null ? rt.price : parseFloat(m.price || 0);
+    _favModalMaxStock = qty;
+    _favModalEstId    = String(m.estId || '');
+    _favModalCartQty  = 0;
+
+    document.getElementById('favModalItemId').value = m.id;
+    document.getElementById('favModalEstId').value  = _favModalEstId;
+    document.getElementById('favModalMaxQty').value = qty;
+    document.getElementById('favModalEstUrl').value = m.estUrl || '';
+    document.getElementById('favModalTitle').textContent = m.name;
+    document.getElementById('favModalDesc').textContent  = m.description || '';
+    document.getElementById('favModalPrice').textContent = '₱' + parseFloat(livePrice).toFixed(2);
+
+    // Image
+    const imgEl = document.getElementById('favModalImg');
+    const imgPh = document.getElementById('favModalImgPh');
+    if (m.image && !m.image.includes('placehold')) {
+        imgEl.src = m.image; imgEl.style.display = 'block'; imgPh.style.display = 'none';
+    } else {
+        imgEl.style.display = 'none'; imgPh.style.display = 'flex';
+    }
+    const bsBadge = document.getElementById('favModalBsBadge');
+    if (bsBadge) bsBadge.style.display = m.isTopSeller ? 'flex' : 'none';
+
+    // Stock badge
+    const sb = document.getElementById('favModalStockBadge');
+    if (sb) {
+        if (qty > 0) { sb.textContent = qty + ' Item' + (qty!==1?'s':''); sb.className = 'fav-modal-stock-badge'; }
+        else         { sb.textContent = 'Out of Stock'; sb.className = 'fav-modal-stock-badge out'; }
+    }
+
+    // Est info
+    const estRt = _fpEstRealtimeData[String(_favModalEstId)] || {};
+    document.getElementById('favModalEstName').textContent    = estRt.name    || m.estName    || '—';
+    document.getElementById('favModalEstAddress').textContent = estRt.address || m.estAddress || '—';
+    const hours = (estRt.opening_time && estRt.closing_time) ? estRt.opening_time + ' – ' + estRt.closing_time : (m.estHours || '—');
+    document.getElementById('favModalEstHours').textContent = hours;
+
+    const status  = estRt.status || _fpEstStatusMap[String(_favModalEstId)] || '';
+    const isOpen  = status.toLowerCase() === 'open';
+    _fpApplyModalStatus(status);
+
+    // Reset quantity
+    const qi = document.getElementById('favModalQty');
+    if (qi) { qi.value = 1; qi.disabled = false; qi.removeAttribute('max'); }
+    document.getElementById('favModalQtyWarn').classList.remove('show');
+    document.getElementById('favModalReqInfo').style.display = 'none';
+
+    // Reset + wire up cart button
+    const canOrder = isOpen && qty > 0;
+    const cb = document.getElementById('favModalCartBtn');
+    const bb = document.getElementById('favModalBuyBtn');
+    if (cb) {
+        cb.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+        cb.style.background = ''; cb.disabled = !canOrder; cb.style.opacity = canOrder ? '1' : '0.5';
+        const fresh = cb.cloneNode(true);
+        fresh.addEventListener('click', function(){ favModalAddToCart(fresh); });
+        cb.parentNode.replaceChild(fresh, cb);
+    }
+    if (bb) { bb.disabled = !canOrder; bb.style.opacity = canOrder ? '1' : '0.5'; }
+
+    document.getElementById('favItemModal').classList.add('open');
+
+    // ── Fresh realtime fetch ──
+    if (_favModalEstId) {
+        fetch('/api/establishment/' + _favModalEstId + '/realtime/', { credentials:'same-origin' })
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                _fpEstStatusMap[String(_favModalEstId)] = data.status;
+                if (_fpEstRealtimeData[String(_favModalEstId)])
+                    _fpEstRealtimeData[String(_favModalEstId)] = Object.assign(_fpEstRealtimeData[String(_favModalEstId)], data);
+                _fpApplyModalStatus(data.status);
+
+                // Update hours
+                if (data.opening_time && data.closing_time)
+                    document.getElementById('favModalEstHours').textContent = data.opening_time + ' – ' + data.closing_time;
+
+                if (Array.isArray(data.menu_items)) {
+                    data.menu_items.forEach(function(mi){ _fpMenuRealtimeData[String(mi.id)] = mi; });
+                    const freshMi = data.menu_items.find(function(mi){ return String(mi.id) === String(m.id); });
+                    if (freshMi) {
+                        _favModalMaxStock = freshMi.quantity;
+                        document.getElementById('favModalMaxQty').value = freshMi.quantity;
+                        const sbEl = document.getElementById('favModalStockBadge');
+                        if (sbEl) {
+                            if (freshMi.quantity > 0) { sbEl.textContent = freshMi.quantity + ' Item' + (freshMi.quantity!==1?'s':''); sbEl.className = 'fav-modal-stock-badge'; }
+                            else { sbEl.textContent = 'Out of Stock'; sbEl.className = 'fav-modal-stock-badge out'; }
+                        }
+                        document.getElementById('favModalPrice').textContent = '₱' + parseFloat(freshMi.price).toFixed(2);
+                        const isNowOpen = data.status.toLowerCase() === 'open';
+                        const canNow    = isNowOpen && freshMi.quantity > 0;
+                        const cb2 = document.getElementById('favModalCartBtn');
+                        const bb2 = document.getElementById('favModalBuyBtn');
+                        if (cb2) { cb2.disabled = !canNow; cb2.style.opacity = canNow ? '1' : '0.5'; }
+                        if (bb2) { bb2.disabled = !canNow; bb2.style.opacity = canNow ? '1' : '0.5'; }
+                    }
+                }
+            })
+            .catch(function(){});
+
+        // Preload pending cart qty
+        fetch('/api/pending-cart-qtys/?establishment_id=' + _favModalEstId, { credentials:'same-origin' })
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
+                if (!data.success || !data.qtys) return;
+                const inCart = parseInt(data.qtys[String(m.id)] || 0);
+                _favModalCartQty = inCart;
+                const canAdd = Math.max(0, _favModalMaxStock - inCart);
+                const qi2 = document.getElementById('favModalQty');
+                const mi2 = document.getElementById('favModalMaxQty');
+                const cb2 = document.getElementById('favModalCartBtn');
+                if (canAdd <= 0 && _favModalMaxStock > 0) {
+                    if (qi2) { qi2.value = 1; qi2.disabled = true; }
+                    if (mi2) mi2.value = 0;
+                    if (cb2) { cb2.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart'; cb2.style.background = '#dc2626'; cb2.disabled = false; cb2.style.opacity = '1'; cb2.onclick = function(){ window.location.href = '/cart/'; }; }
+                } else if (canAdd > 0) {
+                    if (mi2) mi2.value = canAdd;
+                    if (qi2) { qi2.max = canAdd; qi2.disabled = false; if (parseInt(qi2.value) > canAdd) qi2.value = 1; }
+                }
+            })
+            .catch(function(){});
+    }
+}
+
+function _fpApplyModalStatus(statusStr) {
+    const isOpen = (statusStr||'').toLowerCase() === 'open';
+    const el = document.getElementById('favModalEstStatus');
+    if (el) { el.className = 'fav-modal-est-status ' + (isOpen ? 'open' : 'closed'); el.textContent = isOpen ? 'Open Now' : 'Currently Closed'; }
+}
+function _fpSyncModalEstStatus() {
+    if (!_favModalEstId) return;
+    const st = _fpEstStatusMap[_favModalEstId];
+    if (st) _fpApplyModalStatus(st);
+}
+function closeFavItemModal() {
+    document.getElementById('favItemModal').classList.remove('open');
+    _favModalMaxStock = 0; _favModalEstId = ''; _favModalCartQty = 0;
+    const qi = document.getElementById('favModalQty');
+    if (qi) { qi.value = 1; qi.disabled = false; qi.removeAttribute('max'); }
+    document.getElementById('favModalQtyWarn').classList.remove('show');
+    document.getElementById('favModalReqInfo').style.display = 'none';
+}
+function favModalUpdateQty(change) {
+    const input  = document.getElementById('favModalQty');
+    const maxQty = parseInt(document.getElementById('favModalMaxQty').value) || _favModalMaxStock || 0;
+    const warn   = document.getElementById('favModalQtyWarn');
+    if (!input) return;
+    let val = parseInt(input.value) || 1;
+    val += change;
+    if (val < 1) val = 1;
+    if (maxQty > 0 && val > maxQty) { val = maxQty; if (warn) warn.classList.add('show'); setTimeout(function(){ if (warn) warn.classList.remove('show'); }, 2000); }
+    else { if (warn) warn.classList.remove('show'); }
+    input.value = val;
+}
+
+// ── Cookie helper ─────────────────────────────────────────────
+function _fpCsrf() {
+    let v = null;
+    document.cookie.split(';').forEach(function(c){ c=c.trim(); if(c.startsWith('csrftoken=')) v=decodeURIComponent(c.slice(10)); });
+    return v;
+}
+// ── Toast ─────────────────────────────────────────────────────
+function _fpToast(msg, type) {
+    if (typeof window.showToast === 'function') { window.showToast(msg, type); return; }
+    if (typeof window.showNotification === 'function') { window.showNotification(msg, type); return; }
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:80px;right:20px;background:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:999999;font-family:Poppins,sans-serif;font-size:13px;font-weight:500;border-left:4px solid '+(type==='success'?'#16a34a':type==='error'?'#dc2626':'#3b82f6')+';max-width:340px;';
+    d.textContent = msg; document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 3200);
+}
+
+// ── Add to Cart ───────────────────────────────────────────────
+function favModalAddToCart(btn) {
+    const itemId   = document.getElementById('favModalItemId').value;
+    const estId    = document.getElementById('favModalEstId').value;
+    const qty      = parseInt(document.getElementById('favModalQty').value) || 1;
+    const addUrl   = (typeof URLS !== 'undefined' && URLS.addToCart) ? URLS.addToCart : '/cart/add/';
+    const loginUrl = (typeof URLS !== 'undefined' && URLS.login) ? URLS.login : '/accounts/login/';
+    const IS_AUTH  = (typeof IS_AUTHENTICATED !== 'undefined') ? IS_AUTHENTICATED : false;
+    if (!IS_AUTH) { window.location.href = loginUrl; return; }
+    if (!itemId || !estId) return;
+    const origHTML = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    fetch(addUrl, {
+        method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':_fpCsrf()},
+        body: JSON.stringify({ menu_item_id:parseInt(itemId), quantity:qty, establishment_id:parseInt(estId) }),
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            _fpToast('Added to cart! 🛒', 'success');
+            if (typeof data.cart_count === 'number') {
+                if (typeof window.setCartBadgeCount === 'function') window.setCartBadgeCount(data.cart_count, true);
+                else if (typeof window.updateCartBadge === 'function') window.updateCartBadge(data.cart_count);
+            } else if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
+            _favModalCartQty += qty;
+            const canAdd  = Math.max(0, _favModalMaxStock - _favModalCartQty);
+            const maxInp  = document.getElementById('favModalMaxQty');
+            const qtyInp  = document.getElementById('favModalQty');
+            if (canAdd <= 0 && _favModalMaxStock > 0) {
+                if (qtyInp) { qtyInp.value = 1; qtyInp.disabled = true; }
+                if (maxInp) maxInp.value = 0;
+                btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Go to Cart';
+                btn.style.background = '#dc2626'; btn.disabled = false; btn.style.opacity = '1';
+                btn.onclick = function(){ window.location.href = '/cart/'; };
+            } else {
+                if (maxInp) maxInp.value = canAdd;
+                if (qtyInp) { qtyInp.max = canAdd; if (parseInt(qtyInp.value) > canAdd) qtyInp.value = 1; qtyInp.disabled = false; }
+                btn.innerHTML = origHTML; btn.disabled = false; btn.style.background = '';
+            }
+        } else {
+            _fpToast(data.message || 'Failed to add item.', 'error');
+            btn.innerHTML = origHTML; btn.disabled = false;
+        }
+    })
+    .catch(function(err) {
+        _fpToast('Error: ' + err.message, 'error');
+        btn.innerHTML = origHTML; btn.disabled = false;
+    });
+}
+
+// ── Buy Now ───────────────────────────────────────────────────
+function favModalBuyNow(btn) {
+    const itemId   = document.getElementById('favModalItemId').value;
+    const estId    = document.getElementById('favModalEstId').value;
+    const qty      = parseInt(document.getElementById('favModalQty').value) || 1;
+    const addUrl   = (typeof URLS !== 'undefined' && URLS.addToCart) ? URLS.addToCart : '/cart/add/';
+    const cartUrl  = (typeof URLS !== 'undefined' && URLS.cart) ? URLS.cart : '/cart/';
+    const loginUrl = (typeof URLS !== 'undefined' && URLS.login) ? URLS.login : '/accounts/login/';
+    const IS_AUTH  = (typeof IS_AUTHENTICATED !== 'undefined') ? IS_AUTHENTICATED : false;
+    if (!IS_AUTH) { window.location.href = loginUrl; return; }
+    if (!itemId || !estId) return;
+    const origHTML = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    fetch(addUrl, {
+        method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':_fpCsrf()},
+        body: JSON.stringify({ menu_item_id:parseInt(itemId), quantity:qty, establishment_id:parseInt(estId) }),
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (data.success) { window.location.href = cartUrl + '?pay=1'; }
+        else { _fpToast(data.message || 'Failed to process.', 'error'); btn.innerHTML = origHTML; btn.disabled = false; }
+    })
+    .catch(function(err) {
+        _fpToast('Error: ' + err.message, 'error');
+        btn.innerHTML = origHTML; btn.disabled = false;
+    });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    favPageFilter();
+    _fpFetchAllEstStatus();
+    _fpRefreshAllMenuData();
+    setInterval(_fpFetchAllEstStatus, 30000);
+    setInterval(_fpRefreshAllMenuData, 30000);
+    window.addEventListener('storage', function(e) {
+        if (e.key === FP_EST_KEY || e.key === FP_MENU_KEY) {
+            favPageFilter();
+            _fpRefreshAllMenuData();
+        }
+    });
+});
+</script>
+{% endblock %}

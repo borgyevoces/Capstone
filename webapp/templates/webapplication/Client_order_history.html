@@ -3438,7 +3438,7 @@ const itemsHtml = (o.items || []).map(i => {
 <!-- ====================================================
      RATING MODAL  (unchanged — kept in full)
 ===================================================== -->
-<div class="rating-modal-overlay" id="ratingModalOverlay" onclick="handleRatingOverlayClick(event)">
+<div class="rating-modal-overlay" id="ratingModalOverlay" style="display:none;" onclick="handleRatingOverlayClick(event)">
     <div class="rating-modal">
         <div class="rating-modal-header">
             <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:4px;"></i> Rate Your Experience</h3>
@@ -3471,7 +3471,7 @@ const itemsHtml = (o.items || []).map(i => {
 </div>
 
 <!-- Thank You Modal -->
-<div class="thankyou-overlay" id="thankyouOverlay" onclick="closeThankyou(event)">
+<div class="thankyou-overlay" id="thankyouOverlay" style="display:none;" onclick="closeThankyou(event)">
     <div class="thankyou-modal" onclick="event.stopPropagation()">
         <span class="thankyou-icon">✅</span>
         <h3>Thank You!</h3>

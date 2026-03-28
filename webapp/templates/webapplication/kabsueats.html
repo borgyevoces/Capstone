@@ -83,6 +83,12 @@
         outline: 2px solid #f59e0b;
         outline-offset: -2px;
     }
+    /* Cancel any per-card hover lift — the wrap handles it now */
+    .est-card-wrap .estc:hover,
+    .est-card-wrap a.estc:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
 
     /* ── Searchbar animation ── */
     @keyframes matchPulse {
@@ -90,6 +96,298 @@
         60%  { transform: scale(1.05); }
         100% { transform: scale(1); opacity: 1; }
     }
+
+    /* ============================================================
+       FAVORITES SYSTEM — Star (establishments) + Heart (menu items)
+       ============================================================ */
+
+    /* --- Establishment Card Wrap & Bookmark Button --- */
+    .est-card-wrap {
+        position: relative;
+        /* Lift the entire wrap (button + card) together on hover */
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        border-radius: 12px;
+    }
+    .est-card-wrap:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+    }
+
+    /* --- Establishment Bookmark Button --- */
+    .est-fav-star-btn {
+        position: absolute;
+        top: 0;
+        right: 11px;
+        z-index: 20;
+        width: 24px;
+        height: 32px;
+        border-radius: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 0;
+        pointer-events: auto;
+        /* always visible — no opacity hide */
+    }
+    .est-fav-star-btn svg {
+        width: 24px;
+        height: 32px;
+        transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
+        fill: none;
+        stroke: rgba(255,255,255,0.9);
+        stroke-width: 1.8;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+    }
+    .est-fav-star-btn:hover svg {
+        transform: scaleY(1.08);
+        stroke: rgba(255,255,255,1);
+    }
+    .est-fav-star-btn.fav-active svg {
+        fill: #eab308;
+        stroke: #ca8a04;
+        filter: drop-shadow(0 2px 6px rgba(234,179,8,0.5));
+    }
+    @keyframes bookmarkPop {
+        0%   { transform: scaleY(0.7) scaleX(0.9); }
+        55%  { transform: scaleY(1.12) scaleX(1.04); }
+        80%  { transform: scaleY(0.96) scaleX(0.99); }
+        100% { transform: scaleY(1) scaleX(1); }
+    }
+    .est-fav-star-btn.fav-pop svg { animation: bookmarkPop 0.38s cubic-bezier(.34,1.4,.64,1) forwards; }
+
+    /* --- Bestseller card star — top-right of image --- */
+    .bsc-fav-btn {
+        position: absolute !important;
+        top: 7px !important;
+        right: 7px !important;
+        left: auto !important;
+        bottom: auto !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 50% !important;
+        z-index: 25;
+    }
+
+    /* --- Menu Item Star Button --- */
+    .menu-fav-heart-btn {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        bottom: auto;
+        z-index: 30;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: transform 0.18s;
+        pointer-events: auto !important;
+    }
+    .menu-fav-heart-btn:hover {
+        transform: scale(1.18);
+    }
+    .menu-fav-heart-btn svg {
+        width: 22px;
+        height: 22px;
+        transition: fill 0.22s cubic-bezier(.34,1.4,.64,1),
+                    stroke 0.22s,
+                    transform 0.22s cubic-bezier(.34,1.4,.64,1);
+        fill: none;
+        stroke: rgba(255,255,255,0.95);
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.45));
+    }
+    .menu-fav-heart-btn.fav-active svg {
+        fill: #eab308;
+        stroke: #ca8a04;
+        filter: drop-shadow(0 2px 6px rgba(234,179,8,0.6));
+    }
+    @keyframes starPop {
+        0%   { transform: scale(0.6); }
+        55%  { transform: scale(1.35); }
+        80%  { transform: scale(0.92); }
+        100% { transform: scale(1); }
+    }
+    .menu-fav-heart-btn.fav-pop svg { animation: starPop 0.38s cubic-bezier(.34,1.4,.64,1) forwards; }
+
+    /* ============================================================
+       FAVORITES SECTION
+       ============================================================ */
+    .fav-section {
+        margin: 0 0 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1.5px solid #fef3c7;
+        box-shadow: 0 4px 20px rgba(234,179,8,0.10);
+        overflow: hidden;
+        animation: favSecIn 0.3s cubic-bezier(.34,1.4,.64,1);
+    }
+    @keyframes favSecIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .fav-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px 12px;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
+        border-bottom: 1.5px solid #fef3c7;
+        cursor: pointer;
+        user-select: none;
+    }
+    .fav-section-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .fav-section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        color: #92400e;
+    }
+    .fav-section-title svg {
+        width: 20px; height: 20px;
+        fill: #eab308;
+        stroke: #ca8a04;
+        stroke-width: 1.5;
+    }
+    .fav-section-count {
+        background: #eab308;
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 9px;
+        border-radius: 20px;
+        font-family: 'Poppins', sans-serif;
+    }
+    .fav-section-toggle-btn {
+        background: none;
+        border: none;
+        color: #b45309;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .fav-section-toggle-btn:hover { background: rgba(234,179,8,0.14); }
+    .fav-section-toggle-btn .fav-chevron { transition: transform 0.2s; }
+    .fav-section.collapsed .fav-section-toggle-btn .fav-chevron { transform: rotate(-90deg); }
+    .fav-section-body { padding: 14px 16px 16px; }
+    .fav-section.collapsed .fav-section-body { display: none; }
+
+    .fav-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+    .fav-tab {
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        border: 1.5px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .fav-tab.active { background: #eab308; border-color: #eab308; color: white; }
+    .fav-tab:hover:not(.active) { border-color: #eab308; color: #92400e; }
+    .fav-tab-count {
+        background: rgba(0,0,0,0.12);
+        border-radius: 10px;
+        font-size: 10px;
+        padding: 1px 5px;
+        font-weight: 700;
+    }
+    .fav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+        gap: 12px;
+    }
+    .fav-est-card {
+        background: #fafafa;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.18s;
+        position: relative;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+    }
+    .fav-est-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.10); border-color: #fde68a; }
+    .fav-est-card-img { width: 100%; height: 80px; object-fit: cover; display: block; background: #f3f4f6; }
+    .fav-est-card-body { padding: 9px 11px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .fav-est-card-name { font-weight: 700; font-size: 12px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Poppins', sans-serif; }
+    .fav-est-card-cat { font-size: 10px; color: #6b7280; font-family: 'Poppins', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fav-card-remove {
+        position: absolute;
+        top: 5px; right: 5px;
+        width: 22px; height: 22px;
+        background: rgba(255,255,255,0.92);
+        border: none; border-radius: 50%;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 9px; color: #9ca3af;
+        transition: all 0.15s;
+        pointer-events: auto;
+        z-index: 5;
+    }
+    .fav-card-remove:hover { background: #fee2e2; color: #dc2626; }
+    .fav-menu-card {
+        background: #fafafa;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.18s;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    .fav-menu-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.10); border-color: #fca5a5; }
+    .fav-menu-card-img { width: 100%; height: 80px; object-fit: cover; background: #f3f4f6; display: block; }
+    .fav-menu-card-body { padding: 9px 11px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .fav-menu-card-name { font-weight: 700; font-size: 12px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Poppins', sans-serif; }
+    .fav-menu-card-price { font-size: 12px; font-weight: 700; color: #B71C1C; font-family: 'Poppins', sans-serif; }
+    .fav-menu-card-est { font-size: 10px; color: #6b7280; font-family: 'Poppins', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fav-empty {
+        text-align: center;
+        padding: 20px;
+        color: #9ca3af;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+    }
+    .fav-empty i { font-size: 2em; display: block; margin-bottom: 8px; opacity: 0.35; }
 
     /* ============================================================
        GLOBAL CONNECTION OVERLAY
@@ -391,6 +689,13 @@
             <span class="csb-ico"><i class="fas fa-map-marked-alt"></i></span>
             <span class="csb-lbl">View Map</span>
         </a>
+        <a href="{% url 'kabsueats_favorites' %}" class="csb-item {% if request.resolver_match.url_name == 'kabsueats_favorites' %}active{% endif %}">
+            <span class="csb-ico" style="position:relative;">
+                <i class="fas fa-heart"></i>
+                <span id="sidebar-fav-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:#eab308;color:#fff;border-radius:50%;min-width:15px;height:15px;font-size:8px;font-weight:700;align-items:center;justify-content:center;padding:0 2px;border:2px solid #fff;line-height:1;"></span>
+            </span>
+            <span class="csb-lbl">Favorites</span>
+        </a>
     </nav>
 </aside>
 
@@ -436,18 +741,18 @@
 
     <!-- BESTSELLERS SECTION -->
     <section class="bs-section" id="bsSec">
-        <div class="bs-title-row">
-            <h2 class="bs-title" id="bsTitle">
-                <i class="fas fa-fire"></i>
-                Top-rated items from all our partner establishments
-            </h2>
-        </div>
 
         <div class="bs-controls">
-            <button class="gv-btn" id="gvBtn" onclick="toggleGrid()">
-                <i class="fas fa-th" id="gvIco"></i>
-                <span id="gvLbl">Grid View</span>
-            </button>
+            <div class="bs-controls-left">
+                <button class="gv-btn" id="gvBtn" onclick="toggleGrid()">
+                    <i class="fas fa-th" id="gvIco"></i>
+                    <span id="gvLbl">Grid View</span>
+                </button>
+                <h2 class="bs-title" id="bsTitle">
+                    <i class="fas fa-fire"></i>
+                    Top-rated items from all our partner establishments
+                </h2>
+            </div>
         </div>
 
         <!-- CAROUSEL (default) -->
@@ -565,6 +870,14 @@
     });
     </script>
 
+    <!-- Favorites Section removed — now a dedicated page at /favorites/ -->
+    <!-- Hidden stubs kept so kabsueats.js _renderFavSection() doesn't error -->
+    <span id="favTotalCount" style="display:none;"></span>
+    <span id="favEstCount"   style="display:none;"></span>
+    <span id="favMenuCount"  style="display:none;"></span>
+    <div   id="favGrid"      style="display:none;"></div>
+    <div   id="favSection"   style="display:none;" aria-hidden="true"></div>
+
     <div class="est-wrap">
         <div class="est-grid" id="estGrid">
             {% for est in food_establishments %}
@@ -635,6 +948,20 @@
                 </div>
                 {% endif %}
             </a>
+            {# ✅ FAVORITES: Star button — outside <a> so it doesn't trigger navigation #}
+            <button class="est-fav-star-btn"
+                    id="estStarBtn-{{ est.id }}"
+                    data-est-id="{{ est.id }}"
+                    data-est-name="{{ est.name|escapejs }}"
+                    data-est-category="{% for c in est.categories.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %}, {% endif %}{{ est.other_category }}{% endif %}"
+                    data-est-image="{% if est.image %}{{ est.image.url }}{% endif %}"
+                    data-est-url="{% url 'food_establishment_details' est.id %}"
+                    title="Save to Favorites"
+                    onclick="event.stopPropagation(); toggleFavEst(this)">
+                <svg viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 0 H28 Q32 0 32 4 V42 L16 30 L0 42 V4 Q0 0 4 0 Z"/>
+                </svg>
+            </button>
             </div><!-- /.est-card-wrap -->
             {% empty %}
             <p class="no-est-msg">No food establishments found.</p>
@@ -951,6 +1278,13 @@
     <a href="{% url 'kabsueats_map' %}" class="mob-nav-item {% if request.resolver_match.url_name == 'kabsueats_map' %}active{% endif %}">
         <span class="mob-nav-ico"><i class="fas fa-map-marked-alt"></i></span>
         <span class="mob-nav-lbl">Map</span>
+    </a>
+    <a href="{% url 'kabsueats_favorites' %}" class="mob-nav-item {% if request.resolver_match.url_name == 'kabsueats_favorites' %}active{% endif %}" style="position:relative;">
+        <span class="mob-nav-ico" style="position:relative;">
+            <i class="fas fa-heart"></i>
+            <span id="mob-fav-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#eab308;color:#fff;border-radius:50%;min-width:15px;height:15px;font-size:8px;font-weight:700;align-items:center;justify-content:center;padding:0 2px;border:2px solid #fff;line-height:1;"></span>
+        </span>
+        <span class="mob-nav-lbl">Favorites</span>
     </a>
     {% if user.is_authenticated %}
     <button class="mob-nav-item" onclick="toggleOrderNotifPanel()" style="background:none;border:none;cursor:pointer;padding:0;" id="mobNotifBtn">

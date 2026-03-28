@@ -7,163 +7,6 @@
 {% endblock search_visibility_control %}
 
 {% block title %}{{ establishment.name }} - KabsuEats
-<script>
-// ============================================================
-// ✅ FAVORITES — establishment detail page
-// Star button on establishment + Heart buttons on menu items
-// ============================================================
-(function() {
-    'use strict';
-
-    // ── getCsrf helper ────────────────────────────────────────────────────
-    function getCsrf() {
-        return document.getElementById('csrfToken')?.value || '';
-    }
-
-    // ── escHtml helper ────────────────────────────────────────────────────
-    function escHtml(str) {
-        return String(str || '')
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    // ── Show global fav modal (from base kabsueats.html / kabsueats.js) ──
-    function showFavModal(type, action, name) {
-        if (typeof showGlobalFavModal === 'function') {
-            showGlobalFavModal(type, action, name);
-        }
-    }
-
-    // ── Load saved favorites state on page load ───────────────────────────
-    function initDetailFavorites() {
-        const isAuth = {% if user.is_authenticated %}true{% else %}false{% endif %};
-        if (!isAuth) return;
-
-        const url = (typeof URLS !== 'undefined' && URLS.getFavStatus)
-            ? URLS.getFavStatus
-            : '/api/favorites/status/';
-
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                if (data.status !== 'ok') return;
-
-                // ── Apply heart state on all menu item buttons ──
-                const favMenuIds = new Set((data.fav_menus || []).map(Number));
-                window._favMenuIds = favMenuIds;
-                document.querySelectorAll('.menu-fav-heart-btn').forEach(btn => {
-                    const mid = parseInt(btn.getAttribute('data-menu-id'));
-                    if (favMenuIds.has(mid)) {
-                        btn.classList.add('fav-active');
-                        btn.title = 'Remove from Favorites';
-                    }
-                });
-
-                // ── Apply star state on establishment button ──
-                const favEstIds = new Set((data.fav_establishments || []).map(Number));
-                window._favEstIds = favEstIds;
-                const estBtn = document.getElementById('detailEstFavBtn');
-                if (estBtn) {
-                    const eid = parseInt(estBtn.getAttribute('data-est-id'));
-                    if (favEstIds.has(eid)) {
-                        estBtn.classList.add('fav-active');
-                        estBtn.title = 'Remove from Favorites';
-                        const lbl = estBtn.querySelector('.est-detail-fav-label');
-                        if (lbl) lbl.textContent = 'Saved to Favorites';
-                    }
-                }
-            })
-            .catch(() => {});
-    }
-
-    // ── Toggle star on this establishment ────────────────────────────────
-    window.toggleDetailFavEstablishment = function(estId, estName, btn) {
-        const url = (typeof URLS !== 'undefined' && URLS.toggleFavEst)
-            ? URLS.toggleFavEst
-            : '/api/favorites/toggle-establishment/';
-
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-            body: JSON.stringify({ establishment_id: estId })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status !== 'ok') return;
-            const lbl = btn.querySelector('.est-detail-fav-label');
-            if (data.action === 'added') {
-                btn.classList.add('fav-active');
-                btn.title = 'Remove from Favorites';
-                if (lbl) lbl.textContent = 'Saved to Favorites';
-                btn.classList.add('fav-star-pulse-detail');
-                setTimeout(() => btn.classList.remove('fav-star-pulse-detail'), 450);
-                if (!window._favEstIds) window._favEstIds = new Set();
-                window._favEstIds.add(estId);
-            } else {
-                btn.classList.remove('fav-active');
-                btn.title = 'Add to Favorites';
-                if (lbl) lbl.textContent = 'Add to Favorites';
-                if (window._favEstIds) window._favEstIds.delete(estId);
-            }
-            showFavModal('star', data.action, estName);
-        })
-        .catch(() => {});
-    };
-
-    // ── Toggle heart on a menu item ──────────────────────────────────────
-    window.toggleDetailFavMenu = function(menuId, menuName, btn) {
-        if (!{% if user.is_authenticated %}true{% else %}false{% endif %}) {
-            window.location.href = (typeof URLS !== 'undefined' && URLS.login)
-                ? URLS.login + '#login' : '/login/';
-            return;
-        }
-        const url = (typeof URLS !== 'undefined' && URLS.toggleFavMenu)
-            ? URLS.toggleFavMenu
-            : '/api/favorites/toggle-menu/';
-
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-            body: JSON.stringify({ menu_item_id: menuId })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status !== 'ok') return;
-
-            // Update all matching heart buttons on this page
-            // (detail page buttons + any bsc-heart-btn duplicates)
-            const allBtns = document.querySelectorAll(
-                `#detailFavBtn-${menuId}, [data-menu-id="${menuId}"].menu-fav-heart-btn, #menuFavBtn-${menuId}, [data-menu-id="${menuId}"].bsc-heart-btn`
-            );
-
-            if (!window._favMenuIds) window._favMenuIds = new Set();
-
-            if (data.action === 'added') {
-                window._favMenuIds.add(menuId);
-                allBtns.forEach(b => {
-                    b.classList.add('fav-active');
-                    b.title = 'Remove from Favorites';
-                    b.classList.add('fav-heart-pulse');
-                    setTimeout(() => b.classList.remove('fav-heart-pulse'), 450);
-                });
-            } else {
-                window._favMenuIds.delete(menuId);
-                allBtns.forEach(b => {
-                    b.classList.remove('fav-active');
-                    b.title = 'Add to Favorites';
-                });
-            }
-
-            showFavModal('heart', data.action, menuName);
-        })
-        .catch(() => {});
-    };
-
-    // ── Init on DOM ready ─────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', initDetailFavorites);
-})();
-</script>
-
 {% endblock %}
 
 {% block extra_css %}
@@ -1408,120 +1251,59 @@
         50% { transform: scale(1.25); background: #8b0000; }
     }
 
-    /* ============================================================
-       FAVORITES: Establishment star button (hero header)
-       ============================================================ */
-    .est-detail-fav-star-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        margin-top: 10px;
-        padding: 7px 18px;
-        border: 2px solid rgba(255,255,255,0.70);
-        border-radius: 50px;
-        background: rgba(0,0,0,0.32);
-        backdrop-filter: blur(6px);
-        color: rgba(255,255,255,0.90);
-        font-size: 13px;
-        font-weight: 700;
-        font-family: 'Poppins', sans-serif;
-        cursor: pointer;
-        transition: all 0.20s;
-        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.45));
-    }
-    .est-detail-fav-star-btn i {
-        font-size: 15px;
-        color: rgba(255,255,255,0.80);
-        transition: color 0.18s;
-        /* Outlined when not favorited */
-        -webkit-text-stroke: 1.5px rgba(255,255,255,0.90);
-        color: transparent;
-    }
-    .est-detail-fav-star-btn:hover {
-        background: rgba(245,158,11,0.35);
-        border-color: #fbbf24;
-        color: #fef3c7;
-        transform: scale(1.04);
-    }
-    .est-detail-fav-star-btn:hover i {
-        -webkit-text-stroke: 1.5px #fbbf24;
-        color: transparent;
-    }
-    .est-detail-fav-star-btn.fav-active {
-        background: rgba(245,158,11,0.35);
-        border-color: #f59e0b;
-        color: #fef3c7;
-    }
-    .est-detail-fav-star-btn.fav-active i {
-        color: #f59e0b !important;
-        -webkit-text-stroke: 0px transparent !important;
-        filter: drop-shadow(0 1px 6px rgba(245,158,11,0.90));
-    }
-    @keyframes detailEstStarPulse {
-        0%   { transform: scale(1); }
-        35%  { transform: scale(1.55); }
-        65%  { transform: scale(0.88); }
-        100% { transform: scale(1); }
-    }
-    .fav-star-pulse-detail i { animation: detailEstStarPulse 0.42s ease; }
+    .menu-item-image-wrapper { position: relative !important; }
 
-    /* ============================================================
-       FAVORITES: Heart button on menu items — BOTTOM-LEFT
-       ============================================================ */
-    .menu-item { position: relative; }
-
-    .menu-fav-heart-btn {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        top: auto;
-        right: auto;
-        z-index: 30;
-        width: 38px;
-        height: 38px;
-        border-radius: 0 !important;
-        border: none !important;
+    /* ── Heart favorite: top-left ── */
+    .menu-item .menu-fav-heart-btn {
+        top: 7px !important;
+        left: 7px !important;
+        bottom: auto !important;
+        right: auto !important;
         background: transparent !important;
-        box-shadow: none !important;
         backdrop-filter: none !important;
-        /* Outlined when not favorited */
-        color: transparent;
-        -webkit-text-stroke: 2px rgba(255,255,255,0.90);
-        font-size: 26px;
+        box-shadow: none !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        z-index: 20 !important;
+    }
+    .menu-item .menu-fav-heart-btn svg {
+        width: 30px !important;
+        height: 30px !important;
+    }
+    .menu-item .menu-fav-heart-btn:hover {
+        background: transparent !important;
+        transform: scale(1.2);
+    }
+
+    /* ── Best seller badge: top-right ── */
+    .menu-item .badge-top-seller {
+        top: 7px !important;
+        right: 7px !important;
+        left: auto !important;
+    }
+    .menu-item .badge-top-seller i {
+        color: #fff700 !important;
+    }
+
+    /* ── Available / Out of Stock as plain text under price ── */
+    .menu-stock-text {
+        font-size: 12px;
+        font-weight: 600;
+        margin: 2px 0 6px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        cursor: pointer !important;
-        pointer-events: auto !important;
-        transition: color 0.18s, transform 0.18s, -webkit-text-stroke 0.18s;
-        filter: drop-shadow(0 1px 5px rgba(0,0,0,0.75));
-        padding: 0;
-        line-height: 1;
+        gap: 5px;
     }
-    .menu-fav-heart-btn:hover {
-        transform: scale(1.22) !important;
-        background: transparent !important;
-        color: rgba(239,68,68,0.55) !important;
-        -webkit-text-stroke: 2px #ef4444 !important;
-        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.80));
+    .menu-stock-text.available {
+        color: #16a34a;
     }
-    /* Filled red when favorited */
-    .menu-fav-heart-btn.fav-active {
-        color: #ef4444 !important;
-        -webkit-text-stroke: 0px transparent !important;
-        filter: drop-shadow(0 1px 6px rgba(239,68,68,0.90)) !important;
+    .menu-stock-text.out-of-stock {
+        color: #dc2626;
     }
-
-    @keyframes detailHeartPulse {
-        0%   { transform: scale(1); }
-        35%  { transform: scale(1.70); }
-        65%  { transform: scale(0.85); }
-        100% { transform: scale(1); }
+    .menu-stock-text i {
+        font-size: 11px;
     }
-    .fav-heart-pulse { animation: detailHeartPulse 0.42s ease; }
-
-    .menu-item-image-wrapper { position: relative !important; }
-    .menu-item-image-wrapper .menu-fav-heart-btn { pointer-events: auto !important; }
 </style>
 {% endblock %}
 
@@ -1584,18 +1366,6 @@
                     </div>
                     <span class="review-count-text">({{ establishment.review_count|default:0 }} Reviews)</span>
                 </div>
-                {# ✅ FAVORITES: Add to Favorites star button #}
-                {% if user.is_authenticated %}
-                <button class="est-detail-fav-star-btn"
-                        id="detailEstFavBtn"
-                        data-est-id="{{ establishment.id }}"
-                        data-est-name="{{ establishment.name|escapejs }}"
-                        title="Add to Favorites"
-                        onclick="toggleDetailFavEstablishment({{ establishment.id }}, '{{ establishment.name|escapejs }}', this); event.preventDefault(); event.stopPropagation();">
-                    <i class="fas fa-star"></i>
-                    <span class="est-detail-fav-label">Add to Favorites</span>
-                </button>
-                {% endif %}
                 {# ✅ REALTIME: status badge — updated every 60s by status_updater.js #}
                 <span id="detailStatusBadge"
                       class="status-badge status-{{ establishment.status|lower }}"
@@ -1706,9 +1476,7 @@
                     </div>
 
                     {% if user.is_authenticated %}
-                    {% if not user_review %}
-                    <button class="btn-review" id="addReviewBtn" onclick="openReviewModal()"><i class="fas fa-pen"></i> Write a Review</button>
-                    {% else %}
+                    {% if user_review %}
                     <p class="user-review-hint" id="userReviewHint">✏️ Click the pencil icon to edit your review.</p>
                     {% endif %}
                     {% else %}
@@ -1866,33 +1634,28 @@
             <img src="{% if item.image %}{{ item.image.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='150' y='165' text-anchor='middle' fill='%23d1d5db' font-size='80' font-family='sans-serif'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E{% endif %}"
                  alt="{{ item.name }}" class="menu-item-image">
 
-            <!-- Top Left: Best Seller Badge -->
-            {% if item.is_top_seller %}
-            <span class="badge-top-seller">
-                <i class="fas fa-medal"></i> Best Seller
-            </span>
-            {% endif %}
-
-            <!-- Top Right: Stock Badge -->
-            {% if item.quantity > 0 %}
-            <span class="badge-stock available">
-                <i class="fas fa-check-circle"></i> Available: {{ item.quantity }}
-            </span>
-            {% else %}
-            <span class="badge-stock out-of-stock">
-                <i class="fas fa-times-circle"></i> Out of Stock
-            </span>
-            {% endif %}
-            <!-- ✅ FAVORITES: Heart button -->
-            {% if user.is_authenticated %}
+            <!-- Top Left: Heart Favorite Button -->
             <button class="menu-fav-heart-btn"
-                    id="detailFavBtn-{{ item.id }}"
+                    id="menuHeart-{{ item.id }}"
                     data-menu-id="{{ item.id }}"
                     data-menu-name="{{ item.name|escapejs }}"
-                    title="Add to Favorites"
-                    onclick="toggleDetailFavMenu({{ item.id }}, '{{ item.name|escapejs }}', this); event.preventDefault(); event.stopPropagation();">
-                <i class="fas fa-heart"></i>
+                    data-menu-image="{% if item.image %}{{ item.image.url }}{% endif %}"
+                    data-menu-price="{{ item.price|floatformat:2 }}"
+                    data-est-name="{{ establishment.name|escapejs }}"
+                    data-est-id="{{ establishment.id }}"
+                    data-est-url="{% url 'food_establishment_details' establishment.id %}"
+                    title="Save to Favorites"
+                    onclick="event.stopPropagation(); detailToggleFavMenu(this)">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26Z"/>
+                </svg>
             </button>
+
+            <!-- Top Right: Best Seller Badge -->
+            {% if item.is_top_seller %}
+            <span class="badge-top-seller">
+                <i class="fas fa-star"></i> Best Seller
+            </span>
             {% endif %}
         </div>
 
@@ -1910,6 +1673,17 @@
                 {% endif %}
                 <p class="menu-price">₱{{ item.price|floatformat:2 }}</p>
             </p>
+
+            <!-- Stock text indicator -->
+            {% if item.quantity > 0 %}
+            <p class="menu-stock-text available">
+                <i class="fas fa-check-circle"></i> Available: {{ item.quantity }}
+            </p>
+            {% else %}
+            <p class="menu-stock-text out-of-stock">
+                <i class="fas fa-times-circle"></i> Out of Stock
+            </p>
+            {% endif %}
 
             <!-- Action Buttons -->
             <div class="item-actions">
@@ -3978,6 +3752,132 @@ window.setPriceFilter = function(val, btn) {
         setInterval(refreshBadge, 15000);
     });
 })();
+</script>
+
+<script>
+// ============================================================
+// DETAIL PAGE — Menu Item Heart Favorites
+// Uses same localStorage keys as kabsueats.js so they stay in sync
+// ============================================================
+(function() {
+    var DET_MENU_KEY = 'kabsu_fav_menu_items';
+
+    function detGetMenus() {
+        try { return JSON.parse(localStorage.getItem(DET_MENU_KEY) || '[]'); } catch(e) { return []; }
+    }
+    function detSetMenus(arr) {
+        try { localStorage.setItem(DET_MENU_KEY, JSON.stringify(arr)); } catch(e) {}
+    }
+
+    window.detailToggleFavMenu = function(btn) {
+        var menuId   = parseInt(btn.dataset.menuId);
+        var menuName = btn.dataset.menuName;
+        var menuImg  = btn.dataset.menuImage  || '';
+        var menuPrice= btn.dataset.menuPrice  || '0';
+        var estName  = btn.dataset.estName    || '';
+        var estId    = parseInt(btn.dataset.estId || 0);
+        var estUrl   = btn.dataset.estUrl     || '#';
+
+        var favs = detGetMenus();
+        var idx  = favs.findIndex(function(m) { return m.id === menuId; });
+
+        if (idx !== -1) {
+            favs.splice(idx, 1);
+            btn.classList.remove('fav-active', 'fav-pop');
+            btn.title = 'Save to Favorites';
+        } else {
+            favs.push({ id: menuId, name: menuName, image: menuImg, price: menuPrice,
+                        estName: estName, estId: estId, estUrl: estUrl });
+            btn.classList.add('fav-active');
+            btn.classList.remove('fav-pop');
+            void btn.offsetWidth;
+            btn.classList.add('fav-pop');
+            btn.title = 'Remove from Favorites';
+        }
+        detSetMenus(favs);
+
+        // ── Realtime badge update ──
+        detUpdateFavBadge();
+
+        // Toast notification
+        var html = idx !== -1
+            ? '<i class="fas fa-heart" style="color:#ef4444;margin-right:6px;"></i> Removed from Favorites'
+            : '<i class="fas fa-heart" style="color:#ef4444;margin-right:6px;"></i> Saved to Favorites!';
+        detShowToast(html, idx !== -1 ? 'info' : 'success');
+    };
+
+    function detUpdateFavBadge() {
+        // Count menu favs + establishment favs (same keys as kabsueats.js)
+        var menus = (function() { try { return JSON.parse(localStorage.getItem('kabsu_fav_menu_items') || '[]'); } catch(e) { return []; } })();
+        var ests  = (function() { try { return JSON.parse(localStorage.getItem('kabsu_fav_ests') || '[]'); } catch(e) { return []; } })();
+        var total = menus.length + ests.length;
+
+        var sidebarBadge = document.getElementById('sidebar-fav-badge');
+        if (sidebarBadge) {
+            sidebarBadge.textContent = total;
+            sidebarBadge.style.display = total > 0 ? 'flex' : 'none';
+        }
+        var mobBadge = document.getElementById('mob-fav-badge');
+        if (mobBadge) {
+            mobBadge.textContent = total;
+            mobBadge.style.display = total > 0 ? 'flex' : 'none';
+        }
+    }
+
+    function detShowToast(html, type) {
+        var colors   = { success: '#10b981', info: '#6b7280' };
+        var bgColors = { success: '#f0fdf4', info: '#f9fafb' };
+        var container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        var t = document.createElement('div');
+        t.style.cssText = 'background:' + (bgColors[type] || '#fff') + ';border-left:5px solid ' + (colors[type] || '#6b7280') + ';border-radius:10px;padding:12px 18px;box-shadow:0 6px 24px rgba(0,0,0,0.13);display:flex;align-items:center;gap:10px;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;color:#1f2937;min-width:220px;pointer-events:auto;';
+        t.innerHTML = html;
+        container.appendChild(t);
+        setTimeout(function() {
+            t.style.transition = 'opacity .35s ease, transform .35s ease';
+            t.style.opacity = '0';
+            t.style.transform = 'translateY(-8px)';
+            setTimeout(function() { t.remove(); }, 380);
+        }, 2400);
+    }
+
+    // Sync all heart buttons to current localStorage state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        var favs   = detGetMenus();
+        var favIds = new Set(favs.map(function(m) { return m.id; }));
+        document.querySelectorAll('.menu-fav-heart-btn[data-menu-id]').forEach(function(btn) {
+            var id = parseInt(btn.dataset.menuId);
+            if (favIds.has(id)) {
+                btn.classList.add('fav-active');
+                btn.title = 'Remove from Favorites';
+            }
+        });
+        // Init badge count on page load
+        detUpdateFavBadge();
+    });
+
+    // Cross-tab sync — when you favorite something on another tab/page
+    window.addEventListener('storage', function(e) {
+        if (e.key !== DET_MENU_KEY) return;
+        var favs   = detGetMenus();
+        var favIds = new Set(favs.map(function(m) { return m.id; }));
+        document.querySelectorAll('.menu-fav-heart-btn[data-menu-id]').forEach(function(btn) {
+            var id = parseInt(btn.dataset.menuId);
+            if (favIds.has(id)) {
+                btn.classList.add('fav-active');
+                btn.title = 'Remove from Favorites';
+            } else {
+                btn.classList.remove('fav-active', 'fav-pop');
+                btn.title = 'Save to Favorites';
+            }
+        });
+    });
+}());
 </script>
 
 {% endblock %}
