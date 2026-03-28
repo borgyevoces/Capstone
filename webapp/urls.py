@@ -11,6 +11,11 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
+                  # ✅ DB-independent ping endpoint — used by cron-job.org to keep Render awake
+                  # Point your cronjob here instead of /api/establishments/status/
+                  # so the server wakes up without hitting the database.
+                  path('api/ping/', views.health_ping, name='health_ping'),
+
                   # =========================================================
                   # I. CLIENT (CUSTOMER) VIEWS AND FUNCTIONALITY
                   # =========================================================

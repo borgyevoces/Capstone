@@ -160,6 +160,17 @@ def normalize_payment_method(raw):
     return 'gcash'
 
 
+def health_ping(request):
+    """
+    ✅ Lightweight ping endpoint — NO database hit.
+    Used by cron-job.org to keep the Render server awake
+    without triggering a DB connection on a cold-start.
+    Point your cronjob to: /api/ping/
+    """
+    from django.http import JsonResponse as _JsonResponse
+    return _JsonResponse({'status': 'alive'}, status=200)
+
+
 def about_page(request):
     return render(request, 'webapplication/about.html')
 

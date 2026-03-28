@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 # Short sleeps (0.15s, 0.35s) between attempts handle brief
 # Render.com free-tier wake-up latency without noticeable delay.
 # ============================================================
-MAX_RETRIES   = 3
-RETRY_DELAYS  = [0.15, 0.35]   # seconds to wait between retry 1→2 and 2→3
+MAX_RETRIES   = 5
+RETRY_DELAYS  = [1.0, 2.0, 4.0, 8.0]   # exponential backoff — handles Render DB cold starts (up to ~15s)
 
 
 def _call_with_db_retry(get_response, request):

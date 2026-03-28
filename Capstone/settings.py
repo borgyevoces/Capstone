@@ -138,7 +138,7 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=60,       # ✅ reduced from 600 — avoids stale SSL connections
+            conn_max_age=0,        # ✅ Always fresh connection — prevents stale SSL on Render free tier
             conn_health_checks=True,
         )
     }
