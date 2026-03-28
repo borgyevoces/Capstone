@@ -2536,7 +2536,7 @@ function _renderOrderNotifList(notifications) {
         const unreadClass = n.is_read ? '' : 'unread';
         const dot = n.is_read ? '' : '<span class="on-dot"></span>';
         const tab = STATUS_TAB_MAP[n.order_status] || 'request';
-        const href = '/my-purchases/?tab=' + tab;
+        const href = '/my-purchases/?tab=' + tab + '&order_id=' + n.order_id;
         return (
             '<a href="' + href + '" class="on-item ' + unreadClass + '" ' +
             'data-id="' + n.id + '" onclick="closeOrderNotifPanel()">' +

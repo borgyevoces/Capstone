@@ -635,6 +635,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            overflow: visible;
         }
 
         /* Make navbar-btn (profile/settings) same size and color */
@@ -682,21 +683,25 @@
 
         .notification-badge {
             position: absolute;
-            top: 2px;
-            right: 2px;
+            top: -6px;
+            right: -8px;
             background: #B71C1C;
             color: white;
             border-radius: 12px;
-            padding: 3px 7px;
-            font-size: 12px;
+            padding: 2px 6px;
+            font-size: 11px;
             font-weight: 700;
-            min-width: 20px;
+            min-width: 18px;
+            height: 18px;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            line-height: 1;
+            box-sizing: border-box;
         }
 
         .notification-panel {
@@ -3163,6 +3168,10 @@
         <a href="{% url 'store_ratings' %}" class="sidebar-item {% if request.resolver_match.url_name == 'store_ratings' %}active{% endif %}">
             <i class="fas fa-star"></i>
             <span>Ratings</span>
+        </a>
+        <a href="{% url 'cancelled_orders_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'cancelled_orders_list' %}active{% endif %}">
+            <i class="fas fa-ban"></i>
+            <span>Cancelled Orders</span>
         </a>
     </div>
 

@@ -1,0 +1,670 @@
+{% extends 'webapplication/food_establishment_dashboard.html' %}
+{% load static %}
+
+{% block page_title %}Cancelled Orders — {{ establishment.name }}{% endblock %}
+
+{% block extra_head_links %}
+{{ block.super }}
+<style>
+/* ============================================================
+   CANCELLED ORDERS PAGE
+   ============================================================ */
+main.main-content {
+    max-width: 1200px;
+    margin: 24px auto 60px;
+    padding: 0 24px;
+}
+
+/* ── Page Header ── */
+.co-page-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+.co-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.co-page-title i { color: #B71C1C; }
+.co-page-subtitle { color: #6b7280; font-size: 14px; }
+
+/* ── Summary Cards ── */
+.co-summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.co-stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1.5px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.co-stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.co-stat-icon.total   { background: #fee2e2; color: #B71C1C; }
+.co-stat-icon.owner   { background: #fff7ed; color: #c2410c; }
+.co-stat-icon.client  { background: #fef9c3; color: #854d0e; }
+.co-stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.co-stat-value { font-size: 28px; font-weight: 800; color: #1f2937; line-height: 1; }
+
+/* ── Toolbar ── */
+.co-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.co-filter-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.co-pill {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.co-pill:hover { border-color: #B71C1C; color: #B71C1C; }
+.co-pill.active { background: #B71C1C; border-color: #B71C1C; color: white; }
+.co-pill .co-pill-count {
+    background: rgba(0,0,0,0.12);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 11px;
+}
+.co-pill.active .co-pill-count { background: rgba(255,255,255,0.25); }
+
+.co-search-wrap { position: relative; }
+.co-search-inp {
+    padding: 9px 14px 9px 36px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #374151;
+    outline: none;
+    width: 220px;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.2s;
+}
+.co-search-inp:focus { border-color: #B71C1C; }
+.co-search-ico {
+    position: absolute; left: 11px; top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af; font-size: 13px;
+    pointer-events: none;
+}
+.co-live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: #16a34a;
+    background: #dcfce7; border-radius: 20px;
+    padding: 5px 12px;
+}
+.co-live-dot {
+    width: 8px; height: 8px;
+    background: #16a34a; border-radius: 50%;
+    animation: coPulse 1.5s ease-in-out infinite;
+}
+@keyframes coPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.7); }
+}
+
+/* ── Empty State ── */
+.co-empty {
+    text-align: center;
+    padding: 64px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.co-empty i { font-size: 48px; color: #d1d5db; margin-bottom: 16px; display: block; }
+.co-empty h3 { font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+.co-empty p  { font-size: 14px; color: #6b7280; }
+
+/* ── Order Cards ── */
+.co-cards-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+.co-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1.5px solid #f0f0f0;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.co-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
+.co-card.by-owner { border-left: 4px solid #dc2626; }
+.co-card.by-customer { border-left: 4px solid #f59e0b; }
+
+/* Card Header */
+.co-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.co-card-header-left { display: flex; align-items: center; gap: 12px; }
+.co-order-num {
+    font-size: 15px; font-weight: 800;
+    color: #B71C1C;
+    background: #fee2e2;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+.co-cancelled-by-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+.co-cancelled-by-badge.owner    { background: #fee2e2; color: #b91c1c; }
+.co-cancelled-by-badge.customer { background: #fef9c3; color: #92400e; }
+
+.co-card-header-right { display: flex; align-items: center; gap: 10px; }
+.co-cancelled-at { font-size: 12px; color: #9ca3af; }
+
+/* Card Body */
+.co-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    padding: 0;
+}
+.co-section {
+    padding: 16px 20px;
+    border-right: 1px solid #f3f4f6;
+}
+.co-section:last-child { border-right: none; }
+.co-section-title {
+    font-size: 10px; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 5px;
+}
+.co-section-title i { font-size: 10px; }
+
+/* Customer info */
+.co-customer-name { font-size: 14px; font-weight: 700; color: #1f2937; margin-bottom: 3px; }
+.co-customer-email { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px; }
+.co-customer-email i { font-size: 10px; }
+
+/* Items list */
+.co-items-list { display: flex; flex-direction: column; gap: 5px; }
+.co-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: #374151;
+    padding: 4px 8px; background: #f9fafb; border-radius: 6px;
+}
+.co-item-name { font-weight: 600; }
+.co-item-qty  { color: #9ca3af; margin: 0 4px; }
+.co-item-price { font-weight: 700; color: #B71C1C; }
+
+/* Order meta */
+.co-meta-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+.co-meta-label { color: #9ca3af; }
+.co-meta-value { font-weight: 600; color: #374151; }
+.co-meta-value.total { font-size: 16px; font-weight: 800; color: #B71C1C; }
+.co-payment-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+}
+.co-payment-chip.cash   { background: #dcfce7; color: #16a34a; }
+.co-payment-chip.gcash  { background: #dbeafe; color: #1d4ed8; }
+
+/* Reason box */
+.co-reason-box {
+    margin: 12px 20px;
+    padding: 10px 14px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    border-left: 3px solid #f97316;
+    font-size: 12.5px;
+    color: #7c3aed;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+.co-reason-box.owner-rejection {
+    background: #fff1f2;
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    color: #991b1b;
+}
+.co-reason-box i { flex-shrink: 0; margin-top: 2px; font-size: 13px; color: #f97316; }
+.co-reason-box.owner-rejection i { color: #dc2626; }
+.co-reason-text { line-height: 1.5; }
+.co-reason-label { font-weight: 700; display: block; margin-bottom: 2px; }
+.co-no-reason { font-style: italic; color: #9ca3af; }
+
+/* ── New order highlight animation ── */
+@keyframes coNewSlide {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.co-card.co-new-entry {
+    animation: coNewSlide 0.4s cubic-bezier(.34,1.56,.64,1);
+    outline: 2px solid #dc2626;
+    outline-offset: -2px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .co-card-body { grid-template-columns: 1fr 1fr; }
+    .co-section:nth-child(2) { border-right: none; }
+    .co-section:nth-child(3) { border-top: 1px solid #f3f4f6; grid-column: span 2; border-right: none; }
+    .co-summary-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    main.main-content { padding: 0 12px; }
+    .co-card-body { grid-template-columns: 1fr; }
+    .co-section { border-right: none; border-bottom: 1px solid #f3f4f6; }
+    .co-section:last-child { border-bottom: none; }
+    .co-search-inp { width: 160px; }
+}
+</style>
+{% endblock %}
+
+{% block main_content %}
+<main class="main-content">
+
+    <!-- Page Header -->
+    <div class="co-page-header">
+        <h1 class="co-page-title">
+            <i class="fas fa-ban"></i> Cancelled Orders
+        </h1>
+        <p class="co-page-subtitle">All cancelled orders for {{ establishment.name }} — updates in real time</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="co-summary-row">
+        <div class="co-stat-card">
+            <div class="co-stat-icon total"><i class="fas fa-times-circle"></i></div>
+            <div>
+                <div class="co-stat-label">Total Cancelled</div>
+                <div class="co-stat-value" id="statTotal">{{ total_cancelled }}</div>
+            </div>
+        </div>
+        <div class="co-stat-card">
+            <div class="co-stat-icon owner"><i class="fas fa-store-slash"></i></div>
+            <div>
+                <div class="co-stat-label">Rejected by Owner</div>
+                <div class="co-stat-value" id="statOwner">{{ cancelled_by_owner }}</div>
+            </div>
+        </div>
+        <div class="co-stat-card">
+            <div class="co-stat-icon client"><i class="fas fa-user-times"></i></div>
+            <div>
+                <div class="co-stat-label">Cancelled by Customer</div>
+                <div class="co-stat-value" id="statClient">{{ cancelled_by_customer }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="co-toolbar">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div class="co-filter-pills">
+                <button class="co-pill active" id="pillAll" onclick="coFilter('all')">
+                    <i class="fas fa-list"></i> All
+                    <span class="co-pill-count" id="pillAllCount">0</span>
+                </button>
+                <button class="co-pill" id="pillOwner" onclick="coFilter('owner')">
+                    <i class="fas fa-store-slash"></i> Rejected by Owner
+                    <span class="co-pill-count" id="pillOwnerCount">0</span>
+                </button>
+                <button class="co-pill" id="pillCustomer" onclick="coFilter('customer')">
+                    <i class="fas fa-user-times"></i> Cancelled by Customer
+                    <span class="co-pill-count" id="pillCustomerCount">0</span>
+                </button>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="co-search-wrap">
+                <i class="fas fa-search co-search-ico"></i>
+                <input class="co-search-inp" type="text" id="coSearch"
+                       placeholder="Search order, customer…"
+                       oninput="coRender()">
+            </div>
+            <div class="co-live-badge">
+                <span class="co-live-dot"></span> Live
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards List -->
+    <div id="coCardsList"></div>
+
+</main>
+
+<script>
+// ============================================================
+// DATA — injected from Django
+// ============================================================
+let coOrders = {{ orders_data_json|safe }};
+let coFilterMode = 'all';
+
+// ============================================================
+// RENDER
+// ============================================================
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtMoney(v) {
+    return '₱' + parseFloat(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function coRender(highlightId) {
+    const search = (document.getElementById('coSearch').value || '').toLowerCase();
+
+    const filtered = coOrders.filter(function(o) {
+        if (coFilterMode !== 'all' && o.cancelled_by !== coFilterMode) return false;
+        if (search) {
+            const hay = [
+                '#' + o.id,
+                o.customer_name,
+                o.customer_email,
+                o.cancel_reason,
+            ].join(' ').toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    // Update pill counts
+    const all = coOrders.length;
+    const byOwner = coOrders.filter(o => o.cancelled_by === 'owner').length;
+    const byCustomer = coOrders.filter(o => o.cancelled_by === 'customer').length;
+    document.getElementById('pillAllCount').textContent = all;
+    document.getElementById('pillOwnerCount').textContent = byOwner;
+    document.getElementById('pillCustomerCount').textContent = byCustomer;
+    document.getElementById('statTotal').textContent = all;
+    document.getElementById('statOwner').textContent = byOwner;
+    document.getElementById('statClient').textContent = byCustomer;
+
+    const wrap = document.getElementById('coCardsList');
+
+    if (!filtered.length) {
+        wrap.innerHTML = `
+            <div class="co-empty">
+                <i class="fas fa-check-circle" style="color:#16a34a;"></i>
+                <h3>No cancelled orders found</h3>
+                <p>${search ? 'No results match your search.' : 'No cancelled orders yet — great job!'}</p>
+            </div>`;
+        return;
+    }
+
+    wrap.innerHTML = filtered.map(function(o) {
+        const isOwner = o.cancelled_by === 'owner';
+
+        // Items HTML
+        const itemsHtml = o.items.length
+            ? o.items.map(i => `
+                <div class="co-item-row">
+                    <span class="co-item-name">${esc(i.name)}</span>
+                    <span>
+                        <span class="co-item-qty">×${i.quantity}</span>
+                        <span class="co-item-price">${fmtMoney(i.subtotal)}</span>
+                    </span>
+                </div>`).join('')
+            : '<span style="font-size:12px;color:#9ca3af;">No items recorded</span>';
+
+        // Payment chip
+        const isCash = (o.payment_method || '').toLowerCase() === 'cash';
+        const payChip = isCash
+            ? `<span class="co-payment-chip cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>`
+            : `<span class="co-payment-chip gcash"><i class="fas fa-mobile-alt"></i> GCash / Online</span>`;
+
+        // Previous status label (only for owner rejections)
+        const prevStatusLabels = {
+            'request': 'Order Request',
+            'to_pay': 'Awaiting Payment',
+            'to_claim': 'Ready for Pickup',
+        };
+        const prevStatusLabel = prevStatusLabels[o.cancelled_from_status] || '';
+
+        // Reason box
+        let reasonHtml = '';
+        if (o.cancel_reason && o.cancel_reason.trim()) {
+            reasonHtml = `
+                <div class="co-reason-box ${isOwner ? 'owner-rejection' : ''}">
+                    <i class="fas fa-${isOwner ? 'exclamation-circle' : 'comment-alt'}"></i>
+                    <div class="co-reason-text">
+                        <span class="co-reason-label">${isOwner ? 'Rejection Reason:' : 'Cancellation Reason:'}</span>
+                        ${esc(o.cancel_reason)}
+                    </div>
+                </div>`;
+        } else {
+            reasonHtml = `
+                <div class="co-reason-box ${isOwner ? 'owner-rejection' : ''}">
+                    <i class="fas fa-info-circle"></i>
+                    <div class="co-reason-text">
+                        <span class="co-reason-label">${isOwner ? 'Rejection Reason:' : 'Cancellation Reason:'}</span>
+                        <span class="co-no-reason">No reason provided</span>
+                    </div>
+                </div>`;
+        }
+
+        return `
+        <div class="co-card by-${o.cancelled_by}${highlightId === o.id ? ' co-new-entry' : ''}" data-id="${o.id}">
+            <!-- Card Header -->
+            <div class="co-card-header">
+                <div class="co-card-header-left">
+                    <span class="co-order-num">#${o.id}</span>
+                    <span class="co-cancelled-by-badge ${o.cancelled_by}">
+                        <i class="fas fa-${isOwner ? 'store-slash' : 'user-times'}"></i>
+                        ${isOwner ? 'Rejected by Owner' : 'Cancelled by Customer'}
+                    </span>
+                    ${prevStatusLabel ? `<span style="font-size:11px;color:#9ca3af;background:#f3f4f6;padding:3px 8px;border-radius:8px;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> was in <strong>${esc(prevStatusLabel)}</strong></span>` : ''}
+                </div>
+                <div class="co-card-header-right">
+                    <span class="co-cancelled-at"><i class="fas fa-clock" style="font-size:10px;margin-right:3px;"></i>${esc(o.cancelled_at)}</span>
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="co-card-body">
+                <!-- Customer Info -->
+                <div class="co-section">
+                    <div class="co-section-title"><i class="fas fa-user"></i> Customer</div>
+                    <div class="co-customer-name">${esc(o.customer_name)}</div>
+                    <div class="co-customer-email"><i class="fas fa-envelope"></i> ${esc(o.customer_email)}</div>
+                    <div style="margin-top:8px;font-size:11px;color:#9ca3af;">
+                        <i class="fas fa-calendar-plus" style="font-size:10px;margin-right:3px;"></i>
+                        Ordered: ${esc(o.created_at)}
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div class="co-section">
+                    <div class="co-section-title"><i class="fas fa-utensils"></i> Items (${o.item_count})</div>
+                    <div class="co-items-list">${itemsHtml}</div>
+                </div>
+
+                <!-- Order Meta -->
+                <div class="co-section">
+                    <div class="co-section-title"><i class="fas fa-receipt"></i> Order Details</div>
+                    <div class="co-meta-row">
+                        <span class="co-meta-label">Total Amount</span>
+                        <span class="co-meta-value total">${fmtMoney(o.total_amount)}</span>
+                    </div>
+                    <div class="co-meta-row">
+                        <span class="co-meta-label">Payment Method</span>
+                        <span class="co-meta-value">${payChip}</span>
+                    </div>
+                    <div class="co-meta-row">
+                        <span class="co-meta-label">Order ID</span>
+                        <span class="co-meta-value" style="color:#6b7280;">#${o.id}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reason Box -->
+            ${reasonHtml}
+        </div>`;
+    }).join('');
+}
+
+function coFilter(mode) {
+    coFilterMode = mode;
+    document.querySelectorAll('.co-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('pill' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+    coRender();
+}
+
+// ============================================================
+// REALTIME — WebSocket
+// ============================================================
+(function initCancelledOrdersWS() {
+    const estId = '{{ establishment.id }}';
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = wsProtocol + '//' + window.location.host + '/ws/orders/' + estId + '/';
+
+    let ws, reconnectTimer;
+
+    function connect() {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = function() {
+            console.log('[CancelledOrders WS] Connected');
+            clearTimeout(reconnectTimer);
+        };
+
+        ws.onmessage = function(e) {
+            try {
+                const d = JSON.parse(e.data);
+                handleWsMessage(d);
+            } catch(err) {}
+        };
+
+        ws.onclose = function() {
+            console.log('[CancelledOrders WS] Disconnected — reconnecting in 4s');
+            reconnectTimer = setTimeout(connect, 4000);
+        };
+
+        ws.onerror = function() { ws.close(); };
+    }
+
+    function handleWsMessage(d) {
+        const type = d.type || d.message_type || '';
+
+        // New cancellation or rejection
+        if (type === 'order_status_update') {
+            const newStatus = (d.new_status || d.status || '').toLowerCase();
+            if (newStatus !== 'cancelled') return;
+
+            const orderId = d.order_id;
+            const existing = coOrders.find(o => o.id === orderId);
+
+            if (!existing) {
+                // Fetch full order details and add it
+                fetchAndAddOrder(orderId);
+            } else {
+                // Update cancel reason if it changed
+                if (d.cancel_reason !== undefined) {
+                    existing.cancel_reason = d.cancel_reason || '';
+                }
+                if (d.cancelled_by_owner !== undefined) {
+                    existing.cancelled_by = d.cancelled_by_owner ? 'owner' : 'customer';
+                    existing.cancelled_from_status = d.cancelled_from_status || '';
+                }
+                coRender();
+            }
+        }
+    }
+
+    function fetchAndAddOrder(orderId) {
+        fetch('/api/food-establishment/orders/', {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const orders = data.orders || [];
+            // The main API only returns active orders — we need to get cancelled ones
+            // Trigger a page reload for simplicity, or you can add a dedicated endpoint
+            // For now just fetch the cancelled orders endpoint
+            fetchCancelledOrder(orderId);
+        })
+        .catch(() => {});
+    }
+
+    function fetchCancelledOrder(orderId) {
+        fetch('/api/food-establishment/cancelled-order/' + orderId + '/', {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.order) {
+                const o = data.order;
+                const exists = coOrders.find(x => x.id === o.id);
+                if (!exists) {
+                    coOrders.unshift(o);
+                    coRender(o.id);
+                    showCoToast('New cancellation — Order #' + o.id, 'error');
+                }
+            }
+        })
+        .catch(() => {});
+    }
+
+    connect();
+})();
+
+// ============================================================
+// TOAST
+// ============================================================
+function showCoToast(msg, type) {
+    if (typeof window.showToast === 'function') { window.showToast(msg, type); return; }
+    const d = document.createElement('div');
+    const color = type === 'error' ? '#dc2626' : '#16a34a';
+    d.style.cssText = 'position:fixed;top:80px;right:20px;background:#fff;padding:13px 18px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:999999;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;border-left:4px solid ' + color + ';max-width:340px;';
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 3500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    coRender();
+});
+</script>
+{% endblock %}

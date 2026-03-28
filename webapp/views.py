@@ -778,6 +778,13 @@ def kabsueats_main_view(request):
     # Sort by distance
     food_establishments_sorted = sorted(food_establishments_with_data, key=lambda x: x.distance)
 
+    # ✅ Top Rated: only establishments with at least 1 review, sorted by avg rating desc
+    top_rated_establishments = sorted(
+        [est for est in food_establishments_with_data if est.review_count > 0],
+        key=lambda x: x.average_rating,
+        reverse=True
+    )[:5]
+
     # Calculate cart count for authenticated users
     cart_count = 0
     if request.user.is_authenticated:
@@ -789,6 +796,7 @@ def kabsueats_main_view(request):
 
     context = {
         'food_establishments': food_establishments_sorted,
+        'top_rated_establishments': top_rated_establishments,
         'category': {'name': current_category.name} if current_category else None,
         'all_categories': all_categories,
         'status_filter': status_filter,
@@ -3442,6 +3450,67 @@ def delete_menu_item(request, item_id):
 
 @login_required(login_url='owner_login')
 @login_required(login_url='owner_login')
+@login_required
+def cancelled_orders_list(request):
+    """
+    Owner-facing cancelled orders dashboard.
+    Shows all cancelled orders for this establishment — whether cancelled by the
+    customer or rejected by the owner — with full details, realtime WebSocket updates.
+    URL:      /owner/cancelled-orders/
+    Template: webapplication/cancelled_orders.html
+    """
+    establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+
+    cancelled_orders = (
+        Order.objects
+        .filter(establishment=establishment, status='cancelled')
+        .select_related('user', 'establishment')
+        .prefetch_related('orderitem_set__menu_item')
+        .order_by('-updated_at')
+    )
+
+    orders_data = []
+    for order in cancelled_orders:
+        items = [
+            {
+                'name': oi.menu_item.name,
+                'quantity': oi.quantity,
+                'price': float(oi.price_at_order),
+                'subtotal': float(oi.price_at_order * oi.quantity),
+            }
+            for oi in order.orderitem_set.all()
+        ]
+        cancelled_by_owner = bool(order.cancelled_from_status)
+        orders_data.append({
+            'id': order.id,
+            'customer_name': order.user.get_full_name() or order.user.username,
+            'customer_email': order.user.email,
+            'total_amount': float(order.total_amount),
+            'cancel_reason': order.cancel_reason or '',
+            'cancelled_from_status': order.cancelled_from_status or '',
+            'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
+            'cancelled_at': order.updated_at.strftime('%b %d, %Y %I:%M %p'),
+            'created_at': order.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'payment_method': order.gcash_payment_method or 'cash',
+            'items': items,
+            'item_count': sum(i['quantity'] for i in items),
+        })
+
+    context = {
+        'establishment': establishment,
+        'orders_data_json': orders_data,
+        'total_cancelled': len(orders_data),
+        'cancelled_by_owner': sum(1 for o in orders_data if o['cancelled_by'] == 'owner'),
+        'cancelled_by_customer': sum(1 for o in orders_data if o['cancelled_by'] == 'customer'),
+        # Required by base template (food_establishment_dashboard.html) for the
+        # Update Store Details modal which uses {% url 'update_establishment_details_ajax' pk=pk %}
+        'pk': establishment.pk,
+        'status_form': FoodEstablishmentUpdateForm(instance=establishment),
+        'update_token': str(uuid.uuid4()),
+    }
+    return render(request, 'webapplication/cancelled_orders.html', context)
+
+
 def store_ratings(request):
     """
     Full-page ratings & reviews dashboard for the food establishment owner.
@@ -6603,6 +6672,55 @@ def reject_order(request, order_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+
+
+
+
+@login_required
+def get_cancelled_order_detail(request, order_id):
+    """
+    Returns full details of a single cancelled order for the establishment owner.
+    Used by the Cancelled Orders page WebSocket handler to fetch newly cancelled orders.
+    URL: /api/food-establishment/cancelled-order/<order_id>/
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        order = get_object_or_404(
+            Order.objects.select_related('user', 'establishment')
+                         .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            establishment=establishment,
+            status='cancelled'
+        )
+        items = [
+            {
+                'name': oi.menu_item.name,
+                'quantity': oi.quantity,
+                'price': float(oi.price_at_order),
+                'subtotal': float(oi.price_at_order * oi.quantity),
+            }
+            for oi in order.orderitem_set.all()
+        ]
+        cancelled_by_owner = bool(order.cancelled_from_status)
+        return JsonResponse({
+            'success': True,
+            'order': {
+                'id': order.id,
+                'customer_name': order.user.get_full_name() or order.user.username,
+                'customer_email': order.user.email,
+                'total_amount': float(order.total_amount),
+                'cancel_reason': order.cancel_reason or '',
+                'cancelled_from_status': order.cancelled_from_status or '',
+                'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
+                'cancelled_at': order.updated_at.strftime('%b %d, %Y %I:%M %p'),
+                'created_at': order.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'payment_method': order.gcash_payment_method or 'cash',
+                'items': items,
+                'item_count': sum(i['quantity'] for i in items),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required

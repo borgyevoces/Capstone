@@ -1194,6 +1194,29 @@
         20%,60%  { transform: translateX(-5px); }
         40%,80%  { transform: translateX(5px); }
     }
+
+    /* ── Notification bell badge — ensure number is fully visible ── */
+    .notif-badge,
+    .notification-badge,
+    .notif-count,
+    .bell-badge,
+    [class*="notif-badge"],
+    [class*="bell-count"],
+    [class*="notification-count"] {
+        min-width: 20px !important;
+        height: 20px !important;
+        padding: 0 5px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        line-height: 20px !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+    }
 </style>
 {% endblock %}
 

@@ -22,6 +22,19 @@
     .tbl-empty i { font-size: 2.5rem !important; }
     .tbl-empty h3 { font-size: 1.1rem !important; }
 }
+
+/* ── Notification-targeted order row highlight ── */
+@keyframes orderRowPulse {
+    0%   { background: rgba(234, 179, 8, 0.25); }
+    50%  { background: rgba(234, 179, 8, 0.10); }
+    100% { background: rgba(234, 179, 8, 0.25); }
+}
+tr.order-row-highlight {
+    animation: orderRowPulse 0.8s ease-in-out 3;
+    outline: 2px solid #eab308;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
 </style>
 <style>
     /* ========================================== */
@@ -1808,17 +1821,20 @@
             try {
                 const params = new URLSearchParams(window.location.search);
                 const tab = params.get('tab');
+                const orderId = params.get('order_id');
                 const valid = ['request','to_pay','preparing','to_claim','completed'];
                 if (tab && valid.includes(tab)) {
-                    // Wait for orders to load before switching tab
-                    // switchTab is safe to call early — it just sets the active button
-                    // and filterOrders will re-run after allOrders is populated
                     currentFilter = tab;
                     document.querySelectorAll('.order-tab').forEach(function(t) {
                         t.classList.toggle('active', t.dataset.status === tab);
                     });
-                    // Clean the URL so back/refresh doesn't re-trigger
-                    history.replaceState(null, '', window.location.pathname);
+                }
+                // Clean the URL so back/refresh doesn't re-trigger
+                history.replaceState(null, '', window.location.pathname);
+
+                // ✅ Scroll to and highlight specific order row after orders load
+                if (orderId) {
+                    window._highlightOrderId = String(orderId);
                 }
             } catch (e) {}
         })();
@@ -2828,6 +2844,21 @@ const itemsHtml = (o.items || []).map(i => {
                 if (chipEl) chipEl.className = rem <= 5 * 60 * 1000 ? 'claim-countdown-chip urgent' : 'claim-countdown-chip';
             }, 1000);
         });
+
+        // ✅ Scroll to and highlight the specific order row from notification click
+        if (window._highlightOrderId) {
+            const targetRow = document.querySelector('tr.order-row[data-id="' + window._highlightOrderId + '"]');
+            if (targetRow) {
+                window._highlightOrderId = null;
+                setTimeout(function () {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetRow.classList.add('order-row-highlight');
+                    setTimeout(function () {
+                        targetRow.classList.remove('order-row-highlight');
+                    }, 3000);
+                }, 200);
+            }
+        }
     }
 
     // ============================================================

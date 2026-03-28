@@ -113,6 +113,8 @@ urlpatterns = [
                   path('api/food-establishment/orders/<int:order_id>/details/', views.get_order_details_establishment,
                        name='api_order_details_establishment'),
                   path('owner/orders/', views.food_establishment_orders_view, name='orders_list'),
+                  path('owner/cancelled-orders/', views.cancelled_orders_list, name='cancelled_orders_list'),
+                  path('api/food-establishment/cancelled-order/<int:order_id>/', views.get_cancelled_order_detail, name='get_cancelled_order_detail'),
                   path('owner/transactions/', views.food_establishment_transaction_history,
                        name='establishment_transaction_history'),
                   path('api/establishment/transactions/', views.get_establishment_transactions,
