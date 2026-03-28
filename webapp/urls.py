@@ -193,13 +193,6 @@ urlpatterns = [
                        name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
 
-# ── FAVORITES ──────────────────────────────────────────────────────────────
-path('favorites/',                          views.favorites_page,                   name='favorites_page'),
-path('api/favorites/toggle-establishment/', views.toggle_favorite_establishment,    name='toggle_favorite_establishment'),
-path('api/favorites/toggle-menu/',          views.toggle_favorite_menu,             name='toggle_favorite_menu'),
-path('api/favorites/establishments/',       views.get_favorite_establishments,      name='get_favorite_establishments'),
-path('api/favorites/menus/',                views.get_favorite_menus,               name='get_favorite_menus'),
-path('api/favorites/status/',               views.get_favorites_status,             name='get_favorites_status'),
                   # ✅ Client order status
                   path('my-receipts/', views.my_receipts_view, name='my_receipts'),
                   path('owner/ratings/', views.store_ratings, name='store_ratings'),

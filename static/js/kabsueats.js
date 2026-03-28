@@ -55,8 +55,6 @@ document.addEventListener('DOMContentLoaded', function () {
     autoHideMessages();
     initEstablishmentCards();
     initSmartSearch();
-    // ✅ FAVORITES: load star/heart states after other inits
-    initFavorites();
 
     // ✅ Load correct cart count on every page load (realtime from backend)
     updateCartBadge();
@@ -477,20 +475,12 @@ function renderBS(data, isSearchResult = false) {
         const badgeHtml = isBestSeller
             ? `<span class="bsc-badge"><i class="fas fa-star"></i> Best Seller</span>`
             : `<span class="bsc-badge" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"><i class="fas fa-utensils"></i> Menu Item</span>`;
-
-        const isMenuFav = window._favMenuIds && window._favMenuIds.has(d.id);
-        const heartClass = isMenuFav ? 'fav-active' : '';
-        const heartTitle = isMenuFav ? 'Alisin sa Favorites' : 'I-save sa Favorites';
         return `
         <div class="bsc" onclick="openMod(${d.id})">
             <div class="bsc-img" style="position:relative;">
                 <img src="${imgSrc}" alt="${escHtml(d.name)}" loading="lazy"
                      onerror="this.src='https://placehold.co/300x300/f3f4f6/d1d5db?text=Food'">
                 ${badgeHtml}
-                ${IS_AUTHENTICATED ? `<button class="bsc-heart-btn ${heartClass}" id="menuFavBtn-${d.id}" title="${heartTitle}"
-                    onclick="event.stopPropagation(); toggleFavMenu(${d.id}, '${escHtml(d.name).replace(/'/g,"\'")}', this)">
-                    <i class="fas fa-heart"></i>
-                </button>` : ''}
             </div>
             <div class="bsc-body">
                 <div class="bsc-name">${escHtml(d.name)}</div>
@@ -2593,182 +2583,10 @@ function _escHtml(str) {
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ============================================================
-// ✅ FAVORITES SYSTEM
-// ============================================================
 
-// Sets of IDs already favorited (synced on page load)
-window._favEstIds  = new Set();
-window._favMenuIds = new Set();
 
-// ── Load initial favorites status and mark all buttons ────────────────────
-function initFavorites() {
-    if (!IS_AUTHENTICATED) return;
-    const url = (typeof URLS !== 'undefined' && URLS.getFavStatus) ? URLS.getFavStatus : null;
-    if (!url) return;
 
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            if (data.status !== 'ok') return;
-            window._favEstIds  = new Set(data.fav_establishments || []);
-            window._favMenuIds = new Set(data.fav_menus || []);
-            // Apply star state on all establishment cards
-            document.querySelectorAll('.est-fav-star-btn').forEach(btn => {
-                const id = parseInt(btn.getAttribute('data-est-id'));
-                if (window._favEstIds.has(id)) {
-                    btn.classList.add('fav-active');
-                    btn.title = 'Alisin sa Favorites';
-                }
-            });
-            // Apply heart state on all bestseller cards already rendered
-            document.querySelectorAll('.bsc-heart-btn').forEach(btn => {
-                const m = btn.id.match(/menuFavBtn-(\d+)/);
-                if (m && window._favMenuIds.has(parseInt(m[1]))) {
-                    btn.classList.add('fav-active');
-                    btn.title = 'Alisin sa Favorites';
-                }
-            });
-        })
-        .catch(() => {});
-}
 
-// ── Toggle star on an establishment card ─────────────────────────────────
-function toggleFavEstablishment(estId, estName, btn) {
-    if (!IS_AUTHENTICATED) {
-        window.location.href = URLS.login + '#login';
-        return;
-    }
-    const url = (typeof URLS !== 'undefined' && URLS.toggleFavEst) ? URLS.toggleFavEst : null;
-    if (!url) return;
 
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify({ establishment_id: estId })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.status !== 'ok') return;
 
-        // Update local set
-        if (data.action === 'added') {
-            window._favEstIds.add(estId);
-            btn.classList.add('fav-active');
-            btn.title = 'Alisin sa Favorites';
-            btn.classList.add('fav-star-pulse');
-            setTimeout(() => btn.classList.remove('fav-star-pulse'), 450);
-            showGlobalFavModal('star', 'added', estName);
-        } else {
-            window._favEstIds.delete(estId);
-            btn.classList.remove('fav-active');
-            btn.title = 'I-save sa Favorites';
-            showGlobalFavModal('star', 'removed', estName);
-        }
-    })
-    .catch(() => {});
-}
 
-// ── Toggle heart on a bestseller/menu card ───────────────────────────────
-function toggleFavMenu(menuId, menuName, btn) {
-    if (!IS_AUTHENTICATED) {
-        window.location.href = URLS.login + '#login';
-        return;
-    }
-    const url = (typeof URLS !== 'undefined' && URLS.toggleFavMenu) ? URLS.toggleFavMenu : null;
-    if (!url) return;
-
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify({ menu_item_id: menuId })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.status !== 'ok') return;
-
-        // Sync ALL heart buttons for this menu item (there might be duplicates in grid)
-        const allBtns = document.querySelectorAll(`#menuFavBtn-${menuId}, [data-menu-id="${menuId}"].bsc-heart-btn`);
-
-        if (data.action === 'added') {
-            window._favMenuIds.add(menuId);
-            allBtns.forEach(b => {
-                b.classList.add('fav-active');
-                b.title = 'Alisin sa Favorites';
-                b.classList.add('fav-heart-pulse');
-                setTimeout(() => b.classList.remove('fav-heart-pulse'), 450);
-            });
-            // Also update btn directly passed
-            btn.classList.add('fav-active');
-            btn.classList.add('fav-heart-pulse');
-            setTimeout(() => btn.classList.remove('fav-heart-pulse'), 450);
-            showGlobalFavModal('heart', 'added', menuName);
-        } else {
-            window._favMenuIds.delete(menuId);
-            allBtns.forEach(b => {
-                b.classList.remove('fav-active');
-                b.title = 'I-save sa Favorites';
-            });
-            btn.classList.remove('fav-active');
-            showGlobalFavModal('heart', 'removed', menuName);
-        }
-    })
-    .catch(() => {});
-}
-
-// ── Show the global confirmation modal ───────────────────────────────────
-function showGlobalFavModal(type, action, name) {
-    const overlay   = document.getElementById('globalFavModal');
-    const iconWrap  = document.getElementById('gfmIconWrap');
-    const iconEl    = document.getElementById('gfmIcon');
-    const titleEl   = document.getElementById('gfmTitle');
-    const msgEl     = document.getElementById('gfmMsg');
-    if (!overlay) return;
-
-    iconWrap.className = 'gfm-icon-wrap';
-
-    if (action === 'removed') {
-        iconWrap.classList.add('gfm-remove');
-        iconEl.className = type === 'star' ? 'fas fa-store' : 'fas fa-utensils';
-        titleEl.textContent = 'Inalis sa Favorites';
-        msgEl.innerHTML = `Ang <span class="gfm-name">"${escHtml(name)}"</span> ay inalis na sa iyong listahan ng mga paborito.`;
-    } else if (type === 'star') {
-        iconWrap.classList.add('gfm-star');
-        iconEl.className = 'fas fa-star';
-        titleEl.textContent = 'Na-save sa Favorites! ⭐';
-        msgEl.innerHTML = `Ang <span class="gfm-name">"${escHtml(name)}"</span> ay naidagdag na sa iyong mga paboritong establishments.`;
-    } else {
-        iconWrap.classList.add('gfm-heart');
-        iconEl.className = 'fas fa-heart';
-        titleEl.textContent = 'Na-save sa Favorites! ❤️';
-        msgEl.innerHTML = `Ang <span class="gfm-name">"${escHtml(name)}"</span> ay naidagdag na sa iyong mga paboritong menu items.`;
-    }
-
-    overlay.classList.add('gfm-show');
-    clearTimeout(window._gfmAutoClose);
-    window._gfmAutoClose = setTimeout(closeGlobalFavModal, 3500);
-}
-
-function closeGlobalFavModal() {
-    const overlay = document.getElementById('globalFavModal');
-    if (overlay) overlay.classList.remove('gfm-show');
-}
-
-// Close on backdrop click
-document.addEventListener('DOMContentLoaded', function() {
-    const overlay = document.getElementById('globalFavModal');
-    if (overlay) {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) closeGlobalFavModal();
-        });
-    }
-});
-
-// ── escHtml helper (if not already defined) ───────────────────────────────
-if (typeof escHtml === 'undefined') {
-    function escHtml(str) {
-        return String(str || '')
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-}
