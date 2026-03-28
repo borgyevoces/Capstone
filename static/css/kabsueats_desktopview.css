@@ -204,26 +204,85 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* HERO SEARCH                                  */
 /* ============================================ */
-.hero { padding: 36px 0 48px; text-align: center; }
+.hero {
+    padding: 36px 28px 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #92400e 0%, #b45309 40%, #eab308 100%);
+    border-radius: 18px;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+}
+/* Circle decorations — exact match with My Favorites hero */
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 180px; height: 180px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: 40%;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    pointer-events: none;
+}
 .hsw { position: relative; max-width: 680px; margin: 0 auto; }
 .hs-lbl { display: none; }
-.hs-cont { position: relative; display: flex; align-items: center; background: #fff; border: 2px solid var(--g200); border-radius: 50px; box-shadow: none; transition: border-color .25s, box-shadow .25s; overflow: hidden; }
-.hs-cont:focus-within { border-color: var(--red); box-shadow: none; }
+.hs-cont { position: relative; display: flex; align-items: center; background: rgba(255,255,255,0.97); border: 2px solid transparent; border-radius: 50px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); transition: border-color .25s, box-shadow .25s; overflow: hidden; }
+.hs-cont:focus-within { border-color: rgba(255,255,255,1); box-shadow: 0 4px 28px rgba(0,0,0,0.28); }
 .hs-inp { flex: 1; padding: 15px 14px 15px 52px; font-size: 15px; font-family: 'Poppins', sans-serif; border: none; outline: none; background: transparent; color: var(--g800); }
 .hs-inp::placeholder { color: var(--g400); }
-.hs-ico { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 16px; pointer-events: none; transition: color .2s; }
+.hs-ico { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #b45309; font-size: 16px; pointer-events: none; transition: color .2s; }
 .hs-clr { flex-shrink: 0; margin-right: 8px; width: 30px; height: 30px; border-radius: 50%; background: var(--g100); display: none; align-items: center; justify-content: center; color: var(--g500); font-size: 13px; cursor: pointer; transition: background .2s, color .2s; border: none; }
 .hs-clr.on { display: flex; }
-.hs-clr:hover { background: var(--red-light); color: var(--red); }
+.hs-clr:hover { background: #fef3c7; color: #b45309; }
 
-/* Search top-rated pills */
-.hs-hints { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; flex-wrap: wrap; overflow: visible; transition: opacity .2s; }
+/* Search top-rated pills — plain text, no pill styling */
+.hs-hints {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 14px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    transition: opacity .2s;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 4px;
+}
 .hs-hints.hidden { opacity: 0; pointer-events: none; }
-.hs-hint-label { font-size: 12px; font-weight: 700; color: var(--g600); display: inline-flex; align-items: center; gap: 5px; margin-right: 2px; white-space: nowrap; flex-shrink: 0; }
-.hs-hint-label i { color: #f59e0b; font-size: 12px; }
-.hs-hint-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; color: var(--g700); background: #fff; border: 1.5px solid var(--g200); border-radius: 20px; padding: 5px 14px; cursor: pointer; transition: .2s; text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,.07); white-space: nowrap; overflow: visible; text-overflow: unset; max-width: none; }
-.hs-hint-pill:hover { background: var(--red-light); border-color: var(--red); color: var(--red); box-shadow: 0 2px 8px rgba(183,28,28,.12); }
-.hs-hint-pill i { font-size: 11px; color: var(--red); flex-shrink: 0; }
+.hs-hint-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.92); display: inline-flex; align-items: center; gap: 5px; margin-right: 2px; white-space: nowrap; flex-shrink: 0; }
+.hs-hint-label i { color: #fef08a; font-size: 12px; }
+.hs-hint-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.90);
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: color .2s;
+    text-decoration: none;
+    box-shadow: none;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.hs-hint-pill:hover { color: #fff; background: none; border: none; box-shadow: none; transform: none; text-decoration: underline; }
+.hs-hint-pill i { font-size: 11px; color: rgba(255,255,255,0.75); flex-shrink: 0; }
 
 /* ── Advanced Search Dropdown ── */
 .asd { position: fixed; z-index: 9999; display: none; }
@@ -279,10 +338,17 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 .bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
 .bs-title-row { display: none; }
-.bs-title { font-size: 12px; font-weight: 500; color: var(--g600); display: flex; align-items: center; gap: 6px; margin: 4px 0 0 0; text-align: left; }
+.bs-title {
+    font-size: 13px; font-weight: 500; color: var(--g600);
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin: 0 0 14px 0; text-align: center; width: 100%;
+}
 .bs-title i { color: #ff6b35; font-size: 13px; }
-.bs-controls { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; padding: 28px 52px 0; }
-.bs-controls-left { display: flex; flex-direction: column; align-items: flex-start; }
+.bs-controls {
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 20px; padding: 28px 52px 0;
+}
+.bs-controls-left { display: flex; align-items: center; width: 100%; }
 
 /* Dropdown */
 .ddw { position: relative; display: inline-block; }
