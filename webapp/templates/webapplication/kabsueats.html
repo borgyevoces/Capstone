@@ -1253,6 +1253,217 @@
 .notif-bounce { animation: notifBounce 0.5s ease; }
 </style>
 
+<script>
+// ============================================================
+// ✅ FIX: Complete Order Notification System
+//    - Deduplicates per order (Bug 1)
+//    - Click navigates to correct tab + highlights order (Bug 2)
+//    - Polls every 20s for realtime badge updates (Bug 3)
+// ============================================================
+(function () {
+    'use strict';
+
+    var _prevUnread = -1;
+
+    // ── helpers ──────────────────────────────────────────────
+    function esc(s) {
+        if (!s) return '';
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+            .replace(/'/g,'&#039;');
+    }
+    function csrf() {
+        var el = document.getElementById('csrfToken');
+        return el ? el.value : '';
+    }
+
+    // ── badge ─────────────────────────────────────────────────
+    function setBadge(count) {
+        var b1 = document.getElementById('orderNotifBadge');
+        var b2 = document.getElementById('orderNotifBadgeMob');
+        [b1, b2].forEach(function (b) {
+            if (!b) return;
+            if (count > 0) {
+                b.textContent = count > 99 ? '99+' : count;
+                b.style.display = 'flex';
+            } else {
+                b.style.display = 'none';
+            }
+        });
+        // ✅ Animate bell icon on new unread
+        if (count > 0 && count !== _prevUnread) {
+            var bell = document.getElementById('orderNotifBellBtn');
+            if (bell) {
+                bell.classList.remove('notif-bounce');
+                void bell.offsetWidth;
+                bell.classList.add('notif-bounce');
+            }
+        }
+        _prevUnread = count;
+    }
+
+    // ── render one notification item ──────────────────────────
+    function renderItem(n) {
+        // ✅ FIX Bug 2: Click navigates to correct tab and highlights the order row
+        // /order_history/?tab=<tab>&order_id=<id>
+        // Client_order_history.html already handles these params via applyTabFromUrl()
+        var url = '/my-purchases/?tab=' + esc(n.tab || 'request') +
+                  '&order_id=' + esc(n.order_id);
+        return '<div class="on-item' + (n.is_read ? '' : ' unread') + '"' +
+               ' data-notif-id="' + esc(n.id) + '"' +
+               ' onclick="window._onNotifClick(\'' + n.id + '\',\'' + url + '\')">' +
+               '<div class="on-ico" style="background:' + esc(n.color) + '22;">' +
+               '<i class="fas ' + esc(n.icon) + '" style="color:' + esc(n.color) + ';font-size:15px;"></i>' +
+               '</div>' +
+               '<div class="on-body">' +
+               '<div class="on-msg">' + esc(n.message) + '</div>' +
+               '<div class="on-meta">' +
+               '<span>' + esc(n.est_name) + '</span>' +
+               '<span>•</span>' +
+               '<span>' + esc(n.time_ago) + '</span>' +
+               (n.is_read ? '' : '<span class="on-dot"></span>') +
+               '</div>' +
+               '</div>' +
+               '</div>';
+    }
+
+    // ── notification click: mark read then navigate ───────────
+    window._onNotifClick = function (nid, url) {
+        // Mark read (fire & forget — we navigate regardless)
+        fetch('/api/notifications/' + nid + '/mark-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrf(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).catch(function () {});
+
+        // Remove unread style immediately
+        var el = document.querySelector('[data-notif-id="' + nid + '"]');
+        if (el) {
+            el.classList.remove('unread');
+            var dot = el.querySelector('.on-dot');
+            if (dot) dot.remove();
+        }
+
+        closeOrderNotifPanel();
+        // ✅ Navigate to correct tab + order row
+        window.location.href = url;
+    };
+
+    // ── load & render ─────────────────────────────────────────
+    // silent=true  → badge update only (panel is closed)
+    // silent=false → full render of notification list
+    window.loadOrderNotifs = function (silent) {
+        if (!IS_AUTHENTICATED) return;
+        fetch(URLS.userNotifications, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrf()
+            }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) return;
+
+            setBadge(data.unread_count || 0);
+            if (silent) return;   // badge only — don't touch the list DOM
+
+            var list = document.getElementById('orderNotifList');
+            if (!list) return;
+
+            if (!data.notifications || data.notifications.length === 0) {
+                list.innerHTML =
+                    '<div style="padding:36px 20px;text-align:center;color:#9ca3af;font-size:13px;">' +
+                    '<i class="fas fa-bell-slash" style="font-size:28px;margin-bottom:10px;display:block;opacity:0.4;"></i>' +
+                    'No order updates yet.</div>';
+                return;
+            }
+
+            list.innerHTML = data.notifications.map(renderItem).join('');
+        })
+        .catch(function (e) { console.error('[OrderNotif] fetch error', e); });
+    };
+
+    // ── toggle / close ────────────────────────────────────────
+    window.toggleOrderNotifPanel = function () {
+        var panel = document.getElementById('orderNotifPanel');
+        if (!panel) return;
+        var isOpen = panel.style.display === 'flex';
+        if (isOpen) {
+            closeOrderNotifPanel();
+        } else {
+            panel.style.display = 'flex';
+            window.loadOrderNotifs(false);  // ✅ full render when opened
+        }
+    };
+
+    window.closeOrderNotifPanel = function () {
+        var panel = document.getElementById('orderNotifPanel');
+        if (panel) panel.style.display = 'none';
+    };
+
+    // ── mark all read ─────────────────────────────────────────
+    window.markAllOrderNotifsRead = function () {
+        if (!IS_AUTHENTICATED) return;
+        fetch(URLS.markNotifsRead, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrf(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) return;
+            setBadge(0);
+            document.querySelectorAll('.on-item.unread').forEach(function (el) {
+                el.classList.remove('unread');
+                var dot = el.querySelector('.on-dot');
+                if (dot) dot.remove();
+            });
+        })
+        .catch(function (e) { console.error('[OrderNotif] mark-all-read error', e); });
+    };
+
+    // ── close on outside click ────────────────────────────────
+    document.addEventListener('click', function (e) {
+        var panel  = document.getElementById('orderNotifPanel');
+        var wrap   = document.getElementById('notifBellWrap');
+        var mobBtn = document.getElementById('mobNotifBtn');
+        if (!panel || panel.style.display !== 'flex') return;
+        if (wrap   && wrap.contains(e.target))   return;
+        if (mobBtn && mobBtn.contains(e.target)) return;
+        if (panel.contains(e.target)) return;
+        closeOrderNotifPanel();
+    });
+
+    // ── ✅ FIX Bug 3: realtime polling ────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!IS_AUTHENTICATED) return;
+
+        // Initial silent load (badge only)
+        window.loadOrderNotifs(true);
+
+        // Poll every 20s
+        // — if panel is closed: badge-only silent update
+        // — if panel is open: full list refresh (times update too)
+        setInterval(function () {
+            var panel  = document.getElementById('orderNotifPanel');
+            var isOpen = panel && panel.style.display === 'flex';
+            window.loadOrderNotifs(!isOpen);
+        }, 10000);  // ✅ Poll every 10s for near-realtime badge updates
+
+        // Also refresh badge when user switches back to this tab
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) window.loadOrderNotifs(true);
+        });
+    });
+
+}());
+</script>
+
 
 <!-- ============================================================
      MOBILE BOTTOM NAVIGATION BAR

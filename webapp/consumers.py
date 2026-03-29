@@ -64,8 +64,12 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
-        self.scope_type = self.scope['url_route']['kwargs'].get('scope_type')   # 'establishment' | 'user'
-        self.scope_id   = self.scope['url_route']['kwargs'].get('scope_id')
+        kwargs = self.scope['url_route']['kwargs']
+        # Supports both:
+        #   ws/order-status/establishment/<id>/  →  scope_type + scope_id kwargs
+        #   ws/orders/<establishment_id>/        →  establishment_id kwarg only
+        self.scope_type = kwargs.get('scope_type', 'establishment')
+        self.scope_id   = kwargs.get('scope_id') or kwargs.get('establishment_id')
         self.group_name = f'order_status_{self.scope_type}_{self.scope_id}'
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)

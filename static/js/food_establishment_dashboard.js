@@ -1210,7 +1210,16 @@ function loadNotifications() {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
-                list.innerHTML = data.notifications.map(notif => renderNotification(notif)).join('');
+                // ✅ FIX: Deduplicate by order ID on the frontend as a safety net
+                // Keeps only the most recent notification per order
+                const seen = new Set();
+                const deduped = data.notifications.filter(n => {
+                    const oid = n.order && n.order.id;
+                    if (oid !== undefined && oid !== null && seen.has(oid)) return false;
+                    if (oid !== undefined && oid !== null) seen.add(oid);
+                    return true;
+                });
+                list.innerHTML = deduped.map(notif => renderNotification(notif)).join('');
                 updateNotificationBadge(data.unread_count);
             } else {
                 list.innerHTML = `
@@ -1236,7 +1245,14 @@ function renderNotification(notif) {
     const initial = notif.customer.name ? notif.customer.name.charAt(0).toUpperCase() : 'U';
     const email = notif.customer.email || 'customer@email.com';
     const orderId = notif.order.id || 'N/A';
-    const status = notif.order.status ? notif.order.status.toLowerCase() : 'pending';
+
+    // ✅ BUG FIX: Use the notification's OWN snapshot status (derived from
+    // notification_type / message), NOT the live order.status which may have
+    // already been updated to a newer state by the time this notification renders.
+    // This prevents an old "new order" notification from suddenly showing
+    // "to_pay" after the owner accepts the order.
+    const snapshotStatus = getNotifSnapshotStatus(notif);
+    const statusLabel    = getNotifSnapshotLabel(notif);
 
     // Format items
     const items = notif.order.items ? notif.order.items.map(item => `
@@ -1251,11 +1267,17 @@ function renderNotification(notif) {
     return `
         <div class="notification-item ${isUnread}" data-nid="${notif.id}">
 
-            <!-- ONE LINE: Email + Arrow ONLY -->
+            <!-- ONE LINE: Email + Delete + Arrow -->
             <div class="notif-line" onclick="toggleNotif('${notif.id}')">
                 <span class="notif-email-text">${escapeHtml(email)}</span>
-                <div class="notif-arrow">
-                    <i class="fas fa-chevron-down"></i>
+                <div class="notif-line-actions">
+                    <button class="notif-delete-btn" title="Delete notification"
+                        onclick="event.stopPropagation(); removeNotif('${notif.id}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <div class="notif-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
                 </div>
             </div>
 
@@ -1297,9 +1319,10 @@ function renderNotification(notif) {
 
                             ${items ? `<div class="notif-list">${items}</div>` : ''}
 
-                            <div class="notif-stat ${status}">
-                                <i class="fas fa-${notif.is_paid ? 'check-circle' : 'clock'}"></i>
-                                ${escapeHtml(notif.order.status || 'Pending')}
+                            <!-- ✅ FIX: Show snapshot status from THIS notification, not live order status -->
+                            <div class="notif-stat ${snapshotStatus}">
+                                <i class="fas fa-${snapshotStatus === 'paid' ? 'check-circle' : 'clock'}"></i>
+                                ${statusLabel}
                             </div>
                         </div>
                     </div>
@@ -1325,8 +1348,8 @@ function renderNotification(notif) {
                             View Order
                         </button>
                         <button class="notif-btn notif-btn-dismiss" onclick="event.stopPropagation(); removeNotif('${notif.id}')">
-                            <i class="fas fa-times"></i>
-                            Dismiss
+                            <i class="fas fa-trash-alt"></i>
+                            Delete
                         </button>
                     </div>
 
@@ -1334,6 +1357,64 @@ function renderNotification(notif) {
             </div>
         </div>
     `;
+}
+
+// ✅ FIXED: Use live order.status as primary source of truth for the status badge.
+// This ensures every notification shows the REAL current state of the order.
+function getNotifSnapshotStatus(notif) {
+    const STATUS_MAP = {
+        'request':        'request',
+        'to_pay':         'to_pay',
+        'preparing':      'preparing',
+        'to_claim':       'to_claim',
+        'completed':      'paid',
+        'paid':           'paid',
+        'cancelled':      'cancelled',
+        'pending':        'pending',
+        'order_received': 'request',
+    };
+
+    // PRIMARY: live order.status
+    const live = (notif.order && notif.order.status)
+        ? notif.order.status.toLowerCase().trim() : null;
+    if (live && STATUS_MAP[live]) return STATUS_MAP[live];
+
+    // FALLBACK: notification_type
+    const type = (notif.type || '').toLowerCase();
+    if (type === 'order_request' || type === 'new_order') return 'request';
+    if (type === 'payment_confirmed' || notif.is_paid)    return 'paid';
+    if (type === 'order_accepted')                        return 'to_pay';
+    if (type === 'order_cancelled')                       return 'cancelled';
+    if (type === 'order_update')                          return 'preparing';
+    return 'pending';
+}
+
+function getNotifSnapshotLabel(notif) {
+    const LABEL_MAP = {
+        'request':        'Order Request',
+        'to_pay':         'Awaiting Payment',
+        'preparing':      'Preparing',
+        'to_claim':       'Ready to Claim',
+        'completed':      'Completed',
+        'paid':           'Paid',
+        'cancelled':      'Cancelled',
+        'pending':        'Pending',
+        'order_received': 'Order Request',
+    };
+
+    // PRIMARY: live order.status
+    const live = (notif.order && notif.order.status)
+        ? notif.order.status.toLowerCase().trim() : null;
+    if (live && LABEL_MAP[live]) return LABEL_MAP[live];
+
+    // FALLBACK: notification_type
+    const type = (notif.type || '').toLowerCase();
+    if (type === 'order_request' || type === 'new_order') return 'Order Request';
+    if (type === 'payment_confirmed' || notif.is_paid)    return 'Paid';
+    if (type === 'order_accepted')                        return 'Awaiting Payment';
+    if (type === 'order_cancelled')                       return 'Cancelled';
+    if (type === 'order_update')                          return 'Preparing';
+    return escapeHtml(notif.order && notif.order.status ? notif.order.status : 'Pending');
 }
 
 // Helper: Escape HTML
@@ -1378,39 +1459,63 @@ function viewOrderPage(oid) {
     window.location.href = `/orders/${oid}/`;
 }
 
-// Remove notification with animation
+// Show empty state when all notifications are removed
+function checkNotifEmptyState() {
+    const list    = document.getElementById('notificationList');
+    const emptyEl = document.getElementById('notificationEmptyState');
+    if (!list || !emptyEl) return;
+    const remaining = list.querySelectorAll('.notification-item');
+    if (remaining.length === 0) {
+        emptyEl.style.display = 'flex';
+        const p = emptyEl.querySelector('p');
+        if (p) p.textContent = (window._currentFilter === 'unread') ? 'No unread notifications' : 'No notifications yet';
+    }
+}
+
+// ✅ FIXED: Permanently delete notification — only removes from DOM after server confirms
 function removeNotif(nid) {
     const item = document.querySelector(`[data-nid="${nid}"]`);
     if (!item) return;
 
-    item.style.animation = 'slideOut 0.3s ease';
+    // Animate out immediately (optimistic)
+    item.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(30px)';
+    item.style.pointerEvents = 'none';
 
-    setTimeout(() => {
-        item.remove();
-
-        // Check if list is empty
-        const list = document.getElementById('notificationList');
-        if (list && list.children.length === 0) {
-            list.innerHTML = `
-                <div class="notification-empty-state">
-                    <i class="fas fa-bell-slash"></i>
-                    <p>No notifications</p>
-                </div>
-            `;
-        }
-
-        // Update badge count
-        updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length);
-    }, 300);
-
-    // Call API to dismiss
-    fetch(`/api/notifications/${nid}/dismiss/`, {
+    // ✅ Call permanent-delete endpoint — only remove DOM on success
+    fetch(`/api/notifications/${nid}/delete/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         }
-    }).catch(e => console.error('Dismiss error:', e));
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // ✅ Confirmed by server — remove from memory and DOM
+            window._allNotifications = (window._allNotifications || []).filter(n => n.id != nid);
+            setTimeout(() => {
+                if (item && item.parentNode) item.remove();
+                checkNotifEmptyState();
+                updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
+            }, 280);
+        } else {
+            // ❌ Server rejected — roll back
+            console.error('Delete failed:', data.error);
+            item.style.opacity = '1';
+            item.style.transform = '';
+            item.style.pointerEvents = '';
+        }
+    })
+    .catch(e => {
+        // ❌ Network error — roll back
+        console.error('Delete error:', e);
+        item.style.opacity = '1';
+        item.style.transform = '';
+        item.style.pointerEvents = '';
+    });
 }
 
 
@@ -1660,7 +1765,6 @@ document.addEventListener('keydown', function(e) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard initializing...');
-    setInterval(pollNotifications, 30000);
     // Check for login success message
     const urlParams = new URLSearchParams(window.location.search);
     const loginSuccess = urlParams.get('login_success');
@@ -1702,6 +1806,34 @@ document.addEventListener('DOMContentLoaded', function() {
 // ==========================================
 const style = document.createElement('style');
 style.textContent = `
+    /* ✅ Notification header: email + delete btn + arrow */
+    .notif-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+    .notif-line-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .notif-delete-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+        color: #9ca3af;
+        font-size: 13px;
+        transition: color 0.2s, background 0.2s;
+        line-height: 1;
+    }
+    .notif-delete-btn:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
     @keyframes fadeOut {
         from {
             opacity: 1;

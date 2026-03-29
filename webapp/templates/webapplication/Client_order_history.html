@@ -1654,12 +1654,12 @@ tr.order-row-highlight {
 <!-- ====================================================
      THANK YOU MODAL
 ===================================================== -->
-<div class="thankyou-overlay" id="thankyouOverlay" style="display:none;">
-    <div class="thankyou-modal">
+<div class="thankyou-overlay" id="thankyouOverlay" style="display:none;" onclick="closeThankyou(event)">
+    <div class="thankyou-modal" onclick="event.stopPropagation()">
         <i class="fas fa-check-circle thankyou-icon"></i>
         <h3>Thank You!</h3>
         <p>Your review has been submitted successfully.<br>We appreciate your feedback!</p>
-        <button class="thankyou-done-btn" onclick="closeThankyouModal()">
+        <button class="thankyou-done-btn" onclick="closeThankyou()">
             Done
         </button>
     </div>
@@ -1958,6 +1958,12 @@ tr.order-row-highlight {
                     const newStatus = d.new_status;
                     const reason    = d.cancel_reason || '';
                     console.log('📦 [Client Orders WS] Order #' + orderId + ' → ' + newStatus);
+
+                    // ✅ FIX: Immediately refresh notification badge on any status change
+                    // Don't wait for the 20s poll — update the bell badge right now
+                    if (typeof window.loadOrderNotifs === 'function') {
+                        window.loadOrderNotifs(true);  // silent=true → badge only
+                    }
 
                     const idx = allOrders.findIndex(function (o) { return o.id === orderId; });
 
@@ -3501,17 +3507,7 @@ const itemsHtml = (o.items || []).map(i => {
     </div>
 </div>
 
-<!-- Thank You Modal -->
-<div class="thankyou-overlay" id="thankyouOverlay" style="display:none;" onclick="closeThankyou(event)">
-    <div class="thankyou-modal" onclick="event.stopPropagation()">
-        <span class="thankyou-icon">✅</span>
-        <h3>Thank You!</h3>
-        <p>Your review has been submitted successfully.<br>Your feedback helps other customers!</p>
-        <button class="thankyou-done-btn" onclick="closeThankyou()">
-            <i class="fas fa-check"></i> Done
-        </button>
-    </div>
-</div>
+
 
 
 

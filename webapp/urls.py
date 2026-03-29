@@ -88,6 +88,8 @@ urlpatterns = [
                        name='mark_notification_read'),
                   path('api/notifications/mark-all-read/', views.mark_all_notifications_read,
                        name='mark_all_notifications_read'),
+                  path('api/notifications/<int:notification_id>/delete/', views.delete_notification,
+                       name='delete_notification'),
                   path('api/test-notification/', views.create_test_notification, name='create_test_notification'),
 
                   # Order Confirmation

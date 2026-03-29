@@ -264,6 +264,51 @@
             margin-bottom: 8px;
         }
 
+        .notif-line-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .notif-msg-preview {
+            font-size: 12px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .notif-full-message {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border-left: 3px solid #B71C1C;
+        }
+        .notif-cust {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+        .notif-cust-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #B71C1C;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .notif-cust-name { font-size: 13px; font-weight: 600; color: #1a202c; }
+        .notif-cust-email { font-size: 11px; color: #6b7280; }
         .notif-item-line {
             display: flex;
             justify-content: space-between;
@@ -292,10 +337,14 @@
         .notif-prod-name { flex: 1; }
         .notif-prod-price { font-weight: 600; color: #dc2626; margin-left: 8px; }
 
-        /* Status badge colors */
+        /* Status badge colors — covers every real order.status value */
         .notif-stat.completed, .notif-stat.paid { background: #10b981; }
-        .notif-stat.pending { background: #f59e0b; }
-        .notif-stat.processing { background: #3b82f6; }
+        .notif-stat.pending   { background: #f59e0b; }
+        .notif-stat.request   { background: #f59e0b; }
+        .notif-stat.to_pay    { background: #3b82f6; }
+        .notif-stat.preparing { background: #8b5cf6; }
+        .notif-stat.to_claim  { background: #06b6d4; }
+        .notif-stat.processing{ background: #3b82f6; }
         .notif-stat.cancelled { background: #ef4444; }
 
         .notif-stat {
@@ -684,15 +733,15 @@
         .notification-badge {
             position: absolute;
             top: -6px;
-            right: -8px;
+            right: -6px;
             background: #B71C1C;
             color: white;
-            border-radius: 12px;
-            padding: 2px 6px;
+            border-radius: 10px;
+            padding: 2px 5px;
             font-size: 11px;
             font-weight: 700;
-            min-width: 18px;
-            height: 18px;
+            min-width: 20px;
+            height: 20px;
             text-align: center;
             display: flex;
             align-items: center;
@@ -702,6 +751,7 @@
             white-space: nowrap;
             line-height: 1;
             box-sizing: border-box;
+            z-index: 1052;
         }
 
         .notification-panel {
@@ -1411,21 +1461,26 @@
 
         .chat-badge {
             position: absolute;
-            top: 2px;
-            right: 2px;
+            top: -6px;
+            right: -6px;
             background: #B71C1C;
             color: white;
-            border-radius: 12px;
-            padding: 3px 7px;
-            font-size: 12px;
+            border-radius: 10px;
+            padding: 2px 5px;
+            font-size: 11px;
             font-weight: 700;
             min-width: 20px;
+            height: 20px;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            line-height: 1;
+            box-sizing: border-box;
+            z-index: 1052;
         }
 
         /* ========================================
@@ -2588,7 +2643,6 @@
         }
 
         .navbar-actions,
-        .navbar-actions *,
         .notification-toggle-btn,
         .chat-toggle-btn,
         .navbar-btn,
@@ -2596,6 +2650,23 @@
             pointer-events: auto !important;
             position: relative !important;
             z-index: 1051 !important;
+        }
+        /* ✅ FIX: .navbar-actions * was overriding position:absolute on badges.
+           Badges must stay absolute so they sit ON the bell/chat icon, not beside it.
+           Re-apply pointer-events + z-index to direct children only (not badges). */
+        .navbar-actions > * {
+            pointer-events: auto !important;
+            z-index: 1051 !important;
+        }
+        .notification-badge,
+        .chat-badge {
+            position: absolute !important;
+            pointer-events: none !important;
+        }
+        /* Ensure bell/chat buttons never clip the badge */
+        .notification-toggle-btn,
+        .chat-toggle-btn {
+            overflow: visible !important;
         }
 
         /* Ensure main content never overlaps navbar */
@@ -3454,6 +3525,7 @@
                 <i class="fas fa-check-double"></i>
                 <span>Mark all read</span>
             </button>
+
         </div>
     </div>
 
@@ -3484,62 +3556,7 @@
     </div>
 </div>
 
-<!-- Notification Item Template (Hidden, used by JavaScript) -->
-<template id="notificationItemTemplate">
-    <div class="notification-item" data-notification-id="">
-        <!-- ONE LINE: Email + Arrow ONLY -->
-        <div class="notif-line">
-            <span class="notif-email-text"></span>
-            <div class="notif-arrow">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <button class="notif-delete-btn" title="Delete notification" onclick="event.stopPropagation(); deleteNotification(this.closest('.notification-item').dataset.notificationId)">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-
-        <!-- EXPANDABLE: All Details (Hidden by default) -->
-        <div class="notif-expand">
-            <div class="notif-inner">
-                <!-- Order -->
-                <div class="notif-block order-block">
-                    <div class="notif-sec-label">Order Details</div>
-                    <div class="notif-ord">
-                        <div class="notif-ord-top">
-                            <span class="notif-ord-num"></span>
-                            <span class="notif-ord-amt"></span>
-                        </div>
-                        <div class="notif-ref">
-                            <i class="fas fa-hashtag"></i>
-                            <span class="ref-text"></span>
-                        </div>
-                        <div class="notif-list"></div>
-                        <div class="notif-stat">
-                            <i class="fas fa-clock"></i>
-                            <span class="status-text"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Delivery Address -->
-                <div class="notif-block address-block" style="display: none;">
-                    <div class="notif-sec-label">Delivery Address</div>
-                    <div class="notif-addr">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span class="address-text"></span>
-                    </div>
-                </div>
-
-                <div class="notif-when">
-                    <i class="far fa-clock"></i>
-                    <span class="time-ago-text"></span>
-                </div>
-
-
-            </div>
-        </div>
-    </div>
-</template>
+<!-- Notification items are rendered dynamically by createNotificationElement() -->
 
 
 
@@ -4524,24 +4541,69 @@ function confirmToggleSeller() {
     }
 
     // ==========================================
-    // NOTIFICATION PANEL FUNCTIONS
+    // NOTIFICATION PANEL FUNCTIONS  (FULLY REWRITTEN - DO NOT EDIT ABOVE)
     // ==========================================
-    function toggleNotificationPanel() {
-        const panel = document.getElementById('notificationPanel');
-        const chatPanel = document.getElementById('chatPanel');
 
+    // ── Utility ──────────────────────────────────────────────────────────
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, c => map[c]);
+    }
+
+    /**
+     * getSnapshotStatus
+     * Uses the LIVE order.status from the server as the primary source of truth.
+     * This ensures the badge always reflects the real current state of the order
+     * (Order Request, Awaiting Payment, Preparing, Ready to Claim, etc.)
+     * Falls back to notification_type only when order.status is unavailable.
+     */
+    function getSnapshotStatus(notif) {
+        // ✅ PRIMARY: Use live order.status — it's always sent fresh from the server
+        const live = (notif.order && notif.order.status)
+            ? notif.order.status.toLowerCase().trim()
+            : null;
+
+        const STATUS_MAP = {
+            'request':       { cls: 'request',    icon: 'paper-plane',   label: 'Order Request' },
+            'to_pay':        { cls: 'to_pay',      icon: 'credit-card',   label: 'Awaiting Payment' },
+            'preparing':     { cls: 'preparing',   icon: 'fire',          label: 'Preparing' },
+            'to_claim':      { cls: 'to_claim',    icon: 'box-open',      label: 'Ready to Claim' },
+            'completed':     { cls: 'paid',        icon: 'check-circle',  label: 'Completed' },
+            'paid':          { cls: 'paid',        icon: 'check-circle',  label: 'Paid' },
+            'cancelled':     { cls: 'cancelled',   icon: 'times-circle',  label: 'Cancelled' },
+            'pending':       { cls: 'pending',     icon: 'clock',         label: 'Pending' },
+            'order_received':{ cls: 'request',     icon: 'paper-plane',   label: 'Order Request' },
+        };
+
+        if (live && STATUS_MAP[live]) return STATUS_MAP[live];
+
+        // ✅ FALLBACK: derive from notification_type if order.status missing
+        const type = (notif.type || '').toLowerCase();
+        if (type === 'order_request')    return STATUS_MAP['request'];
+        if (type === 'new_order')        return STATUS_MAP['request'];
+        if (type === 'payment_confirmed' || notif.is_paid) return STATUS_MAP['paid'];
+        if (type === 'order_accepted')   return STATUS_MAP['to_pay'];
+        if (type === 'order_cancelled')  return STATUS_MAP['cancelled'];
+        if (type === 'order_update')     return STATUS_MAP['preparing'];
+
+        return { cls: 'pending', icon: 'clock', label: 'Pending' };
+    }
+
+    // ── Panel open/close ──────────────────────────────────────────────────
+    function toggleNotificationPanel() {
+        const panel     = document.getElementById('notificationPanel');
+        const chatPanel = document.getElementById('chatPanel');
         if (panel.classList.contains('open')) {
             panel.classList.remove('open');
         } else {
             panel.classList.add('open');
-            // Close chat panel if open
-            if (chatPanel) {
-                chatPanel.classList.remove('open');
-            }
+            if (chatPanel) chatPanel.classList.remove('open');
             loadNotifications();
         }
     }
 
+    // ── Load from server ──────────────────────────────────────────────────
     function loadNotifications() {
         fetch('/api/notifications/', {
             method: 'GET',
@@ -4550,20 +4612,22 @@ function confirmToggleSeller() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Filter out locally-deleted notifications
-                const deleted = getDeletedNotifIds();
-                window._allNotifications = (data.notifications || []).filter(n => !deleted.has(String(n.id)));
+                window._allNotifications = data.notifications || [];
                 renderFilteredNotifications(window._currentFilter || 'all');
-                // Badge should only count unread that aren't deleted
                 updateNotificationBadge(window._allNotifications.filter(n => n.is_new).length);
             } else {
                 window._allNotifications = [];
                 renderFilteredNotifications('all');
             }
         })
-        .catch(err => { console.error('Error loading notifications:', err); window._allNotifications = []; renderFilteredNotifications('all'); });
+        .catch(err => {
+            console.error('loadNotifications error:', err);
+            window._allNotifications = [];
+            renderFilteredNotifications('all');
+        });
     }
 
+    // ── Filter tabs ───────────────────────────────────────────────────────
     window.filterNotifications = function(filter) {
         window._currentFilter = filter;
         document.getElementById('notifTabAll').classList.toggle('active', filter === 'all');
@@ -4572,37 +4636,39 @@ function confirmToggleSeller() {
     };
 
     function renderFilteredNotifications(filter) {
-        const all = window._allNotifications || [];
-        const filtered = filter === 'unread' ? all.filter(n => n.is_new) : all;
+        const all      = window._allNotifications || [];
+        const filtered = (filter === 'unread') ? all.filter(n => n.is_new) : all;
         displayNotifications(filtered, filter);
     }
 
     function displayNotifications(notifications, filter) {
-        const notificationList = document.getElementById('notificationList');
-        const notificationEmptyState = document.getElementById('notificationEmptyState');
-        const notificationLoading = document.getElementById('notificationLoading');
-        notificationList.querySelectorAll('.notification-item').forEach(el => el.remove());
-        if (notificationLoading) notificationLoading.style.display = 'none';
+        const list      = document.getElementById('notificationList');
+        const emptyEl   = document.getElementById('notificationEmptyState');
+        const loadingEl = document.getElementById('notificationLoading');
+        // Remove old items
+        list.querySelectorAll('.notification-item').forEach(el => el.remove());
+        if (loadingEl) loadingEl.style.display = 'none';
         if (!notifications || notifications.length === 0) {
-            if (notificationEmptyState) {
-                notificationEmptyState.style.display = 'flex';
-                const p = notificationEmptyState.querySelector('p');
-                if (p) p.textContent = filter === 'unread' ? 'No unread notifications' : 'No notifications yet';
+            if (emptyEl) {
+                emptyEl.style.display = 'flex';
+                const p = emptyEl.querySelector('p');
+                if (p) p.textContent = (filter === 'unread') ? 'No unread notifications' : 'No notifications yet';
             }
             return;
         }
-        if (notificationEmptyState) notificationEmptyState.style.display = 'none';
-        notifications.forEach(notif => notificationList.appendChild(createNotificationElement(notif)));
+        if (emptyEl) emptyEl.style.display = 'none';
+        notifications.forEach(notif => list.appendChild(createNotificationElement(notif)));
     }
 
+    // ── Build notification DOM element ────────────────────────────────────
     function createNotificationElement(notif) {
         const isUnread = notif.is_new ? 'unread' : '';
-        const initial = (notif.customer && notif.customer.name) ? notif.customer.name.charAt(0).toUpperCase() : 'U';
-        const email = (notif.customer && notif.customer.email) ? notif.customer.email : '';
-        const orderId = (notif.order && notif.order.id) ? notif.order.id : 'N/A';
-        const status = notif.order ? (notif.order.status || 'pending').toLowerCase() : 'pending';
-        const statusIcons = { 'paid': 'check-circle', 'completed': 'check-circle', 'pending': 'clock', 'processing': 'spinner', 'cancelled': 'times-circle' };
-        const statusIcon = statusIcons[status] || 'clock';
+        const email    = (notif.customer && notif.customer.email) ? notif.customer.email : '';
+        const custName = (notif.customer && notif.customer.name)  ? notif.customer.name  : email;
+        const initial  = custName ? custName.charAt(0).toUpperCase() : 'U';
+        const orderId  = (notif.order && notif.order.id) ? notif.order.id : 'N/A';
+        // ✅ Frozen snapshot — never changes after creation
+        const snap     = getSnapshotStatus(notif);
 
         const items = (notif.order && notif.order.items) ? notif.order.items.map(item =>
             `<div class="notif-prod">
@@ -4613,15 +4679,32 @@ function confirmToggleSeller() {
 
         const wrapper = document.createElement('div');
         wrapper.className = `notification-item ${isUnread}`;
-        wrapper.dataset.nid = notif.id;
+        wrapper.dataset.nid = String(notif.id);
         wrapper.innerHTML = `
             <div class="notif-line">
-                <span class="notif-email-text">${escapeHtml(email)}</span>
+                <div class="notif-line-info">
+                    <span class="notif-email-text">${escapeHtml(email)}</span>
+                    <span class="notif-msg-preview">${escapeHtml(notif.message || '')}</span>
+                </div>
+                <button class="notif-delete-btn" title="Delete notification">
+                    <i class="fas fa-trash"></i>
+                </button>
                 <div class="notif-arrow"><i class="fas fa-chevron-down"></i></div>
-                <button class="notif-delete-btn" title="Delete notification"><i class="fas fa-trash"></i></button>
             </div>
             <div class="notif-expand">
                 <div class="notif-inner">
+                    ${notif.message ? `<div class="notif-full-message">${escapeHtml(notif.message)}</div>` : ''}
+                    ${notif.customer ? `
+                    <div class="notif-block">
+                        <div class="notif-sec-label">Customer</div>
+                        <div class="notif-cust">
+                            <div class="notif-cust-avatar">${escapeHtml(initial)}</div>
+                            <div>
+                                <div class="notif-cust-name">${escapeHtml(custName)}</div>
+                                <div class="notif-cust-email">${escapeHtml(email)}</div>
+                            </div>
+                        </div>
+                    </div>` : ''}
                     ${notif.order ? `
                     <div class="notif-block">
                         <div class="notif-sec-label">Order Details</div>
@@ -4630,15 +4713,20 @@ function confirmToggleSeller() {
                                 <span class="notif-ord-num">Order #${escapeHtml(String(orderId))}</span>
                                 <span class="notif-ord-amt">&#8369;${parseFloat(notif.order.total_amount || 0).toFixed(2)}</span>
                             </div>
-                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A' ? `<div class="notif-ref"><i class="fas fa-hashtag"></i> Ref: ${escapeHtml(notif.order.reference_number)}</div>` : ''}
+                            ${notif.order.reference_number && notif.order.reference_number !== 'N/A'
+                                ? `<div class="notif-ref"><i class="fas fa-hashtag"></i> Ref: ${escapeHtml(notif.order.reference_number)}</div>`
+                                : ''}
                             ${items ? `<div class="notif-list">${items}</div>` : ''}
-                            <div class="notif-stat ${status}"><i class="fas fa-${statusIcon}"></i> ${escapeHtml(notif.order.status || 'Pending')}</div>
+                            <div class="notif-stat ${snap.cls}">
+                                <i class="fas fa-${snap.icon}"></i> ${escapeHtml(snap.label)}
+                            </div>
                         </div>
                     </div>` : ''}
                     <div class="notif-when"><i class="far fa-clock"></i> ${notif.time_ago || 'Just now'}</div>
                 </div>
             </div>`;
 
+        // Expand / collapse on header click
         wrapper.querySelector('.notif-line').addEventListener('click', function(e) {
             if (e.target.closest('.notif-delete-btn')) return;
             const wasExpanded = wrapper.classList.contains('expanded');
@@ -4655,72 +4743,85 @@ function confirmToggleSeller() {
             }
         });
 
+        // ✅ PERMANENT delete — calls real DB endpoint
         wrapper.querySelector('.notif-delete-btn').addEventListener('click', function(e) {
             e.stopPropagation();
-            window.deleteNotification(notif.id);
+            deleteNotificationPermanent(notif.id, wrapper);
         });
 
         return wrapper;
     }
 
-    function escapeHtml(text) {
-        if (!text) return '';
-        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return String(text).replace(/[&<>"']/g, c => map[c]);
-    }
+    // ── Delete ONE notification permanently ───────────────────────────────
+    function deleteNotificationPermanent(notifId, element) {
+        // Optimistic UI — animate out immediately
+        if (element) {
+            element.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
+            element.style.opacity    = '0';
+            element.style.transform  = 'translateX(40px)';
+            element.style.pointerEvents = 'none';
+        }
 
-    // Helper: get/set deleted notification IDs from localStorage
-    function getDeletedNotifIds() {
-        try { return new Set(JSON.parse(localStorage.getItem('_deletedNotifIds') || '[]')); }
-        catch(e) { return new Set(); }
-    }
-    function saveDeletedNotifId(id) {
-        try {
-            const ids = getDeletedNotifIds();
-            ids.add(String(id));
-            localStorage.setItem('_deletedNotifIds', JSON.stringify([...ids]));
-        } catch(e) {}
-    }
-
-    window.deleteNotification = function(notificationId) {
-        const item = document.querySelector(`[data-nid="${notificationId}"]`);
-        if (!item) return;
-        item.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            item.remove();
-            // Remove from memory
-            window._allNotifications = (window._allNotifications || []).filter(n => n.id != notificationId);
-            // Save to localStorage so it stays deleted after refresh + polling
-            saveDeletedNotifId(notificationId);
-            const list = document.getElementById('notificationList');
-            const emptyState = document.getElementById('notificationEmptyState');
-            if (list && list.querySelectorAll('.notification-item').length === 0 && emptyState) {
-                emptyState.style.display = 'flex';
-                const p = emptyState.querySelector('p');
-                if (p) p.textContent = (window._currentFilter === 'unread') ? 'No unread notifications' : 'No notifications yet';
+        fetch('/api/notifications/' + notifId + '/delete/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // ✅ Server confirmed — now remove from in-memory list AND DOM
+                window._allNotifications = (window._allNotifications || []).filter(n => n.id != notifId);
+                setTimeout(() => {
+                    if (element && element.parentNode) element.remove();
+                    checkNotifEmptyState();
+                    updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
+                }, 230);
+            } else {
+                // ❌ Server rejected — roll back animation, keep in DOM
+                console.error('Delete failed:', data.error);
+                if (element) {
+                    element.style.opacity = '1';
+                    element.style.transform = '';
+                    element.style.pointerEvents = '';
+                }
             }
-            updateNotificationBadge((window._allNotifications || []).filter(n => n.is_new).length);
-        }, 300);
-        // Mark as read on server (no dismiss endpoint  use mark-read to prevent re-showing as unread)
-        fetch(`/api/notifications/${notificationId}/mark-read/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
-        }).catch(err => console.error('Error on delete/mark-read:', err));
-    };
+        })
+        .catch(err => {
+            // ❌ Network error — roll back
+            console.error('Delete error:', err);
+            if (element) {
+                element.style.opacity = '1';
+                element.style.transform = '';
+                element.style.pointerEvents = '';
+            }
+        });
+    }
 
-    function markNotificationRead(notificationId) {
-        // Mark in-memory permanently
-        const n = (window._allNotifications || []).find(x => x.id == notificationId);
+
+    function checkNotifEmptyState() {
+        const list    = document.getElementById('notificationList');
+        const emptyEl = document.getElementById('notificationEmptyState');
+        if (!list || !emptyEl) return;
+        if (list.querySelectorAll('.notification-item').length === 0) {
+            emptyEl.style.display = 'flex';
+            const p = emptyEl.querySelector('p');
+            if (p) p.textContent = (window._currentFilter === 'unread') ? 'No unread notifications' : 'No notifications yet';
+        }
+    }
+
+    // ── Mark read ─────────────────────────────────────────────────────────
+    function markNotificationRead(notifId) {
+        const n = (window._allNotifications || []).find(x => x.id == notifId);
         if (n) n.is_new = false;
-        fetch(`/api/notifications/${notificationId}/mark-read/`, {
-            method: 'POST',
+        fetch('/api/notifications/' + notifId + '/mark-read/', {
+            method:  'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
-        }).catch(err => console.error('Error marking notification as read:', err));
+        }).catch(err => console.error('mark-read error:', err));
     }
 
     function markAllNotificationsRead() {
         fetch('/api/notifications/mark-all-read/', {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
         .then(r => r.json())
@@ -4731,80 +4832,157 @@ function confirmToggleSeller() {
                 renderFilteredNotifications(window._currentFilter || 'all');
             }
         })
-        .catch(err => console.error('Error marking all as read:', err));
+        .catch(err => console.error('mark-all-read error:', err));
     }
 
+    // ── Badge ─────────────────────────────────────────────────────────────
     function updateNotificationBadge(count) {
         const badge = document.getElementById('notificationBadge');
-        if (badge) {
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
         }
     }
 
-    function formatTimeAgo(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
+    // ── Realtime WebSocket ────────────────────────────────────────────────
+    // Connects to /ws/orders/<est_id>/ — same channel group that
+    // _broadcast_order_status_update() already pushes to.
+    // When any order event fires, we re-fetch notifications so the panel
+    // and badge update instantly without waiting for the polling interval.
+    (function initNotificationWs() {
+        if (typeof establishmentId === 'undefined' || !establishmentId) return;
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        let ws;
+        // Track IDs we already know to detect genuinely NEW entries
+        let _knownIds = new Set((window._allNotifications || []).map(n => String(n.id)));
 
-        if (seconds < 60) return 'Just now';
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+        function connect() {
+            ws = new WebSocket(proto + '://' + location.host + '/ws/orders/' + establishmentId + '/');
 
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            ws.onopen = () => console.log('🔔 [Notif WS] connected');
+
+            ws.onmessage = function(e) {
+                try {
+                    const msg = JSON.parse(e.data);
+                    // Trigger refresh on any order status event
+                    if (msg.type === 'order.status.update' || msg.type === 'order_status_update'
+                            || msg.type === 'order_update') {
+                        // Small delay so DB commit finishes before we query
+                        setTimeout(refreshNotifRealtime, 350);
+                    }
+                } catch(err) { /* ignore */ }
+            };
+
+            ws.onclose = () => {
+                console.log('🔔 [Notif WS] closed — reconnect in 4s');
+                setTimeout(connect, 4000);
+            };
+            ws.onerror = () => ws.close();
+        }
+        connect();
+
+        function refreshNotifRealtime() {
+            fetch('/api/notifications/', {
+                method:  'GET',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                const incoming = data.notifications || [];
+                // Detect new ones
+                const newOnes = incoming.filter(n => !_knownIds.has(String(n.id)));
+                incoming.forEach(n => _knownIds.add(String(n.id)));
+
+                window._allNotifications = incoming;
+                updateNotificationBadge(incoming.filter(n => n.is_new).length);
+
+                // Refresh open panel
+                const panel = document.getElementById('notificationPanel');
+                if (panel && panel.classList.contains('open')) {
+                    renderFilteredNotifications(window._currentFilter || 'all');
+                }
+
+                // Show toast for each new notification
+                newOnes.forEach(n => showNotifToast(n));
+            })
+            .catch(err => console.error('[Notif WS] refresh error:', err));
+        }
+    })();
+
+    // ── Toast for new notifications ───────────────────────────────────────
+    function showNotifToast(notif) {
+        // Avoid duplicate toasts
+        const toastId = 'ntst_' + notif.id;
+        if (document.getElementById(toastId)) return;
+
+        const toast   = document.createElement('div');
+        toast.id      = toastId;
+        toast.className = 'notification-toast';
+        const email   = (notif.customer && notif.customer.email) ? notif.customer.email : 'Customer';
+        const orderId = (notif.order && notif.order.id) ? ' · Order #' + notif.order.id : '';
+        const amount  = (notif.order && notif.order.total_amount)
+                        ? ' · &#8369;' + parseFloat(notif.order.total_amount).toFixed(2) : '';
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas fa-bell"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${escapeHtml(notif.message || 'New Notification')}</div>
+                <div class="toast-message">${escapeHtml(email)}${orderId}${amount}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 300ms ease forwards';
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 310);
+        }, 6000);
     }
 
-    // Realtime: poll every 15s  update badge, reload panel if open
-    setInterval(() => {
+    // ── Fallback polling every 20 s (keeps badge fresh if WS drops) ───────
+    setInterval(function() {
         fetch('/api/notifications/', {
-            method: 'GET',
+            method:  'GET',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const incoming = data.notifications || [];
+            updateNotificationBadge(incoming.filter(n => n.is_new).length);
+            const panel = document.getElementById('notificationPanel');
+            if (panel && panel.classList.contains('open')) {
+                window._allNotifications = incoming;
+                renderFilteredNotifications(window._currentFilter || 'all');
+            }
+        })
+        .catch(err => console.error('notif poll error:', err));
+    }, 20000);
+
+    // ── Wire up header buttons + initial badge on DOMContentLoaded ────────
+    document.addEventListener('DOMContentLoaded', function() {
+        const markAllBtn = document.getElementById('markAllReadBtn');
+        if (markAllBtn) markAllBtn.addEventListener('click', markAllNotificationsRead);
+
+        // Initial badge count
+        fetch('/api/notifications/', {
+            method:  'GET',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Filter out deleted IDs before updating
-                const deleted = getDeletedNotifIds();
-                const filtered = (data.notifications || []).filter(n => !deleted.has(String(n.id)));
-                const unreadCount = filtered.filter(n => n.is_new).length;
-                updateNotificationBadge(unreadCount);
-                // If panel is open, refresh the list
-                const panel = document.getElementById('notificationPanel');
-                if (panel && panel.classList.contains('open')) {
-                    window._allNotifications = filtered;
-                    renderFilteredNotifications(window._currentFilter || 'all');
-                }
+                window._allNotifications = data.notifications || [];
+                updateNotificationBadge(window._allNotifications.filter(n => n.is_new).length);
             }
         })
-        .catch(err => console.error('Error polling notifications:', err));
-    }, 15000);
-
-    // Load initial notification count on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/notifications/', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const deleted = getDeletedNotifIds();
-                const unreadCount = (data.notifications || []).filter(n => !deleted.has(String(n.id)) && n.is_new).length;
-                updateNotificationBadge(unreadCount);
-            }
-        })
-        .catch(error => console.error('Error loading initial notifications:', error));
+        .catch(err => console.error('initial notif load error:', err));
     });
 
-    // ==========================================
+        // ==========================================
     // CHAT PANEL FUNCTIONS (ORIGINAL)
     // ==========================================
 
@@ -5875,5 +6053,136 @@ function applyDashboardInventoryUpdate(updates) {
 #connRetryBtn:hover { transform: scale(1.04); }
 </style>
 
+<script>
+// ============================================================
+// ✅ GLOBAL NAVBAR BADGE POLLER
+// Runs on EVERY owner page (Orders, Menus, Transactions,
+// Ratings, Cancelled Orders, etc.) because this script lives
+// in the base template food_establishment_dashboard.html.
+//
+// Polls two lightweight endpoints:
+//   • /api/notifications/    → bell badge  (every 15 s)
+//   • /api/unread-messages/  → envelope badge (every 10 s)
+//
+// Also listens to the order-status WebSocket that the dashboard
+// already opens, so the bell badge updates INSTANTLY when an
+// order event fires — no need to wait for the poll interval.
+// ============================================================
+(function initGlobalNavBadges() {
+
+    // ── Helpers ────────────────────────────────────────────────
+    function getCsrf() {
+        const m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    function setNotifBadge(count) {
+        const b = document.getElementById('notificationBadge');
+        if (!b) return;
+        if (count > 0) {
+            b.textContent = count > 99 ? '99+' : String(count);
+            b.style.display = 'flex';
+        } else {
+            b.style.display = 'none';
+        }
+    }
+
+    function setChatBadge(count) {
+        const b = document.getElementById('chatBadge');
+        if (!b) return;
+        if (count > 0) {
+            b.textContent = count > 99 ? '99+' : String(count);
+            b.style.display = 'flex';
+        } else {
+            b.style.display = 'none';
+        }
+    }
+
+    // ── Poll notification bell ─────────────────────────────────
+    function pollNotifBadge() {
+        // Skip if the notification panel is open (dashboard.js handles it there)
+        const panel = document.getElementById('notificationPanel');
+        if (panel && panel.classList.contains('open')) return;
+
+        fetch('/api/notifications/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrf() },
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && typeof data.unread_count === 'number') {
+                setNotifBadge(data.unread_count);
+            }
+        })
+        .catch(function() {});
+    }
+
+    // ── Poll chat envelope ─────────────────────────────────────
+    function pollChatBadge() {
+        // Skip if chat panel is open
+        const cp = document.getElementById('chatPanel');
+        if (cp && cp.classList.contains('open')) return;
+
+        fetch('/api/unread-messages/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrf() },
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && typeof data.unread_count === 'number') {
+                setChatBadge(data.unread_count);
+            }
+        })
+        .catch(function() {});
+    }
+
+    // ── Kick off on DOM ready ──────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial fetch immediately
+        pollNotifBadge();
+        pollChatBadge();
+
+        // Poll every 15 s for bell, every 10 s for chat
+        setInterval(pollNotifBadge, 15000);
+        setInterval(pollChatBadge, 10000);
+
+        // ── Pause when tab hidden, resume instantly on focus ──
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                pollNotifBadge();
+                pollChatBadge();
+            }
+        });
+
+        // ── WebSocket boost: re-poll bell badge INSTANTLY when
+        //    any order-status event fires on this establishment.
+        //    establishmentId is set by the base template inline script.
+        var estId = (typeof establishmentId !== 'undefined') ? establishmentId : null;
+        if (estId) {
+            var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            var wsUrl = proto + '://' + location.host + '/ws/orders/' + estId + '/';
+
+            function connectOrderWs() {
+                var ws = new WebSocket(wsUrl);
+                ws.onmessage = function() {
+                    // Any order event → immediately refresh bell badge
+                    pollNotifBadge();
+                };
+                ws.onclose = function() {
+                    setTimeout(connectOrderWs, 3000);
+                };
+                ws.onerror = function() { ws.close(); };
+            }
+
+            // Only open WS here if dashboard.js has NOT already opened one
+            // (dashboard.js sets window._dashboardWsConnected = true on connect)
+            if (!window._dashboardWsConnected) {
+                connectOrderWs();
+            }
+        }
+    });
+
+}());
+</script>
 </body>
 </html>

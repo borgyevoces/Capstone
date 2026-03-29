@@ -67,7 +67,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_http_methods
 from django.db import transaction
 from django.db.models import Avg, Count, Sum, Q
@@ -2540,6 +2540,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
+@ensure_csrf_cookie
 def owner_login(request):
     """
     Owner login: accepts email & password, authenticates, sets session 'food_establishment_id'
@@ -4965,27 +4966,35 @@ def get_notifications(request):
                         'total': float(item.total_price)
                     })
 
+                # ✅ is_paid: treat any paid/completed status as paid
+                is_paid = order.status.lower() in ('paid', 'completed', 'prepared', 'to_claim') if order.status else False
+
                 notifications_data.append({
                     'id': notif.id,
+                    # 'type' is the notification_type field — used by frontend
+                    # getSnapshotStatus() to freeze the status badge
                     'type': notif.notification_type,
                     'message': notif.message,
                     'is_new': not notif.is_read,
+                    'is_paid': is_paid,
                     'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
                     'time_ago': get_time_ago(notif.created_at),
-                    'is_paid': order.status == 'PAID',
-                    'payment_confirmed_at': order.payment_confirmed_at.strftime(
-                        '%b %d, %Y %I:%M %p') if hasattr(order,
-                                                         'payment_confirmed_at') and order.payment_confirmed_at else None,
+                    'payment_confirmed_at': (
+                        order.payment_confirmed_at.strftime('%b %d, %Y %I:%M %p')
+                        if hasattr(order, 'payment_confirmed_at') and order.payment_confirmed_at
+                        else None
+                    ),
                     'customer': {
                         'name': order.user.username,
-                        'email': order.user.email
+                        'email': order.user.email,
                     },
                     'order': {
                         'id': order.id,
                         'status': order.status,
                         'total_amount': float(order.total_amount),
                         'reference_number': getattr(order, 'gcash_reference_number', None) or 'N/A',
-                        'items': order_items
+                        'items': order_items,
+                        'delivery_address': getattr(order, 'delivery_address', None) or '',
                     }
                 })
 
@@ -4993,7 +5002,18 @@ def get_notifications(request):
                 print(f"⚠️ Error processing notification {notif.id}: {item_error}")
                 continue
 
-        print(f"✅ Successfully formatted {len(notifications_data)} notifications")
+        # ✅ FIX: Deduplicate by order_id — keep only the most recent notification per order
+        # This prevents the same order from appearing twice in the panel (e.g. new_order + to_pay)
+        seen_order_ids = set()
+        deduped_notifications = []
+        for n in notifications_data:
+            oid = n['order']['id']
+            if oid not in seen_order_ids:
+                seen_order_ids.add(oid)
+                deduped_notifications.append(n)
+        notifications_data = deduped_notifications
+
+        print(f"✅ Successfully formatted {len(notifications_data)} notifications (after dedup)")
 
         return JsonResponse({
             'success': True,
@@ -5021,14 +5041,28 @@ def get_user_order_notifications(request):
     try:
         notifications_qs = OrderNotification.objects.filter(
             order__user=request.user
+        ).exclude(
+            # 'new_order' notifications are created for the owner (e.g. "New cash order #522 from...").
+            # Clients should never see these — they describe owner-facing events.
+            notification_type='new_order'
+        ).exclude(
+            # "cancelled by the customer" messages are written for the owner's benefit.
+            # The client already knows they cancelled — don't show it back to them.
+            notification_type='order_cancelled',
+            message__icontains='cancelled by the customer'
         ).select_related(
             'order__establishment',
             'order__user'
-        ).order_by('-created_at')[:30]
+        ).order_by('-created_at')[:100]  # fetch more rows so dedup has headroom
 
         unread_count = OrderNotification.objects.filter(
             order__user=request.user,
             is_read=False
+        ).exclude(
+            notification_type='new_order'
+        ).exclude(
+            notification_type='order_cancelled',
+            message__icontains='cancelled by the customer'
         ).count()
 
         STATUS_ICONS = {
@@ -5041,28 +5075,62 @@ def get_user_order_notifications(request):
             'order_update':  ('fa-info-circle',     '#6b7280', 'Update'),
             'new_order':     ('fa-shopping-bag',    '#b71c1c', 'New Order'),
             'payment_confirmed': ('fa-credit-card', '#16a34a', 'Payment Confirmed'),
+            # FIX: notification_type now stores the actual status string,
+            # so these aliases ensure the correct icon/color is shown.
+            'order_received':('fa-shopping-bag',    '#f59e0b', 'Order Received'),
+            'request':       ('fa-paper-plane',     '#6b7280', 'Order Requested'),
+        }
+
+        # ✅ FIX: Map live order status → My Orders tab name
+        TAB_MAP = {
+            'request':   'request',
+            'to_pay':    'to_pay',
+            'preparing': 'preparing',
+            'to_claim':  'to_claim',
+            'completed': 'completed',
+            'cancelled': 'request',   # rejected orders stay in request tab
+            'PENDING':   'request',
         }
 
         data = []
+        seen_order_ids = set()   # ✅ FIX: one notification per order (most recent)
+
         for n in notifications_qs:
+            order_id = n.order.id
+
+            # Skip older notifications for the same order
+            if order_id in seen_order_ids:
+                continue
+            seen_order_ids.add(order_id)
+
             order_status = n.order.status
             notif_type   = n.notification_type
-            # pick icon by notif_type first, fallback to order status
-            icon_key = notif_type if notif_type in STATUS_ICONS else order_status
+            # FIX: notification_type is now the actual status string (e.g. 'to_claim', 'completed').
+            # Prefer notification_type for icon lookup so the icon matches the event, not the
+            # current live status (e.g. a 'to_claim' notif keeps its bell icon even after completion).
+            icon_key = notif_type if notif_type in STATUS_ICONS else (order_status if order_status in STATUS_ICONS else 'order_update')
             icon, color, label = STATUS_ICONS.get(icon_key, ('fa-info-circle', '#6b7280', 'Update'))
+
+            # ✅ FIX: which tab in /order_history/ this notification links to
+            tab = TAB_MAP.get(order_status, 'request')
+
             data.append({
                 'id':           n.id,
                 'message':      n.message,
                 'is_read':      n.is_read,
                 'time_ago':     get_time_ago(n.created_at),
                 'created_at':   n.created_at.strftime('%b %d, %Y %I:%M %p'),
-                'order_id':     n.order.id,
+                'order_id':     order_id,
                 'order_status': order_status,
+                'tab':          tab,           # ✅ FIX: for click navigation
                 'est_name':     n.order.establishment.name,
                 'icon':         icon,
                 'color':        color,
                 'label':        label,
             })
+
+            if len(data) >= 30:
+                break
 
         return JsonResponse({
             'success':      True,
@@ -5192,6 +5260,34 @@ def mark_all_notifications_read(request):
         }, status=500)
 
 
+@login_required
+@require_POST
+def delete_notification(request, notification_id):
+    """
+    Permanently delete a single notification from the database.
+    The notification will not return on refresh because it is truly deleted.
+    Endpoint: POST /api/notifications/<notification_id>/delete/
+    """
+    try:
+        # Support both auth paths: direct owner FK or session-based establishment
+        notif_qs = OrderNotification.objects.filter(id=notification_id)
+        # Try owner FK first (most common)
+        notification = notif_qs.filter(establishment__owner=request.user).first()
+        if not notification:
+            # Fallback: session-based establishment (owner login flow)
+            est_id = request.session.get('food_establishment_id')
+            if est_id:
+                notification = notif_qs.filter(establishment_id=est_id).first()
+        if not notification:
+            return JsonResponse({'success': False, 'error': 'Notification not found'}, status=404)
+        notification.delete()
+        return JsonResponse({'success': True, 'message': 'Notification deleted'})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
 def _fetch_paymongo_payment_method(session_id):
     """
     ✅ NEW HELPER: Query PayMongo Checkout Sessions API to get the actual payment method used.
@@ -5290,14 +5386,14 @@ def gcash_payment_success(request):
                     order.save(update_fields=['status', 'updated_at'])
                     _broadcast_order_status_update(order, 'cancelled')
                     try:
-                        OrderNotification.objects.create(
+                        OrderNotification.objects.get_or_create(
                             establishment=order.establishment,
                             order=order,
                             notification_type='order_cancelled',
-                            message=(
+                            defaults={'message': (
                                 f'Order #{order.id} auto-cancelled: items ran out of stock — '
                                 + ', '.join(insufficient)
-                            )
+                            )}
                         )
                     except Exception:
                         pass
@@ -5321,15 +5417,15 @@ def gcash_payment_success(request):
                     order.gcash_payment_method = 'gcash'  # default online method
                 order.save()
 
-                # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER
+                # 2. ✅ CREATE ORDER NOTIFICATION FOR OWNER (get_or_create prevents duplicates)
                 try:
-                    OrderNotification.objects.create(
+                    _, notif_created = OrderNotification.objects.get_or_create(
                         establishment=order.establishment,
                         order=order,
                         notification_type='new_order',
-                        message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                        defaults={'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
                     )
-                    print(f"✅ Notification created for Order #{order.id}")
+                    print(f"✅ Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
                 except Exception as notif_error:
                     print(f"⚠️ Notification creation error: {notif_error}")
 
@@ -5528,14 +5624,14 @@ def paymongo_webhook(request):
 
                             order.save()
 
-                            # Create notification
-                            OrderNotification.objects.create(
+                            # Create notification (get_or_create prevents duplicates with gcash_payment_success)
+                            _, notif_created = OrderNotification.objects.get_or_create(
                                 establishment=order.establishment,
                                 order=order,
                                 notification_type='new_order',
-                                message=f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'
+                                defaults={'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
                             )
-                            print(f"✅ Webhook: Notification created for Order #{order.id}")
+                            print(f"✅ Webhook: Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
 
                             # ✅ Use shared helper — stock_deducted flag prevents
                             # double-deduction if gcash_payment_success already ran.
@@ -6020,11 +6116,13 @@ def get_establishment_orders(request):
         ).exclude(
             owner_dismissed=True
         ).exclude(
-            # Owner-rejected request orders stay cancelled with owner_dismissed=False
-            # so the client can still see the rejection reason. Exclude them from the
-            # owner dashboard — the row already vanished via WS broadcast at rejection time.
+            # Owner-rejected orders: cancelled + has cancelled_from_status set (owner set this)
+            # + owner_dismissed=False. These vanished from the owner dashboard via WS at
+            # rejection time and must stay hidden after refresh.
+            # Client-cancelled orders have cancelled_from_status='' so they are NOT excluded
+            # here — they stay visible in the request tab so the owner knows the client cancelled.
             status='cancelled',
-            stock_deducted=False,
+            cancelled_from_status__in=['request', 'to_pay', 'to_claim'],
             owner_dismissed=False,
         ).select_related(
             'user', 'establishment'
@@ -6070,41 +6168,22 @@ def get_establishment_orders(request):
             }
             order_status = status_mapping.get(order_status, order_status)
 
-            # ✅ FIX: Detect if this cancelled order was cancelled while still in 'request' status.
-            # Stock is NOT deducted at the 'request' stage, so if status is 'cancelled' and
-            # stock_deducted is False, it was cancelled before being accepted — show it in the
-            # request tab so the owner can see it even after a page reload.
-            # This now covers BOTH client-cancelled AND owner-rejected request orders.
+            # ✅ FIX: Detect if this cancelled order was cancelled by the CLIENT while in
+            # 'request' status. Client-cancelled orders have cancelled_from_status='' because
+            # only the owner reject flow sets that field. We show client-cancelled request orders
+            # in the owner request tab so the owner knows the customer withdrew.
+            # Owner-rejected orders are already excluded above via the .exclude() clause,
+            # so if we reach here with status=='cancelled', it must be a client cancellation.
             cancelled_from_request = (
                 order_status == 'cancelled'
-                and not order.stock_deducted
+                and not order.cancelled_from_status  # empty = client cancelled, not owner
                 and not order.owner_dismissed
             )
             # Retrieve the cancel_reason stored on the order (if available)
             cancel_reason_value = getattr(order, 'cancel_reason', '') or ''
 
-            # Detect if this was rejected by the owner (not cancelled by client).
-            # owner_dismissed=False + cancelled = owner rejected but hasn't dismissed yet,
-            # OR client self-cancelled (cancel_reason set by client).
-            # We distinguish: owner_rejected means cancelled AND not stock_deducted AND
-            # cancel_reason is present but the order was NOT cancelled by the client's own action.
-            # Since both cases share cancelled_from_request=True, we add an extra flag
-            # cancelled_by_owner so the frontend can show the right badge.
-            # Logic: if the order has a cancel_reason that was NOT set by the client cancel flow,
-            # then it was rejected by the owner. The safest heuristic: check if the
-            # cancellation originated from the owner's reject_order view by inspecting
-            # whether stock was NOT deducted AND owner_dismissed=False (still pending owner dismiss).
-            # Client self-cancels always set owner_dismissed=False too, so we use cancel_reason
-            # presence as a secondary signal — but we can't be 100% sure from the DB alone.
-            # Best approach: store a separate flag. For now we use the convention that
-            # owner-rejected orders have cancel_reason set (owner typed a reason) while
-            # client-cancelled orders have cancel_reason empty or set to client's own message.
-            # The frontend already has WS real-time for live sessions; this API flag is for
-            # page-reload recovery. We set cancelled_by_owner=True when the order was
-            # cancelled while in 'request' status (owner_dismissed=False means owner has
-            # not yet triggered the legacy dismiss path — the client still needs to see it).
-            # We do NOT require cancel_reason to be non-empty; owner may reject without a reason.
-            cancelled_by_owner_flag = cancelled_from_request
+            # cancelled_by_owner=False for client-cancelled orders (owner did NOT reject them).
+            cancelled_by_owner_flag = False
 
             order_data = {
                 'id': order.id,
@@ -6192,12 +6271,12 @@ def owner_remove_order_item(request, order_id, item_id):
                     cancel_reason=f'Order cancelled — all items removed by establishment')
                 # Notify customer
                 try:
-                    OrderNotification.objects.create(
+                    OrderNotification.objects.get_or_create(
                         establishment=establishment,
                         order=order,
                         notification_type='order_cancelled',
-                        message=(f'Your order #{order.id} was cancelled because all items '
-                                 f'are now out of stock.')
+                        defaults={'message': (f'Your order #{order.id} was cancelled because all items '
+                                              f'are now out of stock.')}
                     )
                 except Exception:
                     pass
@@ -6215,12 +6294,12 @@ def owner_remove_order_item(request, order_id, item_id):
                 )
                 # Notify customer via DB notification
                 try:
-                    OrderNotification.objects.create(
+                    OrderNotification.objects.get_or_create(
                         establishment=establishment,
                         order=order,
                         notification_type='order_cancelled',
-                        message=(f'Item "{item_name}" was removed from your order #{order.id} '
-                                 f'by the establishment (out of stock).')
+                        defaults={'message': (f'Item "{item_name}" was removed from your order #{order.id} '
+                                              f'by the establishment (out of stock).')}
                     )
                 except Exception:
                     pass
@@ -6451,14 +6530,14 @@ def update_order_status(request, order_id):
                     _broadcast_order_status_update(existing_to_pay, 'to_pay')
 
                     try:
-                        OrderNotification.objects.create(
+                        OrderNotification.objects.get_or_create(
                             establishment=establishment,
                             order=existing_to_pay,
                             notification_type='order_update',
-                            message=(
+                            defaults={'message': (
                                 f'Your order #{existing_to_pay.id} has been updated with new items! '
                                 f'Payment window reset to 10 minutes.'
-                            ),
+                            )},
                         )
                     except Exception:
                         pass
@@ -6489,7 +6568,7 @@ def update_order_status(request, order_id):
         # Broadcast real-time order status change to owner + customer
         _broadcast_order_status_update(order, new_status)
 
-        # Create notification for status change
+        # Create notification for status change (get_or_create prevents duplicates on retry)
         try:
             notification_messages = {
                 'request': f'New order request #{order.id} from {order.user.username}',
@@ -6500,11 +6579,18 @@ def update_order_status(request, order_id):
                 'completed': f'Order #{order.id} has been completed'
             }
 
-            OrderNotification.objects.create(
+            # ✅ FIX: Use the actual new_status as notification_type so each status change
+            # creates its own unique notification row (preparing, to_claim, completed, etc.).
+            # Previously used 'order_update' for all statuses, causing get_or_create to find
+            # the existing one and skip creating a new unread notification for the customer.
+            OrderNotification.objects.get_or_create(
                 establishment=establishment,
                 order=order,
-                notification_type='order_update',
-                message=notification_messages.get(new_status, f'Order #{order.id} status updated')
+                notification_type=new_status,
+                defaults={
+                    'message': notification_messages.get(new_status, f'Order #{order.id} status updated to {new_status}'),
+                    'is_read': False,
+                }
             )
         except Exception as notif_error:
             # Don't fail the request if notification creation fails
@@ -6650,11 +6736,11 @@ def reject_order(request, order_id):
                                        cancelled_from_status=original_status,
                                        cancelled_by_owner=True)
         try:
-            OrderNotification.objects.create(
+            OrderNotification.objects.get_or_create(
                 establishment=establishment,
                 order=order,
                 notification_type='order_cancelled',
-                message=f'Your order #{order.id} has been rejected by the establishment.'
+                defaults={'message': f'Your order #{order.id} has been rejected by the establishment.'}
             )
         except Exception as e:
             print(f"WARNING: notification failed: {e}")
@@ -6925,11 +7011,11 @@ def cancel_order(request, order_id):
                                        cancelled_by_owner=False)
 
         try:
-            OrderNotification.objects.create(
+            OrderNotification.objects.get_or_create(
                 establishment=order.establishment,
                 order=order,
                 notification_type='order_cancelled',
-                message=f'Order #{order.id} was cancelled by the customer.'
+                defaults={'message': f'Order #{order.id} was cancelled by the customer.'}
             )
         except Exception as e:
             print(f"WARNING: notification failed: {e}")
@@ -7002,11 +7088,11 @@ def re_request_order(request, order_id):
         _broadcast_order_status_update(order, 'request')
 
         try:
-            OrderNotification.objects.create(
+            OrderNotification.objects.get_or_create(
                 establishment=order.establishment,
                 order=order,
                 notification_type='new_order',
-                message=f'Order #{order.id} re-requested by {request.user.username}'
+                defaults={'message': f'Order #{order.id} re-requested by {request.user.username}'}
             )
         except Exception as e:
             print(f"WARNING: notification failed: {e}")
@@ -7448,15 +7534,15 @@ def create_cash_order(request):
                 id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
                 _broadcast_inventory_update_from_items(active_order.establishment_id, id_qty_pairs)
 
-            # ✅ FIXED: Create notification for establishment owner
+            # ✅ FIXED: Create notification for establishment owner (get_or_create prevents duplicates)
             try:
-                notification = OrderNotification.objects.create(
+                notification, notif_created = OrderNotification.objects.get_or_create(
                     order=active_order,
                     establishment=active_order.establishment,
                     notification_type='new_order',
-                    message=f'New cash order #{active_order.id} from {request.user.username}'
+                    defaults={'message': f'New cash order #{active_order.id} from {request.user.username}'}
                 )
-                print(f"DEBUG: Created notification #{notification.id}")
+                print(f"DEBUG: Notification #{notification.id} {'created' if notif_created else 'already existed'}")
             except Exception as notification_error:
                 # Log notification error but don't fail the order
                 print(f"WARNING: Failed to create notification: {str(notification_error)}")
@@ -7667,14 +7753,15 @@ def paymongo_payment_success(request):
                 except Exception as _bcast_err:
                     print(f"WARNING broadcast after paymongo payment: {_bcast_err}")
 
-                # Create notification
+                # Create notification (get_or_create prevents duplicates with webhook)
                 try:
-                    OrderNotification.objects.create(
+                    _, notif_created = OrderNotification.objects.get_or_create(
                         order=order,
                         establishment=order.establishment,
                         notification_type='new_order',
-                        message=f'New online order #{order.id} from {request.user.username}'
+                        defaults={'message': f'New online order #{order.id} from {request.user.username}'}
                     )
+                    print(f"✅ Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
                 except Exception as e:
                     print(f"Warning: Failed to create notification: {str(e)}")
 

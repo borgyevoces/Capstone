@@ -1195,28 +1195,7 @@
         40%,80%  { transform: translateX(5px); }
     }
 
-    /* ── Notification bell badge — ensure number is fully visible ── */
-    .notif-badge,
-    .notification-badge,
-    .notif-count,
-    .bell-badge,
-    [class*="notif-badge"],
-    [class*="bell-count"],
-    [class*="notification-count"] {
-        min-width: 20px !important;
-        height: 20px !important;
-        padding: 0 5px !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        line-height: 20px !important;
-        border-radius: 10px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
-        overflow: visible !important;
-        white-space: nowrap !important;
-    }
+    /* ── Bell badge fix is now in food_establishment_dashboard.html base template ── */
 </style>
 {% endblock %}
 
@@ -1738,6 +1717,7 @@
 
             // ── 30-minute claim countdown for to_claim orders ──
             let claimTimerHtml = '';
+            let isClaimExpired = false;
             if (currentTab === 'to_claim') {
                 const claimStartAt = new Date(o.updated_at || o.created_at);
                 const claimDeadlineMs = claimStartAt.getTime() + 30 * 60 * 1000;
@@ -1749,6 +1729,9 @@
                         <i class="fas fa-hourglass-half"></i> <span id="ctimer-val-${o.id}">${cmm}:${String(css).padStart(2,'0')}</span> left to claim
                     </span>`;
                 } else {
+                    // ✅ FIX: Mark this order as already-expired so its action buttons
+                    // render as Remove-only immediately — no Completed/Reject shown.
+                    isClaimExpired = true;
                     claimTimerHtml = `<span class="claim-timer-chip expired"><i class="fas fa-hourglass-end"></i> Claim window expired</span>`;
                 }
             }
@@ -1853,6 +1836,15 @@
                                      onclick="removeClientCancelledRow(${o.id}, this)"
                                      title="Dismiss this rejected order">
                                  <i class="fas fa-check"></i> Dismiss
+                             </button>`;
+            }
+            // ✅ FIX: Override actionBtn for already-expired to_claim rows on page load.
+            // Show Remove-only so Completed/Reject are never shown for expired windows.
+            if (isClaimExpired) {
+                actionBtn = `<button class="action-btn btn-reject"
+                                     id="remove-expired-${o.id}"
+                                     onclick="directRemoveExpiredClaimOrder(${o.id}, this)">
+                                 <i class="fas fa-trash-alt"></i> Remove
                              </button>`;
             }
 
@@ -2250,9 +2242,24 @@
 
                 if (rem <= 0) {
                     clearInterval(claimTimerMap[orderId]);
+                    // Update timer chip to expired
                     if (chipEl) {
                         chipEl.className = 'claim-timer-chip expired';
                         chipEl.innerHTML = '<i class="fas fa-hourglass-end"></i> Claim window expired';
+                    }
+                    // ✅ FIX: Swap action buttons to a single Remove button — no modal needed.
+                    // The customer did not arrive in time so the owner just removes the row.
+                    const oIdNum = parseInt(orderId, 10);
+                    const actionsCell = document.querySelector(
+                        'tr.order-row[data-id="' + oIdNum + '"] .col-actions'
+                    );
+                    if (actionsCell) {
+                        actionsCell.innerHTML =
+                            '<button class="action-btn btn-reject" ' +
+                            'id="remove-expired-' + oIdNum + '" ' +
+                            'onclick="directRemoveExpiredClaimOrder(' + oIdNum + ', this)">' +
+                            '<i class="fas fa-trash-alt"></i> Remove' +
+                            '</button>';
                     }
                     return;
                 }
@@ -2425,6 +2432,33 @@
     /** Reject button in to_claim tab */
     function cancelClaimOrder(orderId) {
         openUnifiedRejectModal(orderId, 'to_claim');
+    }
+
+    // ── Remove expired to_claim order (no modal — customer did not arrive) ──────
+    function directRemoveExpiredClaimOrder(orderId, btnEl) {
+        if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing…'; }
+        const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        const reason = 'Sorry, your order has been cancelled as you did not arrive within the claim window. Please reorder if you still wish to purchase.';
+        fetch('/api/food-establishment/orders/' + orderId + '/reject/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body:    JSON.stringify({ reason })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                orders = orders.filter(function(o) { return o.id !== orderId; });
+                showToast('Order #' + orderId + ' removed — customer notified.', 'success');
+                removeOrderRow(orderId);
+            } else {
+                showToast(data.message || 'Could not remove order.', 'error');
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
+            }
+        })
+        .catch(function() {
+            showToast('Network error. Please try again.', 'error');
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
+        });
     }
 
     // Backward-compat shims (old onclick strings may still reference these)
