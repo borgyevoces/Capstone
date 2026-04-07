@@ -444,19 +444,6 @@ body {
     display: flex; flex-direction: column; gap: 10px;
     animation: slideUp .35s .25s ease both;
 }
-.oc-btn-primary {
-    display: flex; align-items: center; justify-content: center; gap: 9px;
-    padding: 15px;
-    background: var(--red);
-    color: #fff;
-    border: none; border-radius: 13px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.92rem; font-weight: 700;
-    text-decoration: none; cursor: pointer;
-    transition: all .2s;
-    box-shadow: var(--shadow-btn);
-}
-.oc-btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); color: #fff; box-shadow: 0 6px 20px rgba(183,28,28,.38); }
-
 .oc-btn-secondary {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     padding: 14px;
@@ -480,22 +467,6 @@ body {
 }
 
 /* ════ SHOW-TO-OWNER & DOWNLOAD BUTTONS ════ */
-.oc-btn-show-owner {
-    display:flex;align-items:center;justify-content:center;gap:9px;
-    padding:14px;background:#f0fdf4;color:#166534;
-    border:1.5px solid #bbf7d0;border-radius:13px;
-    font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;
-    cursor:pointer;transition:all .2s;width:100%;text-decoration:none;
-}
-.oc-btn-show-owner:hover { background:#dcfce7;border-color:#16a34a;color:#14532d; }
-.oc-btn-download {
-    display:flex;align-items:center;justify-content:center;gap:9px;
-    padding:14px;background:#fff;color:#0a0a0a;
-    border:1.5px solid #e5e7eb;border-radius:13px;
-    font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;
-    cursor:pointer;transition:all .2s;width:100%;
-}
-.oc-btn-download:hover { border-color:#B71C1C;color:#B71C1C;background:#fff5f5; }
 
 /* ════ RECEIPT MODAL ════ */
 .receipt-overlay {
@@ -796,13 +767,6 @@ body {
 
     <!-- ══ ACTIONS ══ -->
     <div class="oc-actions">
-        <!-- Show to Owner receipt button -->
-        <button class="oc-btn-show-owner" onclick="openReceiptModal()">
-            <i class="fas fa-id-card"></i> Show to Owner (Proof of Order)
-        </button>
-        <a href="{% url 'order_history' %}" class="oc-btn-primary">
-            <i class="fas fa-receipt"></i> View My Orders
-        </a>
         <a href="{% url 'kabsueats_home' %}" class="oc-btn-secondary">
             <i class="fas fa-store"></i> Back to Dashboard
         </a>
@@ -838,6 +802,10 @@ body {
             <div class="receipt-row">
                 <span class="receipt-row-label">Establishment</span>
                 <span class="receipt-row-value">{{ order.establishment.name }}</span>
+            </div>
+            <div class="receipt-row">
+                <span class="receipt-row-label">Address</span>
+                <span class="receipt-row-value" style="font-size:.78rem;line-height:1.4;">{{ order.establishment.address|default:"Not provided" }}</span>
             </div>
             <div class="receipt-row">
                 <span class="receipt-row-label">Payment</span>

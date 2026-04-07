@@ -107,7 +107,7 @@ import requests
 from django.core.cache import cache
 from datetime import datetime, time as dt_time
 
-
+ 
 # ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
 def get_current_status(opening_time, closing_time):
     """
@@ -3449,9 +3449,46 @@ def delete_menu_item(request, item_id):
         return redirect('food_establishment_dashboard')
 
 
+def _serialize_cancelled_order(order):
+    """
+    Helper: Serialize a cancelled Order into JSON-safe dict for the cancelled orders page.
+    Handles proper tracking of whether cancelled by owner (rejected) or customer.
+    Only includes payment method if order was in 'to_pay' or beyond when cancelled.
+    """
+    items = [
+        {
+            'name': oi.menu_item.name,
+            'quantity': oi.quantity,
+            'price': float(oi.price_at_order),
+            'subtotal': float(oi.price_at_order * oi.quantity),
+        }
+        for oi in order.orderitem_set.all()
+    ]
+    
+    # Determine if this was owner rejection or customer cancellation
+    cancelled_by_owner = bool(order.cancelled_from_status)
+    
+    # Only include payment method if order reached 'to_pay' status or beyond
+    payment_reached_to_pay = order.cancelled_from_status in ('to_pay', 'preparing', 'to_claim', 'completed')
+    payment_method = (order.gcash_payment_method or 'cash') if payment_reached_to_pay else None
+    
+    return {
+        'id': order.id,
+        'customer_name': order.user.get_full_name() or order.user.username,
+        'customer_email': order.user.email,
+        'total_amount': float(order.total_amount),
+        'cancel_reason': order.cancel_reason or '',
+        'cancelled_from_status': order.cancelled_from_status or '',
+        'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
+        'cancelled_at': order.updated_at.strftime('%b %d, %Y %I:%M %p'),
+        'created_at': order.created_at.strftime('%b %d, %Y %I:%M %p'),
+        'payment_method': payment_method,
+        'items': items,
+        'item_count': sum(i['quantity'] for i in items),
+    }
+
+
 @login_required(login_url='owner_login')
-@login_required(login_url='owner_login')
-@login_required
 def cancelled_orders_list(request):
     """
     Owner-facing cancelled orders dashboard.
@@ -3470,36 +3507,12 @@ def cancelled_orders_list(request):
         .order_by('-updated_at')
     )
 
-    orders_data = []
-    for order in cancelled_orders:
-        items = [
-            {
-                'name': oi.menu_item.name,
-                'quantity': oi.quantity,
-                'price': float(oi.price_at_order),
-                'subtotal': float(oi.price_at_order * oi.quantity),
-            }
-            for oi in order.orderitem_set.all()
-        ]
-        cancelled_by_owner = bool(order.cancelled_from_status)
-        orders_data.append({
-            'id': order.id,
-            'customer_name': order.user.get_full_name() or order.user.username,
-            'customer_email': order.user.email,
-            'total_amount': float(order.total_amount),
-            'cancel_reason': order.cancel_reason or '',
-            'cancelled_from_status': order.cancelled_from_status or '',
-            'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
-            'cancelled_at': order.updated_at.strftime('%b %d, %Y %I:%M %p'),
-            'created_at': order.created_at.strftime('%b %d, %Y %I:%M %p'),
-            'payment_method': order.gcash_payment_method or 'cash',
-            'items': items,
-            'item_count': sum(i['quantity'] for i in items),
-        })
+    # Serialize each cancelled order using the helper function
+    orders_data = [_serialize_cancelled_order(order) for order in cancelled_orders]
 
     context = {
         'establishment': establishment,
-        'orders_data_json': orders_data,
+        'orders_data_json': json.dumps(orders_data),
         'total_cancelled': len(orders_data),
         'cancelled_by_owner': sum(1 for o in orders_data if o['cancelled_by'] == 'owner'),
         'cancelled_by_customer': sum(1 for o in orders_data if o['cancelled_by'] == 'customer'),
@@ -3510,6 +3523,28 @@ def cancelled_orders_list(request):
         'update_token': str(uuid.uuid4()),
     }
     return render(request, 'webapplication/cancelled_orders.html', context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def cancelled_order_api_detail(request, order_id):
+    """
+    API endpoint: GET /api/food-establishment/cancelled-order/{id}/
+    Fetch a single cancelled order for real-time WebSocket updates.
+    Used by cancelled_orders.html when a new cancellation occurs.
+    """
+    try:
+        establishment = FoodEstablishment.objects.get(owner=request.user)
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Not an establishment owner'}, status=403)
+    
+    try:
+        order = Order.objects.get(id=order_id, establishment=establishment, status='cancelled')
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Order not found'}, status=404)
+    
+    order_data = _serialize_cancelled_order(order)
+    return JsonResponse({'success': True, 'order': order_data})
 
 
 def store_ratings(request):
@@ -6321,19 +6356,17 @@ def _deduct_stock_and_clear_cart(order):
     """
     Deduct menu item quantities for all items in the order,
     and remove those items from the customer's cart.
+    Broadcasts stock updates in real-time to all cart pages via WebSocket.
     Safe to call from anywhere — wraps itself in transaction.atomic().
     """
     import traceback as _tb
     try:
         with transaction.atomic():
-            # ✅ Re-fetch order with a row-level lock so concurrent requests
+            # Re-fetch order with a row-level lock so concurrent requests
             # cannot both pass the idempotency check at the same time.
             order = Order.objects.select_for_update().select_related('user').get(pk=order.pk)
 
-            # ✅ IDEMPOTENCY GUARD — skip if stock was already deducted for this order.
-            # This prevents double-deduction when both the payment callback AND
-            # the owner moving the order to 'preparing' would otherwise both call
-            # this helper (e.g. GCash paid → preparing, then owner presses Preparing again).
+            # IDEMPOTENCY GUARD — skip if stock was already deducted for this order.
             if order.stock_deducted:
                 print(f"DEBUG _deduct_stock: Order #{order.pk} already deducted — skipping.")
                 return
@@ -6355,14 +6388,24 @@ def _deduct_stock_and_clear_cart(order):
             use_lock = 'sqlite' not in connection.vendor
             qs = MenuItem.objects.filter(id__in=list(deduct_map.keys()))
             menu_items = qs.select_for_update() if use_lock else qs
+            
+            # Track all stock updates for WebSocket broadcast
+            stock_updates = []
             for menu_item in menu_items:
                 qty_to_deduct = deduct_map.get(menu_item.id, 0)
                 old_qty = menu_item.quantity
                 menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
                 menu_item.save(update_fields=['quantity'])
                 print(f"DEBUG _deduct_stock: {menu_item.name} {old_qty} → {menu_item.quantity}")
+                
+                # Record for WebSocket broadcast
+                stock_updates.append({
+                    'menu_item_id': menu_item.id,
+                    'new_quantity': menu_item.quantity,
+                    'item_name': menu_item.name,
+                })
 
-            # ✅ Mark order so this helper will never run a second time for it.
+            # Mark order so this helper will never run a second time for it.
             order.stock_deducted = True
             order.save(update_fields=['stock_deducted'])
 
@@ -6377,6 +6420,21 @@ def _deduct_stock_and_clear_cart(order):
                 print(f"DEBUG _deduct_stock: Removed {deleted_count} cart items for user {order.user_id}")
             except Cart.DoesNotExist:
                 pass  # No cart to clean up
+
+            # Broadcast stock updates to all cart pages in real-time
+            if stock_updates:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                establishment_id = order.establishment_id
+                async_to_sync(channel_layer.group_send)(
+                    f'inventory_{establishment_id}',
+                    {
+                        'type': 'inventory.quantity_update',
+                        'updates': stock_updates,
+                    }
+                )
+                print(f"DEBUG _deduct_stock: Broadcasted {len(stock_updates)} stock updates to est #{establishment_id}")
 
     except Exception as e:
         print(f"ERROR in _deduct_stock_and_clear_cart: {e}")
@@ -6778,32 +6836,9 @@ def get_cancelled_order_detail(request, order_id):
             establishment=establishment,
             status='cancelled'
         )
-        items = [
-            {
-                'name': oi.menu_item.name,
-                'quantity': oi.quantity,
-                'price': float(oi.price_at_order),
-                'subtotal': float(oi.price_at_order * oi.quantity),
-            }
-            for oi in order.orderitem_set.all()
-        ]
-        cancelled_by_owner = bool(order.cancelled_from_status)
         return JsonResponse({
             'success': True,
-            'order': {
-                'id': order.id,
-                'customer_name': order.user.get_full_name() or order.user.username,
-                'customer_email': order.user.email,
-                'total_amount': float(order.total_amount),
-                'cancel_reason': order.cancel_reason or '',
-                'cancelled_from_status': order.cancelled_from_status or '',
-                'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
-                'cancelled_at': order.updated_at.strftime('%b %d, %Y %I:%M %p'),
-                'created_at': order.created_at.strftime('%b %d, %Y %I:%M %p'),
-                'payment_method': order.gcash_payment_method or 'cash',
-                'items': items,
-                'item_count': sum(i['quantity'] for i in items),
-            }
+            'order': _serialize_cancelled_order(order)
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -8017,13 +8052,15 @@ def order_history_view(request):
 @login_required
 def my_receipts_view(request):
     """
-    My Receipts page — shows all confirmed orders with printable receipts.
+    My Receipts page — shows only orders that reached 'To Pay' status or beyond
+    (i.e., orders that were confirmed & paid, not pending requests).
+    Also includes cancelled orders if they reached the To Claim stage.
     URL: /my-receipts/
     """
     orders = Order.objects.filter(
         user=request.user
     ).exclude(
-        status__in=['PENDING', 'cancelled', 'CANCELLED']
+        status__in=['request', 'PENDING']  # Exclude Order Request status — only show confirmed/paid orders
     ).select_related(
         'establishment'
     ).prefetch_related(

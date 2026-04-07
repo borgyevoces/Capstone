@@ -33,37 +33,6 @@
 .rp-header-left h1 i { color: #16a34a; font-size: 1.3rem; }
 .rp-header-left p { font-size: 0.85rem; color: #6b7280; }
 
-/* ── Live indicator ── */
-.rp-live-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #15803d;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 20px;
-}
-.rp-live-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: #16a34a;
-    animation: livePulse 1.4s infinite;
-}
-@keyframes livePulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50%      { opacity:.4; transform:scale(.7); }
-}
-.rp-live-badge.disconnected {
-    background: #fef2f2; border-color: #fecaca;
-    color: #b91c1c;
-}
-.rp-live-badge.disconnected .rp-live-dot {
-    background: #ef4444; animation: none;
-}
-
 /* ── Order receipt card ── */
 .rp-card {
     background: #fff;
@@ -104,22 +73,6 @@
     align-items: center;
     gap: 4px;
 }
-.rp-status-badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-.rp-status-badge.request        { background:#fef9c3;color:#92400e; }
-.rp-status-badge.to_pay         { background:#fee2e2;color:#991b1b; }
-.rp-status-badge.preparing,
-.rp-status-badge.order_received { background:#dbeafe;color:#1e40af; }
-.rp-status-badge.to_claim       { background:#e9d5ff;color:#6b21a8; }
-.rp-status-badge.completed      { background:#d1fae5;color:#065f46; }
-.rp-status-badge.cancelled,
-.rp-status-badge.rejected       { background:#f1f5f9;color:#64748b; }
 
 .rp-view-btn {
     padding: 7px 14px;
@@ -235,14 +188,6 @@
     display: flex; align-items: center; gap: 6px; letter-spacing: .2px;
 }
 .rm-logo i { font-size: 0.85rem; opacity:.9; }
-.rm-status-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: rgba(255,255,255,.2); color: #fff;
-    border: 1px solid rgba(255,255,255,.4); border-radius: 20px;
-    padding: 3px 10px; font-size: 0.62rem; font-weight: 700;
-    letter-spacing: .5px; text-transform: uppercase;
-}
-.rm-status-chip i { font-size: 5px; }
 
 /* Ticket body */
 .rm-body { padding: 14px 18px 0; }
@@ -354,11 +299,6 @@
             <h1><i class="fas fa-receipt"></i> My Receipts</h1>
             <p>View and print receipts for all your orders</p>
         </div>
-        <!-- Live status badge -->
-        <div class="rp-live-badge" id="rpLiveBadge">
-            <div class="rp-live-dot"></div>
-            <span id="rpLiveText">Live</span>
-        </div>
     </div>
 
     <!-- Orders list -->
@@ -377,9 +317,6 @@
                                 {{ order.created_at }}
                             </div>
                         </div>
-                        <span class="rp-status-badge {{ order.status }}" id="rpBadge-{{ order.id }}">
-                            {{ order.status_label }}
-                        </span>
                     </div>
                     <button class="rp-view-btn"
                             data-idx="{{ forloop.counter0 }}"
@@ -399,12 +336,10 @@
                         {% endif %}
                         <div>
                             <div class="rp-estab-name">{{ order.establishment.name }}</div>
-                            {% if order.establishment.address %}
                             <div class="rp-estab-addr">
                                 <i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>
-                                {{ order.establishment.address }}
+                                {{ order.establishment.address|default:"Not provided" }}
                             </div>
-                            {% endif %}
                         </div>
                     </div>
 
@@ -606,17 +541,10 @@ function _pollAll() {
     });
 }
 
-// ── Update a card's badge + total on screen ───────────────────────────
+// ── Update a card's total on screen ───────────────────────────
 function _rtUpdateCard(order) {
     const card = document.querySelector('.rp-card[data-order-id="' + order.id + '"]');
     if (!card) return;
-
-    // Badge
-    const badge = document.getElementById('rpBadge-' + order.id);
-    if (badge) {
-        badge.className  = 'rp-status-badge ' + order.status;
-        badge.textContent = order.status_label;
-    }
 
     // Total
     const totalEl = document.getElementById('rpTotal-' + order.id);
@@ -656,14 +584,33 @@ function openReceiptModal(idx) {
     const overlay = document.getElementById('rmOverlay');
     const ticket  = document.getElementById('rmTicket');
 
-    ticket.innerHTML = `
-        <div style="text-align:center;padding:48px 24px;color:#9ca3af;">
-            <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:12px;"></i>
-            <div style="font-size:.9rem;">Loading receipt...</div>
-        </div>`;
+    // Render instantly from local data (no loading spinner)
+    _renderReceiptFromLocal(staticOrder);
     overlay.classList.add('open');
 
-    _fetchAndRenderModal(idx);
+    // Optionally update in background (don't block display)
+    _fetchAndUpdateModalAsync(idx);
+}
+
+function _fetchAndUpdateModalAsync(idx) {
+    // Non-blocking background refresh — update modal if data changed
+    const order = _rtOrders[idx];
+    if (!order) return;
+
+    fetch('/api/order/' + order.id + '/')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success || !data.order) return;
+            // Only re-render if something actually changed
+            if (data.order.status && data.order.status !== order.status) {
+                order.status       = data.order.status;
+                order.status_label = STATUS_LABELS[data.order.status] || data.order.status;
+                renderReceipt(data.order, order);
+            }
+        })
+        .catch(function() {
+            // Silently fail — local data is already displayed
+        });
 }
 
 function _fetchAndRenderModal(idx) {
@@ -705,7 +652,7 @@ function _renderReceiptFromLocal(order) {
         items:           (order.items || []).map(function(i) {
             return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
         }),
-        establishment:   { name: order.establishment.name },
+        establishment:   { name: order.establishment.name, address: order.establishment.address },
         gcash_reference: order.reference,
     }, order);
 }
@@ -736,9 +683,6 @@ function renderReceipt(apiOrder, staticOrder) {
     document.getElementById('rmTicket').innerHTML = `
         <div class="rm-header-strip">
             <div class="rm-logo"><i class="fas fa-utensils"></i> KabsuEats</div>
-            <div class="rm-status-chip">
-                <i class="fas fa-circle"></i>&nbsp;${esc(statusLbl)}
-            </div>
         </div>
         <div class="rm-body">
             <div class="rm-title-row">
@@ -758,6 +702,10 @@ function renderReceipt(apiOrder, staticOrder) {
                 <div class="rm-row">
                     <span class="rm-row-lbl">Establishment</span>
                     <span class="rm-row-val">${esc(estabName)}</span>
+                </div>
+                <div class="rm-row">
+                    <span class="rm-row-lbl">Address</span>
+                    <span class="rm-row-val" style="font-size:.76rem;line-height:1.35;">${esc((apiOrder.establishment && apiOrder.establishment.address) || staticOrder.establishment.address || 'Not provided')}</span>
                 </div>
                 <div class="rm-row">
                     <span class="rm-row-lbl">Payment</span>

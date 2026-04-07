@@ -612,15 +612,16 @@ function setView(v) {}
 // LEAFLET MAP
 // ============================================
 const TILES = {
-    hybrid:    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                 opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 },
-                 labels: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png' },
-    street:    { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                 opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 } },
-    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                 opt: { attribution: 'Tiles &copy; Esri', maxZoom: 20 } },
-    terrain:   { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                 opt: { attribution: '&copy; OpenTopoMap', maxZoom: 17 } }
+    hybrid:    { url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                 opt: { attribution: '© Google', maxZoom: 22 },
+                 labels: 'https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}' },
+    street:    { url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                 opt: { attribution: '© Google', maxZoom: 22 } },
+    satellite: { url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                 opt: { attribution: '© Google', maxZoom: 22 },
+                 labels: 'https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}' },
+    terrain:   { url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+                 opt: { attribution: '© Google', maxZoom: 22 } }
 };
 
 let mapPollTimer = null, curLabels = null;
@@ -634,9 +635,11 @@ let mapFilterState = { status: '', alpha: '', dist: '', rating: '', cat: '', sea
 
 function initMap() {
     setTimeout(() => {
-        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16, zoomControl: true, scrollWheelZoom: true });
-        curTile = L.tileLayer(TILES.hybrid.url, TILES.hybrid.opt).addTo(mapInst);
-        curLabels = L.tileLayer(TILES.hybrid.labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 1 }).addTo(mapInst);
+        // Improved zoom: start at 16, allow up to 22 for detailed street-level viewing with clear road details
+        mapInst = L.map('esMap', { center: [CVSU.lat, CVSU.lng], zoom: 16, maxZoom: 22, zoomControl: true, scrollWheelZoom: true });
+        // Default to hybrid view (Google Maps style) for best clarity and detailed road visibility
+        curTile = L.tileLayer(TILES.hybrid.url, { ...TILES.hybrid.opt, maxZoom: 22 }).addTo(mapInst);
+        curLabels = L.tileLayer(TILES.hybrid.labels || 'https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { attribution: '', maxZoom: 22, opacity: 1 }).addTo(mapInst);
 
         L.circle([CVSU.lat, CVSU.lng], {
             color: '#FFC107', fillColor: 'transparent',
@@ -653,8 +656,95 @@ function initMap() {
         mkLayer = L.layerGroup().addTo(mapInst);
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
+        
+        // Real-time WebSocket updates for establishments
+        initEstablishmentWebSocket();
+        
+        // Update layer button to show satellite is selected
+        document.getElementById('mts-satellite').classList.add('on');
+        document.getElementById('mts-hybrid').classList.remove('on');
+        
         mapInst.invalidateSize();
     }, 150);
+}
+
+function initEstablishmentWebSocket() {
+    if (window._estWSConnected) return; // Prevent duplicate connections
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/establishments/`;
+    
+    try {
+        window._estWS = new WebSocket(wsUrl);
+        
+        window._estWS.onopen = function() {
+            console.log('[Map] Establishments WebSocket connected');
+            window._estWSConnected = true;
+        };
+        
+        window._estWS.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'est_created' || data.type === 'est_updated') {
+                    // Add or update establishment
+                    const idx = esMapData.findIndex(e => e.id === data.establishment.id);
+                    const estData = {
+                        id: data.establishment.id,
+                        name: data.establishment.name || '',
+                        address: data.establishment.address || '',
+                        image: data.establishment.image || '',
+                        status: (data.establishment.status || 'closed').toLowerCase(),
+                        is_active: data.establishment.is_active,
+                        latitude: parseFloat(data.establishment.latitude),
+                        longitude: parseFloat(data.establishment.longitude),
+                        distance: data.establishment.distance || 0,
+                        categories: data.establishment.categories || '',
+                        other_category: data.establishment.other_category || '',
+                        other_amenity: data.establishment.other_amenity || ''
+                    };
+                    
+                    // If establishment has been deactivated, remove it from map
+                    if (!estData.is_active) {
+                        esMapData = esMapData.filter(e => e.id !== estData.id);
+                        console.log(`[Map] Removed deactivated establishment #${estData.id}`);
+                    } else {
+                        // Otherwise add or update
+                        if (idx >= 0) {
+                            esMapData[idx] = estData; // Update
+                            console.log(`[Map] Updated establishment #${estData.id}`);
+                        } else {
+                            esMapData.push(estData); // Add
+                            console.log(`[Map] Added new establishment #${estData.id}`);
+                        }
+                    }
+                    renderMarkers(applyFiltersToData(esMapData));
+                } 
+                else if (data.type === 'est_deleted' || data.type === 'est_deactivated') {
+                    // Remove establishment
+                    esMapData = esMapData.filter(e => e.id !== data.establishment_id);
+                    console.log(`[Map] Removed establishment #${data.establishment_id}`);
+                    renderMarkers(applyFiltersToData(esMapData));
+                }
+            } catch (err) {
+                console.log('[Map] WS message parse error:', err);
+            }
+        };
+        
+        window._estWS.onerror = function() {
+            console.log('[Map] Establishments WebSocket error');
+            window._estWSConnected = false;
+        };
+        
+        window._estWS.onclose = function() {
+            console.log('[Map] Establishments WebSocket closed');
+            window._estWSConnected = false;
+            // Attempt reconnect after 5 seconds
+            setTimeout(initEstablishmentWebSocket, 5000);
+        };
+    } catch (err) {
+        console.log('[Map] WebSocket init error:', err);
+    }
 }
 
 function loadAllEstablishments() {
@@ -737,14 +827,14 @@ function renderMarkers(data) {
         if (!e.latitude || !e.longitude) return;
         const st = (e.status || '').toLowerCase();
         const isOpen = st === 'open';
-        const borderColor = isOpen ? '#f7931e' : '#ef4444';
-        const bgColor = isOpen ? '#fff' : '#374151';
-        const faceColor = isOpen ? '#374151' : '#fff';
+        const borderColor = isOpen ? '#10b981' : '#ef4444';
+        const bgColor = isOpen ? '#fff' : '#fecaca';
+        const faceColor = isOpen ? '#065f46' : '#7f1d1d';
         const glow = isOpen
-            ? '0 0 0 3px rgba(247,147,30,0.4), 0 3px 14px rgba(0,0,0,.4)'
-            : '0 3px 14px rgba(0,0,0,.35)';
+            ? '0 0 0 3px rgba(16,185,129,0.3), 0 3px 14px rgba(0,0,0,.3)'
+            : '0 0 0 3px rgba(239,68,68,0.3), 0 3px 14px rgba(0,0,0,.3)';
         const pulse = isOpen
-            ? '<div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:rgba(247,147,30,0.3);animation:pulse 2s infinite;z-index:0;"></div>'
+            ? '<div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:rgba(16,185,129,0.2);animation:pulse 2s infinite;z-index:0;"></div>'
             : '';
         const face = e.image
             ? `<img src="${e.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-store\\'style=\\'color:${faceColor};font-size:18px;\\'></i>'">`
@@ -800,9 +890,13 @@ function switchTile(t) {
     if (btn) btn.classList.add('on');
     if (curTile)   mapInst.removeLayer(curTile);
     if (curLabels) { mapInst.removeLayer(curLabels); curLabels = null; }
+    
     curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
+    
+    // Add appropriate labels for each layer
     if (TILES[t].labels) {
-        curLabels = L.tileLayer(TILES[t].labels, { attribution: '', maxZoom: 20, subdomains: 'abcd', opacity: 1 }).addTo(mapInst);
+        const labelOpt = { attribution: '', maxZoom: 22, opacity: 0.9 };
+        curLabels = L.tileLayer(TILES[t].labels, labelOpt).addTo(mapInst);
     }
     document.getElementById('mapLayerPanel').classList.remove('show');
 }

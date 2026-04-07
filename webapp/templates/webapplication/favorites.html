@@ -223,6 +223,19 @@
 .fav-modal-login-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 10px; background: #1f2937; color: white; text-decoration: none; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700; width: 100%; box-sizing: border-box; transition: background 0.15s; }
 .fav-modal-login-link:hover { background: #B71C1C; }
 
+/* ── Confirmation Modal ── */
+.fav-confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+.fav-confirm-modal-box { background: white; border-radius: 20px; padding: 32px 24px; max-width: 380px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideInUp 0.3s ease-out; text-align: center; }
+.fav-confirm-icon { font-size: 48px; color: #B71C1C; margin-bottom: 16px; }
+.fav-confirm-title { font-size: 1.3rem; font-weight: 700; color: #0a0a0a; margin-bottom: 12px; font-family: 'Poppins', sans-serif; }
+.fav-confirm-message { font-size: 14px; color: #6b7280; margin-bottom: 24px; line-height: 1.5; }
+.fav-confirm-actions { display: flex; gap: 12px; align-items: center; justify-content: center; }
+.fav-confirm-btn { padding: 10px 24px; border-radius: 10px; border: none; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.fav-confirm-cancel { background: #e5e7eb; color: #374151; }
+.fav-confirm-cancel:hover { background: #d1d5db; }
+.fav-confirm-ok { background: #B71C1C; color: white; }
+.fav-confirm-ok:hover { background: #922020; transform: translateY(-1px); }
+
 @media (max-width: 580px) {
     .fav-modal-img-panel { width: 100%; min-height: 180px; border-radius: 20px 20px 0 0; }
     .fav-modal-img { min-height: 180px; height: 180px; }
@@ -296,6 +309,19 @@
     <div class="fav-page-grid" id="favPageGrid">
         <!-- filled by JS -->
     </div>
+
+<!-- Custom Clear All Confirmation Modal -->
+<div id="favClearConfirmModal" class="fav-confirm-modal-overlay" onclick="if(event.target===this)closeFavClearConfirm()" style="display:none;">
+    <div class="fav-confirm-modal-box">
+        <div class="fav-confirm-icon"><i class="fas fa-trash-alt"></i></div>
+        <h2 class="fav-confirm-title">Remove All Favorites?</h2>
+        <p id="favConfirmMsg" class="fav-confirm-message">Are you sure you want to remove all menu item favorites? This action cannot be undone.</p>
+        <div class="fav-confirm-actions">
+            <button class="fav-confirm-btn fav-confirm-cancel" onclick="closeFavClearConfirm()">Cancel</button>
+            <button class="fav-confirm-btn fav-confirm-ok" onclick="confirmFavClearAll()">Remove All</button>
+        </div>
+    </div>
+</div>
 
 </div>
 
@@ -572,7 +598,20 @@ function fpRemoveMenu(menuId, event) {
     favPageFilter();
 }
 function favPageClearAll() {
-    if (!confirm('Remove all ' + (_fpTab === 'est' ? 'establishment' : 'menu item') + ' favorites?')) return;
+    showFavClearConfirmModal(_fpTab === 'est' ? 'establishment' : 'menu item');
+}
+
+function showFavClearConfirmModal(type) {
+    const msg = document.getElementById('favConfirmMsg');
+    msg.textContent = 'Are you sure you want to remove all ' + type + ' favorites? This action cannot be undone.';
+    document.getElementById('favClearConfirmModal').style.display = 'flex';
+}
+
+function closeFavClearConfirm() {
+    document.getElementById('favClearConfirmModal').style.display = 'none';
+}
+
+function confirmFavClearAll() {
     if (_fpTab === 'est') {
         _fpSetEsts([]);
         document.querySelectorAll('.est-fav-star-btn').forEach(function(b){ b.classList.remove('fav-active','fav-pop'); });
@@ -581,6 +620,8 @@ function favPageClearAll() {
         document.querySelectorAll('.menu-fav-heart-btn').forEach(function(b){ b.classList.remove('fav-active','fav-pop'); });
     }
     favPageFilter();
+    closeFavClearConfirm();
+    _fpToast('All favorites removed.', 'success');
 }
 
 // ============================================================
@@ -857,6 +898,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === FP_EST_KEY || e.key === FP_MENU_KEY) {
             favPageFilter();
             _fpRefreshAllMenuData();
+        }
+    });
+    // Close confirmation modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeFavClearConfirm();
+            closeFavItemModal();
         }
     });
 });

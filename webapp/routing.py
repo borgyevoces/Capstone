@@ -29,4 +29,9 @@ websocket_urlpatterns = [
         r'ws/orders/(?P<establishment_id>\d+)/$',
         consumers.OrderStatusConsumer.as_asgi()
     ),
+    # ✅ Real-time map updates — establishment creation/update/deletion/deactivation
+    re_path(
+        r'ws/establishments/$',
+        consumers.EstablishmentConsumer.as_asgi()
+    ),
 ]

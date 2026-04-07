@@ -305,3 +305,75 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(f"Error unsending message: {e}")
             return {'success': False, 'error': str(e)}
+
+
+# ============================================================
+# ESTABLISHMENT CONSUMER — real-time map updates
+# ============================================================
+class EstablishmentConsumer(AsyncWebsocketConsumer):
+    """
+    Clients (map on kabsueats.html, map.html) connect to:
+        ws/establishments/
+
+    When an establishment is created, updated, deactivated, or deleted,
+    signals trigger channel_layer.group_send() to 'establishment_updates'
+    group and every connected client receives the update instantly.
+    
+    Message types:
+      - est_created: New establishment added to map
+      - est_updated: Establishment info changed (status, name, address)
+      - est_deleted: Establishment removed from system
+      - est_deactivated: Establishment temporarily closed/deactivated
+    """
+
+    async def connect(self):
+        self.group_name = 'establishment_updates'
+        
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        print('[EstablishmentConsumer] Client connected to map updates')
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        print('[EstablishmentConsumer] Client disconnected from map updates')
+
+    # Handler for establishment creation
+    async def est_created(self, event):
+        """
+        Forward new establishment to all connected map clients.
+        event format from signals:
+          {
+            'type': 'est.created',
+            'establishment': {
+              'id': X, 'name': Y, 'status': Z, 'latitude': A, 'longitude': B, ...
+            }
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'est_created',
+            'establishment': event['establishment']
+        }))
+
+    # Handler for establishment update
+    async def est_updated(self, event):
+        """Forward updated establishment data."""
+        await self.send(text_data=json.dumps({
+            'type': 'est_updated',
+            'establishment': event['establishment']
+        }))
+
+    # Handler for establishment deletion
+    async def est_deleted(self, event):
+        """Forward establishment deletion (remove from map)."""
+        await self.send(text_data=json.dumps({
+            'type': 'est_deleted',
+            'establishment_id': event['establishment_id']
+        }))
+
+    # Handler for establishment deactivation
+    async def est_deactivated(self, event):
+        """Forward establishment deactivation."""
+        await self.send(text_data=json.dumps({
+            'type': 'est_deactivated',
+            'establishment_id': event['establishment_id']
+        }))

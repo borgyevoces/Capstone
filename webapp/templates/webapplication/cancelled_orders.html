@@ -446,39 +446,35 @@ function coRender(highlightId) {
 
         // Payment chip
         const isCash = (o.payment_method || '').toLowerCase() === 'cash';
-        const payChip = isCash
-            ? `<span class="co-payment-chip cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>`
-            : `<span class="co-payment-chip gcash"><i class="fas fa-mobile-alt"></i> GCash / Online</span>`;
+        const payChip = o.payment_method
+            ? (isCash
+                ? `<span class="co-payment-chip cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>`
+                : `<span class="co-payment-chip gcash"><i class="fas fa-mobile-alt"></i> GCash / Online</span>`)
+            : `<span class="co-payment-chip" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-ban"></i> No payment recorded</span>`;
 
-        // Previous status label (only for owner rejections)
+        // Previous status label with styling
         const prevStatusLabels = {
-            'request': 'Order Request',
-            'to_pay': 'Awaiting Payment',
-            'to_claim': 'Ready for Pickup',
+            'request': { label: 'Order Request', icon: 'fas fa-inbox', color: '#fbbf24' },
+            'to_pay': { label: 'Awaiting Payment', icon: 'fas fa-coins', color: '#f97316' },
+            'preparing': { label: 'Preparing', icon: 'fas fa-utensils', color: '#8b5cf6' },
+            'to_claim': { label: 'Ready for Pickup', icon: 'fas fa-box', color: '#06b6d4' },
+            'completed': { label: 'Completed', icon: 'fas fa-check-circle', color: '#10b981' },
         };
-        const prevStatusLabel = prevStatusLabels[o.cancelled_from_status] || '';
+        const statusInfo = prevStatusLabels[o.cancelled_from_status] || null;
 
-        // Reason box
-        let reasonHtml = '';
-        if (o.cancel_reason && o.cancel_reason.trim()) {
-            reasonHtml = `
-                <div class="co-reason-box ${isOwner ? 'owner-rejection' : ''}">
-                    <i class="fas fa-${isOwner ? 'exclamation-circle' : 'comment-alt'}"></i>
-                    <div class="co-reason-text">
-                        <span class="co-reason-label">${isOwner ? 'Rejection Reason:' : 'Cancellation Reason:'}</span>
-                        ${esc(o.cancel_reason)}
-                    </div>
-                </div>`;
-        } else {
-            reasonHtml = `
-                <div class="co-reason-box ${isOwner ? 'owner-rejection' : ''}">
-                    <i class="fas fa-info-circle"></i>
-                    <div class="co-reason-text">
-                        <span class="co-reason-label">${isOwner ? 'Rejection Reason:' : 'Cancellation Reason:'}</span>
-                        <span class="co-no-reason">No reason provided</span>
-                    </div>
-                </div>`;
+        // Status badge HTML (show for both owner and customer cancellations)
+        let statusBadgeHtml = '';
+        if (statusInfo || o.cancelled_from_status) {
+            const info = statusInfo || { label: o.cancelled_from_status, icon: 'fas fa-circle', color: '#9ca3af' };
+            statusBadgeHtml = `
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:${info.color}15;color:${info.color};padding:6px 12px;border-radius:8px;border-left:3px solid ${info.color};">
+                    <i class="${info.icon}" style="font-size:11px;"></i>
+                    Cancelled from: <strong>${info.label}</strong>
+                </span>`;
         }
+
+        // Reason box (removed - now shown in top section)
+        let reasonHtml = '';
 
         return `
         <div class="co-card by-${o.cancelled_by}${highlightId === o.id ? ' co-new-entry' : ''}" data-id="${o.id}">
@@ -490,10 +486,26 @@ function coRender(highlightId) {
                         <i class="fas fa-${isOwner ? 'store-slash' : 'user-times'}"></i>
                         ${isOwner ? 'Rejected by Owner' : 'Cancelled by Customer'}
                     </span>
-                    ${prevStatusLabel ? `<span style="font-size:11px;color:#9ca3af;background:#f3f4f6;padding:3px 8px;border-radius:8px;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> was in <strong>${esc(prevStatusLabel)}</strong></span>` : ''}
                 </div>
                 <div class="co-card-header-right">
                     <span class="co-cancelled-at"><i class="fas fa-clock" style="font-size:10px;margin-right:3px;"></i>${esc(o.cancelled_at)}</span>
+                </div>
+            </div>
+
+            <!-- Status & Reason Section (Prominent) -->
+            <div style="background:#f9fafb;padding:14px 20px;border-bottom:1px solid #e5e7eb;display:flex;flex-direction:column;gap:10px;">
+                <!-- Status Badge -->
+                <div style="display:flex;align-items:center;gap:8px;">
+                    ${statusBadgeHtml}
+                </div>
+
+                <!-- Reason - Inline with status -->
+                <div style="font-size:13px;line-height:1.6;">
+                    <span style="font-weight:700;color:#1f2937;">${isOwner ? 'Rejection Reason:' : 'Cancellation Reason:'}</span>
+                    <br>
+                    <span style="color:#374151;font-size:12.5px;margin-top:3px;display:block;">
+                        ${o.cancel_reason && o.cancel_reason.trim() ? esc(o.cancel_reason) : '<em style="color:#9ca3af;">No reason provided</em>'}
+                    </span>
                 </div>
             </div>
 
@@ -533,9 +545,6 @@ function coRender(highlightId) {
                     </div>
                 </div>
             </div>
-
-            <!-- Reason Box -->
-            ${reasonHtml}
         </div>`;
     }).join('');
 }
@@ -548,36 +557,73 @@ function coFilter(mode) {
 }
 
 // ============================================================
-// REALTIME — WebSocket
+// REALTIME — WebSocket + Fallback Polling
 // ============================================================
 (function initCancelledOrdersWS() {
     const estId = '{{ establishment.id }}';
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = wsProtocol + '//' + window.location.host + '/ws/orders/' + estId + '/';
 
-    let ws, reconnectTimer;
+    let ws, reconnectTimer, pollTimer;
+    let lastUpdateTime = Date.now();
 
     function connect() {
-        ws = new WebSocket(wsUrl);
+        try {
+            ws = new WebSocket(wsUrl);
 
-        ws.onopen = function() {
-            console.log('[CancelledOrders WS] Connected');
-            clearTimeout(reconnectTimer);
-        };
+            ws.onopen = function() {
+                console.log('[CancelledOrders WS] Connected');
+                clearTimeout(reconnectTimer);
+                lastUpdateTime = Date.now();
+            };
 
-        ws.onmessage = function(e) {
-            try {
-                const d = JSON.parse(e.data);
-                handleWsMessage(d);
-            } catch(err) {}
-        };
+            ws.onmessage = function(e) {
+                try {
+                    const d = JSON.parse(e.data);
+                    handleWsMessage(d);
+                } catch(err) {}
+            };
 
-        ws.onclose = function() {
-            console.log('[CancelledOrders WS] Disconnected — reconnecting in 4s');
-            reconnectTimer = setTimeout(connect, 4000);
-        };
+            ws.onclose = function() {
+                console.log('[CancelledOrders WS] Disconnected — reconnecting in 4s');
+                clearInterval(pollTimer);
+                reconnectTimer = setTimeout(connect, 4000);
+                startPolling();
+            };
 
-        ws.onerror = function() { ws.close(); };
+            ws.onerror = function() { ws.close(); };
+        } catch(e) {
+            console.error('[CancelledOrders WS] Connection failed:', e);
+            startPolling();
+        }
+    }
+
+    function startPolling() {
+        // Poll every 8 seconds as fallback
+        clearInterval(pollTimer);
+        pollTimer = setInterval(pollForUpdates, 8000);
+    }
+
+    function pollForUpdates() {
+        fetch('/owner/cancelled-orders/', {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.orders) {
+                // Check for new cancellations by comparing with local array
+                data.orders.forEach(newOrder => {
+                    const exists = coOrders.find(x => x.id === newOrder.id);
+                    if (!exists) {
+                        coOrders.unshift(newOrder);
+                        coRender(newOrder.id);
+                        showCoToast('New cancellation — Order #' + newOrder.id, 'error');
+                    }
+                });
+            }
+        })
+        .catch(() => {});
     }
 
     function handleWsMessage(d) {
@@ -609,19 +655,7 @@ function coFilter(mode) {
     }
 
     function fetchAndAddOrder(orderId) {
-        fetch('/api/food-establishment/orders/', {
-            credentials: 'same-origin',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            const orders = data.orders || [];
-            // The main API only returns active orders — we need to get cancelled ones
-            // Trigger a page reload for simplicity, or you can add a dedicated endpoint
-            // For now just fetch the cancelled orders endpoint
-            fetchCancelledOrder(orderId);
-        })
-        .catch(() => {});
+        fetchCancelledOrder(orderId);
     }
 
     function fetchCancelledOrder(orderId) {

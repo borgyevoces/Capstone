@@ -655,6 +655,29 @@ html body .establishment-cart-box.active-cart {
     </div>
 </div>
 
+<!-- ERROR MODAL -->
+<div class="cart-confirm-overlay" id="cartErrorModal">
+    <div class="cart-confirm-box" style="max-width:420px;">
+        <div class="cart-confirm-icon-band" style="padding:36px 24px 16px;">
+            <div class="cart-confirm-icon" style="background:#fef2f2;color:#dc2626;width:80px;height:80px;font-size:36px;">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+        </div>
+        <div class="cart-confirm-text" style="padding:0 28px 10px;">
+            <h3 style="font-size:19px;margin-bottom:10px;color:#dc2626;">Error</h3>
+            <p style="font-size:14px;line-height:1.6;color:#555;" id="cartErrorMessage">
+                An error occurred. Please try again.
+            </p>
+        </div>
+        <div class="cart-confirm-actions" style="border-top:1px solid #f0f0f0;padding:4px 0;display:flex;flex-direction:column;gap:0;">
+            <button onclick="closeCartErrorModal()"
+                    style="flex:1;padding:14px 12px;border:none;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#B71C1C;font-family:inherit;transition:background .15s;">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -763,6 +786,34 @@ html body .establishment-cart-box.active-cart {
         cncBtn.addEventListener('click', onCancel);
         overlay.addEventListener('click', onOverlay);
         document.addEventListener('keydown', onKey);
+    };
+
+    // ============================================================
+    // ERROR MODAL — replaces browser alert()
+    // ============================================================
+    window.showCartError = function(message) {
+        const modal = document.getElementById('cartErrorModal');
+        const msgEl = document.getElementById('cartErrorMessage');
+        if (modal && msgEl) {
+            msgEl.textContent = message || 'An error occurred. Please try again.';
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            
+            // Allow closing by clicking overlay
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    window.closeCartErrorModal();
+                }
+            });
+        }
+    };
+
+    window.closeCartErrorModal = function() {
+        const modal = document.getElementById('cartErrorModal');
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
     };
 
     // ── Intercept remove/clear to capture name before modal opens ──
@@ -975,8 +1026,9 @@ html body .establishment-cart-box.active-cart {
 
     // ============================================================
     // CHECKOUT BUTTON STOCK GUARD
-    // Disables "Send Order Request" ONLY when a checked item has
-    // actual stock = 0 (truly out of stock via server/WebSocket).
+    // Disables "Send Order Request" when any checked item has:
+    // 1) actual stock = 0 (out of stock)
+    // 2) cart quantity > available stock (insufficient stock)
     // Also locks +/- quantity buttons on any OOS cart item.
     // Called on page load, checkbox change, qty change, and WS update.
     // ============================================================
@@ -984,6 +1036,8 @@ html body .establishment-cart-box.active-cart {
         const btn = document.getElementById('initial-checkout-btn');
 
         let hasOos = false;
+        let hasInsufficientStock = false;
+        let insufficientItems = [];
 
         // Lock/unlock quantity buttons for ALL cart items based on their stock
         document.querySelectorAll('.cart-item').forEach(function(cartItem) {
@@ -1006,12 +1060,25 @@ html body .establishment-cart-box.active-cart {
             }
         });
 
-        // Check if any CHECKED item is OOS — that blocks the Send button
+        // Check if any CHECKED item has OOS or insufficient stock
         document.querySelectorAll('.item-checkbox:checked').forEach(function(chk) {
             const cartItem = document.getElementById('cart-item-' + chk.getAttribute('data-item-id'));
             if (!cartItem) return;
+            
             const rawMax = parseInt(cartItem.dataset.maxStock, 10);
-            if (!isNaN(rawMax) && rawMax <= 0) hasOos = true;
+            const curQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
+            const itemName = cartItem.getAttribute('data-name') || 'an item';
+            
+            // Check for out of stock
+            if (!isNaN(rawMax) && rawMax <= 0) {
+                hasOos = true;
+            }
+            
+            // Check for insufficient stock (cart qty > available stock)
+            if (!isNaN(rawMax) && curQty > rawMax) {
+                hasInsufficientStock = true;
+                insufficientItems.push({ name: itemName, cartQty: curQty, available: rawMax });
+            }
         });
 
         if (!btn) return;
@@ -1050,14 +1117,50 @@ html body .establishment-cart-box.active-cart {
             if (warn) warn.style.display = 'none';
         }
 
-        if (hasOos || hasClosed) {
+        // Determine if button should be disabled and set appropriate message
+        let disableReason = '';
+        if (hasClosed) {
+            disableReason = closedNames[0] + ' is currently closed. Uncheck it to proceed.';
+        } else if (hasOos) {
+            disableReason = 'One or more selected items are out of stock. Please remove them before ordering.';
+        } else if (hasInsufficientStock) {
+            if (insufficientItems.length === 1) {
+                const item = insufficientItems[0];
+                disableReason = `Insufficient stock for "${item.name}" - you have ${item.cartQty} but only ${item.available} available.`;
+            } else {
+                disableReason = `Insufficient stock for ${insufficientItems.length} items. Adjust quantities to match available stock.`;
+            }
+        }
+
+        // Show/hide insufficient stock warning message below the button
+        let insufficientWarn = document.getElementById('insufficient-stock-warning');
+        if (hasInsufficientStock) {
+            if (!insufficientWarn) {
+                insufficientWarn = document.createElement('p');
+                insufficientWarn.id = 'insufficient-stock-warning';
+                insufficientWarn.style.cssText = 'color:#b45309;font-size:0.82rem;text-align:center;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:9px 12px;line-height:1.4;';
+                insufficientWarn.innerHTML = '<i class="fas fa-exclamation-triangle" style="flex-shrink:0;"></i><span id="insufficient-warn-text"></span>';
+                btn.parentNode.insertBefore(insufficientWarn, btn.nextSibling);
+            }
+            let warnLabel = '';
+            if (insufficientItems.length === 1) {
+                const item = insufficientItems[0];
+                warnLabel = `"${item.name}" — Adjust down to ${item.available} to proceed.`;
+            } else {
+                warnLabel = `Adjust ${insufficientItems.length} items to match available stock.`;
+            }
+            document.getElementById('insufficient-warn-text').textContent = warnLabel;
+            insufficientWarn.style.display = 'flex';
+        } else {
+            if (insufficientWarn) insufficientWarn.style.display = 'none';
+        }
+
+        if (disableReason) {
             btn.disabled = true;
-            btn.title    = hasClosed
-                ? (closedNames[0] + ' is currently closed. Uncheck it to proceed.')
-                : 'One or more selected items are out of stock. Please remove them before ordering.';
+            btn.title = disableReason;
         } else {
             btn.disabled = false;
-            btn.title    = '';
+            btn.title = '';
         }
     };
 
@@ -1094,7 +1197,7 @@ html body .establishment-cart-box.active-cart {
         });
 
         if (ordersToSend.length === 0) {
-            alert('Please check at least one establishment to place an order.');
+            showCartError('Please check at least one establishment to place an order.');
             return;
         }
 
@@ -1104,7 +1207,7 @@ html body .establishment-cart-box.active-cart {
         });
         if (closedOrders.length > 0) {
             const names = closedOrders.map(function(o) { return o.estabName; }).join(', ');
-            alert(names + (closedOrders.length === 1 ? ' is' : ' are') + ' currently closed. Please uncheck closed establishments before sending your order.');
+            showCartError(names + (closedOrders.length === 1 ? ' is' : ' are') + ' currently closed. Please uncheck closed establishments before sending your order.');
             return;
         }
 
@@ -1187,7 +1290,7 @@ html body .establishment-cart-box.active-cart {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Order Request';
                 }
-                alert('Error sending order for ' + estabName + ': ' + err.message);
+                showCartError('Error sending order for ' + estabName + ': ' + err.message);
             });
         }
 
@@ -1273,12 +1376,11 @@ document.addEventListener('click', function(e) {
     let currentQty = parseInt(qtyEl.textContent, 10) || 1;
     let newQty     = isIncrease ? currentQty + 1 : currentQty - 1;
 
-    // Clamp
+    // Clamp to valid range [1, maxStock]
     if (newQty < 1) newQty = 1;
-    if (isIncrease && newQty > maxStock) {
-        newQty = maxStock;
-        if (newQty === currentQty) return; // already at max
-    }
+    if (newQty > maxStock) newQty = maxStock;
+    
+    // If no change needed, bail out
     if (newQty === currentQty) return;
 
     // Optimistic UI update
@@ -1323,7 +1425,7 @@ document.addEventListener('click', function(e) {
             if (decBtn) decBtn.disabled = (currentQty <= 1);
             if (incBtn) incBtn.disabled = (currentQty >= maxStock);
             if (window.rebuildOrderSummary) window.rebuildOrderSummary();
-            alert(data.message || 'Could not update quantity.');
+            showCartError(data.message || 'Could not update quantity.');
         } else {
             _cartUpdateCount(data.cart_count || 0);
             _cartUpdateBadge(data.cart_count || 0);
@@ -1366,7 +1468,7 @@ window.removeItemFromCart = function(orderItemId) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success) {
-                alert(data.message || 'Could not remove item.');
+                showCartError(data.message || 'Could not remove item.');
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
                 return;
             }
@@ -1394,7 +1496,7 @@ window.removeItemFromCart = function(orderItemId) {
             }
         })
         .catch(function() {
-            alert('Network error. Please try again.');
+            showCartError('Network error. Please try again.');
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
         });
     });
@@ -1429,7 +1531,7 @@ window.clearEstablishmentCart = function(establishmentId) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success) {
-                alert(data.message || 'Could not clear cart.');
+                showCartError(data.message || 'Could not clear cart.');
                 if (clearBtn) { clearBtn.disabled = false; clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
                 return;
             }
@@ -1447,7 +1549,7 @@ window.clearEstablishmentCart = function(establishmentId) {
             }
         })
         .catch(function() {
-            alert('Network error. Please try again.');
+            showCartError('Network error. Please try again.');
             if (clearBtn) { clearBtn.disabled = false; clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
         });
     });
