@@ -1,6 +1,7 @@
 /* ============================================================
    KABSU EATS – BUSINESS OWNER REGISTRATION (FULL 3-STEP FLOW)
    ✅ FIXED: OTP Modal now shows properly with CSRF token
+   ✅ FIXED: English validation messages & tightened gibberish detection
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -711,6 +712,88 @@ function initStep2() {
     const lng = sessionStorage.getItem('longitude');
 
     // ============================================================
+    // WEEKLY SCHEDULE HELPERS
+    // ============================================================
+
+    /** Returns array of 7 schedule objects from the current UI state */
+    function getWeeklySchedule() {
+        const rows = document.querySelectorAll('.schedule-row[data-day]');
+        const schedule = [];
+        rows.forEach(function (row) {
+            const day    = parseInt(row.dataset.day, 10);
+            const cb     = row.querySelector('.day-open-cb');
+            const openT  = row.querySelector('.day-open-t');
+            const closeT = row.querySelector('.day-close-t');
+            schedule.push({
+                day:       day,
+                is_closed: cb ? !cb.checked : true,
+                opening:   openT  ? openT.value  : '',
+                closing:   closeT ? closeT.value : ''
+            });
+        });
+        return schedule;
+    }
+
+    /** Restores schedule UI from a saved array */
+    function restoreWeeklySchedule(hours) {
+        if (!Array.isArray(hours)) return;
+        hours.forEach(function (entry) {
+            const row    = document.querySelector(`.schedule-row[data-day="${entry.day}"]`);
+            if (!row) return;
+            const cb       = row.querySelector('.day-open-cb');
+            const openT    = row.querySelector('.day-open-t');
+            const closeT   = row.querySelector('.day-close-t');
+            const label    = row.querySelector('.sd-label');
+            const timesDiv = row.querySelector('.sd-times');
+            const isOpen   = !entry.is_closed;
+
+            if (cb) cb.checked = isOpen;
+            if (openT  && entry.opening) openT.value  = entry.opening;
+            if (closeT && entry.closing) closeT.value = entry.closing;
+            if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
+            if (timesDiv) {
+                timesDiv.classList.toggle('sd-times-closed', !isOpen);
+                row.querySelectorAll('input[type="time"]').forEach(function (inp) {
+                    inp.disabled = !isOpen;
+                });
+            }
+            row.classList.toggle('row-closed', !isOpen);
+        });
+    }
+
+    /** Wire up toggle switches and time input changes on schedule rows */
+    function initScheduleUI() {
+        document.querySelectorAll('.day-open-cb').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                const day      = this.dataset.day;
+                const row      = document.querySelector(`.schedule-row[data-day="${day}"]`);
+                const label    = row ? row.querySelector('.sd-label')    : null;
+                const timesDiv = row ? row.querySelector('.sd-times')    : null;
+                const isOpen   = this.checked;
+
+                if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
+                if (timesDiv) {
+                    timesDiv.classList.toggle('sd-times-closed', !isOpen);
+                    row.querySelectorAll('input[type="time"]').forEach(function (inp) {
+                        inp.disabled = !isOpen;
+                    });
+                }
+                if (row) row.classList.toggle('row-closed', !isOpen);
+
+                saveDraft();
+                validateForm();
+            });
+        });
+
+        document.querySelectorAll('.day-open-t, .day-close-t').forEach(function (inp) {
+            inp.addEventListener('change', function () {
+                saveDraft();
+                validateForm();
+            });
+        });
+    }
+
+    // ============================================================
     // SAVE STEP 2 DRAFT — real-time save to sessionStorage
     // ============================================================
     function saveDraft() {
@@ -723,8 +806,7 @@ function initStep2() {
 
         const draft = {
             name: form.querySelector('#name').value,
-            opening_time: form.querySelector('#opening_time').value,
-            closing_time: form.querySelector('#closing_time').value,
+            weekly_hours: getWeeklySchedule(),
             categories: selectedCategories,
             amenities: selectedAmenities,
             paymentMethods: selectedPayments,
@@ -732,6 +814,7 @@ function initStep2() {
             other_amenity_text: document.getElementById('other_amenity_text')?.value || '',
         };
         sessionStorage.setItem('step2Draft', JSON.stringify(draft));
+        if (typeof window.saveContactLinksDraft === 'function') window.saveContactLinksDraft();
     }
 
     // ============================================================
@@ -744,8 +827,7 @@ function initStep2() {
 
         // Text fields
         if (draft.name) form.querySelector('#name').value = draft.name;
-        if (draft.opening_time) form.querySelector('#opening_time').value = draft.opening_time;
-        if (draft.closing_time) form.querySelector('#closing_time').value = draft.closing_time;
+        if (draft.weekly_hours) restoreWeeklySchedule(draft.weekly_hours);
 
         // Categories checkboxes
         if (draft.categories) {
@@ -788,8 +870,6 @@ function initStep2() {
                 if (cb) cb.checked = true;
             });
         }
-
-        // Note: image cannot be restored from sessionStorage for security reasons
     }
 
     // Fetch and auto-fill address from coordinates
@@ -815,7 +895,6 @@ function initStep2() {
     checkboxItems.forEach(item => {
         const checkbox = item.querySelector('input[type="checkbox"]');
 
-        // Click anywhere on item to toggle checkbox
         item.addEventListener('click', function(e) {
             if (e.target !== checkbox && e.target.tagName !== 'LABEL') {
                 checkbox.checked = !checkbox.checked;
@@ -823,7 +902,6 @@ function initStep2() {
             }
         });
 
-        // Visual feedback when checked
         checkbox.addEventListener('change', function() {
             if (this.checked) {
                 item.classList.add('checked');
@@ -835,57 +913,239 @@ function initStep2() {
     });
 
     // ============================================================
-    // "OTHER" CATEGORY HANDLING
+    // "OTHER" CATEGORY HANDLING + REALTIME INDICATOR
     // ============================================================
     const categoryOtherCheckbox = document.getElementById('category_other');
     const otherCategoryContainer = document.getElementById('other-category-container');
     const otherCategoryInput = document.getElementById('other_category_text');
+    const categoryHint = document.getElementById('category-hint');
+
+    function getExistingCategoryNames() {
+        return Array.from(document.querySelectorAll('#category-group input[name="categories"]'))
+            .filter(cb => cb.value !== 'other')
+            .map(cb => {
+                const label = document.querySelector(`label[for="${cb.id}"]`);
+                return label ? label.textContent.trim() : '';
+            })
+            .filter(Boolean);
+    }
+
+    // ============================================================
+    // WORD VALIDATOR — TIGHTENED GIBBERISH/MASH DETECTION
+    // ============================================================
+    function isValidWordInput(val) {
+        if (!val || !val.trim()) return false;
+        // Letters/spaces/hyphens/apostrophes only, no digits
+        if (!/^[a-zA-Z\u00C0-\u017E\s\-']+$/.test(val)) return false;
+
+        const spaceWords = val.trim().split(/\s+/).filter(Boolean);
+        const VOWELS = /[aeiouAEIOUyY\u00C0-\u00FF]/g;
+        // 3+ consecutive consonants
+        const SHORT_CONS = /[^aeiouAEIOUyY\u00C0-\u00FF']{3,}/;
+        // 4+ consecutive consonants
+        const LONG_CONS  = /[^aeiouAEIOUyY\u00C0-\u00FF']{4,}/;
+        // 'q' must always be followed by 'u'
+        const BAD_Q = /q(?!u)/i;
+        // Keyboard smashes/random gibberish sequences detection
+        const MASHES = /(qwerty|qwert|wert|erty|rtyu|tyui|yuio|uiop|asdf|sdfg|dfgh|fghj|ghjk|hjkl|zxcv|xcvb|cvbn|vbnm|tywer|ywerh|werhs|ywerhs)/i;
+        // NEW: Detect repeating patterns like "weyweywey" or "yutyutyut" (2+ chars repeated 2+ extra times)
+        const REPEATING_PATTERNS = /(.{2,})\1{2,}/i;
+        // NEW: Detect 3 identical characters in a row like "aaa" or "fff"
+        const REPEATING_CHARS = /(.)\1{2,}/i;
+
+        return spaceWords.every(function(spaceWord) {
+            const parts = spaceWord.split('-').filter(Boolean);
+            const isCompound = parts.length > 1;
+            // Hyphenated parts (e.g. "Pet" in Pet-Friendly) allowed at 3 chars
+            const minLen = isCompound ? 3 : 4;
+
+            return parts.every(function(word) {
+                if (word.length < minLen) return false;
+                if (word.length > 20) return false; // MAX LENGTH constraint per word
+
+                if (!/[aeiouAEIOUyY\u00C0-\u00FF]/.test(word)) return false;
+                if (BAD_Q.test(word)) return false;
+                if (MASHES.test(word)) return false; // Blocks 'tywerhs' and similar
+                if (REPEATING_PATTERNS.test(word)) return false; // Blocks 'weyweywey'
+                if (REPEATING_CHARS.test(word)) return false; // Blocks 'aaa'
+
+                if (word.length <= 5) {
+                    if (SHORT_CONS.test(word)) return false;
+                } else {
+                    const vowelCount = (word.match(VOWELS) || []).length;
+                    // Tightened vowel ratio: English/Tagalog words usually have > 25% vowels.
+                    if (vowelCount / word.length <= 0.25) return false;
+                    if (LONG_CONS.test(word)) return false;
+                    // Block ending with 3 consonants unless standard ending
+                    if (/[^aeiouAEIOUyY\u00C0-\u00FF']{3,}$/.test(word) && !/(ght|tch|rth|mph|nch|lds|rts|sts|sts)$/i.test(word)) return false;
+                }
+                return true;
+            });
+        });
+    }
+
+    function updateCategoryHint() {
+        if (!categoryHint) return;
+        const val = (otherCategoryInput.value || '').trim();
+        const existingNames = getExistingCategoryNames();
+
+        if (!val) {
+            categoryHint.className = 'other-realtime-hint';
+            categoryHint.innerHTML = '';
+            otherCategoryInput.classList.remove('input-invalid', 'input-valid');
+            return;
+        }
+
+        // Validate word
+        if (!isValidWordInput(val)) {
+            otherCategoryInput.classList.add('input-invalid');
+            otherCategoryInput.classList.remove('input-valid');
+            categoryHint.className = 'other-realtime-hint show';
+            categoryHint.innerHTML = `<div class="hint-duplicate">⚠️ Please enter a <strong>full and real word</strong> (e.g. "Vegan Restaurant", "Carinderia"). Incomplete words, numbers, or random characters are not allowed. Minimum of 4 letters per word.</div>`;
+            return;
+        }
+
+        const valLower = val.toLowerCase();
+        const matchedNames = existingNames.filter(name =>
+            name.toLowerCase() === valLower ||
+            name.toLowerCase().includes(valLower) ||
+            valLower.includes(name.toLowerCase())
+        );
+
+        if (matchedNames.length > 0) {
+            otherCategoryInput.classList.add('input-invalid');
+            otherCategoryInput.classList.remove('input-valid');
+            const tagsHtml = existingNames.map(name => {
+                const isMatch = name.toLowerCase() === valLower ||
+                    name.toLowerCase().includes(valLower) ||
+                    valLower.includes(name.toLowerCase());
+                return `<span class="hint-tag${isMatch ? ' matched' : ''}">${name}</span>`;
+            }).join('');
+            categoryHint.className = 'other-realtime-hint show';
+            categoryHint.innerHTML = `
+                <div class="hint-duplicate">
+                    <span>⚠️ <strong>"${val}"</strong> is similar to an existing category. Please choose from the list or type a different name.</span>
+                </div>
+                <div class="hint-existing-list">${tagsHtml}</div>`;
+        } else {
+            otherCategoryInput.classList.remove('input-invalid');
+            otherCategoryInput.classList.add('input-valid');
+            categoryHint.className = 'other-realtime-hint show';
+            categoryHint.innerHTML = `<div class="hint-valid">✅ <strong>"${val}"</strong> — valid new category!</div>`;
+        }
+    }
 
     if (categoryOtherCheckbox) {
         categoryOtherCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // Show the text input field
                 otherCategoryContainer.classList.add('show');
                 otherCategoryInput.required = true;
                 otherCategoryInput.focus();
             } else {
-                // Hide the text input field
                 otherCategoryContainer.classList.remove('show');
                 otherCategoryInput.required = false;
                 otherCategoryInput.value = '';
+                otherCategoryInput.classList.remove('input-invalid', 'input-valid');
+                if (categoryHint) { categoryHint.className = 'other-realtime-hint'; categoryHint.innerHTML = ''; }
             }
             validateForm();
         });
 
-        // Validate when typing in other category field
-        otherCategoryInput.addEventListener('input', validateForm);
+        otherCategoryInput.addEventListener('input', () => {
+            updateCategoryHint();
+            validateForm();
+        });
     }
 
     // ============================================================
-    // "OTHER" AMENITY HANDLING
+    // "OTHER" AMENITY HANDLING + REALTIME INDICATOR
     // ============================================================
     const amenityOtherCheckbox = document.getElementById('amenity_other');
     const otherAmenityContainer = document.getElementById('other-amenity-container');
     const otherAmenityInput = document.getElementById('other_amenity_text');
+    const amenityHint = document.getElementById('amenity-hint');
+
+    function getExistingAmenityNames() {
+        return Array.from(document.querySelectorAll('#amenities-group input[name="amenities"]'))
+            .filter(cb => cb.value !== 'other')
+            .map(cb => {
+                const label = document.querySelector(`label[for="${cb.id}"]`);
+                return label ? label.textContent.trim() : '';
+            })
+            .filter(Boolean);
+    }
+
+    function updateAmenityHint() {
+        if (!amenityHint) return;
+        const val = (otherAmenityInput.value || '').trim();
+        const existingNames = getExistingAmenityNames();
+
+        if (!val) {
+            amenityHint.className = 'other-realtime-hint';
+            amenityHint.innerHTML = '';
+            otherAmenityInput.classList.remove('input-invalid', 'input-valid');
+            return;
+        }
+
+        // Validate word
+        if (!isValidWordInput(val)) {
+            otherAmenityInput.classList.add('input-invalid');
+            otherAmenityInput.classList.remove('input-valid');
+            amenityHint.className = 'other-realtime-hint show';
+            amenityHint.innerHTML = `<div class="hint-duplicate">⚠️ Please enter a <strong>full and real word</strong> (e.g. "Live Music", "Rooftop Seating"). Incomplete words, numbers, or random characters are not allowed. Minimum of 4 letters per word.</div>`;
+            return;
+        }
+
+        const valLower = val.toLowerCase();
+        const matchedNames = existingNames.filter(name =>
+            name.toLowerCase() === valLower ||
+            name.toLowerCase().includes(valLower) ||
+            valLower.includes(name.toLowerCase())
+        );
+
+        if (matchedNames.length > 0) {
+            otherAmenityInput.classList.add('input-invalid');
+            otherAmenityInput.classList.remove('input-valid');
+            const tagsHtml = existingNames.map(name => {
+                const isMatch = name.toLowerCase() === valLower ||
+                    name.toLowerCase().includes(valLower) ||
+                    valLower.includes(name.toLowerCase());
+                return `<span class="hint-tag${isMatch ? ' matched' : ''}">${name}</span>`;
+            }).join('');
+            amenityHint.className = 'other-realtime-hint show';
+            amenityHint.innerHTML = `
+                <div class="hint-duplicate">
+                    <span>⚠️ <strong>"${val}"</strong> is similar to an existing amenity. Please choose from the list or type a different name.</span>
+                </div>
+                <div class="hint-existing-list">${tagsHtml}</div>`;
+        } else {
+            otherAmenityInput.classList.remove('input-invalid');
+            otherAmenityInput.classList.add('input-valid');
+            amenityHint.className = 'other-realtime-hint show';
+            amenityHint.innerHTML = `<div class="hint-valid">✅ <strong>"${val}"</strong> — valid new amenity!</div>`;
+        }
+    }
 
     if (amenityOtherCheckbox) {
         amenityOtherCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // Show the text input field
                 otherAmenityContainer.classList.add('show');
                 otherAmenityInput.required = true;
                 otherAmenityInput.focus();
             } else {
-                // Hide the text input field
                 otherAmenityContainer.classList.remove('show');
                 otherAmenityInput.required = false;
                 otherAmenityInput.value = '';
+                otherAmenityInput.classList.remove('input-invalid', 'input-valid');
+                if (amenityHint) { amenityHint.className = 'other-realtime-hint'; amenityHint.innerHTML = ''; }
             }
             validateForm();
         });
 
-        // Validate when typing in other amenity field
-        otherAmenityInput.addEventListener('input', validateForm);
+        otherAmenityInput.addEventListener('input', () => {
+            updateAmenityHint();
+            validateForm();
+        });
     }
 
     // ============================================================
@@ -894,7 +1154,7 @@ function initStep2() {
     function validateForm() {
         let isValid = true;
 
-        // 1. Validate regular required fields (text inputs, time, file)
+        // 1. Validate regular required fields (name, address — not schedule time inputs)
         const requiredInputs = form.querySelectorAll('input[required]:not([type="checkbox"])');
         requiredInputs.forEach(input => {
             if (!input.value || !input.value.trim()) {
@@ -902,7 +1162,20 @@ function initStep2() {
             }
         });
 
-        // 2. Validate Categories (at least one must be selected)
+        // 1b. Validate weekly schedule — at least one day must be open with valid hours
+        const scheduleError = document.getElementById('schedule-error');
+        const schedule = getWeeklySchedule();
+        const hasValidDay = schedule.some(function (entry) {
+            return !entry.is_closed && entry.opening && entry.closing;
+        });
+        if (!hasValidDay) {
+            if (scheduleError) scheduleError.style.display = 'block';
+            isValid = false;
+        } else {
+            if (scheduleError) scheduleError.style.display = 'none';
+        }
+
+        // 2. Validate Categories
         const categoryCheckboxes = form.querySelectorAll('input[name="categories"]:checked');
         const categoryError = document.getElementById('category-error');
 
@@ -913,14 +1186,26 @@ function initStep2() {
             categoryError.classList.remove('show');
         }
 
-        // 3. If "Other" category is checked, validate the text input
+        // 3. If "Other" category is checked, validate the text input AND check for duplicates
         if (categoryOtherCheckbox && categoryOtherCheckbox.checked) {
-            if (!otherCategoryInput.value || !otherCategoryInput.value.trim()) {
+            const catVal = (otherCategoryInput.value || '').trim();
+            if (!catVal) {
                 isValid = false;
+            } else if (!isValidWordInput(catVal)) {
+                isValid = false;
+            } else {
+                const catNames = typeof getExistingCategoryNames === 'function' ? getExistingCategoryNames() : [];
+                const catLower = catVal.toLowerCase();
+                const isDuplicate = catNames.some(name =>
+                    name.toLowerCase() === catLower ||
+                    name.toLowerCase().includes(catLower) ||
+                    catLower.includes(name.toLowerCase())
+                );
+                if (isDuplicate) isValid = false;
             }
         }
 
-        // 4. Validate Payment Methods (at least one must be selected)
+        // 4. Validate Payment Methods
         const paymentCheckboxes = form.querySelectorAll('input[name="payment_methods"]:checked');
         const paymentError = document.getElementById('payment-error');
 
@@ -931,7 +1216,7 @@ function initStep2() {
             paymentError.classList.remove('show');
         }
 
-        // 5. Validate Amenities (at least one must be selected)
+        // 5. Validate Amenities
         const amenityCheckboxes = form.querySelectorAll('input[name="amenities"]:checked');
         const amenitiesError = document.getElementById('amenities-error');
 
@@ -942,97 +1227,86 @@ function initStep2() {
             amenitiesError.classList.remove('show');
         }
 
-        // 6. If "Other" amenity is checked, validate the text input
+        // 6. If "Other" amenity is checked, validate the text input AND check for duplicates
         if (amenityOtherCheckbox && amenityOtherCheckbox.checked) {
-            if (!otherAmenityInput.value || !otherAmenityInput.value.trim()) {
+            const amenVal = (otherAmenityInput.value || '').trim();
+            if (!amenVal) {
                 isValid = false;
+            } else if (!isValidWordInput(amenVal)) {
+                isValid = false;
+            } else {
+                const amenNames = typeof getExistingAmenityNames === 'function' ? getExistingAmenityNames() : [];
+                const amenLower = amenVal.toLowerCase();
+                const isDuplicate = amenNames.some(name =>
+                    name.toLowerCase() === amenLower ||
+                    name.toLowerCase().includes(amenLower) ||
+                    amenLower.includes(name.toLowerCase())
+                );
+                if (isDuplicate) isValid = false;
             }
         }
 
-        // Enable/disable next button
         nextBtn.disabled = !isValid;
         return isValid;
     }
 
-    // Run validation on any input change
     form.addEventListener('input', validateForm);
     form.addEventListener('change', validateForm);
-
-    // ✅ Save draft on every change
     form.addEventListener('input', saveDraft);
     form.addEventListener('change', saveDraft);
 
-    // ✅ Restore draft on page load (back button / refresh)
+    initScheduleUI();
     restoreDraft();
     validateForm();
 
-    // ============================================================
-    // BACK BUTTON
-    // ============================================================
     backBtn.addEventListener('click', () => {
         window.location.href = '/owner/register/location/';
     });
 
-    // ============================================================
-    // NEXT BUTTON - COLLECT ALL DATA
-    // ============================================================
     nextBtn.addEventListener('click', () => {
         if (!validateForm()) {
-            alert('⚠️ Please fill in all required fields.');
+            alert('⚠️ Please fill in all required fields properly.');
             return;
         }
 
-        // Collect selected categories (IDs only, exclude "other")
         const selectedCategories = Array.from(form.querySelectorAll('input[name="categories"]:checked'))
             .map(el => el.value)
-            .filter(val => val !== 'other');  // Remove "other" from IDs
+            .filter(val => val !== 'other');
 
-        // Get custom category text if "Other" was selected
         const otherCategory = categoryOtherCheckbox && categoryOtherCheckbox.checked
             ? otherCategoryInput.value.trim()
             : null;
 
-        // Collect selected amenities (IDs only, exclude "other")
         const selectedAmenities = Array.from(form.querySelectorAll('input[name="amenities"]:checked'))
             .map(el => el.value)
-            .filter(val => val !== 'other');  // Remove "other" from IDs
+            .filter(val => val !== 'other');
 
-        // Get custom amenity text if "Other" was selected
         const otherAmenity = amenityOtherCheckbox && amenityOtherCheckbox.checked
             ? otherAmenityInput.value.trim()
             : null;
 
-        // Collect payment methods
         const paymentMethods = Array.from(form.querySelectorAll('input[name="payment_methods"]:checked'))
             .map(el => el.value);
 
-        // Build details object
         const details = {
             name: form.querySelector('#name').value.trim(),
             address: form.querySelector('#address').value.trim(),
-            opening_time: form.querySelector('#opening_time').value,
-            closing_time: form.querySelector('#closing_time').value,
-            categories: selectedCategories,        // Array of category IDs: ["1", "2", "3"]
-            other_category: otherCategory,         // String or null: "Vegan Cafe"
-            paymentMethods: paymentMethods,        // Array: ["Cash", "GCash"]
-            amenities: selectedAmenities,          // Array of amenity IDs: ["1", "4", "7"]
-            other_amenity: otherAmenity           // String or null: "Pet-Friendly"
+            weekly_hours: getWeeklySchedule(),
+            categories: selectedCategories,
+            other_category: otherCategory,
+            paymentMethods: paymentMethods,
+            amenities: selectedAmenities,
+            other_amenity: otherAmenity,
+            contact_links: (typeof window.getContactLinks === 'function') ? window.getContactLinks() : [],
         };
 
-        console.log('✅ Step 2 Data Collected:', details);
-
-        // Handle image upload
         const fileInput = document.getElementById('establishment_image');
 
-    // ✅ Save draft before proceeding to Step 3
         if (fileInput.files.length > 0) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Store image as base64
                 sessionStorage.setItem('establishment_image_data', e.target.result);
-                // Store all details
                 sessionStorage.setItem('establishmentDetails', JSON.stringify(details));
-                // Proceed to Step 3
                 window.location.href = '/owner/register/credentials/';
             };
             reader.readAsDataURL(fileInput.files[0]);
@@ -1044,8 +1318,6 @@ function initStep2() {
 
 /* ============================================================
    STEP 3 – ACCOUNT CREDENTIALS + OTP
-   ✅ FIXED: Added CSRF token for OTP request
-   ✅ NEW: Added OTP expiry timer and resend functionality
    ============================================================ */
 function initStep3() {
     if (!sessionStorage.getItem('establishmentDetails')) {
@@ -1082,13 +1354,11 @@ function initStep3() {
         const passErrEl = document.getElementById('password-error-msg');
         const retypeErrEl = document.getElementById('retype-error-msg');
 
-        // Reset email border on typing
         emailInput.style.borderColor = '';
 
-        // --- Email validation ---
         let emailError = '';
         if (emailVal === '') {
-            emailError = ''; // Huwag mag-show ng error kung blangko pa lang
+            emailError = '';
         } else if (!emailVal.includes('@')) {
             emailError = '❌ Missing "@" symbol (e.g. juan@gmail.com)';
         } else if (emailVal.endsWith('@')) {
@@ -1098,14 +1368,12 @@ function initStep3() {
         }
         if (emailErrEl) emailErrEl.textContent = emailError;
 
-        // --- Password validation ---
         let passwordError = '';
         if (passwordInput.value.length > 0 && passwordInput.value.length < 8) {
             passwordError = '❌ Password must be at least 8 characters';
         }
         if (passErrEl) passErrEl.textContent = passwordError;
 
-        // --- Retype password validation ---
         let retypeError = '';
         if (retypeInput.value.length > 0 && passwordInput.value !== retypeInput.value) {
             retypeError = '❌ Passwords do not match';
@@ -1121,12 +1389,8 @@ function initStep3() {
     [emailInput, passwordInput, retypeInput].forEach(el => el.addEventListener('input', validateInputs));
     backBtn.addEventListener('click', () => window.location.href = '/owner/register/details/');
 
-    // ✅ Start OTP countdown timer (10 minutes)
     function startOtpTimer() {
-        // Clear any existing timer
         if (timerInterval) clearInterval(timerInterval);
-
-        // Set expiry time to 10 minutes from now
         otpExpiryTime = Date.now() + (10 * 60 * 1000);
 
         timerInterval = setInterval(() => {
@@ -1149,14 +1413,12 @@ function initStep3() {
             const seconds = Math.floor((remaining % 60000) / 1000);
             otpTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-            // Change color to orange when less than 2 minutes
             if (remaining < 120000) {
                 otpTimer.style.color = '#f59e0b';
             }
         }, 1000);
     }
 
-    // ✅ Start resend cooldown timer (30 seconds)
     function startResendCooldown() {
         resendOtpBtn.disabled = true;
         resendCooldownTime = Date.now() + (30 * 1000);
@@ -1178,7 +1440,6 @@ function initStep3() {
         }, 100);
     }
 
-    // ✅ FIXED: Send OTP with CSRF token
     function sendOTP() {
         const email = emailInput.value;
         sendOtpBtn.disabled = true;
@@ -1196,39 +1457,32 @@ function initStep3() {
         })
         .then(res => res.json())
         .then(data => {
-            console.log('OTP Response:', data);
             if (data.success) {
                 otpEmailDisplay.textContent = email;
                 otpModal.style.display = 'flex';
                 startOtpTimer();
                 startResendCooldown();
 
-                // Reset OTP input and error
                 document.getElementById('otp-input').value = '';
                 otpError.textContent = '';
                 document.getElementById('verify-otp-btn').disabled = false;
 
-                // Reset timer styling
                 otpTimer.style.color = '#dc2626';
                 otpTimerLabel.textContent = 'OTP expires in:';
                 otpTimerContainer.style.background = '#f0f9ff';
             } else {
-                // ✅ Show inline error under email field instead of alert
                 const emailErrEl = document.getElementById('email-error-msg');
                 const errorMsg = data.error || 'Failed to send OTP. Please try again.';
                 if (emailErrEl) {
                     emailErrEl.textContent = '❌ ' + errorMsg;
-                    // Highlight the email input
                     emailInput.style.borderColor = '#e53935';
                     emailInput.focus();
                 } else {
                     alert(errorMsg);
                 }
-                console.error('Failed to send OTP:', data.error);
             }
         })
         .catch((err) => {
-            console.error('Error sending OTP:', err);
             alert('Network error. Please check your connection.');
         })
         .finally(() => {
@@ -1239,7 +1493,6 @@ function initStep3() {
 
     sendOtpBtn.addEventListener('click', sendOTP);
 
-    // ✅ Resend OTP button handler
     resendOtpBtn.addEventListener('click', () => {
         resendOtpBtn.disabled = true;
         resendOtpBtn.textContent = 'Sending...';
@@ -1266,14 +1519,10 @@ function initStep3() {
                     otpError.style.color = 'red';
                 }, 3000);
 
-                // Restart timers
                 startOtpTimer();
                 startResendCooldown();
-
-                // Re-enable verify button
                 document.getElementById('verify-otp-btn').disabled = false;
 
-                // Reset timer styling
                 otpTimer.style.color = '#dc2626';
                 otpTimerLabel.textContent = 'OTP expires in:';
                 otpTimerContainer.style.background = '#f0f9ff';
@@ -1282,7 +1531,6 @@ function initStep3() {
             }
         })
         .catch((err) => {
-            console.error('Error resending OTP:', err);
             otpError.textContent = 'Network error. Please try again.';
         })
         .finally(() => {
@@ -1292,21 +1540,15 @@ function initStep3() {
     });
 
     window.addEventListener('click', (e) => {
-        if (e.target === otpModal) {
-            // Don't close modal by clicking outside - user must complete or refresh page
-        }
         if (e.target === successModal) successModal.style.display = 'none';
     });
 
-    // ✅ X button — close modal, stop timers, keep Step 1 & 2 data intact
     const closeOtpBtn = document.getElementById('close-otp-modal-btn');
     if (closeOtpBtn) {
         closeOtpBtn.addEventListener('click', () => {
-            // Stop timers
             if (timerInterval) clearInterval(timerInterval);
             if (resendInterval) clearInterval(resendInterval);
 
-            // Hide modal and reset OTP fields
             otpModal.style.display = 'none';
             document.getElementById('otp-input').value = '';
             otpError.textContent = '';
@@ -1316,13 +1558,9 @@ function initStep3() {
             document.getElementById('verify-otp-btn').disabled = false;
             resendOtpBtn.disabled = true;
             resendCountdown.textContent = '';
-
-            // NOTE: latitude, longitude, step2Draft, establishmentDetails
-            // are intentionally NOT cleared — Step 1 & 2 data stays safe.
         });
     }
 
-    // ✅ OTP Form Submission (with CSRF)
     otpForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         otpError.textContent = '';
@@ -1365,11 +1603,11 @@ function initStep3() {
 
             if (!res.ok || !result.success) throw new Error(result.error || 'Registration failed.');
 
-            // Clear timers
             if (timerInterval) clearInterval(timerInterval);
             if (resendInterval) clearInterval(resendInterval);
 
-            sessionStorage.clear(); // clears step2Draft, step3Credentials, establishmentDetails, etc.            otpModal.style.display = 'none';
+            sessionStorage.clear();
+            otpModal.style.display = 'none';
             successModal.style.display = 'flex';
             setTimeout(() => window.location.href = result.redirect_url, 2000);
         } catch (err) {
@@ -1380,9 +1618,6 @@ function initStep3() {
     });
 }
 
-/* ============================================================
-   Helper – Convert Base64 → Blob
-   ============================================================ */
 function dataURLtoBlob(dataURL) {
     const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
     const bstr = atob(arr[1]);

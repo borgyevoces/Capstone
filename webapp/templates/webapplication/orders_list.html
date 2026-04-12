@@ -330,6 +330,7 @@
         white-space: nowrap;
     }
     .elapsed-chip i { font-size: 11px; color: #94a3b8; }
+    .col-elapsed > div { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 
     .btn-view {
         background: #4a5568;
@@ -1350,8 +1351,9 @@
     // ==========================================
     // GLOBAL STATE
     // ==========================================
-    // ✅ REALTIME: establishment ID exposed for WebSocket subscriptions
-    const establishmentId = {{ establishment.id }};
+    // NOTE: establishmentId is declared in the base template's inline script block.
+    // Do NOT redeclare it here — duplicate const declarations across <script> tags
+    // in the same global scope throw a SyntaxError and break ALL chat functions.
 
     let orders = [];
     let currentTab = 'request';
@@ -1383,8 +1385,9 @@
         loadOrders();
 
         // ✅ REALTIME: WebSocket handles instant pushes.
-        // Keep poll as a 30-second fallback only (catches missed WS messages).
-        setInterval(loadOrders, 30000);
+        // Keep poll as a 10-second fallback to ensure new orders appear quickly
+        // (especially important for reorders which are broadcast via WebSocket).
+        setInterval(loadOrders, 10000);
 
         // Instant refresh when tab becomes visible again
         document.addEventListener('visibilitychange', function() {
@@ -1417,11 +1420,16 @@
             ws.onmessage = function (e) {
                 try {
                     const d = JSON.parse(e.data);
-                    if (d.type !== 'order_status_update') return;
+                    console.log('📋 [Owner Orders WS] Message received:', d);
+
+                    if (d.type !== 'order_status_update') {
+                        console.log('📋 [Owner Orders WS] Ignoring message type: ' + d.type);
+                        return;
+                    }
 
                     const orderId   = d.order_id;
                     const newStatus = d.new_status;
-                    console.log('📋 [Owner Orders WS] Order #' + orderId + ' → ' + newStatus);
+                    console.log('📋 [Owner Orders WS] Processing Order #' + orderId + ' → ' + newStatus);
 
                     const idx = orders.findIndex(function (o) { return o.id === orderId; });
 
@@ -1534,11 +1542,32 @@
                                 }
                             }
                             updateCounts();
+                        } else if (newStatus === 'request') {
+                            // ✅ FIX: prevStatus === newStatus === 'request'
+                            // Client edited quantities OR re-requested the same order.
+                            // Reload so the owner sees updated quantities in real-time.
+                            loadOrders();
+                            if (currentTab === 'request') {
+                                showToast('Order #' + orderId + ' was updated by the client.', 'info');
+                            }
                         }
 
                     } else {
-                        // ── Brand-new order we haven't seen — reload ────────
-                        loadOrders();
+                        // ── Brand-new order / re-request from cancelled/to_pay — reload ────────
+                        console.log('📋 [Owner Orders WS] 🆕 Brand new order detected! Order #' + orderId + ' with status=' + newStatus);
+                        console.log('📋 Current orders count: ' + orders.length + ', current tab: ' + currentTab);
+
+                        // ✅ Call loadOrders with a small delay to ensure DB commit has finished
+                        setTimeout(() => {
+                            console.log('📋 [Owner Orders WS] Loading orders from API...');
+                            loadOrders();
+                        }, 500);
+
+                        if (newStatus === 'request') {
+                            // ✅ FIX: Always notify owner of new request — client may have
+                            // re-ordered from to_pay while owner is still on that tab.
+                            showToast('✅ New order request received!', 'success');
+                        }
                     }
 
                 } catch (err) {
@@ -1560,6 +1589,7 @@
     // DATA LOADING
     // ==========================================
     function loadOrders() {
+        console.log('📋 [loadOrders] Fetching orders from API...');
         fetch('/api/food-establishment/orders/', {
             method: 'GET',
             headers: {
@@ -1569,8 +1599,15 @@
         })
             .then(response => response.json())
             .then(data => {
-                console.log('Orders loaded:', data);
-                if (data.success && data.orders) {
+                console.log('📋 [loadOrders] API Response:', data);
+                if (data.success && Array.isArray(data.orders)) {
+                    console.log('📋 [loadOrders] Received ' + data.orders.length + ' orders from API');
+
+                    // ✅ Log each order from API
+                    data.orders.forEach((o, idx) => {
+                        console.log('📋 [loadOrders] Order #' + o.id + ': status=' + o.status + ', establishment=' + o.establishment + ', items=' + (o.items ? o.items.length : 0));
+                    });
+
                     // ✅ FIX: Hydrate in-memory flags from API data so cancelled-by-client
                     // request orders are shown in the request tab even after a page reload.
                     // The API now returns cancelled_from_request + cancel_reason per order.
@@ -1591,14 +1628,22 @@
                         o => o.status === 'cancelled' && o._cancelledFromRequest && !freshIds.has(o.id)
                     );
                     orders = data.orders.concat(preservedCancelled);
+                    console.log('📋 [loadOrders] Updated orders array. Total: ' + orders.length);
+                    console.log('📋 [loadOrders] Current tab: ' + currentTab);
+                    const requestOrders = orders.filter(o => o.status === 'request');
+                    console.log('📋 [loadOrders] Request-status orders: ' + requestOrders.length);
+                    requestOrders.forEach(o => {
+                        console.log('📋 [loadOrders]   - Order #' + o.id + ' from ' + o.customer_name);
+                    });
                     updateCounts();
                     renderOrders();
                 } else {
+                    console.error('📋 [loadOrders] Failed - data.success=' + data.success + ', data.orders is array=' + Array.isArray(data.orders));
                     showError('Failed to load orders');
                 }
             })
             .catch(error => {
-                console.error('Error loading orders:', error);
+                console.error('📋 [loadOrders] Network error:', error);
                 showError('Network error. Please check your connection.');
             });
     }
@@ -1607,15 +1652,22 @@
     // UI UPDATES
     // ==========================================
     function updateCounts() {
+        console.log('📋 [updateCounts] called with ' + orders.length + ' total orders');
         Object.keys(LABELS).forEach(status => {
             let count = orders.filter(o => (o.status || 'request') === status).length;
+            console.log('📋 [updateCounts] ' + status + ': ' + count + ' orders');
             // ✅ FIX: Both client-cancelled AND owner-rejected request orders are shown inside
             // the request tab — include them all in the request count.
             if (status === 'request') {
-                count += orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
+                const cancelledCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
+                console.log('📋 [updateCounts] ' + status + ' has ' + cancelledCount + ' cancelled orders to include');
+                count += cancelledCount;
             }
             const el = document.getElementById(`count-${status}`);
-            if (el) el.textContent = count;
+            if (el) {
+                el.textContent = count;
+                console.log('📋 [updateCounts] Set count-' + status + ' to ' + count);
+            }
         });
     }
 
@@ -1629,19 +1681,37 @@
 
     function renderOrders() {
         const container = document.getElementById('ordersContainer');
+        console.log('📋 [renderOrders] Starting render. Current tab: ' + currentTab + ', Total orders: ' + orders.length);
+
         const filtered = orders
             .filter(o => {
                 // ✅ FIX: Show cancelled-by-client request orders inside the request tab
                 // so the owner can see the reason and manually dismiss them.
                 if (currentTab === 'request') {
-                    return (o.status || 'request') === 'request' ||
+                    const match = (o.status || 'request') === 'request' ||
                            (o.status === 'cancelled' && o._cancelledFromRequest);
+                    if(match) {
+                        console.log('📋 [renderOrders filter] ✅ Order #' + o.id + ' matches (status=' + o.status + ')');
+                    }
+                    return match;
                 }
-                return (o.status || 'request') === currentTab;
+                const match = (o.status || 'request') === currentTab;
+                if(match) {
+                    console.log('📋 [renderOrders filter] ✅ Order #' + o.id + ' matches status ' + currentTab);
+                }
+                return match;
             })
             .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
+        console.log('📋 [renderOrders] ✅ Filtered to ' + filtered.length + ' orders for tab "' + currentTab + '"');
+
+        // Log each filtered order
+        filtered.forEach(o => {
+            console.log('📋 [renderOrders] Will display Order #' + o.id + ' - ' + o.customer_name + ' ₱' + o.total_amount);
+        });
+
         if (filtered.length === 0) {
+            console.log('📋 [renderOrders] No orders to display - showing empty state');
             container.innerHTML = `
                 <div class="state-container">
                     <div class="state-icon"><i class="fas fa-inbox"></i></div>
@@ -1680,19 +1750,12 @@
                   }).join('') + `<div class="row-item-total" id="order-total-${o.id}">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
                 : '<span style="color:#a0aec0;font-size:12px;">—</span>';
 
-            // Stock issue flag and banner for request + to_pay rows
+            // Stock issue flag for request + to_pay rows (banner removed — chips on each item are enough)
             const ownerHasStockIssue = isOwnerStockTab && (o.items || []).some(i =>
                 typeof i.available_stock === 'number' && i.available_stock < i.quantity
             );
             o._hasStockIssue = ownerHasStockIssue;
-            const bannerMsg = currentTab === 'request'
-                ? '<i class="fas fa-exclamation-triangle"></i> Some items ran out of stock — remove them or reject the order.'
-                : '<i class="fas fa-exclamation-triangle"></i> Stock insufficient — consider rejecting this order so the customer can reorder.';
-            const ownerStockBanner = isOwnerStockTab
-                ? `<div class="owner-stock-banner${ownerHasStockIssue ? ' visible' : ''}" id="owner-stock-banner-${o.id}">
-                       ${bannerMsg}
-                   </div>`
-                : '';
+            const ownerStockBanner = '';
 
             // ── 10-minute countdown for to_pay orders ──
             // Timer starts from updated_at (when owner accepted = moved to to_pay,
@@ -1814,6 +1877,8 @@
                     </button>`;
                 }
             } else if (currentTab === 'to_pay') {
+                // ✅ Show Reject button — regardless of stock issue
+                // Owner can reject the order, whether stock is low or not
                 actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
                     <i class="fas fa-times"></i> Reject
                 </button>`;
@@ -1865,6 +1930,11 @@
                         <div class="row-meta" style="font-weight:600;color:#374151;font-size:12px;">${formatTime(o.created_at)}</div>
                         <div class="row-meta">${formatDate(o.created_at)}</div>
                     </td>
+                    ${currentTab !== 'completed' && currentTab !== 'to_claim' ? `<td class="col-elapsed">
+                        <span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
+                            <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
+                        </span>
+                    </td>` : ''}
                     <td class="col-customer">
                         <div class="row-customer-name">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
                     </td>
@@ -1885,13 +1955,8 @@
                                 : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
                         }
                     </td>
-                    ${currentTab !== 'completed' ? `<td class="col-elapsed">
-                        ${currentTab === 'to_claim'
-                            ? claimTimerHtml
-                            : `<span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
-                                <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
-                               </span>`
-                        }
+                    ${currentTab === 'to_claim' ? `<td class="col-elapsed">
+                        ${claimTimerHtml}
                     </td>` : ''}
                     <td class="col-actions">
                         ${currentTab === 'completed' ? `<button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button>` : ''}
@@ -1914,11 +1979,12 @@
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Order</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:110px;">Time</th>
+                        ${currentTab !== 'completed' && currentTab !== 'to_claim' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;text-align:center;">Elapsed</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
                         ${currentTab !== 'request' && currentTab !== 'to_pay' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:80px;">Payment</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:100px;text-align:center;">Status</th>
-                        ${currentTab !== 'completed' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">${currentTab === 'to_claim' ? 'Left to Claim' : 'Elapsed'}</th>` : ''}
+                        ${currentTab === 'to_claim' ? `<th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:90px;text-align:center;">Left to Claim</th>` : ''}
                         <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -2467,21 +2533,29 @@
     function confirmCancelClaimOrder()    { submitUnifiedReject(); }
 
     // ── Direct Remove for out-of-stock request orders (no modal) ─────────────
+    // Dismisses the row from the OWNER's view only — the client's order history
+    // is NOT affected (order stays visible to the client as-is).
     function directRemoveOrder(orderId, btnEl) {
         if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
-        const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
-        const reason = 'The item you ordered is currently out of stock.';
-        fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
+        const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        fetch(`/api/food-establishment/orders/${orderId}/dismiss/`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-            body:    JSON.stringify({ reason })
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                console.log('📋 [directRemoveOrder] Order #' + orderId + ' dismissed successfully');
                 orders = orders.filter(o => o.id !== orderId);
-                showToast(`Order #${orderId} removed — customer notified.`, 'success');
+                showToast(`Order #${orderId} removed from your view.`, 'success');
                 removeOrderRow(orderId);
+                
+                // ✅ CRITICAL: After removing an order, reload immediately to catch any new reorders
+                // that might have just been created by the client while we were removing the old one.
+                console.log('📋 [directRemoveOrder] Reloading orders to check for new reorders...');
+                setTimeout(() => {
+                    loadOrders();
+                }, 300);
             } else {
                 showToast(data.message || 'Could not remove order.', 'error');
                 if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
@@ -2957,15 +3031,7 @@ function ownerRemoveOrderItem(orderId, orderItemId, btnEl) {
                 itemRow.style.opacity = '0';
                 setTimeout(() => itemRow.remove(), 260);
             }
-            // Re-evaluate banner
-            const stillHasIssue = order && (order.items || []).some(i =>
-                typeof i.available_stock === 'number' && i.available_stock < i.quantity
-            );
-            const banner = document.getElementById('owner-stock-banner-' + orderId);
-            if (banner) {
-                if (stillHasIssue) banner.classList.add('visible');
-                else banner.classList.remove('visible');
-            }
+            // (banner removed — stock chips on individual items are sufficient)
         }
     })
     .catch(() => {
@@ -3043,16 +3109,10 @@ function ownerRemoveOrderItem(orderId, orderItemId, btnEl) {
                         });
                         if (!anyChange) return;
 
+                        // (banner removed — stock chips on individual items are sufficient)
                         const nowHasIssue = (order.items || []).some(i =>
                             typeof i.available_stock === 'number' && i.available_stock < i.quantity
                         );
-
-                        // Update banner
-                        const banner = document.getElementById('owner-stock-banner-' + order.id);
-                        if (banner) {
-                            if (nowHasIssue) banner.classList.add('visible');
-                            else banner.classList.remove('visible');
-                        }
 
                         // Update per-item chips and remove buttons
                         const row = document.querySelector('tr.order-row[data-id="' + order.id + '"]');

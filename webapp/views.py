@@ -107,7 +107,7 @@ import requests
 from django.core.cache import cache
 from datetime import datetime, time as dt_time
 
- 
+
 # ✅ ADD THIS HELPER FUNCTION at the top of views.py (after imports)
 def get_current_status(opening_time, closing_time):
     """
@@ -539,6 +539,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     When user lands on confirm page, saves account_type to session.
     On form submit, success_url carries ?at= to the complete view.
     """
+
     def dispatch(self, request, *args, **kwargs):
         at = request.GET.get('at', '').strip().lower()
         if at in ('owner', 'client'):
@@ -653,7 +654,6 @@ def password_reset_complete_redirect(request):
     })
 
 
-
 def _ensure_user_profile(user):
     """
     Ensure UserProfile exists for a user — safe to call on every request.
@@ -736,6 +736,21 @@ def kabsueats_main_view(request):
             'db_error': True,
             'error_message': 'Our database is temporarily unavailable. Please try again in a few minutes.',
         })
+
+    # ✅ Bulk-fetch today's BusinessHours for all active establishments (one query)
+    # so calculated_status uses per-day hours — same source as the details page.
+    from .models import BusinessHours as _BH_MAIN
+    try:
+        from zoneinfo import ZoneInfo as _ZI_MAIN
+        _today_idx = datetime.now(_ZI_MAIN('Asia/Manila')).weekday()
+    except Exception:
+        _today_idx = datetime.now().weekday()
+    _bh_today_qs = _BH_MAIN.objects.filter(
+        establishment__is_active=True,
+        day_of_week=_today_idx,
+    ).select_related('establishment')
+    _bh_today_map = {bh.establishment_id: bh for bh in _bh_today_qs}
+
     for est in food_establishments_queryset:
         # Calculate distance
         if est.latitude is not None and est.longitude is not None:
@@ -751,18 +766,26 @@ def kabsueats_main_view(request):
         est.average_rating = rating_data['rating__avg'] if rating_data['rating__avg'] is not None else 0
         est.review_count = rating_data['id__count']
 
-        # ✅ CRITICAL FIX: Calculate fresh status on every request
-        if est.opening_time and est.closing_time:
-            if est.opening_time <= est.closing_time:
-                if est.opening_time <= current_time <= est.closing_time:
-                    est.calculated_status = "Open"
-                else:
-                    est.calculated_status = "Closed"
+        # ✅ Use today's BusinessHours per-day entry for accurate status
+        # Falls back to flat opening/closing time if no BusinessHours entry exists
+        _bh = _bh_today_map.get(est.id)
+        if _bh and not _bh.is_closed and _bh.opening_time and _bh.closing_time:
+            _open_t  = _bh.opening_time
+            _close_t = _bh.closing_time
+        else:
+            _open_t  = est.opening_time
+            _close_t = est.closing_time
+
+        # Store today's effective hours on the object for template use
+        # ✅ Use _eff_ prefix to avoid collision with the model's @property today_opening_time
+        est.eff_opening_time = _open_t
+        est.eff_closing_time = _close_t
+
+        if _open_t and _close_t:
+            if _open_t <= _close_t:
+                est.calculated_status = "Open" if _open_t <= current_time <= _close_t else "Closed"
             else:
-                if current_time >= est.opening_time or current_time <= est.closing_time:
-                    est.calculated_status = "Open"
-                else:
-                    est.calculated_status = "Closed"
+                est.calculated_status = "Open" if current_time >= _open_t or current_time <= _close_t else "Closed"
         else:
             est.calculated_status = "Closed"
 
@@ -882,6 +905,83 @@ def kabsueats_map_view(request):
         'CVSU_LONGITUDE': 120.981348,
     }
     return render(request, 'webapplication/map.html', context)
+
+
+def get_map_categories(request):
+    """
+    Real-time API endpoint that returns all unique categories
+    from currently active/registered food establishments.
+
+    Returns:
+        {
+          "success": true,
+          "categories": [
+            {"name": "Canteen", "slug": "canteen", "count": 3},
+            ...
+          ]
+        }
+
+    The frontend polls this every 30 seconds so new categories
+    appear without a full page reload.
+    """
+    try:
+        from django.db.models import Count
+
+        # Named categories from the Category M2M relation
+        named = (
+            Category.objects
+            .filter(foodestablishment__is_active=True)
+            .annotate(est_count=Count('foodestablishment', distinct=True))
+            .order_by('name')
+            .values('name', 'est_count')
+        )
+
+        categories = []
+        seen = set()
+
+        for row in named:
+            slug = row['name'].strip().lower()
+            if slug and slug not in seen:
+                seen.add(slug)
+                categories.append({
+                    'name': row['name'].strip(),
+                    'slug': slug,
+                    'count': row['est_count'],
+                })
+
+        # Also pick up free-text other_category values
+        other_qs = (
+            FoodEstablishment.objects
+            .filter(is_active=True)
+            .exclude(other_category__isnull=True)
+            .exclude(other_category__exact='')
+            .values_list('other_category', flat=True)
+        )
+        from collections import Counter
+        other_counts = Counter()
+        for val in other_qs:
+            for part in val.split(','):
+                part = part.strip()
+                if part:
+                    other_counts[part.lower()] += 1
+
+        for raw, cnt in sorted(other_counts.items(), key=lambda x: x[0]):
+            if raw not in seen:
+                seen.add(raw)
+                categories.append({
+                    'name': raw.title(),
+                    'slug': raw,
+                    'count': cnt,
+                })
+
+        return JsonResponse({'success': True, 'categories': categories})
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"get_map_categories error: {e}")
+        return JsonResponse({'success': False, 'categories': [], 'error': str(e)})
+
+
     query = request.GET.get('q', '')
     if query:
         food_establishments = FoodEstablishment.objects.filter(name__icontains=query)
@@ -1154,6 +1254,39 @@ def food_establishment_details(request, establishment_id):
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
+    # ── Build weekly schedule for the Hours section ──────────────────────────
+    from .models import BusinessHours as _BH
+    from datetime import datetime as _dt
+    try:
+        from zoneinfo import ZoneInfo as _ZI
+        _ph_now = _dt.now(_ZI('Asia/Manila'))
+    except Exception:
+        _ph_now = _dt.now()
+
+    DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    today_weekday = _ph_now.weekday()
+
+    _bh_qs = _BH.objects.filter(establishment=establishment).order_by('day_of_week')
+    _bh_map = {bh.day_of_week: bh for bh in _bh_qs}
+
+    business_hours_list = []
+    for i, day_name in enumerate(DAY_NAMES):
+        if i in _bh_map:
+            bh = _bh_map[i]
+            bh.day_name = day_name
+            business_hours_list.append(bh)
+        else:
+            # fallback row using global times
+            class _FallbackBH:
+                pass
+            fb = _FallbackBH()
+            fb.day_of_week  = i
+            fb.day_name     = day_name
+            fb.is_closed    = False
+            fb.opening_time = establishment.opening_time
+            fb.closing_time = establishment.closing_time
+            business_hours_list.append(fb)
+
     context = {
         'establishment': establishment,
         'menu_items': menu_items,
@@ -1165,7 +1298,9 @@ def food_establishment_details(request, establishment_id):
         'reviews': other_reviews,
         'is_guest': not request.user.is_authenticated,
         'current_user_gravatar': current_user_gravatar,
-        'cart_count': cart_count,  # ✅ powers #cart-count-badge on initial render
+        'cart_count': cart_count,
+        'business_hours_list': business_hours_list,
+        'today_weekday': today_weekday,
     }
     return render(request, 'webapplication/food_establishment_details.html', context)
 
@@ -1287,6 +1422,29 @@ def toggle_item_availability(request, item_id):
 
         item.is_available = not item.is_available
         item.save()
+
+        # ✅ REALTIME: Broadcast availability change to all cart pages via inventory WS
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            _cl = get_channel_layer()
+            if _cl:
+                async_to_sync(_cl.group_send)(
+                    f'inventory_{item.food_establishment_id}',
+                    {
+                        'type': 'inventory.item_updated',
+                        'update': {
+                            'menu_item_id': item.id,
+                            'name':         item.name,
+                            'price':        str(item.price),
+                            'quantity':     item.quantity,
+                            'is_available': item.is_available,
+                            'image_url':    item.image.url if item.image else '',
+                        }
+                    }
+                )
+        except Exception as _bcast_err:
+            print(f'[toggle_item_availability] WS broadcast warning: {_bcast_err}')
 
         if item.is_available:
             messages.success(request, f"'{item.name}' is now available.")
@@ -1850,10 +2008,10 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 response = sg.send(sg_msg)
 
                 if response.status_code in (200, 202):
-                    logger.info(f"✅ SendGrid sent to {recipient_list} (attempt {attempt+1})")
+                    logger.info(f"✅ SendGrid sent to {recipient_list} (attempt {attempt + 1})")
                     return 1
                 else:
-                    logger.warning(f"⚠️ SendGrid status {response.status_code} on attempt {attempt+1}")
+                    logger.warning(f"⚠️ SendGrid status {response.status_code} on attempt {attempt + 1}")
 
             except HTTPError as http_err:
                 err_str = str(http_err).lower()
@@ -1863,10 +2021,10 @@ def send_mail(subject, message, from_email, recipient_list, fail_silently=False,
                 elif '401' in err_str:
                     logger.error("❌ SendGrid 401 — invalid API key. No point retrying.")
                     break
-                logger.error(f"❌ SendGrid HTTP error attempt {attempt+1}: {http_err}")
+                logger.error(f"❌ SendGrid HTTP error attempt {attempt + 1}: {http_err}")
 
             except Exception as e:
-                logger.error(f"❌ SendGrid error attempt {attempt+1}: {e}")
+                logger.error(f"❌ SendGrid error attempt {attempt + 1}: {e}")
 
             if attempt < MAX_RETRIES - 1:
                 time.sleep(RETRY_DELAYS[attempt + 1])
@@ -2377,12 +2535,52 @@ def checkout_page(request):
     )
     items = order.orderitem_set.select_related('menu_item').all()
 
+    # ── Determine initial payment-method visibility for the template ─────
+    # Values stored as comma-separated e.g. "Cash, GCash" or "Cash" or "GCash".
+    # Empty/null → show both (safe fallback).
+    _pm_raw = (order.establishment.payment_methods or '').strip()
+    if _pm_raw:
+        _pm_parts = [p.strip().lower() for p in _pm_raw.split(',') if p.strip()]
+        _show_online = any(
+            p in ('gcash', 'online', 'card', 'maya', 'paymaya', 'credit', 'debit')
+            for p in _pm_parts
+        )
+        # ⚠️  Must use exact match — 'cash' is a substring of 'gcash' so
+        #    p.includes('cash') would wrongly show Cash on Pickup for GCash-only setups.
+        _show_cash = any(p in ('cash', 'cash on pickup') for p in _pm_parts)
+    else:
+        _show_online = True
+        _show_cash   = True
+
     context = {
-        'order': order,
-        'items': items,
-        'user': request.user,
+        'order':               order,
+        'items':               items,
+        'user':                request.user,
+        'show_online_payment': _show_online,
+        'show_cash_payment':   _show_cash,
+        'establishment_id':    order.establishment.id,
     }
     return render(request, 'webapplication/checkout.html', context)
+
+
+def get_establishment_payment_methods(request, establishment_id):
+    """
+    Lightweight endpoint polled by checkout.html every 5 seconds.
+    Returns the current payment_methods string for an establishment
+    so the checkout page can show/hide buttons in real-time without
+    relying on WebSocket signals that may not carry this field.
+
+    GET /api/establishment/<id>/payment-methods/
+    Response: { "payment_methods": "Cash, GCash" }
+    """
+    try:
+        est = FoodEstablishment.objects.only('payment_methods').get(
+            id=establishment_id,
+            is_active=True,
+        )
+        return JsonResponse({'payment_methods': est.payment_methods or ''})
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({'payment_methods': ''})
 
 
 @login_required
@@ -2427,6 +2625,8 @@ def order_confirmation_view(request, order_id):
 # =================================================== OWNER ========================================================
 # ===================================================================================================================
 User = get_user_model()
+
+
 def get_nearby_establishments(request):
     """
     API endpoint to get establishments within a given radius.
@@ -2475,7 +2675,7 @@ def get_nearby_establishments(request):
 
             # ✅ Opening/closing hours display
             opening = est.opening_time.strftime('%I:%M %p') if est.opening_time else None
-            closing  = est.closing_time.strftime('%I:%M %p') if est.closing_time else None
+            closing = est.closing_time.strftime('%I:%M %p') if est.closing_time else None
 
             # Build absolute image URL
             image_url = ''
@@ -2486,19 +2686,19 @@ def get_nearby_establishments(request):
                     image_url = ''
 
             nearby_establishments.append({
-                'id':              est.id,
-                'name':            est.name,
-                'address':         est.address,
-                'latitude':        float(est.latitude),
-                'longitude':       float(est.longitude),
-                'distance':        round(distance, 2),
-                'status':          est.status,
-                'categories':      categories_str,
-                'amenities':       amenities_str,
+                'id': est.id,
+                'name': est.name,
+                'address': est.address,
+                'latitude': float(est.latitude),
+                'longitude': float(est.longitude),
+                'distance': round(distance, 2),
+                'status': est.status,
+                'categories': categories_str,
+                'amenities': amenities_str,
                 'payment_methods': est.payment_methods or '',
-                'opening_time':    opening,
-                'closing_time':    closing,
-                'image_url':       image_url,
+                'opening_time': opening,
+                'closing_time': closing,
+                'image_url': image_url,
             })
 
         # Sort by distance ascending
@@ -2520,6 +2720,7 @@ def get_nearby_establishments(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
@@ -2667,18 +2868,18 @@ def owner_register_step1_location(request):
             category_name = est.other_category
 
         establishments_list.append({
-            'name':           est.name,
-            'address':        est.address or '',
-            'latitude':       float(est.latitude),
-            'longitude':      float(est.longitude),
-            'image_url':      image_url,      # full absolute URL
-            'status':         status,         # real-time PH timezone Open/Closed
+            'name': est.name,
+            'address': est.address or '',
+            'latitude': float(est.latitude),
+            'longitude': float(est.longitude),
+            'image_url': image_url,  # full absolute URL
+            'status': status,  # real-time PH timezone Open/Closed
             'category__name': category_name,
         })
 
     return render(request, 'webapplication/register_step1_location.html', {
-        'CVSU_LATITUDE':           os.getenv('CVSU_LATITUDE'),
-        'CVSU_LONGITUDE':          os.getenv('CVSU_LONGITUDE'),
+        'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE'),
+        'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE'),
         'existing_establishments': json.dumps(establishments_list),
     })
 
@@ -2955,27 +3156,41 @@ def verify_and_register(request):
     user.save()
 
     # ============================================================
-    # Parse time strings to time objects
+    # Parse weekly_hours → derive default opening/closing times
     # ============================================================
     from datetime import time as dt_time
+    import json as _json
 
-    opening_time_str = data.get('opening_time')
-    closing_time_str = data.get('closing_time')
+    weekly_hours_raw = data.get('weekly_hours', [])
+    if isinstance(weekly_hours_raw, str):
+        try:
+            weekly_hours_raw = _json.loads(weekly_hours_raw)
+        except Exception:
+            weekly_hours_raw = []
 
     opening_time = None
     closing_time = None
+    parsed_hours = []
 
-    if opening_time_str:
+    for entry in weekly_hours_raw:
         try:
-            opening_time = dt_time.fromisoformat(opening_time_str)
-        except ValueError as e:
-            print(f"⚠️ Invalid opening_time format: {opening_time_str} - {e}")
-
-    if closing_time_str:
-        try:
-            closing_time = dt_time.fromisoformat(closing_time_str)
-        except ValueError as e:
-            print(f"⚠️ Invalid closing_time format: {closing_time_str} - {e}")
+            day_int   = int(entry.get('day', 0))
+            is_closed = bool(entry.get('is_closed', False))
+            open_str  = (entry.get('opening') or '').strip()
+            close_str = (entry.get('closing') or '').strip()
+            open_t  = dt_time.fromisoformat(open_str)  if open_str  else None
+            close_t = dt_time.fromisoformat(close_str) if close_str else None
+            parsed_hours.append({
+                'day':          day_int,
+                'is_closed':    is_closed,
+                'opening_time': open_t,
+                'closing_time': close_t,
+            })
+            if not is_closed and open_t and close_t and opening_time is None:
+                opening_time = open_t
+                closing_time = close_t
+        except Exception as e:
+            print(f"⚠️ Skipping invalid schedule entry {entry}: {e}")
 
     # ============================================================
     # ✅ UPDATED: Create establishment without single 'category' field
@@ -2993,6 +3208,31 @@ def verify_and_register(request):
         other_category=other_category,  # ✅ NEW: Store custom category text
         other_amenity=other_amenity  # ✅ NEW: Store custom amenity text
     )
+
+    # ============================================================
+    # ✅ NEW: Save dynamic contact/social links
+    # ============================================================
+    import json as _cl_json
+    raw_links = data.get('contact_links', [])
+    if isinstance(raw_links, str):
+        try:
+            raw_links = _cl_json.loads(raw_links)
+        except Exception:
+            raw_links = []
+    from .models import EstablishmentContactLink
+    link_objs = []
+    for idx, lnk in enumerate(raw_links):
+        label = (lnk.get('label') or '').strip()
+        value = (lnk.get('value') or '').strip()
+        if label and value:
+            link_objs.append(EstablishmentContactLink(
+                establishment=establishment,
+                label=label,
+                value=value,
+                order=idx,
+            ))
+    if link_objs:
+        EstablishmentContactLink.objects.bulk_create(link_objs)
 
     # ============================================================
     # ✅ NEW: Link multiple categories (ManyToMany relationship)
@@ -3025,6 +3265,26 @@ def verify_and_register(request):
         except Exception as e:
             print(f"⚠️ Error setting amenities: {e}")
             establishment.amenities.clear()
+
+    # ============================================================
+    # ✅ NEW: Create per-day BusinessHours records
+    # ============================================================
+    from .models import BusinessHours as _BusinessHours
+    for entry in parsed_hours:
+        try:
+            _BusinessHours.objects.update_or_create(
+                establishment=establishment,
+                day_of_week=entry['day'],
+                defaults={
+                    'is_closed':    entry['is_closed'],
+                    'opening_time': entry['opening_time'],
+                    'closing_time': entry['closing_time'],
+                }
+            )
+        except Exception as e:
+            print(f"⚠️ Could not save BusinessHours for day {entry['day']}: {e}")
+    if parsed_hours:
+        print(f"✅ Saved {len(parsed_hours)} BusinessHours entries for: {name}")
 
     # ============================================================
     # Handle uploaded image
@@ -3140,6 +3400,29 @@ def food_establishment_dashboard(request):
                             invalidate_establishment_cache(establishment.id)
                             menu_item = existing
                             stacked = True
+
+                            # ✅ REALTIME: Broadcast restock to all cart pages
+                            try:
+                                from channels.layers import get_channel_layer
+                                from asgiref.sync import async_to_sync
+                                _cl = get_channel_layer()
+                                if _cl:
+                                    async_to_sync(_cl.group_send)(
+                                        f'inventory_{establishment.id}',
+                                        {
+                                            'type': 'inventory.item_updated',
+                                            'update': {
+                                                'menu_item_id': menu_item.id,
+                                                'name':         menu_item.name,
+                                                'price':        str(menu_item.price),
+                                                'quantity':     menu_item.quantity,
+                                                'is_available': getattr(menu_item, 'is_available', True),
+                                                'image_url':    menu_item.image.url if menu_item.image else '',
+                                            }
+                                        }
+                                    )
+                            except Exception as _bcast_err:
+                                print(f'[add_menu_item/stacked] WS broadcast warning: {_bcast_err}')
                         else:
                             menu_item.save()
                             invalidate_establishment_cache(establishment.id)  # ✅ instant client sync
@@ -3175,7 +3458,8 @@ def food_establishment_dashboard(request):
                             })
 
                         if stacked:
-                            messages.success(request, f"'{menu_item.name}' already exists — quantity updated to {menu_item.quantity}!")
+                            messages.success(request,
+                                             f"'{menu_item.name}' already exists — quantity updated to {menu_item.quantity}!")
                         else:
                             messages.success(request, f"'{menu_item.name}' added to your menu!")
                         return redirect('food_establishment_dashboard')
@@ -3264,6 +3548,100 @@ def food_establishment_dashboard(request):
     average_rating = round(dashboard_reviews.aggregate(Avg('rating'))['rating__avg'] or 0, 1)
     top_sellers_count = sum(1 for item in menu_items if item.is_top_seller)
 
+    # ✅ Pending Orders count — 'request' = submitted by customer, awaiting owner acceptance
+    pending_orders_count = Order.objects.filter(
+        establishment=establishment,
+        status='request',
+    ).count()
+
+    # ✅ FIX: Set calculated_status using PH-timezone-aware logic so the
+    # template renders the CORRECT initial Open/Closed without relying on JS.
+    # Other views (map, kabsueats) already do this — the dashboard view was
+    # the only one that skipped it, causing a "Closed" flash on every refresh.
+    #
+    # Uses today's BusinessHours (per-day schedule) if set, otherwise falls
+    # back to global opening/closing_time — exactly matching the model @property.
+    #
+    # ✅ BUG FIX: Check the owner's manual toggle (establishment.status == 'Disabled')
+    # FIRST before any time-based calculation. Previously this was ignored, so a
+    # manually-closed store would revert to "Open" on every page refresh whenever
+    # the clock fell inside business hours.
+    try:
+        from zoneinfo import ZoneInfo as _ZI_dash
+        from datetime import datetime as _dt_dash
+        _ph_now_dash = _dt_dash.now(_ZI_dash('Asia/Manila'))
+    except Exception:
+        try:
+            import pytz as _pytz_dash
+            from datetime import datetime as _dt_dash
+            _ph_now_dash = _dt_dash.now(_pytz_dash.timezone('Asia/Manila'))
+        except Exception:
+            from datetime import datetime as _dt_dash
+            _ph_now_dash = _dt_dash.now()
+
+    _dash_weekday = _ph_now_dash.weekday()
+    _dash_now_time = _ph_now_dash.time()
+
+    # ── Step 1: Manual toggle overrides everything ─────────────────────────
+    if (getattr(establishment, 'status', None) or '').lower() == 'disabled':
+        establishment.calculated_status = 'Closed'
+    else:
+        # ── Step 2: Time-based calculation using today's BusinessHours ─────
+        try:
+            _dash_bh = establishment.business_hours.filter(day_of_week=_dash_weekday).first()
+
+            # ── Helper: time-based check using global opening/closing ──────
+            def _global_status_check():
+                if establishment.opening_time and establishment.closing_time:
+                    _go, _gc = establishment.opening_time, establishment.closing_time
+                    if _go <= _gc:
+                        return 'Open' if _go <= _dash_now_time <= _gc else 'Closed'
+                    else:
+                        return 'Open' if _dash_now_time >= _go or _dash_now_time <= _gc else 'Closed'
+                return 'Closed'
+
+            if _dash_bh is not None:
+                if _dash_bh.is_closed or not _dash_bh.opening_time or not _dash_bh.closing_time:
+                    # ✅ FIX: Per-day row exists but has no valid hours — fall back
+                    #    to global opening/closing_time (same behaviour as the
+                    #    realtime API and the "no per-day row" branch below).
+                    #    Previously this immediately set 'Closed' with no fallback,
+                    #    causing the badge to show Closed on refresh even when the
+                    #    store's global hours clearly placed it in Open time.
+                    establishment.calculated_status = _global_status_check()
+                else:
+                    _o, _c = _dash_bh.opening_time, _dash_bh.closing_time
+                    if _o <= _c:
+                        establishment.calculated_status = 'Open' if _o <= _dash_now_time <= _c else 'Closed'
+                    else:
+                        establishment.calculated_status = 'Open' if _dash_now_time >= _o or _dash_now_time <= _c else 'Closed'
+            else:
+                # No per-day entry — fall back to global times
+                establishment.calculated_status = _global_status_check()
+        except Exception:
+            establishment.calculated_status = 'Closed'
+
+    # ── Extract today's effective hours for the hero-card status display ───
+    # Re-queries the same BusinessHours row so we don't rely on a scoped var.
+    _today_open_disp = _today_close_disp = None
+    _today_open_24h  = _today_close_24h  = ''
+    try:
+        _eff_bh = establishment.business_hours.filter(day_of_week=_dash_weekday).first()
+        if _eff_bh and not _eff_bh.is_closed and _eff_bh.opening_time and _eff_bh.closing_time:
+            _to, _tc = _eff_bh.opening_time, _eff_bh.closing_time
+        elif establishment.opening_time and establishment.closing_time:
+            _to, _tc = establishment.opening_time, establishment.closing_time
+        else:
+            _to = _tc = None
+        if _to and _tc:
+            # %-I strips the leading zero on Linux (e.g. "8:00 AM" not "08:00 AM")
+            _today_open_disp  = _to.strftime('%-I:%M %p')
+            _today_close_disp = _tc.strftime('%-I:%M %p')
+            _today_open_24h   = _to.strftime('%H:%M')
+            _today_close_24h  = _tc.strftime('%H:%M')
+    except Exception:
+        pass
+
     context = {
         'establishment': establishment,
         'status_form': status_form,
@@ -3277,6 +3655,12 @@ def food_establishment_dashboard(request):
         'menu_add_token': str(uuid.uuid4()),
         'pk': establishment.pk,
         'top_sellers_count': top_sellers_count,
+        'pending_orders_count': pending_orders_count,
+        # ✅ Today's effective opening/closing for the hero card status badge
+        'today_display_opening': _today_open_disp,
+        'today_display_closing': _today_close_disp,
+        'today_opening_24h':     _today_open_24h,
+        'today_closing_24h':     _today_close_24h,
     }
 
     return render(request, 'webapplication/food_establishment_dashboard.html', context)
@@ -3287,6 +3671,30 @@ def toggle_item_availability(request, item_id):
         item = get_object_or_404(MenuItem, id=item_id, establishment=request.user.food_establishment)
         item.is_available = not item.is_available
         item.save()
+
+        # ✅ REALTIME: Broadcast availability change to all cart pages via inventory WS
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            _cl = get_channel_layer()
+            if _cl:
+                async_to_sync(_cl.group_send)(
+                    f'inventory_{item.food_establishment_id}',
+                    {
+                        'type': 'inventory.item_updated',
+                        'update': {
+                            'menu_item_id': item.id,
+                            'name':         item.name,
+                            'price':        str(item.price),
+                            'quantity':     item.quantity,
+                            'is_available': item.is_available,
+                            'image_url':    item.image.url if item.image else '',
+                        }
+                    }
+                )
+        except Exception as _bcast_err:
+            print(f'[toggle_item_availability#2] WS broadcast warning: {_bcast_err}')
+
         return redirect('food_establishment_dashboard')
     return HttpResponseBadRequest()
 
@@ -3337,11 +3745,11 @@ def delete_menu_item(request, item_id):
         #                     payment may already be in flight. The client
         #                     will see "Cancelled by Owner" + reason + Remove.
         affected_request_orders = []
-        affected_topay_orders   = []
+        affected_topay_orders = []
         try:
             for oi in OrderItem.objects.filter(
-                menu_item=menu_item,
-                order__status__in=['request', 'to_pay']
+                    menu_item=menu_item,
+                    order__status__in=['request', 'to_pay']
             ).select_related('order__user', 'order__establishment').distinct():
                 if oi.order.status == 'request':
                     affected_request_orders.append(oi.order)
@@ -3387,12 +3795,12 @@ def delete_menu_item(request, item_id):
                 sync_send(
                     f'inventory_{_est_id_for_cache}',
                     {
-                        'type':    'inventory.quantity_update',
+                        'type': 'inventory.quantity_update',
                         'updates': [{
                             'menu_item_id': item_id,
                             'new_quantity': -1,
-                            'deleted':      True,
-                            'item_name':    item_name,
+                            'deleted': True,
+                            'item_name': item_name,
                             'delete_reason': delete_reason,
                         }]
                     }
@@ -3412,12 +3820,12 @@ def delete_menu_item(request, item_id):
                         sync_send(
                             f'order_status_user_{uid}',
                             {
-                                'type':             'order.status.update',
-                                'order_id':         order.id,
-                                'new_status':       'cancelled',
+                                'type': 'order.status.update',
+                                'order_id': order.id,
+                                'new_status': 'cancelled',
                                 'establishment_id': _est_id_for_cache,
-                                'user_id':          uid,
-                                'cancel_reason':    cancel_msg,
+                                'user_id': uid,
+                                'cancel_reason': cancel_msg,
                             }
                         )
                     except Exception as _ue:
@@ -3464,14 +3872,14 @@ def _serialize_cancelled_order(order):
         }
         for oi in order.orderitem_set.all()
     ]
-    
+
     # Determine if this was owner rejection or customer cancellation
     cancelled_by_owner = bool(order.cancelled_from_status)
-    
+
     # Only include payment method if order reached 'to_pay' status or beyond
     payment_reached_to_pay = order.cancelled_from_status in ('to_pay', 'preparing', 'to_claim', 'completed')
     payment_method = (order.gcash_payment_method or 'cash') if payment_reached_to_pay else None
-    
+
     return {
         'id': order.id,
         'customer_name': order.user.get_full_name() or order.user.username,
@@ -3537,12 +3945,12 @@ def cancelled_order_api_detail(request, order_id):
         establishment = FoodEstablishment.objects.get(owner=request.user)
     except FoodEstablishment.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Not an establishment owner'}, status=403)
-    
+
     try:
         order = Order.objects.get(id=order_id, establishment=establishment, status='cancelled')
     except Order.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Order not found'}, status=404)
-    
+
     order_data = _serialize_cancelled_order(order)
     return JsonResponse({'success': True, 'order': order_data})
 
@@ -3558,16 +3966,16 @@ def store_ratings(request):
         establishment=establishment
     ).select_related('user').order_by('-created_at')
 
-    rating_data    = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    rating_data = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
     average_rating = round(rating_data['avg'] or 0, 1)
-    total_reviews  = rating_data['count'] or 0
+    total_reviews = rating_data['count'] or 0
 
     context = {
-        'establishment':  establishment,
-        'reviews':        reviews,
+        'establishment': establishment,
+        'reviews': reviews,
         'average_rating': average_rating,
-        'total_reviews':  total_reviews,
-        'pk':             establishment.pk,
+        'total_reviews': total_reviews,
+        'pk': establishment.pk,
     }
     return render(request, 'webapplication/store_ratings.html', context)
 
@@ -3613,6 +4021,31 @@ def edit_menu_item(request, item_id):
         form.save()
         menu_item.refresh_from_db()
         invalidate_establishment_cache(menu_item.food_establishment_id)  # ✅ instant client sync
+
+        # ✅ REALTIME: Broadcast full item update to all cart pages via inventory WS
+        # Kapag nag-edit ang owner ng price/name/qty/image, lahat ng cart pages
+        # na may item na ito ay mag-a-update agad — walang page refresh.
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            _cl = get_channel_layer()
+            if _cl:
+                async_to_sync(_cl.group_send)(
+                    f'inventory_{menu_item.food_establishment_id}',
+                    {
+                        'type': 'inventory.item_updated',
+                        'update': {
+                            'menu_item_id': menu_item.id,
+                            'name':         menu_item.name,
+                            'price':        str(menu_item.price),
+                            'quantity':     menu_item.quantity if hasattr(menu_item, 'quantity') else 0,
+                            'is_available': getattr(menu_item, 'is_available', True),
+                            'image_url':    menu_item.image.url if menu_item.image else '',
+                        }
+                    }
+                )
+        except Exception as _bcast_err:
+            print(f'[edit_menu_item] WS broadcast warning: {_bcast_err}')
 
         # ✅ CRITICAL: Return item data for real-time update
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -3665,6 +4098,42 @@ def toggle_establishment_status(request, establishment_id):
             message = "Food establishment successfully enabled."
 
         establishment.save()
+
+        # ✅ REALTIME: Broadcast status change via inventory WS.
+        # Sends today's BusinessHours (per-day) so the hero card hours stay accurate.
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            try:
+                from zoneinfo import ZoneInfo as _ZI_tgl
+                from datetime import datetime as _dt_tgl
+                _ph_tgl = _dt_tgl.now(_ZI_tgl('Asia/Manila'))
+            except Exception:
+                from datetime import datetime as _dt_tgl
+                _ph_tgl = _dt_tgl.now()
+            _tgl_weekday = _ph_tgl.weekday()
+            _tgl_bh = establishment.business_hours.filter(day_of_week=_tgl_weekday).first()
+            if _tgl_bh and not _tgl_bh.is_closed and _tgl_bh.opening_time and _tgl_bh.closing_time:
+                _tgl_open  = _tgl_bh.opening_time.strftime('%I:%M %p')
+                _tgl_close = _tgl_bh.closing_time.strftime('%I:%M %p')
+            else:
+                _tgl_open  = establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else ''
+                _tgl_close = establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else ''
+            _cl = get_channel_layer()
+            if _cl:
+                async_to_sync(_cl.group_send)(
+                    f'inventory_{establishment_id}',
+                    {
+                        'type':             'inventory.establishment_status',
+                        'establishment_id':  establishment.id,
+                        'status':            establishment.status,
+                        'opening_time':      _tgl_open,
+                        'closing_time':      _tgl_close,
+                    }
+                )
+        except Exception as _bcast_err:
+            print(f'[toggle_establishment_status] WS broadcast warning: {_bcast_err}')
+
         return JsonResponse({'message': message, 'status': establishment.status})
     except FoodEstablishment.DoesNotExist:
         return HttpResponseBadRequest("Food establishment not found.")
@@ -3742,11 +4211,14 @@ def update_establishment_details_ajax(request, pk):
         if not name:
             return JsonResponse({'success': False, 'error': 'Establishment name is required.'}, status=400)
         if len(name) < 3:
-            return JsonResponse({'success': False, 'error': 'Establishment name must be at least 3 characters.'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Establishment name must be at least 3 characters.'},
+                                status=400)
         if len(name) > 80:
-            return JsonResponse({'success': False, 'error': 'Establishment name must be 80 characters or fewer.'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Establishment name must be 80 characters or fewer.'},
+                                status=400)
         if not re.match(r"^[a-zA-Z0-9\s'\-&.,áéíóúÁÉÍÓÚñÑ]+$", name):
-            return JsonResponse({'success': False, 'error': 'Establishment name contains invalid characters.'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Establishment name contains invalid characters.'},
+                                status=400)
         establishment.name = name
 
         # ── Payment Methods ────────────────────────────────────────────────
@@ -3756,7 +4228,8 @@ def update_establishment_details_ajax(request, pk):
             submitted = {p.strip() for p in payment_methods.split(',')}
             invalid = submitted - allowed_payments
             if invalid:
-                return JsonResponse({'success': False, 'error': f'Invalid payment method(s): {", ".join(invalid)}'}, status=400)
+                return JsonResponse({'success': False, 'error': f'Invalid payment method(s): {", ".join(invalid)}'},
+                                    status=400)
         establishment.payment_methods = payment_methods
 
         # ── Address ────────────────────────────────────────────────────────
@@ -3798,6 +4271,29 @@ def update_establishment_details_ajax(request, pk):
         establishment.other_category = request.POST.get('other_category', '').strip() or None
         establishment.other_amenity = request.POST.get('other_amenity', '').strip() or None
 
+        # ── Contact / Social Links ─────────────────────────────────────────
+        import json as _cl_json
+        from .models import EstablishmentContactLink
+        raw_links_str = request.POST.get('contact_links_json', '[]')
+        try:
+            raw_links = _cl_json.loads(raw_links_str)
+        except Exception:
+            raw_links = []
+        EstablishmentContactLink.objects.filter(establishment=establishment).delete()
+        link_objs = []
+        for idx, lnk in enumerate(raw_links):
+            label = (lnk.get('label') or '').strip()
+            value = (lnk.get('value') or '').strip()
+            if label and value:
+                link_objs.append(EstablishmentContactLink(
+                    establishment=establishment,
+                    label=label,
+                    value=value,
+                    order=idx,
+                ))
+        if link_objs:
+            EstablishmentContactLink.objects.bulk_create(link_objs)
+
         # ── Image upload ───────────────────────────────────────────────────
         if 'image' in request.FILES:
             image_file = request.FILES['image']
@@ -3819,6 +4315,25 @@ def update_establishment_details_ajax(request, pk):
         # ── Save scalar fields ─────────────────────────────────────────────
         establishment.save()
         invalidate_establishment_cache(establishment.id)  # ✅ instant client sync
+
+        # ✅ REALTIME: Broadcast establishment status/hours change to cart pages
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            _cl = get_channel_layer()
+            if _cl:
+                async_to_sync(_cl.group_send)(
+                    f'inventory_{establishment.id}',
+                    {
+                        'type':            'inventory.establishment_status',
+                        'establishment_id': establishment.id,
+                        'status':           establishment.status,
+                        'opening_time':     establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else '',
+                        'closing_time':     establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else '',
+                    }
+                )
+        except Exception as _bcast_err:
+            print(f'[update_establishment_details_ajax] WS broadcast warning: {_bcast_err}')
 
         # ── Categories (M2M) ──────────────────────────────────────────────
         category_ids = request.POST.getlist('categories')
@@ -3848,6 +4363,36 @@ def update_establishment_details_ajax(request, pk):
         else:
             status_val = establishment.status
 
+        # Build weekly_hours for response so profile page refreshes display
+        from .models import BusinessHours as _BH_RESP
+        from datetime import datetime as _dt_resp
+        try:
+            from zoneinfo import ZoneInfo as _ZI_RESP
+            _ph_resp = _dt_resp.now(_ZI_RESP('Asia/Manila'))
+        except Exception:
+            _ph_resp = _dt_resp.now()
+        today_resp = _ph_resp.weekday()
+        DAY_NAMES_RESP = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        _bh_qs_resp  = _BH_RESP.objects.filter(establishment=establishment).order_by('day_of_week')
+        _bh_map_resp = {bh.day_of_week: bh for bh in _bh_qs_resp}
+        weekly_resp = []
+        for i, dn in enumerate(DAY_NAMES_RESP):
+            if i in _bh_map_resp:
+                bh = _bh_map_resp[i]
+                weekly_resp.append({
+                    'day': i, 'day_name': dn, 'is_today': i == today_resp,
+                    'is_closed': bh.is_closed,
+                    'opening': bh.opening_time.strftime('%I:%M %p') if bh.opening_time else None,
+                    'closing': bh.closing_time.strftime('%I:%M %p') if bh.closing_time else None,
+                })
+            else:
+                weekly_resp.append({
+                    'day': i, 'day_name': dn, 'is_today': i == today_resp,
+                    'is_closed': not bool(establishment.opening_time),
+                    'opening': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+                    'closing': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+                })
+
         data = {
             'success': True,
             'message': 'Establishment details updated successfully.',
@@ -3866,6 +4411,12 @@ def update_establishment_details_ajax(request, pk):
             'amenities': ', '.join([a.name for a in establishment.amenities.all()]),
             'amenities_list': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
             'other_amenity': establishment.other_amenity,
+            'weekly_hours': weekly_resp,
+            'today_weekday': today_resp,
+            'contact_links': [
+                {'label': lnk.label, 'value': lnk.value, 'href': lnk.href}
+                for lnk in establishment.contact_links.all()
+            ],
         }
 
         return JsonResponse(data)
@@ -3877,6 +4428,93 @@ def update_establishment_details_ajax(request, pk):
             'success': False,
             'error': f'A server error occurred: {str(e)}'
         }, status=500)
+
+
+@login_required(login_url='owner_login')
+@require_http_methods(["POST"])
+def update_business_hours_ajax(request, pk):
+    """
+    AJAX endpoint: save per-day BusinessHours for the owner's establishment.
+    Accepts a JSON body: { weekly_hours: [ {day, is_closed, opening, closing}, ... ] }
+    """
+    from .models import BusinessHours as _BH_UP
+    from datetime import time as _dt_up
+    import json as _js_up
+
+    try:
+        establishment = FoodEstablishment.objects.get(pk=pk, owner=request.user)
+    except FoodEstablishment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Not found.'}, status=404)
+
+    try:
+        body = _js_up.loads(request.body)
+        weekly_hours = body.get('weekly_hours', [])
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON body.'}, status=400)
+
+    saved = 0
+    fallback_open  = None
+    fallback_close = None
+
+    for entry in weekly_hours:
+        try:
+            day_int   = int(entry.get('day', 0))
+            is_closed = bool(entry.get('is_closed', False))
+            open_str  = (entry.get('opening') or '').strip()
+            close_str = (entry.get('closing') or '').strip()
+            open_t    = _dt_up.fromisoformat(open_str)  if open_str  else None
+            close_t   = _dt_up.fromisoformat(close_str) if close_str else None
+
+            _BH_UP.objects.update_or_create(
+                establishment=establishment,
+                day_of_week=day_int,
+                defaults={
+                    'is_closed':    is_closed,
+                    'opening_time': open_t,
+                    'closing_time': close_t,
+                }
+            )
+            saved += 1
+
+            if not is_closed and open_t and close_t and fallback_open is None:
+                fallback_open  = open_t
+                fallback_close = close_t
+        except Exception as e:
+            print(f"⚠️ BusinessHours save error day={entry.get('day')}: {e}")
+
+    # Keep global fallback in sync with first open day
+    if fallback_open:
+        establishment.opening_time = fallback_open
+        establishment.closing_time = fallback_close
+        establishment.save(update_fields=['opening_time', 'closing_time', 'updated_at'])
+
+    invalidate_establishment_cache(establishment.id)
+
+    # ✅ REALTIME: Broadcast hours change to all cart pages via inventory WS
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        _cl = get_channel_layer()
+        if _cl:
+            async_to_sync(_cl.group_send)(
+                f'inventory_{establishment.id}',
+                {
+                    'type':            'inventory.establishment_status',
+                    'establishment_id': establishment.id,
+                    'status':           establishment.status,
+                    'opening_time':     establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else '',
+                    'closing_time':     establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else '',
+                }
+            )
+    except Exception as _bcast_err:
+        print(f'[update_business_hours_ajax] WS broadcast warning: {_bcast_err}')
+
+    return JsonResponse({
+        'success': True,
+        'message': f'{saved} day(s) saved.',
+        'status': establishment.status,
+    })
+
 
 @login_required(login_url='owner_login')
 @require_http_methods(["GET"])
@@ -3910,6 +4548,10 @@ def get_establishment_details_ajax(request, pk):
                 'image_url': establishment.image.url if establishment.image else None,
                 'amenities': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
                 'other_amenity': establishment.other_amenity,
+                'contact_links': [
+                    {'label': lnk.label, 'value': lnk.value, 'href': lnk.href}
+                    for lnk in establishment.contact_links.all()
+                ],
             }
         }
 
@@ -3943,6 +4585,7 @@ def handle_payment_success(order):
     for item in order.items.all():
         menu_item = item.menu_item
         menu_item.reduce_stock(item.quantity)
+
 
 @login_required
 @require_POST
@@ -4043,7 +4686,7 @@ def add_to_cart(request):
                     menu_item=menu_item
                 ).first()
                 # request_order_qty = qty in the request order ONLY (for display in modal message)
-                request_order_qty  = existing_req_item.quantity if existing_req_item else 0
+                request_order_qty = existing_req_item.quantity if existing_req_item else 0
                 # existing_request_qty = combined total (request + pending cart) used for the
                 # combined > max_stock check on the frontend
                 existing_request_qty = request_order_qty
@@ -4130,7 +4773,7 @@ def add_to_cart(request):
             # show the customer an appropriate informational message.
             'stacked_on_request': stacked_on_request,
             'existing_request_qty': existing_request_qty,  # combined (request + pending) — for combined > max check
-            'request_order_qty': request_order_qty,         # request order only — for accurate display message
+            'request_order_qty': request_order_qty,  # request order only — for accurate display message
             'max_stock': menu_item.quantity,
         })
 
@@ -4147,6 +4790,7 @@ def add_to_cart(request):
             'success': False,
             'message': 'An error occurred while adding to cart.'
         }, status=500)
+
 
 @login_required
 @require_POST
@@ -4254,6 +4898,15 @@ def update_cart_item(request):
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
+        # ✅ REALTIME: I-broadcast ang quantity update sa lahat ng tabs/devices ng user
+        _broadcast_cart_update(request.user.id, 'cart.quantity_updated', {
+            'order_item_id': int(order_item_id),
+            'new_quantity':  order_item.quantity,
+            'item_total':    float(order_item.quantity * order_item.price_at_order),
+            'order_total':   float(order.total_amount),
+            'cart_count':    total_cart_count,
+        })
+
         return JsonResponse({
             'success': True,
             'message': 'Cart updated',
@@ -4330,6 +4983,14 @@ def remove_from_cart(request):
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
+        # ✅ REALTIME: I-broadcast ang item removal sa lahat ng tabs/devices ng user
+        _broadcast_cart_update(request.user.id, 'cart.item_removed', {
+            'order_item_id':    int(order_item_id),
+            'establishment_id': establishment_id,
+            'order_deleted':    order_deleted,
+            'cart_count':       total_cart_count,
+        })
+
         return JsonResponse({
             'success': True,
             'message': 'Item removed from cart',
@@ -4398,6 +5059,12 @@ def clear_establishment_cart(request):
             order__user=request.user,
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        # ✅ REALTIME: I-broadcast ang clear event sa lahat ng tabs/devices ng user
+        _broadcast_cart_update(request.user.id, 'cart.establishment_cleared', {
+            'establishment_id': int(establishment_id),
+            'cart_count':       total_cart_count,
+        })
 
         return JsonResponse({
             'success': True,
@@ -4592,12 +5259,17 @@ def get_chat_messages(request, customer_id, establishment_id):
 
 
 @login_required
-def get_owner_conversations(request, establishment_id):
+def get_owner_conversations(request, establishment_id=None):
     """
     API endpoint to get all conversations for OWNER.
+    ✅ FIX: establishment_id is now optional — resolves from request.user so
+    the JS can call /api/food-establishment/conversations/ without an ID in the URL.
     """
     try:
-        establishment = get_object_or_404(FoodEstablishment, id=establishment_id, owner=request.user)
+        if establishment_id:
+            establishment = get_object_or_404(FoodEstablishment, id=establishment_id, owner=request.user)
+        else:
+            establishment = get_object_or_404(FoodEstablishment, owner=request.user)
 
         chat_rooms = ChatRoom.objects.filter(
             establishment=establishment
@@ -4617,7 +5289,7 @@ def get_owner_conversations(request, establishment_id):
 
             conversations.append({
                 'customer_id': room.customer.id,
-                'customer_name': room.customer.username,
+                'customer_name': room.customer.get_full_name() or room.customer.username,
                 'last_message': latest_message.content if latest_message else None,
                 'time': latest_message.created_at.strftime('%I:%M %p') if latest_message else None,
                 'unread_count': unread_count
@@ -4685,6 +5357,101 @@ def get_chat_messages_api(request, customer_id, establishment_id):
         }, status=400)
 
 
+# =======================================================
+# ✅ NEW: Owner get messages — matches JS call:
+# GET /api/food-establishment/messages/<customer_id>/
+# No establishment_id needed in URL — resolved from request.user
+# =======================================================
+@login_required
+def owner_get_messages(request, customer_id):
+    """
+    Returns all messages between the logged-in owner and the given customer.
+    Response format matches what the dashboard JS expects:
+      { success, messages: [{id, content, is_from_owner, created_at}] }
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        customer = get_object_or_404(User, id=customer_id)
+
+        chat_room = ChatRoom.objects.filter(
+            customer=customer,
+            establishment=establishment
+        ).first()
+
+        if not chat_room:
+            return JsonResponse({'success': True, 'messages': []})
+
+        msgs = chat_room.messages.all().order_by('created_at')
+
+        # Mark customer messages as read
+        msgs.filter(is_read=False, sender=customer).update(is_read=True)
+
+        messages_data = [
+            {
+                'id': msg.id,
+                'content': msg.content,
+                'is_from_owner': msg.sender_id == request.user.id,
+                'created_at': msg.created_at.isoformat(),
+            }
+            for msg in msgs
+        ]
+
+        return JsonResponse({'success': True, 'messages': messages_data})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# =======================================================
+# ✅ NEW: Owner send message — matches JS call:
+# POST /api/food-establishment/send-message/
+# Body: { customer_id, message }
+# =======================================================
+@login_required
+@require_POST
+def owner_send_message(request):
+    """
+    Owner sends a message to a customer.
+    Creates the ChatRoom if it does not exist yet.
+    """
+    try:
+        data = json.loads(request.body)
+        customer_id = data.get('customer_id')
+        message_text = (data.get('message') or '').strip()
+
+        if not customer_id or not message_text:
+            return JsonResponse({'success': False, 'message': 'customer_id and message are required.'}, status=400)
+
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        customer = get_object_or_404(User, id=customer_id)
+
+        chat_room, _ = ChatRoom.objects.get_or_create(
+            customer=customer,
+            establishment=establishment
+        )
+
+        msg = chat_room.messages.create(
+            sender=request.user,
+            content=message_text,
+            is_read=False
+        )
+
+        # Bump room timestamp so it sorts to top
+        chat_room.updated_at = msg.created_at
+        chat_room.save(update_fields=['updated_at'])
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Message sent.',
+            'msg_id': msg.id,
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
 # =======================================================
@@ -4968,8 +5735,12 @@ def get_notifications(request):
         print(f"✅ Found establishment: {establishment.name}")
 
         # ✅ CRITICAL FIX: Use defer() to exclude payment_status from Order queries
+        # ✅ FIX: Only show new_order notifications where order is still pending owner action.
+        # Once owner accepts or rejects, the notification disappears from the bell automatically.
         notifications_base = OrderNotification.objects.filter(
-            establishment=establishment
+            establishment=establishment,
+            notification_type='new_order',
+            order__status__in=['request', 'to_pay']
         ).select_related(
             'order__user',
             'order__establishment'
@@ -5002,7 +5773,8 @@ def get_notifications(request):
                     })
 
                 # ✅ is_paid: treat any paid/completed status as paid
-                is_paid = order.status.lower() in ('paid', 'completed', 'prepared', 'to_claim') if order.status else False
+                is_paid = order.status.lower() in ('paid', 'completed', 'prepared',
+                                                   'to_claim') if order.status else False
 
                 notifications_data.append({
                     'id': notif.id,
@@ -5101,34 +5873,34 @@ def get_user_order_notifications(request):
         ).count()
 
         STATUS_ICONS = {
-            'to_pay':        ('fa-check-circle',   '#16a34a', 'Order Accepted'),
-            'preparing':     ('fa-fire',            '#f59e0b', 'Being Prepared'),
-            'to_claim':      ('fa-bell',            '#2563eb', 'Ready for Pickup'),
-            'completed':     ('fa-flag-checkered',  '#6d28d9', 'Completed'),
-            'cancelled':     ('fa-times-circle',    '#dc2626', 'Cancelled'),
-            'order_cancelled':('fa-times-circle',   '#dc2626', 'Cancelled'),
-            'order_update':  ('fa-info-circle',     '#6b7280', 'Update'),
-            'new_order':     ('fa-shopping-bag',    '#b71c1c', 'New Order'),
+            'to_pay': ('fa-check-circle', '#16a34a', 'Order Accepted'),
+            'preparing': ('fa-fire', '#f59e0b', 'Being Prepared'),
+            'to_claim': ('fa-bell', '#2563eb', 'Ready for Pickup'),
+            'completed': ('fa-flag-checkered', '#6d28d9', 'Completed'),
+            'cancelled': ('fa-times-circle', '#dc2626', 'Cancelled'),
+            'order_cancelled': ('fa-times-circle', '#dc2626', 'Cancelled'),
+            'order_update': ('fa-info-circle', '#6b7280', 'Update'),
+            'new_order': ('fa-shopping-bag', '#b71c1c', 'New Order'),
             'payment_confirmed': ('fa-credit-card', '#16a34a', 'Payment Confirmed'),
             # FIX: notification_type now stores the actual status string,
             # so these aliases ensure the correct icon/color is shown.
-            'order_received':('fa-shopping-bag',    '#f59e0b', 'Order Received'),
-            'request':       ('fa-paper-plane',     '#6b7280', 'Order Requested'),
+            'order_received': ('fa-shopping-bag', '#f59e0b', 'Order Received'),
+            'request': ('fa-paper-plane', '#6b7280', 'Order Requested'),
         }
 
         # ✅ FIX: Map live order status → My Orders tab name
         TAB_MAP = {
-            'request':   'request',
-            'to_pay':    'to_pay',
+            'request': 'request',
+            'to_pay': 'to_pay',
             'preparing': 'preparing',
-            'to_claim':  'to_claim',
+            'to_claim': 'to_claim',
             'completed': 'completed',
-            'cancelled': 'request',   # rejected orders stay in request tab
-            'PENDING':   'request',
+            'cancelled': 'request',  # rejected orders stay in request tab
+            'PENDING': 'request',
         }
 
         data = []
-        seen_order_ids = set()   # ✅ FIX: one notification per order (most recent)
+        seen_order_ids = set()  # ✅ FIX: one notification per order (most recent)
 
         for n in notifications_qs:
             order_id = n.order.id
@@ -5139,36 +5911,37 @@ def get_user_order_notifications(request):
             seen_order_ids.add(order_id)
 
             order_status = n.order.status
-            notif_type   = n.notification_type
+            notif_type = n.notification_type
             # FIX: notification_type is now the actual status string (e.g. 'to_claim', 'completed').
             # Prefer notification_type for icon lookup so the icon matches the event, not the
             # current live status (e.g. a 'to_claim' notif keeps its bell icon even after completion).
-            icon_key = notif_type if notif_type in STATUS_ICONS else (order_status if order_status in STATUS_ICONS else 'order_update')
+            icon_key = notif_type if notif_type in STATUS_ICONS else (
+                order_status if order_status in STATUS_ICONS else 'order_update')
             icon, color, label = STATUS_ICONS.get(icon_key, ('fa-info-circle', '#6b7280', 'Update'))
 
             # ✅ FIX: which tab in /order_history/ this notification links to
             tab = TAB_MAP.get(order_status, 'request')
 
             data.append({
-                'id':           n.id,
-                'message':      n.message,
-                'is_read':      n.is_read,
-                'time_ago':     get_time_ago(n.created_at),
-                'created_at':   n.created_at.strftime('%b %d, %Y %I:%M %p'),
-                'order_id':     order_id,
+                'id': n.id,
+                'message': n.message,
+                'is_read': n.is_read,
+                'time_ago': get_time_ago(n.created_at),
+                'created_at': n.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'order_id': order_id,
                 'order_status': order_status,
-                'tab':          tab,           # ✅ FIX: for click navigation
-                'est_name':     n.order.establishment.name,
-                'icon':         icon,
-                'color':        color,
-                'label':        label,
+                'tab': tab,  # ✅ FIX: for click navigation
+                'est_name': n.order.establishment.name,
+                'icon': icon,
+                'color': color,
+                'label': label,
             })
 
             if len(data) >= 30:
                 break
 
         return JsonResponse({
-            'success':      True,
+            'success': True,
             'notifications': data,
             'unread_count': unread_count,
         })
@@ -5318,9 +6091,9 @@ def delete_notification(request, notification_id):
         notification.delete()
         return JsonResponse({'success': True, 'message': 'Notification deleted'})
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback;
+        traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
 
 
 def _fetch_paymongo_payment_method(session_id):
@@ -5426,8 +6199,8 @@ def gcash_payment_success(request):
                             order=order,
                             notification_type='order_cancelled',
                             defaults={'message': (
-                                f'Order #{order.id} auto-cancelled: items ran out of stock — '
-                                + ', '.join(insufficient)
+                                    f'Order #{order.id} auto-cancelled: items ran out of stock — '
+                                    + ', '.join(insufficient)
                             )}
                         )
                     except Exception:
@@ -5458,7 +6231,8 @@ def gcash_payment_success(request):
                         establishment=order.establishment,
                         order=order,
                         notification_type='new_order',
-                        defaults={'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
+                        defaults={
+                            'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
                     )
                     print(f"✅ Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
                 except Exception as notif_error:
@@ -5469,7 +6243,8 @@ def gcash_payment_success(request):
                 # Broadcast updated inventory quantities to all WS clients
                 try:
                     updated_items = list(order.orderitem_set.select_related('menu_item').all())
-                    id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                    id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in
+                                    updated_items]
                     _broadcast_inventory_update_from_items(order.establishment_id, id_qty_pairs)
                     _broadcast_order_status_update(order, order.status)
                 except Exception as _bcast_err:
@@ -5564,10 +6339,10 @@ def view_cart(request):
                     items_to_delete.append(item.id)
                     continue
 
-                item.display_qty        = clamped_qty
-                item.remaining_allowed  = remaining if has_active_order else max_stock
-                item.existing_req_qty   = in_request
-                item.has_request_limit  = has_active_order and in_request > 0
+                item.display_qty = clamped_qty
+                item.remaining_allowed = remaining if has_active_order else max_stock
+                item.existing_req_qty = in_request
+                item.has_request_limit = has_active_order and in_request > 0
                 enriched_items.append(item)
 
             # Delete zero-remaining items from the DB quietly
@@ -5576,15 +6351,17 @@ def view_cart(request):
 
             est = order.establishment
             carts_data.append({
-                'establishment':      est,
-                'order':              order,
-                'items':              enriched_items,
-                'item_count':         cart_item_count,
-                'has_request_order':  has_active_order,
-                'is_open': get_current_status(
+                'establishment': est,
+                'order': order,
+                'items': enriched_items,
+                'item_count': cart_item_count,
+                'has_request_order': has_active_order,
+                # ✅ Use owner's manual status toggle as authoritative source.
+                # Fallback to time-based only when status field is empty (legacy).
+                'is_open': (est.status or get_current_status(
                     est.opening_time,
                     est.closing_time
-                ) == "Open",
+                )) == "Open",
                 'opening_time_display': est.opening_time.strftime('%I:%M %p') if est.opening_time else None,
                 'closing_time_display': est.closing_time.strftime('%I:%M %p') if est.closing_time else None,
             })
@@ -5664,9 +6441,11 @@ def paymongo_webhook(request):
                                 establishment=order.establishment,
                                 order=order,
                                 notification_type='new_order',
-                                defaults={'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
+                                defaults={
+                                    'message': f'New order #{order.id} from {order.user.username} - ₱{order.total_amount:.2f}'}
                             )
-                            print(f"✅ Webhook: Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
+                            print(
+                                f"✅ Webhook: Notification {'created' if notif_created else 'already exists'} for Order #{order.id}")
 
                             # ✅ Use shared helper — stock_deducted flag prevents
                             # double-deduction if gcash_payment_success already ran.
@@ -5794,9 +6573,12 @@ def get_owner_notifications(request):
         establishment = FoodEstablishment.objects.get(id=establishment_id, owner=request.user)
 
         # Get unread notifications with complete order details
+        # ✅ FIX: Only show new_order notifications for pending orders (request / to_pay)
         notifications = OrderNotification.objects.filter(
             establishment=establishment,
-            is_read=False
+            is_read=False,
+            notification_type='new_order',
+            order__status__in=['request', 'to_pay']
         ).select_related(
             'order',
             'order__user',
@@ -5855,9 +6637,12 @@ def get_owner_notifications(request):
             })
 
         # Get total unread count
+        # ✅ FIX: Badge count = only pending new orders needing owner action
         unread_count = OrderNotification.objects.filter(
             establishment=establishment,
-            is_read=False
+            is_read=False,
+            notification_type='new_order',
+            order__status__in=['request', 'to_pay']
         ).count()
 
         return JsonResponse({
@@ -5978,6 +6763,37 @@ def food_establishment_profile(request):
         # Get the establishment owned by the current user
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
 
+        from .models import BusinessHours as _BH2
+        from datetime import datetime as _dt2
+        try:
+            from zoneinfo import ZoneInfo as _ZI2
+            _ph2 = _dt2.now(_ZI2('Asia/Manila'))
+        except Exception:
+            _ph2 = _dt2.now()
+
+        DAY_NAMES2 = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        today_weekday2 = _ph2.weekday()
+
+        _bh_qs2  = _BH2.objects.filter(establishment=establishment).order_by('day_of_week')
+        _bh_map2 = {bh.day_of_week: bh for bh in _bh_qs2}
+
+        profile_hours_list = []
+        for i, day_name in enumerate(DAY_NAMES2):
+            if i in _bh_map2:
+                bh = _bh_map2[i]
+                bh.day_name = day_name
+                profile_hours_list.append(bh)
+            else:
+                class _FBH2:
+                    pass
+                fb = _FBH2()
+                fb.day_of_week  = i
+                fb.day_name     = day_name
+                fb.is_closed    = not bool(establishment.opening_time and establishment.closing_time)
+                fb.opening_time = establishment.opening_time
+                fb.closing_time = establishment.closing_time
+                profile_hours_list.append(fb)
+
         context = {
             'establishment': establishment,
             'categories': Category.objects.all().order_by('name'),
@@ -5985,6 +6801,8 @@ def food_establishment_profile(request):
             'pk': establishment.pk,
             'CVSU_LATITUDE': os.getenv('CVSU_LATITUDE', '14.1649'),
             'CVSU_LONGITUDE': os.getenv('CVSU_LONGITUDE', '120.9881'),
+            'profile_hours_list': profile_hours_list,
+            'today_weekday': today_weekday2,
         }
 
         return render(request, 'webapplication/food_establishment_profile.html', context)
@@ -5993,6 +6811,7 @@ def food_establishment_profile(request):
         return redirect('owner_login')
     except Exception as e:
         return redirect('food_establishment_dashboard')
+
 
 @login_required(login_url='owner_login')
 @require_http_methods(["POST"])
@@ -6028,7 +6847,7 @@ def deactivate_establishment(request):
                 request,
                 f'"{name}" has been deactivated and is now hidden from customers. '
                 f'You can reactivate it anytime from Profile Settings.',
-                extra_tags='owner_only'    # ← hides this from kabsueats.html
+                extra_tags='owner_only'  # ← hides this from kabsueats.html
             )
         else:
             establishment.is_active = True
@@ -6036,7 +6855,7 @@ def deactivate_establishment(request):
             messages.success(
                 request,
                 f'"{name}" has been reactivated and is now visible to customers again!',
-                extra_tags='owner_only'    # ← hides this from kabsueats.html
+                extra_tags='owner_only'  # ← hides this from kabsueats.html
             )
 
         return redirect('food_establishment_dashboard')
@@ -6047,6 +6866,7 @@ def deactivate_establishment(request):
     except Exception as e:
         messages.error(request, f'An error occurred: {str(e)}')
         return redirect('food_establishment_dashboard')
+
 
 @login_required
 def get_establishment_profile(request):
@@ -6099,6 +6919,7 @@ def get_establishment_profile(request):
             'error': str(e)
         }, status=500)
 
+
 @login_required
 @require_http_methods(["GET"])
 def get_establishment_orders(request):
@@ -6141,6 +6962,9 @@ def get_establishment_orders(request):
                 'message': 'No establishment found for this user'
             }, status=404)
 
+        print(
+            f"\n📋 [get_establishment_orders] Fetching orders for establishment #{establishment.id} ({establishment.name})")
+
         # Get all orders for this establishment with related data
         # EXCLUDE 'PENDING' orders — those are unpaid cart items, not confirmed orders yet
         # EXCLUDE owner_dismissed orders — owner already cleared them from the request tab
@@ -6165,6 +6989,14 @@ def get_establishment_orders(request):
             Prefetch('orderitem_set', queryset=OrderItem.objects.select_related('menu_item'))
         ).order_by('created_at')
 
+        print(f"📋 [get_establishment_orders] Total orders matching filter: {orders.count()}")
+
+        # Check for 'request' status orders specifically
+        request_orders = orders.filter(status='request')
+        print(f"📋 [get_establishment_orders] Orders with status='request': {request_orders.count()}")
+        for ro in request_orders[:5]:
+            print(f"  - Order #{ro.id}: {ro.user.username}, items={ro.orderitem_set.count()}")
+
         # Build the response data
         orders_data = []
         for order in orders:
@@ -6178,11 +7010,11 @@ def get_establishment_orders(request):
                 if is_out:
                     out_of_stock_count += 1
                 items.append({
-                    'name':            order_item.menu_item.name,
-                    'quantity':        order_item.quantity,
-                    'price':           str(order_item.price_at_order),
-                    'menu_item_id':    order_item.menu_item.id,
-                    'order_item_id':   order_item.id,
+                    'name': order_item.menu_item.name,
+                    'quantity': order_item.quantity,
+                    'price': str(order_item.price_at_order),
+                    'menu_item_id': order_item.menu_item.id,
+                    'order_item_id': order_item.id,
                     'available_stock': order_item.menu_item.quantity,
                 })
                 items_preview.append(f"{order_item.quantity}x {order_item.menu_item.name}")
@@ -6210,9 +7042,9 @@ def get_establishment_orders(request):
             # Owner-rejected orders are already excluded above via the .exclude() clause,
             # so if we reach here with status=='cancelled', it must be a client cancellation.
             cancelled_from_request = (
-                order_status == 'cancelled'
-                and not order.cancelled_from_status  # empty = client cancelled, not owner
-                and not order.owner_dismissed
+                    order_status == 'cancelled'
+                    and not order.cancelled_from_status  # empty = client cancelled, not owner
+                    and not order.owner_dismissed
             )
             # Retrieve the cancel_reason stored on the order (if available)
             cancel_reason_value = getattr(order, 'cancel_reason', '') or ''
@@ -6257,6 +7089,7 @@ def get_establishment_orders(request):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 @require_http_methods(["POST"])
 def owner_remove_order_item(request, order_id, item_id):
@@ -6280,7 +7113,7 @@ def owner_remove_order_item(request, order_id, item_id):
 
         order = get_object_or_404(
             Order.objects.select_related('establishment', 'user')
-                 .prefetch_related('orderitem_set__menu_item'),
+            .prefetch_related('orderitem_set__menu_item'),
             id=order_id,
             establishment=establishment,
         )
@@ -6303,7 +7136,7 @@ def owner_remove_order_item(request, order_id, item_id):
                 order.status = 'cancelled'
                 order.save(update_fields=['status', 'updated_at'])
                 _broadcast_order_status_update(order, 'cancelled',
-                    cancel_reason=f'Order cancelled — all items removed by establishment')
+                                               cancel_reason=f'Order cancelled — all items removed by establishment')
                 # Notify customer
                 try:
                     OrderNotification.objects.get_or_create(
@@ -6388,7 +7221,7 @@ def _deduct_stock_and_clear_cart(order):
             use_lock = 'sqlite' not in connection.vendor
             qs = MenuItem.objects.filter(id__in=list(deduct_map.keys()))
             menu_items = qs.select_for_update() if use_lock else qs
-            
+
             # Track all stock updates for WebSocket broadcast
             stock_updates = []
             for menu_item in menu_items:
@@ -6397,7 +7230,7 @@ def _deduct_stock_and_clear_cart(order):
                 menu_item.quantity = max(menu_item.quantity - qty_to_deduct, 0)
                 menu_item.save(update_fields=['quantity'])
                 print(f"DEBUG _deduct_stock: {menu_item.name} {old_qty} → {menu_item.quantity}")
-                
+
                 # Record for WebSocket broadcast
                 stock_updates.append({
                     'menu_item_id': menu_item.id,
@@ -6440,6 +7273,7 @@ def _deduct_stock_and_clear_cart(order):
         print(f"ERROR in _deduct_stock_and_clear_cart: {e}")
         print(_tb.format_exc())
         raise  # Re-raise so caller's atomic block rolls back
+
 
 def update_order_status(request, order_id):
     """
@@ -6527,9 +7361,9 @@ def update_order_status(request, order_id):
                         return JsonResponse({
                             'success': False,
                             'message': (
-                                'Cannot accept order — all items are out of stock: '
-                                + ', '.join(insufficient_names)
-                                + '. Please reject this order so the customer can reorder.'
+                                    'Cannot accept order — all items are out of stock: '
+                                    + ', '.join(insufficient_names)
+                                    + '. Please reject this order so the customer can reorder.'
                             ),
                             'insufficient_stock': insufficient_names,
                         }, status=409)
@@ -6646,7 +7480,8 @@ def update_order_status(request, order_id):
                 order=order,
                 notification_type=new_status,
                 defaults={
-                    'message': notification_messages.get(new_status, f'Order #{order.id} status updated to {new_status}'),
+                    'message': notification_messages.get(new_status,
+                                                         f'Order #{order.id} status updated to {new_status}'),
                     'is_read': False,
                 }
             )
@@ -6701,7 +7536,7 @@ def reject_order(request, order_id):
 
         order = get_object_or_404(
             Order.objects.select_related('establishment', 'user')
-                 .prefetch_related('orderitem_set__menu_item'),
+            .prefetch_related('orderitem_set__menu_item'),
             id=order_id,
             establishment=establishment
         )
@@ -6761,7 +7596,7 @@ def reject_order(request, order_id):
                 print(f"DEBUG reject_order: Order #{order.pk} stock was not deducted — nothing to restore")
 
             # ── Update order status ───────────────────────────────────────
-            original_status = order.status   # capture BEFORE changing
+            original_status = order.status  # capture BEFORE changing
             order.status = 'cancelled'
 
             # ✅ Do NOT set owner_dismissed=True here.
@@ -6778,7 +7613,7 @@ def reject_order(request, order_id):
             # by the client cancel_order() — making it the definitive signal to
             # identify owner-rejected orders when re-loading from the DB.
             order.cancel_reason = cancel_reason
-            order.cancelled_from_status = original_status   # 'request', 'to_pay', or 'to_claim'
+            order.cancelled_from_status = original_status  # 'request', 'to_pay', or 'to_claim'
             order.save(update_fields=['status', 'cancel_reason', 'cancelled_from_status', 'updated_at'])
 
         # Broadcast restored quantities to all browser clients
@@ -6816,10 +7651,6 @@ def reject_order(request, order_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
-
-
-
-
 @login_required
 def get_cancelled_order_detail(request, order_id):
     """
@@ -6831,7 +7662,7 @@ def get_cancelled_order_detail(request, order_id):
         establishment = get_object_or_404(FoodEstablishment, owner=request.user)
         order = get_object_or_404(
             Order.objects.select_related('user', 'establishment')
-                         .prefetch_related('orderitem_set__menu_item'),
+            .prefetch_related('orderitem_set__menu_item'),
             id=order_id,
             establishment=establishment,
             status='cancelled'
@@ -6848,9 +7679,13 @@ def get_cancelled_order_detail(request, order_id):
 @require_http_methods(["POST"])
 def owner_dismiss_cancelled_order(request, order_id):
     """
-    Owner permanently dismisses a single client-cancelled order from the
-    request tab. Sets owner_dismissed=True so it is excluded from all
-    future API responses and never reappears after a page reload.
+    Owner permanently dismisses a single order from the request tab.
+    Sets owner_dismissed=True so it is excluded from all future API
+    responses and never reappears after a page reload.
+
+    Accepts both 'cancelled' orders (client-cancelled / owner-rejected)
+    AND 'request' orders (e.g. stock-issue orders the owner wants to
+    remove from their view without notifying or cancelling the client).
 
     Endpoint: POST /api/food-establishment/orders/<order_id>/dismiss/
     """
@@ -6861,10 +7696,10 @@ def owner_dismiss_cancelled_order(request, order_id):
 
         order = get_object_or_404(Order, id=order_id, establishment=establishment)
 
-        if order.status != 'cancelled':
+        if order.status not in ('cancelled', 'request'):
             return JsonResponse({
                 'success': False,
-                'message': 'Only cancelled orders can be dismissed.'
+                'message': 'Only cancelled or pending request orders can be dismissed.'
             }, status=400)
 
         order.owner_dismissed = True
@@ -6970,7 +7805,7 @@ def cancel_order(request, order_id):
     try:
         order = get_object_or_404(
             Order.objects.select_related('establishment', 'user')
-                 .prefetch_related('orderitem_set__menu_item'),
+            .prefetch_related('orderitem_set__menu_item'),
             id=order_id,
             user=request.user
         )
@@ -7076,16 +7911,41 @@ def re_request_order(request, order_id):
     Resets status back to 'request' — stock stays deducted (already reserved).
     Endpoint: /api/order/<order_id>/re-request/
     """
+    from datetime import timedelta
+
     try:
+        print(f"\n🔄 [re_request_order] Called with order_id={order_id}, user={request.user.id}")
+
+        # ✅ DEDUPLICATION: Check if this order was already re-requested very recently
+        # This prevents accidental double-clicks from changing the order twice
+        cache_key = f"re_request__{request.user.id}__{order_id}"
+        if cache.get(cache_key):
+            print(f"⚠️  [re_request_order] DUPLICATE DETECTED! Order #{order_id} was just re-requested")
+            print(f"    Returning cached success response to prevent double submission")
+            return JsonResponse({
+                'success': True,
+                'order_id': order_id,
+                'message': f'Order #{order_id} re-submitted (duplicate prevented)',
+            })
+
+        # Set a 3-second cache to block duplicate requests
+        cache.set(cache_key, True, 3)
+        print(f"✅ [re_request_order] Set anti-duplicate cache for 3 seconds")
+
         order = get_object_or_404(
             Order.objects.select_related('establishment', 'user')
-                 .prefetch_related('orderitem_set__menu_item'),
+            .prefetch_related('orderitem_set__menu_item'),
             id=order_id,
             user=request.user
         )
 
-        # Accept 'to_pay' (timer hasn't fired yet) OR 'cancelled' (auto-cancelled after timer)
-        if order.status not in ('to_pay', 'cancelled'):
+        print(f"🔄 [re_request_order] Found order #{order.id}, current status='{order.status}'")
+
+        # Accept 'to_pay' (timer hasn't fired yet), 'cancelled' (auto-cancelled after timer),
+        # OR 'request' (still pending but has stock issues — client edited from Edit Order modal)
+        if order.status not in ('to_pay', 'cancelled', 'request'):
+            print(
+                f"❌ [re_request_order] Order status '{order.status}' not allowed. Must be 'to_pay', 'cancelled', or 'request'")
             return JsonResponse({
                 'success': False,
                 'message': 'Only expired or awaiting-payment orders can be re-requested.'
@@ -7097,6 +7957,7 @@ def re_request_order(request, order_id):
             for oi in order_items:
                 mi = oi.menu_item
                 if mi.quantity < oi.quantity:
+                    print(f"❌ [re_request_order] Stock error: {mi.name} only has {mi.quantity}, need {oi.quantity}")
                     return JsonResponse({
                         'success': False,
                         'message': f'Sorry, {mi.name} only has {mi.quantity} left '
@@ -7110,17 +7971,26 @@ def re_request_order(request, order_id):
             # so the owner can accept it again — no quantity change needed.
             menu_items_map = {}  # kept for broadcast below (no-op, empty)
 
+            old_status = order.status
             order.status = 'request'
+            order.owner_dismissed = False  # ✅ CRITICAL: Reset dismissal so it reappears in owner's list
             order.gcash_reference_number = None
             order.payment_confirmed_at = None
             order.stock_deducted = False
-            order.save(update_fields=['status', 'gcash_reference_number',
-                                      'payment_confirmed_at', 'stock_deducted', 'updated_at'])
+            order.cancelled_from_status = ''  # ✅ CRITICAL: Clear this so it's no longer marked as owner-cancelled
+            order.cancel_reason = ''
+            order.save(update_fields=['status', 'owner_dismissed', 'gcash_reference_number',
+                                      'payment_confirmed_at', 'stock_deducted', 'cancelled_from_status',
+                                      'cancel_reason', 'updated_at'])
+
+            print(f"✅ [re_request_order] Updated order #{order.id}: '{old_status}' → 'request', owner_dismissed=False")
 
         # No inventory broadcast needed — quantities did not change
 
         # Broadcast order status change (owner sees new request, client row moves tab)
+        print(f"🔄 [re_request_order] Broadcasting to owner (est_id={order.establishment_id})...")
         _broadcast_order_status_update(order, 'request')
+        print(f"✅ [re_request_order] Broadcast completed")
 
         try:
             OrderNotification.objects.get_or_create(
@@ -7144,6 +8014,405 @@ def re_request_order(request, order_id):
         print(traceback.format_exc())
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+
+@login_required
+@require_POST
+def update_request_order_quantities(request, order_id):
+    """
+    Customer edits item quantities on a pending 'request' order.
+    Also handles cancelled/expired orders by creating a new reorder.
+
+    Called by the Edit Order modal in Client_order_history.html.
+
+    Endpoint: POST /api/order/<order_id>/update-quantities/
+    Body:     { "items": [{"order_item_id": X, "quantity": Y}, ...] }
+
+    - Only allowed while order.status == 'request' OR if order is cancelled/expired
+    - If order is cancelled/expired, creates a NEW order with updated quantities
+    - Each quantity is validated against live menu item stock
+    - Order total is recalculated after saving
+    """
+    from django.db import transaction
+    from decimal import Decimal
+
+    try:
+        data = json.loads(request.body)
+        items = data.get('items', [])
+
+        if not items:
+            return JsonResponse({'success': False, 'message': 'No items provided.'}, status=400)
+
+        order = get_object_or_404(
+            Order.objects
+            .select_related('establishment')
+            .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            user=request.user
+        )
+
+        # ✅ FIX: If order is 'to_pay' (low-stock / timer-expired reorder), update
+        #         quantities IN-PLACE and reset status back to 'request'.
+        #         Do NOT create a new order — that leaves the old to_pay order dangling
+        #         in both the client's To Pay tab and the owner's dashboard.
+        #
+        #         For truly 'cancelled' orders a new order is still created (legacy path
+        #         kept below) because the original cancelled order must stay in history.
+        if order.status == 'to_pay':
+            print(f'⚠️  [update_request_order_quantities] Order #{order_id} is to_pay '
+                  f'→ updating quantities in-place and resetting to request...')
+
+            with transaction.atomic():
+                # Update each item quantity that was passed in
+                for item_data in items:
+                    oi_id = item_data.get('order_item_id')
+                    new_qty = int(item_data.get('quantity', 1))
+                    if new_qty < 1:
+                        new_qty = 1
+
+                    oi = order.orderitem_set.filter(id=oi_id).select_related('menu_item').first()
+                    if not oi:
+                        continue
+
+                    mi = oi.menu_item
+
+                    # Clamp to available stock (never exceed what's in the shelf)
+                    if new_qty > mi.quantity:
+                        print(f'  ⚠️  Clamping {mi.name}: requested {new_qty} → available {mi.quantity}')
+                        new_qty = mi.quantity
+
+                    if new_qty < 1:
+                        # Item is completely out of stock — remove it from the order
+                        print(f'  ❌ Removing {mi.name} (out of stock)')
+                        oi.delete()
+                        continue
+
+                    oi.quantity = new_qty
+                    oi.save(update_fields=['quantity'])
+                    print(f'  ✏️  {mi.name}: qty → {new_qty}')
+
+                # Make sure at least one item remains
+                if not order.orderitem_set.exists():
+                    return JsonResponse(
+                        {'success': False, 'message': 'Order must have at least one item.'},
+                        status=400
+                    )
+
+                # Reset to 'request' — clears all payment / dismissal state
+                old_status = order.status
+                order.status = 'request'
+                order.owner_dismissed = False  # reappears in owner's list
+                order.gcash_reference_number = None
+                order.payment_confirmed_at = None
+                order.stock_deducted = False
+                order.cancelled_from_status = ''
+                order.cancel_reason = ''
+                order.save(update_fields=[
+                    'status', 'owner_dismissed', 'gcash_reference_number',
+                    'payment_confirmed_at', 'stock_deducted',
+                    'cancelled_from_status', 'cancel_reason', 'updated_at'
+                ])
+
+                # Recalculate total with new quantities
+                order.update_total()
+                order.refresh_from_db(fields=['total_amount'])
+
+            print(f'✅ [update_request_order_quantities] Order #{order.id}: '
+                  f'"{old_status}" → "request", total=₱{order.total_amount}')
+
+            # Broadcast to owner (shows up in Order Request tab) + customer
+            _broadcast_order_status_update(order, 'request')
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Order #{order.id} re-submitted successfully.',
+                'new_total': float(order.total_amount),
+                # ✅ Returning new_order_id = same order id tells the frontend that
+                #    the status was already reset — skip the separate re-request call.
+                'new_order_id': order.id,
+            })
+
+        # ── Cancelled / expired orders: create a NEW order (legacy path) ────────
+        if order.status not in ('request', 'cancelled'):
+            return JsonResponse(
+                {'success': False,
+                 'message': f'Cannot update order with status "{order.status}".'},
+                status=400
+            )
+
+        if order.status == 'cancelled':
+            print(f'⚠️  [update_request_order_quantities] Order #{order_id} status={order.status} (not "request")')
+            print(f'    → Converting to REORDER with updated quantities...')
+
+            # Build quantities dict from the items list
+            quantities = {}
+            for item_data in items:
+                oi_id = item_data.get('order_item_id')
+                qty = int(item_data.get('quantity', 1))
+                if qty < 1:
+                    qty = 1
+
+                # Find the menu_item_id from the order_item_id
+                oi = order.orderitem_set.filter(id=oi_id).first()
+                if oi:
+                    quantities[str(oi.menu_item.id)] = qty
+
+            if not quantities:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No valid items to reorder.'
+                }, status=400)
+
+            print(f'🔄 [update_request_order_quantities] Calling reorder with quantities: {quantities}')
+
+            with transaction.atomic():
+                new_order = Order.objects.create(
+                    user=request.user,
+                    establishment=order.establishment,
+                    status='request',
+                    total_amount=Decimal('0.00')
+                )
+                print(f'✅ [update_request_order_quantities] NEW REORDER CREATED: #{new_order.id}')
+
+                total = Decimal('0.00')
+                item_count = 0
+                for oi in order.orderitem_set.all():
+                    qty = quantities.get(str(oi.menu_item.id), oi.quantity)
+                    try:
+                        qty = max(1, int(qty))
+                    except (ValueError, TypeError):
+                        qty = oi.quantity
+
+                    if oi.menu_item.quantity == 0:
+                        print(f'  ⚠️  Skipping {oi.menu_item.name} (out of stock)')
+                        continue
+
+                    qty = min(qty, oi.menu_item.quantity)
+
+                    OrderItem.objects.create(
+                        order=new_order,
+                        menu_item=oi.menu_item,
+                        quantity=qty,
+                        price_at_order=oi.menu_item.price
+                    )
+                    total += oi.menu_item.price * qty
+                    item_count += 1
+
+                print(f'✅ [update_request_order_quantities] Added {item_count} items, total: ₱{total}')
+                new_order.total_amount = total
+                new_order.save(update_fields=['total_amount'])
+
+            _broadcast_order_status_update(new_order, 'request')
+            print(f'✅ [update_request_order_quantities] Reorder broadcast complete')
+
+            return JsonResponse({
+                'success': True,
+                'message': f'New order request created successfully (Order #{new_order.id})',
+                'new_total': float(new_order.total_amount),
+                'new_order_id': new_order.id,
+            })
+
+        # ✅ ORIGINAL FLOW: Order status is 'request' - update quantities directly
+        with transaction.atomic():
+            for item_data in items:
+                oi_id = item_data.get('order_item_id')
+                new_qty = int(item_data.get('quantity', 1))
+                if new_qty < 1:
+                    new_qty = 1
+
+                oi = order.orderitem_set.filter(id=oi_id).select_related('menu_item').first()
+                if not oi:
+                    continue
+
+                mi = oi.menu_item
+                if new_qty > mi.quantity:
+                    return JsonResponse(
+                        {'success': False,
+                         'message': f'"{mi.name}" only has {mi.quantity} left in stock.'},
+                        status=400
+                    )
+
+                oi.quantity = new_qty
+                oi.save(update_fields=['quantity'])
+
+            # Recalculate order total using the model's own update_total()
+            # which uses F('price_at_order') * F('quantity') — no subtotal field needed
+            order.update_total()
+
+        order.refresh_from_db(fields=['total_amount'])
+
+        # ✅ FIX: Broadcast to the owner so they see updated quantities in real-time.
+        # This sends an 'order_status_update' with new_status='request' to the owner's
+        # WS group (order_status_establishment_<id>).  The handler in orders_list.html
+        # detects that prevStatus === newStatus === 'request' and calls loadOrders()
+        # to refresh the row with the new quantities — no manual page reload needed.
+        _broadcast_order_status_update(order, 'request')
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} updated successfully.',
+            'new_total': float(order.total_amount),
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON body.'}, status=400)
+    except Exception as e:
+        import traceback
+        print(f'ERROR in update_request_order_quantities: {e}')
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def update_order_quantity(request, order_id):
+    """
+    Customer updates item quantities on a 'to_pay' or 'request' order (from modal).
+    This happens when customer clicks "Reorder" in the Order Actions Modal after
+    adjusting quantities on an expired or low-stock order.
+
+    Endpoint: POST /api/order/<order_id>/update-quantity/
+    Body:     { "items": { "menu_item_id": qty, ... } }
+
+    - Allowed while order.status == 'to_pay', 'cancelled', or 'request'
+    - Each quantity is validated against live menu item stock
+    - Order is reset to 'request' status so owner can accept again
+    - Order total is recalculated
+    - All items must have qty > 0 (items with qty=0 are removed)
+
+    Returns: { success: bool, message: str, order_id: int }
+    """
+    try:
+        data = json.loads(request.body)
+        items_dict = data.get('items', {})  # { menu_item_id: qty, ... }
+
+        if not items_dict:
+            return JsonResponse({'success': False, 'message': 'No items provided.'}, status=400)
+
+        order = get_object_or_404(
+            Order.objects
+            .select_related('establishment', 'user')
+            .prefetch_related('orderitem_set__menu_item'),
+            id=order_id,
+            user=request.user
+        )
+
+        # Allow updates on orders that are 'to_pay', 'cancelled', or 'request'
+        if order.status not in ('to_pay', 'cancelled', 'request'):
+            return JsonResponse(
+                {'success': False,
+                 'message': f'Cannot update order with status "{order.status}".'},
+                status=400
+            )
+
+        print(f"\n📝 [update_order_quantity] Order #{order.id}, Current Status: {order.status}")
+        print(f"📝 [update_order_quantity] Items to update: {items_dict}")
+
+        with transaction.atomic():
+            # Build a map of current order items for comparison
+            existing_items = {}
+            for oi in order.orderitem_set.select_related('menu_item').all():
+                existing_items[oi.menu_item_id] = oi
+
+            # Process each item in the request
+            for menu_item_id, new_qty in items_dict.items():
+                new_qty = int(new_qty)
+                if new_qty < 1:
+                    # Remove the item if qty <= 0
+                    oi = existing_items.get(menu_item_id)
+                    if oi:
+                        oi.delete()
+                    continue
+
+                # Get the menu item and check stock
+                try:
+                    mi = MenuItem.objects.get(id=menu_item_id, establishment=order.establishment)
+                except MenuItem.DoesNotExist:
+                    return JsonResponse(
+                        {'success': False,
+                         'message': f'Menu item not found.'},
+                        status=404
+                    )
+
+                # Stock validation: user can use up all available stock
+                if new_qty > mi.quantity:
+                    return JsonResponse(
+                        {'success': False,
+                         'message': f'"{mi.name}" only has {mi.quantity} in stock (you requested {new_qty}).'},
+                        status=400
+                    )
+
+                # Update or create the order item
+                if menu_item_id in existing_items:
+                    oi = existing_items[menu_item_id]
+                    old_qty = oi.quantity
+                    oi.quantity = new_qty
+                    oi.save(update_fields=['quantity'])
+                    print(f"  ✏️  Updated {mi.name}: {old_qty} → {new_qty}")
+                else:
+                    # Create new order item (shouldn't happen in normal reorder, but handle it)
+                    oi = OrderItem.objects.create(
+                        order=order,
+                        menu_item=mi,
+                        quantity=new_qty,
+                        price_at_order=mi.price
+                    )
+                    print(f"  ➕ Added {mi.name}: {new_qty}")
+
+            # Remove any items that weren't in the request (user deleted them)
+            for menu_item_id, oi in existing_items.items():
+                if menu_item_id not in items_dict:
+                    print(f"  ❌ Removed {oi.menu_item.name}")
+                    oi.delete()
+
+            # Check that at least one item remains
+            if not order.orderitem_set.exists():
+                return JsonResponse(
+                    {'success': False,
+                     'message': 'Order must have at least one item.'},
+                    status=400
+                )
+
+            # Reset order to 'request' status and recalculate total
+            old_status = order.status
+            order.status = 'request'
+            order.owner_dismissed = False  # Ensure it appears in owner's list
+            order.gcash_reference_number = None
+            order.payment_confirmed_at = None
+            order.stock_deducted = False
+            order.save(update_fields=[
+                'status', 'owner_dismissed', 'gcash_reference_number',
+                'payment_confirmed_at', 'stock_deducted', 'updated_at'
+            ])
+
+            # Recalculate order total
+            order.update_total()
+
+            print(f"✅ [update_order_quantity] Order #{order.id} updated: '{old_status}' → 'request'")
+            print(f"   • New total: ₱{order.total_amount}")
+            print(f"   • owner_dismissed reset to False")
+
+        # Broadcast to owner and customer
+        _broadcast_order_status_update(order, 'request')
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} updated and moved back to Request status.',
+            'order_id': order.id,
+            'new_total': float(order.total_amount),
+            'status': order.status
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON body.'}, status=400)
+    except ValueError as e:
+        return JsonResponse({'success': False, 'message': f'Invalid quantity value: {str(e)}'}, status=400)
+    except Exception as e:
+        import traceback
+        print(f'❌ ERROR in update_order_quantity: {e}')
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
 def _broadcast_inventory_update_from_items(establishment_id, id_qty_pairs):
     """
     Broadcast stock restoration to all WebSocket clients watching an establishment.
@@ -7164,13 +8433,60 @@ def _broadcast_inventory_update_from_items(establishment_id, id_qty_pairs):
         print(f"WARNING _broadcast_inventory_update_from_items: {e}")
 
 
-def _broadcast_order_status_update(order, new_status, cancel_reason='', cancelled_from_status='', cancelled_by_owner=False):
+def _broadcast_order_status_update(order, new_status, cancel_reason='', cancelled_from_status='',
+                                   cancelled_by_owner=False):
     """
     Broadcast an order-status change to:
       • The owner's establishment group  →  order_status_establishment_<est_id>
       • The customer's user group        →  order_status_user_<user_id>
 
-    Called from: update_order_status, reject_order, cancel_order, create_cash_order
+    Called from: update_order_status, reject_order, cancel_order, create_cash_order, reorder_items
+    """
+    try:
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            print(f"❌ WARNING: Channel layer not configured! Order #{order.id} status change NOT broadcast")
+            return
+
+        payload = {
+            'type': 'order.status.update',
+            'order_id': order.id,
+            'new_status': new_status,
+            'establishment_id': order.establishment_id,
+            'user_id': order.user_id,
+            'cancel_reason': cancel_reason,
+            'cancelled_from_status': cancelled_from_status,
+            'cancelled_by_owner': cancelled_by_owner,
+        }
+        sync_send = async_to_sync(channel_layer.group_send)
+
+        # Notify the owner dashboard
+        owner_group = f'order_status_establishment_{order.establishment_id}'
+        print(f"✅ Broadcasting to owner group: {owner_group}, Order #{order.id}, Status={new_status}")
+        sync_send(owner_group, payload)
+
+        # Notify the customer's order history page
+        customer_group = f'order_status_user_{order.user_id}'
+        print(f"✅ Broadcasting to customer group: {customer_group}, Order #{order.id}, Status={new_status}")
+        sync_send(customer_group, payload)
+    except Exception as e:
+        print(f"❌ ERROR in _broadcast_order_status_update: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+
+def _broadcast_cart_update(user_id, event_type, payload):
+    """
+    ✅ NEW: I-push ang cart mutation event sa CartConsumer group ng user.
+    Tinatawag ng update_cart_item, remove_from_cart, clear_establishment_cart,
+    at create_cash_order pagkatapos ng bawat DB transaction.
+
+    Params:
+        user_id    — int, ang ID ng logged-in user
+        event_type — str, hal. 'cart.quantity_updated'
+        payload    — dict, ang extra fields na isasama sa event
     """
     try:
         from channels.layers import get_channel_layer
@@ -7178,23 +8494,12 @@ def _broadcast_order_status_update(order, new_status, cancel_reason='', cancelle
         channel_layer = get_channel_layer()
         if not channel_layer:
             return
-        payload = {
-            'type':                   'order.status.update',
-            'order_id':               order.id,
-            'new_status':             new_status,
-            'establishment_id':       order.establishment_id,
-            'user_id':                order.user_id,
-            'cancel_reason':          cancel_reason,
-            'cancelled_from_status':  cancelled_from_status,
-            'cancelled_by_owner':     cancelled_by_owner,
-        }
-        sync_send = async_to_sync(channel_layer.group_send)
-        # Notify the owner dashboard
-        sync_send(f'order_status_establishment_{order.establishment_id}', payload)
-        # Notify the customer's order history page
-        sync_send(f'order_status_user_{order.user_id}', payload)
+        async_to_sync(channel_layer.group_send)(
+            f'cart_user_{user_id}',
+            {'type': event_type, **payload}
+        )
     except Exception as e:
-        print(f"WARNING _broadcast_order_status_update: {e}")
+        print(f'[_broadcast_cart_update] WARNING: {e}')
 
 
 def _broadcast_order_item_removed(order, item_name, order_item_id, new_total):
@@ -7215,13 +8520,13 @@ def _broadcast_order_item_removed(order, item_name, order_item_id, new_total):
         if not channel_layer:
             return
         payload = {
-            'type':             'order.item.removed',   # dots → method name in consumer
-            'order_id':         order.id,
-            'order_item_id':    order_item_id,
-            'item_name':        item_name,
-            'new_total':        str(new_total),
+            'type': 'order.item.removed',  # dots → method name in consumer
+            'order_id': order.id,
+            'order_item_id': order_item_id,
+            'item_name': item_name,
+            'new_total': str(new_total),
             'establishment_id': order.establishment_id,
-            'user_id':          order.user_id,
+            'user_id': order.user_id,
         }
         sync_send = async_to_sync(channel_layer.group_send)
         # Notify both owner dashboard and customer order history page
@@ -7566,7 +8871,8 @@ def create_cash_order(request):
                 _deduct_stock_and_clear_cart(active_order)
                 # Broadcast updated quantities to all WS clients
                 updated_items = list(active_order.orderitem_set.select_related('menu_item').all())
-                id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in
+                                updated_items]
                 _broadcast_inventory_update_from_items(active_order.establishment_id, id_qty_pairs)
 
             # ✅ FIXED: Create notification for establishment owner (get_or_create prevents duplicates)
@@ -7589,6 +8895,18 @@ def create_cash_order(request):
 
         # Broadcast order status change to owner dashboard + customer history
         _broadcast_order_status_update(active_order, active_order.status)
+
+        # ✅ REALTIME: I-broadcast ang order-sent event sa cart page ng user
+        # para ma-animate out ang establishment box sa lahat ng bukas na tabs
+        _remaining_cart_count = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status='PENDING'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        _broadcast_cart_update(request.user.id, 'cart.order_sent', {
+            'establishment_id': active_order.establishment_id,
+            'order_id':         active_order.id,
+            'cart_count':       _remaining_cart_count,
+        })
 
         # Return success response
         return JsonResponse({
@@ -7782,7 +9100,8 @@ def paymongo_payment_success(request):
                 # Broadcast updated inventory to all WS clients
                 try:
                     updated_items = list(order.orderitem_set.select_related('menu_item').all())
-                    id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                    id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in
+                                    updated_items]
                     _broadcast_inventory_update_from_items(order.establishment_id, id_qty_pairs)
                     _broadcast_order_status_update(order, order.status)
                 except Exception as _bcast_err:
@@ -7960,6 +9279,7 @@ def get_establishment_transactions(request):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 def get_establishment_transaction_statistics(request):
     """
@@ -8072,11 +9392,11 @@ def my_receipts_view(request):
         items = []
         for oi in order.orderitem_set.all():
             items.append({
-                'name':       oi.menu_item.name,
-                'quantity':   oi.quantity,
-                'price':      float(oi.price_at_order),
-                'subtotal':   float(oi.price_at_order * oi.quantity),
-                'image':      oi.menu_item.image.url if oi.menu_item.image else None,
+                'name': oi.menu_item.name,
+                'quantity': oi.quantity,
+                'price': float(oi.price_at_order),
+                'subtotal': float(oi.price_at_order * oi.quantity),
+                'image': oi.menu_item.image.url if oi.menu_item.image else None,
             })
 
         status_map = {
@@ -8098,27 +9418,28 @@ def my_receipts_view(request):
         payment_label = payment_map.get(order.gcash_payment_method or '', 'Online Payment')
 
         orders_data.append({
-            'id':              order.id,
-            'status':          order.status,
-            'status_label':    status_label,
-            'total_amount':    float(order.total_amount),
-            'payment_method':  payment_label,
-            'reference':       order.gcash_reference_number or '',
-            'created_at':      order.created_at.strftime('%b %d, %Y · %I:%M %p'),
-            'created_date':    order.created_at.strftime('%b %d, %Y'),
+            'id': order.id,
+            'status': order.status,
+            'status_label': status_label,
+            'total_amount': float(order.total_amount),
+            'payment_method': payment_label,
+            'reference': order.gcash_reference_number or '',
+            'created_at': order.created_at.strftime('%b %d, %Y · %I:%M %p'),
+            'created_date': order.created_at.strftime('%b %d, %Y'),
             'establishment': {
-                'name':    order.establishment.name,
+                'name': order.establishment.name,
                 'address': order.establishment.address or '',
-                'image':   order.establishment.image.url if order.establishment.image else None,
+                'image': order.establishment.image.url if order.establishment.image else None,
             },
             'items': items,
             'item_count': len(items),
         })
 
     return render(request, 'webapplication/my_receipts.html', {
-        'orders':      orders_data,
+        'orders': orders_data,
         'orders_json': json.dumps(orders_data, ensure_ascii=False),
     })
+
 
 def get_user_transaction_history(request):
     """
@@ -8169,13 +9490,13 @@ def get_user_transaction_history(request):
         ).order_by('-created_at')
 
         client_status_map = {
-            'request':        'request',
-            'to_pay':         'to_pay',
-            'PAID':           'preparing',
+            'request': 'request',
+            'to_pay': 'to_pay',
+            'PAID': 'preparing',
             'order_received': 'preparing',
-            'preparing':      'preparing',
-            'to_claim':       'to_claim',
-            'completed':      'completed',
+            'preparing': 'preparing',
+            'to_claim': 'to_claim',
+            'completed': 'completed',
             # ✅ 'cancelled' is NOT mapped here — it is handled per-order below
             # using cancelled_from_status so the row appears in the correct tab:
             # request → request tab, to_pay → to_pay tab, to_claim → to_claim tab.
@@ -8183,7 +9504,7 @@ def get_user_transaction_history(request):
 
         orders_data = []
         for order in orders:
-            raw_status        = order.status or 'PENDING'
+            raw_status = order.status or 'PENDING'
 
             # ✅ For owner-rejected (cancelled) orders, route to the tab they came from.
             # cancelled_from_status is stored on the model (request / to_pay / to_claim).
@@ -8200,50 +9521,51 @@ def get_user_transaction_history(request):
             items = []
             for oi in order.orderitem_set.all():
                 items.append({
-                    'name':             oi.menu_item.name,
-                    'quantity':         oi.quantity,
-                    'price':            str(oi.price_at_order),
-                    'total_price':      str(oi.price_at_order * oi.quantity),
-                    'menu_item_id':     oi.menu_item.id,
+                    'order_item_id': oi.id,  # needed by Edit Order modal
+                    'name': oi.menu_item.name,
+                    'quantity': oi.quantity,
+                    'price': str(oi.price_at_order),
+                    'total_price': str(oi.price_at_order * oi.quantity),
+                    'menu_item_id': oi.menu_item.id,
                     # ✅ available_stock = live menu item quantity at this moment.
                     # Used by the client order history page to warn customers in
                     # 'to_pay' orders when another order has consumed the same item.
-                    'available_stock':  oi.menu_item.quantity,
-                    'image':            oi.menu_item.image.url if oi.menu_item.image else None,
+                    'available_stock': oi.menu_item.quantity,
+                    'image': oi.menu_item.image.url if oi.menu_item.image else None,
                 })
 
             orders_data.append({
-                'id':                  order.id,
-                'order_number':        order.gcash_reference_number or f"ORD-{order.id}",
-                'status':              normalized_status,
-                'raw_status':          raw_status,
-                'total_amount':        str(order.total_amount),
-                'payment_method':      normalize_payment_method(order.gcash_payment_method),
-                'created_at':          order.created_at.isoformat(),
-                'updated_at':          order.updated_at.isoformat(),
+                'id': order.id,
+                'order_number': order.gcash_reference_number or f"ORD-{order.id}",
+                'status': normalized_status,
+                'raw_status': raw_status,
+                'total_amount': str(order.total_amount),
+                'payment_method': normalize_payment_method(order.gcash_payment_method),
+                'created_at': order.created_at.isoformat(),
+                'updated_at': order.updated_at.isoformat(),
                 'payment_confirmed_at': order.payment_confirmed_at.isoformat()
-                                        if order.payment_confirmed_at else None,
-                'establishment_id':    order.establishment.id,
-                'establishment_name':  order.establishment.name,
+                if order.payment_confirmed_at else None,
+                'establishment_id': order.establishment.id,
+                'establishment_name': order.establishment.name,
                 'establishment_address': order.establishment.address,
                 'establishment_image': order.establishment.image.url
-                                       if order.establishment.image else None,
+                if order.establishment.image else None,
                 'items': items,
                 # ✅ Include cancel info so client can show reason after page refresh.
                 # cancelled_by_owner=True for ALL owner-rejected orders regardless of stage.
                 # cancelled_from_status tells the client which tab to show the row in.
                 'cancelled_by_owner': (
-                    raw_status == 'cancelled'
-                    and not order.owner_dismissed
-                    and bool(order.cancelled_from_status)
+                        raw_status == 'cancelled'
+                        and not order.owner_dismissed
+                        and bool(order.cancelled_from_status)
                 ),
                 'cancelled_from_status': order.cancelled_from_status or '',
-                'cancel_reason':         order.cancel_reason or '',
+                'cancel_reason': order.cancel_reason or '',
             })
 
         return JsonResponse({
-            'success':      True,
-            'orders':       orders_data,
+            'success': True,
+            'orders': orders_data,
             'total_orders': len(orders_data),
         })
 
@@ -8257,82 +9579,286 @@ def get_user_transaction_history(request):
 @login_required
 def reorder_items(request, order_id):
     """
-    API endpoint to add all items from a previous order to the cart.
-    Supports optional custom quantities passed as JSON body: { "quantities": { "Item Name": qty } }
+    API endpoint to create a NEW ORDER from a previous order with custom quantities.
+    The new order is created with status='request' and appears in the order request list.
+
+    Supports optional custom quantities passed as JSON body: { "quantities": { "menu_item_id": qty } }
 
     Used by: Client_order_history.html (Reorder modal)
     Endpoint: /api/reorder/<order_id>/
     Method: POST
+    Response: { "success": true, "order_id": <new_order_id>, "message": "..." }
     """
+    from django.db import transaction
+    from django.core.cache import cache
+    from decimal import Decimal
+    from django.utils import timezone
+    from datetime import timedelta
+    import time
+
     if request.method != 'POST':
+        print(f"❌ [reorder_items] Invalid method: {request.method} (expected POST)")
         return JsonResponse({
             'success': False,
-            'message': 'Invalid request method'
+            'message': 'Invalid request method. POST required.'
         }, status=405)
 
     try:
-        from .models import Cart, CartItem
-        from django.db import transaction
+        print(f"\n🔄 [reorder_items] ========== START ==========")
+        print(f"🔄 [reorder_items] Called: order_id={order_id}, user={request.user.id}")
+
+        # ✅ CRITICAL: Cache-based deduplication for THIS specific order reorder
+        # This prevents TWO concurrent requests from both creating new orders
+        reorder_lock_key = f"reorder_lock__{request.user.id}__{order_id}"
+
+        # Try to acquire the lock - if it exists, someone else is already reordering this
+        if cache.get(reorder_lock_key):
+            print(f"⚠️  [reorder_items] CONCURRENT REORDER DETECTED! Waiting for first request to complete...")
+            # Wait for the first request to complete and return its order
+            for attempt in range(10):  # Try for up to 1 second (10 x 100ms)
+                time.sleep(0.1)
+
+                # Try to find the order created by the first request
+                try:
+                    original = Order.objects.get(id=order_id, user=request.user)
+                    recent_orders = Order.objects.filter(
+                        user=request.user,
+                        establishment=original.establishment,
+                        status='request',
+                        created_at__gte=timezone.now() - timedelta(seconds=2)
+                    ).exclude(id=order_id).order_by('-id')
+
+                    if recent_orders.exists():
+                        first_order = recent_orders.first()
+                        print(f"✅ [reorder_items] Found concurrent reorder: Order #{first_order.id} - returning it")
+                        return JsonResponse({
+                            'success': True,
+                            'order_id': first_order.id,
+                            'new_order_id': first_order.id,
+                            'message': f'Order request created (Order #{first_order.id})',
+                            'redirect': f'/order/{first_order.id}/'
+                        })
+                except Order.DoesNotExist:
+                    pass
+
+            print(f"⚠️  [reorder_items] Could not find concurrent reorder after waiting. Proceeding...")
+
+        # Set the lock for 3 seconds
+        cache.set(reorder_lock_key, True, 3)
+        print(f"✅ [reorder_items] Set reorder lock for 3 seconds")
 
         # Parse optional custom quantities
         custom_quantities = {}
         try:
             body = json.loads(request.body or '{}')
             custom_quantities = body.get('quantities', {})
-        except (json.JSONDecodeError, AttributeError):
+            print(f"🔄 [reorder_items] Parsed quantities: {custom_quantities}")
+        except (json.JSONDecodeError, AttributeError) as parse_err:
+            print(f"⚠️  [reorder_items] JSON parse error: {parse_err}, using empty quantities")
             pass
 
-        # Get the order and verify it belongs to the user
-        order = Order.objects.get(id=order_id, user=request.user)
-
-        # Get or create the user's cart (Cart is per-user, not per-establishment)
-        cart, created = Cart.objects.get_or_create(user=request.user)
-
-        # Add each item from the order to the cart
+        # ✅ CRITICAL: Wrap entire flow in atomic transaction with lock
+        # This prevents race condition where two concurrent requests both create orders
         with transaction.atomic():
-            for order_item in order.orderitem_set.all():
-                # Use custom quantity if provided, else fall back to original qty
-                qty = custom_quantities.get(order_item.menu_item.name, order_item.quantity)
-                try:
-                    qty = max(1, int(qty))
-                except (ValueError, TypeError):
-                    qty = order_item.quantity
+            # Lock the original order while processing
+            try:
+                original_order = Order.objects.select_for_update().get(id=order_id, user=request.user)
+                print(
+                    f"✅ [reorder_items] Found & locked original order: #{original_order.id}, est_id={original_order.establishment_id}, status={original_order.status}")
+            except Order.DoesNotExist:
+                print(f"❌ [reorder_items] Order #{order_id} not found for user {request.user.id}")
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Order not found or does not belong to you'
+                }, status=404)
 
-                # Clamp to available stock
-                available = order_item.menu_item.quantity
-                if available == 0:
-                    continue  # Skip out-of-stock items silently
-                qty = min(qty, available)
+            # ✅ DEDUPLICATION: Check if a reorder from this order was just created (within 5 seconds)
+            # The lock above ensures this check is atomic - no race condition possible
+            print(f"🔄 [reorder_items] Checking for recent duplicate reorders...")
+            recent_reorders = Order.objects.filter(
+                user=request.user,
+                establishment=original_order.establishment,
+                status='request',
+                created_at__gte=timezone.now() - timedelta(seconds=5)
+            ).exclude(id=original_order.id).order_by('-id')
 
-                cart_item, item_created = CartItem.objects.get_or_create(
-                    cart=cart,
-                    menu_item=order_item.menu_item,
-                    defaults={'quantity': qty}
+            if recent_reorders.exists():
+                recent_reorder = recent_reorders.first()
+                recent_items = recent_reorder.orderitem_set.count()
+                original_items = original_order.orderitem_set.count()
+                recent_total = float(recent_reorder.total_amount or 0)
+
+                print(f"⚠️  [reorder_items] Found {recent_reorders.count()} recent reorder(s) within 5 seconds")
+                print(f"   Most recent: Order #{recent_reorder.id}")
+                print(f"   Recent order: {recent_items} items, total=₱{recent_total}")
+                print(f"   Original order: {original_items} items")
+
+                # If same establishment + same number of items = likely a duplicate
+                # Don't rely on exact total match because prices might change
+                if recent_items == original_items and recent_items > 0:
+                    print(
+                        f"❌ [reorder_items] DUPLICATE DETECTED! Order #{recent_reorder.id} has same {recent_items} items as original")
+                    return JsonResponse({
+                        'success': True,
+                        'order_id': recent_reorder.id,
+                        'new_order_id': recent_reorder.id,
+                        'message': f'Order request already created (Order #{recent_reorder.id})',
+                        'redirect': f'/order/{recent_reorder.id}/'
+                    })
+                elif recent_total > 0:
+                    # Even if item counts don't match exactly, if we have a recent order
+                    # with a decent total from THIS user at THIS establishment, be cautious
+                    print(
+                        f"⚠️  [reorder_items] Recent order exists but item counts differ ({recent_items} vs {original_items})")
+                    print(f"    If this is a duplicate, manually delete Order #{recent_reorder.id}")
+
+            # Create a NEW order with the same establishment but status='request'
+            try:
+                new_order = Order.objects.create(
+                    user=request.user,
+                    establishment=original_order.establishment,
+                    status='request',
+                    total_amount=Decimal('0.00')
                 )
+                print(f"✅ [reorder_items] NEW ORDER CREATED: #{new_order.id}, status='{new_order.status}'")
+            except Exception as create_err:
+                print(f"❌ [reorder_items] ERROR creating order: {create_err}")
+                raise
 
-                if not item_created:
-                    # If item already in cart, update to the new qty
-                    cart_item.quantity = min(cart_item.quantity + qty, available)
-                    cart_item.save()
+            # Copy items from original order to new order with custom quantities
+            total = Decimal('0.00')
+            item_count = 0
+            for order_item in original_order.orderitem_set.all():
+                try:
+                    # Use custom quantity if provided, else fall back to original qty
+                    menu_item_id_str = str(order_item.menu_item.id)
+                    qty = custom_quantities.get(menu_item_id_str, order_item.quantity)
+
+                    try:
+                        qty = max(1, int(qty))
+                    except (ValueError, TypeError):
+                        qty = order_item.quantity
+                        print(f"  ⚠️  Invalid qty for item {menu_item_id_str}, using original: {qty}")
+
+                    print(f"  📦 Item #{order_item.menu_item.id} ({order_item.menu_item.name}):")
+                    print(f"     - Requested qty: {qty}, Available stock: {order_item.menu_item.quantity}")
+
+                    # Skip out-of-stock items
+                    if order_item.menu_item.quantity == 0:
+                        print(f"     - ⚠️  SKIPPING (out of stock)")
+                        continue
+
+                    # Clamp to available stock
+                    qty = min(qty, order_item.menu_item.quantity)
+                    print(f"     - ✅ Using qty: {qty}")
+
+                    # Create new order item with the current price of the menu item
+                    new_order_item = OrderItem.objects.create(
+                        order=new_order,
+                        menu_item=order_item.menu_item,
+                        quantity=qty,
+                        price_at_order=order_item.menu_item.price
+                    )
+                    print(f"     - ✅ OrderItem #{new_order_item.id} created")
+
+                    total += order_item.menu_item.price * qty
+                    item_count += 1
+
+                except Exception as item_err:
+                    print(f"  ❌ ERROR processing item #{order_item.menu_item.id}: {item_err}")
+                    raise
+
+            print(f"🔄 [reorder_items] Added {item_count} items, total: ৳{total}")
+
+            if item_count == 0:
+                print(f"❌ [reorder_items] No items were added to the new order!")
+                # Delete the empty order
+                new_order.delete()
+                print(f"❌ [reorder_items] Deleted empty order #{new_order.id}")
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No items available for reorder (all out of stock)'
+                }, status=400)
+
+            # Update the new order's total amount
+            try:
+                new_order.total_amount = total
+                new_order.save(update_fields=['total_amount'])
+                print(f"✅ [reorder_items] Order saved with total_amount=৳{total}")
+            except Exception as save_err:
+                print(f"❌ [reorder_items] ERROR saving order: {save_err}")
+                raise
+
+        # ✅ Transaction block ends here - order is atomically created & saved
+
+        # ✅ FINAL DEDUPLICATION CHECK: Check if another order was created at the same moment
+        print(f"🔄 [reorder_items] Final deduplication check...")
+        final_dup_check = Order.objects.filter(
+            user=request.user,
+            establishment=original_order.establishment,
+            status='request',
+            created_at__gte=timezone.now() - timedelta(seconds=1)
+        ).exclude(id=new_order.id).order_by('-id')
+
+        if final_dup_check.exists():
+            first_dup = final_dup_check.first()
+            # If another order was created at almost the exact same time, likely a duplicate
+            # Return the first one that was created
+            if first_dup.id < new_order.id:  # Lower ID = created first
+                print(f"⚠️  [reorder_items] RACE CONDITION DETECTED! Order #{first_dup.id} created simultaneously")
+                print(f"    Deleting our duplicate Order #{new_order.id} and returning first one...")
+                new_order.delete()
+                return JsonResponse({
+                    'success': True,
+                    'order_id': first_dup.id,
+                    'new_order_id': first_dup.id,
+                    'message': f'Order request created (Order #{first_dup.id})',
+                    'redirect': f'/order/{first_dup.id}/'
+                })
+
+        print(f"✅ [reorder_items] No race condition detected - Order #{new_order.id} is unique")
+
+        # Verify the order was saved
+        try:
+            verify_order = Order.objects.get(id=new_order.id)
+            print(
+                f"✅ [reorder_items] VERIFIED in DB: Order #{verify_order.id}, status='{verify_order.status}', items={verify_order.orderitem_set.count()}")
+        except Exception as verify_err:
+            print(f"❌ [reorder_items] ERROR verifying order in DB: {verify_err}")
+            raise
+
+        # ✅ CRITICAL: Broadcast the new order to both owner & customer via WebSocket
+        print(f"🔄 [reorder_items] Broadcasting Order #{new_order.id} to owner & customer...")
+        try:
+            _broadcast_order_status_update(new_order, 'request')
+            print(f"✅ [reorder_items] Broadcast complete")
+        except Exception as broadcast_err:
+            print(f"⚠️  [reorder_items] WARNING: Broadcast failed: {broadcast_err}")
+            # Don't fail the entire request if broadcast fails
+
+        print(f"🔄 [reorder_items] ========== COMPLETE ==========\n")
 
         return JsonResponse({
             'success': True,
-            'message': 'Items added to cart successfully',
-            'cart_count': CartItem.objects.filter(cart__user=request.user).count()
+            'order_id': new_order.id,
+            'new_order_id': new_order.id,
+            'message': f'New order request created successfully (Order #{new_order.id})',
+            'redirect': f'/order/{new_order.id}/'
         })
 
     except Order.DoesNotExist:
+        print(f"❌ [reorder_items] Order #{order_id} not found or doesn't belong to user {request.user.id}")
         return JsonResponse({
             'success': False,
             'message': 'Order not found or does not belong to you'
         }, status=404)
     except Exception as e:
         import traceback
-        print(f"Error in reorder_items: {str(e)}")
+        print(f"❌ [reorder_items] FATAL ERROR: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({
             'success': False,
-            'message': str(e)
+            'message': f'Error creating reorder: {str(e)}'
         }, status=500)
 
 
@@ -8422,7 +9948,8 @@ def get_order_details(request, order_id):
             item_total = order_item.quantity * item_price
 
             items.append({
-                'id': order_item.menu_item.id,   # ← needed for /cart/add/ realtime reorder
+                'id': order_item.menu_item.id,  # ← needed for /cart/add/ realtime reorder
+                'order_item_id': order_item.id,  # ← needed by Edit Order modal
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
                 'price': str(item_price),
@@ -8466,10 +9993,12 @@ def get_order_details(request, order_id):
             'message': str(e)
         }, status=500)
 
+
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 import os
+
 
 @csrf_exempt
 def create_admin_user(request):
@@ -8580,7 +10109,7 @@ def get_establishment_realtime(request, establishment_id):
             avg=Avg('rating'),
             count=DjCount('id'),
         )
-        avg_rating   = round(float(rating_agg['avg']), 1) if rating_agg['avg'] else 0.0
+        avg_rating = round(float(rating_agg['avg']), 1) if rating_agg['avg'] else 0.0
         review_count = rating_agg['count'] or 0
 
         # ── Categories string ──
@@ -8588,30 +10117,82 @@ def get_establishment_realtime(request, establishment_id):
         if establishment.other_category:
             cat_names.append(establishment.other_category)
 
+        # ── Weekly schedule for the Hours section ─────────────────────
+        from .models import BusinessHours as _BH_RT
+        DAY_NAMES_RT = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        try:
+            from zoneinfo import ZoneInfo as _ZI_RT
+            from datetime import datetime as _dt_rt
+            _ph_rt = _dt_rt.now(_ZI_RT('Asia/Manila'))
+        except Exception:
+            from datetime import datetime as _dt_rt
+            _ph_rt = _dt_rt.now()
+        today_rt = _ph_rt.weekday()
+
+        _bh_qs_rt  = _BH_RT.objects.filter(establishment=establishment).order_by('day_of_week')
+        _bh_map_rt = {bh.day_of_week: bh for bh in _bh_qs_rt}
+        weekly_hours_rt = []
+        for i, dn in enumerate(DAY_NAMES_RT):
+            if i in _bh_map_rt:
+                bh = _bh_map_rt[i]
+                weekly_hours_rt.append({
+                    'day': i, 'day_name': dn,
+                    'is_closed': bh.is_closed,
+                    'opening': bh.opening_time.strftime('%I:%M %p') if bh.opening_time else None,
+                    'closing': bh.closing_time.strftime('%I:%M %p') if bh.closing_time else None,
+                    'opening_24h': bh.opening_time.strftime('%H:%M') if bh.opening_time else '',
+                    'closing_24h': bh.closing_time.strftime('%H:%M') if bh.closing_time else '',
+                    'is_today': i == today_rt,
+                })
+            else:
+                weekly_hours_rt.append({
+                    'day': i, 'day_name': dn,
+                    'is_closed': not bool(establishment.opening_time and establishment.closing_time),
+                    'opening': establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
+                    'closing': establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
+                    'opening_24h': establishment.opening_time.strftime('%H:%M') if establishment.opening_time else '',
+                    'closing_24h': establishment.closing_time.strftime('%H:%M') if establishment.closing_time else '',
+                    'is_today': i == today_rt,
+                })
+
+        # today's times for status_updater.js backward compat
+        today_bh = _bh_map_rt.get(today_rt)
+        if today_bh and not today_bh.is_closed and today_bh.opening_time:
+            _open_12  = today_bh.opening_time.strftime('%I:%M %p')
+            _close_12 = today_bh.closing_time.strftime('%I:%M %p') if today_bh.closing_time else None
+            _open_24  = today_bh.opening_time.strftime('%H:%M')
+            _close_24 = today_bh.closing_time.strftime('%H:%M') if today_bh.closing_time else ''
+        else:
+            _open_12  = establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None
+            _close_12 = establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None
+            _open_24  = establishment.opening_time.strftime('%H:%M') if establishment.opening_time else ''
+            _close_24 = establishment.closing_time.strftime('%H:%M') if establishment.closing_time else ''
+
         return JsonResponse({
-            'success':         True,
+            'success': True,
             'establishment_id': establishment_id,
-            'status':          status,
-            'name':            establishment.name,
-            'address':         establishment.address,
+            'status': establishment.status,
+            'name': establishment.name,
+            'address': establishment.address,
             'payment_methods': establishment.payment_methods or '',
-            'opening_time':    establishment.opening_time.strftime('%I:%M %p') if establishment.opening_time else None,
-            'closing_time':    establishment.closing_time.strftime('%I:%M %p') if establishment.closing_time else None,
-            'opening_24h':     establishment.opening_time.strftime('%H:%M') if establishment.opening_time else '',
-            'closing_24h':     establishment.closing_time.strftime('%H:%M') if establishment.closing_time else '',
-            'categories':      ', '.join(cat_names) if cat_names else 'N/A',
-            'average_rating':  avg_rating,
-            'review_count':    review_count,
-            'image_url':       request.build_absolute_uri(establishment.image.url) if establishment.image else None,
-            'menu_items':      menu_items_data,
-            'last_modified':   cache.get(f'est_{establishment_id}_last_modified', 0),  # ✅ sync signal
+            'opening_time': _open_12,
+            'closing_time': _close_12,
+            'opening_24h': _open_24,
+            'closing_24h': _close_24,
+            'categories': ', '.join(cat_names) if cat_names else 'N/A',
+            'average_rating': avg_rating,
+            'review_count': review_count,
+            'image_url': request.build_absolute_uri(establishment.image.url) if establishment.image else None,
+            'menu_items': menu_items_data,
+            'weekly_hours': weekly_hours_rt,
+            'today_weekday': today_rt,
+            'last_modified': cache.get(f'est_{establishment_id}_last_modified', 0),
         })
 
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f'get_establishment_realtime error: {e}')
         return JsonResponse({'error': 'database_unavailable'}, status=503)
-
 
 
 # ============================================================
@@ -8630,7 +10211,10 @@ def get_establishment_open_status(request, establishment_id):
             id=establishment_id,
             is_active=True,
         )
-        status = get_current_status(establishment.opening_time, establishment.closing_time)
+        # ✅ FIXED: Use owner's manual toggle (establishment.status) as the
+        # authoritative source — same as /api/establishment/<id>/realtime/.
+        # Fall back to time-based only when the field is empty (legacy data).
+        status = establishment.status or get_current_status(establishment.opening_time, establishment.closing_time)
         return JsonResponse({
             'success': True,
             'establishment_id': establishment_id,
@@ -8649,11 +10233,22 @@ def get_all_establishments_status(request):
     """
     Returns status + rating + review count + all detail fields for all active
     establishments. Used by kabsueats.js to refresh establishment cards every 30s.
-    ✅ Now includes name, image, categories, payment_methods, opening/closing time,
-    and amenities so card details update in real-time when owner saves from dashboard/profile.
+    ✅ Now uses today's BusinessHours per-day entry (same as get_establishment_realtime)
+    so the Open/Closed status on kabsueats cards always matches the details page.
     """
     from django.db.models import Avg, Count as DjCount
+    from .models import BusinessHours as _BH_ALL
     try:
+        # ── Get today's weekday in PH time (same logic as get_establishment_realtime) ──
+        try:
+            from zoneinfo import ZoneInfo as _ZI_ALL
+            from datetime import datetime as _dt_all
+            _ph_now = _dt_all.now(_ZI_ALL('Asia/Manila'))
+        except Exception:
+            from datetime import datetime as _dt_all
+            _ph_now = _dt_all.now()
+        today_weekday = _ph_now.weekday()  # 0=Monday ... 6=Sunday
+
         ests = FoodEstablishment.objects.filter(is_active=True).prefetch_related(
             'categories', 'amenities'
         ).annotate(
@@ -8661,9 +10256,29 @@ def get_all_establishments_status(request):
             review_count=DjCount('reviews', distinct=True),
         )
 
+        # ── Bulk-fetch today's BusinessHours for all establishments ──
+        today_bh_qs = _BH_ALL.objects.filter(
+            establishment__is_active=True,
+            day_of_week=today_weekday,
+        ).select_related('establishment')
+        today_bh_map = {bh.establishment_id: bh for bh in today_bh_qs}
+
         data = []
         for est in ests:
-            status     = get_current_status(est.opening_time, est.closing_time)
+            # ── Use today's BusinessHours if available, else fall back to flat field ──
+            bh = today_bh_map.get(est.id)
+            if bh and not bh.is_closed and bh.opening_time and bh.closing_time:
+                open_t  = bh.opening_time
+                close_t = bh.closing_time
+            else:
+                open_t  = est.opening_time
+                close_t = est.closing_time
+
+            # ✅ FIXED: Use the owner's manually-set establishment.status (same field
+            # that /api/establishment/<id>/realtime/ returns) so the kabsueats cards
+            # always agree with the details page.  Fall back to time-based calculation
+            # only when the model field is empty/null (legacy data).
+            status     = est.status or get_current_status(open_t, close_t)
             avg_rating = round(float(est.avg_rating), 1) if est.avg_rating else 0.0
 
             # Build categories string
@@ -8679,19 +10294,21 @@ def get_all_establishments_status(request):
             amenities_str = ', '.join(amenity_names) if amenity_names else ''
 
             data.append({
-                'id':              est.id,
-                'status':          status,
-                'average_rating':  avg_rating,
-                'review_count':    est.review_count or 0,
-                'last_modified':   cache.get(f'est_{est.id}_last_modified', 0),  # ✅ sync signal
-                # ✅ Detail fields — update card DOM on change
-                'name':            est.name,
-                'image_url':       est.image.url if est.image else None,
-                'categories':      categories_str,
+                'id': est.id,
+                'status': status,
+                'average_rating': avg_rating,
+                'review_count': est.review_count or 0,
+                'last_modified': cache.get(f'est_{est.id}_last_modified', 0),
+                'name': est.name,
+                'image_url': est.image.url if est.image else None,
+                'categories': categories_str,
                 'payment_methods': est.payment_methods or '',
-                'opening_time':    est.opening_time.strftime('%I:%M %p') if est.opening_time else '',
-                'closing_time':    est.closing_time.strftime('%I:%M %p') if est.closing_time else '',
-                'amenities':       amenities_str,
+                'opening_time': open_t.strftime('%I:%M %p') if open_t else '',
+                'closing_time': close_t.strftime('%I:%M %p') if close_t else '',
+                # 24h format for data-opening-time / data-closing-time on kabsueats cards
+                'opening_24h': open_t.strftime('%H:%M') if open_t else '',
+                'closing_24h': close_t.strftime('%H:%M') if close_t else '',
+                'amenities': amenities_str,
             })
 
         return JsonResponse({'success': True, 'establishments': data})
@@ -8791,8 +10408,8 @@ def get_bestsellers(request):
     try:
         bestsellers = MenuItem.objects.filter(
             is_top_seller=True,
-            quantity__gt=0,                          # in stock only
-            food_establishment__is_active=True,      # ✅ hide deactivated
+            quantity__gt=0,  # in stock only
+            food_establishment__is_active=True,  # ✅ hide deactivated
         ).select_related(
             'food_establishment'
         ).annotate(
@@ -8800,26 +10417,57 @@ def get_bestsellers(request):
         ).order_by('-top_seller_marked_at', '-total_orders')[:20]
 
         bestsellers_data = []
+
+        # ── Bulk-fetch today's BusinessHours for accurate opening/closing times ──
+        from .models import BusinessHours as _BH_BS
+        try:
+            from zoneinfo import ZoneInfo as _ZI_BS
+            _today_bs = __import__('datetime').datetime.now(_ZI_BS('Asia/Manila')).weekday()
+        except Exception:
+            _today_bs = __import__('datetime').datetime.now().weekday()
+        _bh_bs_map = {
+            bh.establishment_id: bh
+            for bh in _BH_BS.objects.filter(
+                establishment__is_active=True,
+                day_of_week=_today_bs,
+            )
+        }
+
         for item in bestsellers:
             establishment = item.food_establishment
 
-            status = get_current_status(establishment.opening_time, establishment.closing_time)
+            # ✅ FIXED: Use establishment.status (owner's manual toggle) as the
+            # authoritative status — same source as /api/establishment/<id>/realtime/.
+            # Fall back to time-based only when status field is empty (legacy data).
+            _bh_bs = _bh_bs_map.get(establishment.id)
+            if _bh_bs and not _bh_bs.is_closed and _bh_bs.opening_time and _bh_bs.closing_time:
+                _open_bs  = _bh_bs.opening_time.strftime('%H:%M')
+                _close_bs = _bh_bs.closing_time.strftime('%H:%M')
+            else:
+                _open_bs  = establishment.opening_time.strftime('%H:%M') if establishment.opening_time else ''
+                _close_bs = establishment.closing_time.strftime('%H:%M') if establishment.closing_time else ''
+
+            status = establishment.status or get_current_status(
+                establishment.opening_time, establishment.closing_time
+            )
 
             bestsellers_data.append({
-                'id':          item.id,
-                'name':        item.name,
+                'id': item.id,
+                'name': item.name,
                 'description': item.description,
-                'price':       float(item.price),
-                'image':       item.image.url if item.image else None,
-                'quantity':    item.quantity,
+                'price': float(item.price),
+                'image': item.image.url if item.image else None,
+                'quantity': item.quantity,
                 'total_orders': item.total_orders,
                 'establishment': {
-                    'id':            establishment.id,
-                    'name':          establishment.name,
-                    'address':       establishment.address,
-                    'status':        status,
-                    'latitude':      establishment.latitude,
-                    'longitude':     establishment.longitude,
+                    'id': establishment.id,
+                    'name': establishment.name,
+                    'address': establishment.address,
+                    'status': status,
+                    'opening_24h': _open_bs,
+                    'closing_24h': _close_bs,
+                    'latitude': establishment.latitude,
+                    'longitude': establishment.longitude,
                     'last_modified': cache.get(f'est_{establishment.id}_last_modified', 0),  # ✅ sync signal
                 }
             })
@@ -8834,6 +10482,7 @@ def get_bestsellers(request):
         import logging
         logging.getLogger(__name__).error(f"DB error in get_bestsellers: {e}")
         return JsonResponse({'error': 'database_unavailable'}, status=503)
+
 
 def search_menu_items(request):
     """
@@ -8859,7 +10508,8 @@ def search_menu_items(request):
         items_data = []
         for item in items:
             est = item.food_establishment
-            status = get_current_status(est.opening_time, est.closing_time)
+            # ✅ FIXED: Use establishment.status (owner's manual toggle), not time-based
+            status = est.status or get_current_status(est.opening_time, est.closing_time)
             items_data.append({
                 'id': item.id,
                 'name': item.name,
@@ -8883,6 +10533,8 @@ def search_menu_items(request):
         import logging
         logging.getLogger(__name__).error(f"Error in search_menu_items: {e}")
         return JsonResponse({'success': True, 'items': [], 'count': 0})
+
+
 # ============================================================
 # BUY NOW — 2-STEP CHECKOUT FLOW
 # ============================================================
@@ -8910,3 +10562,45 @@ def favorites_page(request):
     return render(request, 'webapplication/favorites.html', {
         'cart_count': cart_count,
     })
+
+# ============================================================
+# OWNER PRESENCE — Dashboard heartbeat + customer presence check
+# ============================================================
+
+@login_required
+@require_POST
+def owner_heartbeat(request):
+    """
+    Owner dashboard calls this every 30s while the dashboard is open.
+    Sets a cache key with 70s TTL so it expires if heartbeat stops.
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        cache.set(f'owner_online_{establishment.id}', True, timeout=70)
+        return JsonResponse({'status': 'ok'})
+    except Exception:
+        return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+@require_POST
+def owner_heartbeat_offline(request):
+    """
+    Called via navigator.sendBeacon() when owner closes/leaves the dashboard.
+    Immediately clears the presence cache so customers see Offline instantly.
+    """
+    try:
+        establishment = get_object_or_404(FoodEstablishment, owner=request.user)
+        cache.delete(f'owner_online_{establishment.id}')
+        return JsonResponse({'status': 'ok'})
+    except Exception:
+        return JsonResponse({'status': 'error'}, status=400)
+
+
+def check_owner_presence(request, establishment_id):
+    """
+    Customer detail page polls this every 15s to check if owner dashboard is open.
+    Public endpoint — no login required.
+    """
+    is_online = cache.get(f'owner_online_{establishment_id}', False)
+    return JsonResponse({'is_online': bool(is_online)})

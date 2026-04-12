@@ -585,10 +585,10 @@ html body .establishment-cart-box.active-cart {
                style="flex:1;padding:16px 12px;border:none;background:transparent;font-size:14px;font-weight:700;cursor:pointer;color:#B71C1C;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:background .15s;">
                 <i class="fas fa-list-alt"></i> Go to My Orders
             </a>
-            <button onclick="closeOrderRequestModal()"
-                    style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;">
-                Continue Shopping
-            </button>
+            <a href="{% url 'kabsueats_home' %}"
+               style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
+                <i class="fas fa-utensils"></i> Browse More Food
+            </a>
         </div>
     </div>
 </div>
@@ -959,13 +959,14 @@ html body .establishment-cart-box.active-cart {
     };
 
     // Close the order success modal
+    // Close the order success modal — redirect to KabsuEats home to browse more food
     window.closeOrderRequestModal = function() {
         const modal = document.getElementById('orderRequestModal');
         if (modal) {
             modal.classList.remove('open');
             document.body.style.overflow = '';
         }
-        window.location.reload();
+        window.location.href = "{% url 'kabsueats_home' %}";
     };
 
 </script>

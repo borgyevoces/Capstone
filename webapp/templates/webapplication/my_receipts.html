@@ -5,157 +5,242 @@
 
 {% block extra_css %}
 <style>
-/* ── Page ── */
+/* ══════════════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════════════ */
 .rp-page {
-    max-width: 780px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 28px 18px 80px;
+    padding: 28px 20px 80px;
+    font-family: 'Poppins', sans-serif;
 }
 
 /* ── Header ── */
 .rp-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 24px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
+    margin-bottom: 22px;
 }
 .rp-header-left h1 {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
     font-weight: 800;
     color: #0a0a0a;
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 3px;
+    margin: 0 0 3px;
 }
-.rp-header-left h1 i { color: #16a34a; font-size: 1.3rem; }
-.rp-header-left p { font-size: 0.85rem; color: #6b7280; }
+.rp-header-left h1 i { color: #16a34a; font-size: 1.25rem; }
+.rp-header-left p { font-size: 0.82rem; color: #6b7280; margin: 0; }
 
-/* ── Order receipt card ── */
-.rp-card {
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    margin-bottom: 14px;
-    overflow: hidden;
-    transition: box-shadow 0.2s;
-}
-.rp-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); }
-
-/* Card header */
-.rp-card-hd {
+/* ── Summary stats bar ── */
+.rp-stats {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    background: #fafbfc;
-    border-bottom: 1px solid #f1f3f5;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.rp-card-hd-left {
-    display: flex;
-    align-items: center;
     gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
-.rp-order-num {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #B71C1C;
+.rp-stat-card {
+    flex: 1;
+    min-width: 130px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
-.rp-date {
-    font-size: 0.78rem;
+.rp-stat-lbl {
+    font-size: 0.7rem;
+    font-weight: 600;
     color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+}
+.rp-stat-val {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #111;
+    line-height: 1;
+}
+.rp-stat-val.green { color: #16a34a; }
+.rp-stat-val.red   { color: #B71C1C; }
+
+/* ── Toolbar ── */
+.rp-toolbar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
 }
+.rp-search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+}
+.rp-search-wrap i {
+    position: absolute; left: 11px; top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af; font-size: 13px; pointer-events: none;
+}
+.rp-search {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 9px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem; color: #111;
+    outline: none; transition: border-color .15s;
+    box-sizing: border-box;
+}
+.rp-search:focus { border-color: #16a34a; }
+
+.rp-filter-group {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.rp-filter-lbl {
+    font-size: 0.72rem; font-weight: 600; color: #6b7280; white-space: nowrap;
+}
+.rp-select {
+    padding: 7px 28px 7px 10px;
+    border: 1.5px solid #e5e7eb; border-radius: 9px;
+    font-family: 'Poppins', sans-serif; font-size: 0.78rem; color: #374151;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 9px center;
+    appearance: none; outline: none; cursor: pointer; transition: border-color .15s;
+}
+.rp-select:focus { border-color: #16a34a; }
+
+.rp-reset-btn {
+    padding: 7px 14px;
+    border: 1.5px solid #e5e7eb; border-radius: 9px;
+    background: #f9fafb;
+    font-family: 'Poppins', sans-serif; font-size: 0.75rem; font-weight: 600; color: #6b7280;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.rp-reset-btn:hover { border-color: #B71C1C; color: #B71C1C; background: #fff8f8; }
+
+.rp-result-info { font-size: 0.74rem; color: #9ca3af; margin: 0 0 10px 2px; }
+.rp-result-info b { color: #374151; }
+
+/* ── Table card ── */
+.rp-table-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.rp-table-wrap { overflow-x: auto; }
+
+table.rp-table {
+    width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+table.rp-table thead th {
+    background: #f9fafb;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 0.67rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px; color: #9ca3af;
+    border-bottom: 1px solid #e5e7eb; white-space: nowrap;
+}
+table.rp-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background .12s;
+}
+table.rp-table tbody tr:last-child { border-bottom: none; }
+table.rp-table tbody tr:hover { background: #f9fafb; }
+table.rp-table td {
+    padding: 13px 14px; color: #374151; vertical-align: middle;
+}
+
+.td-order-id { font-weight: 800; color: #B71C1C; font-size: 0.86rem; white-space: nowrap; }
+.td-date     { font-size: 0.76rem; color: #6b7280; white-space: nowrap; }
+
+.td-estab { display: flex; align-items: center; gap: 9px; min-width: 160px; }
+.td-estab-img {
+    width: 36px; height: 36px; border-radius: 8px;
+    object-fit: cover; border: 1px solid #e5e7eb; flex-shrink: 0;
+}
+.td-estab-ph {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #f1f3f5; display: flex; align-items: center; justify-content: center;
+    color: #9ca3af; font-size: 14px; flex-shrink: 0;
+}
+.td-estab-name { font-weight: 700; font-size: 0.82rem; color: #111; }
+.td-estab-addr { font-size: 0.7rem; color: #9ca3af; margin-top: 1px; }
+
+.td-items { max-width: 200px; }
+.td-item-line { font-size: 0.76rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-item-more { font-size: 0.68rem; color: #9ca3af; margin-top: 2px; }
+
+.pay-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
+}
+.pay-badge.gcash { background: #eff6ff; color: #1d4ed8; }
+.pay-badge.cash  { background: #f0fdf4; color: #16a34a; }
+
+.td-amount { font-weight: 800; font-size: 0.9rem; color: #B71C1C; white-space: nowrap; }
+
+.status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+}
+.status-badge.completed     { background: #f0fdf4; color: #15803d;  border: 1px solid #bbf7d0; }
+.status-badge.cancelled     { background: #fef2f2; color: #B71C1C;  border: 1px solid #fecaca; }
+.status-badge.rejected      { background: #fef2f2; color: #B71C1C;  border: 1px solid #fecaca; }
+.status-badge.preparing,
+.status-badge.order_received{ background: #fffbeb; color: #b45309;  border: 1px solid #fde68a; }
+.status-badge.to_claim      { background: #eff6ff; color: #1d4ed8;  border: 1px solid #bfdbfe; }
+.status-badge.to_pay        { background: #f5f3ff; color: #7c3aed;  border: 1px solid #ddd6fe; }
+.status-badge.request       { background: #f9fafb; color: #6b7280;  border: 1px solid #e5e7eb; }
 
 .rp-view-btn {
-    padding: 7px 14px;
-    border-radius: 8px;
-    border: 1.5px solid #e5e7eb;
-    background: #fff;
-    color: #374151;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.18s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    padding: 6px 13px; border-radius: 8px;
+    border: 1.5px solid #e5e7eb; background: #fff; color: #374151;
+    font-size: 0.72rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+    cursor: pointer; transition: all 0.18s;
+    display: inline-flex; align-items: center; gap: 5px;
 }
 .rp-view-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
 
-/* Card body */
-.rp-card-body {
-    padding: 16px 20px;
+.rp-table-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-top: 1px solid #f1f3f5; background: #fafbfc;
+    flex-wrap: wrap; gap: 8px;
 }
-.rp-estab-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #f1f3f5;
-}
-.rp-estab-img {
-    width: 44px; height: 44px;
-    border-radius: 8px;
-    object-fit: cover;
-    border: 1px solid #e5e7eb;
-    flex-shrink: 0;
-}
-.rp-estab-ph {
-    width: 44px; height: 44px;
-    border-radius: 8px;
-    background: #f1f3f5;
-    display: flex; align-items: center; justify-content: center;
-    color: #9ca3af; font-size: 1.1rem;
-    flex-shrink: 0;
-}
-.rp-estab-name { font-weight: 700; font-size: 0.9rem; color: #0a0a0a; }
-.rp-estab-addr { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+.rp-table-footer-txt { font-size: 0.72rem; color: #9ca3af; }
+.rp-table-footer-txt b { color: #374151; }
 
-/* Items list */
-.rp-items { display: flex; flex-direction: column; gap: 6px; }
-.rp-item {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.84rem;
-    color: #374151;
+/* ── No results row ── */
+.rp-no-results {
+    text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 0.82rem;
 }
-.rp-item-name  { font-weight: 500; }
-.rp-item-price { font-weight: 700; color: #B71C1C; }
+.rp-no-results i { font-size: 1.8rem; display: block; margin-bottom: 8px; opacity: .2; }
 
-/* Total row */
-.rp-total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px dashed #e5e7eb;
-}
-.rp-total-label { font-size: 0.85rem; font-weight: 600; color: #374151; }
-.rp-total-amt   { font-size: 1.1rem; font-weight: 800; color: #B71C1C; }
-
-/* ── Empty state ── */
-.rp-empty {
-    text-align: center;
-    padding: 80px 20px;
-    color: #9ca3af;
-}
-.rp-empty i { font-size: 3rem; display: block; margin-bottom: 14px; opacity: 0.25; }
+/* ── Empty page state ── */
+.rp-empty { text-align: center; padding: 80px 20px; color: #9ca3af; }
+.rp-empty i { font-size: 3rem; display: block; margin-bottom: 14px; opacity: 0.22; }
 .rp-empty h3 { font-size: 1.1rem; font-weight: 700; color: #374151; margin-bottom: 6px; }
 .rp-empty p  { font-size: 0.85rem; }
 
-/* ══════════════════════════════════════════
+@keyframes rowFlash { 0%{ background:#d1fae5; } 100%{ background:transparent; } }
+tr.just-updated { animation: rowFlash .9s ease-out forwards; }
+
+/* ══════════════════════════════════════════════
    RECEIPT MODAL
-══════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 .rm-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,.6); z-index: 99999;
@@ -163,12 +248,9 @@
     backdrop-filter: blur(6px); padding: 16px;
 }
 .rm-overlay.open { display: flex; }
-
 .rm-modal {
-    background: #fff;
-    border-radius: 20px;
-    width: 100%; max-width: 360px;
-    overflow: hidden;
+    background: #fff; border-radius: 20px;
+    width: 100%; max-width: 360px; overflow: hidden;
     box-shadow: 0 28px 70px rgba(0,0,0,.32);
     animation: rmIn .24s cubic-bezier(.34,1.35,.64,1);
 }
@@ -176,207 +258,269 @@
     from { transform:scale(.88) translateY(16px); opacity:0; }
     to   { transform:scale(1) translateY(0); opacity:1; }
 }
-
-/* Top header band */
 .rm-header-strip {
     background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
     padding: 14px 18px 12px;
     display: flex; align-items: center; justify-content: space-between;
 }
-.rm-logo {
-    font-size: 0.9rem; font-weight: 800; color: #fff;
-    display: flex; align-items: center; gap: 6px; letter-spacing: .2px;
-}
-.rm-logo i { font-size: 0.85rem; opacity:.9; }
-
-/* Ticket body */
+.rm-logo { font-size: .9rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; letter-spacing: .2px; }
+.rm-logo i { font-size: .85rem; opacity: .9; }
 .rm-body { padding: 14px 18px 0; }
-
-/* Title */
-.rm-title-row {
-    text-align: center;
-    padding-bottom: 10px;
-    border-bottom: 2px dashed #e5e7eb;
-    margin-bottom: 10px;
-}
+.rm-title-row { text-align: center; padding-bottom: 10px; border-bottom: 2px dashed #e5e7eb; margin-bottom: 10px; }
 .rm-title { font-size: 1rem; font-weight: 800; color: #111; margin: 0 0 3px; }
-.rm-id    { font-size: 0.68rem; color: #aaa; letter-spacing: .1px; }
-
-/* Info rows */
-.rm-info-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #f0f0f0;
-}
+.rm-id    { font-size: .68rem; color: #aaa; letter-spacing: .1px; }
+.rm-info-grid { display: grid; grid-template-columns: auto 1fr; gap: 0; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 1px solid #f0f0f0; }
 .rm-row { display: contents; }
-.rm-row-lbl {
-    background: #fafafa;
-    color: #9ca3af; font-weight: 600; font-size: 0.67rem;
-    padding: 5px 10px 5px 10px; white-space: nowrap;
-    border-bottom: 1px solid #f0f0f0; line-height: 1.3;
-}
-.rm-row-val {
-    background: #fff;
-    font-weight: 600; color: #1a1a1a; font-size: 0.67rem;
-    padding: 5px 10px; text-align: right;
-    border-bottom: 1px solid #f0f0f0;
-    line-height: 1.3; word-break: break-word;
-}
-.rm-row:last-child .rm-row-lbl,
-.rm-row:last-child .rm-row-val { border-bottom: none; }
-
-/* Items section */
-.rm-items-hd {
-    font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .8px; color: #bbb;
-    padding: 8px 0 4px; border-top: 2px dashed #e5e7eb;
-}
-.rm-item-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 3px 0; font-size: 0.72rem;
-}
+.rm-row-lbl { background: #fafafa; color: #9ca3af; font-weight: 600; font-size: .67rem; padding: 5px 10px; white-space: nowrap; border-bottom: 1px solid #f0f0f0; line-height: 1.3; }
+.rm-row-val { background: #fff; font-weight: 600; color: #1a1a1a; font-size: .67rem; padding: 5px 10px; text-align: right; border-bottom: 1px solid #f0f0f0; line-height: 1.3; word-break: break-word; }
+.rm-row:last-child .rm-row-lbl, .rm-row:last-child .rm-row-val { border-bottom: none; }
+.rm-items-hd { font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #bbb; padding: 8px 0 4px; border-top: 2px dashed #e5e7eb; }
+.rm-item-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: .72rem; }
 .rm-item-name  { color: #374151; font-weight: 500; }
 .rm-item-price { color: #B71C1C; font-weight: 700; }
-
-/* Total */
-.rm-total-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 10px; margin-top: 8px;
-    background: #fff8f8; border-radius: 10px;
-    border: 1px solid #fde8e8;
-}
-.rm-total-lbl { font-size: 0.75rem; font-weight: 700; color: #374151; }
+.rm-total-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin-top: 8px; background: #fff8f8; border-radius: 10px; border: 1px solid #fde8e8; }
+.rm-total-lbl { font-size: .75rem; font-weight: 700; color: #374151; }
 .rm-total-amt { font-size: 1.05rem; font-weight: 800; color: #B71C1C; }
-
-/* Footer */
-.rm-footer {
-    text-align: center; padding: 8px 4px 12px;
-    margin-top: 8px;
-    font-size: 0.6rem; color: #bbb; line-height: 1.5;
-}
-.rm-footer-icon { font-size: 0.8rem; display: block; margin-bottom: 2px; }
-
-/* Actions */
+.rm-footer { text-align: center; padding: 8px 4px 12px; margin-top: 8px; font-size: .6rem; color: #bbb; line-height: 1.5; }
+.rm-footer-icon { font-size: .8rem; display: block; margin-bottom: 2px; }
 .rm-actions { display: flex; gap: 8px; padding: 0 14px 14px; }
-.rm-close {
-    flex: 1; padding: 9px 12px; background: #f3f4f6; color: #374151;
-    border: none; border-radius: 10px; font-weight: 600; font-size: 0.75rem;
-    cursor: pointer; transition: all .15s; font-family: inherit;
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-}
+.rm-close { flex: 1; padding: 9px 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 10px; font-weight: 600; font-size: .75rem; cursor: pointer; transition: all .15s; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 5px; }
 .rm-close:hover { background: #fee2e2; color: #B71C1C; }
-.rm-download {
-    flex: 2; padding: 9px 12px;
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
-    transition: opacity .15s; font-family: inherit;
-    box-shadow: 0 3px 10px rgba(22,163,74,.3);
-}
-.rm-download:hover { opacity: .88; }
+.rm-download { flex: 2; padding: 9px 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: .75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: opacity .15s; font-family: inherit; box-shadow: 0 3px 10px rgba(22,163,74,.3); }
+.rm-download:hover    { opacity: .88; }
 .rm-download:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 
-/* Flash animation for updated cards */
-@keyframes cardFlash {
-    0%   { box-shadow: 0 0 0 0px #16a34a55; }
-    40%  { box-shadow: 0 0 0 3px #16a34a55; }
-    100% { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .rp-page { padding: 16px 12px 60px; }
+    .rp-stats { gap: 8px; }
+    .rp-stat-card { padding: 10px 12px; min-width: 110px; }
+    .rp-stat-val { font-size: 1rem; }
+    .rp-search-wrap { min-width: 100%; }
+    table.rp-table thead th,
+    table.rp-table td { padding: 10px 10px; }
 }
-.rp-card.just-updated { animation: cardFlash .8s ease-out forwards; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="rp-page">
 
-    <!-- Header -->
+    <!-- ── Header ── -->
     <div class="rp-header">
         <div class="rp-header-left">
             <h1><i class="fas fa-receipt"></i> My Receipts</h1>
-            <p>View and print receipts for all your orders</p>
+            <p>Full transaction history — search, filter, and download receipts for any order.</p>
+        </div>
+
+    </div>
+
+    {% if orders %}
+
+    <!-- ── Summary Stats ── -->
+    <div class="rp-stats">
+        <div class="rp-stat-card">
+            <div class="rp-stat-lbl"><i class="fas fa-shopping-bag" style="margin-right:4px;color:#6b7280;"></i>Total Orders</div>
+            <div class="rp-stat-val" id="statTotal">{{ orders|length }}</div>
+        </div>
+        <div class="rp-stat-card">
+            <div class="rp-stat-lbl"><i class="fas fa-check-circle" style="margin-right:4px;color:#16a34a;"></i>Completed</div>
+            <div class="rp-stat-val green" id="statCompleted">—</div>
+        </div>
+        <div class="rp-stat-card">
+            <div class="rp-stat-lbl"><i class="fas fa-times-circle" style="margin-right:4px;color:#B71C1C;"></i>Cancelled</div>
+            <div class="rp-stat-val red" id="statCancelled">—</div>
+        </div>
+        <div class="rp-stat-card">
+            <div class="rp-stat-lbl"><i class="fas fa-coins" style="margin-right:4px;color:#B71C1C;"></i>Total Spent</div>
+            <div class="rp-stat-val red" id="statSpent">—</div>
         </div>
     </div>
 
-    <!-- Orders list -->
-    <div id="rpList">
-        {% if orders %}
-            {% for order in orders %}
-            <div class="rp-card" data-order-id="{{ order.id }}" data-status="{{ order.status }}">
+    <!-- ── Search + Filters Toolbar ── -->
+    <div class="rp-toolbar">
+        <div class="rp-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="rp-search" id="rpSearch"
+                   placeholder="Search by order #, establishment, or item…"
+                   oninput="applyTableFilters()">
+        </div>
 
-                <!-- Card header -->
-                <div class="rp-card-hd">
-                    <div class="rp-card-hd-left">
-                        <div>
-                            <div class="rp-order-num">#{{ order.id }}</div>
-                            <div class="rp-date">
-                                <i class="fas fa-calendar-alt"></i>
-                                {{ order.created_at }}
-                            </div>
-                        </div>
-                    </div>
-                    <button class="rp-view-btn"
-                            data-idx="{{ forloop.counter0 }}"
-                            onclick="openReceiptModal(parseInt(this.dataset.idx))">
-                        <i class="fas fa-receipt"></i> View Receipt
-                    </button>
-                </div>
+        <div class="rp-filter-group">
+            <span class="rp-filter-lbl">Status</span>
+            <select class="rp-select" id="rpStatusFilter" onchange="applyTableFilters()">
+                <option value="">All statuses</option>
+                <option value="completed">Completed</option>
+                <option value="preparing">Preparing</option>
+                <option value="to_claim">To Claim</option>
+                <option value="to_pay">To Pay</option>
+                <option value="request">Requested</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </div>
 
-                <!-- Card body -->
-                <div class="rp-card-body">
-                    <!-- Establishment -->
-                    <div class="rp-estab-row">
-                        {% if order.establishment.image %}
-                            <img src="{{ order.establishment.image }}" class="rp-estab-img" alt="{{ order.establishment.name }}">
-                        {% else %}
-                            <div class="rp-estab-ph"><i class="fas fa-store"></i></div>
-                        {% endif %}
-                        <div>
-                            <div class="rp-estab-name">{{ order.establishment.name }}</div>
-                            <div class="rp-estab-addr">
-                                <i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>
-                                {{ order.establishment.address|default:"Not provided" }}
-                            </div>
-                        </div>
-                    </div>
+        <div class="rp-filter-group">
+            <span class="rp-filter-lbl">Payment</span>
+            <select class="rp-select" id="rpPayFilter" onchange="applyTableFilters()">
+                <option value="">All</option>
+                <option value="gcash">GCash</option>
+                <option value="cash">Cash on Pickup</option>
+            </select>
+        </div>
 
-                    <!-- Items -->
-                    <div class="rp-items">
-                        {% for item in order.items %}
-                        <div class="rp-item">
-                            <span class="rp-item-name">{{ item.name }} × {{ item.quantity }}</span>
-                            <span class="rp-item-price">₱{{ item.subtotal|floatformat:2 }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
+        <div class="rp-filter-group">
+            <span class="rp-filter-lbl">Sort</span>
+            <select class="rp-select" id="rpSort" onchange="applyTableFilters()">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="amount_desc">Highest Amount</option>
+                <option value="amount_asc">Lowest Amount</option>
+            </select>
+        </div>
 
-                    <!-- Total -->
-                    <div class="rp-total-row">
-                        <span class="rp-total-label">
-                            <i class="fas fa-wallet" style="color:#6b7280;margin-right:5px;"></i>
-                            {{ order.payment_method }}
-                        </span>
-                        <span class="rp-total-amt" id="rpTotal-{{ order.id }}">₱{{ order.total_amount|floatformat:2 }}</span>
-                    </div>
-                </div>
 
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="rp-empty">
-                <i class="fas fa-receipt"></i>
-                <h3>No receipts yet</h3>
-                <p>Your order receipts will appear here once you place an order.</p>
-            </div>
-        {% endif %}
     </div>
+
+    <div class="rp-result-info" id="rpResultInfo"></div>
+
+    <!-- ── Transaction Table ── -->
+    <div class="rp-table-card">
+        <div class="rp-table-wrap">
+            <table class="rp-table" id="rpTable">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Date &amp; Time</th>
+                        <th>Establishment</th>
+                        <th>Items Ordered</th>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th style="text-align:center;">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody id="rpTbody">
+
+                    {% for order in orders %}
+                    <tr class="rp-row"
+                        data-order-id="{{ order.id }}"
+                        data-status="{{ order.status }}"
+                        data-payment="{{ order.payment_method|lower }}"
+                        data-amount="{{ order.total_amount }}"
+                        data-date="{{ order.created_at }}"
+                        data-search="{{ order.id }} {{ order.establishment.name|lower }} {% for item in order.items %}{{ item.name|lower }} {% endfor %}">
+
+                        <!-- Order # -->
+                        <td class="td-order-id">#{{ order.id }}</td>
+
+                        <!-- Date -->
+                        <td class="td-date">{{ order.created_at }}</td>
+
+                        <!-- Establishment -->
+                        <td>
+                            <div class="td-estab">
+                                {% if order.establishment.image %}
+                                    <img src="{{ order.establishment.image }}" class="td-estab-img" alt="">
+                                {% else %}
+                                    <div class="td-estab-ph"><i class="fas fa-store"></i></div>
+                                {% endif %}
+                                <div>
+                                    <div class="td-estab-name">{{ order.establishment.name }}</div>
+                                    <div class="td-estab-addr">
+                                        <i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:9px;margin-right:2px;"></i>
+                                        {{ order.establishment.address|default:"—"|truncatechars:28 }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Items -->
+                        <td class="td-items">
+                            {% for item in order.items %}
+                                {% if forloop.counter <= 2 %}
+                                <div class="td-item-line">{{ item.name }} &times; {{ item.quantity }}</div>
+                                {% endif %}
+                            {% endfor %}
+                            {% if order.items|length > 2 %}
+                            <div class="td-item-more">+{{ order.items|length|add:"-2" }} more</div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Payment -->
+                        <td>
+                            {% if "gcash" in order.payment_method|lower %}
+                                <span class="pay-badge gcash"><i class="fas fa-mobile-alt"></i> GCash</span>
+                            {% else %}
+                                <span class="pay-badge cash"><i class="fas fa-money-bill-wave"></i> Cash</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Amount -->
+                        <td class="td-amount" id="rpTotal-{{ order.id }}">₱{{ order.total_amount|floatformat:2 }}</td>
+
+                        <!-- Status -->
+                        <td>
+                            <span class="status-badge {{ order.status }}" id="rpStatus-{{ order.id }}">
+                                {% if order.status == "completed" %}
+                                    <i class="fas fa-check-circle"></i> Completed
+                                {% elif order.status == "cancelled" %}
+                                    <i class="fas fa-times-circle"></i> Cancelled
+                                {% elif order.status == "rejected" %}
+                                    <i class="fas fa-ban"></i> Rejected
+                                {% elif order.status == "preparing" or order.status == "order_received" %}
+                                    <i class="fas fa-fire"></i> Preparing
+                                {% elif order.status == "to_claim" %}
+                                    <i class="fas fa-bell"></i> To Claim
+                                {% elif order.status == "to_pay" %}
+                                    <i class="fas fa-credit-card"></i> To Pay
+                                {% else %}
+                                    <i class="fas fa-clock"></i> {{ order.status|title }}
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <!-- View Receipt -->
+                        <td style="text-align:center;">
+                            <button class="rp-view-btn"
+                                    data-idx="{{ forloop.counter0 }}"
+                                    onclick="openReceiptModal(parseInt(this.dataset.idx))">
+                                <i class="fas fa-receipt"></i> View Receipt
+                            </button>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+            <!-- No results (hidden by default, shown by JS) -->
+            <div id="rpNoResults" style="display:none;" class="rp-no-results">
+                <i class="fas fa-search"></i>
+                No transactions match your search or filters.
+            </div>
+        </div>
+
+        <div class="rp-table-footer">
+            <div class="rp-table-footer-txt" id="rpFooterTxt"></div>
+            <div style="font-size:0.7rem;color:#9ca3af;">
+                <i class="fas fa-sync-alt" style="margin-right:4px;"></i>Updates live
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="rp-empty">
+        <i class="fas fa-receipt"></i>
+        <h3>No receipts yet</h3>
+        <p>Your order receipts will appear here once you place an order.</p>
+    </div>
+    {% endif %}
 
 </div>
 
-<!-- Receipt Modal -->
+<!-- ══ Receipt Modal ══ -->
 <div class="rm-overlay" id="rmOverlay" onclick="if(event.target===this)closeReceiptModal()">
     <div class="rm-modal">
         <div id="rmTicket"></div>
@@ -397,273 +541,242 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ── Static order data ──────────────────────────────────────────────────────
-const ORDERS_STATIC = {{ orders_json|safe }};
+const ORDERS_STATIC   = {{ orders_json|safe }};
 const CURRENT_USER_ID = {{ request.user.id }};
 
-// Live copy of orders (updated by WebSocket + fallback polling)
-let _rtOrders = JSON.parse(JSON.stringify(ORDERS_STATIC));
-let _rtCurrentIdx = null;  // index of currently open modal
+let _rtOrders     = JSON.parse(JSON.stringify(ORDERS_STATIC));
+let _rtCurrentIdx = null;
 
 const STATUS_LABELS = {
-    request:        'Order Request',
-    to_pay:         'To Pay',
-    order_received: 'Preparing',
-    preparing:      'Preparing',
-    to_claim:       'To Claim',
-    completed:      'Completed',
-    cancelled:      'Cancelled',
-    rejected:       'Rejected',
+    request: 'Order Request', to_pay: 'To Pay',
+    order_received: 'Preparing', preparing: 'Preparing',
+    to_claim: 'To Claim', completed: 'Completed',
+    cancelled: 'Cancelled', rejected: 'Rejected',
+};
+const STATUS_ICONS = {
+    completed: 'fa-check-circle', cancelled: 'fa-times-circle',
+    rejected: 'fa-ban', preparing: 'fa-fire', order_received: 'fa-fire',
+    to_claim: 'fa-bell', to_pay: 'fa-credit-card', request: 'fa-clock',
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// WEBSOCKET — connects to OrderStatusConsumer (user scope)
-// Receives instant push when owner changes order status
-// ══════════════════════════════════════════════════════════════════════
-let _ws = null;
-let _wsReconnectTimer = null;
-let _wsReconnectDelay = 3000;  // start at 3s, doubles on each failure
+// ══ Stats ═══════════════════════════════════
+function _renderStats() {
+    const completed  = _rtOrders.filter(o => o.status === 'completed').length;
+    const cancelled  = _rtOrders.filter(o => o.status === 'cancelled' || o.status === 'rejected').length;
+    const spent      = _rtOrders
+        .filter(o => o.status === 'completed')
+        .reduce((s, o) => s + parseFloat(o.total_amount || 0), 0);
+    const _ = id => document.getElementById(id);
+    if (_('statTotal'))     _('statTotal').textContent     = _rtOrders.length;
+    if (_('statCompleted')) _('statCompleted').textContent = completed;
+    if (_('statCancelled')) _('statCancelled').textContent = cancelled;
+    if (_('statSpent'))     _('statSpent').textContent     = '₱' + spent.toFixed(2);
+}
+
+// ══ Table filters ════════════════════════════
+function applyTableFilters() {
+    const q       = (document.getElementById('rpSearch').value || '').toLowerCase().trim();
+    const status  = document.getElementById('rpStatusFilter').value;
+    const payment = document.getElementById('rpPayFilter').value.toLowerCase();
+    const sort    = document.getElementById('rpSort').value;
+    const tbody   = document.getElementById('rpTbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr.rp-row'));
+    let visible = 0;
+
+    rows.forEach(row => {
+        const matchQ   = !q      || (row.dataset.search || '').toLowerCase().includes(q);
+        const matchSt  = !status || row.dataset.status === status;
+        const matchPay = !payment|| (row.dataset.payment || '').includes(payment);
+        const show = matchQ && matchSt && matchPay;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    // Sort
+    const vis = rows.filter(r => r.style.display !== 'none');
+    vis.sort((a, b) => {
+        if (sort === 'oldest')      return (a.dataset.date||'').localeCompare(b.dataset.date||'');
+        if (sort === 'amount_desc') return parseFloat(b.dataset.amount||0) - parseFloat(a.dataset.amount||0);
+        if (sort === 'amount_asc')  return parseFloat(a.dataset.amount||0) - parseFloat(b.dataset.amount||0);
+        return (b.dataset.date||'').localeCompare(a.dataset.date||''); // newest
+    });
+    vis.forEach(r => tbody.appendChild(r));
+
+    const total = rows.length;
+    const txt   = visible === total
+        ? `Showing all <b>${total}</b> transaction${total !== 1 ? 's' : ''}`
+        : `Showing <b>${visible}</b> of <b>${total}</b> transaction${total !== 1 ? 's' : ''}`;
+    const infoEl = document.getElementById('rpResultInfo');
+    const footEl = document.getElementById('rpFooterTxt');
+    const noRes  = document.getElementById('rpNoResults');
+    if (infoEl) infoEl.innerHTML = txt;
+    if (footEl) footEl.innerHTML = txt;
+    if (noRes)  noRes.style.display = visible === 0 ? 'block' : 'none';
+}
+
+function resetFilters() {
+    document.getElementById('rpSearch').value       = '';
+    document.getElementById('rpStatusFilter').value = '';
+    document.getElementById('rpPayFilter').value    = '';
+    document.getElementById('rpSort').value         = 'newest';
+    applyTableFilters();
+}
+
+// ══ WebSocket ════════════════════════════════
+let _ws = null, _wsReconnectTimer = null, _wsReconnectDelay = 3000;
 
 function _wsConnect() {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = protocol + '://' + window.location.host +
-                '/ws/order-status/user/user/' + CURRENT_USER_ID + '/';
-
-    _ws = new WebSocket(url);
-
-    _ws.onopen = function() {
-        _wsReconnectDelay = 3000;  // reset backoff on success
-        _setLiveBadge(true);
-        console.log('[Receipts] WebSocket connected');
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    _ws = new WebSocket(proto + '://' + window.location.host +
+                        '/ws/order-status/user/user/' + CURRENT_USER_ID + '/');
+    _ws.onopen    = () => { _wsReconnectDelay = 3000; _setLiveBadge(true); };
+    _ws.onmessage = e => {
+        try { const d = JSON.parse(e.data); if (d.type === 'order_status_update') _handleStatusPush(d); }
+        catch(err) {}
     };
-
-    _ws.onmessage = function(e) {
-        try {
-            const data = JSON.parse(e.data);
-            if (data.type === 'order_status_update') {
-                _handleStatusPush(data);
-            }
-        } catch(err) {
-            console.warn('[Receipts] WS parse error', err);
-        }
-    };
-
-    _ws.onclose = function() {
+    _ws.onclose   = () => {
         _setLiveBadge(false);
-        console.log('[Receipts] WebSocket closed — reconnecting in', _wsReconnectDelay, 'ms');
-        // Exponential backoff reconnect (max 30s)
-        _wsReconnectTimer = setTimeout(function() {
-            _wsReconnectDelay = Math.min(_wsReconnectDelay * 2, 30000);
-            _wsConnect();
+        _wsReconnectTimer = setTimeout(() => {
+            _wsReconnectDelay = Math.min(_wsReconnectDelay * 2, 30000); _wsConnect();
         }, _wsReconnectDelay);
     };
-
-    _ws.onerror = function() {
-        _ws.close();  // triggers onclose → reconnect
-    };
+    _ws.onerror   = () => _ws.close();
 }
 
-// ── Handle incoming order status push from WebSocket ─────────────────
 function _handleStatusPush(data) {
-    const orderId   = data.order_id;
-    const newStatus = data.new_status;
-    if (!orderId || !newStatus) return;
-
-    // Find matching order in local array
-    const idx = _rtOrders.findIndex(function(o) { return o.id === orderId; });
-    if (idx === -1) return;  // not this user's order on this page
-
+    const idx = _rtOrders.findIndex(o => o.id === data.order_id);
+    if (idx === -1 || !data.new_status) return;
     const order = _rtOrders[idx];
-    const oldStatus = order.status;
-
-    if (oldStatus === newStatus) return;  // no change
-
-    // Update local state
-    order.status       = newStatus;
-    order.status_label = STATUS_LABELS[newStatus] || newStatus;
-
-    // Update the card on screen instantly
-    _rtUpdateCard(order);
-
-    // If this order's receipt modal is open, re-render it
-    if (_rtCurrentIdx === idx) {
-        _fetchAndRenderModal(idx);
-    }
+    if (order.status === data.new_status) return;
+    order.status       = data.new_status;
+    order.status_label = STATUS_LABELS[data.new_status] || data.new_status;
+    _rtUpdateRow(order);
+    if (_rtCurrentIdx === idx) _fetchAndRenderModal(idx);
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// FALLBACK POLLING — runs every 20s as safety net
-// (catches edge cases like server restart where WS missed a push)
-// ══════════════════════════════════════════════════════════════════════
+// ══ Fallback polling ════════════════════════
 let _pollTimer = null;
 
 function _pollAll() {
-    const ids = _rtOrders.map(function(o) { return o.id; });
-    if (!ids.length) return;
-
-    Promise.all(ids.map(function(id, idx) {
-        return fetch('/api/order/' + id + '/', { credentials: 'same-origin' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (!data.success || !data.order) return null;
-                return { idx: idx, order: data.order };
-            })
-            .catch(function() { return null; });
-    })).then(function(results) {
-        results.forEach(function(res) {
+    if (!_rtOrders.length) return;
+    Promise.all(_rtOrders.map((o, idx) =>
+        fetch('/api/order/' + o.id + '/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(d => d.success && d.order ? { idx, order: d.order } : null)
+            .catch(() => null)
+    )).then(results => {
+        results.forEach(res => {
             if (!res) return;
-            const live  = res.order;
-            const local = _rtOrders[res.idx];
-
-            // Sync status
+            const live = res.order, local = _rtOrders[res.idx];
             if (live.status && live.status !== local.status) {
                 local.status       = live.status;
                 local.status_label = STATUS_LABELS[live.status] || live.status;
-                _rtUpdateCard(local);
+                _rtUpdateRow(local);
             }
-
-            // Sync total + items
-            if (live.total_amount !== undefined) {
-                local.total_amount = parseFloat(live.total_amount);
-            }
+            if (live.total_amount !== undefined) local.total_amount = parseFloat(live.total_amount);
             if (live.items && live.items.length) {
-                local.items = live.items.map(function(i) {
-                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
-                });
+                local.items = live.items.map(i => ({
+                    name: i.name, quantity: i.quantity,
+                    subtotal: parseFloat(i.total_price || i.subtotal || 0)
+                }));
             }
         });
-
-        // Refresh open modal silently
         if (_rtCurrentIdx !== null) {
             const o = _rtOrders[_rtCurrentIdx];
             if (o) _renderReceiptFromLocal(o);
         }
+        _renderStats();
     });
 }
 
-// ── Update a card's total on screen ───────────────────────────
-function _rtUpdateCard(order) {
-    const card = document.querySelector('.rp-card[data-order-id="' + order.id + '"]');
-    if (!card) return;
-
-    // Total
+function _rtUpdateRow(order) {
+    // Amount
     const totalEl = document.getElementById('rpTotal-' + order.id);
-    if (totalEl) {
-        totalEl.textContent = '₱' + parseFloat(order.total_amount || 0).toFixed(2);
+    if (totalEl) totalEl.textContent = '₱' + parseFloat(order.total_amount || 0).toFixed(2);
+
+    // Status badge
+    const stEl = document.getElementById('rpStatus-' + order.id);
+    if (stEl) {
+        stEl.className = 'status-badge ' + order.status;
+        const ico = STATUS_ICONS[order.status] || 'fa-clock';
+        stEl.innerHTML = `<i class="fas ${ico}"></i> ${STATUS_LABELS[order.status] || order.status}`;
     }
 
-    // Flash the card to signal update
-    card.classList.remove('just-updated');
-    void card.offsetWidth;  // force reflow
-    card.classList.add('just-updated');
-    setTimeout(function() { card.classList.remove('just-updated'); }, 900);
+    // Update row data attribute + flash
+    const row = document.querySelector('tr.rp-row[data-order-id="' + order.id + '"]');
+    if (row) {
+        row.dataset.status = order.status;
+        row.classList.remove('just-updated');
+        void row.offsetWidth;
+        row.classList.add('just-updated');
+        setTimeout(() => row.classList.remove('just-updated'), 900);
+    }
+    _renderStats();
 }
 
-// ── Live badge helper ─────────────────────────────────────────────────
 function _setLiveBadge(connected) {
-    const badge = document.getElementById('rpLiveBadge');
-    const text  = document.getElementById('rpLiveText');
-    if (!badge || !text) return;
-    if (connected) {
-        badge.classList.remove('disconnected');
-        text.textContent = 'Live';
-    } else {
-        badge.classList.add('disconnected');
-        text.textContent = 'Reconnecting…';
-    }
+    const dot  = document.getElementById('rpLiveDot');
+    const text = document.getElementById('rpLiveText');
+    if (dot)  dot.style.background = connected ? '#16a34a' : '#f59e0b';
+    if (text) text.textContent      = connected ? 'Live'   : 'Reconnecting…';
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// RECEIPT MODAL
-// ══════════════════════════════════════════════════════════════════════
+// ══ Receipt modal ════════════════════════════
 function openReceiptModal(idx) {
     _rtCurrentIdx = idx;
-    const staticOrder = _rtOrders[idx];
-    if (!staticOrder) return;
-
-    const overlay = document.getElementById('rmOverlay');
-    const ticket  = document.getElementById('rmTicket');
-
-    // Render instantly from local data (no loading spinner)
-    _renderReceiptFromLocal(staticOrder);
-    overlay.classList.add('open');
-
-    // Optionally update in background (don't block display)
+    const o = _rtOrders[idx];
+    if (!o) return;
+    _renderReceiptFromLocal(o);
+    document.getElementById('rmOverlay').classList.add('open');
     _fetchAndUpdateModalAsync(idx);
 }
 
 function _fetchAndUpdateModalAsync(idx) {
-    // Non-blocking background refresh — update modal if data changed
     const order = _rtOrders[idx];
     if (!order) return;
-
     fetch('/api/order/' + order.id + '/')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.success || !data.order) return;
-            // Only re-render if something actually changed
-            if (data.order.status && data.order.status !== order.status) {
-                order.status       = data.order.status;
-                order.status_label = STATUS_LABELS[data.order.status] || data.order.status;
-                renderReceipt(data.order, order);
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success || !d.order) return;
+            if (d.order.status && d.order.status !== order.status) {
+                order.status = d.order.status;
+                order.status_label = STATUS_LABELS[d.order.status] || d.order.status;
+                renderReceipt(d.order, order);
             }
-        })
-        .catch(function() {
-            // Silently fail — local data is already displayed
-        });
+        }).catch(() => {});
 }
 
 function _fetchAndRenderModal(idx) {
     const order = _rtOrders[idx];
     if (!order) return;
-
     fetch('/api/order/' + order.id + '/')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.success || !data.order) {
-                _renderReceiptFromLocal(order);
-                return;
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success || !d.order) { _renderReceiptFromLocal(order); return; }
+            if (d.order.status) { order.status = d.order.status; order.status_label = STATUS_LABELS[d.order.status] || d.order.status; }
+            if (d.order.total_amount !== undefined) order.total_amount = parseFloat(d.order.total_amount);
+            if (d.order.items && d.order.items.length) {
+                order.items = d.order.items.map(i => ({ name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) }));
             }
-            // Sync local state with fresh API data
-            if (data.order.status) {
-                order.status       = data.order.status;
-                order.status_label = STATUS_LABELS[data.order.status] || data.order.status;
-            }
-            if (data.order.total_amount !== undefined) {
-                order.total_amount = parseFloat(data.order.total_amount);
-            }
-            if (data.order.items && data.order.items.length) {
-                order.items = data.order.items.map(function(i) {
-                    return { name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) };
-                });
-            }
-            renderReceipt(data.order, order);
-        })
-        .catch(function() {
-            _renderReceiptFromLocal(order);
-        });
+            renderReceipt(d.order, order);
+        }).catch(() => _renderReceiptFromLocal(order));
 }
 
 function _renderReceiptFromLocal(order) {
     renderReceipt({
-        id:              order.id,
-        status:          order.status,
-        total_amount:    order.total_amount,
-        items:           (order.items || []).map(function(i) {
-            return { name: i.name, quantity: i.quantity, total_price: i.subtotal };
-        }),
-        establishment:   { name: order.establishment.name, address: order.establishment.address },
+        id: order.id, status: order.status, total_amount: order.total_amount,
+        items: (order.items || []).map(i => ({ name: i.name, quantity: i.quantity, total_price: i.subtotal })),
+        establishment: { name: order.establishment.name, address: order.establishment.address },
         gcash_reference: order.reference,
     }, order);
 }
 
-// ── Render receipt HTML into modal ────────────────────────────────────
 function renderReceipt(apiOrder, staticOrder) {
     const status    = (apiOrder.status || staticOrder.status || '').toLowerCase();
-    const statusLbl = STATUS_LABELS[status] || staticOrder.status_label || status;
-
-    const items = apiOrder.items || staticOrder.items || [];
-    const itemsHtml = items.map(function(item) {
+    const items     = apiOrder.items || staticOrder.items || [];
+    const itemsHtml = items.map(item => {
         const name     = esc(item.name || '');
         const qty      = item.quantity || 1;
         const subtotal = parseFloat(item.total_price || item.subtotal || 0).toFixed(2);
@@ -672,7 +785,6 @@ function renderReceipt(apiOrder, staticOrder) {
             <span class="rm-item-price">&#8369;${subtotal}</span>
         </div>`;
     }).join('');
-
     const total     = parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0).toFixed(2);
     const estabName = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
     const payment   = staticOrder.payment_method || 'Cash on Pickup';
@@ -689,7 +801,6 @@ function renderReceipt(apiOrder, staticOrder) {
                 <div class="rm-title">Order Receipt</div>
                 <div class="rm-id">Order #${orderId}&nbsp;&middot;&nbsp;${esc(dateStr)}</div>
             </div>
-
             <div class="rm-info-grid">
                 <div class="rm-row">
                     <span class="rm-row-lbl">Customer</span>
@@ -716,10 +827,8 @@ function renderReceipt(apiOrder, staticOrder) {
                     <span class="rm-row-val">${esc(reference)}</span>
                 </div>` : ''}
             </div>
-
             <div class="rm-items-hd">Items Ordered</div>
             ${itemsHtml || '<div style="font-size:.68rem;color:#ccc;padding:3px 0;">No items found.</div>'}
-
             <div class="rm-total-row">
                 <span class="rm-total-lbl">Total Amount</span>
                 <span class="rm-total-amt">&#8369;${total}</span>
@@ -731,47 +840,33 @@ function renderReceipt(apiOrder, staticOrder) {
         </div>`;
 }
 
-// ── Close modal ───────────────────────────────────────────────────────
 function closeReceiptModal() {
     _rtCurrentIdx = null;
     document.getElementById('rmOverlay').classList.remove('open');
 }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReceiptModal(); });
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeReceiptModal();
-});
-
-// ── Download PDF ──────────────────────────────────────────────────────
 function downloadReceiptPDF() {
     const ticket = document.getElementById('rmTicket');
     const btn    = document.getElementById('rmDownloadBtn');
     if (!ticket || !btn) return;
-
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-    const idEl    = ticket.querySelector('.rm-id');
-    const orderNum = idEl ? idEl.textContent.replace(/[^0-9]/g,'').slice(0,10) : 'receipt';
-
-    html2canvas(ticket, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false
-    }).then(function(canvas) {
-        const { jsPDF } = window.jspdf;
-        const imgData   = canvas.toDataURL('image/png');
-        const mmW = (canvas.width  / 96) * 25.4;
-        const mmH = (canvas.height / 96) * 25.4;
-        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[mmW, mmH] });
-        pdf.addImage(imgData, 'PNG', 0, 0, mmW, mmH);
-        pdf.save('KabsuEats_Receipt_' + orderNum + '.pdf');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
-    }).catch(function() {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
-    });
+    const orderNum = (ticket.querySelector('.rm-id') || {}).textContent
+        ? ticket.querySelector('.rm-id').textContent.replace(/[^0-9]/g,'').slice(0,10) : 'receipt';
+    html2canvas(ticket, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false })
+        .then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const imgData = canvas.toDataURL('image/png');
+            const mmW = (canvas.width  / 96) * 25.4;
+            const mmH = (canvas.height / 96) * 25.4;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmW, mmH] });
+            pdf.addImage(imgData, 'PNG', 0, 0, mmW, mmH);
+            pdf.save('KabsuEats_Receipt_' + orderNum + '.pdf');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+        })
+        .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download PDF'; });
 }
 
 function esc(s) {
@@ -781,25 +876,19 @@ function esc(s) {
     return d.innerHTML;
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// INIT — on page load: connect WS + start fallback poll
-// ══════════════════════════════════════════════════════════════════════
+// ══ Init ════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
+    _renderStats();
+    applyTableFilters();
     if (ORDERS_STATIC.length > 0) {
-        _wsConnect();                                    // primary: WebSocket
-        _pollAll();                                      // immediate sync
-        _pollTimer = setInterval(_pollAll, 20000);       // fallback: every 20s
-    }
-});
-
-// Pause polling/WS when tab hidden, resume when visible
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        clearInterval(_pollTimer);
-    } else {
+        _wsConnect();
         _pollAll();
         _pollTimer = setInterval(_pollAll, 20000);
     }
+});
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) { clearInterval(_pollTimer); }
+    else { _pollAll(); _pollTimer = setInterval(_pollAll, 20000); }
 });
 </script>
 {% endblock %}

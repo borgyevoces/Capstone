@@ -113,23 +113,76 @@ class FoodEstablishment(models.Model):
     def __str__(self):
         return self.name
 
-    # ✅ Automatic status calculation based on time
+    # ✅ Philippine-time aware status using per-day BusinessHours
+    def _get_ph_now(self):
+        """Returns current datetime in Philippine time (Asia/Manila)."""
+        from datetime import datetime
+        try:
+            from zoneinfo import ZoneInfo
+            return datetime.now(ZoneInfo('Asia/Manila'))
+        except Exception:
+            pass
+        try:
+            import pytz
+            return datetime.now(pytz.timezone('Asia/Manila'))
+        except Exception:
+            pass
+        return datetime.now()
+
     @property
     def status(self):
         """
-        Automatically determine if establishment is Open or Closed based on current time.
-        Returns 'Open' or 'Closed' string.
+        Automatically determine Open/Closed.
+        Checks per-day BusinessHours first; falls back to global opening/closing_time.
         """
+        now_dt = self._get_ph_now()
+        current_day = now_dt.weekday()   # 0 = Monday … 6 = Sunday
+        current_time = now_dt.time()
+
+        # ── Per-day schedule ──────────────────────────────────
+        try:
+            day_hours = self.business_hours.filter(day_of_week=current_day).first()
+            if day_hours is not None:
+                if day_hours.is_closed or not day_hours.opening_time or not day_hours.closing_time:
+                    return "Closed"
+                o, c = day_hours.opening_time, day_hours.closing_time
+                if o <= c:
+                    return "Open" if o <= current_time <= c else "Closed"
+                return "Open" if current_time >= o or current_time <= c else "Closed"
+        except Exception:
+            pass
+
+        # ── Fallback: global times ────────────────────────────
         if not self.opening_time or not self.closing_time:
             return "Closed"
+        o, c = self.opening_time, self.closing_time
+        if o <= c:
+            return "Open" if o <= current_time <= c else "Closed"
+        return "Open" if current_time >= o or current_time <= c else "Closed"
 
-        from datetime import datetime
-        now = datetime.now().time()
+    @property
+    def today_opening_time(self):
+        """Today's opening time from BusinessHours (falls back to global opening_time)."""
+        today = self._get_ph_now().weekday()
+        try:
+            bh = self.business_hours.filter(day_of_week=today).first()
+            if bh and not bh.is_closed and bh.opening_time:
+                return bh.opening_time
+        except Exception:
+            pass
+        return self.opening_time
 
-        if self.opening_time <= self.closing_time:
-            return "Open" if self.opening_time <= now <= self.closing_time else "Closed"
-        else:
-            return "Open" if now >= self.opening_time or now <= self.closing_time else "Closed"
+    @property
+    def today_closing_time(self):
+        """Today's closing time from BusinessHours (falls back to global closing_time)."""
+        today = self._get_ph_now().weekday()
+        try:
+            bh = self.business_hours.filter(day_of_week=today).first()
+            if bh and not bh.is_closed and bh.closing_time:
+                return bh.closing_time
+        except Exception:
+            pass
+        return self.closing_time
 
     # ✅ NEW: Helper method to get all categories including custom
     def get_all_categories(self):
@@ -146,6 +199,43 @@ class FoodEstablishment(models.Model):
         if self.other_amenity:
             amenity_names.append(f"Other: {self.other_amenity}")
         return amenity_names
+
+
+class BusinessHours(models.Model):
+    """Per-day opening/closing hours for a food establishment."""
+    DAY_CHOICES = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
+    ]
+    establishment = models.ForeignKey(
+        'FoodEstablishment',
+        on_delete=models.CASCADE,
+        related_name='business_hours'
+    )
+    day_of_week = models.IntegerField(choices=DAY_CHOICES)
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+    is_closed = models.BooleanField(
+        default=False,
+        help_text="Set True for days the establishment is fully closed."
+    )
+
+    class Meta:
+        unique_together = ('establishment', 'day_of_week')
+        ordering = ['day_of_week']
+        verbose_name = "Business Hours"
+        verbose_name_plural = "Business Hours"
+
+    def __str__(self):
+        day = dict(self.DAY_CHOICES).get(self.day_of_week, '?')
+        if self.is_closed:
+            return f"{self.establishment.name} – {day}: Closed"
+        return f"{self.establishment.name} – {day}: {self.opening_time} – {self.closing_time}"
 
 
 class OTP(models.Model):
@@ -686,3 +776,73 @@ class FavoriteMenuItem(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ♥ {self.menu_item.name}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EstablishmentContactLink  –  dynamic label + URL/email pairs per establishment
+# ─────────────────────────────────────────────────────────────────────────────
+class EstablishmentContactLink(models.Model):
+    establishment = models.ForeignKey(
+        'FoodEstablishment',
+        on_delete=models.CASCADE,
+        related_name='contact_links'
+    )
+    label = models.CharField(
+        max_length=50,
+        help_text="Short display label, e.g. 'FB', 'Gmail', 'TikTok'"
+    )
+    value = models.CharField(
+        max_length=500,
+        help_text="Full URL (https://…) or e-mail address"
+    )
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = "Contact / Social Link"
+        verbose_name_plural = "Contact / Social Links"
+
+    def __str__(self):
+        return f"{self.establishment.name} – {self.label}: {self.value}"
+
+    @property
+    def href(self):
+        """Return a clickable href: mailto: for e-mails, raw URL for everything else."""
+        import re
+        if re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', self.value.strip()):
+            return f"mailto:{self.value.strip()}"
+        return self.value.strip()
+
+    @property
+    def icon_class(self):
+        """Best-effort Font Awesome icon based on the label text."""
+        lbl = self.label.lower()
+        if 'fb' in lbl or 'facebook' in lbl:           return 'fab fa-facebook-f'
+        if 'ig' in lbl or 'instagram' in lbl or 'insta' in lbl: return 'fab fa-instagram'
+        if 'tiktok' in lbl or 'tik tok' in lbl or lbl == 'tt':  return 'fab fa-tiktok'
+        if 'youtube' in lbl or lbl == 'yt':             return 'fab fa-youtube'
+        if 'gmail' in lbl or 'email' in lbl or 'mail' in lbl:   return 'fas fa-envelope'
+        if 'twitter' in lbl or lbl == 'x':              return 'fab fa-x-twitter'
+        if 'whatsapp' in lbl or lbl == 'wa':            return 'fab fa-whatsapp'
+        if 'viber' in lbl:                              return 'fab fa-viber'
+        if 'discord' in lbl:                            return 'fab fa-discord'
+        if 'linkedin' in lbl:                           return 'fab fa-linkedin-in'
+        if 'website' in lbl or 'web' in lbl or 'site' in lbl:   return 'fas fa-globe'
+        if 'phone' in lbl or 'tel' in lbl or 'call' in lbl:     return 'fas fa-phone'
+        return 'fas fa-link'
+
+    @property
+    def icon_bg(self):
+        """Platform brand colour for the icon bubble in templates."""
+        lbl = self.label.lower()
+        if 'fb' in lbl or 'facebook' in lbl:            return '#1877f2'
+        if 'ig' in lbl or 'instagram' in lbl or 'insta' in lbl: return '#e1306c'
+        if 'tiktok' in lbl or lbl == 'tt':              return '#010101'
+        if 'youtube' in lbl or lbl == 'yt':             return '#ff0000'
+        if 'gmail' in lbl or 'email' in lbl or 'mail' in lbl:   return '#ea4335'
+        if 'twitter' in lbl or lbl == 'x':              return '#000000'
+        if 'whatsapp' in lbl or lbl == 'wa':            return '#25d366'
+        if 'viber' in lbl:                              return '#7360f2'
+        if 'discord' in lbl:                            return '#5865f2'
+        if 'linkedin' in lbl:                           return '#0a66c2'
+        return '#8b0000'

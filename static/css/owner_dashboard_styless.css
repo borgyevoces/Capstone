@@ -315,7 +315,7 @@ body {
 .main-content {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 32px 24px 80px;
+    padding: 0 24px 80px;
     width: 100%;
 }
 
@@ -503,6 +503,137 @@ body {
 /* Remove old sidebar styles */
 .dashboard-sidebar {
     display: none;
+}
+
+/* ==========================================
+   OPTION C: WHITE SIDEBAR — desktop overrides
+   Sidebar is 110px wide, icon-above-label style
+   ========================================== */
+
+/* Sidebar scrollbar */
+.sidebar-menu::-webkit-scrollbar { width: 4px; }
+.sidebar-menu::-webkit-scrollbar-track { background: transparent; }
+.sidebar-menu::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+
+/* Store badge inside sidebar */
+.sidebar-store-badge {
+    margin: 0 12px 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #B71C1C 0%, #7f1111 100%);
+    border-radius: 10px;
+    color: white;
+}
+.sidebar-store-badge .store-name {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sidebar-store-badge .store-status {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.sidebar-store-badge .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    flex-shrink: 0;
+}
+.sidebar.collapsed .sidebar-store-badge { display: none; }
+
+/* ==========================================
+   OPTION D: BOTTOM NAV BAR — mobile only
+   ========================================== */
+.bottom-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #ffffff;
+        border-top: 1px solid #e5e7eb;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        z-index: 1000;
+        align-items: stretch;
+    }
+
+    .bottom-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        text-decoration: none;
+        color: #9ca3af;
+        font-size: 10px;
+        font-weight: 500;
+        padding: 6px 4px;
+        border-top: 2px solid transparent;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+
+    .bottom-nav-item i {
+        font-size: 18px;
+        transition: transform 0.2s;
+    }
+
+    .bottom-nav-item.active {
+        color: #B71C1C;
+        border-top-color: #B71C1C;
+    }
+
+    .bottom-nav-item.active i {
+        transform: scale(1.1);
+    }
+
+    .bottom-nav-item:hover {
+        color: #B71C1C;
+        background: #fef2f2;
+    }
+
+    .bottom-nav-badge {
+        position: absolute;
+        top: 4px;
+        right: 50%;
+        transform: translateX(10px);
+        background: #B71C1C;
+        color: white;
+        font-size: 9px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 1.5px solid white;
+    }
+
+    /* Sidebar overlay */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1000;
+    }
+    .sidebar-overlay.active { display: block; }
 }
 
 /* ==========================================
@@ -1154,6 +1285,132 @@ body {
 }
 
 /* ==========================================
+   CONVERSATION LIST ITEMS
+   ========================================== */
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s ease;
+}
+
+.conversation-item:hover {
+    background: #fef2f2;
+}
+
+.conversation-avatar {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.conversation-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-preview {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-badge {
+    flex-shrink: 0;
+    background: #f02849;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+/* Chat panel tabs (All / Unread) */
+.chat-tabs {
+    display: flex;
+    border-bottom: 1px solid #f3f4f6;
+    background: white;
+}
+
+.chat-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.chat-tab.active {
+    color: #f02849;
+    border-bottom-color: #f02849;
+}
+
+/* Empty state inside chat panel */
+.chat-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.chat-empty-state i {
+    font-size: 40px;
+    color: #d1d5db;
+}
+
+.chat-empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ==========================================
    FOOTER
    ========================================== */
 
@@ -1336,84 +1593,99 @@ body {
    TOAST NOTIFICATIONS
    ========================================== */
 
-.notification-toast {
+/* ── Toast / Notification stack (upper-right, flat, no shadow) ── */
+#toast-stack {
     position: fixed;
-    top: 90px;
-    right: 20px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-    padding: 16px;
+    top: 72px;
+    right: 18px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.notification-toast {
+    pointer-events: all;
     display: flex;
     align-items: center;
-    gap: 12px;
-    z-index: 10000;
-    min-width: 300px;
-    animation: slideIn 300ms ease;
+    gap: 10px;
+    padding: 11px 12px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-left: 4px solid #B71C1C;
+    border-radius: 8px;
+    min-width: 270px;
+    max-width: 320px;
+    animation: toastIn 250ms ease;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.notification-toast.toast-message-type {
+    border-left-color: #2563eb;
 }
 
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(400px);
-        opacity: 0;
-    }
+@keyframes toastIn {
+    from { transform: translateX(30px); opacity: 0; }
+    to   { transform: translateX(0);   opacity: 1; }
+}
+
+@keyframes toastOut {
+    from { transform: translateX(0);   opacity: 1; }
+    to   { transform: translateX(30px); opacity: 0; }
 }
 
 .toast-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f02849 0%, #c62828 100%);
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 18px;
+    color: #B71C1C;
+    font-size: 13px;
+    flex-shrink: 0;
 }
 
-.toast-content {
-    flex: 1;
+.notification-toast.toast-message-type .toast-icon {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
 }
+
+.toast-content { flex: 1; min-width: 0; }
 
 .toast-title {
     font-weight: 700;
-    font-size: 14px;
-    color: #1a1a1a;
-    margin-bottom: 4px;
+    font-size: 12.5px;
+    color: #111827;
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .toast-message {
-    font-size: 13px;
+    font-size: 11.5px;
     color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .toast-close {
     background: none;
     border: none;
-    color: #9ca3af;
-    font-size: 16px;
+    color: #d1d5db;
+    font-size: 13px;
     cursor: pointer;
-    padding: 4px;
+    padding: 2px 4px;
+    flex-shrink: 0;
+    line-height: 1;
 }
 
-.toast-close:hover {
-    color: #f02849;
-}
+.toast-close:hover { color: #B71C1C; }
 
 /* ==========================================
    STORE STATS DISPLAY
@@ -3681,4 +3953,834 @@ body:has(#chatWindow[style*="flex"]) .chat-float-btn {
     font-size: 14px;
     margin-top: 6px;
 }
+}
+/* ============================================================
+   DASHBOARD INFO BAR — Establishment name + status + search + filters
+   ============================================================ */
+
+.dash-info-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin: 16px 0 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* ── Left: name + status ── */
+.dib-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.dib-est-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.dib-est-name i {
+    color: #B71C1C;
+    font-size: 14px;
+}
+
+/* Status pill */
+.dib-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #6b7280;
+    transition: all 0.3s ease;
+    border: 1.5px solid #e5e7eb;
+}
+
+.dib-status-pill.is-open {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #86efac;
+}
+
+.dib-status-pill.is-closed {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.dib-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+    flex-shrink: 0;
+    transition: background 0.3s ease;
+}
+
+.dib-status-pill.is-open  .dib-dot { background: #22c55e; animation: dibPulse 2s infinite; }
+.dib-status-pill.is-closed .dib-dot { background: #ef4444; animation: none; }
+
+@keyframes dibPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+}
+
+/* ── Right: search + filters ── */
+.dib-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+/* Search */
+.dib-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 6px 12px;
+    min-width: 200px;
+    flex: 1;
+    max-width: 320px;
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.dib-search-wrap:focus-within {
+    border-color: #B71C1C;
+    box-shadow: 0 0 0 3px rgba(183,28,28,0.10);
+    background: #fff;
+}
+
+.dib-search-ico {
+    color: #9ca3af;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-right: 7px;
+}
+
+.dib-search-inp {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    color: #111827;
+    flex: 1;
+    min-width: 0;
+}
+
+.dib-search-inp::placeholder { color: #9ca3af; }
+
+.dib-search-clr {
+    border: none;
+    background: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    font-size: 11px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+}
+
+.dib-search-clr:hover { color: #B71C1C; }
+
+/* Filter pills */
+.dib-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.dib-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 20px;
+    background: #fff;
+    color: #6b7280;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.dib-pill:hover {
+    border-color: #B71C1C;
+    color: #B71C1C;
+    background: #fff5f5;
+}
+
+.dib-pill.active {
+    background: #B71C1C;
+    border-color: #B71C1C;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(183,28,28,0.20);
+}
+
+.dib-dot-sm {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.dib-dot-sm.green { background: #22c55e; }
+.dib-dot-sm.red   { background: #ef4444; }
+
+/* Result count */
+.dib-count {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dash-info-bar { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
+    .dib-right     { width: 100%; }
+    .dib-search-wrap { max-width: 100%; }
+    .dib-est-name  { font-size: 13px; }
+}
+
+/* Hidden menu cards */
+.menu-card.dib-hidden { display: none !important; }
+
+/* ── Establishment name in navbar ── */
+.navbar-est-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-left: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+}
+.navbar-est-name i {
+    font-size: 13px;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+/* ── Info bar redesign ── */
+.dash-info-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 12px 0;
+    margin: 14px 0 12px;
+    box-shadow: none;
+}
+
+/* Search — left, takes available space */
+.dib-search-wrap {
+    display: flex;
+    align-items: center;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 7px 14px;
+    flex: 1;
+    min-width: 180px;
+    max-width: 340px;
+    transition: border-color .18s, box-shadow .18s;
+}
+.dib-search-wrap:focus-within {
+    border-color: #B71C1C;
+    box-shadow: 0 0 0 3px rgba(183,28,28,.10);
+    background: #fff;
+}
+.dib-search-ico  { color: #9ca3af; font-size: 12px; flex-shrink: 0; margin-right: 8px; }
+.dib-search-inp  { border: none; background: transparent; outline: none; font-family: 'Poppins',sans-serif; font-size: 12.5px; color: #111827; flex: 1; min-width: 0; }
+.dib-search-inp::placeholder { color: #9ca3af; }
+.dib-search-clr  { border: none; background: none; color: #9ca3af; cursor: pointer; padding: 0 0 0 4px; font-size: 11px; transition: color .15s; flex-shrink: 0; }
+.dib-search-clr:hover { color: #B71C1C; }
+
+/* Right group */
+.dib-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Divider */
+.dib-divider {
+    width: 1px;
+    height: 22px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+}
+
+/* Filter pills container — subtle pill-group background */
+.dib-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f3f4f6;
+    border-radius: 24px;
+    padding: 3px 4px;
+}
+
+/* Individual pill */
+.dib-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: #6b7280;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.dib-pill:hover  { background: #fff; color: #111827; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.dib-pill.active { background: #B71C1C; color: #fff; box-shadow: 0 2px 8px rgba(183,28,28,.22); }
+.dib-pill.active .dib-dot-sm.green,
+.dib-pill.active .dib-dot-sm.red { opacity: .85; }
+
+/* Dots inside pills */
+.dib-dot-sm       { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dib-dot-sm.green { background: #22c55e; }
+.dib-dot-sm.red   { background: #ef4444; }
+
+/* Status pill */
+.dib-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1.5px solid #e5e7eb;
+    transition: all .3s;
+    white-space: nowrap;
+}
+.dib-status-pill.is-open   { background: #f0fdf4; color: #16a34a; border-color: #86efac; }
+.dib-status-pill.is-closed { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+.dib-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; flex-shrink: 0; transition: background .3s; }
+.dib-status-pill.is-open  .dib-dot { background: #22c55e; animation: dibPulse 2s infinite; }
+.dib-status-pill.is-closed .dib-dot { background: #ef4444; }
+
+@keyframes dibPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
+    50%      { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dash-info-bar    { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
+    .dib-search-wrap  { max-width: 100%; width: 100%; }
+    .dib-right        { width: 100%; flex-wrap: wrap; }
+    .navbar-est-name  { max-width: 160px; font-size: 12px; }
+    .dib-filter-pills { flex-wrap: wrap; }
+}
+
+.menu-card.dib-hidden { display: none !important; }
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║   DASHBOARD — ALIGNED WITH KABSUEATS DESIGN LANGUAGE        ║
+   ║   Poppins · #B71C1C primary · clean white cards             ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ── Font family throughout — matches KabsuEats ─── */
+.main-content,
+.top-action-btn,
+.menu-card,
+.menu-name,
+.menu-desc,
+.menu-price,
+.action-btn,
+.dib-pill,
+.card-title-center,
+.btn-label,
+.btn-desc,
+.stats-number {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* ── Page background — KabsuEats light gray body ── */
+.main-content {
+    background: #f3f4f6 !important;
+    min-height: 100vh;
+    padding-top: 28px !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR — matching KabsuEats .csb-item style
+   ══════════════════════════════════════════════════════════ */
+.sidebar {
+    background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    border-right: none !important;
+}
+
+.sidebar-item {
+    font-family: inherit !important;
+    border-radius: 0 !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    transition: all 0.3s !important;
+    margin: 0 !important;
+    padding: 15px 20px !important;
+    border-left: 3px solid transparent !important;
+}
+
+.sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+}
+
+.sidebar-item.active,
+.sidebar-item.active:hover {
+    background: rgba(183, 28, 28, 0.15) !important;
+    color: white !important;
+    border-left-color: #B71C1C !important;
+}
+
+.sidebar-item i {
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    background: none !important;
+    display: inline !important;
+    font-size: 20px !important;
+    min-width: 20px !important;
+    flex-shrink: 0 !important;
+}
+
+.sidebar-item.active i {
+    background: none !important;
+}
+
+/* Sidebar logo */
+.sidebar-logo {
+    font-family: 'Pacifico', cursive !important;
+    color: #fff !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOP ACTION CARDS — KabsuEats card + bsc-btn language
+   ══════════════════════════════════════════════════════════ */
+.top-action-buttons {
+    gap: 14px !important;
+    padding: 0 28px !important;
+    margin-bottom: 0 !important;
+}
+
+.top-action-btn {
+    border-radius: 14px !important;
+    padding: 18px 22px !important;
+    border: 1.5px solid #e5e7eb !important;
+    background: #fff !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07) !important;
+    transition: transform .25s cubic-bezier(.34,1.4,.64,1), box-shadow .25s, border-color .2s !important;
+    cursor: pointer !important;
+}
+
+/* ── Add Item — solid red gradient like .bsc-btn ── */
+.top-action-btn.add-item-btn {
+    background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%) !important;
+    border-color: #8B0000 !important;
+    box-shadow: 0 4px 18px rgba(183,28,28,.30) !important;
+}
+.top-action-btn.add-item-btn:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 28px rgba(183,28,28,.40) !important;
+}
+.add-item-btn .btn-label {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+}
+.add-item-btn .btn-desc {
+    font-size: 11.5px !important;
+    color: rgba(255,255,255,0.72) !important;
+}
+.top-action-btn.add-item-btn .btn-icon {
+    background: rgba(255,255,255,0.18) !important;
+    box-shadow: none !important;
+    color: #fff !important;
+}
+
+/* ── Stats cards — white with colored top accent ── */
+.top-action-btn.stats-card {
+    background: #fff !important;
+    border: 1.5px solid #e5e7eb !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+.top-action-btn.stats-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 3px !important;
+    border-radius: 14px 14px 0 0 !important;
+}
+.top-action-btn.total-items-card::before {
+    background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+}
+.top-action-btn.bestsellers-card::before {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed) !important;
+}
+
+.top-action-btn.stats-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 24px rgba(0,0,0,.10) !important;
+    border-color: #B71C1C !important;
+}
+
+.stats-card .btn-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: .6px !important;
+    text-transform: uppercase !important;
+    color: #6b7280 !important;
+}
+.stats-number {
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+    line-height: 1 !important;
+    letter-spacing: -1px !important;
+}
+
+.btn-icon {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 12px !important;
+    font-size: 20px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.top-action-btn.total-items-card .btn-icon {
+    background: #fef3c7 !important;
+    color: #d97706 !important;
+    box-shadow: none !important;
+}
+.top-action-btn.bestsellers-card .btn-icon {
+    background: #ede9fe !important;
+    color: #7c3aed !important;
+    box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   INFO BAR — KabsuEats .filt-bar style (transparent, pill filters)
+   ══════════════════════════════════════════════════════════ */
+.dash-info-bar {
+    padding: 14px 28px !important;
+    margin-top: 18px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Search input — clean like KabsuEats #catFilt */
+.dib-search-wrap {
+    background: #fff !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 50px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
+    backdrop-filter: none !important;
+    transition: border-color .2s, box-shadow .2s !important;
+}
+.dib-search-wrap:focus-within {
+    border-color: #B71C1C !important;
+    box-shadow: 0 0 0 3px rgba(183,28,28,.08) !important;
+}
+.dib-search-inp {
+    background: transparent !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+}
+
+/* Filter pills — KabsuEats .pill-row / .bs-sort-group style */
+.dib-filter-pills {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    background: #e5e7eb !important;
+    border-radius: 50px !important;
+    padding: 3px 5px !important;
+    backdrop-filter: none !important;
+    border: none !important;
+}
+
+.dib-pill {
+    border: none !important;
+    border-radius: 50px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    padding: 5px 13px !important;
+    color: #6b7280 !important;
+    background: transparent !important;
+    font-family: 'Poppins', sans-serif !important;
+    transition: all .15s !important;
+}
+.dib-pill:hover {
+    background: #fff !important;
+    color: #B71C1C !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08) !important;
+}
+.dib-pill.active {
+    background: #B71C1C !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(183,28,28,.25) !important;
+}
+
+/* Status pill */
+.dib-status-pill {
+    background: #fff !important;
+    border: 1.5px solid #e5e7eb !important;
+    font-family: 'Poppins', sans-serif !important;
+    backdrop-filter: none !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+.dib-status-pill.is-open {
+    background: #f0fdf4 !important;
+    color: #16a34a !important;
+    border-color: #86efac !important;
+}
+.dib-status-pill.is-closed {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border-color: #fca5a5 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MENU SECTION WRAPPER — KabsuEats clean white card
+   ══════════════════════════════════════════════════════════ */
+.full-width-container { padding: 0 28px !important; }
+
+.card.menu-section {
+    border-radius: 14px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06) !important;
+    padding: 22px !important;
+    background: #fff !important;
+    backdrop-filter: none !important;
+}
+
+.card-title-center {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    letter-spacing: -.2px !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+.card-title-center i { color: #B71C1C !important; }
+
+/* ══════════════════════════════════════════════════════════
+   MENU GRID
+   ══════════════════════════════════════════════════════════ */
+.menu-grid {
+    gap: 18px !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MENU CARDS — matching .bsc (bestseller card) from KabsuEats
+   white · 1.5px border · lift hover · red border on hover
+   ══════════════════════════════════════════════════════════ */
+.menu-card {
+    border-radius: 13px !important;
+    border: 1.5px solid #e5e7eb !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08) !important;
+    background: #fff !important;
+    backdrop-filter: none !important;
+    overflow: hidden !important;
+    transition: transform .3s ease, box-shadow .3s, border-color .2s !important;
+}
+.menu-card:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 12px 28px rgba(183,28,28,.14) !important;
+    border-color: #B71C1C !important;
+}
+
+/* Image area */
+.menu-image {
+    height: 160px !important;
+    border-radius: 0 !important;
+    position: relative !important;
+}
+.menu-card:hover .menu-image img {
+    transform: scale(1.08) !important;
+}
+/* Remove gradient overlay from previous */
+.menu-image::after {
+    display: none !important;
+}
+
+/* Badges — KabsuEats .bsc-badge style */
+.badge {
+    border-radius: 20px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+.badge.bestseller {
+    background: linear-gradient(135deg, #ff6b35, #f59e0b) !important;
+    color: #fff !important;
+}
+.badge.available  { background: linear-gradient(135deg, #10b981, #059669) !important; color: #fff !important; }
+.badge.soldout    { background: linear-gradient(135deg, #ef4444, #dc2626) !important; color: #fff !important; }
+
+/* Info section — KabsuEats .bsc-body style */
+.menu-info {
+    padding: 11px 13px 13px !important;
+}
+.menu-name {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    margin-bottom: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+.menu-desc {
+    font-size: 11.5px !important;
+    color: #9ca3af !important;
+    margin-bottom: 8px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+.menu-price {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #B71C1C !important;
+    margin-bottom: 10px !important;
+    letter-spacing: -.5px !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+.menu-price::before {
+    content: '₱' !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    vertical-align: super !important;
+    margin-right: 1px !important;
+    opacity: 0.7 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ACTION BUTTONS — KabsuEats .macb / .mbnb gradient style
+   each button has a distinct color identity, bold & clean
+   ══════════════════════════════════════════════════════════ */
+.menu-actions {
+    gap: 6px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.action-btn {
+    padding: 8px 4px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    gap: 4px !important;
+    font-family: 'Poppins', sans-serif !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: transform .25s cubic-bezier(.34,1.4,.64,1), box-shadow .25s !important;
+    letter-spacing: .1px !important;
+}
+
+/* Edit — blue gradient */
+.action-btn.edit {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(37,99,235,.25) !important;
+}
+.action-btn.edit:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 14px rgba(37,99,235,.38) !important;
+}
+
+/* Seller/Mark — amber gradient */
+.action-btn.seller {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(217,119,6,.25) !important;
+}
+.action-btn.seller:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 14px rgba(217,119,6,.38) !important;
+}
+
+/* Delete — red gradient (same KabsuEats red) */
+.action-btn.delete {
+    background: linear-gradient(135deg, #B71C1C, #8B0000) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(183,28,28,.25) !important;
+}
+.action-btn.delete:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 14px rgba(183,28,28,.38) !important;
 }

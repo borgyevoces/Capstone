@@ -314,6 +314,9 @@ tr.order-row-highlight {
         line-height: 1.5;
         margin-top: 2px;
         animation: reasonFadeIn 0.2s ease;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
     .reason-inline i {
         color: #B71C1C;
@@ -1348,7 +1351,8 @@ tr.order-row-highlight {
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
-        min-width: 680px;
+        min-width: 860px;
+        table-layout: fixed;
     }
     .orders-table thead tr {
         background: white;
@@ -1371,7 +1375,7 @@ tr.order-row-highlight {
     .orders-table th:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; text-align: right; }
     .orders-table tbody tr { border-bottom: 1px solid #f7f7f7; transition: background .12s; }
     .orders-table tbody tr:hover { background: #fafbfc; }
-    .orders-table td { padding: 12px 14px; vertical-align: middle; }
+    .orders-table td { padding: 12px 14px; vertical-align: middle; word-break: break-word; overflow-wrap: break-word; }
     .orders-table td:last-child { text-align: right; }
 
     .tbl-order-num  { font-family: monospace; font-weight: 700; font-size: 13px; color: #B71C1C; background: rgba(183,28,28,.07); padding: 3px 8px; border-radius: 6px; display: inline-block; }
@@ -1382,7 +1386,7 @@ tr.order-row-highlight {
     .tbl-item-qty   { color: #718096; font-size: 11px; }
     .tbl-total      { font-weight: 800; color: #B71C1C; font-size: 15px; }
     .tbl-actions    { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
-    .orders-table td:nth-last-child(2) { white-space: nowrap; } /* status cell stays on 1 row */
+    .orders-table td:nth-last-child(2) { white-space: normal; word-break: break-word; } /* status cell wraps properly */
 
     /* Payment method badges — Cash and GCash only */
     .pay-badge {
@@ -1556,6 +1560,228 @@ tr.order-row-highlight {
         .orders-table-wrap { border-radius: 10px; }
         .tbl-actions { flex-direction: column; align-items: flex-end; }
     }
+
+    /* ==========================================
+       EDIT ORDER MODAL — realtime qty editor
+    ========================================== */
+    #editOrderModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.55);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(2px);
+    }
+    .edit-order-box {
+        background: #fff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0,0,0,.22);
+        overflow: hidden;
+        animation: eoSlideUp .22s ease;
+    }
+    @keyframes eoSlideUp {
+        from { opacity:0; transform:translateY(24px); }
+        to   { opacity:1; transform:translateY(0); }
+    }
+    .edit-order-header {
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    .edit-order-header-text h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0 0 4px;
+    }
+    .edit-order-header-text p {
+        font-size: 12.5px;
+        color: #e07b00;
+        font-weight: 500;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .edit-order-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+    .edit-order-close:hover { color: #374151; background: #f3f4f6; }
+    .edit-order-items {
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+    }
+    .eo-item-card {
+        background: #fafafa;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: border-color .2s;
+    }
+    .eo-item-card.eo-out-of-stock {
+        opacity: .55;
+        border-color: #fca5a5;
+        background: #fff5f5;
+    }
+    .eo-item-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .eo-item-img {
+        width: 50px; height: 50px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+    .eo-item-img-placeholder {
+        width: 50px; height: 50px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        border: 2px solid #e2e8f0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .eo-item-info { flex: 1; min-width: 0; }
+    .eo-item-name {
+        font-size: 14px; font-weight: 700; color: #1a202c;
+        margin-bottom: 3px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .eo-item-price { font-size: 13px; color: #059669; font-weight: 600; }
+    .eo-stock-badge {
+        font-size: 11px; font-weight: 700;
+        padding: 3px 9px; border-radius: 20px;
+        display: inline-flex; align-items: center; gap: 4px;
+        white-space: nowrap;
+    }
+    .eo-stock-ok   { background: #d1fae5; color: #065f46; }
+    .eo-stock-low  { background: #fef9c3; color: #713f12; }
+    .eo-stock-none { background: #fee2e2; color: #991b1b; }
+    .eo-qty-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .eo-qty-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+    .eo-qty-ctrl {
+        display: flex; align-items: center;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .eo-qty-btn {
+        width: 34px; height: 34px;
+        background: #f9fafb; border: none;
+        font-size: 18px; font-weight: 600; color: #374151;
+        cursor: pointer; transition: background .15s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .eo-qty-btn:hover:not(:disabled) { background: #e5e7eb; }
+    .eo-qty-btn:disabled { opacity: .3; cursor: default; }
+    .eo-qty-val {
+        min-width: 36px; text-align: center;
+        font-size: 14px; font-weight: 700; color: #1a202c;
+        padding: 0 4px;
+        border-left: 1.5px solid #d1d5db;
+        border-right: 1.5px solid #d1d5db;
+    }
+    .eo-item-subtotal {
+        font-size: 12.5px; color: #374151; font-weight: 600;
+        text-align: right;
+    }
+    .edit-order-total-bar {
+        padding: 14px 20px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+    .eo-total-label { font-size: 13px; color: #718096; font-weight: 600; }
+    .eo-total-val   { font-size: 20px; font-weight: 800; color: #B71C1C; }
+    .edit-order-footer {
+        padding: 14px 20px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .eo-btn {
+        flex: 1;
+        padding: 11px 16px;
+        border: none; border-radius: 8px;
+        font-size: 13px; font-weight: 700;
+        cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        transition: all .2s;
+    }
+    .eo-btn-close {
+        background: #f3f4f6; color: #374151;
+        border: 1.5px solid #d1d5db;
+    }
+    .eo-btn-close:hover { background: #e5e7eb; }
+    .eo-btn-save {
+        background: linear-gradient(135deg,#B71C1C 0%,#8B0000 100%);
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(183,28,28,.25);
+    }
+    .eo-btn-save:hover:not(:disabled) { background: linear-gradient(135deg,#9b1c1c 0%,#6b0000 100%); }
+    .eo-btn-save:disabled { opacity: .55; cursor: default; }
+    .eo-btn-reorder {
+        background: linear-gradient(135deg,#059669 0%,#047857 100%);
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(5,150,105,.2);
+    }
+    .eo-btn-reorder:hover:not(:disabled) { background: linear-gradient(135deg,#047857 0%,#065f46 100%); box-shadow: 0 4px 14px rgba(5,150,105,.35); }
+    .eo-btn-reorder:disabled { opacity: .55; cursor: default; }
+    .eo-btn-remove {
+        background: linear-gradient(135deg,#ef4444 0%,#dc2626 100%);
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(239,68,68,.2);
+    }
+    .eo-btn-remove:hover:not(:disabled) { background: linear-gradient(135deg,#dc2626 0%,#b91c1c 100%); box-shadow: 0 4px 14px rgba(239,68,68,.3); }
+    .eo-btn-remove:disabled { opacity: .55; cursor: default; }
+    .eo-loading {
+        text-align: center; padding: 36px 16px;
+        color: #9ca3af; font-size: 14px;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .eo-loading i { font-size: 28px; color: #B71C1C; }
+    .eo-oos-notice {
+        font-size: 12px; color: #b91c1c; font-weight: 600;
+        display: flex; align-items: center; gap: 5px;
+    }
 </style>
 {% endblock %}
 
@@ -1565,7 +1791,7 @@ tr.order-row-highlight {
     <div class="order-history-header">
         <h1>
             <i class="fas fa-clipboard-list"></i>
-            My Order History
+            My Orders
         </h1>
         <p>Track and manage all your food orders in one place</p>
     </div>
@@ -1702,6 +1928,43 @@ tr.order-row-highlight {
             </button>
             <button class="reorder-buy-btn" id="reorderBuyBtn" onclick="doReorder('buy')">
                 <i class="fas fa-bolt"></i> Buy Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================
+     EDIT ORDER MODAL — realtime qty editor for 'request' orders
+     with insufficient stock on one or more items.
+===================================================== -->
+<div id="editOrderModal" onclick="handleEditOrderOverlayClick(event)">
+    <div class="edit-order-box">
+        <div class="edit-order-header">
+            <div class="edit-order-header-text">
+                <h3><i class="fas fa-edit" style="color:#B71C1C;margin-right:6px;"></i>Edit Order</h3>
+                <p><i class="fas fa-exclamation-triangle"></i> Some items have limited stock — adjust quantities below.</p>
+            </div>
+            <button class="edit-order-close" onclick="closeEditOrderModal()" title="Close">&times;</button>
+        </div>
+
+        <div class="edit-order-items" id="editOrderItems">
+            <div class="eo-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading items…</span>
+            </div>
+        </div>
+
+        <div class="edit-order-total-bar">
+            <span class="eo-total-label">New Total</span>
+            <span class="eo-total-val" id="editOrderTotalVal">₱0.00</span>
+        </div>
+
+        <div class="edit-order-footer">
+            <button class="eo-btn eo-btn-reorder" id="editOrderReorderBtn" onclick="editOrderReorder()">
+                <i class="fas fa-redo-alt"></i> Reorder
+            </button>
+            <button class="eo-btn eo-btn-remove" id="editOrderRemoveBtn" onclick="editOrderRemove()">
+                <i class="fas fa-trash-alt"></i> Remove
             </button>
         </div>
     </div>
@@ -1995,6 +2258,12 @@ tr.order-row-highlight {
 
                         if (!cancelledByOwner) {
                             // Non-owner cancellation (auto-expire etc.) — just remove row
+                            // ✅ FIX: If idx === -1 AND no DOM row exists, the order was already
+                            // pre-emptively removed by editOrderReorder(). Nothing left to do.
+                            if (idx === -1 && !document.querySelector('tr.order-row[data-id="' + orderId + '"]')) {
+                                updateOrderCounts();
+                                return;
+                            }
                             if (idx !== -1) allOrders.splice(idx, 1);
                             const row = document.querySelector('tr.order-row[data-id="' + orderId + '"]');
                             if (row) {
@@ -2210,8 +2479,19 @@ tr.order-row-highlight {
                     // Also merge any fresh orders — keep client flags, and hydrate
                     // owner-rejected cancelled orders directly from API response.
                     // ✅ Skip orders the client has permanently dismissed.
+                    // ✅ BUG FIX: Also skip any to_pay order that was superseded by a
+                    // reorder (owner_dismissed=true). The backend now excludes these
+                    // from the API response, but this is an extra safety net for
+                    // in-memory / WS race conditions.
                     const freshWithFlags = data.orders
                         .filter(function (fresh) { return !lsIsDismissed(fresh.id); })
+                        .filter(function (fresh) {
+                            // Drop stale to_pay rows that were already reordered
+                            if (fresh.raw_status === 'to_pay' && fresh.owner_dismissed === true) {
+                                return false;
+                            }
+                            return true;
+                        })
                         .map(function (fresh) {
                             // Check in-memory first, then localStorage for existing flags
                             const existing = allOrders.find(function (e) { return e.id === fresh.id; });
@@ -2397,47 +2677,44 @@ tr.order-row-highlight {
                             const nowOutOfStockCount = (order.items || []).filter(function (i) {
                                 return typeof i.available_stock === 'number' && i.available_stock < i.quantity;
                             }).length;
-                            const nowHasIssue = nowOutOfStockCount > 1;
+                            const nowHasIssue = nowOutOfStockCount >= 1; // ✅ FIX: 1 item with stock issue is enough
 
-                            // Update the banner div in the DOM without full re-render
+                            // Banner removed — stock issue shown in status cell only
                             const banner = document.getElementById('stock-banner-' + order.id);
                             if (banner) {
-                                if (nowHasIssue) {
-                                    const wsMsg = order.status === 'request'
-                                        ? 'Some items ran out of stock — your order request may not be accepted. Consider cancelling and reordering.'
-                                        : 'Some items ran out of stock — you may not be able to pay for this order. Contact the establishment or cancel and reorder.';
-                                    banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + wsMsg;
-                                    banner.classList.add('visible');
-                                } else {
-                                    banner.classList.remove('visible');
-                                }
+                                banner.classList.remove('visible');
                             }
 
-                            // Update per-item chips
+                            // Update per-item chips in the Items column (realtime)
                             (order.items || []).forEach(function (item) {
-                                // Find the chip inside the matching row
                                 const row = document.querySelector('tr.order-row[data-id="' + order.id + '"]');
                                 if (!row) return;
-                                // Item lines are rendered in order — find by item name text
+
                                 const lines = row.querySelectorAll('.tbl-item-line');
                                 lines.forEach(function (line) {
                                     const nameEl = line.querySelector('strong');
-                                    if (!nameEl || nameEl.textContent !== item.name) return;
-                                    // Remove existing chip
-                                    const old = line.querySelector('.stock-warn-chip');
-                                    if (old) old.remove();
-                                    // Add fresh chip if needed
-                                    if (typeof item.available_stock === 'number' && item.available_stock < item.quantity) {
+                                    if (!nameEl || nameEl.textContent.trim() !== item.name) return;
+
+                                    // Remove existing stock chip (but not ban/rejected chips)
+                                    const existing = line.querySelector('.stock-warn-chip:not([style*="ban"])');
+                                    if (existing) existing.remove();
+
+                                    const isInsufficient = typeof item.available_stock === 'number' && item.available_stock < item.quantity;
+                                    if (isInsufficient) {
+                                        // Add/update "Only X left" chip
                                         const chip = document.createElement('span');
-                                        chip.className = item.available_stock === 0
-                                            ? 'stock-warn-chip out'
-                                            : 'stock-warn-chip';
-                                        chip.innerHTML = item.available_stock === 0
-                                            ? '<i class="fas fa-times-circle"></i> Out of stock'
-                                            : '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
+                                        chip.className = 'stock-warn-chip out';
+                                        chip.id = 'stock-chip-' + order.id + '-' + item.menu_item_id;
+                                        chip.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
                                         line.appendChild(chip);
                                     }
                                 });
+
+                                // Also update the inline span inside the status cell if it already shows the badge
+                                const statusStockEl = document.getElementById('status-stock-' + item.menu_item_id);
+                                if (statusStockEl && typeof item.available_stock === 'number') {
+                                    statusStockEl.textContent = item.available_stock + ' left';
+                                }
                             });
 
                             // Enable / disable Pay Now button
@@ -2460,10 +2737,45 @@ tr.order-row-highlight {
                             // Show a toast if this order just became problematic
                             if (nowHasIssue && !order._hasStockIssue) {
                                 showOrderToast(
-                                    '⚠️ Order #' + order.id + ': some items are now out of stock. ' +
-                                    'Check your To Pay orders.',
+                                    'Sorry — some items in Order #' + order.id + ' are now out of stock. ' +
+                                    'You may re-order or remove this.',
                                     'warning'
                                 );
+
+                                // ✅ FIX: If this is a to_pay order with a stock issue,
+                                // immediately expire the timer — no need to wait 10 mins.
+                                if ((order.status === 'to_pay' || order.status === 'PENDING') && !order._expired) {
+                                    // Stop the running countdown
+                                    if (timerMap[order.id]) {
+                                        clearInterval(timerMap[order.id].id);
+                                        delete timerMap[order.id];
+                                    }
+                                    // Mark as expired in memory
+                                    order._expired          = true;
+                                    order._cancelledByOwner = false;
+                                    order._cancelReason     = '';
+                                    lsSaveCancelled(order);
+
+                                    // Update status cell to stock issue badge
+                                    const statusCell = document.getElementById('status-cell-' + order.id);
+                                    if (statusCell) {
+                                        statusCell.innerHTML = buildTimesUpBadge(true, order.items);
+                                    } else {
+                                        const chipEl2 = document.getElementById('timer-' + order.id);
+                                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time\'s up'; }
+                                        const statusBadge = document.getElementById('status-badge-' + order.id);
+                                        if (statusBadge) statusBadge.style.display = 'none';
+                                    }
+
+                                    // ✅ FIX: Do NOT auto-cancel the to_pay order on the server.
+                                    // Auto-cancelling caused it to appear as "Cancelled by Client"
+                                    // in the owner's Order Request tab instead of staying in To Pay.
+                                    // The order stays 'to_pay' on the server until the client
+                                    // explicitly clicks Re-order or Remove. Owner sees it in To Pay. ✅
+
+                                    // Swap actions to Re-order + Remove immediately (UI only)
+                                    swapToExpiredActions(order.id);
+                                }
                             }
                             order._hasStockIssue = nowHasIssue;
                         });
@@ -2554,12 +2866,10 @@ const itemsHtml = (o.items || []).map(i => {
             // Owner rejected this order — mark ALL items as rejected
             stockChip = `<span class="stock-warn-chip out" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">` +
                         `<i class="fas fa-ban"></i> Rejected</span>`;
-        } else if (isStockWarnOrder && typeof i.available_stock === 'number') {
-            if (i.available_stock === 0) {
-                stockChip = `<span class="stock-warn-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
-            } else if (i.available_stock < i.quantity) {
-                stockChip = `<span class="stock-warn-chip"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
-            }
+        } else if (isStockWarnOrder && typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
+            // Insufficient stock — show remaining quantity in real-time
+            stockChip = `<span class="stock-warn-chip out" id="stock-chip-${o.id}-${i.menu_item_id}">` +
+                        `<i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
         }
         return `<div class="tbl-item-line" style="${isOwnerRejected ? 'opacity:0.6;text-decoration:line-through;' : ''}">` +
                `<strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}</div>`;
@@ -2568,15 +2878,8 @@ const itemsHtml = (o.items || []).map(i => {
         const outOfStockCount = isStockWarnOrder
             ? (o.items || []).filter(i => typeof i.available_stock === 'number' && i.available_stock < i.quantity).length
             : 0;
-        const hasStockIssue = outOfStockCount > 1;
-        const stockBannerMsg = o.status === 'request'
-            ? 'Some items ran out of stock — your order request may not be accepted. Consider cancelling and reordering.'
-            : 'Some items ran out of stock — you may not be able to pay for this order. Contact the establishment or cancel and reorder.';
-        const stockBanner = hasStockIssue
-            ? `<div class="stock-warn-row-banner visible" id="stock-banner-${o.id}">
-                   <i class="fas fa-exclamation-triangle"></i> ${stockBannerMsg}
-               </div>`
-            : `<div class="stock-warn-row-banner" id="stock-banner-${o.id}"></div>`;
+        const hasStockIssue = outOfStockCount >= 1; // ✅ FIX: even 1 item with stock issue triggers the warning
+        const stockBanner = `<div class="stock-warn-row-banner" id="stock-banner-${o.id}"></div>`;
 
             // ── Timer for to_pay orders ──
             let timerHtml = '';
@@ -2585,10 +2888,26 @@ const itemsHtml = (o.items || []).map(i => {
                 const acceptedAt = new Date(o.updated_at || o.created_at);
                 const deadlineMs = acceptedAt.getTime() + 10 * 60 * 1000;
                 const remaining  = deadlineMs - Date.now();
+                // ✅ FIX: treat as expired immediately if order has a stock issue
+                const forceExpire = hasStockIssue;
                 // _expired flag = server cancelled it, client hasn't decided yet
-                if (o._expired || remaining <= 0) {
+                if (o._expired || remaining <= 0 || forceExpire) {
                     timerHtml = `<span class="timer-chip expired" style="margin-left:6px;"><i class="fas fa-clock"></i> Time's up</span>`;
                     statusCellExpired = true;
+                    // Mark as expired IN MEMORY so actions render Re-order + Remove.
+                    // ✅ FIX A: Do NOT call lsSaveCancelled here when this is a stock-issue
+                    // forced expiry (forceExpire=true). Stock issues are detected live from
+                    // the API's available_stock field — they are NOT real server cancellations.
+                    // Saving to localStorage causes a race condition: if the WS broadcast
+                    // for the new order arrives before the fetch response, loadOrders() reads
+                    // the old to_pay order from localStorage (lsOnlyRows) and renders it as a
+                    // ghost row even after the client successfully re-ordered.
+                    // Stock issue state will be re-detected from the API on the next loadOrders().
+                    if (forceExpire && !o._expired) {
+                        o._expired = true;
+                        o._cancelledByOwner = false;
+                        // ← intentionally NOT calling lsSaveCancelled(o) here
+                    }
                 } else {
                     timerHtml = `<span class="timer-chip" id="timer-${o.id}" style="margin-left:6px;"><i class="fas fa-clock"></i> <span id="timer-val-${o.id}">${fmtMs(remaining)}</span></span>`;
                 }
@@ -2665,7 +2984,7 @@ const itemsHtml = (o.items || []).map(i => {
                 statusCell = buildCancelledByOwnerBadge(rejReason);
             } else if (o.status === 'to_pay' || o.status === 'PENDING') {
                 statusCell = statusCellExpired
-                    ? buildTimesUpBadge()
+                    ? buildTimesUpBadge(hasStockIssue, o.items)
                     : `<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:4px;">
                            <span class="order-status-badge status-${o.status}" id="status-badge-${o.id}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>
                            ${timerHtml}
@@ -2720,14 +3039,14 @@ const itemsHtml = (o.items || []).map(i => {
                 <table class="orders-table">
                     <thead>
                         <tr>
-                            <th ${thS} style="border-left:1px solid #ececec;border-radius:10px 0 0 10px;width:90px;">Order</th>
-                            <th ${thS} style="min-width:160px;">Establishment</th>
-                            <th ${thS}>Items</th>
-                            <th ${thS} style="width:100px;">Total</th>
-                            ${showPaymentCol ? `<th ${thS} style="width:120px;">Payment</th>` : ''}
-                            ${showClaimCol ? `<th ${thS} style="width:140px;text-align:center;">Left to Claim</th>` : ''}
-                            <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}min-width:180px;text-align:left;">Status</th>
-                            ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:180px;text-align:right;">Actions</th>`}
+                            <th ${thS} style="border-left:1px solid #ececec;border-radius:10px 0 0 10px;width:9%;">Order</th>
+                            <th ${thS} style="width:16%;">Establishment</th>
+                            <th ${thS} style="width:19%;">Items</th>
+                            <th ${thS} style="width:8%;">Total</th>
+                            ${showPaymentCol ? `<th ${thS} style="width:9%;">Payment</th>` : ''}
+                            ${showClaimCol ? `<th ${thS} style="width:11%;text-align:center;">Left to Claim</th>` : ''}
+                            <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}width:${showPaymentCol || showClaimCol ? '25%' : '33%'};text-align:left;">Status</th>
+                            ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:15%;text-align:right;">Actions</th>`}
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -2737,6 +3056,9 @@ const itemsHtml = (o.items || []).map(i => {
         // Start live countdown timers for to_pay rows
         orders.forEach(o => {
             if (o.status !== 'to_pay' && o.status !== 'PENDING') return;
+            // ✅ FIX: Don't start a timer for orders that already have a stock issue —
+            // they render as expired immediately (Re-order + Remove shown, no countdown).
+            if (o._hasStockIssue || o._expired) return;
             const acceptedAt = new Date(o.updated_at || o.created_at);
             const deadlineMs = acceptedAt.getTime() + 10 * 60 * 1000;
 
@@ -2933,7 +3255,36 @@ const itemsHtml = (o.items || []).map(i => {
             </div>`;
     }
 
-    function buildTimesUpBadge() {
+    function buildTimesUpBadge(stockIssue, items) {
+        if (stockIssue) {
+            // Build per-item remaining stock list for affected items
+            let stockListHtml = '';
+            if (Array.isArray(items) && items.length) {
+                const affected = items.filter(function (i) {
+                    return typeof i.available_stock === 'number' && i.available_stock < i.quantity;
+                });
+                if (affected.length) {
+                    stockListHtml = '<div style="margin-top:7px;display:flex;flex-direction:column;gap:4px;">' +
+                        affected.map(function (i) {
+                            return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;` +
+                                   `background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;padding:2px 8px;">` +
+                                   `<i class="fas fa-box-open"></i> ${esc(i.name)}: ` +
+                                   `<span id="status-stock-${i.menu_item_id}" style="color:#b91c1c;">` +
+                                   `${i.available_stock} left</span></span>`;
+                        }).join('') + '</div>';
+                }
+            }
+            return `
+                <div class="cancelled-owner-wrap">
+                    <div class="reason-inline" style="background:#f9fafb;border-color:#e5e7eb;color:#4b5563;flex-direction:column;align-items:flex-start;">
+                        <div style="display:flex;align-items:flex-start;gap:6px;">
+                            <i class="fas fa-info-circle" style="color:#6b7280;margin-top:2px;flex-shrink:0;"></i>
+                            <span>We're sorry! The quantity of some items in your order is no longer sufficient. You may re-order or remove this.</span>
+                        </div>
+                        ${stockListHtml}
+                    </div>
+                </div>`;
+        }
         return `
             <div class="cancelled-owner-wrap">
                 <span class="order-status-badge status-timesup">
@@ -2964,16 +3315,25 @@ const itemsHtml = (o.items || []).map(i => {
         let html = '';
 
         if (o.status === 'request') {
-            // ✅ If owner rejected this request order — show Remove only (no Re-order).
-            // Client can re-order manually from the establishment if they want.
+            // ✅ If owner rejected this request order — show Remove only.
             if (o._cancelledByOwner === true) {
                 html += `<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
                             <i class="fas fa-times"></i> Remove
                          </button>`;
             } else {
-                html += `<button class="tbl-btn tbl-btn-cancel" onclick="askCancelOrder(${o.id})">
-                            <i class="fas fa-times"></i> Cancel
-                         </button>`;
+                // If any item has insufficient stock → show Edit Order instead of Cancel
+                const hasAnyStockIssue = (o.items || []).some(i =>
+                    typeof i.available_stock === 'number' && i.available_stock < i.quantity
+                );
+                if (hasAnyStockIssue) {
+                    html += `<button class="tbl-btn tbl-btn-rerequest" onclick="showEditOrderModal(${o.id})">
+                                <i class="fas fa-redo-alt"></i> Re-order
+                             </button>`;
+                } else {
+                    html += `<button class="tbl-btn tbl-btn-cancel" onclick="askCancelOrder(${o.id})">
+                                <i class="fas fa-times"></i> Cancel
+                             </button>`;
+                }
             }
         }
 
@@ -3187,62 +3547,23 @@ const itemsHtml = (o.items || []).map(i => {
     function doReRequest(orderId, btn) { doReOrder(orderId, btn); }
 
     // ── RE-ORDER ─────────────────────────────────────────────────────────────
-    // Re-submits the expired to_pay order as a fresh 'request'.
-    // Server re-deducts stock and broadcasts inventory WS → all pages update.
-    // Row fades from to_pay tab instantly on success.
-    function doReOrder(orderId, btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-        fetch('/api/order/' + orderId + '/re-request/', {
-            method:  'POST',
-            headers: {
-                'X-CSRFToken':  getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(function (r) {
-            return r.text().then(function (txt) {
-                try { return JSON.parse(txt); }
-                catch (e) {
-                    console.error('[doReOrder] Non-JSON response:', txt.slice(0, 200));
-                    return { success: false, message: 'Server error. Please try again.' };
-                }
-            });
-        })
-        .then(function (data) {
-            if (data.success) {
-                // ── Update in-memory status so poll doesn't resurrect the row ──
-                const idx = allOrders.findIndex(function (o) { return o.id === orderId; });
-                if (idx !== -1) allOrders[idx].status = 'request';
-
-                // Remove from localStorage — client has acted
-                lsRemoveCancelled(orderId);
-
-                // ── Fade the row out immediately (no need to wait for WS push) ──
-                fadeOutRow(orderId, function () {
-                    allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
-                    updateOrderCounts();
-                    const tbody = document.querySelector('#ordersList tbody');
-                    if (tbody && !tbody.querySelector('tr')) filterOrders(currentFilter);
-                });
-
-                showOrderToast(
-                    'Order #' + orderId + ' re-submitted! Waiting for owner acceptance.',
-                    'success'
-                );
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
-                showOrderToast(data.message || 'Could not re-order. Please try again.', 'error');
-            }
-        })
-        .catch(function (err) {
-            console.error('[doReOrder] error:', err);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo-alt"></i> Re-order';
-            showOrderToast('Network error. Please try again.', 'error');
-        });
+    // Opens the Edit Order modal so the client can adjust quantities before
+    // re-submitting the expired to_pay order as a fresh 'request'.
+    // The modal's "Reorder" button calls editOrderReorder() which:
+    //   1. POSTs updated quantities → /api/order/<id>/update-quantities/
+    //   2. POSTs re-request        → /api/order/<id>/re-request/
+    //      (server broadcasts WS so owner sees the new order instantly)
+    function doReOrder(orderId /*, btn — kept for signature compat */) {
+        // ── Set modal header for the re-order (TIME'S UP) context ──
+        const headerText = document.querySelector('#editOrderModal .edit-order-header-text');
+        if (headerText) {
+            headerText.querySelector('h3').innerHTML =
+                '<i class="fas fa-redo-alt" style="color:#059669;margin-right:6px;"></i>Re-order Items';
+            headerText.querySelector('p').innerHTML =
+                '<i class="fas fa-clock"></i> Payment time expired — adjust quantities then tap <strong>Reorder</strong> to re-submit.';
+            headerText.querySelector('p').style.color = '#0369a1';
+        }
+        window.showEditOrderModal(orderId);
     }
 
     // ── CANCEL (EXPIRED) ──────────────────────────────────────────────────────
@@ -3365,8 +3686,10 @@ const itemsHtml = (o.items || []).map(i => {
         const ownerCanc  = orderEntry && orderEntry._cancelledByOwner === true;
         const isRequest  = orderEntry && orderEntry.status === 'request';
 
-        if (isToPay && ownerCanc) {
-            // Fire-and-forget — cancel the order in DB so server stops returning it
+        if (isToPay) {
+            // ✅ FIX: Cancel any to_pay order when client clicks Remove —
+            // whether owner-cancelled OR stock-issue expired (we no longer auto-cancel
+            // on stock issue, so this Remove button must do it explicitly).
             fetch('/api/order/' + orderId + '/cancel/', {
                 method:  'POST',
                 headers: {
@@ -3866,5 +4189,497 @@ const itemsHtml = (o.items || []).map(i => {
 
     // Legacy alias (used by older HTML in the file)
     function submitReorder(mode) { doReorder(mode); }
+</script>
+
+<script>
+// ============================================================
+// EDIT ORDER MODAL — realtime qty editor for 'request' orders
+// ============================================================
+(function () {
+
+    let _editOrderId        = null;
+    let _editOrderData      = null;
+    let _editOrderStockPoll = null;
+
+    function _esc(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function _refreshEditTotal() {
+        if (!_editOrderData) return;
+        let total = 0;
+        (_editOrderData.items || []).forEach(function (item) {
+            const oi_id = String(item.order_item_id || '');
+            const qEl   = document.getElementById('eoqv-' + oi_id);
+            const qty   = qEl ? (parseInt(qEl.textContent) || 0) : (item.quantity || 0);
+            total += qty * parseFloat(item.price || 0);
+        });
+        const valEl = document.getElementById('editOrderTotalVal');
+        if (valEl) valEl.textContent = '₱' + total.toFixed(2);
+    }
+
+    function _renderEditOrderItems(orderData) {
+        const container = document.getElementById('editOrderItems');
+        if (!container) return;
+
+        // Preserve currently-entered qtys across re-renders (stock poll)
+        const savedQtys = {};
+        container.querySelectorAll('[data-eo-item-id]').forEach(function (card) {
+            const id  = card.dataset.eoItemId;
+            const qEl = document.getElementById('eoqv-' + id);
+            if (qEl) savedQtys[id] = parseInt(qEl.textContent) || 1;
+        });
+
+        container.innerHTML = (orderData.items || []).map(function (item) {
+            const oi_id   = String(item.order_item_id || '');
+            const stock   = typeof item.available_stock === 'number' ? item.available_stock : 0;
+            const inStock = stock > 0;
+            const ordered = item.quantity || 1;
+            const maxQty  = inStock ? Math.min(stock, 99) : 0;
+            const curQty  = Math.min(savedQtys[oi_id] || ordered, inStock ? maxQty : 0);
+            const price   = parseFloat(item.price || 0);
+
+            let badgeCls, badgeTxt;
+            if (!inStock) {
+                badgeCls = 'eo-stock-none';
+                badgeTxt = '<i class="fas fa-times-circle"></i> Out of stock';
+            } else if (stock < ordered) {
+                badgeCls = 'eo-stock-low';
+                badgeTxt = '<i class="fas fa-exclamation-triangle"></i> Only ' + stock + ' left';
+            } else {
+                badgeCls = 'eo-stock-ok';
+                badgeTxt = '<i class="fas fa-check-circle"></i> ' + stock + ' in stock';
+            }
+
+            const imgHtml = item.image
+                ? '<img src="' + _esc(item.image) + '" alt="' + _esc(item.name) + '" class="eo-item-img" onerror="this.parentNode.innerHTML=\'<div class=eo-item-img-placeholder>🍽️</div>\'">'
+                : '<div class="eo-item-img-placeholder">🍽️</div>';
+
+            const subtotal = (curQty * price).toFixed(2);
+
+            return '<div class="eo-item-card' + (inStock ? '' : ' eo-out-of-stock') + '" '
+                 + 'data-eo-item-id="' + oi_id + '" data-eo-max="' + maxQty + '" data-eo-price="' + price + '">'
+                 + '  <div class="eo-item-top">'
+                 + '    ' + imgHtml
+                 + '    <div class="eo-item-info">'
+                 + '      <div class="eo-item-name">' + _esc(item.name) + '</div>'
+                 + '      <div class="eo-item-price">₱' + price.toFixed(2) + ' each</div>'
+                 + '    </div>'
+                 + '    <span class="eo-stock-badge ' + badgeCls + '" id="eo-badge-' + oi_id + '">' + badgeTxt + '</span>'
+                 + '  </div>'
+                 + (inStock
+                    ? '<div class="eo-qty-row">'
+                    + '  <span class="eo-qty-label">Qty <small style="color:#9ca3af;">(ordered: ' + ordered + ')</small></span>'
+                    + '  <div class="eo-qty-ctrl">'
+                    + '    <button class="eo-qty-btn" onclick="editOrderChg(\'' + oi_id + '\',-1)"'
+                    + (curQty <= 1 ? ' disabled' : '') + '>−</button>'
+                    + '    <span class="eo-qty-val" id="eoqv-' + oi_id + '">' + curQty + '</span>'
+                    + '    <button class="eo-qty-btn" onclick="editOrderChg(\'' + oi_id + '\',1)"'
+                    + (curQty >= maxQty ? ' disabled' : '') + '>+</button>'
+                    + '  </div>'
+                    + '</div>'
+                    : '<div class="eo-oos-notice"><i class="fas fa-ban"></i> Out of stock — will be removed from order.</div>')
+                 + '  <div class="eo-item-subtotal" id="eo-sub-' + oi_id + '">Subtotal: ₱'
+                 + (inStock ? subtotal : '0.00') + '</div>'
+                 + '</div>';
+        }).join('');
+
+        _refreshEditTotal();
+    }
+
+    function _pollEditOrderStock() {
+        if (!_editOrderId) return;
+        fetch('/api/order/' + _editOrderId + '/')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success || !data.order) return;
+                _editOrderData = data.order;
+
+                (data.order.items || []).forEach(function (item) {
+                    const oi_id   = String(item.order_item_id || '');
+                    const stock   = typeof item.available_stock === 'number' ? item.available_stock : 0;
+                    const inStock = stock > 0;
+
+                    const badge = document.getElementById('eo-badge-' + oi_id);
+                    if (badge) {
+                        if (!inStock) {
+                            badge.className = 'eo-stock-badge eo-stock-none';
+                            badge.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
+                        } else if (stock < (item.quantity || 1)) {
+                            badge.className = 'eo-stock-badge eo-stock-low';
+                            badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Only ' + stock + ' left';
+                        } else {
+                            badge.className = 'eo-stock-badge eo-stock-ok';
+                            badge.innerHTML = '<i class="fas fa-check-circle"></i> ' + stock + ' in stock';
+                        }
+                    }
+
+                    const card = document.querySelector('.eo-item-card[data-eo-item-id="' + oi_id + '"]');
+                    if (card) {
+                        card.classList.toggle('eo-out-of-stock', !inStock);
+                        card.dataset.eoMax = String(stock);
+                    }
+
+                    const qEl = document.getElementById('eoqv-' + oi_id);
+                    if (qEl && stock > 0) {
+                        const cur = parseInt(qEl.textContent) || 1;
+                        if (cur > stock) {
+                            qEl.textContent = String(stock);
+                            _updateSubtotal(oi_id);
+                        }
+                    }
+                    _refreshQtyBtns(oi_id, stock);
+                });
+
+                _refreshEditTotal();
+            })
+            .catch(function () {});
+    }
+
+    function _refreshQtyBtns(oi_id, maxQty) {
+        const card = document.querySelector('.eo-item-card[data-eo-item-id="' + oi_id + '"]');
+        if (!card) return;
+        const qEl  = document.getElementById('eoqv-' + oi_id);
+        const cur  = qEl ? (parseInt(qEl.textContent) || 1) : 1;
+        const btns = card.querySelectorAll('.eo-qty-btn');
+        if (btns[0]) btns[0].disabled = cur <= 1;
+        if (btns[1]) btns[1].disabled = cur >= (maxQty || 1);
+    }
+
+    function _updateSubtotal(oi_id) {
+        const card  = document.querySelector('.eo-item-card[data-eo-item-id="' + oi_id + '"]');
+        const qEl   = document.getElementById('eoqv-' + oi_id);
+        const subEl = document.getElementById('eo-sub-' + oi_id);
+        if (!card || !qEl || !subEl) return;
+        const qty   = parseInt(qEl.textContent) || 0;
+        const price = parseFloat(card.dataset.eoPrice || 0);
+        subEl.textContent = 'Subtotal: ₱' + (qty * price).toFixed(2);
+    }
+
+    // ── PUBLIC API ──────────────────────────────────────────────────────────
+
+    window.showEditOrderModal = function (orderId) {
+        _editOrderId   = orderId;
+        _editOrderData = null;
+
+        // ── Reset header to the default "Edit Order" state ──
+        // (In case it was previously set to "Re-order Items" by doReOrder)
+        const headerText = document.querySelector('#editOrderModal .edit-order-header-text');
+        if (headerText) {
+            headerText.querySelector('h3').innerHTML =
+                '<i class="fas fa-edit" style="color:#B71C1C;margin-right:6px;"></i>Edit Order';
+            headerText.querySelector('p').innerHTML =
+                '<i class="fas fa-exclamation-triangle"></i> Some items have limited stock — adjust quantities below.';
+            headerText.querySelector('p').style.color = '#e07b00';
+        }
+
+        const modal   = document.getElementById('editOrderModal');
+        const items   = document.getElementById('editOrderItems');
+        const saveBtn = document.getElementById('editOrderSaveBtn');
+
+        modal.style.display = 'flex';
+        items.innerHTML = '<div class="eo-loading"><i class="fas fa-spinner fa-spin"></i><span>Loading items…</span></div>';
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Changes'; }
+
+        if (_editOrderStockPoll) { clearInterval(_editOrderStockPoll); _editOrderStockPoll = null; }
+
+        fetch('/api/order/' + orderId + '/')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success || !data.order) {
+                    items.innerHTML = '<div class="eo-loading">Failed to load order details.</div>';
+                    return;
+                }
+                _editOrderData = data.order;
+                _renderEditOrderItems(data.order);
+                _editOrderStockPoll = setInterval(_pollEditOrderStock, 5000);
+            })
+            .catch(function () {
+                items.innerHTML = '<div class="eo-loading">Network error. Please try again.</div>';
+            });
+    };
+
+    window.editOrderChg = function (oi_id, delta) {
+        const qEl  = document.getElementById('eoqv-' + oi_id);
+        if (!qEl) return;
+        const card = document.querySelector('.eo-item-card[data-eo-item-id="' + oi_id + '"]');
+        const max  = parseInt((card && card.dataset.eoMax) || '99');
+        let v = parseInt(qEl.textContent) + delta;
+        if (v < 1)   v = 1;
+        if (v > max) v = max;
+        qEl.textContent = String(v);
+        _updateSubtotal(oi_id);
+        _refreshQtyBtns(oi_id, max);
+        _refreshEditTotal();
+    };
+
+    window.closeEditOrderModal = function () {
+        const modal = document.getElementById('editOrderModal');
+        if (modal) modal.style.display = 'none';
+        if (_editOrderStockPoll) { clearInterval(_editOrderStockPoll); _editOrderStockPoll = null; }
+        _editOrderId   = null;
+        _editOrderData = null;
+    };
+
+    window.handleEditOrderOverlayClick = function (e) {
+        if (e.target === document.getElementById('editOrderModal')) closeEditOrderModal();
+    };
+
+    window.submitEditOrder = function () {
+        if (!_editOrderData || !_editOrderId) return;
+
+        const saveBtn = document.getElementById('editOrderSaveBtn');
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+        const payload = [];
+        (_editOrderData.items || []).forEach(function (item) {
+            const oi_id = String(item.order_item_id || '');
+            const qEl   = document.getElementById('eoqv-' + oi_id);
+            const qty   = qEl ? (parseInt(qEl.textContent) || 0) : 0;
+            if (oi_id && qty > 0) {
+                payload.push({ order_item_id: parseInt(oi_id), quantity: qty });
+            }
+        });
+
+        if (!payload.length) {
+            if (typeof showOrderToast === 'function') showOrderToast('No valid items to update.', 'warning');
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Changes'; }
+            return;
+        }
+
+        fetch('/api/order/' + _editOrderId + '/update-quantities/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ items: payload }),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            if (res.success) {
+                closeEditOrderModal();
+                if (typeof showOrderToast === 'function') showOrderToast('Order updated successfully!', 'success');
+                if (typeof loadOrders === 'function') loadOrders();
+            } else {
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Changes'; }
+                if (typeof showOrderToast === 'function') showOrderToast(res.message || 'Update failed. Please try again.', 'error');
+            }
+        })
+        .catch(function () {
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Changes'; }
+            if (typeof showOrderToast === 'function') showOrderToast('Network error. Please try again.', 'error');
+        });
+    };
+
+    // Also close on Escape (supplements existing keydown handler)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeEditOrderModal();
+    });
+
+    // ── REORDER — update quantities then re-submit the request ──────────────
+    window.editOrderReorder = function () {
+        if (!_editOrderId || !_editOrderData) return;
+        const oid = _editOrderId;
+        const btn       = document.getElementById('editOrderReorderBtn');
+        const removeBtn = document.getElementById('editOrderRemoveBtn');
+        if (btn)       { btn.disabled = true;       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+        if (removeBtn) { removeBtn.disabled = true; }
+
+        // Capture the current status before the request
+        const orderEntry = allOrders.find(function (o) { return o.id === oid; });
+        const wasRequest = orderEntry && orderEntry.status === 'request';
+
+        // Build qty payload from whatever the user has set in the modal
+        const payload = [];
+        (_editOrderData.items || []).forEach(function (item) {
+            const oi_id = String(item.order_item_id || '');
+            const qEl   = document.getElementById('eoqv-' + oi_id);
+            const qty   = qEl ? (parseInt(qEl.textContent) || 0) : 0;
+            if (oi_id && qty > 0) {
+                payload.push({ order_item_id: parseInt(oi_id), quantity: qty });
+            }
+        });
+
+        if (!payload.length) {
+            if (typeof showOrderToast === 'function') showOrderToast('No valid items to reorder.', 'warning');
+            if (btn)       { btn.disabled = false;       btn.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+            if (removeBtn) { removeBtn.disabled = false; }
+            return;
+        }
+
+        // ✅ FIX B: Pre-emptively remove the old order from allOrders AND localStorage
+        // BEFORE sending the fetch. This eliminates the race condition where the WS
+        // broadcast for the NEW order arrives before the fetch response, causing
+        // loadOrders() to call lsOnlyRows and re-add the old order as a ghost row.
+        // If the fetch later fails, the catch handler re-enables the buttons; the order
+        // will reappear on the next loadOrders() (e.g. when WS reconnects or user refreshes).
+        var _preIdxOld = allOrders.findIndex(function (o) { return o.id === oid; });
+        if (_preIdxOld !== -1) allOrders.splice(_preIdxOld, 1);
+        if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(oid);
+
+        // Step 1 — save the adjusted quantities to the DB
+        fetch('/api/order/' + oid + '/update-quantities/', {
+            method:  'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ items: payload })
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) { return { success: false, message: 'Server error saving quantities.' }; }
+            });
+        })
+        .then(function (qRes) {
+            if (!qRes.success) {
+                if (btn)       { btn.disabled = false;       btn.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+                if (removeBtn) { removeBtn.disabled = false; }
+                if (typeof showOrderToast === 'function')
+                    showOrderToast(qRes.message || 'Could not update quantities. Please try again.', 'error');
+                return;
+            }
+
+            // ✅ FIX: If update-quantities already reset/created the order back to 'request'
+            // (covers both to_pay in-place reset AND cancelled new-order creation),
+            // the backend already broadcasted it — do NOT also call re-request.
+            if (qRes.new_order_id) {
+                closeEditOrderModal();
+                if (typeof showOrderToast === 'function')
+                    showOrderToast('Order re-submitted! Waiting for owner acceptance.', 'success');
+
+                // ✅ Switch to Request tab IMMEDIATELY (before fade) so the WS broadcast's
+                // loadOrders() renders into the visible tab instead of the now-stale To Pay tab.
+                switchTab('request');
+
+                // Then fade the old row out of view (it was pre-emptively removed from allOrders
+                // by Fix B above; fadeOutRow just handles the DOM animation).
+                fadeOutRow(oid, function () {
+                    updateOrderCounts();
+                    filterOrders('request');
+                });
+
+                // Fallback: if the WS broadcast fires before DOM is ready, force a reload
+                // after a short delay so the new request row always appears.
+                setTimeout(function () {
+                    if (typeof loadOrders === 'function') loadOrders();
+                }, 600);
+
+                return; // ← stop here, no re-request needed
+            }
+
+            // Step 2 — order was still 'request' status, re-request with the updated quantities
+            return fetch('/api/order/' + oid + '/re-request/', {
+                method:  'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' }
+            })
+            .then(function (r) {
+                return r.text().then(function (txt) {
+                    try { return JSON.parse(txt); }
+                    catch (e) { return { success: false, message: 'Server error. Please try again.' }; }
+                });
+            })
+            .then(function (data) {
+                if (data.success) {
+                    closeEditOrderModal();
+                    if (typeof showOrderToast === 'function')
+                        showOrderToast('Order #' + oid + ' re-submitted! Waiting for owner acceptance.', 'success');
+
+                    if (wasRequest) {
+                        // Already in Request tab — clear stock issue flags, re-render row
+                        const idx = allOrders.findIndex(function (o) { return o.id === oid; });
+                        if (idx !== -1) {
+                            allOrders[idx].status = 'request';
+                            // Update quantities in allOrders so row reflects new qty
+                            payload.forEach(function (p) {
+                                const itemIdx = (allOrders[idx].items || []).findIndex(function (i) {
+                                    return String(i.order_item_id) === String(p.order_item_id);
+                                });
+                                if (itemIdx !== -1) {
+                                    allOrders[idx].items[itemIdx].quantity = p.quantity;
+                                    // Mark as no longer a stock issue (qty was adjusted to fit)
+                                    allOrders[idx].items[itemIdx].available_stock = p.quantity + 99;
+                                }
+                            });
+                            allOrders[idx]._hasStockIssue = false;
+                        }
+                        updateOrderCounts();
+                        filterOrders(currentFilter);
+                    } else {
+                        // Was 'to_pay' or 'cancelled' — fade row out of current tab
+                        const idx = allOrders.findIndex(function (o) { return o.id === oid; });
+                        if (idx !== -1) allOrders[idx].status = 'request';
+                        if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(oid);
+                        fadeOutRow(oid, function () {
+                            updateOrderCounts();
+                            // ✅ FIX: Switch to Order Request tab so client sees their re-submitted order
+                            switchTab('request');
+                        });
+                    }
+                } else {
+                    if (btn)       { btn.disabled = false;       btn.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+                    if (removeBtn) { removeBtn.disabled = false; }
+                    if (typeof showOrderToast === 'function')
+                        showOrderToast(data.message || 'Could not re-order. Please try again.', 'error');
+                }
+            });
+        })
+        .catch(function () {
+            if (btn)       { btn.disabled = false;       btn.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+            if (removeBtn) { removeBtn.disabled = false; }
+            if (typeof showOrderToast === 'function')
+                showOrderToast('Network error. Please try again.', 'error');
+        });
+    };
+
+    // ── REMOVE — cancel the order and fade the row out ───────────────────────
+    window.editOrderRemove = function () {
+        if (!_editOrderId) return;
+        const oid = _editOrderId;
+        const btn = document.getElementById('editOrderRemoveBtn');
+        const reorderBtn = document.getElementById('editOrderReorderBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing…'; }
+        if (reorderBtn) reorderBtn.disabled = true;
+
+        fetch('/api/order/' + oid + '/cancel/', {
+            method:  'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ cancel_reason: 'I want to change my order.' })
+        })
+        .then(function (r) {
+            return r.text().then(function (txt) {
+                try { return JSON.parse(txt); }
+                catch (e) { return { success: false, message: 'Server error. Please try again.' }; }
+            });
+        })
+        .then(function (data) {
+            closeEditOrderModal();
+            if (data.success) {
+                if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(oid);
+                if (typeof timerMap !== 'undefined' && timerMap[oid]) {
+                    clearInterval(timerMap[oid].id);
+                    delete timerMap[oid];
+                }
+                fadeOutRow(oid, function () {
+                    allOrders = allOrders.filter(function (o) { return o.id !== oid; });
+                    updateOrderCounts();
+                    filterOrders(currentFilter);
+                });
+                if (typeof showOrderToast === 'function')
+                    showOrderToast('Order #' + oid + ' removed. Stock has been returned.', 'success');
+            } else {
+                if (typeof showOrderToast === 'function')
+                    showOrderToast(data.message || 'Could not remove order. Please try again.', 'error');
+            }
+        })
+        .catch(function () {
+            closeEditOrderModal();
+            if (typeof showOrderToast === 'function')
+                showOrderToast('Network error. Please try again.', 'error');
+        });
+    };
+
+})();
 </script>
 {% endblock %}

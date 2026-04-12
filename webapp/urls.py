@@ -202,8 +202,31 @@ urlpatterns = [
                        name='get_chat_messages_api'),
                   path('api/test-email-config/', views.test_email_config, name='test_email_config'),
 
-                  path('favorites/', views.favorites_page, name='kabsueats_favorites'),
+                  # ✅ FIX: Chat API URLs matching the JS fetch calls exactly
+                  path('api/food-establishment/conversations/', views.get_owner_conversations, name='api_owner_conversations'),
+                  path('api/food-establishment/messages/<int:customer_id>/', views.owner_get_messages, name='owner_get_messages'),
+                  path('api/food-establishment/send-message/', views.owner_send_message, name='owner_send_message'),
 
+                  path('api/map-categories/', views.get_map_categories, name='get_map_categories'),
+                  path('favorites/', views.favorites_page, name='kabsueats_favorites'),
+path('api/order/<int:order_id>/update-quantities/',
+         views.update_request_order_quantities,
+         name='update_request_order_quantities'),
+path('owner/establishment/<int:pk>/update-business-hours/',
+     views.update_business_hours_ajax,
+     name='update_business_hours_ajax'),
+
+    path('api/order/<int:order_id>/re-request/',
+         views.re_request_order,
+         name='re_request_order'),
+path('owner/heartbeat/', views.owner_heartbeat, name='owner_heartbeat'),
+path('owner/heartbeat-offline/', views.owner_heartbeat_offline, name='owner_heartbeat_offline'),
+path('api/owner-presence/<int:establishment_id>/', views.check_owner_presence, name='check_owner_presence'),
+path(
+    'api/establishment/<int:establishment_id>/payment-methods/',
+    views.get_establishment_payment_methods,
+    name='establishment_payment_methods',
+),
                   # ✅ Client order status
                   path('my-receipts/', views.my_receipts_view, name='my_receipts'),
                   path('owner/ratings/', views.store_ratings, name='store_ratings'),

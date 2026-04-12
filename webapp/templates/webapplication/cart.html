@@ -647,10 +647,10 @@ html body .establishment-cart-box.active-cart {
                style="flex:1;padding:16px 12px;border:none;background:transparent;font-size:14px;font-weight:700;cursor:pointer;color:#B71C1C;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:background .15s;">
                 <i class="fas fa-list-alt"></i> Go to My Orders
             </a>
-            <button onclick="closeOrderRequestModal()"
-                    style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;">
-                Continue Shopping
-            </button>
+            <a href="{% url 'kabsueats_home' %}"
+               style="flex:1;padding:14px 12px;border:none;border-top:1px solid #f0f0f0;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#666;font-family:inherit;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
+                <i class="fas fa-utensils"></i> Browse More Food
+            </a>
         </div>
     </div>
 </div>
@@ -798,7 +798,7 @@ html body .establishment-cart-box.active-cart {
             msgEl.textContent = message || 'An error occurred. Please try again.';
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
-            
+
             // Allow closing by clicking overlay
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
@@ -953,9 +953,60 @@ html body .establishment-cart-box.active-cart {
             summaryNoSel.style.display  = 'none';
             grandTotalEl.textContent    = '₱' + grandTotal.toFixed(2);
         } else {
-            summaryBody.innerHTML       = '<p class="summary-empty-msg">Check an establishment to see order details.</p>';
-            summaryFooter.style.display = 'none';
-            summaryNoSel.style.display  = 'none';
+            // ── Check if there are closed establishments (nothing checked because they're locked) ──
+            // If so, show the footer but with the button disabled and a clear explanation,
+            // rather than hiding everything and leaving the user confused.
+            const closedBoxes = Array.from(estabBoxes).filter(function(b) {
+                return b.getAttribute('data-is-open') !== 'true';
+            });
+            const hasAnyBox = estabBoxes.length > 0;
+
+            if (closedBoxes.length > 0 && hasAnyBox) {
+                // All carts are closed — show footer but button disabled
+                const closedName = closedBoxes[0].querySelector('.cart-establishment-info h2 .estab-name-link')
+                    ?.firstChild?.textContent?.trim() || 'The establishment';
+                const opensAt = closedBoxes[0].getAttribute('data-opening-time') || '';
+                const opensMsg = opensAt ? ` Opens at ${opensAt}.` : '';
+                summaryBody.innerHTML = `
+                    <div style="text-align:center;padding:18px 8px;">
+                        <i class="fas fa-store-slash" style="font-size:2rem;color:#dc2626;margin-bottom:8px;display:block;"></i>
+                        <p style="margin:0 0 4px;font-weight:600;color:#991b1b;">${closedName} is currently closed.</p>
+                        <p style="margin:0;font-size:0.82rem;color:#6b7280;">${opensMsg} You can still keep your cart and order once it opens.</p>
+                    </div>`;
+                summaryFooter.style.display = 'block';
+                summaryNoSel.style.display  = 'none';
+                grandTotalEl.textContent    = '₱0.00';
+                // Disable the send button
+                const sendBtn = document.getElementById('initial-checkout-btn');
+                if (sendBtn) {
+                    sendBtn.disabled = true;
+                    sendBtn.style.opacity = '0.5';
+                    sendBtn.style.cursor  = 'not-allowed';
+                    sendBtn.title = 'Cannot order — establishment is currently closed';
+                }
+            } else {
+                summaryBody.innerHTML       = '<p class="summary-empty-msg">Check an establishment to see order details.</p>';
+                summaryFooter.style.display = 'none';
+                summaryNoSel.style.display  = 'none';
+                // Re-enable send button in case it was previously disabled
+                const sendBtn = document.getElementById('initial-checkout-btn');
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.style.opacity = '';
+                    sendBtn.style.cursor  = '';
+                    sendBtn.title = '';
+                }
+            }
+        }
+        // Re-enable send button when there ARE checked open items
+        if (anyChecked) {
+            const sendBtn = document.getElementById('initial-checkout-btn');
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = '';
+                sendBtn.style.cursor  = '';
+                sendBtn.title = '';
+            }
         }
     };
 
@@ -1064,16 +1115,16 @@ html body .establishment-cart-box.active-cart {
         document.querySelectorAll('.item-checkbox:checked').forEach(function(chk) {
             const cartItem = document.getElementById('cart-item-' + chk.getAttribute('data-item-id'));
             if (!cartItem) return;
-            
+
             const rawMax = parseInt(cartItem.dataset.maxStock, 10);
             const curQty = parseInt(cartItem.querySelector('.quantity-value')?.textContent, 10) || 1;
             const itemName = cartItem.getAttribute('data-name') || 'an item';
-            
+
             // Check for out of stock
             if (!isNaN(rawMax) && rawMax <= 0) {
                 hasOos = true;
             }
-            
+
             // Check for insufficient stock (cart qty > available stock)
             if (!isNaN(rawMax) && curQty > rawMax) {
                 hasInsufficientStock = true;
@@ -1297,14 +1348,14 @@ html body .establishment-cart-box.active-cart {
         sendNext();
     };
 
-    // Close the order success modal
+    // Close the order success modal — redirect to KabsuEats home to browse more food
     window.closeOrderRequestModal = function() {
         const modal = document.getElementById('orderRequestModal');
         if (modal) {
             modal.classList.remove('open');
             document.body.style.overflow = '';
         }
-        window.location.reload();
+        window.location.href = "{% url 'kabsueats_home' %}";
     };
 
 </script>
@@ -1379,7 +1430,7 @@ document.addEventListener('click', function(e) {
     // Clamp to valid range [1, maxStock]
     if (newQty < 1) newQty = 1;
     if (newQty > maxStock) newQty = maxStock;
-    
+
     // If no change needed, bail out
     if (newQty === currentQty) return;
 
@@ -1590,6 +1641,73 @@ window.clearEstablishmentCart = function(establishmentId) {
     }
 
     function handleInventoryUpdate(data) {
+        // ✅ Handler: owner manually toggled Open/Closed, or changed business hours
+        if (data.type === 'establishment_status') {
+            var estId   = String(data.establishment_id);
+            var box     = document.querySelector('.establishment-cart-box[data-establishment-id="' + estId + '"]');
+            if (!box) return;
+
+            var isNowOpen  = (data.status === 'Open');
+            var wasOpen    = box.getAttribute('data-is-open') === 'true';
+
+            if (isNowOpen === wasOpen) return;   // walang nagbago
+
+            if (isNowOpen) {
+                box.setAttribute('data-is-open', 'true');
+
+                // Alisin ang Closed badge
+                box.querySelectorAll('.estab-closed-badge').forEach(function(b) { b.remove(); });
+
+                // Re-enable + recheck lahat ng checkboxes
+                _unlockOpenEstab(box);
+
+                var estName = (box.querySelector('.estab-name-link') || {}).firstChild;
+                var name = estName ? estName.textContent.trim() : 'Establishment';
+                showCartToast('✅ <strong>' + name + '</strong> is now open!', 'success');
+            } else {
+                box.setAttribute('data-is-open', 'false');
+
+                var openingTime = data.opening_time || '';
+                var closingTime = data.closing_time || '';
+                if (openingTime) box.setAttribute('data-opening-time', openingTime);
+                if (closingTime) box.setAttribute('data-closing-time', closingTime);
+
+                // Dagdagan o i-update ang Closed badge
+                var header = box.querySelector('.cart-establishment-info');
+                var badge  = header ? header.querySelector('.estab-closed-badge') : null;
+                var opensText = openingTime
+                    ? ' <span class="estab-opens-at">&middot; Opens ' + openingTime + '</span>'
+                    : '';
+                if (!badge && header) {
+                    badge = document.createElement('span');
+                    badge.className = 'estab-closed-badge';
+                    var h2 = header.querySelector('h2');
+                    if (h2) h2.insertAdjacentElement('afterend', badge);
+                }
+                if (badge) {
+                    badge.innerHTML = '<i class="fas fa-clock"></i> Closed' + opensText;
+                }
+
+                // I-lock: uncheck + disable lahat ng checkboxes
+                _lockClosedEstab(box);
+
+                var estLinkEl = box.querySelector('.estab-name-link');
+                var estNameStr = estLinkEl && estLinkEl.firstChild ? estLinkEl.firstChild.textContent.trim() : 'Establishment';
+                showCartToast('\uD83D\uDD12 <strong>' + estNameStr + '</strong> is now closed.' +
+                    (openingTime ? ' Opens at ' + openingTime + '.' : ''), 'warning');
+            }
+
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+            return;
+        }
+
+        // ✅ Handler: full item data update galing sa owner (edit price/name/qty/availability)
+        if (data.type === 'item_updated' && data.update) {
+            handleOwnerItemUpdate(data.update);
+            return;
+        }
+
         if (data.type !== 'quantity_update' || !Array.isArray(data.updates)) return;
         data.updates.forEach(function(upd) {
             const menuItemId   = String(upd.menu_item_id);
@@ -1676,6 +1794,115 @@ window.clearEstablishmentCart = function(establishmentId) {
         });
     }
 
+    // =====================================================================
+    // ✅ NEW: handleOwnerItemUpdate — real-time DOM patch when owner edits
+    // a menu item (price, name, quantity, availability).
+    // Tinatawag ng handleInventoryUpdate kapag natanggap ang 'item_updated'
+    // event mula sa InventoryConsumer (via ws/inventory/<estab_id>/).
+    // =====================================================================
+    function handleOwnerItemUpdate(upd) {
+        var menuItemId  = String(upd.menu_item_id);
+        var newName     = upd.name     || '';
+        var newPrice    = parseFloat(upd.price);
+        var newQty      = parseInt(upd.quantity, 10);
+        var isAvailable = upd.is_available !== false;   // default true kung wala
+        var priceChanged = false;
+        var wentOos      = false;
+        var cameBack     = false;
+
+        document.querySelectorAll('.cart-item[data-menu-item-id="' + menuItemId + '"]')
+            .forEach(function(cartItem) {
+                var orderItemId = cartItem.dataset.itemId;
+
+                // ── Name ──────────────────────────────────────────────
+                if (newName) {
+                    var nameEl = cartItem.querySelector('.item-name');
+                    if (nameEl) nameEl.textContent = newName;
+                    cartItem.setAttribute('data-name', newName);
+                }
+
+                // ── Price ─────────────────────────────────────────────
+                if (!isNaN(newPrice)) {
+                    var oldPrice = parseFloat(cartItem.getAttribute('data-unit-price') || newPrice);
+                    if (Math.abs(oldPrice - newPrice) > 0.001) priceChanged = true;
+
+                    var priceEl = cartItem.querySelector('.item-price');
+                    if (priceEl) {
+                        priceEl.textContent = '₱' + newPrice.toFixed(2) + ' each';
+                        priceEl.setAttribute('data-unit-price', newPrice);
+                    }
+                    cartItem.setAttribute('data-unit-price', newPrice);
+
+                    // Recalculate subtotal
+                    var qty        = parseInt((cartItem.querySelector('.quantity-value') || {}).textContent || '1', 10) || 1;
+                    var subtotalEl = document.getElementById('item-total-' + orderItemId);
+                    if (subtotalEl) subtotalEl.textContent = '₱' + (newPrice * qty).toFixed(2);
+                }
+
+                // ── Stock / Availability ──────────────────────────────
+                if (!isNaN(newQty)) {
+                    var stockCountEl = cartItem.querySelector('.stock-count');
+                    if (stockCountEl) stockCountEl.textContent = newQty;
+                    var wasOos = parseInt(cartItem.dataset.maxStock, 10) <= 0;
+                    cartItem.dataset.maxStock = newQty;
+
+                    var remQty   = parseInt(cartItem.dataset.remainingQty, 10);
+                    var effMax   = !isNaN(remQty) ? Math.min(remQty, newQty) : newQty;
+                    var curQty   = parseInt((cartItem.querySelector('.quantity-value') || {}).textContent || '1', 10) || 1;
+                    var inc      = cartItem.querySelector('.btn-increase');
+                    var dec      = cartItem.querySelector('.btn-decrease');
+
+                    var nowOos = (newQty === 0 || !isAvailable);
+
+                    if (nowOos) {
+                        if (!wasOos) wentOos = true;
+                        if (inc) inc.disabled = true;
+                        if (dec) dec.disabled = true;
+                        var stockP = cartItem.querySelector('.item-stock');
+                        if (stockP) stockP.style.color = '#ef4444';
+                        if (!cartItem.querySelector('.cart-oos-chip')) {
+                            var chip = document.createElement('span');
+                            chip.className = 'cart-oos-chip';
+                            chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-top:4px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;';
+                            chip.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
+                            var d = cartItem.querySelector('.item-details');
+                            if (d) d.appendChild(chip);
+                        }
+                        // Uncheck — hindi kasama sa checkout ang OOS item
+                        var chk = cartItem.querySelector('.item-checkbox');
+                        if (chk && chk.checked) {
+                            chk.checked = false;
+                            chk.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    } else {
+                        if (wasOos) cameBack = true;
+                        var existingChip = cartItem.querySelector('.cart-oos-chip');
+                        if (existingChip) existingChip.remove();
+                        var stockPEl = cartItem.querySelector('.item-stock');
+                        if (stockPEl) stockPEl.style.color = '';
+                        if (inc) inc.disabled = (curQty >= effMax);
+                        if (dec) dec.disabled = (curQty <= 1);
+                    }
+                }
+            });
+
+        // Rebuild order summary (mahalaga kapag nagbago ang price)
+        if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+
+        // ── Toast notifications ──────────────────────────────────────
+        var displayName = newName || 'An item';
+        if (priceChanged && !isNaN(newPrice)) {
+            showCartToast('💸 <strong>"' + displayName + '"</strong> price updated to ₱' + newPrice.toFixed(2) + '.', 'warning');
+        } else if (wentOos) {
+            showCartToast('⚠️ <strong>"' + displayName + '"</strong> is now out of stock.', 'warning');
+        } else if (cameBack) {
+            showCartToast('✅ <strong>"' + displayName + '"</strong> is back in stock!', 'success');
+        } else if (!isNaN(newQty) && newQty > 0) {
+            showCartToast('🔄 <strong>"' + displayName + '"</strong> was updated by the establishment.', 'info');
+        }
+    }
+
     document.querySelectorAll('.establishment-cart-box[data-establishment-id]').forEach(function(box) {
         const estId = box.getAttribute('data-establishment-id');
         if (!estId) return;
@@ -1703,14 +1930,16 @@ window.clearEstablishmentCart = function(establishmentId) {
     // Updates data-is-open, the Closed badge, and re-evaluates button.
     // ================================================================
     (function initOpenClosedPolling() {
-        function applyClosedState(box, openingTime) {
+        function applyClosedState(box, openingTime, closingTime) {
             box.setAttribute('data-is-open', 'false');
             if (openingTime) box.setAttribute('data-opening-time', openingTime);
-            // Add or update badge
+            if (closingTime) box.setAttribute('data-closing-time', closingTime);
+            // Add or update Closed badge with opening time
             const header = box.querySelector('.cart-establishment-info');
             let badge = header ? header.querySelector('.estab-closed-badge') : null;
-            const opensText = (openingTime || box.getAttribute('data-opening-time'))
-                ? ' <span class=\"estab-opens-at\">· Opens ' + (openingTime || box.getAttribute('data-opening-time')) + '</span>'
+            const displayOpen = openingTime || box.getAttribute('data-opening-time');
+            const opensText = displayOpen
+                ? ' <span class=\"estab-opens-at\">&middot; Opens ' + displayOpen + '</span>'
                 : '';
             if (!badge) {
                 badge = document.createElement('span');
@@ -1719,12 +1948,11 @@ window.clearEstablishmentCart = function(establishmentId) {
                 if (h2) h2.insertAdjacentElement('afterend', badge);
             }
             badge.innerHTML = '<i class=\"fas fa-clock\"></i> Closed' + opensText;
-            // Lock the establishment (uncheck + disable checkboxes)
+            // Lock: uncheck + disable all checkboxes for this establishment
             _lockClosedEstab(box);
             const estName = box.querySelector('.estab-name-link')?.firstChild?.textContent?.trim() || 'Establishment';
             showCartToast('\uD83D\uDD12 <strong>' + estName + '</strong> is now closed.', 'warning');
         }
-
         function applyOpenState(box) {
             box.setAttribute('data-is-open', 'true');
             // Remove closed badge
@@ -1754,7 +1982,7 @@ window.clearEstablishmentCart = function(establishmentId) {
                     if (isNowOpen) {
                         applyOpenState(box);
                     } else {
-                        applyClosedState(box, data.opening_time || null);
+                        applyClosedState(box, data.opening_time || null, data.closing_time || null);
                     }
 
                     if (window.rebuildOrderSummary) window.rebuildOrderSummary();
@@ -1764,9 +1992,309 @@ window.clearEstablishmentCart = function(establishmentId) {
             });
         }
 
-        // Poll every 60 seconds
-        setInterval(pollAllEstablishments, 60000);
+        // Poll every 30 seconds (matches kabsueats card polling frequency)
+        setInterval(pollAllEstablishments, 30000);
+
+        // ── BroadcastChannel: instant update when owner saves profile/hours ──
+        // When the owner updates their establishment in the dashboard or profile,
+        // kabsueats_hours fires so the cart page re-polls immediately instead of
+        // waiting up to 30 seconds for the next scheduled tick.
+        try {
+            const _cartBc = new BroadcastChannel('kabsueats_hours');
+            _cartBc.addEventListener('message', function(ev) {
+                // ev.data may be { establishment_id, ... } or just a signal
+                pollAllEstablishments();
+            });
+        } catch(e) {
+            // BroadcastChannel not supported (older Safari) — silent fallback to polling only
+        }
     })();
+})();
+</script>
+
+{# ✅ REALTIME CART SYNC via WebSocket ws/cart/<user_id>/ #}
+{# Ini-broadcast ng views.py ang bawat cart mutation dito. #}
+{# Ini-update ng script na ito ang DOM nang walang page reload #}
+{# para sa lahat ng bukas na tabs/devices ng same user. #}
+<script>
+(function () {
+    'use strict';
+
+    var userId = {{ request.user.id }};
+    var proto  = location.protocol === 'https:' ? 'wss' : 'ws';
+    var wsUrl  = proto + '://' + location.host + '/ws/cart/' + userId + '/';
+
+    // ── Reconnection state ──
+    var _reconnectDelay   = 2000;
+    var _maxDelay         = 30000;
+    var _ws               = null;
+    var _intentionalClose = false;
+
+    // ============================================================
+    // CONNECT / RECONNECT
+    // ============================================================
+    function connect() {
+        _ws = new WebSocket(wsUrl);
+
+        _ws.onopen = function () {
+            console.log('[CartWS] ✅ Connected → ' + wsUrl);
+            _reconnectDelay = 2000;
+        };
+
+        _ws.onmessage = function (e) {
+            var data;
+            try { data = JSON.parse(e.data); } catch (_) { return; }
+            handleCartEvent(data);
+        };
+
+        _ws.onclose = function () {
+            if (_intentionalClose) return;
+            console.log('[CartWS] Disconnected. Reconnecting in ' + _reconnectDelay + 'ms…');
+            setTimeout(function () {
+                _reconnectDelay = Math.min(_reconnectDelay * 1.5, _maxDelay);
+                connect();
+            }, _reconnectDelay);
+        };
+
+        _ws.onerror = function () { _ws.close(); };
+    }
+
+    // ============================================================
+    // ORIGINATING TAB DETECTION
+    // ── Ang cart.js ang nag-fi-fire ng AJAX. Bago mag-click ang
+    //    user, ini-mark ng event hooks sa ibaba ang action para
+    //    hindi mag-double-update ang DOM ng tab na nag-initiate. ──
+    // ============================================================
+    function isOriginatingTab(type, id) {
+        var last = window._lastCartAction;
+        if (!last) return false;
+        if (last.type === type && String(last.id) === String(id)) {
+            window._lastCartAction = null;
+            return true;
+        }
+        return false;
+    }
+
+    // ============================================================
+    // MAIN EVENT HANDLER
+    // ============================================================
+    function handleCartEvent(data) {
+        switch (data.type) {
+            case 'cart_quantity_updated':
+                if (isOriginatingTab('quantity', data.order_item_id)) return;
+                applyQuantityUpdate(data);
+                break;
+            case 'cart_item_removed':
+                if (isOriginatingTab('remove', data.order_item_id)) return;
+                applyItemRemoved(data);
+                break;
+            case 'cart_establishment_cleared':
+                if (isOriginatingTab('clear', data.establishment_id)) return;
+                applyEstablishmentCleared(data);
+                break;
+            case 'cart_order_sent':
+                if (isOriginatingTab('order_sent', data.establishment_id)) return;
+                applyOrderSent(data);
+                break;
+        }
+    }
+
+    // ============================================================
+    // DOM UPDATERS
+    // ============================================================
+
+    function applyQuantityUpdate(data) {
+        var itemId    = data.order_item_id;
+        var newQty    = data.new_quantity;
+        var newTotal  = data.item_total;
+        var cartCount = data.cart_count;
+
+        var cartItem = document.querySelector('#cart-item-' + itemId + ', .cart-item[data-item-id="' + itemId + '"]');
+        if (!cartItem) return;
+
+        // Update quantity display
+        var qtyEl = cartItem.querySelector('.quantity-value');
+        if (qtyEl) qtyEl.textContent = newQty;
+        cartItem.setAttribute('data-qty', newQty);
+
+        // Update subtotal display
+        var subtotalEl = document.getElementById('item-total-' + itemId);
+        if (subtotalEl) subtotalEl.textContent = '₱' + parseFloat(newTotal).toFixed(2);
+
+        // Update +/- button disabled state
+        var maxStock = parseInt(cartItem.getAttribute('data-remaining-qty') || cartItem.getAttribute('data-max-stock') || '999');
+        var decBtn   = cartItem.querySelector('.btn-decrease[data-item-id="' + itemId + '"]');
+        var incBtn   = cartItem.querySelector('.btn-increase[data-item-id="' + itemId + '"]');
+        if (decBtn) decBtn.disabled = (newQty <= 1);
+        if (incBtn) incBtn.disabled = (newQty >= maxStock);
+
+        updateCartBadge(cartCount);
+        if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+        if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+        showSyncToast('🔄 Cart updated from another tab.');
+    }
+
+    function applyItemRemoved(data) {
+        var itemId          = data.order_item_id;
+        var establishmentId = data.establishment_id;
+        var orderDeleted    = data.order_deleted;
+        var cartCount       = data.cart_count;
+
+        if (orderDeleted) {
+            var box = document.querySelector('.establishment-cart-box[data-establishment-id="' + establishmentId + '"]');
+            if (box) animateRemove(box);
+        } else {
+            var cartItem = document.querySelector('#cart-item-' + itemId + ', .cart-item[data-item-id="' + itemId + '"]');
+            if (cartItem) animateRemove(cartItem);
+        }
+
+        updateCartBadge(cartCount);
+        setTimeout(function () {
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+            updateCartHeaderCount(cartCount);
+        }, 380);
+        showSyncToast('🔄 Item removed from another tab.');
+    }
+
+    function applyEstablishmentCleared(data) {
+        var establishmentId = data.establishment_id;
+        var cartCount       = data.cart_count;
+
+        var box = document.querySelector('.establishment-cart-box[data-establishment-id="' + establishmentId + '"]');
+        if (box) animateRemove(box);
+
+        updateCartBadge(cartCount);
+        setTimeout(function () {
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+            updateCartHeaderCount(cartCount);
+        }, 380);
+        showSyncToast('🔄 Cart cleared from another tab.');
+    }
+
+    function applyOrderSent(data) {
+        var establishmentId = data.establishment_id;
+        var cartCount       = data.cart_count;
+
+        var box = document.querySelector('.establishment-cart-box[data-establishment-id="' + establishmentId + '"]');
+        if (box) animateRemove(box);
+
+        updateCartBadge(cartCount);
+        setTimeout(function () {
+            if (window.rebuildOrderSummary) window.rebuildOrderSummary();
+            if (window._updateCheckoutButtonStockState) window._updateCheckoutButtonStockState();
+            updateCartHeaderCount(cartCount);
+            // Show success modal on other tabs too
+            var modal = document.getElementById('orderRequestModal');
+            if (modal && !modal.classList.contains('open')) {
+                modal.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+        }, 380);
+    }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+
+    function animateRemove(el) {
+        el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        el.style.opacity    = '0';
+        el.style.transform  = 'translateX(20px)';
+        setTimeout(function () { el.remove(); }, 320);
+    }
+
+    function updateCartBadge(count) {
+        document.querySelectorAll('.cart-count, .cart-badge, #cart-count, [data-cart-count]').forEach(function (el) {
+            el.textContent   = count;
+            el.style.display = count > 0 ? '' : 'none';
+        });
+    }
+
+    function updateCartHeaderCount(count) {
+        var countEl = document.querySelector('.cart-item-count');
+        if (countEl) countEl.textContent = count + ' item' + (count !== 1 ? 's' : '');
+    }
+
+    function showSyncToast(msg) {
+        if (window.showCartToast) { window.showCartToast(msg, 'info'); return; }
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
+            + 'background:rgba(0,0,0,0.75);color:#fff;padding:8px 18px;border-radius:20px;'
+            + 'font-size:0.82rem;z-index:99999;pointer-events:none;opacity:0;transition:opacity 0.25s ease;';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        requestAnimationFrame(function () { toast.style.opacity = '1'; });
+        setTimeout(function () {
+            toast.style.opacity = '0';
+            setTimeout(function () { toast.remove(); }, 300);
+        }, 3000);
+    }
+
+    // ============================================================
+    // ORIGINATING TAB HOOKS
+    // ── I-mark ang action bago mag-fire ng AJAX para hindi
+    //    mag-double-update ang DOM ng initiating tab. ──
+    // ============================================================
+    function hookCartActions() {
+        // Quantity +/- buttons
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.btn-decrease, .btn-increase');
+            if (!btn) return;
+            var itemId = btn.getAttribute('data-item-id');
+            if (itemId) window._lastCartAction = { type: 'quantity', id: itemId };
+        }, true);
+
+        // Remove item button
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.remove-item-btn');
+            if (!btn) return;
+            var cartItem = btn.closest('.cart-item');
+            if (cartItem) {
+                var itemId = cartItem.getAttribute('data-item-id');
+                if (itemId) window._lastCartAction = { type: 'remove', id: itemId };
+            }
+        }, true);
+
+        // Clear establishment button
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.clear-establishment-btn');
+            if (!btn) return;
+            var box = btn.closest('.establishment-cart-box');
+            if (box) {
+                var estId = box.getAttribute('data-establishment-id');
+                if (estId) window._lastCartAction = { type: 'clear', id: estId };
+            }
+        }, true);
+
+        // Send order request button
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#initial-checkout-btn')) return;
+            document.querySelectorAll('.establishment-cart-box').forEach(function (box) {
+                if (box.querySelector('.item-checkbox:checked')) {
+                    window._lastCartAction = {
+                        type: 'order_sent',
+                        id:   box.getAttribute('data-establishment-id')
+                    };
+                }
+            });
+        }, true);
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    connect();
+    hookCartActions();
+    console.log('[CartWS] Real-time cart sync initialized for user #' + userId);
+
+    // Expose for debugging
+    window._cartWs = {
+        disconnect: function () { _intentionalClose = true; if (_ws) _ws.close(); },
+        reconnect:  function () { _intentionalClose = false; connect(); }
+    };
+
 })();
 </script>
 {% endblock %}

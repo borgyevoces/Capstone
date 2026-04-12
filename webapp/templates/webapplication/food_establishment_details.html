@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/establishment_detail_phoneview.css' %}"/>
 <link rel="stylesheet" href="{% static 'css/establishment_detail_desktopview.css' %}"/>
 
@@ -855,17 +856,7 @@
         gap: 5px;
     }
 
-    .chat-connection-status::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #31a24c;
-    }
-
-    .chat-connection-status.disconnected::before {
-        background: #f02849;
-    }
+    /* Dot is injected by JS updateConnectionStatus — no ::before needed */
 
     /* Notification Badge on Message Button */
     .chat-notification-badge {
@@ -1210,6 +1201,68 @@
             transform: translateY(0);
         }
     }
+
+        /* ══ Weekly Hours Grid (contact info card) ════════════════════════ */
+        .contact-info-card--hours { align-items: flex-start !important; }
+        .weekly-hours-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+            width: 100%;
+        }
+        .wh-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+        .wh-today {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            font-weight: 600;
+        }
+        .wh-day {
+            min-width: 90px;
+            color: #374151;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .wh-today .wh-day { color: #b91c1c; }
+        .wh-now-tag {
+            display: inline-block;
+            background: #e53935;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .wh-time {
+            color: #374151;
+            font-size: 13px;
+            flex: 1;
+        }
+        .wh-closed { color: #9ca3af !important; font-style: italic; }
+        .wh-not-set { color: #d1d5db !important; font-style: italic; }
+        .wh-status-pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .wh-open        { background: #d1fae5; color: #065f46; }
+        .wh-closed-pill { background: #fee2e2; color: #991b1b; }
 </style>
 
 {# Override notification to appear top-center #}
@@ -1369,8 +1422,8 @@
                 {# ✅ REALTIME: status badge — updated every 60s by status_updater.js #}
                 <span id="detailStatusBadge"
                       class="status-badge status-{{ establishment.status|lower }}"
-                      data-opening-time="{{ establishment.opening_time|time:'H:i'|default:'' }}"
-                      data-closing-time="{{ establishment.closing_time|time:'H:i'|default:'' }}">
+                      data-opening-time="{{ establishment.today_opening_time|time:'H:i'|default:'' }}"
+                      data-closing-time="{{ establishment.today_closing_time|time:'H:i'|default:'' }}">
                     <span class="status-text">{% if establishment.status == 'Open' %}Open Now{% else %}Closed Now{% endif %}</span>
                 </span>
             </div>
@@ -1416,19 +1469,43 @@
                         </div>
                     </div>
 
-                    <div class="contact-info-card">
+                    <div class="contact-info-card contact-info-card--hours">
                         <div class="contact-icon-wrap contact-icon--hours">
                             <i class="fas fa-clock"></i>
                         </div>
-                        <div class="contact-info-body">
-                            <span class="contact-label">Hours</span>
-                            <span class="hours-text" id="detailHours">
-                                {% if establishment.opening_time and establishment.closing_time %}
-                                    {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
-                                {% else %}
-                                    Hours not set
-                                {% endif %}
-                            </span>
+                        <div class="contact-info-body" style="width:100%;">
+                            <span class="contact-label">Weekly Hours</span>
+                            <div id="weeklyHoursDisplay" class="weekly-hours-grid">
+                                {% with today_idx=today_weekday %}
+                                {% for bh in business_hours_list %}
+                                <div class="wh-row {% if bh.day_of_week == today_idx %}wh-today{% endif %}">
+                                    <span class="wh-day">
+                                        {{ bh.day_name }}{% if bh.day_of_week == today_idx %} <span class="wh-now-tag">Today</span>{% endif %}
+                                    </span>
+                                    {% if bh.is_closed %}
+                                        <span class="wh-time wh-closed">Closed</span>
+                                    {% elif bh.opening_time and bh.closing_time %}
+                                        <span class="wh-time">{{ bh.opening_time|time:"g:i A" }} – {{ bh.closing_time|time:"g:i A" }}</span>
+                                        {% if bh.day_of_week == today_idx %}
+                                            <span class="wh-status-pill {% if establishment.status == 'Open' %}wh-open{% else %}wh-closed-pill{% endif %}" id="liveHoursStatusPill">
+                                                {{ establishment.status }}
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="wh-time wh-not-set">Not set</span>
+                                    {% endif %}
+                                </div>
+                                {% empty %}
+                                    {% if establishment.opening_time and establishment.closing_time %}
+                                        <span class="hours-text" id="detailHours">
+                                            {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
+                                        </span>
+                                    {% else %}
+                                        <span style="color:#9ca3af;font-size:13px;">Hours not set</span>
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
                         </div>
                     </div>
 
@@ -1443,6 +1520,45 @@
                             </span>
                         </div>
                     </div>
+
+                    {% if establishment.contact_links.all %}
+                    <div class="contact-info-card" id="detailContactLinks">
+                        <div class="contact-icon-wrap" style="background:linear-gradient(135deg,#8b0000,#c62828);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-link" style="color:#fff;font-size:15px;"></i>
+                        </div>
+                        <div class="contact-info-body">
+                            <span class="contact-label">Links &amp; Socials</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">
+                                {% for lnk in establishment.contact_links.all %}
+                                <a href="{{ lnk.href }}"
+                                   target="_blank" rel="noopener noreferrer"
+                                   title="{{ lnk.value }}"
+                                   style="display:inline-flex;align-items:center;gap:8px;
+                                          background:#ffffff;
+                                          border:1.5px solid {{ lnk.icon_bg }};
+                                          border-radius:999px;
+                                          padding:7px 16px 7px 9px;
+                                          text-decoration:none;
+                                          transition:transform .15s,box-shadow .15s;
+                                          box-shadow:0 1px 3px rgba(0,0,0,.08);"
+                                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';"
+                                   onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)';">
+                                    <!-- Brand icon circle -->
+                                    <span style="width:28px;height:28px;border-radius:50%;
+                                                 background:{{ lnk.icon_bg }};
+                                                 display:inline-flex;align-items:center;
+                                                 justify-content:center;flex-shrink:0;">
+                                        <i class="{{ lnk.icon_class }}" style="color:#fff;font-size:14px;line-height:1;"></i>
+                                    </span>
+                                    <!-- Label -->
+                                    <span style="font-size:13px;font-weight:700;color:#1f2937;
+                                                 letter-spacing:.3px;">{{ lnk.label }}</span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                 </div>
             </section>
@@ -1573,7 +1689,7 @@
             <section class="section-card" id="menu-section">
 
                 {# Menu Title — centered #}
-                <h2 class="menu-title-centered"><span><i class="fas fa-utensils menu-title-icon"></i> Menu</span></h2>
+                <h2 class="menu-title-centered">Menu</h2>
 
                 {# Controls row: [Price pills] [Best Seller pills] [Search bar] #}
                 <div class="menu-controls">
@@ -1654,7 +1770,7 @@
             <!-- Top Right: Best Seller Badge -->
             {% if item.is_top_seller %}
             <span class="badge-top-seller">
-                <i class="fas fa-star"></i> Best Seller
+                 Best Seller
             </span>
             {% endif %}
         </div>
@@ -2501,17 +2617,16 @@ function applyDetailsInventoryUpdate(updates) {
 
         chatSocket.onopen = function(e) {
             console.log('✅ Chat WebSocket connected');
-            updateConnectionStatus('online');
+            // ✅ DO NOT set "Active now" here — owner presence is checked separately via polling
         };
 
         chatSocket.onclose = function(e) {
             console.log('❌ Chat WebSocket disconnected');
-            updateConnectionStatus('disconnected');
+            // Don't change presence status on chat WS disconnect — presence polling handles that
         };
 
         chatSocket.onerror = function(e) {
             console.error('⚠️ WebSocket error:', e);
-            updateConnectionStatus('error');
         };
 
         chatSocket.onmessage = function(e) {
@@ -2540,18 +2655,23 @@ function applyDetailsInventoryUpdate(updates) {
         };
     }
 
+    // ✅ updateConnectionStatus is now driven ONLY by owner presence polling (see below)
     function updateConnectionStatus(status) {
         const statusElement = document.getElementById('chatConnectionStatus');
         if (!statusElement) return;
 
         if (status === 'online') {
-            statusElement.textContent = 'Active now';
+            statusElement.innerHTML =
+                '<span style="display:inline-flex;align-items:center;gap:5px;">' +
+                '<span style="width:8px;height:8px;background:#22c55e;border-radius:50%;' +
+                'display:inline-block;animation:ownerPresencePulse 1.5s ease-in-out infinite;"></span>' +
+                'Active now</span>';
             statusElement.classList.remove('disconnected');
-        } else if (status === 'disconnected') {
-            statusElement.textContent = 'Offline';
-            statusElement.classList.add('disconnected');
-        } else if (status === 'error') {
-            statusElement.textContent = 'Connection Error';
+        } else {
+            statusElement.innerHTML =
+                '<span style="display:inline-flex;align-items:center;gap:5px;">' +
+                '<span style="width:8px;height:8px;background:#9ca3af;border-radius:50%;' +
+                'display:inline-block;"></span>Offline</span>';
             statusElement.classList.add('disconnected');
         }
     }
@@ -3878,6 +3998,82 @@ window.setPriceFilter = function(val, btn) {
         });
     });
 }());
+</script>
+
+<style>
+/* ============================================================
+   OWNER PRESENCE — Pulsing green dot animation
+   ============================================================ */
+@keyframes ownerPresencePulse {
+    0%   { transform: scale(1);   box-shadow: 0 0 0 0   rgba(34,197,94,0.6); }
+    50%  { transform: scale(1.25);box-shadow: 0 0 0 5px rgba(34,197,94,0);   }
+    100% { transform: scale(1);   box-shadow: 0 0 0 0   rgba(34,197,94,0);   }
+}
+#chatConnectionStatus.disconnected { opacity: 0.6; }
+</style>
+
+<script>
+// ============================================================
+// OWNER PRESENCE — WebSocket listener (customer side)
+// ============================================================
+// Connects to /ws/presence/<est_id>/customer/<customer_id>/
+// On connect  : server immediately sends current owner status
+// Owner opens : server broadcasts 'online'  → ~1 second
+// Owner closes: server broadcasts 'offline' → ~1 second
+// Also broadcasts customer's own presence to the owner dashboard.
+// ============================================================
+(function () {
+    var PRESENCE_EST_ID    = '{{ establishment.id }}';
+    var PRESENCE_CUST_ID   = '{{ request.user.id|default:"0" }}';
+    var presenceSocket     = null;
+    var reconnectTimer     = null;
+    var intentionalClose   = false;
+
+    function connectPresence() {
+        if (presenceSocket && presenceSocket.readyState === WebSocket.OPEN) return;
+
+        intentionalClose = false;
+        var proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        var url   = proto + '://' + window.location.host +
+                    '/ws/presence/' + PRESENCE_EST_ID +
+                    '/customer/' + PRESENCE_CUST_ID + '/';
+
+        presenceSocket = new WebSocket(url);
+
+        presenceSocket.onopen = function () {
+            console.log('✅ [Presence] Customer connected — awaiting owner status');
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        };
+
+        presenceSocket.onmessage = function (e) {
+            var data = JSON.parse(e.data);
+            if (data.type === 'presence_update') {
+                updateConnectionStatus(data.status === 'online' ? 'online' : 'offline');
+            }
+        };
+
+        presenceSocket.onclose = function () {
+            if (!intentionalClose) {
+                reconnectTimer = setTimeout(connectPresence, 2000);
+            }
+        };
+
+        presenceSocket.onerror = function () {
+            console.error('❌ [Presence] WebSocket error');
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', connectPresence);
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') connectPresence();
+    });
+
+    window.addEventListener('beforeunload', function () {
+        intentionalClose = true;
+        if (presenceSocket) presenceSocket.close();
+    });
+})();
 </script>
 
 {% endblock %}

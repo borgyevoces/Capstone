@@ -83,6 +83,54 @@ document.addEventListener('DOMContentLoaded', function () {
             cartRefreshTimer      = setInterval(updateCartBadge, 3000);
         }
     });
+
+    // ✅ REALTIME: BroadcastChannel — instant sync when owner saves business hours
+    // from food_establishment_profile.html or dashboard. Fires immediately (no 30s wait)
+    // so kabsueats cards always match what the owner just saved.
+    try {
+        const _kabsuBC = new BroadcastChannel('kabsueats_hours');
+        _kabsuBC.onmessage = function (event) {
+            const msg = event.data;
+            if (!msg || msg.type !== 'hours_updated') return;
+
+            const estId = msg.establishment_id;
+            console.log('[KabsuEats] hours_updated for est #' + estId + ' — refreshing cards immediately');
+
+            if (estId) {
+                // Fetch fresh times for just this establishment and patch its card
+                fetch('/api/establishment/' + estId + '/realtime/', { credentials: 'same-origin' })
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (data) {
+                        if (!data || !data.success) {
+                            refreshEstablishmentCardStatuses();
+                            return;
+                        }
+                        // Patch data-opening/closing-time on the card
+                        document.querySelectorAll('.food-est-item[data-id="' + estId + '"]')
+                            .forEach(function (card) {
+                                if (data.opening_24h) card.setAttribute('data-opening-time', data.opening_24h);
+                                if (data.closing_24h) card.setAttribute('data-closing-time', data.closing_24h);
+                            });
+                        // Recalculate all badges instantly (no extra API call)
+                        if (typeof updateAllClientStatuses === 'function') {
+                            updateAllClientStatuses();
+                        }
+                        // Also do a full backend poll to keep rating/details fresh
+                        refreshEstablishmentCardStatuses();
+                        console.log('[KabsuEats] Patched est #' + estId + ' from broadcast');
+                    })
+                    .catch(function () {
+                        // Fallback: full refresh
+                        refreshEstablishmentCardStatuses();
+                    });
+            } else {
+                // No specific id — refresh everything
+                refreshEstablishmentCardStatuses();
+            }
+        };
+    } catch (e) {
+        console.warn('[KabsuEats] BroadcastChannel not supported:', e.message);
+    }
 });
 
 // ============================================
@@ -303,6 +351,9 @@ function refreshBestsellerStatuses() {
                 const st = (item.establishment.status || 'closed').toLowerCase();
                 const badge = card.querySelector('.sp');
                 if (badge) { badge.className = `sp ${st}`; badge.textContent = st.toUpperCase(); }
+                // Note: card stays fully clickable so customers can view details.
+                // applyModOrderState (called below for open modals) disables
+                // Add to Cart / Buy Now inside the modal when closed.
             });
             if (currentModalItem) {
                 const fresh = data.bestsellers.find(x => x.id === currentModalItem.id);
@@ -391,14 +442,23 @@ function refreshEstablishmentCardStatuses() {
                     if (rc) rc.textContent = `(${est.review_count} Reviews)`;
                 }
 
-                // ── 5–9. Detail fields — only update if changed ──────────
+                // ── 10. Keep data-opening/closing-time patched for reference / map use ──
+                // ✅ NOTE: We intentionally do NOT call updateAllClientStatuses() here.
+                //    status_updater.js must NOT override the badge with a time-based
+                //    recalculation — the authoritative source is establishment.status
+                //    (owner's manual toggle) which is already applied in step 1 above.
+                if (card && est.opening_24h) {
+                    card.setAttribute('data-opening-time', est.opening_24h);
+                    card.setAttribute('data-closing-time', est.closing_24h || '');
+                }
+
+                // ── 5–9. Detail fields — only update when dashboard changed ──────────
                 if (changed && card) {
                     // 5. Name
                     if (est.name) {
                         const nameEl = card.querySelector('.estc-name');
                         if (nameEl) nameEl.textContent = est.name;
                         card.setAttribute('data-name', est.name.toLowerCase());
-                        // Update img alt
                         const img = card.querySelector('.estc-img');
                         if (img) img.alt = est.name;
                     }
@@ -419,7 +479,6 @@ function refreshEstablishmentCardStatuses() {
                     // 8. Payment methods (2nd .emr div — after the distance one)
                     if (est.payment_methods !== undefined) {
                         const emrs = card.querySelectorAll('.emr');
-                        // emrs[0] = distance, emrs[1] = payment, emrs[2] = amenities
                         if (emrs[1]) {
                             emrs[1].innerHTML = `<i class="fas fa-credit-card" style="color:#B71C1C"></i> ${est.payment_methods || 'Cash'}`;
                         }
@@ -436,13 +495,6 @@ function refreshEstablishmentCardStatuses() {
                                 emrs[2].style.display = 'none';
                             }
                         }
-                    }
-
-                    // 10. Opening/closing time data-attrs (for client-side status calc)
-                    if (est.opening_time) {
-                        // Convert 12h to 24h for data-attrs used by status_updater
-                        // The API now returns opening_time in 12h format for display
-                        // We keep the data-attrs as-is since status_updater uses its own calc
                     }
                 }
             });
@@ -515,7 +567,8 @@ function renderBS(data, isSearchResult = false) {
                     </div>
                 </div>
                 <div style="margin-top:auto;">
-                    <button class="bsc-btn" style="width:100%;" onclick="event.stopPropagation();openMod(${d.id})">
+                    <button class="bsc-btn" style="width:100%;"
+                            onclick="event.stopPropagation();openMod(${d.id})">
                         <i class="fas fa-eye"></i> View Details
                     </button>
                 </div>
@@ -901,6 +954,44 @@ function switchTile(t) {
     document.getElementById('mapLayerPanel').classList.remove('show');
 }
 
+// ── Gender-based user location icon ──────────────────────────────────────────
+window._userGender = localStorage.getItem('kabsu_map_gender') || 'male';
+
+function createUserLocIcon(gender) {
+    var isMale = (gender || window._userGender) === 'male';
+    var bg    = isMale
+        ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)'
+        : 'linear-gradient(135deg,#be185d,#ec4899)';
+    var icon  = isMale ? 'fa-male' : 'fa-female';
+    var glow  = isMale ? 'rgba(59,130,246,.35)' : 'rgba(236,72,153,.35)';
+    var html  =
+        '<div style="' +
+            'width:36px;height:36px;' +
+            'background:' + bg + ';' +
+            'border-radius:50%;' +
+            'border:3px solid #fff;' +
+            'box-shadow:0 0 0 5px ' + glow + ',0 3px 10px rgba(0,0,0,.3);' +
+            'display:flex;align-items:center;justify-content:center;' +
+            'color:#fff;font-size:16px;' +
+        '">' +
+        '<i class="fas ' + icon + '"></i>' +
+        '</div>';
+    return L.divIcon({ html: html, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
+}
+
+window.setUserGender = function(gender) {
+    window._userGender = gender;
+    localStorage.setItem('kabsu_map_gender', gender);
+    // Update toggle button active states
+    document.querySelectorAll('.gender-toggle-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.gender === gender);
+    });
+    // Swap the icon on the existing marker in real-time (no need to re-geolocate)
+    if (userLocMarker && mapInst) {
+        userLocMarker.setIcon(createUserLocIcon(gender));
+    }
+};
+
 function showMyLocation() {
     const btn = document.getElementById('mapLocBtn');
     if (!btn || !navigator.geolocation) { showToast('Geolocation not supported.', 'error'); return; }
@@ -909,18 +1000,22 @@ function showMyLocation() {
     navigator.geolocation.getCurrentPosition(
         pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            window._userLat = lat; window._userLng = lng;
             userLatLng = { lat, lng };
             if (userLocMarker) mapInst.removeLayer(userLocMarker);
-            const locIco = L.divIcon({
-                html: '<div style="width:18px;height:18px;background:#3b82f6;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,.3),0 2px 8px rgba(0,0,0,.3);"></div>',
-                className: '', iconSize: [18, 18], iconAnchor: [9, 9]
-            });
-            userLocMarker = L.marker([lat, lng], { icon: locIco }).addTo(mapInst)
-                .bindPopup('<div style="font-family:Poppins,sans-serif;font-weight:600;font-size:13px;">📍 You are here</div>')
+            var isMale = window._userGender === 'male';
+            var popupLabel = isMale ? '🧔 You are here' : '👩 You are here';
+            userLocMarker = L.marker([lat, lng], { icon: createUserLocIcon() }).addTo(mapInst)
+                .bindPopup(
+                    '<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:13px;' +
+                    'display:flex;align-items:center;gap:6px;">' + popupLabel + '</div>'
+                )
                 .openPopup();
             mapInst.flyTo([lat, lng], 17, { animate: true, duration: 1.2 });
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-location-arrow"></i> Show My Location';
+            // Sync gender toggle buttons visible state
+            if (typeof window.setUserGender === 'function') window.setUserGender(window._userGender);
         },
         () => {
             showToast('Could not get location. Allow location access.', 'error');
@@ -1167,18 +1262,296 @@ function clearRoute() {
     if (btn)   btn.classList.remove('active');
 }
 
+// ✅ I-expose ang clearRoute globally para matawag ng map.html's closeRouteGuide()
+window.clearRoute = clearRoute;
 
-function applyFilter() {
-    const val = document.getElementById('catFilt').value.toLowerCase();
-    document.querySelectorAll('.food-est-item').forEach(el => {
-        const cat = (el.dataset.category || '').toLowerCase();
-        const show = !val || cat.includes(val);
-        const wrap = el.closest('.est-card-wrap') || el;
+
+// ============================================================
+// ✅ REALTIME FILTER STATE — Establishments
+// ============================================================
+window.estFS = { status: '', ratingMin: 0, sortBy: '' };
+
+function applyFilter() { applyEstFilters(); }
+
+function applyEstFilters() {
+    const catVal    = (document.getElementById('catFilt')?.value || '').toLowerCase();
+    const statusVal = window.estFS.status;
+    const minRating = window.estFS.ratingMin;
+    const sortBy    = window.estFS.sortBy;
+
+    const cards = Array.from(document.querySelectorAll('.food-est-item'));
+    let visible = [];
+
+    cards.forEach(el => {
+        const cat    = (el.dataset.category || '').toLowerCase();
+        const status = (el.dataset.status   || '').toLowerCase();
+        const rating = parseFloat(el.dataset.rating) || 0;
+        const wrap   = el.closest('.est-card-wrap') || el;
+
+        const catOk    = !catVal    || cat.includes(catVal);
+        const statusOk = !statusVal || status === statusVal;
+        const ratingOk = minRating <= 0 || rating >= minRating;
+
+        const show = catOk && statusOk && ratingOk;
         wrap.style.display = show ? '' : 'none';
+
         const existing = el.querySelector('.est-match-badge');
         if (existing) existing.remove();
+
+        if (show) visible.push(el);
     });
+
+    // Sorting
+    if (sortBy && visible.length > 1) {
+        const grid = document.getElementById('estGrid');
+        if (grid) {
+            visible.sort((a, b) => {
+                if (sortBy === 'rating_desc') {
+                    return (parseFloat(b.dataset.rating) || 0) - (parseFloat(a.dataset.rating) || 0);
+                }
+                if (sortBy === 'reviews_desc') {
+                    const ra = parseInt(a.querySelector('.estc-review-count')?.textContent.replace(/\D/g,'')) || 0;
+                    const rb = parseInt(b.querySelector('.estc-review-count')?.textContent.replace(/\D/g,'')) || 0;
+                    return rb - ra;
+                }
+                if (sortBy === 'nearest') {
+                    const dm = el => {
+                        const mr = el.querySelector('.emr');
+                        const t = mr ? mr.textContent : '';
+                        const m = t.match(/([\d.]+)\s*(km|meter)/);
+                        if (!m) return 99999;
+                        return parseFloat(m[1]) * (m[2] === 'km' ? 1000 : 1);
+                    };
+                    return dm(a) - dm(b);
+                }
+                if (sortBy === 'open_first') {
+                    const sa = (a.dataset.status || '') === 'open' ? 0 : 1;
+                    const sb = (b.dataset.status || '') === 'open' ? 0 : 1;
+                    return sa - sb;
+                }
+                if (sortBy === 'name_asc') {
+                    return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+                }
+                return 0;
+            });
+            visible.forEach(el => {
+                const wrap = el.closest('.est-card-wrap') || el;
+                grid.appendChild(wrap);
+            });
+        }
+    }
+
+    _updateEstResultCount(visible.length, cards.length);
+    _renderEstActiveFilters(catVal, statusVal, minRating, sortBy);
 }
+
+function _updateEstResultCount(shown, total) {
+    const el = document.getElementById('estResultCount');
+    if (!el) return;
+    el.textContent = shown === total
+        ? `${total} establishment${total !== 1 ? 's' : ''}`
+        : `${shown} of ${total} establishments`;
+}
+
+function _renderEstActiveFilters(cat, status, rating, sort) {
+    const container = document.getElementById('estActiveFilters');
+    if (!container) return;
+    const chips = [];
+    if (cat)    chips.push({ label: cap(cat),                clear: `(function(){var s=document.getElementById('catFilt');if(s)s.value='';applyEstFilters();})()` });
+    if (status) chips.push({ label: (status.charAt(0).toUpperCase()+status.slice(1)), clear: `setEstStatus('')` });
+    if (rating) chips.push({ label: rating + '★+',           clear: `setEstRating(0)` });
+    if (sort)   chips.push({ label: _estSortLabel(sort),     clear: `setEstSort('')` });
+    if (!chips.length) { container.innerHTML = ''; return; }
+    container.innerHTML = chips.map(c =>
+        `<span class="est-active-chip">${escHtml(c.label)} <button onclick="${c.clear}" title="Remove">&times;</button></span>`
+    ).join('');
+}
+
+function _estSortLabel(v) {
+    const m = { rating_desc:'Top Rated', reviews_desc:'Most Reviews', nearest:'Nearest', open_first:'Open First', name_asc:'A–Z' };
+    return m[v] || v;
+}
+
+function setEstStatus(val) {
+    window.estFS.status = val;
+    document.querySelectorAll('.est-status-pill').forEach(b => {
+        b.classList.toggle('active', (b.dataset.status || '') === val);
+    });
+    applyEstFilters();
+}
+
+function setEstRating(val) {
+    window.estFS.ratingMin = val;
+    document.querySelectorAll('.est-rating-pill').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.rating) === val);
+    });
+    applyEstFilters();
+}
+
+function setEstSort(val) {
+    window.estFS.sortBy = val;
+    document.querySelectorAll('.est-sort-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.sort === val);
+    });
+    applyEstFilters();
+}
+
+// ── Re-apply est filters after every realtime status refresh ──
+const _origRefreshEstCards = window.refreshEstablishmentCardStatuses;
+
+// ============================================================
+// ✅ REALTIME FILTER STATE — Bestsellers
+// ============================================================
+window.bsFS = { inStockOnly: false, category: '', sortBy: '', priceMax: 0 };
+
+function applyBsFilters() {
+    if (searchMode) return; // don't interfere with smart search
+    let data = [...bsData];
+    const fs = window.bsFS;
+
+    if (fs.inStockOnly)  data = data.filter(d => d.quantity > 0);
+    if (fs.category)     data = data.filter(d =>
+        (d.category_name || '').toLowerCase() === fs.category ||
+        (d.establishment && (d.establishment.categories || '').toLowerCase().includes(fs.category))
+    );
+    if (fs.priceMax > 0) data = data.filter(d => parseFloat(d.price) <= fs.priceMax);
+
+    if (fs.sortBy === 'orders_desc') data.sort((a, b) => (b.total_orders||0) - (a.total_orders||0));
+    else if (fs.sortBy === 'price_asc')  data.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+    else if (fs.sortBy === 'price_desc') data.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+    else if (fs.sortBy === 'name_asc')   data.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Use the original renderBS to avoid infinite loop
+    if (window._bsRenderOriginal) window._bsRenderOriginal(data, false);
+    else renderBS(data, false);
+
+    const count = document.getElementById('bsResultCount');
+    if (count) count.textContent = data.length === bsData.length
+        ? `${data.length} items`
+        : `${data.length} of ${bsData.length} items`;
+}
+
+function _updateBsPriceSliderMax() {
+    if (!bsData || !bsData.length) return;
+    const slider = document.getElementById('bsPriceSlider');
+    if (!slider) return;
+    const maxPrice = Math.max(...bsData.map(d => parseFloat(d.price) || 0));
+    const roundedMax = Math.ceil(maxPrice / 50) * 50 || 500;
+    const step = Math.max(1, Math.round(roundedMax / 20));
+    slider.max  = roundedMax;
+    slider.step = step;
+    if (parseInt(slider.value) > roundedMax) {
+        slider.value = 0;
+        setBsPriceMax(0);
+    }
+}
+
+function populateBsCatPills() {
+    const wrap = document.getElementById('bsCatPills');
+    if (!wrap || !bsData.length) return;
+
+    const cats = new Map();
+    bsData.forEach(d => {
+        const raw = ((d.category_name || '') + ',' + (d.establishment?.categories || '')).toLowerCase().split(',');
+        raw.forEach(c => {
+            c = c.trim();
+            if (c) cats.set(c, (cats.get(c) || 0) + 1);
+        });
+    });
+
+    wrap.querySelectorAll('.bscp:not(.bscp-all)').forEach(b => b.remove());
+
+    Array.from(cats.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .forEach(([cat, cnt]) => {
+            const btn = document.createElement('button');
+            btn.className = 'bscp';
+            btn.dataset.cat = cat;
+            btn.innerHTML = `${cap(cat)} <span class="bscp-cnt">${cnt}</span>`;
+            btn.onclick = function () { toggleBsCatPill(this); };
+            wrap.appendChild(btn);
+        });
+}
+
+function toggleBsCatPill(btn) {
+    const cat = btn.dataset.cat || '';
+    window.bsFS.category = (window.bsFS.category === cat) ? '' : cat;
+    document.querySelectorAll('.bscp').forEach(b => {
+        b.classList.toggle('active', (b.dataset.cat || '') === window.bsFS.category || (!window.bsFS.category && b.classList.contains('bscp-all')));
+    });
+    applyBsFilters();
+}
+
+function setBsSort(val) {
+    window.bsFS.sortBy = val;
+    document.querySelectorAll('.bs-sort-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.sort === val);
+    });
+    applyBsFilters();
+}
+
+function toggleBsInStock() {
+    window.bsFS.inStockOnly = !window.bsFS.inStockOnly;
+    const btn = document.getElementById('bsInStockToggle');
+    if (btn) btn.classList.toggle('active', window.bsFS.inStockOnly);
+    applyBsFilters();
+}
+
+function setBsPriceMax(val) {
+    window.bsFS.priceMax = parseInt(val) || 0;
+    const label = document.getElementById('bsPriceLabel');
+    if (label) label.textContent = val > 0 ? `≤ ₱${val}` : 'Any Price';
+    applyBsFilters();
+}
+
+// ── Hook: re-apply BS filters after every refreshBestsellerStatuses ──
+document.addEventListener('DOMContentLoaded', function () {
+    // Save original renderBS so applyBsFilters can use it without recursion
+    if (typeof renderBS === 'function') {
+        window._bsRenderOriginal = renderBS;
+    }
+
+    // After bestsellers first load, populate category pills + result count
+    const _origFetch = window.fetchBestsellers;
+    if (typeof _origFetch === 'function') {
+        window._origFetchBS = _origFetch;
+    }
+
+    // Update result count and cat pills whenever bsData changes
+    const catPillTimer = setInterval(() => {
+        if (bsData && bsData.length > 0) {
+            populateBsCatPills();
+            _updateBsPriceSliderMax();
+            const count = document.getElementById('bsResultCount');
+            if (count && !count.textContent) count.textContent = `${bsData.length} items`;
+            clearInterval(catPillTimer);
+        }
+    }, 500);
+
+    // Re-apply est filters after status refresh
+    const _origRefresh = window.refreshEstablishmentCardStatuses;
+    if (typeof _origRefresh === 'function') {
+        window.refreshEstablishmentCardStatuses = function () {
+            _origRefresh.apply(this, arguments);
+            setTimeout(() => {
+                const hasFilter = window.estFS.status || window.estFS.ratingMin ||
+                                  window.estFS.sortBy || document.getElementById('catFilt')?.value;
+                if (hasFilter) applyEstFilters();
+                else _updateEstResultCount(
+                    document.querySelectorAll('.est-card-wrap:not([style*="none"]) .food-est-item').length,
+                    document.querySelectorAll('.food-est-item').length
+                );
+            }, 350);
+        };
+    }
+
+    // Initial est result count
+    setTimeout(() => {
+        const total = document.querySelectorAll('.food-est-item').length;
+        _updateEstResultCount(total, total);
+    }, 300);
+});
 
 // ============================================
 // ── SMART SEARCH ENGINE ──
@@ -1815,6 +2188,8 @@ function resetSearch() {
     // 9. Re-apply category filter if one was active
     const catFilt = document.getElementById('catFilt');
     if (catFilt && catFilt.value) applyFilter();
+    // Re-apply all active filters (status, rating, sort) after clearing search
+    if (window.estFS && (window.estFS.status || window.estFS.ratingMin || window.estFS.sortBy)) applyEstFilters();
 }
 
 // ── Save original establishment order on DOM ready ──

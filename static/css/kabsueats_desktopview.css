@@ -336,7 +336,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* ============================================ */
 /* BESTSELLERS SECTION                          */
 /* ============================================ */
-.bs-section { background: transparent; padding: 0 0 28px; margin: 0 0 24px; }
+.bs-section { background: transparent; padding: 0 0 28px; margin: 52px 0 24px; }
 .bs-title-row { display: none; }
 .bs-title {
     font-size: 13px; font-weight: 500; color: var(--g600);
@@ -387,6 +387,24 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .car-track.gmode .bsc { min-width: unset !important; max-width: unset !important; width: 100% !important; }
 #carouselWrap.gmode { padding: 0; }
 #carouselWrap.gmode .cnav { display: none !important; }
+
+/* ── Align filter bar + title with carousel content (52px left indent) ── */
+/* Carousel has padding: 0 52px for its nav arrows, so cards start at 52px.
+   Shift the title row and filter bar left-edge to match. */
+#bsFilterBar,
+.bs-title-row {
+    padding-left: 52px;
+}
+/* In grid mode carousel removes its padding — reset both to flush left */
+.bs-section:has(#carouselWrap.gmode) #bsFilterBar,
+.bs-section:has(#carouselWrap.gmode) .bs-title-row {
+    padding-left: 0;
+}
+/* Keep filter bar children on one row on desktop */
+#bsFilterBar {
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
 
 .cnav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 2px solid var(--g200); color: var(--g700); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: .25s; box-shadow: var(--sh1); font-size: 14px; }
 .cnav:hover { background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-50%) scale(1.08); box-shadow: 0 4px 14px rgba(183,28,28,.28); }

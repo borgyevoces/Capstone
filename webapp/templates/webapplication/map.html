@@ -10,63 +10,152 @@
 
 {% block extra_css %}
 <style>
-/* ── Navbar: uniform gap between icon buttons ── */
-.nav-right {
-    display: flex !important; align-items: center !important; gap: 0 !important;
-}
+/* ── Profile z-index above Leaflet ── */
+#pcont  { position: relative !important; z-index: 9999 !important; }
+#pdrop  { z-index: 9999 !important; }
+#setMod { z-index: 99999 !important; }
+
+/* ── Navbar: uniform gap ── */
+.nav-right { display: flex !important; align-items: center !important; gap: 0 !important; }
 .nav-right #myReceiptsNavBtn,
-.nav-right #notifBellWrap {
-    margin: 0 20px 0 0 !important; padding: 0 !important; flex-shrink: 0 !important;
-}
+.nav-right #notifBellWrap { margin: 0 20px 0 0 !important; padding: 0 !important; flex-shrink: 0 !important; }
 .nav-right .pcont { margin: 0 !important; padding: 0 !important; flex-shrink: 0 !important; }
 
-/* ── Map page content ── */
-.map-page-content { padding: 24px 28px 40px; flex: 1; }
-.map-page-header { margin-bottom: 20px; }
-.map-page-header h1 {
-    font-size: 22px; font-weight: 800; color: var(--g900);
-    font-family: 'Poppins', sans-serif;
-    display: flex; align-items: center; gap: 10px; margin: 0 0 4px;
+/* ═══════════════════════════════════════════
+   PAGE LAYOUT
+═══════════════════════════════════════════ */
+.map-page-content { padding: 28px 32px 48px; flex: 1; }
+
+/* ── Page Header ── */
+.map-page-header {
+    margin-bottom: 22px;
+    padding: 32px 28px 28px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #fff 55%, #f0f9ff 100%);
+    border-radius: 20px;
+    border: 1px solid #e5e7eb;
+    position: relative;
+    overflow: hidden;
 }
-.map-page-header h1 i { color: var(--red); }
-.map-page-header p { font-size: 13px; color: var(--g400); margin: 0; font-family: 'Poppins', sans-serif; }
-.map-page-card {
-    background: #fff; border-radius: 16px;
-    border: 1px solid var(--g200); box-shadow: var(--sh1); overflow: hidden;
+.map-page-header::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%);
+    border-radius: 50%;
+}
+.map-page-header h1 {
+    font-size: 23px; font-weight: 800; color: var(--g900);
+    font-family: 'Poppins', sans-serif;
+    display: flex; align-items: center; gap: 10px; margin: 0 0 6px;
+    letter-spacing: -0.3px;
+}
+.map-page-header h1 i { color: #10b981; filter: drop-shadow(0 0 5px rgba(16,185,129,0.35)); }
+.map-page-header > p {
+    font-size: 13px; color: var(--g400); margin: 0 0 16px;
+    font-family: 'Poppins', sans-serif;
 }
 
-/* ── Map layout ── */
-.map-layout { display: flex; align-items: stretch; height: calc(100vh - 200px); min-height: 500px; }
+/* ── How-to Instructions accordion ── */
+.map-instructions-wrap {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.map-instructions-trigger {
+    width: 100%; padding: 12px 16px;
+    background: #fff; border: none; text-align: left; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 700; color: #374151;
+    font-family: 'Poppins', sans-serif; font-size: 13px;
+    transition: background 0.18s;
+}
+.map-instructions-trigger:hover { background: #f9fafb; }
+.map-instructions-trigger .trig-left { display: flex; align-items: center; gap: 8px; }
+.map-instructions-trigger .trig-left i { color: #10b981; font-size: 13px; }
+.map-instructions-trigger .trig-icon {
+    font-size: 11px; transition: transform 0.3s; color: #b0b7c3;
+}
+.map-instructions-body {
+    display: none;
+    border-top: 1px solid #f0f0f0;
+    padding: 16px 18px 18px;
+    font-family: 'Poppins', sans-serif;
+}
+.map-steps { display: flex; flex-direction: column; gap: 14px; }
+.map-step  { display: flex; align-items: flex-start; gap: 13px; }
+.map-step-num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px;
+}
+.map-step-title { font-weight: 700; font-size: 13px; color: #1f2937; margin-bottom: 3px; }
+.map-step-desc  { font-size: 12px; color: #6b7280; line-height: 1.6; }
+
+/* ── Map Legend ── */
+.map-legend-row {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    font-family: 'Poppins', sans-serif;
+}
+.map-legend-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: #4b5563;
+}
+.map-legend-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; flex-shrink: 0;
+}
+.map-legend-dot.open   { border: 3px solid #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
+.map-legend-dot.closed { border: 3px solid #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.2); }
+
+/* ── Map card ── */
+.map-page-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   MAP LAYOUT
+═══════════════════════════════════════════ */
+.map-layout { display: flex; align-items: stretch; height: calc(100vh - 210px); min-height: 500px; }
+
+/* ── Left sidebar ── */
 .map-cat-sidebar {
-    width: 260px; flex-shrink: 0; background: #fff;
+    width: 240px; flex-shrink: 0;
+    background: #fafafa;
     border-right: 1px solid #f0f0f0;
-    padding: 14px 12px; display: flex; flex-direction: column;
+    padding: 16px 12px;
+    display: flex; flex-direction: column;
     gap: 8px; overflow-y: auto; overflow-x: hidden;
 }
 .mcs-header {
     display: flex; align-items: center; gap: 7px;
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.6px; color: var(--g400);
-    padding: 0 2px 8px; border-bottom: 1.5px solid #f0f0f0;
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #b0b7c3;
+    padding: 0 4px 10px; border-bottom: 1.5px solid #ececec;
+    font-family: 'Poppins', sans-serif;
 }
 .mcs-header i { font-size: 10px; }
-.map-right { flex: 1; min-width: 0; }
-.map-wrap  { position: relative; height: 100%; }
-#esMap     { width: 100%; height: 100%; }
 
-/* ── Category checkbox pills ── */
-.map-cat-filter { display: grid; grid-template-columns: 1fr; gap: 5px; padding: 4px 0; }
+/* ── Category filter buttons ── */
+.map-cat-filter { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 2px 0; }
 .mcf-btn.mcf-all { grid-column: 1 / -1; font-size: 12px; }
 .mcf-btn {
-    display: flex; align-items: center; gap: 6px; padding: 6px 8px;
-    border-radius: 7px; border: 1.5px solid #d1d5db; background: #fff;
-    color: #374151; font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 10px; border-radius: 9px;
+    border: 1.5px solid #e9ecef; background: #fff;
+    color: #4b5563; font-size: 11.5px; font-weight: 600;
     font-family: 'Poppins', sans-serif; cursor: pointer;
-    transition: border-color .15s, background .15s, color .15s;
+    transition: border-color .15s, background .15s, color .15s, box-shadow .15s;
     white-space: nowrap; text-align: left; width: 100%; line-height: 1.3;
 }
 .mcf-check {
-    width: 15px; height: 15px; border-radius: 3px;
+    width: 15px; height: 15px; border-radius: 4px;
     border: 1.5px solid #d1d5db; background: #fff; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     transition: border-color .15s, background .15s;
@@ -76,96 +165,196 @@
     border: 2px solid #fff; border-top: none; border-left: none;
     transform: rotate(45deg) translate(-1px,-1px);
 }
-.mcf-btn:hover               { border-color: var(--red); background: #fff8f8; color: var(--red); }
-.mcf-btn:hover .mcf-check    { border-color: var(--red); }
-.mcf-btn.active              { border-color: var(--red); background: #fff8f8; color: var(--red); }
-.mcf-btn.active .mcf-check   { background: var(--red); border-color: var(--red); }
+.mcf-btn:hover               { border-color: #10b981; background: #f0fdf4; color: #065f46; box-shadow: 0 1px 6px rgba(16,185,129,0.12); }
+.mcf-btn:hover .mcf-check    { border-color: #10b981; }
+.mcf-btn.active              { border-color: #10b981; background: #f0fdf4; color: #065f46; }
+.mcf-btn.active .mcf-check   { background: #10b981; border-color: #10b981; }
 .mcf-btn.active .mcf-check::after { display: block; }
-.mcf-btn.mcf-all.active      { background: var(--red); color: #fff; border-color: var(--red); }
+.mcf-btn.mcf-all.active      { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: transparent; box-shadow: 0 2px 10px rgba(16,185,129,0.3); }
 .mcf-btn.mcf-all.active .mcf-check { background: rgba(255,255,255,.3); border-color: rgba(255,255,255,.6); }
 .mcf-btn.mcf-all.active .mcf-check::after { display: block; }
 
-/* ── Map controls ── */
+.map-right { flex: 1; min-width: 0; }
+.map-wrap  { position: relative; height: 100%; }
+#esMap     { width: 100%; height: 100%; }
+
+/* ═══════════════════════════════════════════
+   MAP CONTROLS
+═══════════════════════════════════════════ */
 .map-ctrl-stack {
     position: absolute; top: 14px; right: 14px; z-index: 1000;
     display: flex; flex-direction: column; gap: 6px;
 }
 .map-ctrl-stack .map-layer-btn,
 .map-ctrl-stack .map-route-btn { position: static !important; top: auto !important; right: auto !important; }
+
 .map-route-btn {
-    width: 42px; height: 42px; background: #fff; border-radius: 8px;
+    width: 42px; height: 42px; background: #fff; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,.18); cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,.16); cursor: pointer;
     border: 1px solid #e5e7eb; font-size: 17px; color: #1967d2; transition: .2s;
 }
-.map-route-btn:hover  { background: #f0f4ff; }
-.map-route-btn.active { background: #1967d2; color: #fff; border-color: #1967d2; }
+.map-route-btn:hover  { background: #eff6ff; transform: scale(1.05); }
+.map-route-btn.active { background: #1967d2; color: #fff; border-color: #1967d2; box-shadow: 0 3px 12px rgba(25,103,210,.35); }
 
 /* ── Route guide panel ── */
 #routeGuide {
     position: absolute; top: 14px; right: 66px; z-index: 1090;
-    width: 280px; max-width: calc(100vw - 100px);
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.12), 0 6px 24px rgba(0,0,0,.14);
-    border: 1px solid #e5e7eb;
+    width: 288px; max-width: calc(100vw - 100px);
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 4px 8px rgba(0,0,0,.10), 0 12px 32px rgba(0,0,0,.14);
+    border: 1px solid #e9ecef;
     display: none; flex-direction: column; overflow: hidden;
     font-family: 'Poppins', sans-serif; animation: rgIn .22s ease;
 }
-@keyframes rgIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+@keyframes rgIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
 #routeGuide.show { display: flex; }
-#rgHeader { padding:11px 12px 10px; background:#fff; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-#rgHeaderInner { display:flex; align-items:center; gap:9px; flex:1; min-width:0; }
-#rgIcon { width:32px; height:32px; background:#1967d2; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; flex-shrink:0; }
-#rgDestName { font-size:12px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#rgSubtitle { font-size:10.5px; color:#9ca3af; margin-top:1px; }
-#rgClose { width:26px; height:26px; background:#f3f4f6; border:none; border-radius:6px; cursor:pointer; font-size:11px; color:#6b7280; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:.15s; }
-#rgClose:hover { background:#fee2e2; color:#B71C1C; }
-#rgSummary { display:flex; align-items:center; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #f1f5f9; }
-.rg-stat { flex:1; text-align:center; }
-.rg-stat-divider { width:1px; height:30px; background:#e5e7eb; }
-.rg-stat-lbl { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#9ca3af; margin-bottom:2px; }
-.rg-stat-val { font-size:15px; font-weight:800; line-height:1; }
-.rg-dist { color:#1967d2; }
-.rg-time { color:#16a34a; }
-#rgLoading { padding:18px 14px; font-size:12px; color:#6b7280; display:flex; align-items:center; gap:8px; justify-content:center; }
-#rgSteps { max-height:260px; overflow-y:auto; padding:4px 0 2px; }
-#rgSteps::-webkit-scrollbar { width:3px; }
-#rgSteps::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:2px; }
-.rg-step { display:flex; align-items:flex-start; gap:10px; padding:7px 12px; transition:background .12s; position:relative; }
-.rg-step:hover { background:#f8fafc; }
-.rg-step:not(:last-child)::after { content:''; position:absolute; left:22px; top:32px; bottom:-7px; width:2px; background:#e5e7eb; }
-.rg-ico { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; flex-shrink:0; margin-top:2px; border:2px solid #e5e7eb; background:#fff; color:#6b7280; z-index:1; }
-.rg-ico.depart { border-color:#bbf7d0; background:#f0fdf4; color:#16a34a; }
-.rg-ico.left   { border-color:#bfdbfe; background:#eff6ff; color:#1967d2; }
-.rg-ico.right  { border-color:#bbf7d0; background:#f0fdf4; color:#16a34a; }
-.rg-ico.uturn  { border-color:#fde68a; background:#fefce8; color:#b45309; }
-.rg-ico.arrive { border-color:#fca5a5; background:#fef2f2; color:#B71C1C; }
-.rg-step-body { flex:1; min-width:0; }
-.rg-step-name { font-size:11.5px; font-weight:600; color:#1f2937; line-height:1.4; }
-.rg-step-dist { font-size:10px; color:#9ca3af; margin-top:1px; }
-#rgFooter { padding:8px 10px 10px; border-top:1px solid #f1f5f9; }
-#rgClearBtn { width:100%; padding:9px; background:#fff; color:#dc2626; border:1.5px solid #fca5a5; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; transition:.15s; }
-#rgClearBtn:hover { background:#fef2f2; border-color:#dc2626; }
 
-/* ── Mobile ── */
+#rgHeader {
+    padding: 12px 13px 11px; background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+#rgHeaderInner { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+#rgIcon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #1967d2, #3b82f6);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(25,103,210,.3);
+}
+#rgDestName  { font-size: 12.5px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#rgSubtitle  { font-size: 10.5px; color: #9ca3af; margin-top: 2px; }
+#rgClose {
+    width: 28px; height: 28px; background: #f3f4f6;
+    border: none; border-radius: 7px; cursor: pointer;
+    font-size: 11px; color: #6b7280;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: .15s;
+}
+#rgClose:hover { background: #fee2e2; color: #B71C1C; transform: rotate(90deg); }
+
+#rgSummary {
+    display: flex; align-items: center; padding: 11px 14px;
+    background: linear-gradient(135deg, #f0f9ff, #f8fafc);
+    border-bottom: 1px solid #f1f5f9;
+}
+.rg-stat { flex: 1; text-align: center; }
+.rg-stat-divider { width: 1px; height: 32px; background: #e5e7eb; }
+.rg-stat-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #9ca3af; margin-bottom: 3px; }
+.rg-stat-val { font-size: 16px; font-weight: 800; line-height: 1; }
+.rg-dist { color: #1967d2; }
+.rg-time { color: #16a34a; }
+
+#rgLoading { padding: 20px 14px; font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 8px; justify-content: center; }
+#rgSteps { max-height: 260px; overflow-y: auto; padding: 4px 0 2px; }
+#rgSteps::-webkit-scrollbar { width: 3px; }
+#rgSteps::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+
+.rg-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 13px; transition: background .12s; position: relative; }
+.rg-step:hover { background: #f8fafc; }
+.rg-step:not(:last-child)::after { content: ''; position: absolute; left: 23px; top: 33px; bottom: -7px; width: 2px; background: #e9ecef; }
+.rg-ico { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; margin-top: 2px; border: 2px solid #e5e7eb; background: #fff; color: #6b7280; z-index: 1; }
+.rg-ico.depart { border-color: #bbf7d0; background: #f0fdf4; color: #16a34a; }
+.rg-ico.left   { border-color: #bfdbfe; background: #eff6ff; color: #1967d2; }
+.rg-ico.right  { border-color: #bbf7d0; background: #f0fdf4; color: #16a34a; }
+.rg-ico.uturn  { border-color: #fde68a; background: #fefce8; color: #b45309; }
+.rg-ico.arrive { border-color: #fca5a5; background: #fef2f2; color: #B71C1C; }
+.rg-step-body { flex: 1; min-width: 0; }
+.rg-step-name { font-size: 11.5px; font-weight: 600; color: #1f2937; line-height: 1.45; }
+.rg-step-dist { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+
+#rgFooter { padding: 9px 11px 11px; border-top: 1px solid #f1f5f9; }
+#rgClearBtn {
+    width: 100%; padding: 9px; background: #fff; color: #dc2626;
+    border: 1.5px solid #fca5a5; border-radius: 9px;
+    font-size: 11.5px; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: .15s;
+}
+#rgClearBtn:hover { background: #fef2f2; border-color: #dc2626; }
+
+/* ═══════════════════════════════════════════
+   BOTTOM ROW
+═══════════════════════════════════════════ */
+.map-bottom-row {
+    position: absolute; bottom: 16px; right: 16px;
+    z-index: 1000; display: flex; align-items: flex-end; gap: 10px;
+    white-space: nowrap;
+}
+.gender-toggle-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.gender-toggle-label {
+    font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
+    color: #6b7280; white-space: nowrap; pointer-events: none;
+    background: rgba(255,255,255,0.92); padding: 2px 8px; border-radius: 20px;
+    line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.gender-toggle-wrap {
+    display: flex; gap: 5px;
+    background: rgba(255,255,255,0.97);
+    border-radius: 14px; padding: 5px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.18);
+    border: 1px solid #e9ecef;
+}
+.gender-toggle-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 14px; border-radius: 10px;
+    border: 1.5px solid transparent; background: transparent;
+    font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; color: #9ca3af;
+}
+.gender-toggle-btn i { font-size: 13px; }
+.gender-toggle-btn[data-gender="male"]:hover,
+.gender-toggle-btn[data-gender="male"].active {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 10px rgba(59,130,246,.4);
+}
+.gender-toggle-btn[data-gender="female"]:hover,
+.gender-toggle-btn[data-gender="female"].active {
+    background: linear-gradient(135deg, #be185d, #ec4899);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 10px rgba(236,72,153,.4);
+}
+
+.map-loc-btn-inline {
+    display: flex; align-items: center; gap: 7px;
+    padding: 11px 20px; border-radius: 14px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff; border: none;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(249,115,22,.45);
+    white-space: nowrap;
+}
+.map-loc-btn-inline:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,115,22,.5); }
+.map-loc-btn-inline i { font-size: 13px; }
+
+/* ═══════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════ */
 @media (max-width: 768px) {
     .map-page-content { padding: 14px 14px 60px; }
-    .map-loc-btn {
-        bottom: 14px !important; right: 14px !important;
-        left: auto !important; transform: none !important;
-        background: #f97316 !important;
-        box-shadow: 0 4px 12px rgba(249,115,22,.4) !important;
-        z-index: 1001 !important;
-    }
+    .map-page-header  { padding: 20px 16px 18px; border-radius: 14px; }
+    .map-page-header h1 { font-size: 18px; }
     .mleg { bottom: 14px !important; left: 10px !important; right: auto !important; }
     .map-layout { height: calc(100vh - 220px); min-height: 400px; flex-direction: column; }
-    .map-cat-sidebar { width:100%; height:auto; max-height:100px; border-right:none; border-bottom:1px solid #f0f0f0; flex-direction:row; flex-wrap:wrap; padding:6px 8px; gap:4px; overflow-x:auto; overflow-y:hidden; }
+    .map-cat-sidebar { width: 100%; height: auto; max-height: 100px; border-right: none; border-bottom: 1px solid #f0f0f0; flex-direction: row; flex-wrap: wrap; padding: 6px 8px; gap: 4px; overflow-x: auto; overflow-y: hidden; }
     .mcs-header { display: none; }
     .map-right { flex: 1; }
     .client-sidebar { display: none; }
     .page-layout { display: block; }
     .main.main-with-sidebar { width: 100%; }
     #notifBellWrap { display: none !important; }
+    .map-bottom-row { bottom: 10px; right: 10px; gap: 6px; }
+    .gender-toggle-btn { padding: 5px 9px; font-size: 10.5px; }
+    .gender-toggle-btn i { font-size: 11px; }
+    .gender-toggle-wrap { padding: 4px; }
+    .gender-toggle-label { font-size: 9px; }
+    .map-loc-btn-inline { padding: 8px 14px; font-size: 11.5px; gap: 5px; }
+    .map-loc-btn-inline i { font-size: 11px; }
 }
 </style>
 {% endblock extra_css %}
@@ -176,38 +365,80 @@
     <div class="map-page-header">
         <h1><i class="fas fa-map-marked-alt"></i> Establishment Map</h1>
         <p>See all food establishments near CvSU-Bacoor — tap a pin to view details or get directions.</p>
-        
-        <!-- Map Instructions - Collapsible -->
-        <div style="background:#f9fafb; border-radius:10px; border:1px solid #e5e7eb; overflow:hidden; margin-top:14px;">
-            <button onclick="toggleMapInstructions()" style="width:100%; padding:12px 16px; background:#f9fafb; border:none; text-align:left; cursor:pointer; display:flex; align-items:center; justify-content:space-between; font-weight:600; color:#374151; transition:background 0.2s;">
-                <span style="display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-question-circle" style="color:#10b981; font-size:14px;"></i>
+
+        <!-- Map Instructions - Collapsible Step-by-Step -->
+        <div class="map-instructions-wrap">
+            <button onclick="toggleMapInstructions()" class="map-instructions-trigger">
+                <span class="trig-left">
+                    <i class="fas fa-map-signs"></i>
                     How to use the map
                 </span>
-                <i class="fas fa-chevron-down" id="mapInstructionsIcon" style="font-size:12px; transition:transform 0.3s;"></i>
+                <i class="fas fa-chevron-down trig-icon" id="mapInstructionsIcon"></i>
             </button>
-            <div id="mapInstructionsContent" style="display:none; padding:0 16px 14px; border-top:1px solid #e5e7eb; font-size:13px; color:#555; line-height:1.6;">
-                <ul style="margin:12px 0 0; padding-left:20px;">
-                    <li><strong>🟢 Green pins</strong> = Open establishments (you can order now)</li>
-                    <li><strong>🔴 Red pins</strong> = Closed establishments (not accepting orders)</li>
-                    <li><strong>📌 Tap a pin</strong> = View establishment details and menu</li>
-                    <li><strong>🗺️ Zoom in/out</strong> = Use scroll wheel or pinch on mobile to see more detail</li>
-                    <li><strong>🎯 Filter by category</strong> = Use the filter on the left to narrow down establishments</li>
-                    <li><strong>📍 Layer button</strong> = Switch between Map, Satellite, or Terrain views</li>
-                    <li><strong>📍 Show My Location</strong> = Click the location icon in the top-right corner of the map to see your current position. A blue dot will appear. This helps you find the nearest establishments to you!</li>
-                </ul>
+            <div id="mapInstructionsContent" class="map-instructions-body">
+                <div class="map-steps">
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6)">1</div>
+                        <div>
+                            <div class="map-step-title">Choose your avatar icon</div>
+                            <div class="map-step-desc">Before showing your location, pick your gender icon — tap <strong style="color:#1d4ed8;">🧔 Male</strong> or <strong style="color:#be185d;">👩 Female</strong> using the toggle buttons at the bottom of the map. This determines what icon appears on your exact location.</div>
+                        </div>
+                    </div>
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#f97316,#ea580c)">2</div>
+                        <div>
+                            <div class="map-step-title">Show your location</div>
+                            <div class="map-step-desc">Click <strong>📍 Show My Location</strong> at the bottom of the map. Allow location permission when prompted — your chosen avatar will appear at your exact position on the map in real-time.</div>
+                        </div>
+                    </div>
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#059669,#10b981)">3</div>
+                        <div>
+                            <div class="map-step-title">Switch icon anytime</div>
+                            <div class="map-step-desc">Even after your location is shown, you can tap the <strong>🧔 / 👩</strong> buttons to instantly swap your avatar icon — no need to re-tap Show My Location. The change happens in real-time.</div>
+                        </div>
+                    </div>
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">4</div>
+                        <div>
+                            <div class="map-step-title">Tap an establishment pin</div>
+                            <div class="map-step-desc"><strong style="color:#10b981;">🟢 Green pins</strong> = Open (can order now) &nbsp;·&nbsp; <strong style="color:#ef4444;">🔴 Red pins</strong> = Closed. Tap any pin to view details, menu, and get walking directions.</div>
+                        </div>
+                    </div>
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#b45309,#f59e0b)">5</div>
+                        <div>
+                            <div class="map-step-title">Get walking directions</div>
+                            <div class="map-step-desc">After tapping a pin, click <strong>Get Directions</strong>. A turn-by-turn walking route will appear with distance and estimated walk time. Click <strong>Clear Route</strong> to remove it.</div>
+                        </div>
+                    </div>
+
+                    <div class="map-step">
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#0e7490,#06b6d4)">6</div>
+                        <div>
+                            <div class="map-step-title">Filter &amp; change map type</div>
+                            <div class="map-step-desc">Use <strong>Filter by Category</strong> on the left sidebar to narrow down establishments. Use the <strong>🗺️ Layers</strong> button (top-right of map) to switch between Hybrid, Street, Satellite, or Terrain view.</div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
-        
+
         <!-- Map Legend -->
-        <div style="display:flex; gap:24px; margin-top:12px; font-size:13px; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <div style="width:20px; height:20px; border-radius:50%; background:#fff; border:3px solid #10b981; box-shadow:0 0 0 2px rgba(16,185,129,0.3);"></div>
-                <span style="color:#555;">Open</span>
+        <div class="map-legend-row">
+            <div class="map-legend-item">
+                <div class="map-legend-dot open"></div>
+                <span>Open</span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <div style="width:20px; height:20px; border-radius:50%; background:#fff; border:3px solid #ef4444; box-shadow:0 0 0 2px rgba(239,68,68,0.3);"></div>
-                <span style="color:#555;">Closed</span>
+            <div class="map-legend-item">
+                <div class="map-legend-dot closed"></div>
+                <span>Closed</span>
             </div>
         </div>
     </div>
@@ -254,10 +485,28 @@
                         <button class="mlp-opt"    id="mts-terrain"   onclick="switchTile('terrain')">  <i class="fas fa-mountain"></i> Terrain</button>
                     </div>
 
-                    <!-- Show My Location -->
-                    <button class="map-loc-btn" id="mapLocBtn" onclick="showMyLocation()">
-                        <i class="fas fa-location-arrow"></i> Show My Location
-                    </button>
+                    <!-- Bottom row: Choose icon (left) + Show My Location (right) -->
+                    <div class="map-bottom-row">
+                        <!-- Gender toggle group -->
+                        <div class="gender-toggle-group">
+                            <div class="gender-toggle-label" id="genderToggleLabel">Choose your icon</div>
+                            <div class="gender-toggle-wrap">
+                                <button class="gender-toggle-btn active" data-gender="male"
+                                    onclick="window.setUserGender('male')" title="Male avatar">
+                                    <i class="fas fa-male"></i> Male
+                                </button>
+                                <button class="gender-toggle-btn" data-gender="female"
+                                    onclick="window.setUserGender('female')" title="Female avatar">
+                                    <i class="fas fa-female"></i> Female
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Show My Location -->
+                        <button class="map-loc-btn-inline" id="mapLocBtn" onclick="showMyLocation()">
+                            <i class="fas fa-location-arrow"></i> Show My Location
+                        </button>
+                    </div>
 
                     <!-- 500m legend -->
                     <div class="mleg"><div class="mleg-dot"></div> 500m radius from CvSU-Bacoor</div>
@@ -347,7 +596,7 @@ function toggleMapInstructions() {
     const content = document.getElementById('mapInstructionsContent');
     const icon = document.getElementById('mapInstructionsIcon');
     const isOpen = content.style.display !== 'none';
-    
+
     if (isOpen) {
         content.style.display = 'none';
         icon.style.transform = 'rotate(0deg)';
@@ -364,6 +613,13 @@ document.addEventListener('DOMContentLoaded', function () {
     initProfile();
 
     if (!mapReady) { initMap(); mapReady = true; }
+
+    // ── Restore saved gender toggle state ──
+    var savedGender = localStorage.getItem('kabsu_map_gender') || 'male';
+    document.querySelectorAll('.gender-toggle-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.gender === savedGender);
+    });
+    window._userGender = savedGender;
 
     window.addEventListener('load', function () {
         setTimeout(function(){ if(mapInst) mapInst.invalidateSize(); }, 300);
@@ -393,72 +649,170 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSet(); });
 });
 
-// ── Category Filter ──
+// ── Category Filter (reads directly from EST_ALL_DATA already on the page) ──
+window._mapActiveCats = new Set();
+
+window.filterMapCategory = function(cat, btn) {
+    const container = document.getElementById('mapCatFilter');
+    const allBtn = container ? container.querySelector('.mcf-all') : null;
+    if (cat === '__all__') {
+        window._mapActiveCats.clear();
+        if (container) container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(b => b.classList.remove('active'));
+        if (allBtn) allBtn.classList.add('active');
+    } else {
+        if (window._mapActiveCats.has(cat)) {
+            window._mapActiveCats.delete(cat);
+            if (btn) btn.classList.remove('active');
+        } else {
+            window._mapActiveCats.add(cat);
+            if (btn) btn.classList.add('active');
+        }
+        if (allBtn) allBtn.classList.toggle('active', window._mapActiveCats.size === 0);
+    }
+    applyMapCatFilter();
+};
+
+window.applyMapCatFilter = function() {
+    const active = window._mapActiveCats;
+    if (typeof esMapData === 'undefined' || typeof renderMarkers !== 'function') return;
+    mapFilterState.cats = active.size === 0 ? null : Array.from(active);
+    renderMarkers(_applyFiltersWithCats(esMapData));
+};
+
+function _applyFiltersWithCats(data) {
+    const saved = mapFilterState.cat;
+    mapFilterState.cat = '';
+    let result = (typeof applyFiltersToData === 'function') ? applyFiltersToData(data) : data;
+    mapFilterState.cat = saved;
+    if (mapFilterState.cats && mapFilterState.cats.length > 0) {
+        result = result.filter(function(e) {
+            const ec = (e.categories  || '').toLowerCase();
+            const eo = (e.other_category || '').toLowerCase();
+            return mapFilterState.cats.some(function(c) {
+                return ec.includes(c) || eo.includes(c);
+            });
+        });
+    }
+    return result;
+}
+
 function initMapCatFilter() {
     const container = document.getElementById('mapCatFilter');
-    if (!container || !window.SUGGEST_DATA || !SUGGEST_DATA.categories) return;
+    if (!container) return;
 
-    SUGGEST_DATA.categories.forEach(function(cat) {
-        const btn = document.createElement('button');
-        btn.className = 'mcf-btn';
-        btn.setAttribute('data-cat', cat.toLowerCase());
-        btn.innerHTML = '<span class="mcf-check"></span><span>' + cat + '</span>';
-        btn.onclick = function() { filterMapCategory(cat.toLowerCase(), this); };
-        container.appendChild(btn);
-    });
+    // ── Build unique category list from EST_ALL_DATA (already on the page) ──
+    var catCount = {};
+    if (window.EST_ALL_DATA) {
+        Object.values(window.EST_ALL_DATA).forEach(function(est) {
+            var combined = [];
+            if (est.categories) {
+                est.categories.split(',').forEach(function(c) {
+                    var t = c.trim(); if (t) combined.push(t);
+                });
+            }
+            if (est.other_category) {
+                est.other_category.split(',').forEach(function(c) {
+                    var t = c.trim(); if (t) combined.push(t);
+                });
+            }
+            combined.forEach(function(c) {
+                var key = c.toLowerCase();
+                catCount[key] = (catCount[key] || { label: c, count: 0 });
+                catCount[key].count++;
+            });
+        });
+    }
 
-    window._mapActiveCats = new Set();
+    var cats = Object.keys(catCount).sort().map(function(k) { return catCount[k]; });
 
-    window.filterMapCategory = function(cat, btn) {
-        const allBtn = container.querySelector('.mcf-all');
-        if (cat === '__all__') {
-            window._mapActiveCats.clear();
-            container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(b => b.classList.remove('active'));
-            allBtn.classList.add('active');
-        } else {
-            if (window._mapActiveCats.has(cat)) { window._mapActiveCats.delete(cat); btn.classList.remove('active'); }
-            else { window._mapActiveCats.add(cat); btn.classList.add('active'); }
-            allBtn.classList.toggle('active', window._mapActiveCats.size === 0);
-        }
-        applyMapCatFilter();
-    };
-
-    window.applyMapCatFilter = function() {
-        const active = window._mapActiveCats;
-        if (typeof esMapData === 'undefined' || typeof renderMarkers !== 'function') return;
-        mapFilterState.cats = active.size === 0 ? null : Array.from(active);
-        renderMarkers(_applyFiltersWithCats(esMapData));
-    };
-
-    function _applyFiltersWithCats(data) {
-        const saved = mapFilterState.cat;
-        mapFilterState.cat = '';
-        let result = applyFiltersToData(data);
-        mapFilterState.cat = saved;
-        if (mapFilterState.cats && mapFilterState.cats.length > 0) {
-            result = result.filter(function(e) {
-                const ec = (e.categories||'').toLowerCase(), eo = (e.other_category||'').toLowerCase();
-                return mapFilterState.cats.some(function(c){ return ec.includes(c)||eo.includes(c); });
+    if (cats.length === 0) {
+        if (window.SUGGEST_DATA && SUGGEST_DATA.categories) {
+            SUGGEST_DATA.categories.forEach(function(c) {
+                var key = c.toLowerCase();
+                if (!catCount[key]) cats.push({ label: c, count: 0 });
             });
         }
-        return result;
     }
+
+    container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(function(b) { b.remove(); });
+
+    if (cats.length === 0) {
+        var hint = document.createElement('div');
+        hint.style.cssText = 'font-size:11px;color:#9ca3af;padding:8px 4px;font-family:Poppins,sans-serif;';
+        hint.textContent = 'No categories registered yet.';
+        container.appendChild(hint);
+        return;
+    }
+
+    cats.forEach(function(cat) {
+        var btn = document.createElement('button');
+        btn.className = 'mcf-btn';
+        btn.setAttribute('data-cat', cat.label.toLowerCase());
+        btn.innerHTML =
+            '<span class="mcf-check"></span>' +
+            '<span>' + cat.label + '</span>' +
+            (cat.count ? '<span style="margin-left:auto;font-size:9.5px;opacity:.5;font-weight:700;">' + cat.count + '</span>' : '');
+        btn.onclick = function() { filterMapCategory(cat.label.toLowerCase(), this); };
+        container.appendChild(btn);
+    });
 }
 
 // ── Routing System (OSRM) ──
-window._routeLayer = null; window._routeExtraLayers = []; window._userLat = null; window._userLng = null;
+window._routeExtraLayers = [];
+window._userLat = null;
+window._userLng = null;
+window._routeRequestId = 0; // Anti-ghost line flag
+
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         function(pos){ window._userLat=pos.coords.latitude; window._userLng=pos.coords.longitude; },
         null, { enableHighAccuracy:true, maximumAge:15000 }
     );
 }
+
+// PINALITANG FUNCTION PARA SIGURADONG BURADO ANG MGA LINYA
+// Ginawa itong window function para ma-access kahit saan (global scope)
+window._clearRouteLayers = function(){
+    if (window._routeExtraLayers && window._routeExtraLayers.length > 0) {
+        window._routeExtraLayers.forEach(function(layer) {
+            if (layer) {
+                try {
+                    // Method 1: Gamitin ang built-in remove() ng mismong Leaflet map (mapInst)
+                    if (typeof mapInst !== 'undefined' && mapInst.hasLayer(layer)) {
+                        mapInst.removeLayer(layer);
+                    }
+                    // Fallback kapag ang map variable ay pinangalanang "map"
+                    if (typeof window.map !== 'undefined' && window.map.hasLayer(layer)) {
+                        window.map.removeLayer(layer);
+                    }
+                    // Method 2: Fallback remove call sa mismong layer
+                    if (typeof layer.remove === 'function') {
+                        layer.remove();
+                    }
+                } catch(e) {
+                    console.error('Hindi mabura ang layer:', e);
+                }
+            }
+        });
+        // Linisin ang array pabalik sa wala
+        window._routeExtraLayers = [];
+    }
+};
+
 window.toggleRouteGuide = function() {
     var guide=document.getElementById('routeGuide'), btn=document.getElementById('mapRouteBtn');
     if(!guide) return;
-    if(guide.classList.contains('show')){ guide.classList.remove('show'); if(btn) btn.classList.remove('active'); }
-    else { guide.classList.add('show'); if(btn) btn.classList.add('active'); }
+    if(guide.classList.contains('show')){
+        guide.classList.remove('show');
+        if(btn) btn.classList.remove('active');
+        window._routeRequestId++;          // I-cancel ang mga naglo-loading na routes
+        window._clearRouteLayers();        // MAHALAGA: Burahin din ang asul na linya kapag na-close ang menu
+    } else {
+        guide.classList.add('show');
+        if(btn) btn.classList.add('active');
+    }
 };
+
 window.showRouteTo = function(destLat, destLng, destName) {
     if (!window._userLat || !window._userLng) {
         if (!navigator.geolocation) { if(typeof showToast==='function') showToast('Geolocation not supported.','error'); return; }
@@ -470,25 +824,58 @@ window.showRouteTo = function(destLat, destLng, destName) {
         );
         return;
     }
+
     var guide=document.getElementById('routeGuide'),
         rgLoading=document.getElementById('rgLoading'), rgSteps=document.getElementById('rgSteps'),
         rgSummary=document.getElementById('rgSummary'), rgFooter=document.getElementById('rgFooter'),
         rgDest=document.getElementById('rgDestName'), rgDist=document.getElementById('rgDist'),
         rgTime=document.getElementById('rgTime'), btn=document.getElementById('mapRouteBtn');
+
     rgDest.textContent=destName; document.getElementById('rgSubtitle').textContent='Calculating…';
     rgSummary.style.display='none'; rgFooter.style.display='none'; rgSteps.innerHTML='';
     rgLoading.style.display='flex'; guide.classList.add('show'); btn.style.display='flex'; btn.classList.add('active');
-    _clearRouteLayers();
+
+    // Panibagong ID para hindi mag-overlap ang linya kapag nag-click agad ng iba habang naglo-load
+    window._routeRequestId++;
+    var currentReqId = window._routeRequestId;
+
+    // Burahin muna ang anumang nakaraang route bago gumawa ng bago
+    window._clearRouteLayers();
+
     fetch('https://router.project-osrm.org/route/v1/walking/'+window._userLng+','+window._userLat+';'+destLng+','+destLat+'?overview=full&geometries=geojson&steps=true')
         .then(function(r){return r.json();})
         .then(function(data){
+            // Kung nai-cancel o nag-clear bago natapos mag-fetch, huwag nang ituloy
+            if (currentReqId !== window._routeRequestId) return;
+
             if(!data.routes||!data.routes.length) throw new Error('no route');
+
+            // Siguraduhing malinis ang map bago mag-drawing ulit (double protection)
+            window._clearRouteLayers();
+
             var route=data.routes[0], coords=route.geometry.coordinates.map(function(c){return[c[1],c[0]];});
-            var shadow=L.polyline(coords,{color:'#1967d2',weight:10,opacity:0.15,lineJoin:'round',lineCap:'round'}).addTo(mapInst);
-            window._routeLayer=L.polyline(coords,{color:'#1967d2',weight:5,opacity:1,lineJoin:'round',lineCap:'round'}).addTo(mapInst);
-            var center=L.polyline(coords,{color:'#ffffff',weight:2,opacity:0.5,lineJoin:'round',lineCap:'round',dashArray:'1 8'}).addTo(mapInst);
-            window._routeExtraLayers=[shadow,center];
-            mapInst.fitBounds(window._routeLayer.getBounds(),{padding:[50,50],animate:true});
+
+            // Gumawa ng linyang pampamapa (shadow, mismong blue line, at broken white line)
+            var shadow = L.polyline(coords, {color:'#1967d2',weight:10,opacity:0.15,lineJoin:'round',lineCap:'round'});
+            var mainLine = L.polyline(coords, {color:'#1967d2',weight:5,opacity:1,lineJoin:'round',lineCap:'round'});
+            var centerLine = L.polyline(coords, {color:'#ffffff',weight:2,opacity:0.5,lineJoin:'round',lineCap:'round',dashArray:'1 8'});
+
+            // I-add ang bawat isa sa mismong map variable mo
+            if (typeof mapInst !== 'undefined') {
+                shadow.addTo(mapInst);
+                mainLine.addTo(mapInst);
+                centerLine.addTo(mapInst);
+                mapInst.fitBounds(mainLine.getBounds(),{padding:[50,50],animate:true});
+            } else if (typeof window.map !== 'undefined') {
+                shadow.addTo(window.map);
+                mainLine.addTo(window.map);
+                centerLine.addTo(window.map);
+                window.map.fitBounds(mainLine.getBounds(),{padding:[50,50],animate:true});
+            }
+
+            // Itago natin ang object references sa iisang array para madali burahin mamaya
+            window._routeExtraLayers = [shadow, mainLine, centerLine];
+
             var dM=route.distance, dS=route.duration;
             rgDist.textContent=dM<1000?Math.round(dM)+'m':(dM/1000).toFixed(1)+'km';
             rgTime.textContent=dS<60?Math.round(dS)+'s':dS<3600?Math.round(dS/60)+' min':Math.floor(dS/3600)+'h '+Math.round((dS%3600)/60)+'m';
@@ -522,17 +909,25 @@ window.showRouteTo = function(destLat, destLng, destName) {
         })
         .catch(function(){ rgLoading.style.display='none'; if(typeof showToast==='function') showToast('Could not calculate route.','error'); });
 };
+
 function _cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):''; }
-function _clearRouteLayers(){
-    if(window._routeLayer){ mapInst.removeLayer(window._routeLayer); window._routeLayer=null; }
-    (window._routeExtraLayers||[]).forEach(function(l){ mapInst.removeLayer(l); });
-    window._routeExtraLayers=[];
-}
+
+// Itong function ay nata-trigger kapag clinick ang "X" o "Clear Route" button sa modal
 window.closeRouteGuide = function(){
-    var guide=document.getElementById('routeGuide'), btn=document.getElementById('mapRouteBtn');
-    if(guide) guide.classList.remove('show');
-    if(btn){ btn.classList.remove('active'); btn.style.display='none'; }
-    _clearRouteLayers();
+    // Cancel any in-flight route requests
+    window._routeRequestId++;
+    // Clear OSRM polyline layers (shadow, mainLine, centerLine from showRouteTo)
+    if (typeof window._clearRouteLayers === 'function') window._clearRouteLayers();
+    // Clear kabsueats.js routeLine/routeAnimMarker and hide the panel
+    if (typeof window.clearRoute === 'function') {
+        window.clearRoute();
+        return;
+    }
+    // Fallback kung hindi pa naka-load ang kabsueats.js
+    var guide = document.getElementById('routeGuide');
+    var btn   = document.getElementById('mapRouteBtn');
+    if (guide) guide.classList.remove('show');
+    if (btn)  { btn.classList.remove('active'); btn.style.display = 'none'; }
 };
 </script>
 {% endblock extra_js %}

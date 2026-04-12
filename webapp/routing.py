@@ -34,4 +34,24 @@ websocket_urlpatterns = [
         r'ws/establishments/$',
         consumers.EstablishmentConsumer.as_asgi()
     ),
+    # ✅ NEW: Real-time cart sync per user — quantity updates, remove, clear,
+    #    and order-sent events are pushed to all tabs/devices of the same user.
+    re_path(
+        r'ws/cart/(?P<user_id>\d+)/$',
+        consumers.CartConsumer.as_asgi()
+    ),
+    # ✅ NEW: Realtime owner presence (bidirectional, ~1 second)
+    #   Owner:    /ws/presence/<est_id>/owner/
+    #             → connects when dashboard opens; disconnect = offline broadcast
+    #   Customer: /ws/presence/<est_id>/customer/<customer_id>/
+    #             → connects when details page opens; receives owner status
+    #             → also broadcasts customer presence to the owner dashboard
+    re_path(
+        r'ws/presence/(?P<establishment_id>\d+)/owner/$',
+        consumers.OwnerPresenceConsumer.as_asgi()
+    ),
+    re_path(
+        r'ws/presence/(?P<establishment_id>\d+)/customer/(?P<customer_id>\d+)/$',
+        consumers.OwnerPresenceConsumer.as_asgi()
+    ),
 ]

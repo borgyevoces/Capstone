@@ -1,0 +1,655 @@
+/* ============================================================
+   KABSUEATS — FILTER REDESIGN
+   Drop this into your <style> block in kabsueats.html
+   OR add as a separate CSS file loaded after the main ones.
+   ============================================================ */
+
+/* ─────────────────────────────────────────────
+   SHARED VARIABLES
+───────────────────────────────────────────── */
+:root {
+    --red:        #B71C1C;
+    --red-dark:   #8B0000;
+    --red-light:  #fff5f5;
+    --red-ring:   rgba(183, 28, 28, 0.15);
+    --pill-bg:    #f3f4f6;
+    --pill-hover: #e9e9e9;
+    --text-main:  #1f2937;
+    --text-muted: #6b7280;
+    --border:     #e5e7eb;
+    --radius-sm:  6px;
+    --radius-md:  10px;
+    --radius-pill:30px;
+    --shadow-sm:  0 1px 4px rgba(0,0,0,0.07);
+    --shadow-md:  0 3px 12px rgba(0,0,0,0.09);
+    --trans:      all 0.18s ease;
+}
+
+/* ============================================================
+   SECTION 1 — BESTSELLERS FILTER BAR  (.bs-filter-bar)
+   ============================================================ */
+
+/* ── Bestsellers section top spacing ── */
+.bs-section {
+    margin-top: 40px !important;
+}
+
+/* ── Best Sellers heading block ── */
+.bs-title-row {
+    display: block !important;
+    margin-bottom: 18px;
+}
+
+.bs-heading-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.bs-heading-main {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.bs-heading-sub {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    font-weight: 400;
+}
+
+@media (max-width: 768px) {
+    .bs-heading-main { font-size: 18px; }
+    .bs-heading-sub  { font-size: 11.5px; }
+}
+
+/* ── Establishment filter bar — force left alignment ── */
+.filt-bar,
+.filt-bar-enhanced {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.filt-inner,
+.filt-inner-enhanced {
+    width: auto;
+    align-items: flex-start;
+}
+
+.filt-row {
+    justify-content: flex-start;
+}
+
+/* Title row sits above the filter bar */
+.bs-title-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.bs-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 6px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 18px;
+    box-shadow: none;
+    overflow-x: auto;
+}
+
+/* ── In Stock toggle chip ── */
+.bs-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.bs-filter-chip i {
+    font-size: 13px;
+    color: #d1d5db;
+    transition: var(--trans);
+}
+
+.bs-filter-chip:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-light);
+}
+
+.bs-filter-chip:hover i {
+    color: var(--red);
+}
+
+.bs-filter-chip.active {
+    border-color: var(--red);
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 2px 10px var(--red-ring);
+}
+
+.bs-filter-chip.active i {
+    color: #fff;
+}
+
+/* ── Divider between groups ── */
+.bs-filter-bar::before {
+    display: none; /* remove if you had a pseudo-divider */
+}
+
+/* ── Meta label (sort icon prefix) ── */
+.bs-meta-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ── Sort group ── */
+.bs-sort-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--pill-bg);
+    border-radius: var(--radius-pill);
+    padding: 3px 6px;
+    flex-shrink: 0;
+}
+
+.bs-sort-btn {
+    padding: 5px 12px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+}
+
+.bs-sort-btn:hover {
+    background: #fff;
+    color: var(--red);
+    box-shadow: var(--shadow-sm);
+}
+
+.bs-sort-btn.active {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--red-ring);
+}
+
+/* ── Price wrap ── */
+.bs-price-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--pill-bg);
+    border-radius: var(--radius-pill);
+    padding: 5px 12px;
+    flex-shrink: 0;
+}
+
+.bs-price-wrap .bs-meta-label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 60px;
+}
+
+#bsPriceSlider {
+    width: 90px !important;
+    height: 4px;
+    cursor: pointer;
+    accent-color: var(--red) !important;
+    border-radius: 4px;
+    background: transparent;
+}
+
+/* ── Category pills (bscp) ── */
+.bs-cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.bscp {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+}
+
+.bscp:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-light);
+}
+
+.bscp.active {
+    border-color: var(--red);
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--red-ring);
+}
+
+.bscp-cnt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    background: rgba(0,0,0,0.08);
+    color: inherit;
+    line-height: 1;
+}
+
+.bscp.active .bscp-cnt {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+}
+
+/* Result count + grid toggle row */
+.bs-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.bs-result-count {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
+}
+
+.gv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gv-btn:hover,
+.gv-btn.on {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-light);
+}
+
+/* Override desktop CSS which sets red bg but no text color on .on state */
+.gv-btn.on,
+.gv-btn:hover {
+    background: var(--red) !important;
+    border-color: var(--red) !important;
+    color: #fff !important;
+}
+
+/* ============================================================
+   SECTION 2 — ESTABLISHMENT FILTERS  (.filt-bar)
+   ============================================================ */
+
+.filt-bar,
+.filt-bar-enhanced {
+    margin-bottom: 20px;
+}
+
+.filt-inner,
+.filt-inner-enhanced {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 6px 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── Each filter row ── */
+.filt-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
+.filt-row-2 {
+    padding-top: 0;
+    border-top: none;
+}
+
+/* Hide orphaned est result count / active chips if still in DOM */
+.est-result-count,
+.est-active-filters {
+    display: none !important;
+}
+
+/* Hide old bs-controls wrapper if still referenced */
+.bs-controls {
+    display: none !important;
+}
+
+/* ── Each group: label + controls ── */
+.filt-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.filt-group-end {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* ── Label ── */
+.filt-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Poppins', sans-serif;
+    flex-shrink: 0;
+}
+
+/* ── Category dropdown wrapper ── */
+.selw {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.selw::after {
+    content: '\f107'; /* fa-angle-down */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 11px;
+    color: var(--text-muted);
+    position: absolute;
+    right: 11px;
+    pointer-events: none;
+}
+
+.selw select,
+#catFilt {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 6px 32px 6px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    outline: none;
+    min-width: 140px;
+}
+
+.selw select:hover,
+#catFilt:hover {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.selw select:focus,
+#catFilt:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-ring);
+}
+
+/* ── Pill rows ── */
+.pill-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--pill-bg);
+    border-radius: var(--radius-pill);
+    padding: 3px 5px;
+    flex-wrap: nowrap;
+}
+
+/* ── Status pills ── */
+.est-status-pill,
+.est-rating-pill,
+.est-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+}
+
+.est-status-pill:hover,
+.est-rating-pill:hover,
+.est-sort-btn:hover {
+    background: #fff;
+    color: var(--red);
+    box-shadow: var(--shadow-sm);
+}
+
+.est-status-pill.active,
+.est-rating-pill.active,
+.est-sort-btn.active {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--red-ring);
+}
+
+/* ── Dot indicator inside status pills ── */
+.pill-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.pill-open  { background: #22c55e; }
+.pill-closed { background: #ef4444; }
+
+/* ── Result count ── */
+.est-result-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
+    white-space: nowrap;
+    padding: 5px 0;
+}
+
+/* ── Active filter chips ── */
+.est-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+/* These chips are injected by JS — style them here */
+.est-active-filters .af-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px 4px 11px;
+    background: var(--red-light);
+    border: 1.5px solid #fca5a5;
+    border-radius: var(--radius-pill);
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: var(--trans);
+    white-space: nowrap;
+}
+
+.est-active-filters .af-chip:hover {
+    background: #fee2e2;
+    border-color: var(--red);
+}
+
+.est-active-filters .af-chip .af-x {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 1px;
+}
+
+/* ============================================================
+   MOBILE OVERRIDES  (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+
+    .bs-filter-bar {
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 8px;
+    }
+
+    .bs-sort-group {
+        gap: 2px;
+        padding: 2px 4px;
+        overflow-x: auto;
+        max-width: 100%;
+    }
+
+    .bs-sort-btn {
+        font-size: 10.5px;
+        padding: 4px 9px;
+    }
+
+    .bs-price-wrap {
+        padding: 4px 10px;
+    }
+
+    #bsPriceSlider {
+        width: 70px !important;
+    }
+
+    .bscp {
+        font-size: 10.5px;
+        padding: 4px 10px;
+    }
+
+    .filt-inner,
+    .filt-inner-enhanced {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .filt-row {
+        gap: 8px 12px;
+    }
+
+    .filt-row-2 {
+        padding-top: 8px;
+    }
+
+    .pill-row {
+        flex-wrap: wrap;
+    }
+
+    .est-status-pill,
+    .est-rating-pill,
+    .est-sort-btn {
+        font-size: 10.5px;
+        padding: 4px 10px;
+    }
+
+    .filt-group-end {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .est-active-filters {
+        width: 100%;
+    }
+
+    .selw select,
+    #catFilt {
+        font-size: 11px;
+        min-width: 120px;
+        padding: 5px 28px 5px 11px;
+    }
+}

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Register (2/3): Details - KabsuEats</title>
     <link rel="stylesheet" href="{% static 'css/business_owner_registration.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media (min-width: 1024px) {
             .registration-container {
@@ -63,6 +64,7 @@
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
+            transition: border-color 0.2s;
         }
 
         .other-input-container input:focus {
@@ -70,11 +72,63 @@
             border-color: #e53935;
         }
 
+        .other-input-container input.input-invalid {
+            border-color: #e53935 !important;
+            background: #fff5f5;
+        }
+
+        .other-input-container input.input-valid {
+            border-color: #16a34a !important;
+            background: #f0fdf4;
+        }
+
         .other-input-container label {
             display: block;
             margin-bottom: 6px;
             font-size: 13px;
             color: #555;
+        }
+
+        /* Realtime indicator */
+        .other-realtime-hint {
+            margin-top: 6px;
+            font-size: 12px;
+            display: none;
+        }
+        .other-realtime-hint.show { display: block; }
+
+        .hint-duplicate {
+            color: #e53935;
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .hint-valid {
+            color: #16a34a;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .hint-existing-list {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .hint-tag {
+            display: inline-block;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .hint-tag.matched {
+            background: #e53935;
+            color: #fff;
+            border-color: #e53935;
         }
 
         /* Validation error */
@@ -88,6 +142,153 @@
         .validation-error.show {
             display: block;
         }
+
+        /* ══ Weekly Schedule ══════════════════════════════════════ */
+        .weekly-schedule-wrap {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        .schedule-header-row {
+            display: grid;
+            grid-template-columns: 110px 110px 1fr;
+            background: #f9fafb;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .schedule-row {
+            display: grid;
+            grid-template-columns: 110px 110px 1fr;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+        .schedule-row:last-child { border-bottom: none; }
+        .schedule-row.row-closed { background: #fafafa; }
+
+        .sd-name {
+            font-weight: 600;
+            color: #374151;
+        }
+        .schedule-row.row-closed .sd-name { color: #9ca3af; }
+
+        /* Toggle switch */
+        .sd-toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .sd-toggle-wrap input[type="checkbox"] { display: none; }
+
+        .sd-slider {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: #d1d5db;
+            border-radius: 11px;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .sd-slider::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        }
+        .sd-toggle-wrap input:checked ~ .sd-slider { background: #e53935; }
+        .sd-toggle-wrap input:checked ~ .sd-slider::after { transform: translateX(18px); }
+
+        .sd-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            min-width: 40px;
+        }
+        .sd-toggle-wrap input:checked ~ .sd-label { color: #e53935; }
+
+        /* Time inputs */
+        .sd-times {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sd-times input[type="time"] {
+            padding: 5px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #111;
+            background: #fff;
+            width: 112px;
+            transition: border-color 0.2s;
+        }
+        .sd-times input[type="time"]:focus {
+            outline: none;
+            border-color: #e53935;
+        }
+        .sd-times input[type="time"]:disabled {
+            background: #f3f4f6;
+            color: #c4c4c4;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+        }
+        .sd-sep { color: #9ca3af; font-size: 14px; font-weight: 600; }
+        .sd-times-closed { opacity: 0.4; }
+
+        @media (max-width: 600px) {
+            .schedule-header-row { display: none; }
+            .schedule-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 12px 16px;
+            }
+        }
+    /* ── Contact Link Rows ─────────────────────────────────────── */
+    .cl-row {
+        display:flex; align-items:center; gap:8px;
+        background:#fafafa; border:1px solid #e5e7eb;
+        border-radius:10px; padding:10px 12px;
+        transition:border-color .2s;
+        animation: clSlideIn .2s ease;
+    }
+    @keyframes clSlideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .cl-row:focus-within { border-color:#8b0000; background:#fff; }
+    .cl-label-inp {
+        width:90px; flex-shrink:0; border:none;
+        border-right:1px solid #e5e7eb; background:transparent;
+        padding:4px 10px 4px 4px; font-size:13px;
+        font-weight:700; color:#1f2937; outline:none;
+        text-transform:uppercase; letter-spacing:.3px;
+    }
+    .cl-label-inp::placeholder { font-weight:400; text-transform:none; color:#d1d5db; }
+    .cl-value-inp {
+        flex:1; border:none; background:transparent;
+        padding:4px 8px; font-size:13px; color:#1f2937; outline:none;
+    }
+    .cl-value-inp::placeholder { color:#d1d5db; }
+    .cl-remove-btn {
+        background:none; border:none; color:#9ca3af;
+        cursor:pointer; padding:4px 6px; border-radius:6px;
+        font-size:14px; transition:color .15s,background .15s; flex-shrink:0;
+    }
+    .cl-remove-btn:hover { color:#ef4444; background:#fee2e2; }
     </style>
 </head>
 <body>
@@ -120,21 +321,129 @@
                     <input type="text" id="address" name="address" required readonly>
                 </div>
 
-                <!-- Opening Time -->
-                <div class="form-group">
-                    <label for="opening_time">Opening Time *</label>
-                    <input type="time" id="opening_time" name="opening_time" required>
-                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
-                        ⏰ Example: 08:00 for 8:00 AM
-                    </small>
-                </div>
+                <!-- ══ WEEKLY SCHEDULE ══ -->
+                <div class="form-group full-width" id="weekly-schedule-section">
+                    <label>Weekly Schedule <span style="color:#e53935">*</span></label>
+                    <p style="font-size:13px;color:#666;margin:4px 0 14px;line-height:1.5;">
+                        Set your opening and closing hours per day of the week.<br>
+                        Toggle <strong>off</strong> the switch for days your establishment is closed.
+                    </p>
 
-                <!-- Closing Time -->
-                <div class="form-group">
-                    <label for="closing_time">Closing Time *</label>
-                    <input type="time" id="closing_time" name="closing_time" required>
-                    <small style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
-                        ⏰ Example: 22:00 for 10:00 PM
+                    <div class="weekly-schedule-wrap">
+                        <div class="schedule-header-row">
+                            <span class="sh-day">Day</span>
+                            <span class="sh-status">Status</span>
+                            <span class="sh-times">Opening – Closing</span>
+                        </div>
+
+                        <!-- Monday = 0 -->
+                        <div class="schedule-row" data-day="0">
+                            <span class="sd-name">Monday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="0" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="0" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="0" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Tuesday = 1 -->
+                        <div class="schedule-row" data-day="1">
+                            <span class="sd-name">Tuesday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="1" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="1" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="1" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Wednesday = 2 -->
+                        <div class="schedule-row" data-day="2">
+                            <span class="sd-name">Wednesday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="2" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="2" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="2" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Thursday = 3 -->
+                        <div class="schedule-row" data-day="3">
+                            <span class="sd-name">Thursday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="3" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="3" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="3" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Friday = 4 -->
+                        <div class="schedule-row" data-day="4">
+                            <span class="sd-name">Friday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="4" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="4" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="4" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Saturday = 5 -->
+                        <div class="schedule-row" data-day="5">
+                            <span class="sd-name">Saturday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="5" checked>
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Open</span>
+                            </label>
+                            <div class="sd-times">
+                                <input type="time" class="day-open-t" data-day="5" value="08:00">
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="5" value="22:00">
+                            </div>
+                        </div>
+
+                        <!-- Sunday = 6 (closed by default) -->
+                        <div class="schedule-row row-closed" data-day="6">
+                            <span class="sd-name">Sunday</span>
+                            <label class="sd-toggle-wrap">
+                                <input type="checkbox" class="day-open-cb" data-day="6">
+                                <span class="sd-slider"></span>
+                                <span class="sd-label">Closed</span>
+                            </label>
+                            <div class="sd-times sd-times-closed">
+                                <input type="time" class="day-open-t" data-day="6" value="08:00" disabled>
+                                <span class="sd-sep">–</span>
+                                <input type="time" class="day-close-t" data-day="6" value="22:00" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <small id="schedule-error" style="color:#e53935;font-size:12px;margin-top:8px;display:none;">
+                        ⚠️ Please set valid opening and closing times for at least one open day.
                     </small>
                 </div>
 
@@ -159,7 +468,9 @@
                     <div class="other-input-container" id="other-category-container">
                         <label for="other_category_text">Specify other category:</label>
                         <input type="text" id="other_category_text" name="other_category_text"
-                               placeholder="e.g., Vegan Restaurant, Dessert Shop, Food Truck">
+                               placeholder="e.g., Vegan Restaurant, Dessert Shop, Food Truck"
+                               autocomplete="off">
+                        <div class="other-realtime-hint" id="category-hint"></div>
                     </div>
                 </div>
 
@@ -207,11 +518,34 @@
                     <div class="other-input-container" id="other-amenity-container">
                         <label for="other_amenity_text">Specify other amenity:</label>
                         <input type="text" id="other_amenity_text" name="other_amenity_text"
-                               placeholder="e.g., Pet-Friendly, Live Music, Rooftop Seating">
+                               placeholder="e.g., Pet-Friendly, Live Music, Rooftop Seating"
+                               autocomplete="off">
+                        <div class="other-realtime-hint" id="amenity-hint"></div>
                     </div>
                 </div>
 
             </div>
+
+            <!-- ── Contact & Social Links (Optional) ─────────────────── -->
+            <div class="form-group full-width" id="contact-links-section" style="margin-top:24px;">
+                <div class="section-label" style="font-size:15px;font-weight:700;color:#1f2937;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-link" style="color:#8b0000;font-size:14px;"></i>
+                    Contact &amp; Social Links
+                    <span style="font-size:11px;font-weight:500;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;border-radius:999px;padding:2px 9px;">Optional</span>
+                </div>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:14px;">
+                    Add your social pages, email, or any contact link. Customers will see these on your profile.<br>
+                    Example: <strong>FB</strong> → <em>https://www.facebook.com/yourpage</em> &nbsp;|&nbsp; <strong>Gmail</strong> → <em>youremail@gmail.com</em>
+                </p>
+                <div id="cl-list-reg" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+                <button type="button" id="btn-add-link-reg"
+                    style="display:inline-flex;align-items:center;gap:6px;background:none;border:1.5px dashed #d1d5db;color:#6b7280;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;justify-content:center;transition:border-color .2s,color .2s;"
+                    onmouseover="this.style.borderColor='#8b0000';this.style.color='#8b0000';"
+                    onmouseout="this.style.borderColor='#d1d5db';this.style.color='#6b7280';">
+                    <i class="fas fa-plus" style="font-size:12px;"></i> Add a Link
+                </button>
+            </div>
+
         </form>
 
         <div class="navigation-buttons">
@@ -223,6 +557,116 @@
     </div>
 </div>
 
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   SHARED CONTACT LINK UTILITIES  (used by registration + profile modal)
+   ════════════════════════════════════════════════════════════════════ */
+
+/** Map a label string → Font Awesome class */
+window.clIconClass = function (label) {
+    const l = (label || '').toLowerCase().trim();
+    if (l === 'fb' || l.includes('facebook'))       return 'fab fa-facebook-f';
+    if (l === 'ig' || l.includes('instagram') || l.includes('insta')) return 'fab fa-instagram';
+    if (l.includes('tiktok') || l === 'tt')         return 'fab fa-tiktok';
+    if (l.includes('youtube') || l === 'yt')        return 'fab fa-youtube';
+    if (l.includes('gmail') || l.includes('email') || l.includes('mail')) return 'fas fa-envelope';
+    if (l.includes('twitter') || l === 'x')         return 'fab fa-x-twitter';
+    if (l.includes('whatsapp') || l === 'wa')       return 'fab fa-whatsapp';
+    if (l.includes('viber'))                        return 'fab fa-viber';
+    if (l.includes('discord'))                      return 'fab fa-discord';
+    if (l.includes('linkedin'))                     return 'fab fa-linkedin-in';
+    if (l.includes('website') || l.includes('web') || l.includes('site')) return 'fas fa-globe';
+    if (l.includes('phone') || l.includes('tel') || l.includes('call'))   return 'fas fa-phone';
+    return 'fas fa-link';
+};
+
+/** Icon bg colours matching each platform */
+window.clIconBg = function (label) {
+    const l = (label || '').toLowerCase().trim();
+    if (l === 'fb' || l.includes('facebook'))   return '#1877f2';
+    if (l === 'ig' || l.includes('instagram') || l.includes('insta')) return '#e1306c';
+    if (l.includes('tiktok') || l === 'tt')     return '#010101';
+    if (l.includes('youtube') || l === 'yt')    return '#ff0000';
+    if (l.includes('gmail') || l.includes('email') || l.includes('mail')) return '#ea4335';
+    if (l.includes('twitter') || l === 'x')     return '#000000';
+    if (l.includes('whatsapp') || l === 'wa')   return '#25d366';
+    if (l.includes('viber'))                    return '#7360f2';
+    if (l.includes('discord'))                  return '#5865f2';
+    if (l.includes('linkedin'))                 return '#0a66c2';
+    return '#8b0000';
+};
+
+/** Build one row and append to `listEl`. Works for both reg + profile modal. */
+window.clAddRow = function (listEl, label, value) {
+    if (!listEl) return;
+    const iconCls = window.clIconClass(label);
+    const iconBg  = window.clIconBg(label);
+    const row = document.createElement('div');
+    row.className = 'cl-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;transition:border-color .2s;';
+    row.innerHTML = `
+        <span class="cl-icon-wrap" style="width:32px;height:32px;border-radius:50%;background:${iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">
+            <i class="${iconCls}" style="color:#fff;font-size:13px;"></i>
+        </span>
+        <input class="cl-label-inp" type="text" placeholder="Label  (e.g. FB)"
+               maxlength="30" value="${label || ''}" aria-label="Link label"
+               style="width:80px;flex-shrink:0;border:none;border-right:1px solid #e5e7eb;background:transparent;padding:4px 10px 4px 2px;font-size:13px;font-weight:700;color:#1f2937;outline:none;text-transform:uppercase;letter-spacing:.4px;">
+        <span style="color:#d1d5db;font-size:12px;flex-shrink:0;">—</span>
+        <input class="cl-value-inp" type="text" placeholder="https://… or email@gmail.com"
+               value="${value || ''}" aria-label="Link URL or email"
+               style="flex:1;border:none;background:transparent;padding:4px 6px;font-size:13px;color:#374151;outline:none;min-width:0;">
+        <button type="button" class="cl-remove-btn" title="Remove"
+                style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;flex-shrink:0;line-height:1;">
+            <i class="fas fa-times"></i>
+        </button>`;
+
+    /* Live icon update as user types the label */
+    const labelInp  = row.querySelector('.cl-label-inp');
+    const iconWrap  = row.querySelector('.cl-icon-wrap');
+    const iconEl    = iconWrap.querySelector('i');
+    labelInp.addEventListener('input', function () {
+        const ic = window.clIconClass(this.value);
+        const bg = window.clIconBg(this.value);
+        iconEl.className = ic;
+        iconWrap.style.background = bg;
+    });
+
+    /* Focus ring */
+    row.addEventListener('focusin',  () => row.style.borderColor = '#8b0000');
+    row.addEventListener('focusout', () => row.style.borderColor = '#e5e7eb');
+
+    row.querySelector('.cl-remove-btn').addEventListener('click', () => row.remove());
+    listEl.appendChild(row);
+};
+
+/* ── Registration Step 2 init ───────────────────────────────────── */
+(function () {
+    const list   = document.getElementById('cl-list-reg');
+    const addBtn = document.getElementById('btn-add-link-reg');
+    if (!list || !addBtn) return;
+
+    addBtn.addEventListener('click', () => window.clAddRow(list, '', ''));
+
+    window.getContactLinks = function () {
+        return Array.from(list.querySelectorAll('.cl-row')).map((row, i) => ({
+            label: row.querySelector('.cl-label-inp').value.trim(),
+            value: row.querySelector('.cl-value-inp').value.trim(),
+            order: i,
+        })).filter(lnk => lnk.label && lnk.value);
+    };
+
+    window.saveContactLinksDraft = function () {
+        sessionStorage.setItem('cl_draft', JSON.stringify(window.getContactLinks()));
+    };
+    window.restoreContactLinksDraft = function () {
+        try {
+            const saved = JSON.parse(sessionStorage.getItem('cl_draft') || '[]');
+            saved.forEach(lnk => window.clAddRow(list, lnk.label, lnk.value));
+        } catch (e) {}
+    };
+    window.restoreContactLinksDraft();
+})();
+</script>
 <script src="{% static 'js/business_owner_registration.js' %}"></script>
 </body>
 </html>

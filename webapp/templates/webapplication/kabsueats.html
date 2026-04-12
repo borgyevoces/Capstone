@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="{% static 'css/kabsueats_filters_redesign.css' %}">
     <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}">
     <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}">
     {% block extra_css %}{% endblock %}
@@ -742,17 +743,50 @@
     <!-- BESTSELLERS SECTION -->
     <section class="bs-section" id="bsSec">
 
-        <div class="bs-controls">
-            <h2 class="bs-title" id="bsTitle">
-                <i class="fas fa-fire"></i>
-                Top-rated items from all our partner establishments
-            </h2>
-            <div class="bs-controls-left">
-                <button class="gv-btn" id="gvBtn" onclick="toggleGrid()">
-                    <i class="fas fa-th" id="gvIco"></i>
-                    <span id="gvLbl">Grid View</span>
-                </button>
+        <div class="bs-title-row">
+            <div class="bs-heading-block">
+                <h2 class="bs-heading-main">🔥 Best Sellers</h2>
+                <p class="bs-heading-sub">Top-rated Loved Picks from Our Local Partner Establishments</p>
             </div>
+        </div>
+
+        <!-- ✅ REALTIME BS FILTERS — single unified row -->
+        <div class="bs-filter-bar" id="bsFilterBar">
+
+            <!-- In Stock Only toggle -->
+            <button class="bs-filter-chip active" id="bsInStockToggle" onclick="toggleBsInStock()" title="Show in-stock items only">
+                <i class="fas fa-check-circle"></i> In Stock Only
+            </button>
+
+            <!-- Sort pills -->
+            <div class="bs-sort-group">
+                <span class="bs-meta-label"><i class="fas fa-sort-amount-down"></i></span>
+                <button class="bs-sort-btn active" data-sort=""           onclick="setBsSort('')">Default</button>
+                <button class="bs-sort-btn"        data-sort="orders_desc" onclick="setBsSort('orders_desc')">Most Ordered</button>
+                <button class="bs-sort-btn"        data-sort="price_asc"   onclick="setBsSort('price_asc')">Price ↑</button>
+                <button class="bs-sort-btn"        data-sort="price_desc"  onclick="setBsSort('price_desc')">Price ↓</button>
+                <button class="bs-sort-btn"        data-sort="name_asc"    onclick="setBsSort('name_asc')">A–Z</button>
+            </div>
+
+            <!-- Max price slider -->
+            <div class="bs-price-wrap">
+                <i class="fas fa-tag" style="color:#B71C1C;font-size:11px;flex-shrink:0;"></i>
+                <span class="bs-meta-label" id="bsPriceLabel">Any Price</span>
+                <input type="range" id="bsPriceSlider" min="0" max="500" step="1" value="0"
+                       style="width:90px;accent-color:#B71C1C;cursor:pointer;"
+                       oninput="setBsPriceMax(this.value)">
+            </div>
+
+            <!-- Category pills — populated by JS after bsData loads -->
+            <div class="bs-cat-pills" id="bsCatPills">
+            </div>
+
+            <!-- Grid View button — far right -->
+            <button class="gv-btn" id="gvBtn" onclick="toggleGrid()" style="margin-left:auto;">
+                <i class="fas fa-th" id="gvIco"></i>
+                <span id="gvLbl">Grid View</span>
+            </button>
+
         </div>
 
         <!-- CAROUSEL (default) -->
@@ -760,11 +794,7 @@
             <button class="cnav prev" id="cPrev" onclick="cScroll(-1)"><i class="fas fa-chevron-left"></i></button>
             <div class="car-cont">
                 <div class="car-track" id="cTrack">
-                    <!-- Skeleton loaders while fetching -->
-                    <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
-                    <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
-                    <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
-                    <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
+                    <!-- Skeleton loader while fetching -->
                     <div class="sk-card"><div class="sk sk-img"></div><div class="sk sk-ln" style="margin-top:13px"></div><div class="sk sk-ln s"></div><div class="sk sk-bt"></div></div>
                 </div>
             </div>
@@ -776,17 +806,37 @@
     <!-- Food Establishments -->
     <h2 class="sec-title"><i class="fas fa-store"></i> Food Establishments</h2>
 
-    <div class="filt-bar">
-        <div class="filt-inner">
-            <span class="filt-lbl"><i class="fas fa-filter"></i> Filter by:</span>
-            <div class="selw">
-                <select id="catFilt" onchange="applyFilter()">
-                    <option value="">All Categories</option>
-                    {% for cat in all_categories %}
-                    <option value="{{ cat.name|lower }}" {% if request.GET.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
-                    {% endfor %}
-                    <!-- other_category options injected by JS below -->
-                </select>
+    <!-- ✅ REALTIME ESTABLISHMENT FILTERS — single row -->
+    <div class="filt-bar filt-bar-enhanced" id="estFiltBar">
+        <div class="filt-inner filt-inner-enhanced">
+            <div class="filt-row">
+
+                <!-- Category -->
+                <div class="filt-group">
+                    <span class="filt-lbl"></span>
+                    <div class="selw">
+                        <select id="catFilt" onchange="applyFilter()">
+                            <option value="">All Categories</option>
+                            {% for cat in all_categories %}
+                            <option value="{{ cat.name|lower }}" {% if request.GET.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sort -->
+                <div class="filt-group">
+                    <span class="filt-lbl"><i class="fas fa-sort"></i> Sort</span>
+                    <div class="pill-row">
+                        <button class="est-sort-btn active" data-sort=""             onclick="setEstSort('')">Default</button>
+                        <button class="est-sort-btn"        data-sort="open_first"   onclick="setEstSort('open_first')">Open First</button>
+                        <button class="est-sort-btn"        data-sort="rating_desc"  onclick="setEstSort('rating_desc')">Top Rated</button>
+                        <button class="est-sort-btn"        data-sort="reviews_desc" onclick="setEstSort('reviews_desc')">Most Reviews</button>
+                        <button class="est-sort-btn"        data-sort="nearest"      onclick="setEstSort('nearest')">Nearest</button>
+                        <button class="est-sort-btn"        data-sort="name_asc"     onclick="setEstSort('name_asc')">A–Z</button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -887,10 +937,10 @@
                data-id="{{ est.id }}"
                data-name="{{ est.name|lower }}"
                data-category="{% for c in est.categories.all %}{{ c.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}{% if est.other_category %}{% if est.categories.all %},{% endif %}{{ est.other_category|lower }}{% endif %}"
-               data-status="{{ est.calculated_status|lower }}"
+               data-status="{{ est.status|lower }}"
                data-rating="{{ est.average_rating|floatformat:1 }}"
-               data-opening-time="{{ est.opening_time|time:'H:i'|default:'' }}"
-               data-closing-time="{{ est.closing_time|time:'H:i'|default:'' }}"
+               data-opening-time="{{ est.eff_opening_time|time:'H:i'|default:'' }}"
+               data-closing-time="{{ est.eff_closing_time|time:'H:i'|default:'' }}"
                onclick="window.location.href='{% url 'food_establishment_details' est.id %}'; return true;"
                style="text-decoration:none;cursor:pointer;pointer-events:auto;display:block;">
 
@@ -901,9 +951,9 @@
                 {% endif %}
 
                 {# ✅ REALTIME: status badge — id for direct targeting, data attrs for client-side calc #}
-                <span class="estb {% if est.calculated_status == 'Open' %}open{% else %}closed{% endif %}"
+                <span class="estb {% if est.status == 'Open' %}open{% else %}closed{% endif %}"
                       id="estStatusBadge-{{ est.id }}">
-                    <span class="estb-dot"></span>{{ est.calculated_status }}
+                    <span class="estb-dot"></span>{{ est.status }}
                 </span>
 
                 <div class="estc-body">
@@ -1178,7 +1228,23 @@
 }());
 </script>
 
+<!-- ✅ REALTIME: status_updater.js must load BEFORE kabsueats.js so
+     updateAllClientStatuses() is available when refreshEstablishmentCardStatuses() calls it.
+     This makes the Open/Closed badge update in real-time on all establishment cards. -->
+<script src="{% static 'js/status_updater.js' %}"></script>
 <script src="{% static 'js/kabsueats.js' %}"></script>
+
+<!-- ── Default: In Stock Only ON ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.bsFS) {
+        window.bsFS.inStockOnly = true;
+        var btn = document.getElementById('bsInStockToggle');
+        if (btn) btn.classList.add('active');
+        if (typeof applyBsFilters === 'function') applyBsFilters();
+    }
+});
+</script>
 
 {% block extra_js %}{% endblock %}
 

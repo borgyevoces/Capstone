@@ -879,14 +879,16 @@ body { background: #f5f5f5 !important; }
                     <div class="payment-total-amount">₱{{ order.total_amount }}</div>
                 </div>
 
-                <!-- Payment method buttons -->
-                <div class="payment-method-section">
+                <!-- Payment method buttons — visibility controlled by owner dashboard (real-time) -->
+                <div class="payment-method-section" id="payment-method-section">
                     <p class="payment-method-title">Choose Payment Method</p>
 
                     <!-- Online Payment -->
                     <button type="button"
+                            id="btn-online-payment"
                             class="btn-payment-method btn-online"
-                            onclick="openPolicyModal('online')">
+                            onclick="openPolicyModal('online')"
+                            {% if not show_online_payment %}style="display:none;"{% endif %}>
                         <div class="pm-icon">
                             <i class="fas fa-credit-card"></i>
                         </div>
@@ -899,8 +901,10 @@ body { background: #f5f5f5 !important; }
 
                     <!-- Cash on Pickup -->
                     <button type="button"
+                            id="btn-cash-pickup"
                             class="btn-payment-method btn-cash-pickup"
-                            onclick="openPolicyModal('cash')">
+                            onclick="openPolicyModal('cash')"
+                            {% if not show_cash_payment %}style="display:none;"{% endif %}>
                         <div class="pm-icon">
                             <i class="fas fa-money-bill-wave"></i>
                         </div>
@@ -910,6 +914,15 @@ body { background: #f5f5f5 !important; }
                         </div>
                         <i class="fas fa-chevron-right pm-arrow"></i>
                     </button>
+
+                    <!-- Shown when owner disables ALL methods -->
+                    <div id="pm-none-available"
+                         style="display:{% if not show_online_payment and not show_cash_payment %}block{% else %}none{% endif %};
+                                padding:14px; text-align:center; color:#B71C1C;
+                                font-size:0.88rem; background:#FEF2F2; border-radius:10px;">
+                        <i class="fas fa-ban" style="margin-right:6px;"></i>
+                        No payment methods are currently available. Please check back later.
+                    </div>
 
                 </div>
 
@@ -1034,8 +1047,8 @@ body { background: #f5f5f5 !important; }
     'use strict';
 
     // Order ID from the URL: /checkout/?order_id=822
-    const ORDER_ID = (new URLSearchParams(window.location.search)).get('order_id')
-                     || '{{ order.id }}';
+    const ORDER_ID         = (new URLSearchParams(window.location.search)).get('order_id');
+    const ESTABLISHMENT_ID = {{ establishment_id|default:"null" }} || {{ order.id }};
 
     // Endpoint URLs — resolved server-side so they always match urls.py
     const URL_CREATE_GCASH  = "{% url 'create_gcash_payment_link' %}";
@@ -1100,6 +1113,65 @@ body { background: #f5f5f5 !important; }
 
     // Stop polling when the user navigates away
     window.addEventListener('pagehide', () => clearInterval(_stockPollInterval));
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Real-time payment method sync — polls every 5 s
+    // ─────────────────────────────────────────────────────────────────────────
+    // Why polling and not WebSocket?
+    // The ws/establishments/ consumer is triggered by Django signals whose
+    // payload does not reliably include payment_methods.  A tiny dedicated
+    // endpoint is simpler, guaranteed accurate, and still feels instant at 5 s.
+    // ─────────────────────────────────────────────────────────────────────────
+    (function _initPaymentMethodPoll() {
+        if (!ESTABLISHMENT_ID) return;
+
+        const _btnOnline  = document.getElementById('btn-online-payment');
+        const _btnCash    = document.getElementById('btn-cash-pickup');
+        const _btnNone    = document.getElementById('pm-none-available');
+
+        // Keep track of the last-seen value so we only touch the DOM on change
+        let _lastRaw = null;
+
+        function _applyPaymentMethods(raw) {
+            const str   = (raw || '').trim();
+            if (str === _lastRaw) return;   // no change — skip DOM update
+            _lastRaw = str;
+
+            const parts = str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+            // Empty → both visible (owner hasn't restricted anything)
+            const showOnline = !parts.length ||
+                parts.some(p =>
+                    ['gcash', 'online', 'card', 'maya', 'paymaya', 'credit', 'debit'].includes(p)
+                );
+            // ⚠️ Use exact match — 'cash' is a substring of 'gcash' so
+            //    p.includes('cash') would wrongly show Cash on Pickup for GCash-only setups.
+            const showCash = !parts.length ||
+                parts.some(p => p === 'cash' || p === 'cash on pickup');
+
+            _btnOnline.style.display = showOnline ? '' : 'none';
+            _btnCash.style.display   = showCash   ? '' : 'none';
+            _btnNone.style.display   = (!showOnline && !showCash) ? '' : 'none';
+        }
+
+        function _poll() {
+            fetch(`/api/establishment/${ESTABLISHMENT_ID}/payment-methods/`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) _applyPaymentMethods(data.payment_methods);
+            })
+            .catch(() => { /* silent — server may be momentarily unavailable */ });
+        }
+
+        // Run once on load (in case page was cached / bfcache restored)
+        _poll();
+        const _pmPollInterval = setInterval(_poll, 5000);
+
+        window.addEventListener('pagehide', () => clearInterval(_pmPollInterval));
+    }());
 
     // ✅ Back-navigation guard — if user arrives here via browser back button
     // after order is already confirmed/preparing, redirect them to My Orders.

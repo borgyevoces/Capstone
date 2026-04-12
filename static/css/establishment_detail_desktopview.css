@@ -570,27 +570,28 @@
 
     .menu-list {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
     }
 
     .menu-item {
         display: flex;
         flex-direction: column;
         padding: 0;
-        border: 1px solid #eeeeee;
-        border-radius: 12px;  /* Reduced from 15px */
+        border: 1.5px solid #e5e7eb;
+        border-radius: 16px;
         background-color: white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);  /* Reduced shadow */
-        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         cursor: pointer;
         position: relative;
         overflow: hidden;
     }
 
     .menu-item:hover {
-        transform: translateY(-4px);  /* Reduced from -5px */
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);  /* Reduced shadow */
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.11);
+        border-color: #fca5a5;
     }
 
     .menu-item.hidden-by-filter {
@@ -610,7 +611,7 @@
     .menu-item-image-wrapper {
         position: relative;
         width: 100%;
-        height: 140px;  /* Reduced from 180px */
+        height: 130px;
         overflow: hidden;
     }
 
@@ -628,27 +629,27 @@
     /* ============================================ */
 .badge-top-seller {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    left: auto;
+    top: 9px;
+    left: 9px;
+    right: auto;
     z-index: 10;
     background: linear-gradient(135deg, #ff6633, #e84d1c);
     color: white;
-    font-size: 0.72em;
+    font-size: 0.66em;
     font-weight: 700;
-    padding: 5px 10px;
-    border-radius: 6px;
+    padding: 3px 9px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 3px 8px rgba(232,77,28,0.45);
+    box-shadow: 0 2px 8px rgba(232,77,28,0.4);
     white-space: nowrap;
     letter-spacing: 0.02em;
 }
 
 .badge-top-seller i {
     font-size: 1em;
-    color: #fff700;
+    color: #ffe066;
 }
 
 /* ============================================ */
@@ -669,14 +670,32 @@
         display: none !important;
     }
 
+    /* ── Stock pill ── */
+    .menu-stock-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.66em;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+        margin-bottom: 4px;
+        width: fit-content;
+    }
+    .menu-stock-text.available  { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+    .menu-stock-text.low-stock  { background: #fef9c3; color: #b45309; border: 1px solid #fde68a; }
+    .menu-stock-text.out-of-stock { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .menu-stock-text i { font-size: 0.9em; }
+
     /* ✅ MENU INFO: Content below image - REDUCED PADDING */
     .menu-info {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        padding: 14px;  /* Reduced from 20px */
+        padding: 10px 12px 11px;
         text-align: left;
         align-items: flex-start;
+        gap: 2px;
     }
 
     /* ✅ HEADER INFO: Name and Price */
@@ -690,38 +709,36 @@
     }
 
     .menu-info h3.menu-name {
-        font-size: 0.95em;  /* Reduced from 1.1em */
+        font-size: 0.82em;
         margin: 0;
-        font-weight: 800;
-        color: #212529;
-        flex: 1;
-        padding-right: 8px;  /* Reduced from 10px */
+        font-weight: 700;
+        color: #1f2937;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         text-align: left;
+        width: 100%;
     }
 
     .menu-price {
-        font-weight: 800;
-        color: #000000;
-        font-size: 0.95em;  /* Reduced from 1.1em */
+        font-weight: 700;
+        color: #B71C1C;
+        font-size: 0.9em;
         margin: 0;
         white-space: nowrap;
-        text-align: right;
+        text-align: left;
     }
 
     .menu-description {
-        font-size: 0.75em;  /* Reduced from 0.85em */
-        color: #888;
-        margin: 4px 0 12px 0;  /* Reduced margins */
-        flex-grow: 1;
+        font-size: 0.7em;
+        color: #9ca3af;
+        margin: 0 0 2px 0;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.4;  /* Reduced from 1.5 */
+        line-height: 1.4;
         text-align: left;
         width: 100%;
     }
@@ -741,38 +758,43 @@
     .btn-buy-now {
         flex: 1;
         border: none;
-        padding: 10px 4px;  /* Reduced from 12px 5px */
-        border-radius: 6px;  /* Reduced from 8px */
+        padding: 8px 4px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 0.8em;  /* Reduced from 0.9em */
+        font-size: 0.72em;
         font-weight: 700;
-        transition: all 0.2s;
+        transition: all 0.18s;
         white-space: nowrap;
         margin-top: 0;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;  /* Reduced from 8px */
+        gap: 5px;
         box-shadow: none;
     }
 
     .btn-add-to-cart {
-        background: #0d6efd;
+        background: linear-gradient(135deg, #B71C1C, #8b0000);
         color: white;
+        box-shadow: 0 2px 6px rgba(183,28,28,0.22);
     }
 
     .btn-add-to-cart:hover:not(:disabled) {
-        background-color: #0b5ed7;
+        background: linear-gradient(135deg, #8b0000, #6a0000);
+        transform: translateY(-1px);
     }
 
     .btn-buy-now {
-        background: #198754;
-        color: white;
+        background: #fff5f5;
+        color: #B71C1C;
+        border: 1.5px solid #fca5a5 !important;
     }
 
     .btn-buy-now:hover {
-        background: #157347;
+        background: #ffe4e4;
+        border-color: #B71C1C !important;
+        transform: translateY(-1px);
     }
 
     .btn-add-to-cart.disabled {
@@ -787,7 +809,7 @@
         display: inline-flex;
         box-sizing: border-box;
         text-decoration: none;
-        background: #0d6efd;
+        background: linear-gradient(135deg, #B71C1C, #8b0000);
     }
 
     /* ================== REVIEW SECTION (FILTERS ON SIDE - MODERN DESIGN) ================== */
@@ -1294,31 +1316,6 @@
     order: 3;
     margin-top: 5px;
 }
-}
-/* ============================================ */
-/* FIX: Ensure Profile Button is Always Clickable */
-/* ============================================ */
-.profile-container {
-    position: relative !important;
-    z-index: 9999 !important;
-    cursor: pointer !important;
-    pointer-events: auto !important;
-}
-
-.profile-image,
-.profile-icon-default {
-    cursor: pointer !important;
-    position: relative !important;
-    z-index: 9999 !important;
-    pointer-events: auto !important;
-}
-
-.header-right {
-    z-index: 9998 !important;
-}
-
-.nav-actions-group {
-    z-index: 9997 !important;
 }
 /* ============================================ */
 /* FIX: Ensure Profile Button is Always Clickable */

@@ -3,6 +3,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from .models import ChatRoom, Message, FoodEstablishment
 
 
@@ -45,6 +46,59 @@ class InventoryConsumer(AsyncWebsocketConsumer):
             'updates': event['updates'],
         }))
 
+    # ✅ NEW: Handler — establishment open/closed status changed
+    async def inventory_establishment_status(self, event):
+        """
+        Forward establishment open/closed change to the cart page.
+        Tinatawag ng views.py sa:
+          - toggle_establishment_status      → owner nag-toggle ng Open/Disabled
+          - update_establishment_details_ajax → owner nag-update ng hours/details
+          - update_business_hours_ajax        → owner nag-save ng per-day hours
+
+        event format:
+          {
+            'type': 'inventory.establishment_status',
+            'establishment_id': X,
+            'status':           'Open',      # 'Open' or 'Disabled'/'Closed'
+            'opening_time':     '08:00 AM',  # display string, optional
+            'closing_time':     '09:00 PM',  # display string, optional
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'establishment_status',
+            'establishment_id': event['establishment_id'],
+            'status':           event['status'],
+            'opening_time':     event.get('opening_time', ''),
+            'closing_time':     event.get('closing_time', ''),
+        }))
+
+    # ✅ NEW: Handler — full menu item data changed (price, name, qty, availability)
+    async def inventory_item_updated(self, event):
+        """
+        Forward full item data change to all cart pages watching this establishment.
+        Tinatawag ng views.py sa:
+          - edit_menu_item       → owner nag-edit ng price/name/qty/image
+          - toggle_item_availability → owner nag-toggle ng availability
+          - add_menu_item (stacked)  → owner nag-restock (quantity added)
+
+        event format:
+          {
+            'type': 'inventory.item_updated',
+            'update': {
+              'menu_item_id': X,
+              'name':         'Sinigang na Baboy',
+              'price':        '120.00',
+              'quantity':     15,
+              'is_available': True,
+              'image_url':    '/media/...',   # optional
+            }
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'item_updated',
+            'update': event['update'],
+        }))
+
 
 # ============================================================
 # ORDER STATUS CONSUMER — real-time order lifecycle events
@@ -69,7 +123,7 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
         #   ws/order-status/establishment/<id>/  →  scope_type + scope_id kwargs
         #   ws/orders/<establishment_id>/        →  establishment_id kwarg only
         self.scope_type = kwargs.get('scope_type', 'establishment')
-        self.scope_id   = kwargs.get('scope_id') or kwargs.get('establishment_id')
+        self.scope_id = kwargs.get('scope_id') or kwargs.get('establishment_id')
         self.group_name = f'order_status_{self.scope_type}_{self.scope_id}'
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -90,15 +144,37 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
             'establishment_id': 5,
             'user_id': 3,
             'cancel_reason': '...',   # optional
+            'cancelled_from_status': 'request',  # owner-rejected orders
+            'cancelled_by_owner': True,  # whether owner initiated rejection
           }
         """
         await self.send(text_data=json.dumps({
-            'type':             'order_status_update',
-            'order_id':         event['order_id'],
-            'new_status':       event['new_status'],
+            'type': 'order_status_update',
+            'order_id': event['order_id'],
+            'new_status': event['new_status'],
             'establishment_id': event['establishment_id'],
-            'user_id':          event['user_id'],
-            'cancel_reason':    event.get('cancel_reason', ''),
+            'user_id': event['user_id'],
+            'cancel_reason': event.get('cancel_reason', ''),
+            'cancelled_from_status': event.get('cancelled_from_status', ''),
+            'cancelled_by_owner': event.get('cancelled_by_owner', False),
+        }))
+
+    # ✅ NEW: Handler for client dismissing a cancelled order
+    async def order_dismissed_by_client(self, event):
+        """
+        Forward order dismissal to the owner dashboard.
+        When client dismisses a cancelled order, owner sees it auto-removed.
+        event format:
+          {
+            'type': 'order.dismissed_by_client',
+            'order_id': 42,
+            'establishment_id': 5,
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'order_dismissed_by_client',
+            'order_id': event['order_id'],
+            'establishment_id': event['establishment_id'],
         }))
 
 
@@ -318,7 +394,7 @@ class EstablishmentConsumer(AsyncWebsocketConsumer):
     When an establishment is created, updated, deactivated, or deleted,
     signals trigger channel_layer.group_send() to 'establishment_updates'
     group and every connected client receives the update instantly.
-    
+
     Message types:
       - est_created: New establishment added to map
       - est_updated: Establishment info changed (status, name, address)
@@ -328,7 +404,7 @@ class EstablishmentConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.group_name = 'establishment_updates'
-        
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         print('[EstablishmentConsumer] Client connected to map updates')
@@ -377,3 +453,231 @@ class EstablishmentConsumer(AsyncWebsocketConsumer):
             'type': 'est_deactivated',
             'establishment_id': event['establishment_id']
         }))
+
+
+# ============================================================
+# ✅ NEW: CART CONSUMER — real-time cart sync per user
+# ============================================================
+class CartConsumer(AsyncWebsocketConsumer):
+    """
+    Clients (cart.html) connect to:
+        ws/cart/<user_id>/
+
+    Ini-broadcast nito ang lahat ng cart mutations (quantity update,
+    remove item, clear establishment, order sent) sa LAHAT ng
+    tabs/devices ng same user para real-time ang cart kahit bukas
+    sa iba pang window o device.
+
+    Message types pababa sa browser:
+      - cart_quantity_updated       → quantity ng item nabago
+      - cart_item_removed           → item na-delete mula sa cart
+      - cart_establishment_cleared  → lahat ng items ng establishment na-clear
+      - cart_order_sent             → order request na-send na
+
+    Tinatawag ng views.py ang _broadcast_cart_update() helper
+    pagkatapos ng bawat cart DB mutation.
+    """
+
+    async def connect(self):
+        self.user_id = self.scope['url_route']['kwargs']['user_id']
+        self.group_name = f'cart_user_{self.user_id}'
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # ── Handler: quantity ng item na-update ──
+    async def cart_quantity_updated(self, event):
+        """
+        event format (galing sa views.py _broadcast_cart_update):
+          {
+            'type': 'cart.quantity_updated',
+            'order_item_id': 12,
+            'new_quantity':  3,
+            'item_total':    150.00,
+            'order_total':   450.00,
+            'cart_count':    7,
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'cart_quantity_updated',
+            'order_item_id': event['order_item_id'],
+            'new_quantity': event['new_quantity'],
+            'item_total': event['item_total'],
+            'order_total': event['order_total'],
+            'cart_count': event['cart_count'],
+        }))
+
+    # ── Handler: item na-remove mula sa cart ──
+    async def cart_item_removed(self, event):
+        """
+        event format:
+          {
+            'type': 'cart.item_removed',
+            'order_item_id':    12,
+            'establishment_id': 5,
+            'order_deleted':    False,
+            'cart_count':       4,
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'cart_item_removed',
+            'order_item_id': event['order_item_id'],
+            'establishment_id': event['establishment_id'],
+            'order_deleted': event['order_deleted'],
+            'cart_count': event['cart_count'],
+        }))
+
+    # ── Handler: establishment cart na-clear ──
+    async def cart_establishment_cleared(self, event):
+        """
+        event format:
+          {
+            'type': 'cart.establishment_cleared',
+            'establishment_id': 5,
+            'cart_count':       2,
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'cart_establishment_cleared',
+            'establishment_id': event['establishment_id'],
+            'cart_count': event['cart_count'],
+        }))
+
+    # ── Handler: order request na-send ──
+    async def cart_order_sent(self, event):
+        """
+        event format:
+          {
+            'type': 'cart.order_sent',
+            'establishment_id': 5,
+            'order_id':         42,
+            'cart_count':       0,
+          }
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'cart_order_sent',
+            'establishment_id': event['establishment_id'],
+            'order_id': event['order_id'],
+            'cart_count': event['cart_count'],
+        }))
+
+# ============================================================
+# OWNER PRESENCE CONSUMER — realtime ~1 second
+# ============================================================
+# TWO directions:
+#   1. Owner → Customers:
+#      Owner opens dashboard   → connects /ws/presence/<est>/owner/
+#                              → broadcasts 'owner_online' to all customers
+#      Owner closes tab        → auto-disconnect → broadcasts 'owner_offline'
+#      Customer opens details  → connects /ws/presence/<est>/customer/<cust_id>/
+#                              → immediately receives current owner status
+#
+#   2. Customer → Owner:
+#      Customer opens details  → connects with customer_id
+#                              → broadcasts 'customer_online' to owner dashboard
+#      Customer closes tab     → auto-disconnect → broadcasts 'customer_offline'
+#      Owner dashboard listens → shows online dot per customer in chat list
+# ============================================================
+class OwnerPresenceConsumer(AsyncWebsocketConsumer):
+
+    async def connect(self):
+        kwargs = self.scope['url_route']['kwargs']
+        self.establishment_id = kwargs['establishment_id']
+        # Role is determined by which URL pattern was matched:
+        #   /ws/presence/<est_id>/owner/          -> no customer_id -> owner
+        #   /ws/presence/<est_id>/customer/<id>/  -> has customer_id -> customer
+        self.customer_id = kwargs.get('customer_id', None)
+        self.role        = 'customer' if self.customer_id else 'owner'
+        self.group_name  = f'presence_{self.establishment_id}'
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+        if self.role == 'owner':
+            # Mark owner online (90s safety TTL)
+            cache.set(f'owner_online_{self.establishment_id}', True, timeout=90)
+            # Broadcast owner ONLINE to all customers on details page
+            await self.channel_layer.group_send(
+                self.group_name,
+                {'type': 'presence.update', 'status': 'owner_online'}
+            )
+            # Send current online customers to the owner immediately
+            online_customers = cache.get(f'online_customers_{self.establishment_id}', set())
+            for cid in online_customers:
+                await self.send(text_data=json.dumps({
+                    'type':        'customer_presence',
+                    'customer_id': cid,
+                    'status':      'online',
+                }))
+
+        elif self.role == 'customer':
+            # Send current owner status immediately to this customer
+            is_owner_online = cache.get(f'owner_online_{self.establishment_id}', False)
+            await self.send(text_data=json.dumps({
+                'type':   'presence_update',
+                'status': 'online' if is_owner_online else 'offline',
+            }))
+            # Track this customer as online
+            online_customers = cache.get(f'online_customers_{self.establishment_id}', set())
+            online_customers.add(str(self.customer_id))
+            cache.set(f'online_customers_{self.establishment_id}', online_customers, timeout=90)
+            # Broadcast customer ONLINE to the owner dashboard
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    'type':        'presence.update',
+                    'status':      'customer_online',
+                    'customer_id': str(self.customer_id),
+                }
+            )
+
+    async def disconnect(self, close_code):
+        if self.role == 'owner':
+            cache.delete(f'owner_online_{self.establishment_id}')
+            # Broadcast owner OFFLINE to all customers
+            await self.channel_layer.group_send(
+                self.group_name,
+                {'type': 'presence.update', 'status': 'owner_offline'}
+            )
+
+        elif self.role == 'customer':
+            # Remove from online customers set
+            online_customers = cache.get(f'online_customers_{self.establishment_id}', set())
+            online_customers.discard(str(self.customer_id))
+            cache.set(f'online_customers_{self.establishment_id}', online_customers, timeout=90)
+            # Broadcast customer OFFLINE to the owner dashboard
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    'type':        'presence.update',
+                    'status':      'customer_offline',
+                    'customer_id': str(self.customer_id),
+                }
+            )
+
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        pass
+
+    async def presence_update(self, event):
+        """Forward group broadcast to this WebSocket client — filtered by role."""
+        status = event['status']
+
+        if self.role == 'customer' and status in ('owner_online', 'owner_offline'):
+            # Customers only care about owner status
+            await self.send(text_data=json.dumps({
+                'type':   'presence_update',
+                'status': 'online' if status == 'owner_online' else 'offline',
+            }))
+
+        elif self.role == 'owner' and status in ('customer_online', 'customer_offline'):
+            # Owner only cares about customer presence
+            await self.send(text_data=json.dumps({
+                'type':        'customer_presence',
+                'customer_id': event.get('customer_id', ''),
+                'status':      'online' if status == 'customer_online' else 'offline',
+            }))

@@ -1190,13 +1190,19 @@ function toggleNotificationPanel() {
     const panel = document.getElementById('notificationPanel');
     if (panel.classList.contains('open')) {
         panel.classList.remove('open');
+        notifShowAll = false; // reset so next open starts collapsed
     } else {
         panel.classList.add('open');
         loadNotifications();
     }
 }
 
-function loadNotifications() {
+const NOTIF_PAGE_SIZE = 10; // Max notifications shown at once
+let notifShowAll = false;   // Toggle for "See all"
+
+function loadNotifications(showAll) {
+    if (showAll !== undefined) notifShowAll = showAll;
+
     fetch('/api/notifications/', {
         method: 'GET',
         headers: {
@@ -1210,8 +1216,7 @@ function loadNotifications() {
             const list = document.getElementById('notificationList');
 
             if (data.notifications && data.notifications.length > 0) {
-                // ✅ FIX: Deduplicate by order ID on the frontend as a safety net
-                // Keeps only the most recent notification per order
+                // ✅ Deduplicate by order ID — keep only the most recent per order
                 const seen = new Set();
                 const deduped = data.notifications.filter(n => {
                     const oid = n.order && n.order.id;
@@ -1219,7 +1224,47 @@ function loadNotifications() {
                     if (oid !== undefined && oid !== null) seen.add(oid);
                     return true;
                 });
-                list.innerHTML = deduped.map(notif => renderNotification(notif)).join('');
+
+                // ✅ Limit to NOTIF_PAGE_SIZE unless user tapped "See all"
+                const totalCount = deduped.length;
+                const visible    = notifShowAll ? deduped : deduped.slice(0, NOTIF_PAGE_SIZE);
+                const hasMore    = !notifShowAll && totalCount > NOTIF_PAGE_SIZE;
+
+                list.innerHTML = visible.map(notif => renderNotification(notif)).join('');
+
+                // ✅ "See all" / "Show less" footer
+                const existingFooter = document.getElementById('notifSeeAllFooter');
+                if (existingFooter) existingFooter.remove();
+
+                if (totalCount > NOTIF_PAGE_SIZE) {
+                    const footer = document.createElement('div');
+                    footer.id = 'notifSeeAllFooter';
+                    footer.style.cssText = `
+                        text-align: center;
+                        padding: 10px 8px 14px;
+                    `;
+                    if (hasMore) {
+                        footer.innerHTML = `
+                            <button onclick="loadNotifications(true)"
+                                style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;
+                                       font-size:13px;font-weight:600;padding:7px 20px;
+                                       border-radius:20px;cursor:pointer;transition:all 0.2s;">
+                                <i class="fas fa-chevron-down" style="margin-right:5px;"></i>
+                                See all ${totalCount} notifications
+                            </button>`;
+                    } else {
+                        footer.innerHTML = `
+                            <button onclick="loadNotifications(false)"
+                                style="background:#f3f4f6;border:1px solid #e5e7eb;color:#6b7280;
+                                       font-size:13px;font-weight:600;padding:7px 20px;
+                                       border-radius:20px;cursor:pointer;transition:all 0.2s;">
+                                <i class="fas fa-chevron-up" style="margin-right:5px;"></i>
+                                Show less
+                            </button>`;
+                    }
+                    list.appendChild(footer);
+                }
+
                 updateNotificationBadge(data.unread_count);
             } else {
                 list.innerHTML = `
@@ -1532,14 +1577,8 @@ function pollNotifications() {
         .then(data => {
             if (data.success) {
                 updateNotificationBadge(data.unread_count);
-
-                // Show toast notification if new orders
-                if (data.unread_count > 0) {
-                    const latestNotif = data.notifications[0];
-                    if (latestNotif && latestNotif.is_new) {
-                        showToastNotification(latestNotif);
-                    }
-                }
+                // NOTE: Toasts are handled exclusively by showNotifToast()
+                // in the HTML WebSocket block to avoid duplicate notifications.
             }
         })
         .catch(error => {
@@ -1547,30 +1586,45 @@ function pollNotifications() {
         });
     }
 }
+// ── Shared toast helper (upper-right stack, flat, no shadow) ──
+function _getToastStack() {
+    let stack = document.getElementById('toast-stack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'toast-stack';
+        document.body.appendChild(stack);
+    }
+    return stack;
+}
+
+function _showToast({ icon, title, message, type }) {
+    const stack = _getToastStack();
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast' + (type === 'message' ? ' toast-message-type' : '');
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.closest('.notification-toast').remove()">
+            <i class="fas fa-times"></i>
+        </button>`;
+    stack.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'toastOut 250ms ease forwards';
+        setTimeout(() => toast.remove(), 260);
+    }, 5000);
+}
+
 // ✅ Show toast notification for new orders
 function showToastNotification(notif) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.innerHTML = `
-        <div class="toast-icon">
-            <i class="fas fa-shopping-cart"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">New Order #${notif.order.id}</div>
-            <div class="toast-message">${notif.customer.name} • ₱${notif.order.total_amount.toFixed(2)}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 300ms ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
+    _showToast({
+        icon: 'shopping-cart',
+        title: `New Order #${notif.order.id}`,
+        message: `${notif.customer.name} • ₱${notif.order.total_amount.toFixed(2)}`,
+        type: 'order'
+    });
 }
 function getNotificationIcon(type) {
     const icons = {
@@ -1665,23 +1719,12 @@ function pollUnreadMessages() {
 }
 
 function showNewMessageToast(count) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.innerHTML = `
-        <div class="toast-icon"><i class="fas fa-envelope"></i></div>
-        <div class="toast-content">
-            <div class="toast-title">New Message${count > 1 ? 's' : ''}</div>
-            <div class="toast-message">You have ${count} new message${count > 1 ? 's' : ''} from a customer.</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 300ms ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
+    _showToast({
+        icon: 'envelope',
+        title: `New Message${count > 1 ? 's' : ''}`,
+        message: `You have ${count} new message${count > 1 ? 's' : ''} from a customer.`,
+        type: 'message'
+    });
 }
 
 
@@ -2167,6 +2210,17 @@ function escapeHtml(text) {
             ws.onmessage = function (e) {
                 try {
                     const data = JSON.parse(e.data);
+
+                    // ✅ FIX: Handle establishment open/closed status pushed by
+                    //    toggle_establishment_status / update_business_hours_ajax.
+                    //    Previously this branch was missing so WS messages were silently dropped.
+                    if (data.type === 'establishment_status') {
+                        if (typeof _applyHeroEstablishmentStatus === 'function') {
+                            _applyHeroEstablishmentStatus(data);
+                        }
+                        return;
+                    }
+
                     if (data.type !== 'quantity_update') return;
 
                     data.updates.forEach(function (upd) {

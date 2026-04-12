@@ -217,13 +217,27 @@
             padding: 40px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
+            gap: 0;
         }
 
-        .detail-item {
+        /* Each cell gets padding + a bottom border to separate rows */
+        .details-grid .detail-item {
+            padding: 24px 30px;
+            border-bottom: 1px solid #f0f1f3;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            align-items: flex-start;
+        }
+
+        /* Left column cells get a right border to form the column divider */
+        .details-grid .detail-item:nth-child(odd) {
+            border-right: 1px solid #f0f1f3;
+        }
+
+        /* Last row (bottom 2 cells) — no bottom border */
+        .details-grid .detail-item:nth-last-child(-n+2) {
+            border-bottom: none;
         }
 
         .detail-label {
@@ -238,10 +252,6 @@
             font-size: 16px;
             color: #1f2937;
             font-weight: 500;
-        }
-
-        .amenities-section {
-            grid-column: 1 / -1;
         }
 
         .amenities-grid {
@@ -1013,12 +1023,6 @@
                 flex: 1;
             }
 
-            /* Amenities — full width row */
-            .amenities-section {
-                grid-column: 1 !important;
-                flex-direction: column !important;
-                gap: 10px;
-            }
 
             .amenities-grid {
                 gap: 8px;
@@ -1152,7 +1156,143 @@
             justify-content: center;
         }
 
-        </style>
+
+        /* ══ Profile — Weekly Schedule Display ═══════════════════════════ */
+        .profile-weekly-hours {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 6px;
+            width: 100%;
+        }
+        .pwh-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 13px;
+        }
+        .pwh-today {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            font-weight: 600;
+        }
+        .pwh-day {
+            min-width: 90px;
+            font-weight: 500;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pwh-today .pwh-day { color: #b91c1c; }
+        .pwh-today-tag {
+            display: inline-block;
+            background: #e53935;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+        .pwh-time { color: #374151; font-size: 13px; flex: 1; }
+        .pwh-closed   { color: #9ca3af !important; font-style: italic; }
+        .pwh-not-set  { color: #d1d5db !important; font-style: italic; }
+
+        /* ══ Profile — Weekly Schedule Editor ════════════════════════════ */
+        .edit-weekly-wrap {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .ews-row {
+            display: grid;
+            grid-template-columns: 100px 110px 1fr;
+            align-items: center;
+            padding: 9px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+        .ews-row:last-child { border-bottom: none; }
+        .ews-row.ews-closed-row { background: #fafafa; }
+
+        .ews-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+        .ews-closed-row .ews-name { color: #9ca3af; }
+
+        .ews-toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .ews-toggle-wrap input[type="checkbox"] { display: none; }
+        .ews-slider {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background: #d1d5db;
+            border-radius: 10px;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .ews-slider::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,.18);
+        }
+        .ews-toggle-wrap input:checked ~ .ews-slider { background: #e53935; }
+        .ews-toggle-wrap input:checked ~ .ews-slider::after { transform: translateX(16px); }
+        .ews-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            min-width: 38px;
+        }
+        .ews-toggle-wrap input:checked ~ .ews-label { color: #e53935; }
+
+        .ews-times {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ews-times input[type="time"] {
+            padding: 4px 7px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #111;
+            background: #fff;
+            width: 105px;
+        }
+        .ews-times input[type="time"]:focus { outline: none; border-color: #e53935; }
+        .ews-times input[type="time"]:disabled {
+            background: #f3f4f6;
+            color: #c4c4c4;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+        }
+        .ews-sep { color: #9ca3af; font-size: 13px; font-weight: 600; }
+        .ews-times-closed { opacity: 0.35; }
+
+        @media (max-width: 540px) {
+            .ews-row { grid-template-columns: 1fr; gap: 6px; padding: 10px 14px; }
+        }
+</style>
 </head>
 <body>
     <!-- MOBILE TOP BAR (phone only) -->
@@ -1220,6 +1360,8 @@
             </div>
 
             <div class="details-grid">
+
+                <!-- ── ROW 1: Category | Payment Methods ── -->
                 <div class="detail-item">
                     <span class="detail-label">Category</span>
                     <span class="detail-value" id="display-category">
@@ -1238,22 +1380,34 @@
                     <span class="detail-value" id="display-payment">{{ establishment.payment_methods|default:"Not set" }}</span>
                 </div>
 
+                <!-- ── ROW 2: Weekly Schedule | Address ── -->
                 <div class="detail-item">
-                    <span class="detail-label">Opening Time</span>
-                    <span class="detail-value" id="display-opening">{{ establishment.opening_time|default:"Not set" }}</span>
+                    <span class="detail-label">Weekly Schedule</span>
+                    <div id="display-weekly-hours" class="profile-weekly-hours">
+                        {% with today_idx=today_weekday %}
+                        {% for bh in profile_hours_list %}
+                        <div class="pwh-row {% if bh.day_of_week == today_idx %}pwh-today{% endif %}">
+                            <span class="pwh-day">{{ bh.day_name }}{% if bh.day_of_week == today_idx %} <span class="pwh-today-tag">Today</span>{% endif %}</span>
+                            {% if bh.is_closed %}
+                                <span class="pwh-time pwh-closed">Closed</span>
+                            {% elif bh.opening_time and bh.closing_time %}
+                                <span class="pwh-time">{{ bh.opening_time|time:"g:i A" }} – {{ bh.closing_time|time:"g:i A" }}</span>
+                            {% else %}
+                                <span class="pwh-time pwh-not-set">Not set</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
                 </div>
 
                 <div class="detail-item">
-                    <span class="detail-label">Closing Time</span>
-                    <span class="detail-value" id="display-closing">{{ establishment.closing_time|default:"Not set" }}</span>
-                </div>
-
-                <div class="detail-item" style="grid-column: 1 / -1;">
                     <span class="detail-label">Address</span>
                     <span class="detail-value" id="display-address">{{ establishment.address|default:"Address not set" }}</span>
                 </div>
 
-                <div class="amenities-section">
+                <!-- ── ROW 3: Amenities | Links & Socials ── -->
+                <div class="detail-item">
                     <span class="detail-label">Amenities</span>
                     <div class="amenities-grid" id="display-amenities">
                         {% if establishment.amenities.all or establishment.other_amenity %}
@@ -1274,6 +1428,40 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- ── Contact / Social Links display ──────────────── -->
+                <div class="detail-item">
+                    <span class="detail-label" style="display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-link" style="color:#8b0000;font-size:12px;"></i>
+                        Links &amp; Socials
+                    </span>
+                    <div id="profile-contact-links-display" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;">
+                        {% if establishment.contact_links.all %}
+                            {% for lnk in establishment.contact_links.all %}
+                                <a href="{{ lnk.href }}" target="_blank" rel="noopener noreferrer"
+                                   style="display:inline-flex;align-items:center;gap:8px;
+                                          background:#ffffff;border:1.5px solid {{ lnk.icon_bg }};
+                                          border-radius:999px;padding:7px 16px 7px 9px;
+                                          text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.08);
+                                          transition:transform .15s,box-shadow .15s;"
+                                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';"
+                                   onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)';">
+                                    <span style="width:28px;height:28px;border-radius:50%;background:{{ lnk.icon_bg }};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i class="{{ lnk.icon_class }}" style="color:#fff;font-size:14px;line-height:1;"></i>
+                                    </span>
+                                    <span style="font-size:13px;font-weight:700;color:#1f2937;letter-spacing:.3px;">{{ lnk.label }}</span>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <span style="font-size:13px;color:#9ca3af;">No links added yet</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Initial contact link data for edit modal pre-fill -->
+                <script id="cl-initial-data" type="application/json">
+                    [{% for lnk in establishment.contact_links.all %}{"label":"{{ lnk.label|escapejs }}","value":"{{ lnk.value|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+                </script>
             </div>
         </div>
 
@@ -1387,30 +1575,48 @@
                             <div class="checkbox-item">
                                 <input type="checkbox" id="pay_cash" name="payment_method_options" value="Cash"
                                     {% if "Cash" in current_payments %}checked{% endif %}>
-                                <label for="pay_cash">💵 Cash</label>
+                                <label for="pay_cash">Cash</label>
                             </div>
                             <div class="checkbox-item">
                                 <input type="checkbox" id="pay_gcash" name="payment_method_options" value="GCash"
                                     {% if "GCash" in current_payments %}checked{% endif %}>
-                                <label for="pay_gcash">📱 GCash</label>
+                                <label for="pay_gcash">GCash</label>
                             </div>
                             {% endwith %}
                         </div>
                         <input type="hidden" id="payment_methods" name="payment_methods" value="{{ establishment.payment_methods }}">
                     </div>
 
-                    <!-- OPENING TIME -->
-                    <div class="edit-group">
-                        <label class="edit-label" for="opening_time">Opening Time</label>
-                        <input type="time" id="opening_time" name="opening_time" class="edit-input"
-                               value="{{ establishment.opening_time|time:'H:i' }}">
-                    </div>
+                    <!-- WEEKLY SCHEDULE EDITOR -->
+                    <div class="edit-group" style="grid-column: 1 / -1;" id="edit-weekly-schedule-group">
+                        <label class="edit-label">Weekly Schedule</label>
+                        <p style="font-size:12px;color:#6b7280;margin:2px 0 12px;">Toggle off days your store is closed.</p>
 
-                    <!-- CLOSING TIME -->
-                    <div class="edit-group">
-                        <label class="edit-label" for="closing_time">Closing Time</label>
-                        <input type="time" id="closing_time" name="closing_time" class="edit-input"
-                               value="{{ establishment.closing_time|time:'H:i' }}">
+                        <div class="edit-weekly-wrap" id="editWeeklySchedule">
+                            {% for bh in profile_hours_list %}
+                            <div class="ews-row" data-day="{{ bh.day_of_week }}">
+                                <span class="ews-name">{{ bh.day_name }}</span>
+                                <label class="ews-toggle-wrap">
+                                    <input type="checkbox" class="ews-open-cb" data-day="{{ bh.day_of_week }}"
+                                        {% if not bh.is_closed %}checked{% endif %}>
+                                    <span class="ews-slider"></span>
+                                    <span class="ews-label">{% if bh.is_closed %}Closed{% else %}Open{% endif %}</span>
+                                </label>
+                                <div class="ews-times {% if bh.is_closed %}ews-times-closed{% endif %}">
+                                    <input type="time" class="ews-open-t" data-day="{{ bh.day_of_week }}"
+                                        value="{{ bh.opening_time|time:'H:i'|default:'08:00' }}"
+                                        {% if bh.is_closed %}disabled{% endif %}>
+                                    <span class="ews-sep">–</span>
+                                    <input type="time" class="ews-close-t" data-day="{{ bh.day_of_week }}"
+                                        value="{{ bh.closing_time|time:'H:i'|default:'22:00' }}"
+                                        {% if bh.is_closed %}disabled{% endif %}>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <small id="ews-error" style="color:#e53935;font-size:12px;margin-top:8px;display:none;">
+                            ⚠️ At least one day must be open with valid hours.
+                        </small>
                     </div>
 
                     <!-- AMENITIES (Checkboxes with Other) -->
@@ -1467,6 +1673,29 @@
                     <!-- Hidden Lat/Long -->
                     <input type="hidden" id="latitude" name="latitude" value="{{ establishment.latitude }}">
                     <input type="hidden" id="longitude" name="longitude" value="{{ establishment.longitude }}">
+
+                    <!-- CONTACT / SOCIAL LINKS -->
+                    <div class="edit-group" style="grid-column:1/-1;margin-top:8px;">
+                        <label class="edit-label" style="display:flex;align-items:center;gap:8px;">
+                            <i class="fas fa-link" style="color:#8b0000;"></i>
+                            Contact &amp; Social Links
+                            <span style="font-size:11px;font-weight:500;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;border-radius:999px;padding:2px 9px;">Optional</span>
+                        </label>
+                        <p style="font-size:12px;color:#6b7280;margin:4px 0 12px;">
+                            Add clickable links that customers see on your profile page.<br>
+                            Example: <strong>FB</strong> → <em>https://www.facebook.com/yourpage</em> &nbsp;|&nbsp; <strong>Gmail</strong> → <em>youremail@gmail.com</em>
+                        </p>
+                        <!-- Hidden field carrying the JSON to the backend -->
+                        <input type="hidden" name="contact_links_json" id="contact_links_json" value="">
+                        <!-- Dynamic rows injected here -->
+                        <div id="cl-list-edit" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+                        <button type="button" id="btn-add-link-edit"
+                            style="display:inline-flex;align-items:center;gap:6px;background:none;border:1.5px dashed #d1d5db;color:#6b7280;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;justify-content:center;"
+                            onmouseover="this.style.borderColor='#8b0000';this.style.color='#8b0000';"
+                            onmouseout="this.style.borderColor='#d1d5db';this.style.color='#6b7280';">
+                            <i class="fas fa-plus" style="font-size:12px;"></i> Add a Link
+                        </button>
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -1824,11 +2053,93 @@
         // ===== MODAL FUNCTIONS =====
         function openEditModal() {
             document.getElementById('editModal').classList.add('active');
+            // Populate contact link rows from server data
+            const list = document.getElementById('cl-list-edit');
+            if (list && list.children.length === 0) {
+                const existing = JSON.parse(document.getElementById('cl-initial-data')?.textContent || '[]');
+                existing.forEach(lnk => addContactLinkRow(lnk.label, lnk.value));
+            }
         }
 
         function closeEditModal() {
             document.getElementById('editModal').classList.remove('active');
         }
+
+        /* ── Contact Link Builder (Edit Modal) ─────────────────────── */
+        /* ── Contact Link Builder (Edit Modal) ─────────────────────── */
+        function clIconClass(label) {
+            const l = (label || '').toLowerCase().trim();
+            if (l === 'fb' || l.includes('facebook'))       return 'fab fa-facebook-f';
+            if (l === 'ig' || l.includes('instagram') || l.includes('insta')) return 'fab fa-instagram';
+            if (l.includes('tiktok') || l === 'tt')         return 'fab fa-tiktok';
+            if (l.includes('youtube') || l === 'yt')        return 'fab fa-youtube';
+            if (l.includes('gmail') || l.includes('email') || l.includes('mail')) return 'fas fa-envelope';
+            if (l.includes('twitter') || l === 'x')         return 'fab fa-x-twitter';
+            if (l.includes('whatsapp') || l === 'wa')       return 'fab fa-whatsapp';
+            if (l.includes('viber'))                        return 'fab fa-viber';
+            if (l.includes('discord'))                      return 'fab fa-discord';
+            if (l.includes('linkedin'))                     return 'fab fa-linkedin-in';
+            if (l.includes('website') || l.includes('web') || l.includes('site')) return 'fas fa-globe';
+            if (l.includes('phone') || l.includes('tel') || l.includes('call'))   return 'fas fa-phone';
+            return 'fas fa-link';
+        }
+        function clIconBg(label) {
+            const l = (label || '').toLowerCase().trim();
+            if (l === 'fb' || l.includes('facebook'))   return '#1877f2';
+            if (l === 'ig' || l.includes('instagram') || l.includes('insta')) return '#e1306c';
+            if (l.includes('tiktok') || l === 'tt')     return '#010101';
+            if (l.includes('youtube') || l === 'yt')    return '#ff0000';
+            if (l.includes('gmail') || l.includes('email') || l.includes('mail')) return '#ea4335';
+            if (l.includes('twitter') || l === 'x')     return '#000000';
+            if (l.includes('whatsapp') || l === 'wa')   return '#25d366';
+            if (l.includes('viber'))                    return '#7360f2';
+            if (l.includes('discord'))                  return '#5865f2';
+            if (l.includes('linkedin'))                 return '#0a66c2';
+            return '#8b0000';
+        }
+
+        function addContactLinkRow(label, value) {
+            const list = document.getElementById('cl-list-edit');
+            if (!list) return;
+            const iconCls = clIconClass(label);
+            const iconBg  = clIconBg(label);
+            const row = document.createElement('div');
+            row.className = 'cl-row';
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;transition:border-color .2s;';
+            row.innerHTML = `
+                <span class="cl-icon-wrap" style="width:32px;height:32px;border-radius:50%;background:${iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">
+                    <i class="${iconCls}" style="color:#fff;font-size:13px;"></i>
+                </span>
+                <input class="cl-label-inp" type="text" placeholder="Label  (e.g. FB)"
+                       maxlength="30" value="${label || ''}"
+                       style="width:80px;flex-shrink:0;border:none;border-right:1px solid #e5e7eb;background:transparent;padding:4px 10px 4px 2px;font-size:13px;font-weight:700;color:#1f2937;outline:none;text-transform:uppercase;letter-spacing:.4px;">
+                <span style="color:#d1d5db;font-size:12px;flex-shrink:0;">—</span>
+                <input class="cl-value-inp" type="text" placeholder="https://… or email@gmail.com"
+                       value="${value || ''}"
+                       style="flex:1;border:none;background:transparent;padding:4px 6px;font-size:13px;color:#374151;outline:none;min-width:0;">
+                <button type="button"
+                        style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;flex-shrink:0;line-height:1;"
+                        onmouseover="this.style.color='#ef4444';this.style.background='#fee2e2';"
+                        onmouseout="this.style.color='#9ca3af';this.style.background='none';">
+                    <i class="fas fa-times"></i>
+                </button>`;
+            const labelInp = row.querySelector('.cl-label-inp');
+            const iconWrap = row.querySelector('.cl-icon-wrap');
+            const iconEl   = iconWrap.querySelector('i');
+            labelInp.addEventListener('input', function () {
+                iconEl.className = clIconClass(this.value);
+                iconWrap.style.background = clIconBg(this.value);
+            });
+            row.addEventListener('focusin',  () => row.style.borderColor = '#8b0000');
+            row.addEventListener('focusout', () => row.style.borderColor = '#e5e7eb');
+            row.querySelector('button').addEventListener('click', () => row.remove());
+            list.appendChild(row);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const addBtn = document.getElementById('btn-add-link-edit');
+            if (addBtn) addBtn.addEventListener('click', () => addContactLinkRow('', ''));
+        });
 
         // ===================================================
         // MAP — constants & state
@@ -2442,6 +2753,15 @@
             }
             document.getElementById('payment_methods').value = checkedPayments.join(', ');
 
+            // ── Sync contact links → hidden JSON field ─────────────────────
+            const clRows = Array.from(document.querySelectorAll('#cl-list-edit .cl-row'));
+            const clData = clRows.map((row, i) => ({
+                label: row.querySelector('.cl-label-inp').value.trim(),
+                value: row.querySelector('.cl-value-inp').value.trim(),
+                order: i,
+            })).filter(lnk => lnk.label && lnk.value);
+            document.getElementById('contact_links_json').value = JSON.stringify(clData);
+
             // ── Validate establishment name ────────────────────────────────
             const nameVal = document.getElementById('name').value.trim();
             if (nameVal.length < 3) {
@@ -2489,6 +2809,8 @@
             }
 
             const formData = new FormData(this);
+            // ── Collect weekly schedule and submit separately then patch main form ──
+            const ewsSchedule = collectEwsSchedule();
             const loadingOverlay = document.getElementById('loadingOverlay');
 
             loadingOverlay.classList.add('active');
@@ -2527,9 +2849,14 @@
 
                     // ── Payment, Times, Address ───────────────────────────
                     document.getElementById('display-payment').textContent = data.payment_methods || 'Not set';
-                    document.getElementById('display-opening').textContent = data.opening_time || 'Not set';
-                    document.getElementById('display-closing').textContent = data.closing_time || 'Not set';
                     document.getElementById('display-address').textContent = data.address || 'Address not set';
+                    // ── Rebuild weekly hours display after save ────────────
+                    if (data.weekly_hours && Array.isArray(data.weekly_hours)) {
+                        rebuildProfileWeeklyHoursDisplay(data.weekly_hours, data.today_weekday);
+                    }
+
+                    // ── Also save business hours via dedicated endpoint ────
+                    saveBusinessHoursAjax(ewsSchedule);
 
                     // ── Amenities ─────────────────────────────────────────
                     const amenitiesContainer = document.getElementById('display-amenities');
@@ -2554,6 +2881,31 @@
                     }
 
                     amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';                    amenitiesContainer.innerHTML = amenityTagsHTML || '<span class="detail-value">No amenities added</span>';
+
+                    // ── Update contact links display ───────────────────────
+                    const clDisplayWrap = document.getElementById('profile-contact-links-display');
+                    if (clDisplayWrap) {
+                        if (data.contact_links && data.contact_links.length > 0) {
+                            clDisplayWrap.innerHTML = data.contact_links.map(lnk => {
+                                const ic = clIconClass(lnk.label);
+                                const bg = clIconBg(lnk.label);
+                                return `<a href="${lnk.href}" target="_blank" rel="noopener noreferrer"
+                                   style="display:inline-flex;align-items:center;gap:8px;
+                                          background:#ffffff;border:1.5px solid ${bg};
+                                          border-radius:999px;padding:7px 16px 7px 9px;
+                                          text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.08);"
+                                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';"
+                                   onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)';">
+                                    <span style="width:28px;height:28px;border-radius:50%;background:${bg};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i class="${ic}" style="color:#fff;font-size:14px;line-height:1;"></i>
+                                    </span>
+                                    <span style="font-size:13px;font-weight:700;color:#1f2937;letter-spacing:.3px;">${lnk.label}</span>
+                                </a>`;
+                            }).join('');
+                        } else {
+                            clDisplayWrap.innerHTML = '<span style="font-size:13px;color:#9ca3af;">No links added</span>';
+                        }
+                    }
 
                     // Show success toast
                     showToast('Changes saved successfully!', 'success');
@@ -2892,6 +3244,189 @@
     {% endif %}
 
 }());
+
+    // ══════════════════════════════════════════════════════════════════════
+    // WEEKLY SCHEDULE EDITOR — profile page JS helpers
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Wire up toggle switches in the edit-weekly-schedule section */
+    (function initEws() {
+        document.querySelectorAll('.ews-open-cb').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                const day      = this.dataset.day;
+                const row      = document.querySelector('.ews-row[data-day="' + day + '"]');
+                const label    = row ? row.querySelector('.ews-label')    : null;
+                const timesDiv = row ? row.querySelector('.ews-times')    : null;
+                const isOpen   = this.checked;
+
+                if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
+                if (timesDiv) {
+                    timesDiv.classList.toggle('ews-times-closed', !isOpen);
+                    row.querySelectorAll('input[type="time"]').forEach(function (inp) {
+                        inp.disabled = !isOpen;
+                    });
+                }
+                if (row) row.classList.toggle('ews-closed-row', !isOpen);
+            });
+        });
+    }());
+
+    /** Collect the current state of the weekly schedule editor */
+    function collectEwsSchedule() {
+        const rows = document.querySelectorAll('.ews-row[data-day]');
+        const schedule = [];
+        rows.forEach(function (row) {
+            const day    = parseInt(row.dataset.day, 10);
+            const cb     = row.querySelector('.ews-open-cb');
+            const openT  = row.querySelector('.ews-open-t');
+            const closeT = row.querySelector('.ews-close-t');
+            schedule.push({
+                day:       day,
+                is_closed: cb ? !cb.checked : true,
+                opening:   openT  ? openT.value  : '',
+                closing:   closeT ? closeT.value : ''
+            });
+        });
+        return schedule;
+    }
+
+    /** POST the weekly schedule to the dedicated endpoint */
+    function saveBusinessHoursAjax(schedule) {
+        // Use the JS constant rendered by Django (same as {{ pk }})
+        const pk = (typeof ESTABLISHMENT_ID !== 'undefined' ? ESTABLISHMENT_ID : null) || '{{ pk }}';
+        if (!pk || !schedule || schedule.length === 0) return;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfToken) return;
+
+        fetch('/owner/establishment/' + pk + '/update-business-hours/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken.value,
+            },
+            body: JSON.stringify({ weekly_hours: schedule })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.success) {
+                console.log('✅ BusinessHours saved:', data.message);
+                // Refresh the display side immediately
+                rebuildEwsDisplayFromEditor();
+                // ✅ Broadcast to ALL open tabs (dashboard, details, kabsueats)
+                // so they update instantly without a page refresh
+                try {
+                    const bc = new BroadcastChannel('kabsueats_hours');
+                    bc.postMessage({
+                        type:             'hours_updated',
+                        establishment_id: parseInt(pk),
+                        status:           data.status || null
+                    });
+                    bc.close();
+                } catch (e) { /* BroadcastChannel not supported — silent fail */ }
+            } else {
+                console.warn('⚠️ BusinessHours save failed:', data.error);
+            }
+        })
+        .catch(function (err) {
+            console.warn('⚠️ BusinessHours save error:', err);
+        });
+    }
+
+    /** Rebuild the profile display (#display-weekly-hours) from the editor's current state */
+    function rebuildEwsDisplayFromEditor() {
+        const displayGrid = document.getElementById('display-weekly-hours');
+        if (!displayGrid) return;
+        const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+        // Get today's weekday index (PH local where possible)
+        const todayIdx = new Date().getDay(); // 0=Sun; adjust to Mon-based
+        const phToday  = (todayIdx + 6) % 7; // convert Sun=0 → Mon=0
+
+        displayGrid.innerHTML = '';
+        document.querySelectorAll('.ews-row[data-day]').forEach(function (row) {
+            const day      = parseInt(row.dataset.day, 10);
+            const cb       = row.querySelector('.ews-open-cb');
+            const openT    = row.querySelector('.ews-open-t');
+            const closeT   = row.querySelector('.ews-close-t');
+            const isOpen   = cb && cb.checked;
+            const isToday  = day === phToday;
+
+            const pRow = document.createElement('div');
+            pRow.className = 'pwh-row' + (isToday ? ' pwh-today' : '');
+
+            const daySpan = document.createElement('span');
+            daySpan.className = 'pwh-day';
+            daySpan.textContent = DAY_NAMES[day] || ('Day ' + day);
+            if (isToday) {
+                const tag = document.createElement('span');
+                tag.className = 'pwh-today-tag';
+                tag.textContent = 'Today';
+                daySpan.appendChild(tag);
+            }
+            pRow.appendChild(daySpan);
+
+            const timeSpan = document.createElement('span');
+            if (!isOpen) {
+                timeSpan.className = 'pwh-time pwh-closed';
+                timeSpan.textContent = 'Closed';
+            } else if (openT && openT.value && closeT && closeT.value) {
+                timeSpan.className = 'pwh-time';
+                // Format HH:MM → h:MM AM/PM
+                function fmt(t) {
+                    const [h, m] = t.split(':').map(Number);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const h12  = h % 12 || 12;
+                    return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+                }
+                timeSpan.textContent = fmt(openT.value) + ' – ' + fmt(closeT.value);
+            } else {
+                timeSpan.className = 'pwh-time pwh-not-set';
+                timeSpan.textContent = 'Not set';
+            }
+            pRow.appendChild(timeSpan);
+            displayGrid.appendChild(pRow);
+        });
+    }
+
+    /** Rebuild weekly hours display from backend API data */
+    function rebuildProfileWeeklyHoursDisplay(weeklyHours, todayIdx) {
+        const grid = document.getElementById('display-weekly-hours');
+        if (!grid || !Array.isArray(weeklyHours)) return;
+
+        grid.innerHTML = '';
+        weeklyHours.forEach(function (entry) {
+            const isToday = entry.day === todayIdx || entry.is_today;
+            const row = document.createElement('div');
+            row.className = 'pwh-row' + (isToday ? ' pwh-today' : '');
+
+            const daySpan = document.createElement('span');
+            daySpan.className = 'pwh-day';
+            daySpan.textContent = entry.day_name;
+            if (isToday) {
+                const tag = document.createElement('span');
+                tag.className = 'pwh-today-tag';
+                tag.textContent = 'Today';
+                daySpan.appendChild(tag);
+            }
+            row.appendChild(daySpan);
+
+            const timeSpan = document.createElement('span');
+            if (entry.is_closed) {
+                timeSpan.className = 'pwh-time pwh-closed';
+                timeSpan.textContent = 'Closed';
+            } else if (entry.opening && entry.closing) {
+                timeSpan.className = 'pwh-time';
+                timeSpan.textContent = entry.opening + ' – ' + entry.closing;
+            } else {
+                timeSpan.className = 'pwh-time pwh-not-set';
+                timeSpan.textContent = 'Not set';
+            }
+            row.appendChild(timeSpan);
+            grid.appendChild(row);
+        });
+    }
+
 </script>
 
 </body>

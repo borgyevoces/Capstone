@@ -926,3 +926,112 @@
         font-size: 17px !important;
     }
 }
+/* ============================================================
+   OVERFLOW FIX — Prevent horizontal page overflow on mobile
+   ============================================================ */
+@media (max-width: 768px) {
+
+    /* ── Root level: clip any overflow ── */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+
+    /* ── Main content wrapper ── */
+    .main, .page-layout {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+    }
+
+    /* ── BS Filter Bar: single scrollable row, no page overflow ── */
+    .bs-filter-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 6px !important;
+        padding: 6px 0 8px !important;
+        /* reserve enough scroll width but don't break the page */
+        max-width: 100% !important;
+        /* hide the ugly scrollbar */
+        scrollbar-width: none !important;
+    }
+    .bs-filter-bar::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    /* Chips and groups must not shrink / must stay inline */
+    .bs-filter-chip,
+    .bs-sort-group,
+    .bs-price-wrap,
+    .bs-cat-pills,
+    .gv-btn {
+        flex-shrink: 0 !important;
+    }
+
+    /* ── Sort group: let it scroll inside the filter bar ── */
+    .bs-sort-group {
+        overflow-x: visible !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* ── "Grid View" button: push to end without margin-left:auto
+           (margin-left:auto breaks scroll in overflow containers) ── */
+    .gv-btn {
+        margin-left: 0 !important;
+    }
+
+    /* ── Category pills inside filter bar ── */
+    .bs-cat-pills {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+        overflow-x: visible !important;
+    }
+
+    /* ── Establishment filter row: allow wrap on small screens ── */
+    .filt-bar,
+    .filt-bar-enhanced {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+    }
+
+    .filt-inner,
+    .filt-inner-enhanced {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .filt-row {
+        flex-wrap: wrap !important;
+        max-width: 100% !important;
+    }
+
+    /* ── Establishment sort pill row: scroll horizontally ── */
+    .pill-row {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none !important;
+        max-width: calc(100vw - 28px) !important;
+    }
+    .pill-row::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    /* ── Carousel container: clip but allow internal scroll ── */
+    #carouselWrap, .car-cont {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+    }
+    .car-track {
+        /* carousel track itself scrolls, but not the page */
+        max-width: 100% !important;
+    }
+
+    /* ── Section titles ── */
+    .bs-section, .sec-title {
+        max-width: 100% !important;
+    }
+}

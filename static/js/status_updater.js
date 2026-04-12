@@ -54,6 +54,18 @@
         return (cur >= open || cur <= close) ? 'Open' : 'Closed';
     }
 
+    /**
+     * ✅ FIX: Returns true when an element carries a server-authoritative
+     * "disabled / closed" status override (data-force-status attribute).
+     * When true, status_updater MUST show "Closed" regardless of the current
+     * clock time — the owner has manually toggled the store off.
+     */
+    function isForceDisabled(el) {
+        if (!el) return false;
+        const fs = (el.dataset.forceStatus || '').toLowerCase();
+        return fs === 'disabled' || fs === 'closed';
+    }
+
     /** Update a single status badge DOM element */
     function updateStatusElement(element, status) {
         if (!element) return;
@@ -86,18 +98,24 @@
         let updated = 0;
 
         // ── 1. Main page — establishment cards (.food-est-item or .food-establishment-item) ──
+        // ✅ FIXED: Do NOT recompute status from opening/closing hours here.
+        //    The authoritative source is establishment.status (the owner's manual toggle),
+        //    which is set in the template (data-status attr) and kept fresh by
+        //    refreshEstablishmentCardStatuses() in kabsueats.js every 30s.
+        //    Recomputing from hours would override the owner's "Closed" override with
+        //    "Open" whenever the clock falls inside business hours — causing the mismatch
+        //    between the kabsueats cards and the details page.
         document.querySelectorAll(
-            '.food-est-item[data-opening-time], .food-establishment-item[data-opening-time]'
+            '.food-est-item, .food-establishment-item'
         ).forEach(function (item) {
-            const open  = item.dataset.openingTime;
-            const close = item.dataset.closingTime;
-            if (!open || !close) return;
+            // Read the authoritative status that was set by the server / kabsueats.js poll
+            const status = (item.getAttribute('data-status') || '').toLowerCase();
+            if (!status) return;
 
-            const status   = calculateStatus(open, close);
-            const isOpen   = status === 'Open';
+            const isOpen   = status === 'open';
             const badgeTxt = isOpen ? 'Open' : 'Closed';
 
-            // estb / sp badge (kabsueats cards)
+            // Sync the visible badge class + text to match data-status
             const estbBadge = item.querySelector('.estb, .sp');
             if (estbBadge) {
                 estbBadge.className = estbBadge.className.replace(/\b(open|closed)\b/g, '').trim() + ` ${isOpen ? 'open' : 'closed'}`;
@@ -109,10 +127,8 @@
 
             // .status-indicator (old pattern)
             const indicator = item.querySelector('.status-indicator');
-            if (indicator) updateStatusElement(indicator, status);
+            if (indicator) updateStatusElement(indicator, isOpen ? 'Open' : 'Closed');
 
-            // data-status attr used by search/filter JS
-            item.setAttribute('data-status', isOpen ? 'open' : 'closed');
             updated++;
         });
 
@@ -159,9 +175,16 @@
         // ── 5. Owner dashboard — #establishmentStatus ──
         const dashboardBadge = document.getElementById('establishmentStatus');
         if (dashboardBadge) {
+            // ✅ FIX: If the owner has manually toggled the store Closed/Disabled,
+            //    data-force-status="disabled" is set. Always show Closed in that case —
+            //    never let time-based calculation flip it back to Open.
+            const forcedClosed = isForceDisabled(dashboardBadge);
             const open  = dashboardBadge.dataset.openingTime;
             const close = dashboardBadge.dataset.closingTime;
-            if (open && close) {
+            if (forcedClosed) {
+                updateStatusElement(dashboardBadge, 'Closed');
+                updated++;
+            } else if (open && close) {
                 const status = calculateStatus(open, close);
                 updateStatusElement(dashboardBadge, status);
                 updated++;
@@ -178,6 +201,56 @@
             updateStatusElement(el, status);
             updated++;
         });
+
+        // ── 7. Owner dashboard hero card — #heroStatusBadge ──
+        // NOTE: This has class "hero-status-badge" (not "status-badge") so section 6 misses it.
+        // We update heroStatusDot and heroStatusText directly to preserve inner HTML structure.
+        const heroStatusBadge = document.getElementById('heroStatusBadge');
+        if (heroStatusBadge) {
+            // ✅ FIX: Respect the owner's manual toggle — if force-status is "disabled",
+            //    always render Closed; never let time-based calc flip it back to Open.
+            const forcedClosed = isForceDisabled(heroStatusBadge);
+            const open  = heroStatusBadge.dataset.openingTime;
+            const close = heroStatusBadge.dataset.closingTime;
+
+            let isOpen;
+            if (forcedClosed) {
+                isOpen = false;
+            } else if (open && close) {
+                isOpen = calculateStatus(open, close) === 'Open';
+            } else {
+                isOpen = null; // unknown — don't update
+            }
+
+            if (isOpen !== null) {
+                // Update the dot color
+                const dot = document.getElementById('heroStatusDot');
+                if (dot) {
+                    dot.className = 'hero-status-dot' + (isOpen ? '' : ' closed');
+                }
+
+                // Update the text label
+                const txt = document.getElementById('heroStatusText');
+                if (txt) {
+                    txt.textContent = isOpen ? 'Open Now' : 'Closed';
+                }
+
+                // ✅ FIX: Also sync the sidebar (no separate loop for sidebar in status_updater)
+                const sdot = document.getElementById('sidebarStatusDot');
+                const stxt = document.getElementById('sidebarStatusText');
+                if (sdot) {
+                    sdot.style.backgroundColor = isOpen ? '#10b981' : '#ef4444';
+                    sdot.style.display         = 'inline-block';
+                    sdot.style.width           = '8px';
+                    sdot.style.height          = '8px';
+                    sdot.style.borderRadius    = '50%';
+                }
+                if (stxt) stxt.textContent = isOpen ? 'Open Now' : 'Closed';
+
+                updated++;
+                console.log('🟢 [StatusUpdater] Hero badge →', isOpen ? 'Open' : 'Closed', 'at', new Date().toLocaleTimeString());
+            }
+        }
 
         if (updated > 0) {
             console.log(`✅ [StatusUpdater] Updated ${updated} status badge(s) at ${new Date().toLocaleTimeString()}`);
@@ -409,6 +482,62 @@
         dot._dimTimer = setTimeout(() => dot.className = 'live-indicator-dot idle', 2000);
     }
 
+    /**
+     * Rebuild the #weeklyHoursDisplay grid from fresh backend data.
+     * Called every 30 s by the backend poller on the details page.
+     */
+    function updateWeeklyHoursFromBackend(weeklyHours, todayIdx, currentStatus) {
+        const grid = document.getElementById('weeklyHoursDisplay');
+        if (!grid || !Array.isArray(weeklyHours) || weeklyHours.length === 0) return;
+
+        grid.innerHTML = '';
+
+        weeklyHours.forEach(function (entry) {
+            const isToday  = entry.is_today || entry.day === todayIdx;
+            const isClosed = entry.is_closed;
+            const hasHours = !isClosed && entry.opening && entry.closing;
+
+            const row = document.createElement('div');
+            row.className = 'wh-row' + (isToday ? ' wh-today' : '');
+
+            const daySpan = document.createElement('span');
+            daySpan.className = 'wh-day';
+            daySpan.textContent = entry.day_name;
+            if (isToday) {
+                const tag = document.createElement('span');
+                tag.className = 'wh-now-tag';
+                tag.textContent = 'Today';
+                daySpan.appendChild(tag);
+            }
+            row.appendChild(daySpan);
+
+            const timeSpan = document.createElement('span');
+            if (isClosed) {
+                timeSpan.className = 'wh-time wh-closed';
+                timeSpan.textContent = 'Closed';
+            } else if (hasHours) {
+                timeSpan.className = 'wh-time';
+                timeSpan.textContent = entry.opening + ' – ' + entry.closing;
+            } else {
+                timeSpan.className = 'wh-time wh-not-set';
+                timeSpan.textContent = 'Not set';
+            }
+            row.appendChild(timeSpan);
+
+            // Live status pill only for today
+            if (isToday && hasHours) {
+                const pill = document.createElement('span');
+                pill.id = 'liveHoursStatusPill';
+                const isOpen = (currentStatus || '').toLowerCase() === 'open';
+                pill.className = 'wh-status-pill ' + (isOpen ? 'wh-open' : 'wh-closed-pill');
+                pill.textContent = isOpen ? 'Open' : 'Closed';
+                row.appendChild(pill);
+            }
+
+            grid.appendChild(row);
+        });
+    }
+
     /** Main backend poll — fetch fresh data and update DOM */
     function pollBackend() {
         const url = getRealtimeUrl();
@@ -437,7 +566,8 @@
                 updateMenuItemsFromBackend(data.menu_items);
                 updateRatingFromBackend(data.average_rating, data.review_count);
                 updateHeroBadgesFromBackend(data.status, data.opening_time, data.closing_time);
-                updateEstablishmentDetailsFromBackend(data);  // ✅ name, image, address, categories, hours, payment, amenities
+                updateEstablishmentDetailsFromBackend(data);
+                updateWeeklyHoursFromBackend(data.weekly_hours, data.today_weekday, data.status);
                 pulseLiveDot();
             })
             .catch(function (err) {
@@ -588,6 +718,122 @@
         });
 
         console.log('✅ [StatusUpdater] Started — client: 60 s, backend: 30 s');
+
+        // ── F. On owner dashboard: immediately fetch the authoritative status ──
+        // This corrects any server-rendered Closed that resulted from a per-day
+        // BusinessHours row with is_closed=True overriding valid global hours.
+        // Runs once on load; after that the 60-second clock loop takes over.
+        const _dashId = (typeof DASHBOARD_EST_ID !== 'undefined') ? parseInt(DASHBOARD_EST_ID) : null;
+        if (_dashId && document.getElementById('heroStatusBadge')) {
+            _fetchAndPatchEstCard(_dashId);
+        }
+
+        // ── E. BroadcastChannel — instant cross-tab sync ──────────────────
+        // When the owner saves BusinessHours in the profile/settings page,
+        // every other open tab (details, kabsueats, dashboard) reacts immediately.
+        try {
+            const _bc = new BroadcastChannel('kabsueats_hours');
+            _bc.onmessage = function (event) {
+                const msg = event.data;
+                if (!msg || msg.type !== 'hours_updated') return;
+
+                const updatedId = msg.establishment_id;
+                console.log('📡 [StatusUpdater] hours_updated broadcast for est #' + updatedId);
+
+                // 1. Always re-run client-side status badges immediately
+                updateAllClientStatuses();
+
+                // 2. If we are on the DETAILS page for this establishment → re-poll backend now
+                const thisEstId = getEstablishmentId();
+                if (thisEstId && thisEstId === updatedId) {
+                    console.log('🔄 [StatusUpdater] Details page — immediate backend re-poll');
+                    clearInterval(backendPollTimer);
+                    pollBackend();
+                    backendPollTimer = setInterval(pollBackend, BACKEND_POLL_INTERVAL_MS);
+                    return;
+                }
+
+                // 3. Otherwise (kabsueats, dashboard) — fetch just today's hours for
+                //    this establishment and patch its data-opening/closing-time attributes,
+                //    then re-run the client-side badge calculation.
+                _fetchAndPatchEstCard(updatedId);
+            };
+        } catch (e) {
+            console.warn('[StatusUpdater] BroadcastChannel not available:', e.message);
+        }
+    }
+
+    /**
+     * Fetches realtime data for a single establishment and patches:
+     *  – data-opening-time / data-closing-time on its card (kabsueats / dashboard)
+     *  – The weekly hours grid if #weeklyHoursDisplay is present (details page)
+     * Then re-runs updateAllClientStatuses() so badges flip instantly.
+     */
+    function _fetchAndPatchEstCard(estId) {
+        if (!estId) return;
+        const url = '/api/establishment/' + estId + '/realtime/';
+        fetch(url, { credentials: 'same-origin' })
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (data) {
+                if (!data || !data.success) return;
+
+                // ── Patch card data-attrs on kabsueats ──────────────────────
+                const cards = document.querySelectorAll(
+                    '.food-est-item[data-id="' + estId + '"], ' +
+                    '.food-establishment-item[data-id="' + estId + '"]'
+                );
+                cards.forEach(function (card) {
+                    if (data.opening_24h) card.setAttribute('data-opening-time', data.opening_24h);
+                    if (data.closing_24h) card.setAttribute('data-closing-time', data.closing_24h);
+                    // ✅ FIXED: Also update data-status from the server's authoritative
+                    //    establishment.status so updateAllClientStatuses() syncs correctly.
+                    if (data.status) card.setAttribute('data-status', data.status.toLowerCase());
+                });
+
+                // ── Patch dashboard #establishmentStatus badge ───────────────
+                // (only present on the owner dashboard page)
+                const dashBadge = document.getElementById('establishmentStatus');
+                if (dashBadge && data.opening_24h) {
+                    dashBadge.setAttribute('data-opening-time', data.opening_24h);
+                    dashBadge.setAttribute('data-closing-time', data.closing_24h);
+                }
+
+                // ── Patch hero card status badge + hours text (owner dashboard) ──
+                const heroStatusBadge = document.getElementById('heroStatusBadge');
+                if (heroStatusBadge && data.opening_24h) {
+                    heroStatusBadge.setAttribute('data-opening-time', data.opening_24h);
+                    heroStatusBadge.setAttribute('data-closing-time', data.closing_24h || '');
+                    // ✅ Sync force-status: only lock to 'disabled' when owner manually
+                    //    toggled the store off; otherwise clear it so time-based calc runs.
+                    const serverStatus = (data.status || '').toLowerCase();
+                    heroStatusBadge.setAttribute('data-force-status',
+                        (serverStatus === 'disabled') ? 'disabled' : serverStatus
+                    );
+                }
+
+                // ── Update the displayed hours text (e.g. "8:00 AM – 5:00 PM") ──
+                const heroHoursText = document.getElementById('heroHoursText');
+                const heroHoursSep  = document.getElementById('heroHoursSep');
+                if (heroHoursText && data.opening_time && data.closing_time) {
+                    heroHoursText.textContent = data.opening_time + ' \u2013 ' + data.closing_time;
+                    heroHoursText.style.display = '';   // reveal if it was hidden
+                    if (heroHoursSep) heroHoursSep.style.display = '';
+                }
+
+                // ── Re-run badge calculation with the fresh times ───────────
+                updateAllClientStatuses();
+
+                // ── Patch weekly hours grid if visible (unlikely outside details) ──
+                if (typeof updateWeeklyHoursFromBackend === 'function' &&
+                    data.weekly_hours && Array.isArray(data.weekly_hours)) {
+                    updateWeeklyHoursFromBackend(data.weekly_hours, data.today_weekday, data.status);
+                }
+
+                console.log('✅ [StatusUpdater] Patched est #' + estId + ' from broadcast');
+            })
+            .catch(function (err) {
+                console.warn('[StatusUpdater] _fetchAndPatchEstCard failed:', err.message);
+            });
     }
 
     if (document.readyState === 'loading') {
