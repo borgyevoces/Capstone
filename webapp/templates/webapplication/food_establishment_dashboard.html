@@ -164,8 +164,6 @@
                 <span id="navbarStatusText">{% if establishment.calculated_status == 'Open' %}Open{% else %}Closed{% endif %}</span>
             </div>
             {% if today_display_opening and today_display_closing %}
-            {# ✅ FIX: Use view-computed per-day hours (today_display_opening/closing),
-               not the model property which may return global hours instead of today's schedule. #}
             <span class="navbar-hours-sep" id="navbarHoursSep">·</span>
             <span class="navbar-hours-text" id="navbarHoursText">{{ today_display_opening }} – {{ today_display_closing }}</span>
             {% elif establishment.today_opening_time and establishment.today_closing_time %}
