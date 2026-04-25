@@ -492,6 +492,20 @@ function setupAddMenuItemForm() {
                     }
                 }
 
+                // ── Save add-on groups for the new item ────────────────
+                const _addAddonGroups = collectAddonGroups('addAddonGroupsContainer');
+                if (_addAddonGroups.length && data.item && data.item.id) {
+                    const _addonCsrf = getCookie('csrftoken');
+                    fetch('/owner/dashboard/menu-item-addons/' + data.item.id + '/save/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _addonCsrf },
+                        body: JSON.stringify({ groups: _addAddonGroups })
+                    }).catch(function(err) { console.warn('Add-on save failed:', err); });
+                }
+                // Clear addon builder
+                const _addCont = document.getElementById('addAddonGroupsContainer');
+                if (_addCont) _addCont.innerHTML = '';
+
                 // ✅ CRITICAL: Reset form and keep modal open
                 newForm.reset();
 
@@ -773,6 +787,18 @@ function setupEditMenuItemForm() {
                     showNotification('✅ ' + data.message, 'success');
                     updateMenuItemInGrid(data.item);
 
+                    // ── Save add-on groups for the edited item ──────────
+                    const _editAddonGroups = collectAddonGroups('editAddonGroupsContainer');
+                    const _editItemId = document.getElementById('edit_item_id') ? document.getElementById('edit_item_id').value : null;
+                    if (_editItemId) {
+                        const _addonCsrf2 = getCookie('csrftoken');
+                        fetch('/owner/dashboard/menu-item-addons/' + _editItemId + '/save/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _addonCsrf2 },
+                            body: JSON.stringify({ groups: _editAddonGroups })
+                        }).catch(function(err) { console.warn('Edit add-on save failed:', err); });
+                    }
+
                     setTimeout(() => {
                         closeModal('editMenuItemModal');
                     }, 1000);
@@ -932,6 +958,45 @@ function openEditModal(itemId) {
     }
 
     openModal('editMenuItemModal');
+
+    // ── Load existing add-on groups for this item ───────────────
+    const _editAddonCont = document.getElementById('editAddonGroupsContainer');
+    if (_editAddonCont) {
+        _editAddonCont.innerHTML = '<p style="font-size:12px;color:#9ca3af;padding:4px 0;">Loading add-ons...</p>';
+        fetch('/api/menu-item-addons/' + itemId + '/')
+            .then(function(r) { return r.json(); })
+            .then(function(adData) {
+                _editAddonCont.innerHTML = '';
+                if (!adData.success || !adData.groups || !adData.groups.length) return;
+                adData.groups.forEach(function(g) {
+                    addAddonGroup('editAddonGroupsContainer');
+                    const block = _editAddonCont.lastElementChild;
+                    if (!block) return;
+                    const nameInput = block.querySelector('.addon-group-name');
+                    const reqCheck  = block.querySelector('.addon-group-required');
+                    const maxSel    = block.querySelector('.addon-group-max');
+                    if (nameInput) nameInput.value = g.name || '';
+                    if (reqCheck)  reqCheck.checked = !!g.is_required;
+                    if (maxSel)    maxSel.value = g.max_choices;
+                    // Clear the auto-created empty option row
+                    const optList = block.querySelector('.addon-opts-list');
+                    if (optList) optList.innerHTML = '';
+                    (g.options || []).forEach(function(o) {
+                        const addOptBtn = block.querySelector('.addon-add-opt-btn');
+                        if (addOptBtn) addAddonOption(addOptBtn);
+                        const rows = optList ? optList.querySelectorAll('div') : [];
+                        const lastRow = rows[rows.length - 1];
+                        if (lastRow) {
+                            const nInp = lastRow.querySelector('.addon-opt-name');
+                            const pInp = lastRow.querySelector('.addon-opt-price');
+                            if (nInp) nInp.value = o.name || '';
+                            if (pInp) pInp.value = o.additional_price || 0;
+                        }
+                    });
+                });
+            })
+            .catch(function() { _editAddonCont.innerHTML = ''; });
+    }
 }
 
 // ==========================================
@@ -1299,15 +1364,22 @@ function renderNotification(notif) {
     const snapshotStatus = getNotifSnapshotStatus(notif);
     const statusLabel    = getNotifSnapshotLabel(notif);
 
-    // Format items
-    const items = notif.order.items ? notif.order.items.map(item => `
+    // Format items (with add-ons)
+    const items = notif.order.items ? notif.order.items.map(item => {
+        const addonRows = (item.addons && item.addons.length) ? item.addons.map(a =>
+            `<div class="notif-addon">
+                <span class="notif-addon-name">+ ${escapeHtml(a.name)} &times;${a.quantity}</span>
+                <span class="notif-addon-price">+&#8369;${parseFloat(a.price * a.quantity).toFixed(2)}</span>
+            </div>`
+        ).join('') : '';
+        return `
         <div class="notif-prod">
             <span class="notif-prod-name">
                 <strong>${item.quantity}x</strong> ${escapeHtml(item.name)}
             </span>
-            <span class="notif-prod-price">₱${parseFloat(item.total).toFixed(2)}</span>
-        </div>
-    `).join('') : '';
+            <span class="notif-prod-price">&#8369;${parseFloat(item.total).toFixed(2)}</span>
+        </div>${addonRows}`;
+    }).join('') : '';
 
     return `
         <div class="notification-item ${isUnread}" data-nid="${notif.id}">
@@ -2291,3 +2363,163 @@ function escapeHtml(text) {
 
     tryConnect();
 })();
+
+// ============================================================
+// ADD-ON GROUP BUILDER  (used in Add & Edit menu item modals)
+// ============================================================
+
+/**
+ * addAddonGroup(containerId)
+ * Appends a new add-on group block to the given container.
+ */
+function addAddonGroup(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const div = document.createElement('div');
+    div.className = 'addon-group-block';
+    div.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:10px;padding:12px;background:#fafafa;display:flex;flex-direction:column;gap:8px';
+
+    // Build header row
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'addon-group-name';
+    nameInput.placeholder = 'Group name (e.g. Choice A, Add-ons)';
+    nameInput.style.cssText = 'flex:1;min-width:120px;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 10px;font-size:13px;font-family:Poppins,sans-serif;outline:none;';
+
+    const reqLabel = document.createElement('label');
+    reqLabel.style.cssText = 'font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;';
+    const reqCheck = document.createElement('input');
+    reqCheck.type = 'checkbox';
+    reqCheck.className = 'addon-group-required';
+    reqCheck.style.accentColor = '#B71C1C';
+    reqLabel.appendChild(reqCheck);
+    reqLabel.appendChild(document.createTextNode(' Required'));
+
+    const maxSel = document.createElement('select');
+    maxSel.className = 'addon-group-max';
+    maxSel.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 8px;font-size:12px;font-family:Poppins,sans-serif;outline:none;cursor:pointer;';
+    [['1','Max 1'],['2','Max 2'],['3','Max 3'],['5','Max 5'],['0','Unlimited']].forEach(function(pair) {
+        const opt = document.createElement('option');
+        opt.value = pair[0]; opt.textContent = pair[1];
+        maxSel.appendChild(opt);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.title = 'Remove group';
+    delBtn.style.cssText = 'background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;padding:2px 4px;';
+    delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    delBtn.addEventListener('click', function() { div.remove(); });
+
+    header.appendChild(nameInput);
+    header.appendChild(reqLabel);
+    header.appendChild(maxSel);
+    header.appendChild(delBtn);
+
+    // Options list
+    const optList = document.createElement('div');
+    optList.className = 'addon-opts-list';
+    optList.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+    // Add option button
+    const addOptBtn = document.createElement('button');
+    addOptBtn.type = 'button';
+    addOptBtn.className = 'addon-add-opt-btn';
+    addOptBtn.style.cssText = 'align-self:flex-start;font-size:11px;padding:4px 12px;border:1.5px solid #B71C1C;color:#B71C1C;background:#fff5f5;border-radius:20px;cursor:pointer;font-family:Poppins,sans-serif;font-weight:600;';
+    addOptBtn.textContent = '+ Add Option';
+    addOptBtn.addEventListener('click', function() { addAddonOption(addOptBtn); });
+
+    div.appendChild(header);
+    div.appendChild(optList);
+    div.appendChild(addOptBtn);
+    container.appendChild(div);
+
+    // Auto-add one empty option row
+    addAddonOption(addOptBtn);
+}
+
+/**
+ * addAddonOption(btn)
+ * Appends a new option row to the group that contains btn.
+ */
+function addAddonOption(btn) {
+    const list = btn.closest('.addon-group-block').querySelector('.addon-opts-list');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+
+    const nameInp = document.createElement('input');
+    nameInp.type = 'text';
+    nameInp.className = 'addon-opt-name';
+    nameInp.placeholder = 'Option name (e.g. Large Fries)';
+    nameInp.style.cssText = 'flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px;font-family:Poppins,sans-serif;outline:none;';
+
+    const priceLabel = document.createElement('span');
+    priceLabel.style.cssText = 'font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;';
+    priceLabel.textContent = '+\u20B1';
+
+    const priceInp = document.createElement('input');
+    priceInp.type = 'number';
+    priceInp.className = 'addon-opt-price';
+    priceInp.placeholder = '0';
+    priceInp.min = '0';
+    priceInp.step = '0.01';
+    priceInp.value = '0';
+    priceInp.style.cssText = 'width:72px;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 8px;font-size:13px;font-family:Poppins,sans-serif;outline:none;';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.title = 'Remove option';
+    removeBtn.style.cssText = 'background:none;border:none;color:#ef4444;font-size:14px;cursor:pointer;padding:2px 4px;';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.addEventListener('click', function() { row.remove(); });
+
+    row.appendChild(nameInp);
+    row.appendChild(priceLabel);
+    row.appendChild(priceInp);
+    row.appendChild(removeBtn);
+    list.appendChild(row);
+}
+
+/**
+ * collectAddonGroups(containerId)
+ * Reads all group blocks from a container and returns a clean array
+ * suitable for the save_menu_item_addons API.
+ */
+function collectAddonGroups(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    const groups = [];
+    container.querySelectorAll('.addon-group-block').forEach(function(block) {
+        const nameEl = block.querySelector('.addon-group-name');
+        const reqEl  = block.querySelector('.addon-group-required');
+        const maxEl  = block.querySelector('.addon-group-max');
+        const groupName = (nameEl ? nameEl.value : '').trim();
+        if (!groupName) return; // skip unnamed groups
+
+        const options = [];
+        block.querySelectorAll('.addon-opts-list > div').forEach(function(row) {
+            const nEl = row.querySelector('.addon-opt-name');
+            const pEl = row.querySelector('.addon-opt-price');
+            const optName = (nEl ? nEl.value : '').trim();
+            if (!optName) return; // skip blank options
+            options.push({
+                name: optName,
+                additional_price: parseFloat((pEl ? pEl.value : 0) || 0)
+            });
+        });
+
+        groups.push({
+            name:        groupName,
+            is_required: reqEl ? reqEl.checked : false,
+            max_choices: maxEl  ? parseInt(maxEl.value) : 1,
+            options:     options
+        });
+    });
+    return groups;
+}

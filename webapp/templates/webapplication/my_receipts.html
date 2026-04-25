@@ -275,9 +275,33 @@ tr.just-updated { animation: rowFlash .9s ease-out forwards; }
 .rm-row-val { background: #fff; font-weight: 600; color: #1a1a1a; font-size: .67rem; padding: 5px 10px; text-align: right; border-bottom: 1px solid #f0f0f0; line-height: 1.3; word-break: break-word; }
 .rm-row:last-child .rm-row-lbl, .rm-row:last-child .rm-row-val { border-bottom: none; }
 .rm-items-hd { font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #bbb; padding: 8px 0 4px; border-top: 2px dashed #e5e7eb; }
-.rm-item-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: .72rem; }
-.rm-item-name  { color: #374151; font-weight: 500; }
+.rm-item-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 2px; font-size: .72rem; }
+.rm-item-name  { color: #374151; font-weight: 600; }
 .rm-item-price { color: #B71C1C; font-weight: 700; }
+
+/* ── Add-on rows inside receipt modal ── */
+.rm-addon-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1px 0 2px 10px;
+}
+.rm-addon-name { font-size: .64rem; color: #9ca3af; font-style: italic; }
+.rm-addon-price { font-size: .64rem; color: #B71C1C; font-weight: 600; }
+.rm-unit-price { font-size: .6rem; color: #b0b8c1; font-weight: 400; font-style: normal; }
+
+/* ── Breakdown (base items / add-ons split) ── */
+.rm-breakdown-wrap {
+    border-top: 1px dashed #e5e7eb;
+    margin-top: 6px;
+    padding-top: 6px;
+}
+.rm-breakdown-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2px 0; font-size: .66rem; color: #9ca3af;
+}
+.rm-breakdown-lbl { }
+.rm-breakdown-val { font-weight: 600; color: #374151; }
+.rm-addons-total-val { font-weight: 700; color: #B71C1C !important; }
+
 .rm-total-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin-top: 8px; background: #fff8f8; border-radius: 10px; border: 1px solid #fde8e8; }
 .rm-total-lbl { font-size: .75rem; font-weight: 700; color: #374151; }
 .rm-total-amt { font-size: 1.05rem; font-weight: 800; color: #B71C1C; }
@@ -289,6 +313,13 @@ tr.just-updated { animation: rowFlash .9s ease-out forwards; }
 .rm-download { flex: 2; padding: 9px 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: .75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: opacity .15s; font-family: inherit; box-shadow: 0 3px 10px rgba(22,163,74,.3); }
 .rm-download:hover    { opacity: .88; }
 .rm-download:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+/* ── Loading state inside modal ── */
+.rm-loading {
+    text-align: center; padding: 36px 20px; color: #9ca3af;
+}
+.rm-loading i { font-size: 1.4rem; display: block; margin-bottom: 10px; color: #B71C1C; opacity: .6; }
+.rm-loading span { font-size: .78rem; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -372,7 +403,7 @@ tr.just-updated { animation: rowFlash .9s ease-out forwards; }
         <div class="rp-filter-group">
             <span class="rp-filter-lbl">Sort</span>
             <select class="rp-select" id="rpSort" onchange="applyTableFilters()">
-                <option value="newest">Newest First</option>
+                <option value="newest" selected>Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="amount_desc">Highest Amount</option>
                 <option value="amount_asc">Lowest Amount</option>
@@ -409,6 +440,7 @@ tr.just-updated { animation: rowFlash .9s ease-out forwards; }
                         data-payment="{{ order.payment_method|lower }}"
                         data-amount="{{ order.total_amount }}"
                         data-date="{{ order.created_at }}"
+                        data-timestamp="{{ order.id }}"
                         data-search="{{ order.id }} {{ order.establishment.name|lower }} {% for item in order.items %}{{ item.name|lower }} {% endfor %}">
 
                         <!-- Order # -->
@@ -544,7 +576,8 @@ tr.just-updated { animation: rowFlash .9s ease-out forwards; }
 const ORDERS_STATIC   = {{ orders_json|safe }};
 const CURRENT_USER_ID = {{ request.user.id }};
 
-let _rtOrders     = JSON.parse(JSON.stringify(ORDERS_STATIC));
+let _rtOrders     = JSON.parse(JSON.stringify(ORDERS_STATIC))
+                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 let _rtCurrentIdx = null;
 
 const STATUS_LABELS = {
@@ -597,10 +630,10 @@ function applyTableFilters() {
     // Sort
     const vis = rows.filter(r => r.style.display !== 'none');
     vis.sort((a, b) => {
-        if (sort === 'oldest')      return (a.dataset.date||'').localeCompare(b.dataset.date||'');
+        if (sort === 'oldest')      return parseInt(a.dataset.timestamp||0) - parseInt(b.dataset.timestamp||0);
         if (sort === 'amount_desc') return parseFloat(b.dataset.amount||0) - parseFloat(a.dataset.amount||0);
         if (sort === 'amount_asc')  return parseFloat(a.dataset.amount||0) - parseFloat(b.dataset.amount||0);
-        return (b.dataset.date||'').localeCompare(a.dataset.date||''); // newest
+        return parseInt(b.dataset.timestamp||0) - parseInt(a.dataset.timestamp||0); // newest
     });
     vis.forEach(r => tbody.appendChild(r));
 
@@ -676,16 +709,14 @@ function _pollAll() {
                 _rtUpdateRow(local);
             }
             if (live.total_amount !== undefined) local.total_amount = parseFloat(live.total_amount);
+            // ✅ Store live items with addons for use when modal is open
             if (live.items && live.items.length) {
-                local.items = live.items.map(i => ({
-                    name: i.name, quantity: i.quantity,
-                    subtotal: parseFloat(i.total_price || i.subtotal || 0)
-                }));
+                local.items_live = live.items; // preserve full items with addons
             }
         });
         if (_rtCurrentIdx !== null) {
             const o = _rtOrders[_rtCurrentIdx];
-            if (o) _renderReceiptFromLocal(o);
+            if (o) _fetchAndRenderModal(_rtCurrentIdx);
         }
         _renderStats();
     });
@@ -726,71 +757,120 @@ function _setLiveBadge(connected) {
 // ══ Receipt modal ════════════════════════════
 function openReceiptModal(idx) {
     _rtCurrentIdx = idx;
-    const o = _rtOrders[idx];
-    if (!o) return;
-    _renderReceiptFromLocal(o);
-    document.getElementById('rmOverlay').classList.add('open');
-    _fetchAndUpdateModalAsync(idx);
-}
+    const overlay = document.getElementById('rmOverlay');
+    const ticket  = document.getElementById('rmTicket');
+    if (!overlay || !ticket) return;
 
-function _fetchAndUpdateModalAsync(idx) {
+    // Render instantly from local data — no loading spinner
+    overlay.classList.add('open');
     const order = _rtOrders[idx];
-    if (!order) return;
-    fetch('/api/order/' + order.id + '/')
-        .then(r => r.json())
-        .then(d => {
-            if (!d.success || !d.order) return;
-            if (d.order.status && d.order.status !== order.status) {
-                order.status = d.order.status;
-                order.status_label = STATUS_LABELS[d.order.status] || d.order.status;
-                renderReceipt(d.order, order);
-            }
-        }).catch(() => {});
+    if (order) _renderReceiptFromLocal(order);
+
+    // Silently refresh in background for live add-ons/status
+    _fetchAndRenderModal(idx);
 }
 
 function _fetchAndRenderModal(idx) {
     const order = _rtOrders[idx];
     if (!order) return;
-    fetch('/api/order/' + order.id + '/')
+    fetch('/api/order/' + order.id + '/', { credentials: 'same-origin' })
         .then(r => r.json())
         .then(d => {
-            if (!d.success || !d.order) { _renderReceiptFromLocal(order); return; }
-            if (d.order.status) { order.status = d.order.status; order.status_label = STATUS_LABELS[d.order.status] || d.order.status; }
-            if (d.order.total_amount !== undefined) order.total_amount = parseFloat(d.order.total_amount);
-            if (d.order.items && d.order.items.length) {
-                order.items = d.order.items.map(i => ({ name: i.name, quantity: i.quantity, subtotal: parseFloat(i.total_price || i.subtotal || 0) }));
-            }
-            renderReceipt(d.order, order);
-        }).catch(() => _renderReceiptFromLocal(order));
+            if (!d.success || !d.order) return; // already showing local, no need to update
+            const live = d.order;
+            // Sync local state
+            if (live.status) { order.status = live.status; order.status_label = STATUS_LABELS[live.status] || live.status; }
+            if (live.total_amount !== undefined) order.total_amount = parseFloat(live.total_amount);
+            if (live.items && live.items.length) order.items_live = live.items;
+            // Only re-render if modal is still open for same order
+            if (_rtCurrentIdx === idx) renderReceipt(live, order);
+        })
+        .catch(() => {}); // local render already shown, silently ignore
 }
 
 function _renderReceiptFromLocal(order) {
     renderReceipt({
         id: order.id, status: order.status, total_amount: order.total_amount,
-        items: (order.items || []).map(i => ({ name: i.name, quantity: i.quantity, total_price: i.subtotal })),
+        items: (order.items_live || order.items || []).map(i => ({
+            name: i.name, quantity: i.quantity,
+            price: i.price || i.subtotal / (i.quantity || 1) || 0,
+            total_price: i.subtotal || i.total_price || 0,
+            addons: i.addons || []
+        })),
         establishment: { name: order.establishment.name, address: order.establishment.address },
         gcash_reference: order.reference,
     }, order);
 }
 
+// ══ Render Receipt (with full add-ons breakdown) ══════════════
 function renderReceipt(apiOrder, staticOrder) {
-    const status    = (apiOrder.status || staticOrder.status || '').toLowerCase();
-    const items     = apiOrder.items || staticOrder.items || [];
+    const status  = (apiOrder.status || staticOrder.status || '').toLowerCase();
+    const items   = apiOrder.items || staticOrder.items || [];
+
+    let baseSubtotal   = 0;
+    let addonsSubtotal = 0;
+
     const itemsHtml = items.map(item => {
-        const name     = esc(item.name || '');
-        const qty      = item.quantity || 1;
-        const subtotal = parseFloat(item.total_price || item.subtotal || 0).toFixed(2);
-        return `<div class="rm-item-row">
-            <span class="rm-item-name">${name} &times; ${qty}</span>
-            <span class="rm-item-price">&#8369;${subtotal}</span>
-        </div>`;
+        const name      = esc(item.name || '');
+        const qty       = parseInt(item.quantity || 1);
+        const basePrice = parseFloat(item.price || item.price_at_order || 0);
+        const addons    = Array.isArray(item.addons) ? item.addons : [];
+
+        // Calculate add-ons extra — addon qty is ABSOLUTE (total for this line, not per-unit)
+        const addonsPerUnit = addons.reduce((s, a) =>
+            s + parseFloat(a.additional_price || 0) * parseInt(a.qty || 1), 0);
+        // ✅ FIXED: item subtotal = base × qty + addon_total (addons not multiplied by qty again)
+        const itemSubtotal = basePrice * qty + addonsPerUnit;
+
+        baseSubtotal   += basePrice * qty;
+        addonsSubtotal += addonsPerUnit;   // ✅ FIXED: was addonsPerUnit * qty
+
+        // Build add-on sub-rows
+        const addonsHtml = addons.length ? addons.map(a => {
+            const aPrice = parseFloat(a.additional_price || 0);
+            const aQty   = parseInt(a.qty || 1);
+            const aTotal = aPrice * aQty;  // ✅ FIXED: was aPrice * aQty * qty
+            return `<div class="rm-addon-row">
+                <span class="rm-addon-name">&#8627; ${esc(a.name || '')} &times; ${aQty} <span class="rm-unit-price">(&#8369;${aPrice.toFixed(2)}/ea)</span></span>
+                <span class="rm-addon-price">+&#8369;${aTotal.toFixed(2)}</span>
+            </div>`;
+        }).join('') : '';
+
+        return `
+            <div class="rm-item-row">
+                <span class="rm-item-name">${name} &times; ${qty} <span class="rm-unit-price">(&#8369;${basePrice.toFixed(2)}/ea)</span></span>
+                <span class="rm-item-price">&#8369;${(basePrice * qty).toFixed(2)}</span>
+            </div>
+            ${addonsHtml}`;
     }).join('');
-    const total     = parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0).toFixed(2);
-    const estabName = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
-    const payment   = staticOrder.payment_method || 'Cash on Pickup';
-    const reference = apiOrder.gcash_reference || staticOrder.reference || '';
-    const dateStr   = staticOrder.created_at;
-    const orderId   = apiOrder.id || staticOrder.id;
+
+    // Subtotal breakdown (only show if there are add-ons)
+    const hasAddons      = addonsSubtotal > 0;
+    const recalcTotal = baseSubtotal + addonsSubtotal;
+    const total = (recalcTotal > 0
+        ? recalcTotal
+        : parseFloat(apiOrder.total_amount || staticOrder.total_amount || 0)
+    ).toFixed(2);
+    const estabName      = (apiOrder.establishment && apiOrder.establishment.name) || staticOrder.establishment.name;
+    const estabAddr      = (apiOrder.establishment && apiOrder.establishment.address) || staticOrder.establishment.address || 'Not provided';
+    const payment        = staticOrder.payment_method || 'Cash on Pickup';
+    const reference      = apiOrder.gcash_reference || staticOrder.reference || '';
+    const dateStr        = staticOrder.created_at;
+    const orderId        = apiOrder.id || staticOrder.id;
+
+    const breakdownHtml = hasAddons ? `
+        <div class="rm-breakdown-wrap">
+            <div class="rm-breakdown-row">
+                <span class="rm-breakdown-lbl"><i class="fas fa-utensils" style="margin-right:3px;font-size:.58rem;"></i>Items subtotal</span>
+                <span class="rm-breakdown-val">&#8369;${baseSubtotal.toFixed(2)}</span>
+            </div>
+            <div class="rm-breakdown-row">
+                <span class="rm-breakdown-lbl" style="color:#B71C1C;font-weight:600;">
+                    <i class="fas fa-plus-circle" style="margin-right:3px;font-size:.58rem;"></i>Add-ons total
+                </span>
+                <span class="rm-breakdown-val rm-addons-total-val">+&#8369;${addonsSubtotal.toFixed(2)}</span>
+            </div>
+        </div>` : '';
 
     document.getElementById('rmTicket').innerHTML = `
         <div class="rm-header-strip">
@@ -816,7 +896,7 @@ function renderReceipt(apiOrder, staticOrder) {
                 </div>
                 <div class="rm-row">
                     <span class="rm-row-lbl">Address</span>
-                    <span class="rm-row-val" style="font-size:.76rem;line-height:1.35;">${esc((apiOrder.establishment && apiOrder.establishment.address) || staticOrder.establishment.address || 'Not provided')}</span>
+                    <span class="rm-row-val" style="font-size:.76rem;line-height:1.35;">${esc(estabAddr)}</span>
                 </div>
                 <div class="rm-row">
                     <span class="rm-row-lbl">Payment</span>
@@ -829,6 +909,7 @@ function renderReceipt(apiOrder, staticOrder) {
             </div>
             <div class="rm-items-hd">Items Ordered</div>
             ${itemsHtml || '<div style="font-size:.68rem;color:#ccc;padding:3px 0;">No items found.</div>'}
+            ${breakdownHtml}
             <div class="rm-total-row">
                 <span class="rm-total-lbl">Total Amount</span>
                 <span class="rm-total-amt">&#8369;${total}</span>

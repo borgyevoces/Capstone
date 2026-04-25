@@ -361,11 +361,12 @@
             </div>
 
             <div id="login" class="tab-content active">
-                <form method="post" action="{% url 'user_login_register' %}" class="auth-form">
+                <form id="login-form" class="auth-form">
                     {% csrf_token %}
                     <div class="form-field-container">
                         <label for="id_username">Email/Gmail</label>
-                        <input type="text" name="username" id="id_username" placeholder="Enter your registered email" required>
+                        <input type="text" name="username" id="id_username" placeholder="Enter your Gmail address" required>
+                        <div id="login-email-error" class="inline-error" style="display:none;"></div>
                     </div>
                     <div class="form-field-container">
                         <label for="id_password">Password</label>
@@ -373,11 +374,12 @@
                             <input type="password" name="password" id="id_password" class="password-input" placeholder="••••••••" required>
                             <span class="password-toggle" onclick="togglePassword('id_password', this)" title="Show password">👁️‍🗨️</span>
                         </div>
+                        <div id="login-password-error" class="inline-error" style="display:none;"></div>
                     </div>
                     <div class="forgot-password">
                         <a onclick="openForgotPasswordModal()">Forgot password?</a>
                     </div>
-                    <button type="submit" name="login_submit" class="action-btn">Login</button>
+                    <button type="submit" id="login-submit-btn" class="action-btn">Login</button>
                 </form>
             </div>
 
@@ -453,11 +455,11 @@
                 <div class="brand-features">
                     <div class="brand-feature-item">
                         <span class="brand-feature-icon">⚡</span>
-                        <span>Quick reservation from campus stalls</span>
+                        <span>Quick orders from campus stalls</span>
                     </div>
                     <div class="brand-feature-item">
                         <span class="brand-feature-icon">📍</span>
-                        <span>Real-time reservation tracking</span>
+                        <span>Real-time order tracking</span>
                     </div>
                     <div class="brand-feature-item">
                         <span class="brand-feature-icon">🎓</span>
@@ -477,7 +479,7 @@
             <div class="modal-header">
                 <h3>Forgot Password?</h3>
             </div>
-            <p class="modal-text">Enter your email below to reset your password.</p>
+            <p class="modal-text">Enter your Gmail address below to reset your password.</p>
 
             <!-- Success message -->
             <div id="forgot-success-msg" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; padding:12px 14px; color:#2e7d32; font-size:0.88rem; margin-bottom:16px;">
@@ -492,8 +494,8 @@
             <form id="forgotPasswordForm" class="modal-form">
                 {% csrf_token %}
                 <div class="form-field-container">
-                    <label for="id_forgot_email">Email</label>
-                    <input type="email" name="email" id="id_forgot_email" placeholder="Enter your registered email" required>
+                    <label for="id_forgot_email">Gmail Address</label>
+                    <input type="email" name="email" id="id_forgot_email" placeholder="Enter your registered Gmail (@gmail.com)" required>
                 </div>
                 <button type="submit" id="forgot-submit-btn" class="action-btn modal-action-btn">Send Reset Link</button>
             </form>
@@ -509,7 +511,100 @@
         let otpTimer = null;
         let timeRemaining = 600; // 10 minutes in seconds
 
-        // Password Toggle
+        // ==========================================
+        // GMAIL VALIDATION HELPER
+        // ==========================================
+        function isValidGmail(email) {
+            return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email.trim().toLowerCase());
+        }
+
+        function showLoginFieldError(fieldId, message) {
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.textContent = message;
+                el.style.display = 'flex';
+            }
+        }
+
+        function clearLoginErrors() {
+            ['login-email-error', 'login-password-error'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        // ==========================================
+        // AJAX LOGIN HANDLER
+        // ==========================================
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearLoginErrors();
+
+            const email = document.getElementById('id_username').value.trim();
+            const password = document.getElementById('id_password').value;
+            const btn = document.getElementById('login-submit-btn');
+
+            // Frontend Gmail check
+            if (!isValidGmail(email)) {
+                showLoginFieldError('login-email-error', 'Please enter a valid Gmail address (e.g. yourname@gmail.com).');
+                document.getElementById('id_username').focus();
+                return;
+            }
+
+            if (!password) {
+                showLoginFieldError('login-password-error', 'Please enter your password.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Logging in...';
+
+            try {
+                const formData = new FormData();
+                formData.append('username', email);
+                formData.append('password', password);
+                formData.append('login_submit', '1');
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+                const response = await fetch("{% url 'user_login_register' %}", {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessagePopup('Successfully logged in!', 'success');
+                    setTimeout(() => { window.location.href = data.redirect || '/'; }, 800);
+                } else {
+                    // Show inline errors based on which field is wrong
+                    const err = data.error || 'Invalid Gmail or Password.';
+                    if (data.error_field === 'email') {
+                        showLoginFieldError('login-email-error', err);
+                    } else if (data.error_field === 'password') {
+                        showLoginFieldError('login-password-error', err);
+                    } else {
+                        // Generic: highlight both fields
+                        showLoginFieldError('login-email-error', 'Invalid Gmail or Password.');
+                        showLoginFieldError('login-password-error', 'Please check your credentials and try again.');
+                    }
+                }
+            } catch (error) {
+                showMessagePopup('Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        });
+
+        // Clear inline errors when user starts typing
+        document.getElementById('id_username').addEventListener('input', () => {
+            document.getElementById('login-email-error').style.display = 'none';
+        });
+        document.getElementById('id_password').addEventListener('input', () => {
+            document.getElementById('login-password-error').style.display = 'none';
+        });
         function togglePassword(fieldId, iconElement) {
             const passwordField = document.getElementById(fieldId);
             if (passwordField.type === "password") {
@@ -595,7 +690,14 @@
             const submitBtn = e.target.querySelector('.action-btn');
 
             if (!email) {
-                showMessagePopup('Please enter your email', 'error');
+                showMessagePopup('Please enter your Gmail address', 'error');
+                return;
+            }
+
+            // Gmail-only validation
+            if (!isValidGmail(email)) {
+                showMessagePopup('Only Gmail addresses are allowed (@gmail.com). Please use a valid Gmail.', 'error');
+                emailInput.focus();
                 return;
             }
 
@@ -892,13 +994,21 @@
             document.getElementById('forgot-error-msg').style.display = 'none';
 
             if (!email) {
-                document.getElementById('forgot-error-text-msg').textContent = 'Please enter your email address.';
+                document.getElementById('forgot-error-text-msg').textContent = 'Please enter your Gmail address.';
                 document.getElementById('forgot-error-msg').style.display = 'block';
                 return;
             }
 
+            // Gmail format check before hitting the server
+            if (!isValidGmail(email)) {
+                document.getElementById('forgot-error-text-msg').textContent = 'Please enter a valid Gmail address (e.g. yourname@gmail.com).';
+                document.getElementById('forgot-error-msg').style.display = 'block';
+                document.getElementById('id_forgot_email').focus();
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Sending...';
+            btn.innerHTML = '<span class="spinner"></span> Verifying Gmail...';
 
             try {
                 const formData = new FormData();
@@ -908,13 +1018,23 @@
 
                 const response = await fetch("{% url 'forgot_password' %}", {
                     method: 'POST',
-                    body: formData,
-                    redirect: 'manual'
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
                 });
 
-                // Show success regardless (security: don't reveal if email exists)
-                document.getElementById('forgotPasswordForm').style.display = 'none';
-                document.getElementById('forgot-success-msg').style.display = 'block';
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success — don't reveal if Gmail is registered
+                    document.getElementById('forgotPasswordForm').style.display = 'none';
+                    document.getElementById('forgot-success-msg').style.display = 'block';
+                } else {
+                    // Show the specific error (non-existent Gmail, wrong format, etc.)
+                    document.getElementById('forgot-error-text-msg').textContent = data.error || 'Something went wrong. Please try again.';
+                    document.getElementById('forgot-error-msg').style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Send Reset Link';
+                }
 
             } catch (err) {
                 document.getElementById('forgot-error-text-msg').textContent = 'Network error. Please try again.';

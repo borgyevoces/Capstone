@@ -359,8 +359,8 @@ window.handleModalAddToCart = function(button) {
                 window.updateCartBadge(true);
             }
 
-            // 2. Fly animation — modal stays OPEN (same as kabsueats _flyToCart)
-            _flyToCartFromModal();
+            // 2. Fly animation — modal stays OPEN, starts from Add to Cart button
+            _flyToCartFromModal(null, button);
 
             // 3. Local running total — same as kabsueats currentModalInCart
             estCartQtyCache[String(itemId)] = (parseInt(estCartQtyCache[String(itemId)] || 0)) + qty;
@@ -399,38 +399,50 @@ window.handleModalAddToCart = function(button) {
     });
 };
 
-// ── Flying-to-cart animation — robust with multiple fallbacks ──
-// imgEl: optional source element to fly from (defaults to #modalItemImage)
-function _flyToCartFromModal(imgEl) {
-    // Target for END POSITION (where the bubble flies to):
-    // Use the <i> icon for precise center, fall back up the chain
+// ── Flying-to-cart animation ──
+// imgEl : optional source image element (falls back to #modalItemImage)
+// srcBtn: optional source button — when provided, animation starts FROM the button
+function _flyToCartFromModal(imgEl, srcBtn) {
+    // ── Find cart target: desktop sidebar first, then mobile bottom nav ──
     const flyTarget =
         document.querySelector('.client-sidebar .cart-link .csb-ico i.fa-shopping-cart') ||
         document.querySelector('.client-sidebar .cart-link .csb-ico') ||
         document.querySelector('.client-sidebar .cart-link') ||
+        document.querySelector('#mobBottomNav .mob-nav-item .fa-shopping-cart') ||
         document.querySelector('#cart-count-badge') ||
         document.querySelector('.cart-badge');
 
-    // Target for POP-BOUNCE on landing (always the .csb-ico span for best visual)
     const bounceTarget =
         document.querySelector('.client-sidebar .cart-link .csb-ico') ||
+        document.querySelector('#mobBottomNav .mob-nav-item .fa-shopping-cart') ||
         flyTarget;
 
-    const modalImg = imgEl || document.getElementById('modalItemImage');
-    const src = (modalImg && modalImg.src) ? modalImg.src : '';
+    // ── Determine start position ──────────────────────────────────────
+    let startX, startY, flySize, arcHeight;
 
-    // Start position — centre of modal image, or viewport centre
-    let startX, startY;
-    if (modalImg) {
-        const r = modalImg.getBoundingClientRect();
-        startX = r.left + r.width  / 2 - 26;
-        startY = r.top  + r.height / 2 - 26;
+    if (srcBtn) {
+        // START: centre of the "Add to Cart" button
+        const r = srcBtn.getBoundingClientRect();
+        flySize   = 44;
+        startX    = r.left + r.width  / 2 - flySize / 2;
+        startY    = r.top  + r.height / 2 - flySize / 2;
+        arcHeight = -120; // strong upward arc from button → cart
     } else {
-        startX = window.innerWidth  / 2 - 26;
-        startY = window.innerHeight / 2 - 26;
+        // Fallback: start from modal food image
+        const modalImg = imgEl || document.getElementById('modalItemImage');
+        flySize = 52;
+        if (modalImg) {
+            const r = modalImg.getBoundingClientRect();
+            startX = r.left + r.width  / 2 - flySize / 2;
+            startY = r.top  + r.height / 2 - flySize / 2;
+        } else {
+            startX = window.innerWidth  / 2 - flySize / 2;
+            startY = window.innerHeight / 2 - flySize / 2;
+        }
+        arcHeight = -80;
     }
 
-    // End position — use flyTarget rect if on-screen, else top-right corner fallback
+    // ── Determine end position ────────────────────────────────────────
     let endX, endY;
     if (flyTarget) {
         const cartRect = flyTarget.getBoundingClientRect();
@@ -438,10 +450,9 @@ function _flyToCartFromModal(imgEl) {
             cartRect.top >= -10 && cartRect.left >= -10 &&
             cartRect.bottom <= window.innerHeight + 10 &&
             cartRect.right  <= window.innerWidth  + 10) {
-            endX = cartRect.left + cartRect.width  / 2 - 26;
-            endY = cartRect.top  + cartRect.height / 2 - 26;
+            endX = cartRect.left + cartRect.width  / 2 - flySize / 2;
+            endY = cartRect.top  + cartRect.height / 2 - flySize / 2;
         } else {
-            // Off-screen (sidebar collapsed on mobile)
             endX = window.innerWidth  - 60;
             endY = 20;
         }
@@ -450,35 +461,55 @@ function _flyToCartFromModal(imgEl) {
         endY = 20;
     }
 
-    // Build the flying bubble — same style as kabsueats
+    // ── Build the flying bubble ───────────────────────────────────────
     const fly = document.createElement('div');
     fly.style.cssText = [
         'position:fixed',
-        'width:52px',
-        'height:52px',
+        'width:'  + flySize + 'px',
+        'height:' + flySize + 'px',
         'border-radius:50%',
         'overflow:hidden',
-        'background:#B71C1C',
+        'background:linear-gradient(135deg,#B71C1C,#ef4444)',
         'display:flex',
         'align-items:center',
         'justify-content:center',
-        'z-index:999999',
+        'z-index:9999999',
         'pointer-events:none',
-        'box-shadow:0 4px 16px rgba(183,28,28,.5)',
+        'box-shadow:0 6px 20px rgba(183,28,28,.55)',
+        'border:2.5px solid rgba(255,255,255,0.35)',
         'transition:none',
+        'will-change:transform,left,top',
     ].join(';');
 
-    if (src) {
-        fly.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    // Always show cart icon — makes intent crystal-clear
+    const modalImg = imgEl || document.getElementById('modalItemImage');
+    const iconSize = Math.round(flySize * 0.40);
+    if (modalImg && modalImg.src) {
+        fly.innerHTML =
+            '<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-shopping-cart" style="color:#fff;font-size:' + iconSize + 'px;"></i>' +
+            '<img src="' + modalImg.src + '" style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;object-fit:cover;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);">' +
+            '</div>';
     } else {
-        fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:20px;"></i>';
+        fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:' + iconSize + 'px;"></i>';
     }
 
     document.body.appendChild(fly);
     fly.style.left = startX + 'px';
     fly.style.top  = startY + 'px';
 
-    const duration  = 600;
+    // ── Tiny launch burst on the source button ────────────────────────
+    if (srcBtn) {
+        srcBtn.style.transition = 'transform .12s ease';
+        srcBtn.style.transform  = 'scale(0.92)';
+        setTimeout(function () {
+            srcBtn.style.transform = 'scale(1)';
+            setTimeout(function () { srcBtn.style.transition = ''; }, 140);
+        }, 120);
+    }
+
+    // ── Animate: arc + spin + shrink ─────────────────────────────────
+    const duration  = 620;
     const startTime = performance.now();
 
     function step(now) {
@@ -487,15 +518,17 @@ function _flyToCartFromModal(imgEl) {
         const t = progress < 0.5
             ? 4 * progress * progress * progress
             : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        const arc  = Math.sin(Math.PI * progress) * -80;
+
+        const arc  = Math.sin(Math.PI * progress) * arcHeight;
         const curX = startX + (endX - startX) * t;
         const curY = startY + (endY - startY) * t + arc;
-        const scale = 1 - 0.5 * t;
+        const scale = 1 - 0.55 * t;
+        const rot   = t * 360;
 
         fly.style.left      = curX + 'px';
         fly.style.top       = curY + 'px';
-        fly.style.transform = 'scale(' + scale + ')';
-        fly.style.opacity   = (1 - progress * 0.3).toString();
+        fly.style.transform = 'scale(' + scale + ') rotate(' + rot + 'deg)';
+        fly.style.opacity   = progress > 0.85 ? String(1 - (progress - 0.85) / 0.15) : '1';
 
         if (progress < 1) {
             requestAnimationFrame(step);
@@ -573,6 +606,9 @@ window.handleQuickAddToCart = function(button, event) {
     })
     .then(data => {
         if (data.success) {
+            // Fly animation from the quick-add button itself
+            _flyToCartFromModal(null, button);
+
             showMessage(
                 data.message || 'Item added to cart!',
                 'success',

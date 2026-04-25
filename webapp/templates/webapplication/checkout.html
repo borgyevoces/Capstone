@@ -769,11 +769,34 @@ body { background: #f5f5f5 !important; }
                     {% endif %}
 
                     <div class="checkout-item-details">
-                        <p class="checkout-item-name">{{ item.menu_item.name }}</p>
-                        <p class="checkout-item-meta">
-                            ×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }} each
-                        </p>
-                    </div>
+    <p class="checkout-item-name">{{ item.menu_item.name }}</p>
+    <p class="checkout-item-meta">
+        ×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }} each
+    </p>
+
+    <!-- ✅ BAGONG: Add-ons display -->
+    {% if item.addons_list %}
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;">
+        {% for addon in item.addons_list %}
+        <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;
+                     border-radius:4px;padding:1px 7px;font-size:10.5px;font-weight:500;">
+            <i class="fas fa-plus" style="font-size:8px;"></i>
+            {{ addon.name }}{% if addon.additional_price %} +₱{{ addon.additional_price }}{% endif %}
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ✅ BAGONG: Note to establishment display -->
+    {% if item.note_to_establishment %}
+    <div style="font-size:11px;color:#78350f;background:#fffbeb;border:1px solid #fde68a;
+                border-radius:4px;padding:3px 8px;margin-top:4px;font-style:italic;">
+        <i class="fas fa-comment-alt" style="color:#d97706;font-size:9px;margin-right:4px;"></i>
+        {{ item.note_to_establishment }}
+    </div>
+    {% endif %}
+
+</div>
 
                     <div>
                         <div class="checkout-item-price">
@@ -860,13 +883,62 @@ body { background: #f5f5f5 !important; }
                 <!-- Items summary -->
                 <div class="payment-summary-items">
                     {% for item in items %}
-                    <div class="payment-summary-item-row">
-                        <span class="payment-summary-item-name">{{ item.menu_item.name }}</span>
-                        <span class="payment-summary-item-qty">×{{ item.quantity }}</span>
-                        <span class="payment-summary-item-price">
-                            ₱{{ item.price_at_order }}
+
+                    <!-- ── Item name row ── -->
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;
+                                padding:10px 0 3px;border-top:1px solid #f0f0f0;">
+                        <span style="font-size:0.88rem;font-weight:700;color:#111;">
+                            {{ item.menu_item.name }}
+                        </span>
+                        <!-- item subtotal (base price × qty) -->
+                        <span style="font-size:0.88rem;font-weight:700;color:#111;white-space:nowrap;">
+                            ₱{% widthratio item.price_at_order 1 item.quantity %}
                         </span>
                     </div>
+
+                    <!-- ── qty · unit price ── -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;
+                                padding:0 0 4px;font-size:0.75rem;color:#9CA3AF;">
+                        <span>×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }}/ea</span>
+                    </div>
+
+                    <!-- ── Add-ons ── -->
+                    {% if item.addons_list %}
+                    <div style="background:#f9fafb;border-radius:8px;padding:6px 10px;margin-bottom:4px;">
+                        {% for addon in item.addons_list %}
+                        <div style="display:flex;justify-content:space-between;align-items:center;
+                                    padding:3px 0;{% if not forloop.last %}border-bottom:1px dashed #e5e7eb;{% endif %}">
+
+                            <!-- left: name + qty·price -->
+                            <div>
+                                <span style="font-size:0.78rem;color:#374151;font-weight:500;">
+                                    <i class="fas fa-plus" style="font-size:0.55rem;color:#9CA3AF;margin-right:3px;"></i>{{ addon.name }}
+                                </span>
+                                {% if addon.qty and addon.qty > 1 %}
+                                <span style="font-size:0.72rem;color:#9CA3AF;margin-left:4px;">
+                                    ×{{ addon.qty }} &nbsp;·&nbsp; ₱{{ addon.additional_price }}/ea
+                                </span>
+                                {% else %}
+                                <span style="font-size:0.72rem;color:#9CA3AF;margin-left:4px;">
+                                    ×1 &nbsp;·&nbsp; ₱{{ addon.additional_price }}/ea
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- right: addon subtotal -->
+                            {% if addon.additional_price %}
+                            <span style="font-size:0.78rem;font-weight:600;color:#B71C1C;white-space:nowrap;margin-left:8px;">
+                                +₱{% widthratio addon.additional_price 1 addon.qty|default:1 %}
+                            </span>
+                            {% else %}
+                            <span style="font-size:0.75rem;color:#16a34a;font-weight:500;margin-left:8px;">Free</span>
+                            {% endif %}
+
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
                     {% endfor %}
                 </div>
 

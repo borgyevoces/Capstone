@@ -93,7 +93,8 @@ from sendgrid.helpers.mail import Mail
 # ==========================================
 from .models import (
     FoodEstablishment, MenuItem, Review, Order, OrderItem,
-    OTP, Amenity, Category, InvitationCode, UserProfile, OrderNotification
+    OTP, Amenity, Category, InvitationCode, UserProfile, OrderNotification,
+    MenuItemAddOnGroup, MenuItemAddOnOption
 )
 from .forms import (
     UserProfileUpdateForm, AccessCodeForm,
@@ -160,6 +161,56 @@ def normalize_payment_method(raw):
     return 'gcash'
 
 
+def verify_gmail_exists(email):
+    """
+    ✅ GMAIL EXISTENCE CHECK — SMTP handshake against Gmail's MX server.
+
+    Performs an SMTP RCPT TO check WITHOUT sending any actual email.
+    Gmail's inbound server (gmail-smtp-in.l.google.com) returns:
+        250 → mailbox exists
+        550 → mailbox does not exist
+
+    Falls back to True (allow) if the server is unreachable (port 25 blocked
+    on some hosting providers like Render free tier) so real users are never
+    wrongly blocked.
+    """
+    import smtplib
+    import socket as _socket
+    import logging as _logging
+
+    logger = _logging.getLogger(__name__)
+
+    if not email or not email.lower().endswith('@gmail.com'):
+        return False
+
+    try:
+        conn = smtplib.SMTP(timeout=8)
+        conn.connect('gmail-smtp-in.l.google.com', 25)
+        conn.helo('kabsueats.com')
+        conn.mail('noreply@kabsueats.com')
+        code, _ = conn.rcpt(str(email))
+        conn.quit()
+
+        if code == 250:
+            return True   # ✅ Mailbox exists
+        elif code == 550:
+            return False  # ❌ Mailbox does not exist
+        else:
+            logger.warning(f'verify_gmail_exists: unexpected SMTP code {code} for {email}')
+            return True   # Unknown — allow through
+
+    except (_socket.timeout, ConnectionRefusedError, OSError) as e:
+        # Port 25 blocked (common on cloud providers) — cannot verify, allow through
+        logger.warning(f'verify_gmail_exists: connection failed for {email}: {e}')
+        return True
+    except smtplib.SMTPException as e:
+        logger.warning(f'verify_gmail_exists: SMTP error for {email}: {e}')
+        return True
+    except Exception as e:
+        logger.error(f'verify_gmail_exists: unexpected error for {email}: {e}')
+        return True
+
+
 def health_ping(request):
     """
     ✅ Lightweight ping endpoint — NO database hit.
@@ -197,8 +248,18 @@ def user_login_register(request):
 
     if request.method == "POST":
         if "login_submit" in request.POST:
-            username = request.POST.get("username")
-            password = request.POST.get("password")
+            username = request.POST.get("username", "").strip()
+            password = request.POST.get("password", "")
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+            # Gmail-only validation
+            import re as _re
+            if not _re.match(r'^[a-zA-Z0-9._%+\-]+@gmail\.com$', username, _re.IGNORECASE):
+                if is_ajax:
+                    return JsonResponse({'success': False, 'error': 'Only Gmail addresses are allowed. Please enter a valid @gmail.com address.', 'error_field': 'email'})
+                messages.error(request, "Only Gmail addresses are allowed.")
+                active_tab = 'login'
+                return render(request, "webapplication/login.html", {'show_done_modal': show_done_modal, 'active_tab': active_tab})
 
             try:
                 user_obj = User.objects.get(email=username)
@@ -214,8 +275,16 @@ def user_login_register(request):
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email], fail_silently=True)
 
                 messages.success(request, "Successfully logged in!")
+                if is_ajax:
+                    return JsonResponse({'success': True, 'redirect': '/home/'})
                 return redirect("kabsueats_home")
             else:
+                # Check if email exists to give a more specific error
+                email_exists = User.objects.filter(email=username).exists()
+                if is_ajax:
+                    if not email_exists:
+                        return JsonResponse({'success': False, 'error': 'No account found with this Gmail address.', 'error_field': 'email'})
+                    return JsonResponse({'success': False, 'error': 'Incorrect password. Please try again.', 'error_field': 'password'})
                 messages.error(request, "Invalid Gmail or Password.")
                 active_tab = 'login'
 
@@ -555,12 +624,32 @@ def forgot_password(request):
     """
     Forgot password — sends completely different email designs for Client vs Owner.
     Fires in background thread for instant response.
+    ✅ UPDATED: Validates Gmail existence before sending. Supports AJAX responses.
     """
     if request.method != 'POST':
         return redirect('user_login_register')
 
     email = request.POST.get('email', '').strip()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     User = get_user_model()
+
+    import re as _re
+
+    # ── Gmail format check ─────────────────────────────────────────────────
+    if not _re.match(r'^[a-zA-Z0-9._%+\-]+@gmail\.com$', email, _re.IGNORECASE):
+        error_msg = 'Please enter a valid Gmail address (@gmail.com).'
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('user_login_register')
+
+    # ── Verify the Gmail address actually exists (SMTP handshake) ──────────
+    if not verify_gmail_exists(email):
+        error_msg = 'This Gmail address does not exist. Please check the email and try again.'
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': error_msg})
+        messages.error(request, error_msg)
+        return redirect('user_login_register')
 
     try:
         user = User.objects.get(email=email)
@@ -613,9 +702,12 @@ def forgot_password(request):
         request.session['reset_account_type'] = account_type
 
     except User.DoesNotExist:
-        pass  # Security: never reveal whether an email is registered
+        pass  # Security: don't reveal whether this Gmail is registered
 
-    # Always redirect — don't reveal if email was found or not
+    # Always show success — don't reveal if email is registered in our system
+    success_msg = "If that Gmail is registered, a reset link has been sent. Check your inbox and spam folder."
+    if is_ajax:
+        return JsonResponse({'success': True, 'message': success_msg})
     messages.success(request, "If an account with that email exists, we've sent password reset instructions.")
     return redirect('password_reset_done_redirect')
 
@@ -1481,6 +1573,14 @@ def send_registration_otp(request):
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, email):
         return JsonResponse({'error': 'Invalid email format'}, status=400)
+
+    # Gmail-only restriction
+    if not re.match(r'^[a-zA-Z0-9._%+\-]+@gmail\.com$', email, re.IGNORECASE):
+        return JsonResponse({'error': 'Only Gmail addresses (@gmail.com) are allowed for registration.'}, status=400)
+
+    # ✅ Verify the Gmail address actually exists before sending an OTP
+    if not verify_gmail_exists(email):
+        return JsonResponse({'error': 'This Gmail address does not exist. Please check the email and try again.'}, status=400)
 
     # Check if email already exists
     if User.objects.filter(email=email).exists():
@@ -2533,7 +2633,15 @@ def checkout_page(request):
         id=order_id,
         user=request.user,
     )
-    items = order.orderitem_set.select_related('menu_item').all()
+    import json as _checkout_json
+    items = list(order.orderitem_set.select_related('menu_item').all())
+    for _item in items:
+        try:
+            _item.addons_list = _checkout_json.loads(_item.addons_json or '[]')
+            if not isinstance(_item.addons_list, list):
+                _item.addons_list = []
+        except Exception:
+            _item.addons_list = []
 
     # ── Determine initial payment-method visibility for the template ─────
     # Values stored as comma-separated e.g. "Cash, GCash" or "Cash" or "GCash".
@@ -2745,14 +2853,42 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def owner_login(request):
     """
     Owner login: accepts email & password, authenticates, sets session 'food_establishment_id'
-    âœ… FIXED: Redirects with login_success parameter for notification
+    ✅ FIXED: Redirects with login_success parameter for notification
+    ✅ UPDATED: Gmail-only validation + AJAX JSON responses with error_field
     """
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
         if not email or not password:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'Email and password are required.', 'error_field': 'email'})
             messages.error(request, "Email and password are required.")
+            return redirect('owner_login')
+
+        # ── Gmail-only format check ───────────────────────────────────────
+        import re as _re
+        if not _re.match(r'^[a-zA-Z0-9._%+\-]+@gmail\.com$', email, _re.IGNORECASE):
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'Only Gmail addresses (@gmail.com) are allowed.', 'error_field': 'email'})
+            messages.error(request, "Only Gmail addresses (@gmail.com) are allowed.")
+            return redirect('owner_login')
+
+        # ── Verify the Gmail address actually exists (SMTP handshake) ─────
+        if not verify_gmail_exists(email):
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'This Gmail address does not exist. Please check the email and try again.', 'error_field': 'email'})
+            messages.error(request, "This Gmail address does not exist. Please check and try again.")
+            return redirect('owner_login')
+
+        # ── Check whether this email is registered at all ─────────────────
+        User = get_user_model()
+        email_exists = User.objects.filter(email=email).exists()
+        if not email_exists:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'No owner account found with this Gmail address.', 'error_field': 'email'})
+            messages.error(request, "No owner account found with this Gmail address.")
             return redirect('owner_login')
 
         user = authenticate(request, username=email, password=password)
@@ -2761,14 +2897,18 @@ def owner_login(request):
             est = FoodEstablishment.objects.filter(owner=user).first()
             if est:
                 request.session['food_establishment_id'] = est.id
-
-                # âœ… REDIRECT WITH SUCCESS PARAMETER
+                if is_ajax:
+                    return JsonResponse({'success': True, 'redirect': reverse('food_establishment_dashboard') + '?login_success=true'})
                 return redirect(reverse('food_establishment_dashboard') + '?login_success=true')
             else:
+                if is_ajax:
+                    return JsonResponse({'success': False, 'error': 'No establishment found for this account.', 'error_field': 'email'})
                 messages.error(request, "No establishment found for this account.")
                 return redirect('owner_login')
         else:
-            messages.error(request, "Invalid email or password.")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'Incorrect password. Please try again.', 'error_field': 'password'})
+            messages.error(request, "Incorrect password. Please try again.")
             return redirect('owner_login')
 
     # GET request -> render login page
@@ -2926,7 +3066,17 @@ def send_otp(request):
         if not re.match(email_pattern, email):
             return JsonResponse({'error': 'Invalid email format'}, status=400)
 
-        # ✅ CHECK IF EMAIL IS ALREADY REGISTERED
+        # Gmail-only restriction
+        if not re.match(r'^[a-zA-Z0-9._%+\-]+@gmail\.com$', email, re.IGNORECASE):
+            return JsonResponse({'error': 'Only Gmail addresses (@gmail.com) are allowed.'}, status=400)
+
+        # ✅ Verify the Gmail address actually exists (SMTP handshake)
+        if not verify_gmail_exists(email):
+            return JsonResponse({
+                'error': 'This Gmail address does not exist. Please check the email and try again.',
+                'success': False
+            }, status=400)
+
         User = get_user_model()
         if User.objects.filter(email__iexact=email).exists():
             return JsonResponse({
@@ -3700,18 +3850,85 @@ def toggle_item_availability(request, item_id):
 
 
 @login_required(login_url='owner_login')
-@require_POST
-@transaction.atomic
+@require_http_methods(["GET"])
+def check_menu_item_active_orders(request, item_id):
+    """
+    Pre-delete check: returns all active orders that contain this menu item.
+    Active = status in [request, to_pay, preparing, to_claim].
+    Called by the dashboard before showing the delete modal.
+    Endpoint: GET /owner/dashboard/check_menu_item_orders/<item_id>/
+    """
+    # ✅ Manual auth check — returns JSON 401 instead of HTML redirect
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'Session expired. Please refresh the page.'}, status=401)
+
+    establishment_id = request.session.get('food_establishment_id')
+    if not establishment_id:
+        # ✅ FIX: Session may have expired — try to recover via request.user
+        try:
+            est = FoodEstablishment.objects.get(owner=request.user)
+            establishment_id = est.id
+            request.session['food_establishment_id'] = establishment_id  # restore session
+        except FoodEstablishment.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Not authorized'}, status=403)
+
+    try:
+        food_establishment = get_object_or_404(FoodEstablishment, pk=establishment_id)
+        menu_item = get_object_or_404(MenuItem, pk=item_id, food_establishment=food_establishment)
+
+        # ✅ FIX: Must include ALL in-progress statuses — the old list was missing
+        # 'PENDING' (cart/checkout orders) and 'order_received' (GCash orders),
+        # which caused "No active orders found" even when a real order existed.
+        # This now matches the same full list already used at lines 2807 & 6837.
+        ACTIVE_STATUSES = ['PENDING', 'request', 'to_pay', 'order_received', 'preparing', 'to_claim']
+
+        active_items = (
+            OrderItem.objects
+            .filter(menu_item=menu_item, order__status__in=ACTIVE_STATUSES)
+            .select_related('order__user')
+        )
+
+        STATUS_LABELS = {
+            'PENDING':        'Order Request',
+            'request':        'Order Request',
+            'to_pay':         'To Pay',
+            'order_received': 'Order Received',
+            'preparing':      'Preparing',
+            'to_claim':       'To Claim',
+        }
+
+        orders_info = []
+        seen = set()
+        for oi in active_items:
+            oid = oi.order.id
+            if oid in seen:
+                continue
+            seen.add(oid)
+            orders_info.append({
+                'id':       oid,
+                'status':   oi.order.status,
+                'label':    STATUS_LABELS.get(oi.order.status, oi.order.status),
+                'customer': oi.order.user.username,
+            })
+
+        return JsonResponse({
+            'success':           True,
+            'has_active_orders': len(orders_info) > 0,
+            'count':             len(orders_info),
+            'orders':            orders_info,
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
 def delete_menu_item(request, item_id):
     """
     Delete a menu item.
-    1. Reads { delete_reason } from the JSON body (sent by the dashboard modal).
-    2. Finds all active 'request' orders that contain this item.
-    3. Cancels those orders (status → 'cancelled') so the client order history
-       shows "Cancelled by Owner" with the delete reason in real time.
-    4. Broadcasts order_status_update (with cancel_reason) to each affected user
-       so buildCancelledByOwnerBadge(reason) renders immediately on the client.
-    5. Broadcasts the inventory quantity_update (deleted=True) for any cart pages.
+    Guard: blocked if active orders exist (frontend pre-checks, backend double-checks).
+    Uses menu_item.delete() (not _raw_delete) so Django handles all FK cascades
+    automatically — no more FOREIGN KEY constraint errors.
+    Still broadcasts WS events for cart/inventory pages.
     """
     establishment_id = request.session.get('food_establishment_id')
 
@@ -3727,72 +3944,29 @@ def delete_menu_item(request, item_id):
         item_name = menu_item.name
         _est_id_for_cache = menu_item.food_establishment_id
 
-        # ── 1. Read delete reason from JSON body ─────────────────────
-        delete_reason = ''
-        try:
-            body = json.loads(request.body or '{}')
-            delete_reason = str(body.get('delete_reason', '')).strip()
-        except Exception:
-            delete_reason = request.POST.get('delete_reason', '').strip()
+        # ── Backend guard: reject if active orders still exist ───────
+        # The frontend already blocks this, but double-check on the server
+        # in case the user bypasses the modal or there is a race condition.
+        # ✅ FIX: Must match the same full list as check_menu_item_active_orders.
+        ACTIVE_STATUSES = ['PENDING', 'request', 'to_pay', 'order_received', 'preparing', 'to_claim']
+        active_count = OrderItem.objects.filter(
+            menu_item=menu_item,
+            order__status__in=ACTIVE_STATUSES
+        ).count()
+        if active_count > 0:
+            return JsonResponse({
+                'success': False,
+                'message': f'"{item_name}" still has {active_count} active order(s). '
+                           f'Please wait for all orders to complete before deleting.'
+            }, status=400)
 
-        if not delete_reason:
-            delete_reason = f'"{item_name}" was removed from the menu.'
-
-        # ── 2. Collect affected orders BEFORE deleting anything ──────
-        # 'request' orders → cancel them fully (not yet accepted/paid)
-        # 'to_pay' orders  → notify client only (timer stops, reason shown,
-        #                     Pay Now removed) but do NOT force-cancel since
-        #                     payment may already be in flight. The client
-        #                     will see "Cancelled by Owner" + reason + Remove.
-        affected_request_orders = []
-        affected_topay_orders = []
-        try:
-            for oi in OrderItem.objects.filter(
-                    menu_item=menu_item,
-                    order__status__in=['request', 'to_pay']
-            ).select_related('order__user', 'order__establishment').distinct():
-                if oi.order.status == 'request':
-                    affected_request_orders.append(oi.order)
-                else:
-                    affected_topay_orders.append(oi.order)
-        except Exception as _e:
-            print(f"WARNING: Could not collect affected orders: {_e}")
-
-        # Merge for broadcast loop
-        affected_orders = affected_request_orders + affected_topay_orders
-
-        # ── 3. Cancel 'request' orders in DB (to_pay left as-is) ────
-        for order in affected_request_orders:
-            try:
-                with transaction.atomic():
-                    order.status = 'cancelled'
-                    order.save(update_fields=['status', 'updated_at'])
-            except Exception as _ce:
-                print(f"WARNING: Could not cancel order #{order.id}: {_ce}")
-
-        # ── 4. Delete ALL related OrderItems (includes non-request) ──
-        try:
-            related_order_items = OrderItem.objects.filter(menu_item=menu_item)
-            if related_order_items.exists():
-                print(f"Deleting {related_order_items.count()} related OrderItem(s) for menu item {item_id}...")
-                related_order_items.delete()
-        except Exception as e:
-            print(f"WARNING: Could not delete related OrderItems: {e}")
-
-        # ── 5. Delete the menu item itself ───────────────────────────
-        MenuItem.objects.filter(pk=item_id)._raw_delete(using=MenuItem.objects.db)
-        invalidate_establishment_cache(_est_id_for_cache)
-
-        # ── 6. Broadcast to all affected users via WS ────────────────
+        # ── Broadcast WS inventory event BEFORE deleting ─────────────
         try:
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             if channel_layer:
-                sync_send = async_to_sync(channel_layer.group_send)
-
-                # 6a. Inventory channel — updates cart pages + dashboard badges
-                sync_send(
+                async_to_sync(channel_layer.group_send)(
                     f'inventory_{_est_id_for_cache}',
                     {
                         'type': 'inventory.quantity_update',
@@ -3801,38 +3975,19 @@ def delete_menu_item(request, item_id):
                             'new_quantity': -1,
                             'deleted': True,
                             'item_name': item_name,
-                            'delete_reason': delete_reason,
                         }]
                     }
                 )
+        except Exception as _ws_err:
+            print(f"WARNING: WS broadcast failed: {_ws_err}")
 
-                # 6b. Per-user order_status_update — triggers buildCancelledByOwnerBadge
-                # on the client order history page with the real reason text.
-                # Sent for BOTH 'request' (cancelled) and 'to_pay' (timer stopped, reason shown).
-                seen = set()
-                for order in affected_orders:
-                    uid = order.user_id
-                    if uid in seen:
-                        continue
-                    seen.add(uid)
-                    cancel_msg = f'Menu item "{item_name}" was deleted by the establishment. Reason: {delete_reason}'
-                    try:
-                        sync_send(
-                            f'order_status_user_{uid}',
-                            {
-                                'type': 'order.status.update',
-                                'order_id': order.id,
-                                'new_status': 'cancelled',
-                                'establishment_id': _est_id_for_cache,
-                                'user_id': uid,
-                                'cancel_reason': cancel_msg,
-                            }
-                        )
-                    except Exception as _ue:
-                        print(f"WARNING: WS push failed for user {uid}: {_ue}")
+        # ── Delete using ORM .delete() so Django handles all FK cascades ──
+        # This replaces the old _raw_delete() + manual OrderItem cleanup
+        # which was causing FOREIGN KEY constraint errors.
+        with transaction.atomic():
+            menu_item.delete()
 
-        except Exception as e:
-            print(f"WARNING: Could not broadcast item deletion: {e}")
+        invalidate_establishment_cache(_est_id_for_cache)
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
@@ -3846,32 +4001,41 @@ def delete_menu_item(request, item_id):
 
     except Exception as e:
         print(f"Error deleting menu item: {e}")
-
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
                 'message': f'An error occurred while deleting: {str(e)}'
             }, status=500)
-
         messages.error(request, f'An error occurred while deleting the menu item: {str(e)}', extra_tags='owner_only')
         return redirect('food_establishment_dashboard')
-
-
 def _serialize_cancelled_order(order):
     """
     Helper: Serialize a cancelled Order into JSON-safe dict for the cancelled orders page.
     Handles proper tracking of whether cancelled by owner (rejected) or customer.
     Only includes payment method if order was in 'to_pay' or beyond when cancelled.
     """
-    items = [
-        {
+    import json as _sj
+    items = []
+    for oi in order.orderitem_set.all():
+        try:
+            _addons = _sj.loads(oi.addons_json or '[]')
+            if not isinstance(_addons, list):
+                _addons = []
+        except Exception:
+            _addons = []
+        # ✅ Include add-on prices in per-item subtotal so displayed totals match
+        addon_extra = sum(
+            float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+            for a in _addons
+        )
+        items.append({
             'name': oi.menu_item.name,
             'quantity': oi.quantity,
             'price': float(oi.price_at_order),
-            'subtotal': float(oi.price_at_order * oi.quantity),
-        }
-        for oi in order.orderitem_set.all()
-    ]
+            'subtotal': float(oi.price_at_order) * oi.quantity + addon_extra,
+            'addons': _addons,
+            'note': oi.note_to_establishment or '',
+        })
 
     # Determine if this was owner rejection or customer cancellation
     cancelled_by_owner = bool(order.cancelled_from_status)
@@ -3880,11 +4044,24 @@ def _serialize_cancelled_order(order):
     payment_reached_to_pay = order.cancelled_from_status in ('to_pay', 'preparing', 'to_claim', 'completed')
     payment_method = (order.gcash_payment_method or 'cash') if payment_reached_to_pay else None
 
+    # ✅ Recalculate total using add-on-aware helper so the displayed total is always accurate
+    from decimal import Decimal as _D
+    import json as _sj2
+    recalc_total = Decimal('0.00')
+    for oi in order.orderitem_set.all():
+        try:
+            _a2 = _sj2.loads(oi.addons_json or '[]')
+            if not isinstance(_a2, list): _a2 = []
+        except Exception:
+            _a2 = []
+        addon_extra2 = sum(Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1)) for a in _a2)
+        recalc_total += Decimal(str(oi.price_at_order)) * oi.quantity + addon_extra2
+
     return {
         'id': order.id,
         'customer_name': order.user.get_full_name() or order.user.username,
         'customer_email': order.user.email,
-        'total_amount': float(order.total_amount),
+        'total_amount': float(recalc_total),
         'cancel_reason': order.cancel_reason or '',
         'cancelled_from_status': order.cancelled_from_status or '',
         'cancelled_by': 'owner' if cancelled_by_owner else 'customer',
@@ -4591,27 +4768,31 @@ def handle_payment_success(order):
 @require_POST
 def add_to_cart(request):
     """
-    ✅ FIXED: Now properly handles JSON requests from Best Sellers section
     Adds a MenuItem to cart. Supports multiple establishments.
     """
     try:
-        # ✅ FIX: Parse JSON body instead of POST data
+        # ✅ FIX: Kunin nang tama ang Note at Addons kahit JSON o Form-Data ang gamit
         if request.content_type == 'application/json':
             data = json.loads(request.body)
             menu_item_id = data.get('menu_item_id')
             establishment_id = data.get('establishment_id')
             quantity = int(data.get('quantity', 1))
+            note_to_est = str(data.get('note', ''))[:300]
+            addons_data = data.get('addons', [])
         else:
             # Support form-encoded data too
             menu_item_id = request.POST.get('menu_item_id')
             establishment_id = request.POST.get('establishment_id')
             quantity = int(request.POST.get('quantity', 1))
+            note_to_est = str(request.POST.get('note', ''))[:300]
+            import json as _json
+            try:
+                addons_data = _json.loads(request.POST.get('addons', '[]'))
+            except:
+                addons_data = []
 
         if not menu_item_id or quantity <= 0:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid item or quantity.'
-            }, status=400)
+            return JsonResponse({'success': False, 'message': 'Invalid item or quantity.'}, status=400)
 
         # Fetch the menu item with establishment
         menu_item = get_object_or_404(
@@ -4621,92 +4802,59 @@ def add_to_cart(request):
 
         establishment = menu_item.food_establishment
 
-        # ✅ Verify establishment_id matches (if provided)
+        # Verify establishment_id matches (if provided)
         if establishment_id and str(establishment.id) != str(establishment_id):
-            return JsonResponse({
-                'success': False,
-                'message': 'Establishment mismatch error.'
-            }, status=400)
+            return JsonResponse({'success': False, 'message': 'Establishment mismatch error.'}, status=400)
 
-        # ✅ If no stock at all, block early
+        # If no stock at all, block early
         if menu_item.quantity <= 0:
-            return JsonResponse({
-                'success': False,
-                'message': f'{menu_item.name} is out of stock.'
-            }, status=400)
+            return JsonResponse({'success': False, 'message': f'{menu_item.name} is out of stock.'}, status=400)
 
-        # ✅ Block if customer has already committed max stock across request + to_pay orders
+        # Block if customer has already committed max stock
         committed_qty = OrderItem.objects.filter(
             order__user=request.user,
             order__establishment=establishment,
             order__status__in=('request', 'to_pay'),
             menu_item=menu_item,
         ).aggregate(total=Sum('quantity'))['total'] or 0
+
         remaining_stock = max(0, menu_item.quantity - committed_qty)
         if remaining_stock <= 0:
             return JsonResponse({
                 'success': False,
-                'message': (
-                    f'You already have {committed_qty}x {menu_item.name} in an active order '
-                    f'(max stock is {menu_item.quantity}). '
-                    f'Wait for it to be fulfilled before ordering more.'
-                )
+                'message': (f'You already have {committed_qty}x {menu_item.name} in an active order '
+                            f'(max stock is {menu_item.quantity}). Wait for it to be fulfilled before ordering more.')
             }, status=400)
 
         stacked_on_request = False
         existing_request_qty = 0
-        request_order_qty = 0  # qty in the request order only — used for accurate display message
+        request_order_qty = 0
 
         with transaction.atomic():
-            # ── Find the best existing open order to stack items onto ────
-            # Priority 1: an existing PENDING (cart) order for this establishment
-            # Priority 2: an existing 'request' order still waiting for owner
-            #             acceptance — customer is adding more items before the
-            #             owner has acted on the original request.
-            # If neither exists, create a fresh PENDING order.
             pending_order = Order.objects.filter(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING'
+                user=request.user, establishment=establishment, status='PENDING'
             ).order_by('-created_at').first()
 
             request_order = Order.objects.filter(
-                user=request.user,
-                establishment=establishment,
-                status='request'
+                user=request.user, establishment=establishment, status='request'
             ).order_by('-created_at').first()
 
             order = pending_order or request_order
 
-            # ── Check if stacking on a 'request' order ────────────────────
             if request_order:
                 stacked_on_request = True
-                existing_req_item = OrderItem.objects.filter(
-                    order=request_order,
-                    menu_item=menu_item
-                ).first()
-                # request_order_qty = qty in the request order ONLY (for display in modal message)
+                existing_req_item = OrderItem.objects.filter(order=request_order, menu_item=menu_item).first()
                 request_order_qty = existing_req_item.quantity if existing_req_item else 0
-                # existing_request_qty = combined total (request + pending cart) used for the
-                # combined > max_stock check on the frontend
                 existing_request_qty = request_order_qty
 
                 if pending_order:
-                    pending_item = OrderItem.objects.filter(
-                        order=pending_order,
-                        menu_item=menu_item
-                    ).first()
+                    pending_item = OrderItem.objects.filter(order=pending_order, menu_item=menu_item).first()
                     if pending_item:
                         existing_request_qty += pending_item.quantity
 
-                # Always route new items into a PENDING cart order so cart
-                # is never empty — merge happens at create_cash_order time.
                 if not pending_order:
                     order = Order.objects.create(
-                        user=request.user,
-                        establishment=establishment,
-                        status='PENDING',
-                        total_amount=0,
+                        user=request.user, establishment=establishment, status='PENDING', total_amount=0
                     )
                     pending_order = order
                 else:
@@ -4714,49 +4862,72 @@ def add_to_cart(request):
 
             if order is None:
                 order = Order.objects.create(
-                    user=request.user,
-                    establishment=establishment,
-                    status='PENDING',
-                    total_amount=0,
+                    user=request.user, establishment=establishment, status='PENDING', total_amount=0
                 )
 
-            # Clean up any extra duplicate PENDING orders for this establishment
+            # Clean up duplicates
             duplicate_pending = Order.objects.filter(
-                user=request.user,
-                establishment=establishment,
-                status='PENDING'
+                user=request.user, establishment=establishment, status='PENDING'
             ).exclude(pk=order.pk).values_list('id', flat=True)
             if duplicate_pending:
                 Order.objects.filter(id__in=list(duplicate_pending)).delete()
 
-            # Get or create OrderItem — stack quantity if item already exists
+            # ✅ Get or create OrderItem - Sinisiguradong papasok ang Note!
             order_item, item_created = OrderItem.objects.get_or_create(
                 order=order,
                 menu_item=menu_item,
                 defaults={
                     'quantity': min(quantity, menu_item.quantity),
                     'price_at_order': menu_item.price,
+                    'note_to_establishment': note_to_est,
+                    'addons_json': json.dumps(addons_data) if addons_data else '',
                 }
             )
 
             if not item_created:
-                # Accumulate — clamp to available stock
                 new_quantity = min(order_item.quantity + quantity, menu_item.quantity)
                 order_item.quantity = new_quantity
-                order_item.save()
 
-            # Update order total
-            order_total = sum(
-                item.quantity * item.price_at_order
-                for item in order.orderitem_set.all()
-            )
-            order.total_amount = order_total
+                # ✅ MERGE add-ons: dagdagan ang qty ng existing, idagdag ang bago
+                if addons_data:
+                    try:
+                        existing_addons = json.loads(order_item.addons_json or '[]')
+                        if not isinstance(existing_addons, list):
+                            existing_addons = []
+                    except Exception:
+                        existing_addons = []
+
+                    # ✅ Helper: support both 'id' and 'option_id' keys (favorites sends option_id)
+                    def _addon_key(a):
+                        return a.get('id') or a.get('option_id')
+
+                    # Gumawa ng map mula sa existing add-ons (key = addon id)
+                    merged_map = {_addon_key(a): dict(a) for a in existing_addons if _addon_key(a) is not None}
+                    for new_addon in addons_data:
+                        aid = _addon_key(new_addon)
+                        if aid is None:
+                            continue
+                        if aid in merged_map:
+                            # ✅ Existing na add-on — idagdag lang ang qty, huwag palitan
+                            merged_map[aid]['qty'] = int(merged_map[aid].get('qty', 1)) + int(new_addon.get('qty', 1))
+                        else:
+                            # ✅ Bagong add-on — idagdag bilang bagong entry
+                            merged_map[aid] = dict(new_addon)
+
+                    order_item.addons_json = json.dumps(list(merged_map.values()))
+
+                # I-update ang note kung may ibinigay
+                if note_to_est:
+                    order_item.note_to_establishment = note_to_est
+
+                order_item.save(update_fields=['quantity', 'note_to_establishment', 'addons_json'])
+
+            # ✅ FIXED: Update order total INCLUDING add-ons
+            order.total_amount = _calc_total_with_addons(order.orderitem_set.all())
             order.save()
 
-        # Calculate total cart count across PENDING + request orders
         total_cart_count = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status='PENDING'
+            order__user=request.user, order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
         actual_qty = min(quantity, menu_item.quantity)
@@ -4764,33 +4935,17 @@ def add_to_cart(request):
             'success': True,
             'message': f'{actual_qty}x {menu_item.name} added to cart',
             'cart_count': total_cart_count,
-            # ── Extra info for the cart page ──────────────────────────────
-            # stacked_on_request = True means the customer already has a
-            # submitted (pending-owner) 'request' order for this establishment.
-            # The new item goes into a PENDING cart order as usual, but when
-            # the customer hits "Request Order" on the cart page the two orders
-            # will be merged.  We surface these flags so the cart page can
-            # show the customer an appropriate informational message.
+            'order_item_id': order_item.id,   # ✅ Return so frontend can persist addons/note as fallback
             'stacked_on_request': stacked_on_request,
-            'existing_request_qty': existing_request_qty,  # combined (request + pending) — for combined > max check
-            'request_order_qty': request_order_qty,  # request order only — for accurate display message
+            'existing_request_qty': existing_request_qty,
+            'request_order_qty': request_order_qty,
             'max_stock': menu_item.quantity,
         })
 
     except ValueError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid quantity value.'
-        }, status=400)
+        return JsonResponse({'success': False, 'message': 'Invalid quantity value.'}, status=400)
     except Exception as e:
-        import traceback
-        print(f"❌ Error in add_to_cart: {e}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'message': 'An error occurred while adding to cart.'
-        }, status=500)
-
+        return JsonResponse({'success': False, 'message': 'An error occurred while adding to cart.'}, status=500)
 
 @login_required
 @require_POST
@@ -4852,7 +5007,7 @@ def clear_cart(request):
 def update_cart_item(request):
     """
     Update quantity of an item in cart
-    ✅ FIXED: Real-time quantity updates with stock checking
+    ✅ FIXED: Real-time quantity updates with stock checking + add-on aware totals
     """
     try:
         order_item_id = request.POST.get('order_item_id')
@@ -4883,13 +5038,9 @@ def update_cart_item(request):
             order_item.quantity = new_quantity
             order_item.save()
 
-            # Update order total
+            # ✅ FIXED: Update order total INCLUDING add-ons
             order = order_item.order
-            order_total = sum(
-                item.quantity * item.price_at_order
-                for item in order.orderitem_set.all()
-            )
-            order.total_amount = order_total
+            order.total_amount = _calc_total_with_addons(order.orderitem_set.all())
             order.save()
 
         # Calculate total cart count (PENDING cart + request orders awaiting acceptance)
@@ -4898,20 +5049,23 @@ def update_cart_item(request):
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
+        # ✅ FIXED: item_total now uses total_price (includes add-ons) instead of bare multiply
+        item_total_with_addons = float(order_item.total_price)
+
         # ✅ REALTIME: I-broadcast ang quantity update sa lahat ng tabs/devices ng user
         _broadcast_cart_update(request.user.id, 'cart.quantity_updated', {
             'order_item_id': int(order_item_id),
-            'new_quantity':  order_item.quantity,
-            'item_total':    float(order_item.quantity * order_item.price_at_order),
-            'order_total':   float(order.total_amount),
-            'cart_count':    total_cart_count,
+            'new_quantity': order_item.quantity,
+            'item_total': item_total_with_addons,
+            'order_total': float(order.total_amount),
+            'cart_count': total_cart_count,
         })
 
         return JsonResponse({
             'success': True,
             'message': 'Cart updated',
             'cart_count': total_cart_count,
-            'item_total': float(order_item.quantity * order_item.price_at_order),
+            'item_total': item_total_with_addons,
             'order_total': float(order.total_amount)
         })
 
@@ -4928,7 +5082,6 @@ def update_cart_item(request):
             'success': False,
             'message': 'An error occurred while updating cart.'
         }, status=500)
-
 
 @login_required
 @require_POST
@@ -5734,13 +5887,13 @@ def get_notifications(request):
 
         print(f"✅ Found establishment: {establishment.name}")
 
-        # ✅ CRITICAL FIX: Use defer() to exclude payment_status from Order queries
-        # ✅ FIX: Only show new_order notifications where order is still pending owner action.
-        # Once owner accepts or rejects, the notification disappears from the bell automatically.
+        # ✅ FIX: Removed order__status__in filter completely.
+        # Notifications must NEVER auto-disappear — they stay until the owner
+        # manually deletes them with the X button. The old filter caused all
+        # notifications to vanish the moment an order moved past 'to_pay'.
         notifications_base = OrderNotification.objects.filter(
             establishment=establishment,
             notification_type='new_order',
-            order__status__in=['request', 'to_pay']
         ).select_related(
             'order__user',
             'order__establishment'
@@ -5762,14 +5915,29 @@ def get_notifications(request):
                 # ✅ CRITICAL: Defer payment_status when accessing order
                 order = notif.order
 
-                # Get order items
+                # Get order items (with add-ons)
+                import json as _notif_json
                 order_items = []
                 for item in order.orderitem_set.all():
+                    try:
+                        addons = _notif_json.loads(item.addons_json or '[]')
+                        if not isinstance(addons, list):
+                            addons = []
+                    except Exception:
+                        addons = []
                     order_items.append({
                         'name': item.menu_item.name,
                         'quantity': item.quantity,
                         'price': float(item.price_at_order),
-                        'total': float(item.total_price)
+                        'total': float(item.total_price),
+                        'addons': [
+                            {
+                                'name': a.get('name', ''),
+                                'quantity': int(a.get('qty', a.get('quantity', 1))),
+                                'price': float(a.get('additional_price', a.get('price', 0))),
+                            }
+                            for a in addons if a.get('name')
+                        ],
                     })
 
                 # ✅ is_paid: treat any paid/completed status as paid
@@ -6273,7 +6441,8 @@ def gcash_payment_success(request):
         messages.error(request, 'An error occurred processing your payment')
         return redirect('view_cart')
 
-
+from django.views.decorators.cache import never_cache
+@never_cache
 def view_cart(request):
     _ensure_user_profile(request.user)
     """
@@ -6302,12 +6471,8 @@ def view_cart(request):
 
         for order in all_carts:
             items = order.orderitem_set.all()
-            cart_item_count = sum(item.quantity for item in items)
-            total_cart_count += cart_item_count
 
             # ── Check for active orders ('request' or 'to_pay') for this establishment ──
-            # Compute how many more of each item the customer can still add
-            # (max_stock − already committed across request + to_pay orders).
             active_orders = Order.objects.filter(
                 user=request.user,
                 establishment=order.establishment,
@@ -6323,31 +6488,49 @@ def view_cart(request):
                     mid = req_item.menu_item_id
                     request_qty_map[mid] = request_qty_map.get(mid, 0) + req_item.quantity
 
-            # Annotate each cart item with remaining_allowed and existing_request_qty
+            # Annotate each cart item — HUWAG NANG MAG-DELETE, IPAKITA NA LANG NA MAY WARNING
             enriched_items = []
-            items_to_delete = []
             for item in items:
                 mid = item.menu_item_id
                 max_stock = item.menu_item.quantity
                 in_request = request_qty_map.get(mid, 0)
                 remaining = max(0, max_stock - in_request)
-                # Clamp cart qty to remaining allowed (auto-fix over-qty)
-                clamped_qty = min(item.quantity, remaining) if has_active_order else item.quantity
 
-                # Auto-remove items that have 0 remaining — no point keeping them
-                if clamped_qty <= 0 and has_active_order:
-                    items_to_delete.append(item.id)
-                    continue
+                # ✅ HINDI NA NIRE-REMOVE — display_qty lang ang kinukuha, original qty ang pinipili
+                # Kung may active order at wala nang remaining, ipakita pa rin ang item (may warning)
+                if has_active_order:
+                    item.display_qty = max(1, min(item.quantity, remaining)) if remaining > 0 else item.quantity
+                    item.remaining_allowed = remaining
+                else:
+                    item.display_qty = item.quantity
+                    item.remaining_allowed = max_stock
 
-                item.display_qty = clamped_qty
-                item.remaining_allowed = remaining if has_active_order else max_stock
                 item.existing_req_qty = in_request
                 item.has_request_limit = has_active_order and in_request > 0
+
+                # ── Parse add-ons for display + price in cart template ──
+                import json as _cart_json
+                try:
+                    _addons = _cart_json.loads(item.addons_json or '[]')
+                    if not isinstance(_addons, list):
+                        _addons = []
+                except Exception:
+                    _addons = []
+                item.addons_list = _addons
+                item.addons_total = sum(
+                    float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+                    for a in _addons
+                )
+
                 enriched_items.append(item)
 
-            # Delete zero-remaining items from the DB quietly
-            if items_to_delete:
-                OrderItem.objects.filter(id__in=items_to_delete).delete()
+            # ✅ SKIP establishment kung walang items
+            if not enriched_items:
+                continue
+
+            # ✅ I-calculate ang cart count mula sa enriched_items (tama na ngayon)
+            cart_item_count = sum(item.display_qty for item in enriched_items)
+            total_cart_count += cart_item_count
 
             est = order.establishment
             carts_data.append({
@@ -6356,8 +6539,6 @@ def view_cart(request):
                 'items': enriched_items,
                 'item_count': cart_item_count,
                 'has_request_order': has_active_order,
-                # ✅ Use owner's manual status toggle as authoritative source.
-                # Fallback to time-based only when status field is empty (legacy).
                 'is_open': (est.status or get_current_status(
                     est.opening_time,
                     est.closing_time
@@ -7009,6 +7190,15 @@ def get_establishment_orders(request):
                 is_out = order_item.menu_item.quantity < order_item.quantity
                 if is_out:
                     out_of_stock_count += 1
+                import json as _json
+                _addons = []
+                try:
+                    _addons = _json.loads(order_item.addons_json or '[]')
+                    if not isinstance(_addons, list):
+                        _addons = []
+                except Exception:
+                    _addons = []
+
                 items.append({
                     'name': order_item.menu_item.name,
                     'quantity': order_item.quantity,
@@ -7016,6 +7206,9 @@ def get_establishment_orders(request):
                     'menu_item_id': order_item.menu_item.id,
                     'order_item_id': order_item.id,
                     'available_stock': order_item.menu_item.quantity,
+                    # ✅ BAGONG FIELDS
+                    'addons': _addons,
+                    'note': order_item.note_to_establishment or '',
                 })
                 items_preview.append(f"{order_item.quantity}x {order_item.menu_item.name}")
 
@@ -7282,17 +7475,6 @@ def update_order_status(request, order_id):
     Endpoint: /api/food-establishment/orders/<order_id>/update-status/
     Method: POST
     Body: { "status": "preparing" | "to_claim" | "completed" }
-
-    Returns JSON:
-    {
-        "success": true,
-        "message": "Order status updated to preparing",
-        "order": {
-            "id": 1,
-            "status": "preparing",
-            "updated_at": "2026-02-06T10:35:00"
-        }
-    }
     """
     try:
         # Get the establishment owned by the current user
@@ -7341,23 +7523,44 @@ def update_order_status(request, order_id):
                 order_items = list(
                     order.orderitem_set.select_related('menu_item').all()
                 )
+
+                # ✅ FIX: I-count din ang existing to_pay quantities para
+                # hindi mag-exceed ng stock pagkatapos ng merge.
+                existing_to_pay_for_check = None
+                if new_status == 'to_pay' and old_status == 'request':
+                    existing_to_pay_for_check = Order.objects.filter(
+                        user=order.user,
+                        establishment=establishment,
+                        status='to_pay',
+                    ).exclude(id=order.id).order_by('-created_at').first()
+
+                # Build a map of already-committed quantities in existing to_pay
+                committed_qty_map = {}
+                if existing_to_pay_for_check:
+                    for tp_oi in existing_to_pay_for_check.orderitem_set.select_related('menu_item').all():
+                        committed_qty_map[tp_oi.menu_item_id] = tp_oi.quantity
+
                 insufficient_ids = []
                 insufficient_names = []
                 for oi in order_items:
                     mi = oi.menu_item
-                    if mi.quantity < oi.quantity:
-                        insufficient_ids.append(oi.id)
-                        insufficient_names.append(mi.name)
+                    already_committed = committed_qty_map.get(mi.id, 0)
+                    total_after_merge = already_committed + oi.quantity
+                    if mi.quantity < total_after_merge:
+                        clamped = max(0, mi.quantity - already_committed)
+                        if clamped <= 0:
+                            insufficient_ids.append(oi.id)
+                            insufficient_names.append(mi.name)
+                        else:
+                            oi.quantity = clamped
+                            oi.save(update_fields=['quantity'])
 
                 if insufficient_ids:
-                    # Auto-remove only the out-of-stock items so the rest can proceed
                     order.orderitem_set.filter(id__in=insufficient_ids).delete()
-                    # Refresh remaining valid items
                     order_items = list(
                         order.orderitem_set.select_related('menu_item').all()
                     )
                     if not order_items:
-                        # Every item was out of stock — cannot accept at all
                         return JsonResponse({
                             'success': False,
                             'message': (
@@ -7367,19 +7570,14 @@ def update_order_status(request, order_id):
                             ),
                             'insufficient_stock': insufficient_names,
                         }, status=409)
-                    # Recalculate total with the remaining valid items
-                    new_total = sum(
-                        oi.quantity * oi.price_at_order for oi in order_items
-                    )
-                    order.total_amount = new_total
+                    # ✅ FIXED: Recalculate total WITH add-ons after clamping
+                    order.total_amount = _calc_total_with_addons(order_items)
                     order.save(update_fields=['total_amount'])
 
             # ── Merge into existing to_pay order (same client) ───────────
             # If owner accepts a 'request' order and the same client already
             # has a 'to_pay' order for this establishment, merge the new items
-            # into that existing to_pay order and reset its 10-minute timer
-            # (by updating updated_at). The accepted 'request' order is then
-            # deleted since its items have been folded into the to_pay order.
+            # into that existing to_pay order and reset its 10-minute timer.
             if new_status == 'to_pay' and old_status == 'request':
                 existing_to_pay = Order.objects.filter(
                     user=order.user,
@@ -7395,22 +7593,53 @@ def update_order_status(request, order_id):
                             menu_item=req_oi.menu_item,
                         ).first()
                         if existing_item:
+                            # ✅ FIXED: Stack quantity
                             existing_item.quantity += req_oi.quantity
-                            existing_item.save(update_fields=['quantity'])
+
+                            # ✅ FIXED: Merge add-ons — stack qty for same addon,
+                            #    append for new addons so none are lost
+                            if req_oi.addons_json:
+                                try:
+                                    import json as _mj
+                                    new_addons = _mj.loads(req_oi.addons_json or '[]')
+                                    ex_addons = _mj.loads(existing_item.addons_json or '[]')
+                                    # Build a map keyed by addon name
+                                    merged_map = {a.get('name', ''): dict(a) for a in ex_addons}
+                                    for na in new_addons:
+                                        key = na.get('name', '')
+                                        if key in merged_map:
+                                            merged_map[key]['qty'] = (
+                                                    int(merged_map[key].get('qty', 1)) +
+                                                    int(na.get('qty', 1))
+                                            )
+                                        else:
+                                            merged_map[key] = dict(na)
+                                    existing_item.addons_json = _mj.dumps(list(merged_map.values()))
+                                except Exception:
+                                    pass  # Keep existing addons on parse error
+
+                            # ✅ FIXED: Transfer note (newest wins)
+                            if req_oi.note_to_establishment:
+                                existing_item.note_to_establishment = req_oi.note_to_establishment
+
+                            existing_item.save(update_fields=[
+                                'quantity', 'addons_json', 'note_to_establishment'
+                            ])
                         else:
+                            # ✅ FIXED: New item — include addons_json and note
                             OrderItem.objects.create(
                                 order=existing_to_pay,
                                 menu_item=req_oi.menu_item,
                                 quantity=req_oi.quantity,
                                 price_at_order=req_oi.price_at_order,
+                                addons_json=req_oi.addons_json or '',
+                                note_to_establishment=req_oi.note_to_establishment or '',
                             )
 
-                    # Recalculate total of the merged to_pay order
-                    merged_total = sum(
-                        oi.quantity * oi.price_at_order
-                        for oi in existing_to_pay.orderitem_set.all()
+                    # ✅ FIXED: Recalculate total WITH add-ons after merge
+                    existing_to_pay.total_amount = _calc_total_with_addons(
+                        existing_to_pay.orderitem_set.all()
                     )
-                    existing_to_pay.total_amount = merged_total
                     # Reset the 10-minute payment timer by bumping updated_at
                     existing_to_pay.updated_at = timezone.now()
                     existing_to_pay.save(update_fields=['total_amount', 'updated_at'])
@@ -7418,7 +7647,8 @@ def update_order_status(request, order_id):
                     # Delete the now-merged request order
                     order.delete()
 
-                    # Notify client and broadcast the updated to_pay order
+                    # ✅ FIX: I-refresh ang items sa broadcast para makita agad ng client
+                    existing_to_pay.refresh_from_db()
                     _broadcast_order_status_update(existing_to_pay, 'to_pay')
 
                     try:
@@ -7460,7 +7690,7 @@ def update_order_status(request, order_id):
         # Broadcast real-time order status change to owner + customer
         _broadcast_order_status_update(order, new_status)
 
-        # Create notification for status change (get_or_create prevents duplicates on retry)
+        # Create notification for status change
         try:
             notification_messages = {
                 'request': f'New order request #{order.id} from {order.user.username}',
@@ -7471,10 +7701,6 @@ def update_order_status(request, order_id):
                 'completed': f'Order #{order.id} has been completed'
             }
 
-            # ✅ FIX: Use the actual new_status as notification_type so each status change
-            # creates its own unique notification row (preparing, to_claim, completed, etc.).
-            # Previously used 'order_update' for all statuses, causing get_or_create to find
-            # the existing one and skip creating a new unread notification for the customer.
             OrderNotification.objects.get_or_create(
                 establishment=establishment,
                 order=order,
@@ -7486,7 +7712,6 @@ def update_order_status(request, order_id):
                 }
             )
         except Exception as notif_error:
-            # Don't fail the request if notification creation fails
             print(f"Warning: Could not create notification: {notif_error}")
 
         return JsonResponse({
@@ -7517,7 +7742,6 @@ def update_order_status(request, order_id):
             'success': False,
             'message': str(e)
         }, status=500)
-
 
 @login_required
 @require_http_methods(["POST"])
@@ -8192,7 +8416,9 @@ def update_request_order_quantities(request, order_id):
                         order=new_order,
                         menu_item=oi.menu_item,
                         quantity=qty,
-                        price_at_order=oi.menu_item.price
+                        price_at_order=oi.menu_item.price,
+                        addons_json=oi.addons_json or '',
+                        note_to_establishment=oi.note_to_establishment or ''
                     )
                     total += oi.menu_item.price * qty
                     item_count += 1
@@ -8569,12 +8795,22 @@ def get_order_details_establishment(request, order_id):
         # Build items list
         items = []
         for order_item in order.orderitem_set.all():
+
+            # (Kunin ang addons)
+            import json as _json
+            try:
+                _addons = _json.loads(order_item.addons_json or '[]')
+            except:
+                _addons = []
+
             items.append({
                 'id': order_item.id,
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
                 'price_at_order': str(order_item.price_at_order),
                 'total_price': str(order_item.total_price),
+                'note': order_item.note_to_establishment or '',  # ✅ IDINAGDAG ANG NOTE
+                'addons': _addons,  # ✅ IDINAGDAG ANG ADDONS
             })
 
         order_data = {
@@ -8651,6 +8887,7 @@ def create_cash_order(request):
 
     ✅ FIXED: Improved transaction handling and notifications
     ✅ FIXED: Better error messages and debugging
+    ✅ FIXED: Order totals now include add-on prices
 
     Expected POST data:
     - order_id: The ID of the order to process
@@ -8659,32 +8896,24 @@ def create_cash_order(request):
     - JSON response with success status
 
     Endpoint: /payment/create-cash-order/
-    Called from: cart.js -> proceedToCashPayment()
+    Called from: cart.js -> sendOrderRequest() -> proceedToCashPayment()
     """
     try:
-        # Get order ID from POST data
         order_id = request.POST.get('order_id')
 
-        # Validate order ID
         if not order_id:
             return JsonResponse({
                 'success': False,
                 'message': 'Order ID is required'
             }, status=400)
 
-        # Get the order and verify it belongs to the logged-in user
         order = get_object_or_404(Order, id=order_id, user=request.user)
 
-        # Debug logging
         print(f"DEBUG: Processing cash order #{order_id}")
         print(f"DEBUG: Order establishment: {order.establishment.name}")
         print(f"DEBUG: Order user: {request.user.username}")
 
-        # Start atomic transaction to ensure data consistency
         with transaction.atomic():
-            # Determine new status based on source:
-            # - From cart (order is PENDING): set to 'request' waiting for owner acceptance
-            # - From checkout (order is 'to_pay'): owner already accepted, set to 'preparing'
             source = request.POST.get('source', 'cart')
             if order.status == 'to_pay' or source == 'checkout':
                 new_status = 'preparing'
@@ -8693,18 +8922,6 @@ def create_cash_order(request):
 
             # ── Existing-request-order merge / block logic ─────────────────
             # Only applies when the cart order is PENDING (new submission from cart).
-            # If the customer already has a 'request' order for the same establishment
-            # that the owner has NOT yet accepted, we must merge the items rather than
-            # creating a second parallel request.
-            #
-            # Rules:
-            #   1. For each item in the cart being submitted, check whether the same
-            #      menu item already exists in the existing 'request' order.
-            #   2. If combined quantity would EXCEED the menu item's max stock →
-            #      BLOCK the submission entirely and return an error message.
-            #   3. If combined quantity is within max stock → MERGE: add the new
-            #      quantities onto the existing request order items, delete the
-            #      PENDING cart order, and return a success + info message.
             if order.status == 'PENDING' and new_status == 'request':
                 existing_request = Order.objects.filter(
                     user=request.user,
@@ -8713,7 +8930,6 @@ def create_cash_order(request):
                 ).order_by('-created_at').first()
 
                 if existing_request:
-                    # Determine which cart items we're about to submit
                     selected_item_ids_raw = request.POST.getlist('selected_item_ids[]')
                     selected_item_ids = [int(i) for i in selected_item_ids_raw if str(i).isdigit()]
                     if selected_item_ids:
@@ -8722,13 +8938,11 @@ def create_cash_order(request):
                         cart_items_to_submit = order.orderitem_set.all()
 
                     # ── Step 1: Auto-clamp each cart item's qty to what's actually remaining ──
-                    # Build a lookup of existing request quantities once, to avoid repeated DB hits.
                     req_qty_map = {}
                     for req_oi in existing_request.orderitem_set.select_related('menu_item').all():
                         req_qty_map[req_oi.menu_item_id] = req_oi.quantity
 
-                    # Clamp in memory — do NOT save yet; we use the clamped value during merge.
-                    clamped_qtys = {}  # cart_oi.id → clamped quantity
+                    clamped_qtys = {}
                     for cart_oi in cart_items_to_submit:
                         menu_item = cart_oi.menu_item
                         existing_qty = req_qty_map.get(menu_item.id, 0)
@@ -8739,32 +8953,62 @@ def create_cash_order(request):
                     for cart_oi in cart_items_to_submit:
                         qty_to_add = clamped_qtys.get(cart_oi.id, 0)
                         if qty_to_add <= 0:
-                            continue  # nothing left to add for this item — skip silently
+                            continue
                         menu_item = cart_oi.menu_item
                         existing_req_item = OrderItem.objects.filter(
                             order=existing_request,
                             menu_item=menu_item
                         ).first()
                         if existing_req_item:
+                            # ✅ Stack quantity
                             existing_req_item.quantity = min(
                                 existing_req_item.quantity + qty_to_add,
                                 menu_item.quantity
                             )
-                            existing_req_item.save()
+
+                            # ✅ Merge add-ons
+                            if cart_oi.addons_json:
+                                try:
+                                    import json as _json
+                                    new_addons = _json.loads(cart_oi.addons_json or '[]')
+                                    existing_addons = _json.loads(existing_req_item.addons_json or '[]')
+                                    merged_map = {a.get('name', ''): dict(a) for a in existing_addons}
+                                    for new_a in new_addons:
+                                        key = new_a.get('name', '')
+                                        if key in merged_map:
+                                            merged_map[key]['qty'] = (
+                                                    int(merged_map[key].get('qty', 1)) +
+                                                    int(new_a.get('qty', 1))
+                                            )
+                                        else:
+                                            merged_map[key] = dict(new_a)
+                                    existing_req_item.addons_json = _json.dumps(list(merged_map.values()))
+                                except Exception:
+                                    pass
+
+                            # ✅ Note: palaging i-override ng pinakabago
+                            if cart_oi.note_to_establishment:
+                                existing_req_item.note_to_establishment = cart_oi.note_to_establishment
+
+                            existing_req_item.save(update_fields=[
+                                'quantity',
+                                'addons_json',
+                                'note_to_establishment',
+                            ])
                         else:
                             OrderItem.objects.create(
                                 order=existing_request,
                                 menu_item=menu_item,
                                 quantity=qty_to_add,
                                 price_at_order=cart_oi.price_at_order,
+                                addons_json=cart_oi.addons_json or '',
+                                note_to_establishment=cart_oi.note_to_establishment or '',
                             )
 
-                    # Recalculate total of the existing request order
-                    new_total = sum(
-                        oi.quantity * oi.price_at_order
-                        for oi in existing_request.orderitem_set.all()
+                    # ✅ FIXED: Recalculate total WITH add-ons
+                    existing_request.total_amount = _calc_total_with_addons(
+                        existing_request.orderitem_set.all()
                     )
-                    existing_request.total_amount = new_total
                     existing_request.save(update_fields=['total_amount'])
 
                     # Remove submitted items from the PENDING cart order
@@ -8773,11 +9017,9 @@ def create_cash_order(request):
                     else:
                         order.orderitem_set.all().delete()
 
-                    # Delete the (now empty) PENDING cart order
                     if not order.orderitem_set.exists():
                         order.delete()
 
-                    # Broadcast the update
                     _broadcast_order_status_update(existing_request, existing_request.status)
 
                     return JsonResponse({
@@ -8793,15 +9035,10 @@ def create_cash_order(request):
             # ── End of merge/block logic ───────────────────────────────────
 
             # ✅ Handle partial selection (only checked items go into the new order)
-            # selected_item_ids[] are OrderItem IDs the user checked in the cart.
-            # IMPORTANT: We do NOT delete unchecked items from the original order.
-            # Instead, we create a brand-new Order for the checked items only,
-            # so unchecked items remain in the original cart order untouched.
             selected_item_ids_raw = request.POST.getlist('selected_item_ids[]')
             selected_item_ids = [int(i) for i in selected_item_ids_raw if str(i).isdigit()]
 
             if selected_item_ids:
-                # Get only the checked OrderItems
                 checked_items = order.orderitem_set.filter(id__in=selected_item_ids)
 
                 if not checked_items.exists():
@@ -8810,35 +9047,34 @@ def create_cash_order(request):
                         'message': 'No valid items selected.'
                     }, status=400)
 
-                # Create a brand-new Order for the checked items only
                 new_order = Order.objects.create(
                     user=order.user,
                     establishment=order.establishment,
                     status=new_status,
+                    total_amount=Decimal('0.00'),
                     gcash_payment_method='cash',
                     gcash_reference_number=f'CASH-{order.id}-{timezone.now().strftime("%Y%m%d%H%M%S")}',
                     payment_confirmed_at=timezone.now(),
                 )
 
                 # Copy checked OrderItems into the new order
-                total = Decimal('0.00')
                 for oi in checked_items:
                     OrderItem.objects.create(
                         order=new_order,
                         menu_item=oi.menu_item,
                         quantity=oi.quantity,
                         price_at_order=oi.price_at_order,
+                        addons_json=oi.addons_json or '',
+                        note_to_establishment=oi.note_to_establishment or '',
                     )
-                    total += oi.price_at_order * oi.quantity
 
-                new_order.total_amount = total
+                # ✅ FIXED: Calculate total WITH add-ons from the newly created items
+                new_order.total_amount = _calc_total_with_addons(new_order.orderitem_set.all())
                 new_order.save(update_fields=['total_amount'])
 
                 # Remove checked items from the original cart-order
-                # (they now belong to new_order; unchecked items stay intact)
                 checked_items.delete()
 
-                # If original order is now empty, clean it up
                 if not order.orderitem_set.exists():
                     order.delete()
 
@@ -8846,7 +9082,6 @@ def create_cash_order(request):
 
             else:
                 # No filter provided — process entire order (checkout flow or legacy)
-                # Accept payment_method param but always store in gcash_payment_method field
                 payment_method = request.POST.get('payment_method', 'cash')
                 order.status = new_status
                 order.gcash_payment_method = payment_method
@@ -8858,24 +9093,14 @@ def create_cash_order(request):
             print(f"DEBUG: Order saved with status: {active_order.status}")
 
             # ── Stock deduction rule ─────────────────────────────────────
-            # Deduct ONLY when payment is actually confirmed:
-            #   • 'preparing': owner accepted a cash order from checkout
-            #     (source=checkout or order was already 'to_pay').
-            #     Stock is deducted immediately here.
-            #   • 'request': customer just submitted — waiting for owner to
-            #     accept. Do NOT deduct yet. Stock will be deducted when the
-            #     owner moves the order to 'preparing' in update_order_status.
-            #   • GCash/online orders are handled in gcash_payment_success /
-            #     paymongo_webhook — never in create_cash_order.
             if new_status == 'preparing':
                 _deduct_stock_and_clear_cart(active_order)
-                # Broadcast updated quantities to all WS clients
                 updated_items = list(active_order.orderitem_set.select_related('menu_item').all())
                 id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in
                                 updated_items]
                 _broadcast_inventory_update_from_items(active_order.establishment_id, id_qty_pairs)
 
-            # ✅ FIXED: Create notification for establishment owner (get_or_create prevents duplicates)
+            # ✅ FIXED: Create notification for establishment owner
             try:
                 notification, notif_created = OrderNotification.objects.get_or_create(
                     order=active_order,
@@ -8885,35 +9110,32 @@ def create_cash_order(request):
                 )
                 print(f"DEBUG: Notification #{notification.id} {'created' if notif_created else 'already existed'}")
             except Exception as notification_error:
-                # Log notification error but don't fail the order
                 print(f"WARNING: Failed to create notification: {str(notification_error)}")
                 import traceback
                 print(traceback.format_exc())
-                # Order will still complete successfully
 
         print(f"DEBUG: Order #{active_order.id} processed successfully")
 
         # Broadcast order status change to owner dashboard + customer history
         _broadcast_order_status_update(active_order, active_order.status)
 
-        # ✅ REALTIME: I-broadcast ang order-sent event sa cart page ng user
-        # para ma-animate out ang establishment box sa lahat ng bukas na tabs
         _remaining_cart_count = OrderItem.objects.filter(
             order__user=request.user,
             order__status='PENDING'
         ).aggregate(total=Sum('quantity'))['total'] or 0
         _broadcast_cart_update(request.user.id, 'cart.order_sent', {
             'establishment_id': active_order.establishment_id,
-            'order_id':         active_order.id,
-            'cart_count':       _remaining_cart_count,
+            'order_id': active_order.id,
+            'cart_count': _remaining_cart_count,
         })
 
-        # Return success response
-        return JsonResponse({
+        response = JsonResponse({
             'success': True,
             'message': 'Order placed successfully',
             'order_id': active_order.id
         })
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        return response
 
     except Order.DoesNotExist:
         print(f"ERROR: Order {order_id} not found")
@@ -8923,7 +9145,6 @@ def create_cash_order(request):
         }, status=404)
 
     except Exception as e:
-        # Log the full error for debugging
         print(f"ERROR in create_cash_order: {str(e)}")
         import traceback
         print(traceback.format_exc())
@@ -8932,7 +9153,6 @@ def create_cash_order(request):
             'success': False,
             'message': f'An error occurred while processing your order: {str(e)}'
         }, status=500)
-
 
 @login_required
 def debug_order_status(request, order_id):
@@ -9184,11 +9404,20 @@ def get_establishment_transactions(request):
             # Get order items
             items = []
             for order_item in order.orderitem_set.all():
+                import json as _tj
+                try:
+                    _addons = _tj.loads(order_item.addons_json or '[]')
+                    if not isinstance(_addons, list):
+                        _addons = []
+                except Exception:
+                    _addons = []
                 items.append({
                     'name': order_item.menu_item.name,
                     'quantity': order_item.quantity,
                     'price': str(order_item.price_at_order),
                     'total': str(order_item.total_price),
+                    'addons': _addons,
+                    'note': order_item.note_to_establishment or '',
                 })
 
             # Determine payment method display name
@@ -9350,7 +9579,7 @@ def get_establishment_transaction_statistics(request):
 # ORDER HISTORY VIEWS - UPDATED           FOR CLIENT SIDE
 # ==========================================
 
-
+@never_cache
 def order_history_view(request):
     _ensure_user_profile(request.user)
     """
@@ -9391,11 +9620,24 @@ def my_receipts_view(request):
     for order in orders:
         items = []
         for oi in order.orderitem_set.all():
+            import json as _rjson
+            try:
+                addons = _rjson.loads(oi.addons_json or '[]')
+                if not isinstance(addons, list):
+                    addons = []
+            except Exception:
+                addons = []
+            addon_total = sum(
+                float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+                for a in addons
+            )
             items.append({
                 'name': oi.menu_item.name,
                 'quantity': oi.quantity,
                 'price': float(oi.price_at_order),
-                'subtotal': float(oi.price_at_order * oi.quantity),
+                # ✅ FIXED: subtotal = base × qty + addon_total (addons are absolute, not per-unit)
+                'subtotal': float(oi.price_at_order) * oi.quantity + addon_total,
+                'addons': addons,
                 'image': oi.menu_item.image.url if oi.menu_item.image else None,
             })
 
@@ -9441,6 +9683,7 @@ def my_receipts_view(request):
     })
 
 
+@never_cache
 def get_user_transaction_history(request):
     """
     API endpoint to get all orders for the logged-in user.
@@ -9451,29 +9694,7 @@ def get_user_transaction_history(request):
         return JsonResponse({'success': True, 'orders': []})
 
     try:
-        # Get all orders for the user that have been formally submitted (status = 'request' or beyond).
-        # EXCLUDE 'PENDING' — these are cart orders that haven't been submitted yet.
-        # INCLUDE owner-rejected 'cancelled' orders so the client can show the reason
-        # even after a page refresh (not just via WS). Client uses lsIsDismissed to
-        # hide rows the user has already dismissed.
-        # EXCLUDE client-self-cancelled orders (cancel_reason may be set but owner_dismissed=False
-        # means it was a client cancel — actually simpler: exclude cancelled where stock_deducted
-        # matches a client cancel pattern). Simplest rule: return cancelled only if owner_dismissed=True
-        # (owner rejected) OR if it's not cancelled at all.
         from django.db.models import Q as Q
-        # ✅ FIX: Include ALL owner-rejected cancelled orders so client sees the reason
-        # after a page refresh — regardless of which stage the order was in when rejected:
-        #   • request  → stock_deducted=False (stock was never taken)
-        #   • to_pay   → stock_deducted=True  (stock was deducted at acceptance)
-        #   • to_claim → stock_deducted=True  (stock was deducted at acceptance)
-        # We identify owner-rejected orders by: status='cancelled', owner_dismissed=False.
-        # Client-self-cancelled orders are excluded via the owner_dismissed check because
-        # the owner dismisses them (owner_dismissed=True) after they cancel. Orders that
-        # the client cancelled themselves and the owner hasn't dismissed yet would still
-        # appear, but those are harmless — the client already knows they cancelled.
-        # Include owner-rejected cancelled orders (cancelled_from_status is non-empty)
-        # Exclude client-self-cancelled orders (cancelled_from_status is empty/null)
-        # Exclude owner-dismissed orders (fully handled on both sides)
         orders = Order.objects.filter(
             user=request.user
         ).exclude(
@@ -9497,18 +9718,12 @@ def get_user_transaction_history(request):
             'preparing': 'preparing',
             'to_claim': 'to_claim',
             'completed': 'completed',
-            # ✅ 'cancelled' is NOT mapped here — it is handled per-order below
-            # using cancelled_from_status so the row appears in the correct tab:
-            # request → request tab, to_pay → to_pay tab, to_claim → to_claim tab.
         }
 
         orders_data = []
         for order in orders:
             raw_status = order.status or 'PENDING'
 
-            # ✅ For owner-rejected (cancelled) orders, route to the tab they came from.
-            # cancelled_from_status is stored on the model (request / to_pay / to_claim).
-            # Fall back to 'request' if not available (older orders before this fix).
             if raw_status == 'cancelled':
                 cf = order.cancelled_from_status or ''
                 if cf in ('to_pay', 'to_claim'):
@@ -9518,20 +9733,36 @@ def get_user_transaction_history(request):
             else:
                 normalized_status = client_status_map.get(raw_status, raw_status.lower())
 
+            import json as _json
             items = []
             for oi in order.orderitem_set.all():
+                _addons = []
+                try:
+                    _addons = _json.loads(oi.addons_json or '[]')
+                    if not isinstance(_addons, list):
+                        _addons = []
+                except Exception:
+                    _addons = []
+
+                # ✅ FIXED: total_price now includes add-on prices per unit × qty
+                _addon_per_unit = sum(
+                    float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+                    for a in _addons
+                )
+                _item_total = round(float(oi.price_at_order) * oi.quantity + _addon_per_unit, 2)
+
                 items.append({
-                    'order_item_id': oi.id,  # needed by Edit Order modal
+                    'order_item_id': oi.id,
                     'name': oi.menu_item.name,
                     'quantity': oi.quantity,
                     'price': str(oi.price_at_order),
-                    'total_price': str(oi.price_at_order * oi.quantity),
+                    'total_price': str(_item_total),  # ✅ now includes add-ons
                     'menu_item_id': oi.menu_item.id,
-                    # ✅ available_stock = live menu item quantity at this moment.
-                    # Used by the client order history page to warn customers in
-                    # 'to_pay' orders when another order has consumed the same item.
                     'available_stock': oi.menu_item.quantity,
                     'image': oi.menu_item.image.url if oi.menu_item.image else None,
+                    # ✅ BAGONG FIELDS
+                    'addons': _addons,
+                    'note': oi.note_to_establishment or '',
                 })
 
             orders_data.append({
@@ -9551,9 +9782,6 @@ def get_user_transaction_history(request):
                 'establishment_image': order.establishment.image.url
                 if order.establishment.image else None,
                 'items': items,
-                # ✅ Include cancel info so client can show reason after page refresh.
-                # cancelled_by_owner=True for ALL owner-rejected orders regardless of stage.
-                # cancelled_from_status tells the client which tab to show the row in.
                 'cancelled_by_owner': (
                         raw_status == 'cancelled'
                         and not order.owner_dismissed
@@ -9753,11 +9981,14 @@ def reorder_items(request, order_id):
                     print(f"     - ✅ Using qty: {qty}")
 
                     # Create new order item with the current price of the menu item
+                    # Create new order item with the current price of the menu item
                     new_order_item = OrderItem.objects.create(
                         order=new_order,
                         menu_item=order_item.menu_item,
                         quantity=qty,
-                        price_at_order=order_item.menu_item.price
+                        price_at_order=order_item.menu_item.price,
+                        addons_json=order_item.addons_json or '',
+                        note_to_establishment=order_item.note_to_establishment or ''
                     )
                     print(f"     - ✅ OrderItem #{new_order_item.id} created")
 
@@ -9937,25 +10168,39 @@ def get_order_details(request, order_id):
         ).get(id=order_id, user=request.user)
 
         # Get order items
+        # Get order items
         items = []
         for order_item in order.orderitem_set.all():
-            # Calculate item price and total
-            if hasattr(order_item, 'price') and order_item.price:
-                item_price = order_item.price
-            else:
-                item_price = order_item.menu_item.price
+            # (Kunin ang addons)
+            import json as _json
+            try:
+                _addons = _json.loads(order_item.addons_json or '[]')
+            except:
+                _addons = []
 
-            item_total = order_item.quantity * item_price
+            # ✅ FIXED: Always use price_at_order (the locked price when order was placed),
+            # never fall back to current menu price which may have changed.
+            item_price = order_item.price_at_order
+
+            # ✅ FIXED: addon qty is absolute total, not per-unit.
+            # item_total = base × qty + addon_total
+            addon_total = sum(
+                float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+                for a in _addons
+            )
+            item_total = float(item_price) * order_item.quantity + addon_total
 
             items.append({
-                'id': order_item.menu_item.id,  # ← needed for /cart/add/ realtime reorder
-                'order_item_id': order_item.id,  # ← needed by Edit Order modal
+                'id': order_item.menu_item.id,
+                'order_item_id': order_item.id,
                 'name': order_item.menu_item.name,
                 'quantity': order_item.quantity,
                 'price': str(item_price),
                 'total_price': str(item_total),
                 'image': order_item.menu_item.image.url if order_item.menu_item.image else None,
-                'available_stock': order_item.menu_item.quantity,  # live stock count
+                'available_stock': order_item.menu_item.quantity,
+                'note': order_item.note_to_establishment or '',  # ✅ IDINAGDAG ANG NOTE
+                'addons': _addons,  # ✅ IDINAGDAG ANG ADDONS
             })
 
         order_data = {
@@ -10096,13 +10341,43 @@ def get_establishment_realtime(request, establishment_id):
         status = get_current_status(establishment.opening_time, establishment.closing_time)
 
         # ── Menu items (only fields needed by frontend) ──
-        menu_items_data = list(
-            MenuItem.objects.filter(food_establishment=establishment)
-            .values('id', 'name', 'quantity', 'is_top_seller', 'price')
-        )
-        for m in menu_items_data:
-            m['is_available'] = m['quantity'] > 0
-            m['price'] = float(m['price'])
+        menu_items_qs = MenuItem.objects.filter(
+            food_establishment=establishment
+        ).prefetch_related('addon_groups__options')
+        menu_items_data = []
+        for mi in menu_items_qs:
+            m = {
+                'id': mi.id,
+                'name': mi.name,
+                'quantity': mi.quantity,
+                'is_top_seller': mi.is_top_seller,
+                'price': float(mi.price),
+                'description': mi.description or '',
+                'is_available': mi.quantity > 0,
+            }
+            # Include add-on groups so the favorites modal can load them instantly
+            try:
+                m['add_on_groups'] = [
+                    {
+                        'id': g.id,
+                        'name': g.name,
+                        'is_required': g.is_required,
+                        'max_options_per_order': getattr(g, 'max_choices', 0) or 0,
+                        'options': [
+                            {
+                                'id': o.id,
+                                'name': o.name,
+                                'additional_price': float(o.additional_price),
+                                'is_available': o.is_available,
+                            }
+                            for o in g.options.all() if o.is_available
+                        ]
+                    }
+                    for g in mi.addon_groups.all()
+                ]
+            except Exception:
+                m['add_on_groups'] = []
+            menu_items_data.append(m)
 
         # ── Rating ──
         rating_agg = establishment.reviews.aggregate(
@@ -10168,10 +10443,37 @@ def get_establishment_realtime(request, establishment_id):
             _open_24  = establishment.opening_time.strftime('%H:%M') if establishment.opening_time else ''
             _close_24 = establishment.closing_time.strftime('%H:%M') if establishment.closing_time else ''
 
+        # ✅ FIX: Compute time-based calculated status using the same logic as the
+        # dashboard view, instead of returning the raw establishment.status field.
+        # Previously returning establishment.status ('Open'/'Disabled') caused:
+        #   1. Customer-facing cards to show 'Open' when the store was time-closed
+        #   2. _fetchAndPatchEstCard to set data-force-status='open' unconditionally,
+        #      overriding a previously-correct 'Closed' indicator on BroadcastChannel sync.
+        _is_manually_disabled = (establishment.status or '').lower() == 'disabled'
+        if _is_manually_disabled:
+            _calc_status = 'Closed'
+        elif _open_24 and _close_24:
+            try:
+                from datetime import time as _time_rt2
+                _o_parts = [int(x) for x in _open_24.split(':')]
+                _c_parts = [int(x) for x in _close_24.split(':')]
+                _rt_o = _time_rt2(_o_parts[0], _o_parts[1])
+                _rt_c = _time_rt2(_c_parts[0], _c_parts[1])
+                _rt_now = _ph_rt.time()
+                if _rt_o <= _rt_c:
+                    _calc_status = 'Open' if _rt_o <= _rt_now <= _rt_c else 'Closed'
+                else:  # overnight hours (e.g. 21:00 → 05:00)
+                    _calc_status = 'Open' if _rt_now >= _rt_o or _rt_now <= _rt_c else 'Closed'
+            except Exception:
+                _calc_status = 'Closed'
+        else:
+            _calc_status = 'Closed'
+
         return JsonResponse({
             'success': True,
             'establishment_id': establishment_id,
-            'status': establishment.status,
+            'status': _calc_status,
+            'is_manually_disabled': _is_manually_disabled,
             'name': establishment.name,
             'address': establishment.address,
             'payment_methods': establishment.payment_methods or '',
@@ -10399,6 +10701,31 @@ def get_pending_cart_qtys(request):
         return JsonResponse({'success': False, 'qtys': {}, 'error': str(e)})
 
 
+def _safe_addon_groups(item):
+    """Return addon_groups list for a MenuItem, safely handling missing DB table."""
+    try:
+        return [
+            {
+                'id': g.id,
+                'name': g.name,
+                'is_required': g.is_required,
+                'max_choices': g.max_choices,
+                'options': [
+                    {
+                        'id': o.id,
+                        'name': o.name,
+                        'additional_price': float(o.additional_price),
+                        'is_available': o.is_available,
+                    }
+                    for o in g.options.all() if o.is_available
+                ]
+            }
+            for g in item.addon_groups.all()
+        ]
+    except Exception:
+        return []
+
+
 def get_bestsellers(request):
     """
     Get all top seller items across all establishments.
@@ -10412,9 +10739,22 @@ def get_bestsellers(request):
             food_establishment__is_active=True,  # ✅ hide deactivated
         ).select_related(
             'food_establishment'
+        ).prefetch_related(
+            'food_establishment__categories'  # ✅ needed for quick-filter buttons
         ).annotate(
             total_orders=Count('orderitem')
         ).order_by('-top_seller_marked_at', '-total_orders')[:20]
+
+        # Prefetch addon_groups only if the table exists (migration may not be run yet)
+        try:
+            from django.db import connection as _dbconn
+            _tables = _dbconn.introspection.table_names()
+            _addon_table = [t for t in _tables if 'menuitemaddongroup' in t.lower() or 'addon_group' in t.lower()]
+            if _addon_table:
+                from django.db.models import Prefetch as _Prefetch
+                bestsellers = bestsellers.prefetch_related('addon_groups__options')
+        except Exception:
+            pass
 
         bestsellers_data = []
 
@@ -10459,6 +10799,7 @@ def get_bestsellers(request):
                 'image': item.image.url if item.image else None,
                 'quantity': item.quantity,
                 'total_orders': item.total_orders,
+                'addon_groups': _safe_addon_groups(item),
                 'establishment': {
                     'id': establishment.id,
                     'name': establishment.name,
@@ -10468,6 +10809,8 @@ def get_bestsellers(request):
                     'closing_24h': _close_bs,
                     'latitude': establishment.latitude,
                     'longitude': establishment.longitude,
+                    'categories': ', '.join([cat.name for cat in establishment.categories.all()]).lower(),  # ✅ for quick-filter
+                    'other_category': (establishment.other_category or '').lower(),  # ✅ for quick-filter
                     'last_modified': cache.get(f'est_{establishment.id}_last_modified', 0),  # ✅ sync signal
                 }
             })
@@ -10482,6 +10825,72 @@ def get_bestsellers(request):
         import logging
         logging.getLogger(__name__).error(f"DB error in get_bestsellers: {e}")
         return JsonResponse({'error': 'database_unavailable'}, status=503)
+
+
+# ─── Add-On Views ─────────────────────────────────────────────────────────────
+
+def get_menu_item_addons(request, item_id):
+    """Returns add-on groups + options for a menu item (used by customer modal)."""
+    import json as _aj
+    try:
+        item = get_object_or_404(MenuItem, pk=item_id)
+        groups = []
+        for g in item.addon_groups.prefetch_related('options').all():
+            groups.append({
+                'id': g.id,
+                'name': g.name,
+                'is_required': g.is_required,
+                'max_choices': g.max_choices,
+                'options': [
+                    {
+                        'id': o.id,
+                        'name': o.name,
+                        'additional_price': float(o.additional_price),
+                        'is_available': o.is_available,
+                    }
+                    for o in g.options.filter(is_available=True)
+                ]
+            })
+        return JsonResponse({'success': True, 'groups': groups})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_POST
+def save_menu_item_addons(request, item_id):
+    """Owner saves/replaces all add-on groups for a menu item."""
+    import json as _aj
+    food_establishment_id = request.session.get('food_establishment_id')
+    if not food_establishment_id:
+        return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+    establishment = get_object_or_404(FoodEstablishment, id=food_establishment_id)
+    item = get_object_or_404(MenuItem, pk=item_id, food_establishment=establishment)
+    try:
+        data = _aj.loads(request.body)
+        groups_data = data.get('groups', [])
+        # Replace all existing groups
+        item.addon_groups.all().delete()
+        for i, g in enumerate(groups_data):
+            group = MenuItemAddOnGroup.objects.create(
+                menu_item=item,
+                name=str(g.get('name', '')).strip(),
+                is_required=bool(g.get('is_required', False)),
+                max_choices=int(g.get('max_choices', 1)),
+                order=i
+            )
+            for j, opt in enumerate(g.get('options', [])):
+                opt_name = str(opt.get('name', '')).strip()
+                if not opt_name:
+                    continue
+                MenuItemAddOnOption.objects.create(
+                    group=group,
+                    name=opt_name,
+                    additional_price=float(opt.get('additional_price', 0)),
+                    order=j
+                )
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
 def search_menu_items(request):
@@ -10604,3 +11013,107 @@ def check_owner_presence(request, establishment_id):
     """
     is_online = cache.get(f'owner_online_{establishment_id}', False)
     return JsonResponse({'is_online': bool(is_online)})
+
+@login_required
+@require_POST
+def update_cart_item_addons(request):
+    """
+    Update the selected add-ons for a cart (PENDING) order item.
+    Receives: order_item_id, addons (JSON string)
+    """
+    import json as _j
+    from decimal import Decimal
+    try:
+        order_item_id = request.POST.get('order_item_id')
+        addons_raw    = request.POST.get('addons', '[]')
+
+        if not order_item_id:
+            return JsonResponse({'success': False, 'message': 'Missing item ID.'}, status=400)
+
+        try:
+            addons_data = _j.loads(addons_raw)
+            if not isinstance(addons_data, list):
+                addons_data = []
+        except Exception:
+            addons_data = []
+
+        order_item = get_object_or_404(
+            OrderItem.objects.select_related('order', 'menu_item'),
+            pk=order_item_id,
+            order__user=request.user,
+            order__status='PENDING'
+        )
+
+        order_item.addons_json = _j.dumps(addons_data)
+        order_item.save(update_fields=['addons_json'])
+
+        # Recalculate item total (base price + add-ons per unit × qty)
+        addons_total_per_unit = sum(
+            float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+            for a in addons_data
+        )
+        unit_price   = float(order_item.price_at_order)
+        item_total = unit_price * order_item.quantity + addons_total_per_unit
+
+        return JsonResponse({
+            'success'               : True,
+            'addons'                : addons_data,
+            'addons_total_per_unit' : round(addons_total_per_unit, 2),
+            'item_total'            : round(item_total, 2),
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def update_cart_item_note(request):
+    """Save the note_to_establishment for a cart (PENDING) order item."""
+    try:
+        order_item_id = request.POST.get('order_item_id')
+        note = str(request.POST.get('note', ''))[:300]
+        if not order_item_id:
+            return JsonResponse({'success': False, 'message': 'Missing item ID.'}, status=400)
+
+        order_item = get_object_or_404(
+            OrderItem.objects.select_related('order'),
+            pk=order_item_id,
+            order__user=request.user,
+            order__status='PENDING'
+        )
+
+        order_item.note_to_establishment = note
+        order_item.save(update_fields=['note_to_establishment'])
+
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def _calc_total_with_addons(order_items):
+    """
+    ✅ FIXED HELPER: Calculate the correct order total by including add-on
+    prices stored in each OrderItem's addons_json field.
+
+    Formula per item:
+        (price_at_order + Σ addon.additional_price × addon.qty) × item.quantity
+
+    Works with both QuerySets and plain Python lists of OrderItem objects.
+    Always call this instead of bare  sum(oi.price_at_order * oi.quantity).
+    """
+    import json as _j
+    from decimal import Decimal
+    total = Decimal('0.00')
+    for oi in order_items:
+        addon_extra = Decimal('0.00')
+        try:
+            addons = _j.loads(oi.addons_json or '[]')
+            if isinstance(addons, list):
+                for a in addons:
+                    addon_extra += Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1))
+        except Exception:
+            pass
+        # ✅ FIXED: addon qty is absolute (total for the order line), NOT per-unit.
+        # Correct formula: base_price × item_qty + addon_total
+        # Wrong formula was: (base_price + addon_total) × item_qty  ← multiplied addons by qty again
+        total += Decimal(str(oi.price_at_order)) * oi.quantity + addon_extra
+    return total

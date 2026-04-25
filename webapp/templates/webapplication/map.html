@@ -339,7 +339,7 @@
     .map-page-content { padding: 14px 14px 60px; }
     .map-page-header  { padding: 20px 16px 18px; border-radius: 14px; }
     .map-page-header h1 { font-size: 18px; }
-    .mleg { bottom: 14px !important; left: 10px !important; right: auto !important; }
+    .mleg { bottom: 10px !important; left: 10px !important; right: auto !important; }
     .map-layout { height: calc(100vh - 220px); min-height: 400px; flex-direction: column; }
     .map-cat-sidebar { width: 100%; height: auto; max-height: 100px; border-right: none; border-bottom: 1px solid #f0f0f0; flex-direction: row; flex-wrap: wrap; padding: 6px 8px; gap: 4px; overflow-x: auto; overflow-y: hidden; }
     .mcs-header { display: none; }
@@ -348,10 +348,28 @@
     .page-layout { display: block; }
     .main.main-with-sidebar { width: 100%; }
     #notifBellWrap { display: none !important; }
-    .map-bottom-row { bottom: 10px; right: 10px; gap: 6px; }
+
+    /* Fix: gawing fixed ang bottom controls para laging nasa itaas ng mobile nav bar */
+    .map-bottom-row {
+        position: fixed !important;
+        bottom: 62px !important;   /* exactly above the 62px mobile nav */
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1100 !important;
+        background: rgba(255,255,255,0.96) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border-top: 1px solid #e9ecef !important;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.08) !important;
+        padding: 8px 12px !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        white-space: nowrap !important;
+    }
     .gender-toggle-btn { padding: 5px 9px; font-size: 10.5px; }
     .gender-toggle-btn i { font-size: 11px; }
-    .gender-toggle-wrap { padding: 4px; }
+    .gender-toggle-wrap { padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.10); }
     .gender-toggle-label { font-size: 9px; }
     .map-loc-btn-inline { padding: 8px 14px; font-size: 11.5px; gap: 5px; }
     .map-loc-btn-inline i { font-size: 11px; }

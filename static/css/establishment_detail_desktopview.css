@@ -722,7 +722,7 @@
 
     .menu-price {
         font-weight: 700;
-        color: #B71C1C;
+        color: #111111;
         font-size: 0.9em;
         margin: 0;
         white-space: nowrap;
@@ -1534,3 +1534,33 @@
 .chat-pinned-collapse        { color: #b71c1c !important; }
 .pinned-message-item i       { color: #b71c1c !important; }
 .chat-see-pins-link          { color: #b71c1c !important; }
+
+/* ============================================================
+   LAYOUT B — DESKTOP OVERRIDES
+   ============================================================ */
+@media (min-width: 1025px) {
+    /* Tab bar — desktop sizing */
+    .detail-tab { padding: 22px 20px; font-size: 1em; }
+
+    /* Overview 3x3 grid desktop */
+    .ov-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    /* Reviews tab — truly full-width, no max-width constraint */
+    #tab-reviews { width: 100%; }
+    #tab-reviews .reviews-section--fullwidth {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+    #tab-reviews .reviews-section--fullwidth .all-reviews-list-wrapper {
+        max-height: 65vh;
+    }
+
+    /* Menu tab */
+    #tab-menu .quantity-control { display: block; }
+}

@@ -1263,6 +1263,181 @@
         }
         .wh-open        { background: #d1fae5; color: #065f46; }
         .wh-closed-pill { background: #fee2e2; color: #991b1b; }
+
+/* ============================================================
+   LAYOUT B — TAB NAVIGATION
+   ============================================================ */
+.detail-tab-bar {
+    display: flex;
+    gap: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+}
+.detail-tab {
+    flex: 1;
+    padding: 20px 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #6b7280;
+    background: #fff;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.detail-tab:hover {
+    color: #B71C1C;
+    background: #fff8f8;
+}
+.detail-tab.active {
+    color: #B71C1C;
+    border-bottom-color: #B71C1C;
+    background: #fff8f8;
+}
+.detail-tab i { font-size: 0.9em; }
+
+.detail-tab-panel { display: none; }
+.detail-tab-panel.active { display: block; }
+
+/* ============================================================
+   OVERVIEW TAB — 3-COLUMN × 2-ROW GRID
+   ============================================================ */
+.ov-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.ov-cell {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid #ebebeb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ov-label {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: #111111;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.ov-label i { font-size: 0.85em; color: #B71C1C; }
+.ov-value {
+    font-size: 0.95em;
+    color: #111111;
+    line-height: 1.65;
+    margin: 0;
+    font-weight: 500;
+}
+.ov-muted {
+    font-size: 0.85em;
+    color: #9ca3af;
+    margin: 0;
+    font-style: italic;
+}
+.ov-hours-today { font-size: 0.85em; color: #111; margin: 0; font-weight: 500; }
+
+/* Weekly hours text override — black */
+.ov-cell .wh-day   { color: #111 !important; font-weight: 600; }
+.ov-cell .wh-time  { color: #111 !important; font-size: 13px; }
+
+/* Rating */
+.ov-rating-big { display: flex; align-items: center; gap: 14px; }
+.ov-rating-num {
+    font-size: 2.6em;
+    font-weight: 800;
+    color: #111;
+    line-height: 1;
+}
+.ov-stars { display: flex; gap: 2px; }
+.ov-stars .fas.fa-star { color: #f59e0b; font-size: 0.9em; }
+.ov-stars .far.fa-star { color: #d1d5db; font-size: 0.9em; }
+
+/* Amenities */
+.ov-amenities-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.ov-amenities-list li {
+    font-size: 0.92em;
+    color: #111;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ov-amenities-list li .fas.fa-check-circle { color: #22c55e; font-size: 0.85em; }
+
+/* Links */
+.ov-links-wrap { display: flex; flex-direction: column; gap: 8px; }
+.ov-social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 6px 14px 6px 7px;
+    text-decoration: none;
+    transition: transform .15s;
+    width: fit-content;
+}
+.ov-social-icon {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ov-social-icon i { color: #fff; font-size: 12px; }
+.ov-social-name { font-size: 0.82em; font-weight: 700; color: #111; }
+
+/* Reviews tab full-width */
+.reviews-section--fullwidth {
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid #f0f0f0;
+}
+.reviews-section--fullwidth .all-reviews-list-wrapper {
+    max-height: 65vh;
+}
+#tab-reviews.detail-tab-panel.active { display: block; }
+
+/* Mobile tab tweaks */
+@media (max-width: 768px) {
+    .detail-tab { font-size: 0.78em; padding: 12px 6px; gap: 5px; }
+    .ov-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+@media (max-width: 480px) {
+    .ov-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 {# Override notification to appear top-center #}
@@ -1430,156 +1605,135 @@
         </div>
     </header>
 
-    <div class="details-container">
+    {# ══ LAYOUT B: TAB NAVIGATION BAR ══ #}
+    <nav class="detail-tab-bar" id="detailTabBar">
+        <button class="detail-tab active" data-tab="overview" onclick="switchDetailTab('overview',this)">
+            <i class="fas fa-th-large"></i> Overview
+        </button>
+        <button class="detail-tab" data-tab="menu" onclick="switchDetailTab('menu',this)">
+            <i class="fas fa-hamburger"></i> Menu
+        </button>
+        <button class="detail-tab" data-tab="reviews" onclick="switchDetailTab('reviews',this)">
+            <i class="fas fa-star"></i> Reviews
+        </button>
+    </nav>
 
-        {# TOP THREE COLUMN LAYOUT #}
-        <div class="top-info-grid">
-            {# COLUMN 1: Location & Contact #}
-            <section class="section-card contact-location">
-                <h2>Location & Contact</h2>
-                <div class="contact-grid">
+    {# ══ OVERVIEW TAB PANEL — 3 col × 2 row ══ #}
+    <div class="detail-tab-panel active" id="tab-overview">
+    <div class="ov-grid">
 
-                    <div class="contact-info-card">
-                        <div class="contact-icon-wrap contact-icon--address">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div class="contact-info-body">
-                            <span class="contact-label">Address</span>
-                            <span class="contact-value" id="detailAddress">{{ establishment.address|default:"Not Available" }}</span>
-                        </div>
-                    </div>
+        {# ROW 1 ── #}
 
-                    <div class="contact-info-card">
-                        <div class="contact-icon-wrap contact-icon--category">
-                            <i class="fas fa-store"></i>
-                        </div>
-                        <div class="contact-info-body">
-                            <span class="contact-label">Categories</span>
-                            <span class="contact-value" id="detailCategories">
-                                {% with cats=establishment.categories.all %}
-                                {% if cats %}
-                                    {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                                {% elif establishment.other_category %}
-                                    {{ establishment.other_category }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                                {% endwith %}
+        {# CELL 1: Address #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-map-marker-alt"></i> Address</span>
+            <p class="ov-value" id="detailAddress">{{ establishment.address|default:"Not Available" }}</p>
+        </div>
+
+        {# CELL 2: Categories #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-store"></i> Categories</span>
+            <p class="ov-value" id="detailCategories">
+                {% with cats=establishment.categories.all %}
+                {% if cats %}
+                    {% for cat in cats %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                {% elif establishment.other_category %}
+                    {{ establishment.other_category }}
+                {% else %}
+                    N/A
+                {% endif %}
+                {% endwith %}
+            </p>
+        </div>
+
+        {# CELL 3: Weekly Hours #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-clock"></i> Weekly Hours</span>
+            <div id="weeklyHoursDisplay" class="weekly-hours-grid">
+                {% with today_idx=today_weekday %}
+                {% for bh in business_hours_list %}
+                <div class="wh-row {% if bh.day_of_week == today_idx %}wh-today{% endif %}">
+                    <span class="wh-day">
+                        {{ bh.day_name }}{% if bh.day_of_week == today_idx %} <span class="wh-now-tag">Today</span>{% endif %}
+                    </span>
+                    {% if bh.is_closed %}
+                        <span class="wh-time wh-closed">Closed</span>
+                    {% elif bh.opening_time and bh.closing_time %}
+                        <span class="wh-time">{{ bh.opening_time|time:"g:i A" }} – {{ bh.closing_time|time:"g:i A" }}</span>
+                        {% if bh.day_of_week == today_idx %}
+                            <span class="wh-status-pill {% if establishment.status == 'Open' %}wh-open{% else %}wh-closed-pill{% endif %}" id="liveHoursStatusPill">
+                                {{ establishment.status }}
                             </span>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-card contact-info-card--hours">
-                        <div class="contact-icon-wrap contact-icon--hours">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="contact-info-body" style="width:100%;">
-                            <span class="contact-label">Weekly Hours</span>
-                            <div id="weeklyHoursDisplay" class="weekly-hours-grid">
-                                {% with today_idx=today_weekday %}
-                                {% for bh in business_hours_list %}
-                                <div class="wh-row {% if bh.day_of_week == today_idx %}wh-today{% endif %}">
-                                    <span class="wh-day">
-                                        {{ bh.day_name }}{% if bh.day_of_week == today_idx %} <span class="wh-now-tag">Today</span>{% endif %}
-                                    </span>
-                                    {% if bh.is_closed %}
-                                        <span class="wh-time wh-closed">Closed</span>
-                                    {% elif bh.opening_time and bh.closing_time %}
-                                        <span class="wh-time">{{ bh.opening_time|time:"g:i A" }} – {{ bh.closing_time|time:"g:i A" }}</span>
-                                        {% if bh.day_of_week == today_idx %}
-                                            <span class="wh-status-pill {% if establishment.status == 'Open' %}wh-open{% else %}wh-closed-pill{% endif %}" id="liveHoursStatusPill">
-                                                {{ establishment.status }}
-                                            </span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="wh-time wh-not-set">Not set</span>
-                                    {% endif %}
-                                </div>
-                                {% empty %}
-                                    {% if establishment.opening_time and establishment.closing_time %}
-                                        <span class="hours-text" id="detailHours">
-                                            {{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}
-                                        </span>
-                                    {% else %}
-                                        <span style="color:#9ca3af;font-size:13px;">Hours not set</span>
-                                    {% endif %}
-                                {% endfor %}
-                                {% endwith %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-card">
-                        <div class="contact-icon-wrap contact-icon--payment">
-                            <i class="fas fa-credit-card"></i>
-                        </div>
-                        <div class="contact-info-body">
-                            <span class="contact-label">Payment</span>
-                            <span class="contact-value" id="detailPayment">
-                                {% if establishment.payment_methods %}{{ establishment.payment_methods }}{% else %}N/A{% endif %}
-                            </span>
-                        </div>
-                    </div>
-
-                    {% if establishment.contact_links.all %}
-                    <div class="contact-info-card" id="detailContactLinks">
-                        <div class="contact-icon-wrap" style="background:linear-gradient(135deg,#8b0000,#c62828);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                            <i class="fas fa-link" style="color:#fff;font-size:15px;"></i>
-                        </div>
-                        <div class="contact-info-body">
-                            <span class="contact-label">Links &amp; Socials</span>
-                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;">
-                                {% for lnk in establishment.contact_links.all %}
-                                <a href="{{ lnk.href }}"
-                                   target="_blank" rel="noopener noreferrer"
-                                   title="{{ lnk.value }}"
-                                   style="display:inline-flex;align-items:center;gap:8px;
-                                          background:#ffffff;
-                                          border:1.5px solid {{ lnk.icon_bg }};
-                                          border-radius:999px;
-                                          padding:7px 16px 7px 9px;
-                                          text-decoration:none;
-                                          transition:transform .15s,box-shadow .15s;
-                                          box-shadow:0 1px 3px rgba(0,0,0,.08);"
-                                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';"
-                                   onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)';">
-                                    <!-- Brand icon circle -->
-                                    <span style="width:28px;height:28px;border-radius:50%;
-                                                 background:{{ lnk.icon_bg }};
-                                                 display:inline-flex;align-items:center;
-                                                 justify-content:center;flex-shrink:0;">
-                                        <i class="{{ lnk.icon_class }}" style="color:#fff;font-size:14px;line-height:1;"></i>
-                                    </span>
-                                    <!-- Label -->
-                                    <span style="font-size:13px;font-weight:700;color:#1f2937;
-                                                 letter-spacing:.3px;">{{ lnk.label }}</span>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+                        {% endif %}
+                    {% else %}
+                        <span class="wh-time wh-not-set">Not set</span>
                     {% endif %}
-
                 </div>
-            </section>
-
-            {# COLUMN 2: Amenities & Features #}
-            <section class="section-card amenities-section">
-                <h2>Amenities & Features</h2>
-                <ul class="amenities-list" id="detailAmenities">
-                    {% for amenity in establishment.amenities.all %}
-                    <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
-                    {% empty %}
-                    <li>No amenities listed.</li>
-                    {% endfor %}
-                    {% if establishment.other_amenity %}
-                    <li><i class="fas fa-check-circle"></i> {{ establishment.other_amenity }}</li>
+                {% empty %}
+                    {% if establishment.opening_time and establishment.closing_time %}
+                        <span class="ov-value" id="detailHours">{{ establishment.opening_time|time:"g:i A" }} – {{ establishment.closing_time|time:"g:i A" }}</span>
+                    {% else %}
+                        <span class="ov-value">Hours not set</span>
                     {% endif %}
-                </ul>
-            </section>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
 
-            {# COLUMN 3: Customer Reviews #}
-            <section class="section-card reviews-section">
+        {# ROW 2 ── #}
+
+        {# CELL 4: Payment Methods #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-credit-card"></i> Payment Methods</span>
+            <p class="ov-value" id="detailPayment">
+                {% if establishment.payment_methods %}{{ establishment.payment_methods }}{% else %}N/A{% endif %}
+            </p>
+        </div>
+
+        {# CELL 5: Amenities & Features #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-concierge-bell"></i> Amenities & Features</span>
+            <ul class="ov-amenities-list" id="detailAmenities">
+                {% for amenity in establishment.amenities.all %}
+                <li><i class="fas fa-check-circle"></i> {{ amenity.name }}</li>
+                {% empty %}
+                <li class="ov-value" style="font-style:italic;color:#9ca3af;">No amenities listed.</li>
+                {% endfor %}
+                {% if establishment.other_amenity %}
+                <li><i class="fas fa-check-circle"></i> {{ establishment.other_amenity }}</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        {# CELL 6: Links & Socials #}
+        <div class="ov-cell">
+            <span class="ov-label"><i class="fas fa-link"></i> Links</span>
+            {% if establishment.contact_links.all %}
+            <div id="detailContactLinks" class="ov-links-wrap">
+                {% for lnk in establishment.contact_links.all %}
+                <a href="{{ lnk.href }}" target="_blank" rel="noopener noreferrer"
+                   class="ov-social-link"
+                   style="border-color:{{ lnk.icon_bg }};"
+                   onmouseover="this.style.transform='translateY(-2px)';"
+                   onmouseout="this.style.transform='none';">
+                    <span class="ov-social-icon" style="background:{{ lnk.icon_bg }};">
+                        <i class="{{ lnk.icon_class }}"></i>
+                    </span>
+                    <span class="ov-social-name">{{ lnk.label }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="ov-value" style="font-style:italic;color:#9ca3af;">No links added.</p>
+            {% endif %}
+        </div>
+
+    </div>{# end .ov-grid #}
+    </div>{# end #tab-overview #}
+
+    {# ══ REVIEWS TAB PANEL ══ #}
+    <div class="detail-tab-panel" id="tab-reviews" style="display:none;">
+        <section class="reviews-section reviews-section--fullwidth">
                 <h2>Customer Reviews</h2>
 
                 <div class="reviews-header-bar">
@@ -1682,14 +1836,15 @@
                     </div>
                 </div>
             </section>
-        </div>
+    </div>{# end #tab-reviews #}
 
-        {# FULL WIDTH MENU SECTION #}
+    {# ══ MENU TAB PANEL ══ #}
+    <div class="detail-tab-panel" id="tab-menu" style="display:none;">
         <div class="quantity-control">
             <section class="section-card" id="menu-section">
 
                 {# Menu Title — centered #}
-                <h2 class="menu-title-centered">Menu</h2>
+                <h2 class="menu-title-centered"><i class="fas fa-hamburger"></i> Menu</h2><br>
 
                 {# Controls row: [Price pills] [Best Seller pills] [Search bar] #}
                 <div class="menu-controls">
@@ -1836,7 +1991,7 @@
                 </div>
             </section>
         </div>
-    </div>
+    </div>{# end #tab-menu #}
 
     {# DELETE REVIEW FORM #}
     <form id="delete-review-form" method="post" style="display:none;">{% csrf_token %}</form>
@@ -1888,86 +2043,93 @@
         </div>
     </div>
 
-    {# ITEM DETAIL MODAL - NEW DESIGN (matches screenshot: image left, info right) #}
-    <div id="itemDetailModal" class="item-modal-overlay" onclick="handleItemModalOutsideClick(event)">
-        <div class="item-modal-box">
-
-            <!-- Left: Image Panel -->
-            <div class="item-modal-image-panel">
-                <img id="modalItemImage" src="" alt="Menu Item" class="item-modal-image">
-                <span id="modalBestSellerBadge" class="item-modal-bestseller-badge" style="display:none;">
-                    <i class="fas fa-medal"></i> Best Seller
-                </span>
-            </div>
-
-            <!-- Right: Info Panel -->
-            <div class="item-modal-info-panel">
-                <button class="item-modal-close-btn" onclick="closeItemDetailModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-
-                <h2 id="itemDetailModalTitle" class="item-modal-name">Menu Item Name</h2>
-                <p id="modalItemDescription" class="item-modal-desc"></p>
-
-                {% if user.is_authenticated %}
-                <div class="item-modal-price-row">
-                    <span id="modalItemPrice" class="item-modal-price">₱0.00</span>
-                    <span id="modalItemStock" class="item-modal-stock-badge"></span>
+    {# ITEM DETAIL MODAL — exact kabsueats design #}
+    <div id="itemDetailModal" class="mover" onclick="handleItemModalOutsideClick(event)">
+        <div class="mbox">
+            <button class="mcb" type="button" onclick="closeItemDetailModal()"><i class="fas fa-times"></i></button>
+            <div class="mbody">
+                <div class="mimg">
+                    <img id="modalItemImage" src="" alt="">
+                    <span id="modalBestSellerBadge" class="m-bsbadge" style="display:none;">
+                        <i class="fas fa-fire"></i> Best Seller
+                    </span>
                 </div>
+                <div class="mdet">
+                    <h2 class="miname" id="itemDetailModalTitle"></h2>
+                    <p class="midesc" id="modalItemDescription"></p>
 
-                <!-- Establishment Info -->
-                <div class="item-modal-establishment-card">
-                    <div class="item-modal-est-header">
-                        <i class="fas fa-store"></i>
-                        <strong>{{ establishment.name }}</strong>
+                    {% if user.is_authenticated %}
+                    <div class="mpr">
+                        <span class="mprice" id="modalItemPrice">&#8369;0.00</span>
+                        <span class="mstock" id="modalItemStock"><i class="fas fa-box"></i> 0 Items</span>
                     </div>
-                    <div class="item-modal-est-address">
-                        <i class="fas fa-map-marker-alt"></i>
-                        {{ establishment.address }}
-                    </div>
-                    <div id="itemModalEstStatus" class="item-modal-est-status"></div>
-                </div>
 
-                <!-- Quantity -->
-                <div class="item-modal-qty-row">
-                    <span class="item-modal-qty-label">Quantity:</span>
-                    <div class="item-modal-qty-group">
-                        <button type="button" class="item-modal-qty-btn" onclick="updateModalQuantity(-1)">
-                            <i class="fas fa-minus"></i>
+                    <div class="mestb">
+                        <div class="mestn"><i class="fas fa-store"></i> <span>{{ establishment.name }}</span></div>
+                        <div class="mesta"><i class="fas fa-map-marker-alt"></i> {{ establishment.address }}</div>
+                        <div id="itemModalEstStatus" class="mests closed"><i class="fas fa-circle" style="font-size:8px"></i> Closed</div>
+                    </div>
+
+                    <!-- Add-Ons -->
+                    <div id="modalAddOnsSection" class="modal-addons-section" style="display:none;">
+                        <div class="modal-addons-section-title">
+                            <i class="fas fa-plus-circle"></i> Add-ons
+                        </div>
+                        <div id="modalAddOnsLoader" class="addons-loading" style="display:none;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading add-ons...
+                        </div>
+                        <div id="modalAddOnsContent"></div>
+                        <div id="modalAddonTotalRow" class="modal-addon-total-row">
+                            <span><i class="fas fa-tags" style="margin-right:5px;"></i> Add-ons Total</span>
+                            <span id="modalAddonTotalAmt">+&#8369;0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Special Instructions -->
+                    <div id="mNoteWrap" style="margin-bottom:12px;">
+                        <label style="font-size:12px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                            <i class="fas fa-sticky-note" style="color:#B71C1C;"></i> Special Instructions
+                            <span style="font-weight:400;color:#9ca3af;font-size:11px;">(optional)</span>
+                        </label>
+                        <textarea id="modalOrderNote" rows="2" maxlength="300"
+                            placeholder="E.g. less spice, no onions, extra sauce..."
+                            style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Poppins',sans-serif;resize:none;outline:none;transition:border-color .18s;box-sizing:border-box;"
+                            onfocus="this.style.borderColor='#B71C1C'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+                    </div>
+
+                    <div class="qrow">
+                        <span class="qlbl">Quantity:</span>
+                        <div class="qctrl">
+                            <button class="qb" type="button" onclick="updateModalQuantity(-1)"><i class="fas fa-minus"></i></button>
+                            <input type="number" id="itemQuantity" value="1" min="1" readonly>
+                            <button class="qb" type="button" onclick="updateModalQuantity(1)"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div id="quantityWarning" class="quantity-warning">&#9888; Maximum quantity reached</div>
+
+                    <div id="modalRequestInfo" style="display:none;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;color:#92400e;">
+                        <i class="fas fa-info-circle" style="color:#d97706;margin-right:6px;"></i>
+                        <span id="modalRequestInfoText"></span>
+                    </div>
+
+                    <div class="mar" id="modalActions">
+                        <button class="macb" id="modalAddToCartBtn" onclick="handleModalAddToCart(this)">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
                         </button>
-                        <input type="number" id="itemQuantity" value="1" min="1" readonly class="item-modal-qty-input">
-                        <button type="button" class="item-modal-qty-btn" onclick="updateModalQuantity(1)">
-                            <i class="fas fa-plus"></i>
+                        <button class="mbnb mbnb-green" id="modalBuyNowBtn" onclick="handleModalBuyNow(this)">
+                            <i class="fas fa-bolt"></i> Buy Now
                         </button>
                     </div>
-                </div>
-                <div id="quantityWarning" class="quantity-warning">
-                    ⚠ Maximum quantity reached
-                </div>
-                <!-- Existing request order info — shown when user already has a pending request -->
-                <div id="modalRequestInfo" style="display:none;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;color:#92400e;">
-                    <i class="fas fa-info-circle" style="color:#d97706;margin-right:6px;"></i>
-                    <span id="modalRequestInfoText"></span>
-                </div>
 
-                <!-- Actions -->
-                <div class="item-modal-actions">
-                    <button id="modalAddToCartBtn" class="item-modal-btn-cart" onclick="handleModalAddToCart(this)">
-                        <i class="fas fa-cart-plus"></i> Add to Cart
-                    </button>
-                    <button id="modalBuyNowBtn" class="item-modal-btn-buynow" onclick="handleModalBuyNow(this)">
-                        <i class="fas fa-bolt"></i> Buy Now
-                    </button>
+                    {% else %}
+                    <div style="margin-top:24px;">
+                        <p style="color:#718096;text-align:center;margin-bottom:16px;">Log in or Sign Up to order.</p>
+                        <a href="{% url 'user_login_register' %}" class="macb" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
-
-                {% else %}
-                <div style="margin-top: 24px;">
-                    <p style="color:#718096;text-align:center;margin-bottom:16px;">Log in or Sign Up to order.</p>
-                    <a href="{% url 'user_login_register' %}" class="item-modal-btn-cart" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
-                        <i class="fas fa-sign-in-alt"></i> Log In / Sign Up
-                    </a>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Hidden fields -->
@@ -1976,305 +2138,123 @@
             <input type="hidden" id="modalEstablishmentId" value="{{ establishment.id }}">
         </div>
     </div>
-
     <style>
     /* ============================================================
-       NEW ITEM DETAIL MODAL — matches screenshot design
+       ITEM DETAIL MODAL — exact kabsueats design
        ============================================================ */
-    .item-modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.55);
-        z-index: 9999;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        box-sizing: border-box;
-        backdrop-filter: blur(2px);
-    }
-    .item-modal-overlay.open {
-        display: flex;
-    }
 
-    .item-modal-box {
-        background: white;
-        border-radius: 20px;
-        max-width: 860px;
-        width: 100%;
-        display: flex;
-        overflow: hidden;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
-        animation: itemModalIn 0.28s cubic-bezier(0.34,1.4,0.64,1);
-        max-height: 90vh;
-        position: relative;
-    }
-    @keyframes itemModalIn {
-        from { transform: scale(0.9) translateY(16px); opacity: 0; }
-        to   { transform: scale(1) translateY(0); opacity: 1; }
-    }
+    /* Overlay */
+    .mover { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
+    .mover.open { display: flex; }
 
-    /* --- Image Panel --- */
-    .item-modal-image-panel {
-        flex: 0 0 45%;
-        position: relative;
-        background: #f1f1f1;
-        min-height: 400px;
-    }
-    .item-modal-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .item-modal-bestseller-badge {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        color: white;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        box-shadow: 0 4px 12px rgba(249,115,22,0.4);
-    }
+    /* Box */
+    .mbox { position: relative; background: #fff; border-radius: 18px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,.4); }
 
-    /* --- Info Panel --- */
-    .item-modal-info-panel {
-        flex: 1;
-        padding: 28px 28px 24px;
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-        position: relative;
-    }
-    .item-modal-close-btn {
-        position: absolute;
-        top: 14px;
-        right: 14px;
-        background: #f3f4f6;
-        border: none;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        font-size: 14px;
-        color: #6b7280;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        z-index: 2;
-    }
-    .item-modal-close-btn:hover {
-        background: #e5e7eb;
-        color: #1f2937;
-    }
-    .item-modal-name {
-        font-size: 22px;
-        font-weight: 800;
-        color: #1a202c;
-        margin: 0 40px 6px 0;
-        line-height: 1.3;
-    }
-    .item-modal-desc {
-        font-size: 13px;
-        color: #6b7280;
-        margin: 0 0 14px;
-        line-height: 1.5;
-    }
-    .item-modal-price-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 14px;
-    }
-    .item-modal-price {
-        font-size: 26px;
-        font-weight: 800;
-        color: #B71C1C;
-    }
-    .item-modal-stock-badge {
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .item-modal-stock-badge::before {
-        content: '';
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #6b7280;
-    }
+    /* Close button */
+    .mcb { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.92); backdrop-filter: blur(4px); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #6b7280; box-shadow: 0 2px 10px rgba(0,0,0,.2); z-index: 30; transition: .2s; }
+    .mcb:hover { background: #B71C1C; color: #fff; }
 
-    /* Establishment card */
-    .item-modal-establishment-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px 14px;
-        margin-bottom: 16px;
-    }
-    .item-modal-est-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 700;
-        font-size: 14px;
-        color: #1f2937;
-        margin-bottom: 5px;
-    }
-    .item-modal-est-header i { color: #B71C1C; }
-    .item-modal-est-address {
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-        font-size: 12px;
-        color: #6b7280;
-        line-height: 1.5;
-        margin-bottom: 6px;
-    }
-    .item-modal-est-address i { color: #9ca3af; margin-top: 2px; flex-shrink: 0; }
-    .item-modal-est-status {
-        font-size: 13px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .item-modal-est-status.open { color: #16a34a; }
-    .item-modal-est-status.closed { color: #dc2626; }
-    .item-modal-est-status::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: currentColor;
-        display: inline-block;
-    }
+    /* Body — stacked (image top, info below) */
+    .mbody { display: flex; flex-direction: column; }
 
-    /* Quantity */
-    .item-modal-qty-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 6px;
-    }
-    .item-modal-qty-label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
-    }
-    .item-modal-qty-group {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .item-modal-qty-btn {
-        width: 36px;
-        height: 36px;
-        border: 2px solid #e5e7eb;
-        background: white;
-        border-radius: 50%;
-        font-size: 13px;
-        color: #374151;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-    }
-    .item-modal-qty-btn:hover {
-        border-color: #B71C1C;
-        color: #B71C1C;
-        background: #fff5f5;
-    }
-    .item-modal-qty-input {
-        width: 48px;
-        text-align: center;
-        font-size: 16px;
-        font-weight: 700;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 6px 0;
-        color: #1f2937;
-        -moz-appearance: textfield;
-        background: white;
-    }
-    .item-modal-qty-input::-webkit-outer-spin-button,
-    .item-modal-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    /* Image */
+    .mimg { position: relative; height: 300px; width: 100%; flex-shrink: 0; }
+    .mimg img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px 18px 0 0; }
+
+    /* Best seller badge */
+    .m-bsbadge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg,#f97316,#ea580c); color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(249,115,22,0.4); }
+
+    /* Detail panel */
+    .mdet { padding: 26px 24px; display: flex; flex-direction: column; overflow-y: auto; }
+    .miname { font-size: 22px; font-weight: 800; color: #1a202c; margin-bottom: 10px; line-height: 1.3; }
+    .midesc { font-size: 13px; color: #6b7280; line-height: 1.6; margin-bottom: 14px; }
+
+    /* Price row */
+    .mpr { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .mprice { font-size: 28px; font-weight: 800; color: #111111; }
+    .mstock { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+
+    /* Establishment box */
+    .mestb { background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+    .mestn { font-size: 14px; font-weight: 700; color: #1f2937; margin-bottom: 6px; display: flex; align-items: center; gap: 7px; }
+    .mestn i { color: #B71C1C; }
+    .mesta { font-size: 12px; color: #6b7280; display: flex; align-items: flex-start; gap: 5px; margin-bottom: 8px; line-height: 1.5; }
+    .mesta i { color: #9ca3af; margin-top: 2px; flex-shrink: 0; }
+    .mests { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .mests.open  { color: #10b981; }
+    .mests.closed { color: #ef4444; }
+
+    /* JS sets className="item-modal-est-status open/closed" — alias to .mests */
+    .item-modal-est-status { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .item-modal-est-status.open   { color: #10b981; }
+    .item-modal-est-status.closed { color: #ef4444; }
+
+    /* Quantity row */
+    .qrow { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .qlbl { font-size: 13px; font-weight: 600; color: #374151; }
+    .qctrl { display: flex; align-items: center; gap: 8px; }
+    .qb { width: 32px; height: 32px; border-radius: 8px; background: #f3f4f6; border: 1px solid #e5e7eb; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #374151; transition: .2s; }
+    .qb:hover { background: #e5e7eb; color: #1f2937; }
+    #itemQuantity { width: 48px; text-align: center; font-size: 16px; font-weight: 700; border: 2px solid #e5e7eb; border-radius: 8px; padding: 6px 0; color: #1f2937; -moz-appearance: textfield; background: white; }
+    #itemQuantity::-webkit-outer-spin-button,
+    #itemQuantity::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
     /* Actions */
-    .item-modal-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: auto;
-        padding-top: 16px;
-    }
-    .item-modal-btn-cart {
-        flex: 1;
-        padding: 13px 16px;
-        background: #B71C1C;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        transition: all 0.2s;
-    }
-    .item-modal-btn-cart:hover:not(:disabled) {
-        background: #991515;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(183,28,28,0.3);
-    }
-    .item-modal-btn-cart:disabled { opacity: 0.5; cursor: not-allowed; }
+    .mar { display: flex; gap: 10px; margin-top: auto; padding-top: 16px; }
+    .macb { flex: 1; padding: 12px; background: linear-gradient(135deg,#B71C1C,#8B0000); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; text-decoration: none; }
+    .macb:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(183,28,28,.35); }
+    .macb:disabled { opacity: 0.5; cursor: not-allowed; }
+    .mbnb { flex: 1; padding: 12px; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: .25s; }
+    .mbnb:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(22,163,74,.35); }
+    .mbnb:disabled { opacity: 0.5; cursor: not-allowed; }
+    .mbnb-green { background: linear-gradient(135deg,#16a34a,#15803d) !important; }
+    .mbnb-green:hover:not(:disabled) { box-shadow: 0 5px 14px rgba(22,163,74,.35) !important; }
 
-    .item-modal-btn-buynow {
-        flex: 1;
-        padding: 13px 16px;
-        background: #16a34a;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        transition: all 0.2s;
-    }
-    .item-modal-btn-buynow:hover:not(:disabled) {
-        background: #15803d;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(22,163,74,0.3);
-    }
-    .item-modal-btn-buynow:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* Quantity warning */
+    .quantity-warning { display: none; color: #dc2626; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+    .quantity-warning.show { display: block; }
 
-    /* Mobile: stack vertically */
+    /* Mobile */
     @media (max-width: 640px) {
-        .item-modal-box { flex-direction: column; max-height: 95vh; border-radius: 16px 16px 0 0; }
-        .item-modal-overlay { align-items: flex-end; padding: 0; }
-        .item-modal-image-panel { flex: 0 0 200px; min-height: 200px; }
-        .item-modal-info-panel { padding: 20px 18px 18px; }
-        .item-modal-name { font-size: 18px; }
-        .item-modal-price { font-size: 22px; }
+        .mbox { max-height: 95vh; border-radius: 18px 18px 0 0; width: 100%; }
+        .mover { align-items: flex-end; }
+        .mimg { height: 220px; }
+        .mimg img { border-radius: 18px 18px 0 0; }
+        .mdet { padding: 20px 18px 18px; }
+        .miname { font-size: 18px; }
+        .mprice { font-size: 22px; }
     }
+
+    /* ============================================================
+       ADD-ONS SECTION STYLES (preserved)
+       ============================================================ */
+    .modal-addons-section { margin-bottom: 14px; }
+    .modal-addons-section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .modal-addons-section-title i { color: #B71C1C; }
+    .addon-group { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 11px 13px; margin-bottom: 10px; }
+    .addon-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .addon-group-name { font-size: 13px; font-weight: 700; color: #1f2937; }
+    .addon-group-meta { display: flex; gap: 6px; align-items: center; }
+    .addon-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .addon-tag-required { background: #fee2e2; color: #b91c1c; }
+    .addon-tag-optional { background: #e0f2fe; color: #0369a1; }
+    .addon-tag-max { background: #f3f4f6; color: #6b7280; }
+    .addon-options-list { display: flex; flex-direction: column; gap: 6px; }
+    .addon-option-row { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1.5px solid transparent; }
+    .addon-option-row:hover { background: #f3f4f6; }
+    .addon-option-row.selected { background: #fff5f5; border-color: #fca5a5; }
+    .addon-option-row input[type="checkbox"], .addon-option-row input[type="radio"] { accent-color: #B71C1C; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .addon-option-label { flex: 1; font-size: 13px; color: #374151; cursor: pointer; }
+    .addon-option-price { font-size: 12px; font-weight: 700; color: #1f2937; flex-shrink: 0; }
+    .addon-option-price.free { color: #16a34a; }
+    .addon-qty-ctrl { display: none; align-items: center; gap: 0; margin-left: 8px; border: 1.5px solid #e5e7eb; border-radius: 20px; overflow: hidden; background: #fff; flex-shrink: 0; }
+    .addon-option-row.selected .addon-qty-ctrl { display: flex; }
+    .addon-qty-btn { background: none; border: none; width: 26px; height: 26px; font-size: 15px; font-weight: 700; color: #b91c1c; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; line-height: 1; padding: 0; flex-shrink: 0; }
+    .addon-qty-btn:hover { background: #fee2e2; }
+    .addon-qty-val { min-width: 22px; text-align: center; font-size: 13px; font-weight: 700; color: #1f2937; user-select: none; }
+    .modal-addon-total-row { display: none; align-items: center; justify-content: space-between; padding: 8px 10px; background: #fff8f8; border: 1.5px solid #fecaca; border-radius: 8px; margin-bottom: 12px; font-size: 13px; font-weight: 700; color: #991b1b; }
+    .modal-addon-total-row.visible { display: flex; }
+    .addons-loading { text-align: center; padding: 14px; color: #9ca3af; font-size: 13px; }
     </style>
 
     {% if user.is_authenticated %}
@@ -4074,6 +4054,337 @@ window.setPriceFilter = function(val, btn) {
         if (presenceSocket) presenceSocket.close();
     });
 })();
+</script>
+
+<script>
+// ============================================================
+// ✅ ADD-ONS + NOTES — Realtime fetch, render, collect & submit
+// ============================================================
+(function () {
+
+    // ── State ──────────────────────────────────────────────
+    var _currentBasePrice = 0;
+    var _addonGroups      = [];
+    var _addonUrl         = '/api/menu-item-addons/';
+
+    // ── Read selected add-ons ─────────────────────────────────────────
+    function getSelectedAddons() {
+        var selected = [];
+        document.querySelectorAll('#modalAddOnsContent .addon-group').forEach(function (groupEl) {
+            var gid   = parseInt(groupEl.dataset.groupId);
+            var gname = groupEl.dataset.groupName || '';
+            groupEl.querySelectorAll('input:checked').forEach(function (inp) {
+                var row    = inp.closest('.addon-option-row');
+                var qtyEl  = row ? row.querySelector('.addon-qty-val') : null;
+                var qty    = qtyEl ? (parseInt(qtyEl.textContent) || 1) : 1;
+                selected.push({
+                    id:               parseInt(inp.dataset.optionId),
+                    name:             inp.dataset.optionName  || '',
+                    group_id:         gid,
+                    group_name:       gname,
+                    additional_price: parseFloat(inp.dataset.optionPrice) || 0,
+                    qty:              qty
+                });
+            });
+        });
+        return selected;
+    }
+
+    // ── Add-ons subtotal ──────────────────────────────────────────────
+    function calcAddonsTotal() {
+        return getSelectedAddons().reduce(function (s, a) { return s + a.additional_price * a.qty; }, 0);
+    }
+
+    // ── Refresh price display ─────────────────────────────────────────
+    function updateModalPriceDisplay() {
+        var addonsTotal = calcAddonsTotal();
+        var totalRow    = document.getElementById('modalAddonTotalRow');
+        var totalAmt    = document.getElementById('modalAddonTotalAmt');
+        var priceEl     = document.getElementById('modalItemPrice');
+        var qty         = parseInt((document.getElementById('itemQuantity') || {}).value) || 1;
+
+        if (totalRow && totalAmt) {
+            if (addonsTotal > 0) {
+                totalRow.classList.add('visible');
+                totalAmt.textContent = '+₱' + (addonsTotal * qty).toFixed(2);
+            } else {
+                totalRow.classList.remove('visible');
+            }
+        }
+        if (priceEl && _currentBasePrice > 0) {
+            priceEl.textContent = '₱' + ((_currentBasePrice + addonsTotal) * qty).toFixed(2);
+        }
+    }
+
+    // ── Render groups into the modal ──────────────────────────────────
+    function renderAddons(groups) {
+        var content = document.getElementById('modalAddOnsContent');
+        if (!content) return;
+        content.innerHTML = '';
+        _addonGroups = groups;
+
+        if (!groups || groups.length === 0) {
+            document.getElementById('modalAddOnsSection').style.display = 'none';
+            return;
+        }
+        document.getElementById('modalAddOnsSection').style.display = 'block';
+
+        groups.forEach(function (group) {
+            var inputType = (group.max_choices === 1) ? 'radio' : 'checkbox';
+            var groupName = 'addon_group_' + group.id;
+
+            var metaHtml = group.is_required
+                ? '<span class="addon-tag addon-tag-required">Required</span>'
+                : '<span class="addon-tag addon-tag-optional">Optional</span>';
+            if (group.max_choices && group.max_choices > 1)
+                metaHtml += '<span class="addon-tag addon-tag-max">Pick up to ' + group.max_choices + '</span>';
+
+            var optionsHtml = group.options.map(function (opt) {
+                var priceLabel = opt.additional_price > 0
+                    ? '<span class="addon-option-price">+₱' + opt.additional_price.toFixed(2) + '</span>'
+                    : '<span class="addon-option-price free">Free</span>';
+                var qtyCtrl = '<div class="addon-qty-ctrl">' +
+                    '<button type="button" class="addon-qty-btn addon-qty-minus">−</button>' +
+                    '<span class="addon-qty-val">1</span>' +
+                    '<button type="button" class="addon-qty-btn addon-qty-plus">+</button>' +
+                    '</div>';
+                return '<label class="addon-option-row">' +
+                    '<input type="' + inputType + '" name="' + groupName + '" ' +
+                    'data-option-id="' + opt.id + '" ' +
+                    'data-option-name="' + (opt.name || '').replace(/"/g, '&quot;') + '" ' +
+                    'data-option-price="' + opt.additional_price + '" ' +
+                    'data-group-id="' + group.id + '">' +
+                    '<span class="addon-option-label">' + (opt.name || '') + '</span>' +
+                    qtyCtrl +
+                    priceLabel + '</label>';
+            }).join('');
+
+            content.insertAdjacentHTML('beforeend',
+                '<div class="addon-group" data-group-id="' + group.id + '" data-group-name="' + (group.name || '').replace(/"/g, '&quot;') + '">' +
+                    '<div class="addon-group-header">' +
+                        '<span class="addon-group-name">' + (group.name || '') + '</span>' +
+                        '<span class="addon-group-meta">' + metaHtml + '</span>' +
+                    '</div>' +
+                    '<div class="addon-options-list">' + optionsHtml + '</div>' +
+                '</div>');
+        });
+
+        // Change listeners for highlight + price update + qty stepper show/hide
+        content.querySelectorAll('input').forEach(function (inp) {
+            inp.addEventListener('change', function () {
+                var row = inp.closest('.addon-option-row');
+                if (!row) return;
+                if (inp.type === 'radio') {
+                    var g = inp.closest('.addon-group');
+                    if (g) g.querySelectorAll('.addon-option-row').forEach(function (r) {
+                        r.classList.remove('selected');
+                        // reset qty to 1 for deselected rows
+                        var qv = r.querySelector('.addon-qty-val');
+                        if (qv) qv.textContent = '1';
+                    });
+                }
+                row.classList.toggle('selected', inp.checked);
+                // reset qty to 1 when unchecked
+                if (!inp.checked) {
+                    var qv = row.querySelector('.addon-qty-val');
+                    if (qv) qv.textContent = '1';
+                }
+                updateModalPriceDisplay();
+            });
+        });
+
+        // +/− button handlers
+        content.querySelectorAll('.addon-qty-minus').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                var row   = btn.closest('.addon-option-row');
+                var qtyEl = row ? row.querySelector('.addon-qty-val') : null;
+                if (!qtyEl) return;
+                var cur = parseInt(qtyEl.textContent) || 1;
+                if (cur > 1) { qtyEl.textContent = cur - 1; updateModalPriceDisplay(); }
+            });
+        });
+        content.querySelectorAll('.addon-qty-plus').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                var row   = btn.closest('.addon-option-row');
+                var qtyEl = row ? row.querySelector('.addon-qty-val') : null;
+                if (!qtyEl) return;
+                var cur = parseInt(qtyEl.textContent) || 1;
+                if (cur < 99) { qtyEl.textContent = cur + 1; updateModalPriceDisplay(); }
+            });
+        });
+    }
+
+    // ── Fetch add-ons for item ────────────────────────────────────────
+    window._fetchAddonsForItem = function (itemId, basePrice) {
+        _currentBasePrice = parseFloat(basePrice) || 0;
+        var section  = document.getElementById('modalAddOnsSection');
+        var loader   = document.getElementById('modalAddOnsLoader');
+        var content  = document.getElementById('modalAddOnsContent');
+        var totalRow = document.getElementById('modalAddonTotalRow');
+        if (!section) return;
+
+        section.style.display = 'block';
+        loader.style.display  = 'block';
+        content.innerHTML     = '';
+        if (totalRow) totalRow.classList.remove('visible');
+
+        fetch(_addonUrl + itemId + '/', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            loader.style.display = 'none';
+            if (data.success && data.groups && data.groups.length > 0) {
+                renderAddons(data.groups);
+            } else {
+                section.style.display = 'none';
+            }
+        })
+        .catch(function () { loader.style.display = 'none'; section.style.display = 'none'; });
+    };
+
+    // ── Reset ─────────────────────────────────────────────────────────
+    window._resetAddonsAndNote = function () {
+        _addonGroups = []; _currentBasePrice = 0;
+        var els = {
+            section:  document.getElementById('modalAddOnsSection'),
+            content:  document.getElementById('modalAddOnsContent'),
+            loader:   document.getElementById('modalAddOnsLoader'),
+            totalRow: document.getElementById('modalAddonTotalRow'),
+            note:     document.getElementById('modalOrderNote')
+        };
+        if (els.section)  els.section.style.display = 'none';
+        if (els.content)  els.content.innerHTML     = '';
+        if (els.loader)   els.loader.style.display  = 'none';
+        if (els.totalRow) els.totalRow.classList.remove('visible');
+        if (els.note)     els.note.value            = '';
+    };
+
+    // ── Validate required groups ──────────────────────────────────────
+    window._validateRequiredAddons = function () {
+        var errors = [];
+        document.querySelectorAll('#modalAddOnsContent .addon-group').forEach(function (g) {
+            if (!g.querySelector('.addon-tag-required')) return;
+            if (g.querySelectorAll('input:checked').length === 0)
+                errors.push('Please choose an option for: ' + (g.dataset.groupName || 'a required add-on group'));
+        });
+        return errors;
+    };
+
+    // ── Collect for submission ────────────────────────────────────────
+    window._collectAddonsAndNote = function () {
+        return { addons: getSelectedAddons(), note: (document.getElementById('modalOrderNote') || {}).value || '' };
+    };
+
+    // ── Patch openItemDetailModal ─────────────────────────────────────
+    var _origOpen = window.openItemDetailModal;
+    window.openItemDetailModal = function (el, mode) {
+        _resetAddonsAndNote();
+        if (typeof _origOpen === 'function') _origOpen(el, mode);
+        if (el && el.dataset && el.dataset.itemId)
+            _fetchAddonsForItem(el.dataset.itemId, el.dataset.price);
+    };
+
+    // ── Patch closeItemDetailModal ────────────────────────────────────
+    var _origClose = window.closeItemDetailModal;
+    window.closeItemDetailModal = function () {
+        _resetAddonsAndNote();
+        if (typeof _origClose === 'function') _origClose();
+    };
+
+    // ── Patch handleModalAddToCart ────────────────────────────────────
+    var _origATC = window.handleModalAddToCart;
+    window.handleModalAddToCart = function (button) {
+        var errs = _validateRequiredAddons();
+        if (errs.length) { if (typeof showMessage === 'function') showMessage(errs[0], 'warning'); else alert(errs[0]); return; }
+        var _origFetch = window.fetch;
+        window.fetch = function (url, opts) {
+            if (typeof url === 'string' && url.includes('/cart/add/') && opts && opts.body instanceof FormData) {
+                var x = _collectAddonsAndNote();
+                opts.body.append('note', x.note);
+                if (x.addons.length > 0) opts.body.append('addons', JSON.stringify(x.addons));
+            }
+            window.fetch = _origFetch;
+            return _origFetch.apply(this, arguments);
+        };
+        if (typeof _origATC === 'function') _origATC(button);
+    };
+
+    // ── Patch handleModalBuyNow ───────────────────────────────────────
+    var _origBN = window.handleModalBuyNow;
+    window.handleModalBuyNow = function (button) {
+        var errs = _validateRequiredAddons();
+        if (errs.length) { if (typeof showMessage === 'function') showMessage(errs[0], 'warning'); else alert(errs[0]); return; }
+        var _origFetch = window.fetch;
+        window.fetch = function (url, opts) {
+            if (typeof url === 'string' && url.includes('/cart/add/') && opts && opts.body instanceof FormData) {
+                var x = _collectAddonsAndNote();
+                opts.body.append('note', x.note);
+                if (x.addons.length > 0) opts.body.append('addons', JSON.stringify(x.addons));
+            }
+            window.fetch = _origFetch;
+            return _origFetch.apply(this, arguments);
+        };
+        if (typeof _origBN === 'function') _origBN(button);
+    };
+
+    // ── Keep price display in sync with qty changes ───────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        var _origUpdateQty = window.updateModalQuantity;
+        if (typeof _origUpdateQty === 'function') {
+            window.updateModalQuantity = function (change) {
+                _origUpdateQty(change);
+                updateModalPriceDisplay();
+            };
+        }
+    });
+
+}());
+</script>
+
+<script>
+/* ============================================================
+   LAYOUT B — TAB SWITCHING
+   ============================================================ */
+function switchDetailTab(tabName, clickedBtn) {
+    // Update buttons
+    document.querySelectorAll('.detail-tab').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    clickedBtn.classList.add('active');
+
+    // Show/hide panels
+    document.querySelectorAll('.detail-tab-panel').forEach(function(panel) {
+        panel.style.display = 'none';
+        panel.classList.remove('active');
+    });
+    var target = document.getElementById('tab-' + tabName);
+    if (target) {
+        target.style.display = 'block';
+        target.classList.add('active');
+    }
+
+    // If switching to Menu tab, re-run filterMenuItems so layout is intact
+    if (tabName === 'menu' && typeof filterMenuItems === 'function') {
+        filterMenuItems();
+    }
+
+    // Persist active tab in sessionStorage
+    try { sessionStorage.setItem('kabsu_detail_tab', tabName); } catch(e) {}
+}
+
+// Restore last-active tab on page load
+document.addEventListener('DOMContentLoaded', function() {
+    var saved;
+    try { saved = sessionStorage.getItem('kabsu_detail_tab'); } catch(e) {}
+    if (saved) {
+        var btn = document.querySelector('.detail-tab[data-tab="' + saved + '"]');
+        if (btn) { switchDetailTab(saved, btn); return; }
+    }
+    // Default: show overview
+    var defaultBtn = document.querySelector('.detail-tab[data-tab="overview"]');
+    if (defaultBtn) switchDetailTab('overview', defaultBtn);
+});
 </script>
 
 {% endblock %}

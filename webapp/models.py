@@ -10,6 +10,7 @@ import string
 from datetime import timedelta
 from decimal import Decimal
 import logging
+import json
 
 # ✅ ADD THIS: Logger for error handling
 logger = logging.getLogger(__name__)
@@ -338,6 +339,37 @@ class MenuItem(models.Model):
         self.save()
 
 
+# ─── Add-On Groups & Options for Menu Items ─────────────────────────────────
+class MenuItemAddOnGroup(models.Model):
+    """A group of add-on choices for a menu item (e.g. 'Choice A', 'Drinks')."""
+    menu_item   = models.ForeignKey('MenuItem', on_delete=models.CASCADE, related_name='addon_groups')
+    name        = models.CharField(max_length=100)
+    is_required = models.BooleanField(default=False)
+    max_choices = models.PositiveSmallIntegerField(default=1, help_text="0 = unlimited")
+    order       = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.menu_item.name} – {self.name}"
+
+
+class MenuItemAddOnOption(models.Model):
+    """A single selectable option inside an add-on group."""
+    group            = models.ForeignKey(MenuItemAddOnGroup, on_delete=models.CASCADE, related_name='options')
+    name             = models.CharField(max_length=100)
+    additional_price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    is_available     = models.BooleanField(default=True)
+    order            = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.group.name} → {self.name} (+₱{self.additional_price})"
+
+
 class Review(models.Model):
     """Represents a user's review and rating for a food establishment."""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -524,12 +556,24 @@ class Order(models.Model):
         return result['total'] or 0
 
     def update_total(self):
-        """Update the total amount based on order items"""
-        from django.db.models import Sum, F
-        from decimal import Decimal
-        total = self.orderitem_set.aggregate(
-            total=Sum(F('price_at_order') * F('quantity'))
-        )['total'] or Decimal('0.00')
+        """
+        ✅ FIXED: Update the total amount based on order items INCLUDING add-ons.
+        Previously this only calculated price_at_order × quantity, ignoring addons_json.
+        Now each item's add-on prices (additional_price × qty) are included per unit,
+        then multiplied by the item quantity, so the stored total_amount is always
+        consistent with what the customer sees in the cart and checkout pages.
+        """
+        total = Decimal('0.00')
+        for oi in self.orderitem_set.all():
+            addon_extra = Decimal('0.00')
+            try:
+                addons = json.loads(oi.addons_json or '[]')
+                if isinstance(addons, list):
+                    for a in addons:
+                        addon_extra += Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1))
+            except Exception:
+                pass
+            total += (Decimal(str(oi.price_at_order)) + addon_extra) * oi.quantity
         self.total_amount = total
         self.save(update_fields=['total_amount'])
 
@@ -553,6 +597,14 @@ class OrderItem(models.Model):
         decimal_places=2,
         help_text="Price of the item at the time of order"
     )
+    note_to_establishment = models.TextField(
+        blank=True, default='',
+        help_text="Customer special request note for this item"
+    )
+    addons_json = models.TextField(
+        blank=True, default='',
+        help_text="JSON list of selected add-on options [{id, name, additional_price, qty}]"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -565,8 +617,35 @@ class OrderItem(models.Model):
 
     @property
     def total_price(self):
-        """Calculate subtotal for this item"""
-        return Decimal(self.price_at_order) * self.quantity
+        """
+        ✅ FIXED: Calculate subtotal for this item INCLUDING add-ons.
+        Formula: (price_at_order + sum(addon.additional_price × addon.qty)) × quantity
+        """
+        addon_extra = Decimal('0.00')
+        try:
+            addons = json.loads(self.addons_json or '[]')
+            if isinstance(addons, list):
+                for a in addons:
+                    addon_extra += Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1))
+        except Exception:
+            pass
+        return (Decimal(str(self.price_at_order)) + addon_extra) * self.quantity
+
+    @property
+    def addons_total_per_unit(self):
+        """
+        ✅ NEW helper: returns the total add-on price per single unit of this item.
+        Useful for display in templates and views.
+        """
+        addon_extra = Decimal('0.00')
+        try:
+            addons = json.loads(self.addons_json or '[]')
+            if isinstance(addons, list):
+                for a in addons:
+                    addon_extra += Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1))
+        except Exception:
+            pass
+        return addon_extra
 
     # ✅ NEW: Auto-update order total on save
     def save(self, *args, **kwargs):

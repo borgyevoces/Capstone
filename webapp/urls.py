@@ -160,6 +160,8 @@ urlpatterns = [
 
                   # 7. Menu Item CRUD
                   path('owner/dashboard/edit_menu_item/<int:item_id>/', views.edit_menu_item, name='edit_menu_item'),
+                  path('api/menu-item-addons/<int:item_id>/', views.get_menu_item_addons, name='get_menu_item_addons'),
+                  path('owner/dashboard/menu-item-addons/<int:item_id>/save/', views.save_menu_item_addons, name='save_menu_item_addons'),
                   path('owner/dashboard/delete_menu_item/<int:item_id>/', views.delete_menu_item,
                        name='delete_menu_item'),
 
@@ -227,6 +229,9 @@ path(
     views.get_establishment_payment_methods,
     name='establishment_payment_methods',
 ),
+path('cart/update-addons/', views.update_cart_item_addons, name='update_cart_item_addons'),
+path('cart/update-note/', views.update_cart_item_note, name='update_cart_item_note'),
+path('owner/dashboard/check_menu_item_orders/<int:item_id>/', views.check_menu_item_active_orders, name='check_menu_item_active_orders'),
                   # ✅ Client order status
                   path('my-receipts/', views.my_receipts_view, name='my_receipts'),
                   path('owner/ratings/', views.store_ratings, name='store_ratings'),

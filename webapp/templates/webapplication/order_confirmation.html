@@ -108,7 +108,6 @@ body {
     font-family: 'Syne', sans-serif;
     font-size: 2.2rem;
     font-weight: 400;
-
     color: #fff;
     line-height: 1.1;
     margin-bottom: 8px;
@@ -281,7 +280,7 @@ body {
 .oc-items { padding: 0; }
 .oc-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 13px;
     padding: 12px 20px;
     border-bottom: 1px solid var(--border-soft);
@@ -327,6 +326,59 @@ body {
 .oc-item-total { font-weight: 700; font-size: 0.92rem; color: var(--red); }
 .oc-item-sub-price { font-size: 0.68rem; color: var(--faint); margin-top: 2px; }
 
+/* ════════════════════════
+   ADD-ON ROWS (per item)
+════════════════════════ */
+.oc-addons-list {
+    margin-top: 5px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border-soft);
+}
+.oc-addon-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    font-size: 0.72rem;
+}
+.oc-addon-name {
+    color: var(--muted);
+    font-style: italic;
+    display: flex; align-items: center; gap: 4px;
+}
+.oc-addon-name::before { content: '↳'; color: var(--faint); font-style: normal; font-size: 0.68rem; }
+.oc-addon-price {
+    color: var(--red);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ════════════════════════
+   SUBTOTAL BREAKDOWN STRIP
+════════════════════════ */
+.oc-breakdown-strip {
+    display: none;                   /* shown by JS if add-ons exist */
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border-soft);
+    padding: 10px 20px;
+    background: #fafbfc;
+}
+.oc-breakdown-strip.visible { display: flex; }
+.oc-breakdown-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.oc-breakdown-line.addon-line {
+    color: var(--red);
+    font-weight: 600;
+}
+.oc-breakdown-line span:last-child { font-weight: 700; }
+
 /* Total row */
 .oc-total {
     display: flex;
@@ -344,7 +396,6 @@ body {
     font-weight: 400;
     color: var(--red);
     letter-spacing: -0.5px;
-
 }
 
 /* ════════════════════════
@@ -466,8 +517,6 @@ body {
     .oc-det-cell:last-child { border-bottom: none !important; }
 }
 
-/* ════ SHOW-TO-OWNER & DOWNLOAD BUTTONS ════ */
-
 /* ════ RECEIPT MODAL ════ */
 .receipt-overlay {
     display:none;position:fixed;inset:0;
@@ -498,9 +547,22 @@ body {
 .receipt-row-label { color:#6b7280;font-weight:500; }
 .receipt-row-value { font-weight:600;color:#0a0a0a;text-align:right;max-width:60%; }
 .receipt-items-header { font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#9ca3af;padding:12px 0 6px;margin-top:4px;border-top:2px dashed #e5e7eb; }
-.receipt-item-row { display:flex;justify-content:space-between;padding:5px 0;font-size:.83rem; }
-.receipt-item-name { color:#0a0a0a;font-weight:500; }
-.receipt-item-price { color:#B71C1C;font-weight:700; }
+.receipt-item-row { display:flex;justify-content:space-between;padding:5px 0 3px;font-size:.83rem; }
+.receipt-item-name { color:#0a0a0a;font-weight:600; }
+.receipt-item-price { color:#B71C1C;font-weight:700;white-space:nowrap; }
+
+/* Receipt add-on sub-rows */
+.receipt-addon-row { display:flex;justify-content:space-between;padding:1px 0 2px 10px;font-size:.71rem; }
+.receipt-addon-name { color:#9ca3af;font-style:italic; }
+.receipt-addon-price { color:#B71C1C;font-weight:600; }
+
+/* Receipt breakdown */
+.receipt-breakdown-wrap { border-top:1px dashed #e5e7eb;margin-top:6px;padding-top:5px; }
+.receipt-breakdown-row { display:flex;justify-content:space-between;padding:2px 0;font-size:.73rem;color:#9ca3af; }
+.receipt-breakdown-row.addon-br { color:#B71C1C;font-weight:600; }
+.receipt-breakdown-row span:last-child { font-weight:700;color:#374151; }
+.receipt-breakdown-row.addon-br span:last-child { color:#B71C1C; }
+
 .receipt-total-row { display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:2px dashed #e5e7eb;margin-top:8px; }
 .receipt-total-label { font-size:.9rem;font-weight:700;color:#0a0a0a; }
 .receipt-total-amount { font-size:1.2rem;font-weight:800;color:#B71C1C; }
@@ -510,7 +572,6 @@ body {
 .receipt-close-btn:hover { border-color:#B71C1C;color:#B71C1C; }
 .receipt-print-btn { flex:1;padding:11px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s; }
 .receipt-print-btn:hover { background:#166534; }
-
 
 @media print {
     body * { visibility:hidden !important; }
@@ -608,10 +669,13 @@ body {
             </div>
         </div>
 
-        <!-- Items -->
+        <!-- Items — embed addons_json as data attribute for JS rendering -->
         <div class="oc-items">
             {% for item in order_items %}
-            <div class="oc-item">
+            <div class="oc-item"
+                 data-addons="{{ item.addons_json|default:'[]'|escapejs }}"
+                 data-base-price="{{ item.price_at_order }}"
+                 data-qty="{{ item.quantity }}">
                 {% if item.menu_item.image %}
                     <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" class="oc-item-img">
                 {% else %}
@@ -621,22 +685,35 @@ body {
                     <div class="oc-item-name">{{ item.menu_item.name }}</div>
                     <div class="oc-item-sub">
                         <span class="oc-item-qty">× {{ item.quantity }}</span>
-                        <span class="oc-item-each">₱{{ item.menu_item.price|floatformat:2 }} each</span>
+                        <span class="oc-item-each">₱{{ item.price_at_order|floatformat:2 }} each</span>
                     </div>
+                    <!-- Add-ons injected here by JS -->
                 </div>
                 <div class="oc-item-price">
-                    <div class="oc-item-total">₱{{ item.total_price|floatformat:2 }}</div>
+                    <div class="oc-item-total" id="oc-item-total-{{ forloop.counter0 }}">₱{{ item.total_price|floatformat:2 }}</div>
                     <div class="oc-item-sub-price">subtotal</div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
+        <!-- Breakdown strip (base + add-ons) — shown by JS if add-ons exist -->
+        <div class="oc-breakdown-strip" id="ocBreakdownStrip">
+            <div class="oc-breakdown-line">
+                <span><i class="fas fa-utensils" style="font-size:.65rem;margin-right:4px;color:var(--faint);"></i>Items subtotal</span>
+                <span id="ocBaseSubtotal">—</span>
+            </div>
+            <div class="oc-breakdown-line addon-line">
+                <span><i class="fas fa-plus-circle" style="font-size:.65rem;margin-right:4px;"></i>Add-ons total</span>
+                <span id="ocAddonsSubtotal">—</span>
+            </div>
+        </div>
+
         <!-- Total -->
         <div class="oc-total">
             <div>
                 <div class="oc-total-left-label">Total Amount</div>
-                <div class="oc-total-left-sub">{{ order_items|length }} item{% if order_items|length != 1 %}s{% endif %} · inclusive of all charges</div>
+                <div class="oc-total-left-sub" id="ocTotalSub">{{ order_items|length }} item{% if order_items|length != 1 %}s{% endif %} · inclusive of all charges</div>
             </div>
             <span class="oc-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
         </div>
@@ -828,19 +905,27 @@ body {
             </div>
             {% endif %}
 
-            <!-- Items -->
+            <!-- Items — static rows with embedded addon data for JS enhancement -->
             <div class="receipt-items-header">Items Ordered</div>
-            {% for item in order_items %}
-            <div class="receipt-item-row">
-                <span class="receipt-item-name">{{ item.menu_item.name }} × {{ item.quantity }}</span>
-                <span class="receipt-item-price">₱{{ item.total_price|floatformat:2 }}</span>
+            <div id="receiptItemsList">
+                {% for item in order_items %}
+                <div class="receipt-item-row"
+                     data-addons="{{ item.addons_json|default:'[]'|escapejs }}"
+                     data-base-price="{{ item.price_at_order }}"
+                     data-qty="{{ item.quantity }}">
+                    <span class="receipt-item-name">{{ item.menu_item.name }} × {{ item.quantity }}</span>
+                    <span class="receipt-item-price">₱{{ item.total_price|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+
+            <!-- Breakdown (add-ons) injected by JS below items -->
+            <div id="receiptBreakdown"></div>
 
             <!-- Total -->
             <div class="receipt-total-row">
                 <span class="receipt-total-label">Total Amount</span>
-                <span class="receipt-total-amount">₱{{ order.total_amount|floatformat:2 }}</span>
+                <span class="receipt-total-amount" id="receiptTotalAmt">₱{{ order.total_amount|floatformat:2 }}</span>
             </div>
 
             <div class="receipt-footer">
@@ -861,9 +946,151 @@ body {
 </div>
 
 <script>
+// ══ Items data with add-ons (for JS rendering) ═══════════════
+const OC_ITEMS = [
+    {% for item in order_items %}
+    {
+        idx:      {{ forloop.counter0 }},
+        name:     '{{ item.menu_item.name|escapejs }}',
+        qty:      {{ item.quantity }},
+        price:    {{ item.price_at_order }},
+        total:    '{{ item.total_price|floatformat:2 }}',
+        addons:   JSON.parse('{{ item.addons_json|default:"[]"|escapejs }}' || '[]')
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// ══ Render add-ons in items list + breakdown ═════════════════
+(function renderItemAddons() {
+    const itemEls = document.querySelectorAll('.oc-item');
+    let baseSubtotal   = 0;
+    let addonsSubtotal = 0;
+
+    OC_ITEMS.forEach(function(item, i) {
+        const addons = Array.isArray(item.addons) ? item.addons : [];
+        const basePrice = parseFloat(item.price || 0);
+        const qty       = parseInt(item.qty || 1);
+
+        baseSubtotal += basePrice * qty;
+
+        if (addons.length > 0) {
+            const addonsPerUnit = addons.reduce(function(s, a) {
+                return s + parseFloat(a.additional_price || 0) * parseInt(a.qty || 1);
+            }, 0);
+            addonsSubtotal += addonsPerUnit * qty;
+
+            const itemEl = itemEls[i];
+            if (itemEl) {
+                const itemInfo = itemEl.querySelector('.oc-item-info');
+                if (itemInfo) {
+                    const addonsList = document.createElement('div');
+                    addonsList.className = 'oc-addons-list';
+                    addonsList.innerHTML = addons.map(function(a) {
+                        const aPrice = parseFloat(a.additional_price || 0);
+                        const aQty   = parseInt(a.qty || 1);
+                        const aTotal = aPrice * aQty * qty;
+                        return '<div class="oc-addon-row">' +
+                            '<span class="oc-addon-name">' + escHtml(a.name || '') + '</span>' +
+                            '<span class="oc-addon-price">+&#8369;' + aTotal.toFixed(2) + '</span>' +
+                        '</div>';
+                    }).join('');
+                    itemInfo.appendChild(addonsList);
+                }
+            }
+        }
+    });
+
+    // Show breakdown strip only if there are add-ons
+    if (addonsSubtotal > 0) {
+        var strip = document.getElementById('ocBreakdownStrip');
+        var baseEl = document.getElementById('ocBaseSubtotal');
+        var addEl  = document.getElementById('ocAddonsSubtotal');
+        if (strip)  strip.classList.add('visible');
+        if (baseEl) baseEl.textContent = '₱' + baseSubtotal.toFixed(2);
+        if (addEl)  addEl.textContent  = '+₱' + addonsSubtotal.toFixed(2);
+
+        // Also update the total sub-text
+        var subEl = document.getElementById('ocTotalSub');
+        if (subEl) {
+            subEl.textContent = OC_ITEMS.length + ' item' + (OC_ITEMS.length !== 1 ? 's' : '') +
+                ' · incl. ₱' + addonsSubtotal.toFixed(2) + ' add-ons';
+        }
+    }
+})();
+
+// ══ Render add-ons in receipt modal ══════════════════════════
+(function renderReceiptAddons() {
+    var itemRows = document.querySelectorAll('#receiptItemsList .receipt-item-row');
+    var breakdownEl = document.getElementById('receiptBreakdown');
+    var baseSubtotal   = 0;
+    var addonsSubtotal = 0;
+
+    OC_ITEMS.forEach(function(item, i) {
+        var addons = Array.isArray(item.addons) ? item.addons : [];
+        var basePrice = parseFloat(item.price || 0);
+        var qty = parseInt(item.qty || 1);
+        baseSubtotal += basePrice * qty;
+
+        if (addons.length > 0) {
+            var addonsPerUnit = addons.reduce(function(s, a) {
+                return s + parseFloat(a.additional_price || 0) * parseInt(a.qty || 1);
+            }, 0);
+            addonsSubtotal += addonsPerUnit * qty;
+
+            var row = itemRows[i];
+            if (row) {
+                var addonHtml = addons.map(function(a) {
+                    var aPrice = parseFloat(a.additional_price || 0);
+                    var aQty   = parseInt(a.qty || 1);
+                    var aTotal = aPrice * aQty * qty;
+                    return '<div class="receipt-addon-row">' +
+                        '<span class="receipt-addon-name">&#8627; ' + escHtml(a.name || '') + '</span>' +
+                        '<span class="receipt-addon-price">+&#8369;' + aTotal.toFixed(2) + '</span>' +
+                    '</div>';
+                }).join('');
+
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = addonHtml;
+                row.insertAdjacentElement('afterend', wrapper);
+            }
+        }
+    });
+
+    // Show breakdown before total if add-ons exist
+    if (addonsSubtotal > 0 && breakdownEl) {
+        breakdownEl.innerHTML =
+            '<div class="receipt-breakdown-wrap">' +
+                '<div class="receipt-breakdown-row">' +
+                    '<span>Items subtotal</span>' +
+                    '<span>₱' + baseSubtotal.toFixed(2) + '</span>' +
+                '</div>' +
+                '<div class="receipt-breakdown-row addon-br">' +
+                    '<span>Add-ons total</span>' +
+                    '<span>+₱' + addonsSubtotal.toFixed(2) + '</span>' +
+                '</div>' +
+            '</div>';
+    }
+})();
+
+// Helper: escape HTML
+function escHtml(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
 // ── Save receipt data to localStorage so the navbar button works everywhere ──
 (function saveReceipt() {
-    const data = {
+    var addonsTotal = OC_ITEMS.reduce(function(s, item) {
+        var addons = Array.isArray(item.addons) ? item.addons : [];
+        var perUnit = addons.reduce(function(as, a) {
+            return as + parseFloat(a.additional_price || 0) * parseInt(a.qty || 1);
+        }, 0);
+        return s + perUnit * parseInt(item.qty || 1);
+    }, 0);
+
+    var data = {
         order_id:      '{{ order.id }}',
         date:          '{{ order.created_at|date:"M d, Y · g:i A" }}',
         customer:      '{{ request.user.get_full_name|default:request.user.username|escapejs }}',
@@ -872,20 +1099,19 @@ body {
         payment:       '{% if order.gcash_payment_method == "cash" and payment_method != "online" %}Cash on Pickup{% elif order.gcash_payment_method == "gcash" %}GCash{% elif order.gcash_payment_method == "paymaya" %}Maya{% elif order.gcash_payment_method == "card" %}Card{% else %}Online Payment{% endif %}',
         reference:     '{{ order.gcash_reference_number|default:"" }}',
         total:         '{{ order.total_amount|floatformat:2 }}',
-        items: [
-            {% for item in order_items %}
-            {
-                name:     '{{ item.menu_item.name|escapejs }}',
-                qty:      {{ item.quantity }},
-                subtotal: '{{ item.total_price|floatformat:2 }}'
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ]
+        addons_total:  addonsTotal.toFixed(2),
+        items:         OC_ITEMS.map(function(item) {
+            return {
+                name:        item.name,
+                qty:         item.qty,
+                subtotal:    item.total,
+                addons:      item.addons
+            };
+        })
     };
     try {
-        const LS_KEY = 'kabsueats_last_receipt_{{ request.user.id|default:"guest" }}';
+        var LS_KEY = 'kabsueats_last_receipt_{{ request.user.id|default:"guest" }}';
         localStorage.setItem(LS_KEY, JSON.stringify(data));
-        // Also trigger the navbar button to show if function exists
         if (typeof window.saveReceiptToStorage === 'function') {
             window.saveReceiptToStorage(data);
         }
@@ -897,7 +1123,7 @@ window.addEventListener('pageshow', function (e) {
     if (e.persisted) window.location.replace("{% url 'order_history' %}");
 });
 (function () {
-    const myOrdersUrl = "{% url 'order_history' %}";
+    var myOrdersUrl = "{% url 'order_history' %}";
     if (window.history && window.history.replaceState) {
         window.history.pushState(null, '', window.location.href);
         window.addEventListener('popstate', function () {
@@ -917,12 +1143,12 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeReceiptModal();
 });
 
-// ── Realtime order status polling ─────────────────────────────────────────
+// ── Realtime order status + total polling ─────────────────────────────────
 (function startRealtimePoll() {
-    const ORDER_ID = '{{ order.id }}';
-    const API_URL  = '/api/order/' + ORDER_ID + '/';
+    var ORDER_ID = '{{ order.id }}';
+    var API_URL  = '/api/order/' + ORDER_ID + '/';
 
-    const STATUS_LABEL = {
+    var STATUS_LABEL = {
         request:        'Order Request',
         to_pay:         'To Pay',
         order_received: 'Accepted',
@@ -932,18 +1158,15 @@ document.addEventListener('keydown', function(e) {
         cancelled:      'Cancelled',
     };
 
-    // DOM refs
-    const statusValueEl = document.querySelector('.oc-det-cell .oc-det-value.oc-ok, .oc-det-cell .oc-det-value.oc-warn, .oc-det-cell .oc-det-value.oc-accent');
-    // Find the Status cell specifically
     function getStatusCell() {
-        const labels = document.querySelectorAll('.oc-det-label');
-        for (const lbl of labels) {
-            if (lbl.textContent.trim() === 'Order Status') return lbl.nextElementSibling;
+        var labels = document.querySelectorAll('.oc-det-label');
+        for (var i = 0; i < labels.length; i++) {
+            if (labels[i].textContent.trim() === 'Order Status') return labels[i].nextElementSibling;
         }
         return null;
     }
 
-    const STATUS_COLORS = {
+    var STATUS_COLORS = {
         request:        { cls: 'oc-warn',   dot: 'warn', icon: 'fa-clock',       color: 'var(--amber-mid)' },
         to_pay:         { cls: 'oc-accent',  dot: '',     icon: 'fa-credit-card',  color: 'var(--red)' },
         order_received: { cls: 'oc-ok',      dot: 'ok',   icon: 'fa-check',        color: 'var(--green-mid)' },
@@ -953,25 +1176,23 @@ document.addEventListener('keydown', function(e) {
         cancelled:      { cls: 'oc-accent',  dot: '',     icon: 'fa-times',        color: 'var(--red)' },
     };
 
-    // Track last known status to detect changes
-    let _lastStatus = 'preparing';
+    var _lastStatus = 'preparing';
 
     function updateStatusCell(status) {
-        const cell = getStatusCell();
+        var cell = getStatusCell();
         if (!cell) return;
-        const cfg   = STATUS_COLORS[status] || STATUS_COLORS.preparing;
-        const label = STATUS_LABEL[status]  || status;
+        var cfg   = STATUS_COLORS[status] || STATUS_COLORS.preparing;
+        var label = STATUS_LABEL[status]  || status;
         cell.className = 'oc-det-value ' + cfg.cls;
         cell.innerHTML = cfg.dot
-            ? `<div class="oc-status-dot ${cfg.dot}"></div> ${label}`
-            : `<i class="fas ${cfg.icon}" style="color:${cfg.color};"></i> ${label}`;
+            ? '<div class="oc-status-dot ' + cfg.dot + '"></div> ' + label
+            : '<i class="fas ' + cfg.icon + '" style="color:' + cfg.color + ';"></i> ' + label;
     }
 
-    // Update "What's Next" step highlights
     function updateSteps(status) {
-        const steps = document.querySelectorAll('.oc-step-num');
-        const STEP_ORDER = ['request', 'to_pay', 'preparing', 'to_claim', 'completed'];
-        const idx = STEP_ORDER.indexOf(status);
+        var steps = document.querySelectorAll('.oc-step-num');
+        var STEP_ORDER = ['request', 'to_pay', 'preparing', 'to_claim', 'completed'];
+        var idx = STEP_ORDER.indexOf(status);
         steps.forEach(function(el, i) {
             el.classList.remove('done', 'active');
             if (i < idx) el.classList.add('done');
@@ -979,12 +1200,13 @@ document.addEventListener('keydown', function(e) {
         });
     }
 
-    // Update hero strip total if changed
     function updateHeroTotal(total) {
-        const stripVals = document.querySelectorAll('.oc-hero-strip-value');
+        var stripVals = document.querySelectorAll('.oc-hero-strip-value');
         if (stripVals[0]) stripVals[0].textContent = '₱' + parseFloat(total).toFixed(2);
-        const totalAmtEl = document.querySelector('.oc-total-amount');
+        var totalAmtEl = document.querySelector('.oc-total-amount');
         if (totalAmtEl) totalAmtEl.textContent = '₱' + parseFloat(total).toFixed(2);
+        var receiptTotal = document.getElementById('receiptTotalAmt');
+        if (receiptTotal) receiptTotal.textContent = '₱' + parseFloat(total).toFixed(2);
     }
 
     function doPoll() {
@@ -992,8 +1214,8 @@ document.addEventListener('keydown', function(e) {
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success || !data.order) return;
-                const order  = data.order;
-                const status = (order.status || '').toLowerCase();
+                var order  = data.order;
+                var status = (order.status || '').toLowerCase();
 
                 updateStatusCell(status);
                 updateSteps(status);
@@ -1002,7 +1224,7 @@ document.addEventListener('keydown', function(e) {
                 // Flash green border on status change
                 if (status !== _lastStatus) {
                     _lastStatus = status;
-                    const card = document.querySelector('.oc-card:nth-child(2)');
+                    var card = document.querySelector('.oc-card:nth-child(2)');
                     if (card) {
                         card.style.transition = 'box-shadow .3s';
                         card.style.boxShadow  = '0 0 0 2px #16a34a88';
@@ -1014,14 +1236,12 @@ document.addEventListener('keydown', function(e) {
                     }
                 }
             })
-            .catch(function() {}); // silent fail — keep polling
+            .catch(function() {});
     }
 
-    // Immediate + every 10 seconds
     doPoll();
     var _pollTimer = setInterval(doPoll, 10000);
 
-    // Pause when tab hidden, resume when visible
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
             clearInterval(_pollTimer);

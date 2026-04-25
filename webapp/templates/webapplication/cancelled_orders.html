@@ -77,16 +77,6 @@ main.main-content {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.10);
 }
-.co-stat-card::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 16px 16px 0 0;
-}
-.co-stat-card:nth-child(1)::after { background: linear-gradient(90deg, #B71C1C, #ef4444); }
-.co-stat-card:nth-child(2)::after { background: linear-gradient(90deg, #c2410c, #fb923c); }
-.co-stat-card:nth-child(3)::after { background: linear-gradient(90deg, #d97706, #fbbf24); }
 
 .co-stat-icon {
     width: 46px; height: 46px;
@@ -233,8 +223,7 @@ main.main-content {
     box-shadow: 0 8px 28px rgba(0,0,0,0.10);
     transform: translateY(-2px);
 }
-.co-card.by-owner    { border-left: 4px solid #dc2626; }
-.co-card.by-customer { border-left: 4px solid #f59e0b; }
+/* no left-side colour stripe — clean simple border */
 
 /* Card Header */
 .co-card-header {
@@ -507,14 +496,34 @@ function coRender(highlightId) {
 
         // Items HTML
         const itemsHtml = o.items.length
-            ? o.items.map(i => `
-                <div class="co-item-row">
-                    <span class="co-item-name">${esc(i.name)}</span>
-                    <span>
-                        <span class="co-item-qty">×${i.quantity}</span>
-                        <span class="co-item-price">${fmtMoney(i.subtotal)}</span>
-                    </span>
-                </div>`).join('')
+            ? o.items.map(i => {
+                // Add-ons
+                let addonLines = '';
+                if (i.addons && i.addons.length) {
+                    addonLines = i.addons.map(a =>
+                        `<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;padding-left:8px;margin-top:2px;">
+                            <span><i class="fas fa-plus-circle" style="font-size:9px;color:#b91c1c;margin-right:2px;"></i>${esc(a.name)} ×${a.qty||1}</span>
+                            <span style="color:#b91c1c;font-weight:600;">+₱${parseFloat(a.additional_price||0).toFixed(2)}</span>
+                        </div>`
+                    ).join('');
+                }
+                // Note to establishment
+                const noteLine = (i.note && i.note.trim())
+                    ? `<div style="font-size:11px;color:#f59e0b;font-style:italic;margin-top:3px;padding-left:8px;">
+                           <i class="fas fa-sticky-note" style="font-size:10px;margin-right:3px;"></i>${esc(i.note)}
+                       </div>`
+                    : '';
+                return `<div class="co-item-row" style="flex-direction:column;align-items:stretch;gap:0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span class="co-item-name">${esc(i.name)}</span>
+                        <span>
+                            <span class="co-item-qty">×${i.quantity}</span>
+                            <span class="co-item-price">${fmtMoney(i.price * i.quantity)}</span>
+                        </span>
+                    </div>
+                    ${addonLines}${noteLine}
+                </div>`;
+            }).join('')
             : '<span style="font-size:12px;color:#9ca3af;">No items recorded</span>';
 
         // Payment chip
@@ -561,6 +570,14 @@ function coRender(highlightId) {
                     </span>
                 </div>
                 <div class="co-card-header-right">
+                    ${(()=>{
+                        const addonCount = o.items.reduce((s,i)=>s+(i.addons&&i.addons.length?i.addons.length:0),0);
+                        const hasNote = o.items.some(i=>i.note&&i.note.trim());
+                        let badges = '';
+                        if (addonCount) badges += `<span title="${addonCount} add-on(s)" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:6px;padding:2px 7px;"><i class="fas fa-plus-circle" style="font-size:9px;"></i> ${addonCount}</span>`;
+                        if (hasNote)    badges += `<span title="Has customer note" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;background:#fef9c3;color:#a16207;border:1px solid #fde68a;border-radius:6px;padding:2px 7px;margin-left:4px;"><i class="fas fa-sticky-note" style="font-size:9px;"></i></span>`;
+                        return badges;
+                    })()}
                     <span class="co-cancelled-at"><i class="fas fa-clock" style="font-size:10px;margin-right:3px;"></i>${esc(o.cancelled_at)}</span>
                 </div>
             </div>

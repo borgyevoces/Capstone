@@ -87,6 +87,20 @@
             color: #000000;
         }
 
+        /* Inline field error messages */
+        .field-error {
+            display: none;
+            color: #d9534f;
+            font-size: 0.82rem;
+            margin-top: 5px;
+            padding: 4px 8px;
+            background: #fef5f5;
+            border-left: 3px solid #d9534f;
+            border-radius: 3px;
+        }
+        .field-error.visible { display: block; }
+        .input.field-has-error { border-bottom: 2px solid #d9534f !important; }
+
         /* Mobile Responsive Centering */
         @media screen and (max-width: 768px) {
             body {
@@ -184,7 +198,7 @@
                     </div>
                     <div class="brand-feature-item">
                         <span class="brand-feature-icon">📋</span>
-                        <span>View and accept reservations</span>
+                        <span>View and accept orders realtime</span>
                     </div>
                     <div class="brand-feature-item">
                         <span class="brand-feature-icon">📊</span>
@@ -215,7 +229,7 @@
 
         <p class="subtext">Use your registered email and password to manage your establishment.</p>
 
-        <form method="POST" class="login-form auth-form" action="{% url 'owner_login' %}">
+        <form id="ownerLoginForm" class="login-form auth-form">
             {% csrf_token %}
 
             <!-- Email Field -->
@@ -224,11 +238,12 @@
                     type="email"
                     name="email"
                     id="email"
-                    placeholder="Enter your email"
+                    placeholder="Enter your Gmail address"
                     required
                     class="input"
                     autocomplete="email"
                 >
+                <div class="field-error" id="email-error"></div>
             </div>
 
             <!-- Password Field with Toggle -->
@@ -243,6 +258,7 @@
                     autocomplete="current-password"
                 >
                 <i class="fas fa-eye password-toggle" id="togglePassword" title="Show password"></i>
+                <div class="field-error" id="password-error"></div>
             </div>
 
             <div class="forgot-password-link" style="text-align: right; margin: -8px 0 16px 0;">
@@ -250,7 +266,7 @@
             </div>
 
             <div class="button-container">
-                <button type="submit" class="continue action-btn">
+                <button type="submit" id="loginBtn" class="continue action-btn">
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
 
@@ -265,18 +281,32 @@
     </div><!-- end page-wrapper -->
 
     <script>
-        // Password Toggle Functionality
+        // ── Helpers ──────────────────────────────────────────────────────────
+        function showFieldError(field, msg) {
+            const input = document.getElementById(field);
+            const errDiv = document.getElementById(field + '-error');
+            if (input)  input.classList.add('field-has-error');
+            if (errDiv) { errDiv.textContent = msg; errDiv.classList.add('visible'); }
+        }
+        function clearFieldErrors() {
+            ['email', 'password'].forEach(f => {
+                const input = document.getElementById(f);
+                const errDiv = document.getElementById(f + '-error');
+                if (input)  input.classList.remove('field-has-error');
+                if (errDiv) errDiv.classList.remove('visible');
+            });
+        }
+
+        // ── Password Toggle ───────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', function() {
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
 
             if (togglePassword && passwordInput) {
                 togglePassword.addEventListener('click', function() {
-                    // Toggle password visibility
                     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                     passwordInput.setAttribute('type', type);
 
-                    // Toggle icon
                     if (type === 'text') {
                         this.classList.remove('fa-eye');
                         this.classList.add('fa-eye-slash');
@@ -290,7 +320,6 @@
                     }
                 });
 
-                // Optional: Hide password when clicking outside
                 passwordInput.addEventListener('blur', function() {
                     setTimeout(() => {
                         if (passwordInput.getAttribute('type') === 'text') {
@@ -304,7 +333,7 @@
                 });
             }
 
-            // Auto-dismiss messages after 5 seconds
+            // Auto-dismiss Django messages after 5 seconds
             const messages = document.querySelectorAll('.messages li');
             messages.forEach(message => {
                 setTimeout(() => {
@@ -313,25 +342,58 @@
                 }, 5000);
             });
 
-            // Form validation enhancement
-            const form = document.querySelector('.login-form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    const email = document.getElementById('email').value.trim();
-                    const password = document.getElementById('password').value;
+            // Clear inline errors when user starts typing
+            ['email', 'password'].forEach(f => {
+                const el = document.getElementById(f);
+                if (el) el.addEventListener('input', clearFieldErrors);
+            });
 
-                    if (!email || !password) {
-                        e.preventDefault();
-                        alert('Please fill in all required fields.');
-                        return false;
+            // ── AJAX Login Form ───────────────────────────────────────────────
+            const form = document.getElementById('ownerLoginForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    clearFieldErrors();
+
+                    const emailVal = document.getElementById('email').value.trim();
+                    const passwordVal = document.getElementById('password').value;
+                    const btn = document.getElementById('loginBtn');
+
+                    // Front-end Gmail format check (instant feedback, no server round-trip)
+                    const gmailRegex = /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i;
+                    if (!gmailRegex.test(emailVal)) {
+                        showFieldError('email', 'Please enter a valid @gmail.com address.');
+                        return;
                     }
 
-                    // Basic email validation
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(email)) {
-                        e.preventDefault();
-                        alert('Please enter a valid email address.');
-                        return false;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in…';
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('email', emailVal);
+                        formData.append('password', passwordVal);
+                        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                        const res = await fetch("{% url 'owner_login' %}", {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: formData
+                        });
+
+                        const data = await res.json();
+
+                        if (data.success) {
+                            window.location.href = data.redirect;
+                        } else {
+                            showFieldError(data.error_field || 'email', data.error || 'Login failed. Please try again.');
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Log In';
+                        }
+                    } catch (err) {
+                        showFieldError('email', 'Network error. Please try again.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Log In';
                     }
                 });
             }
@@ -425,7 +487,6 @@
     <script>
         function openForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'flex';
-            // Reset modal state every time
             document.getElementById('forgot-success').style.display = 'none';
             document.getElementById('forgot-error').style.display = 'none';
             document.getElementById('forgotPasswordForm').style.display = 'block';
@@ -440,12 +501,11 @@
             document.getElementById('forgotPasswordModal').style.display = 'none';
         }
 
-        // Close modal when clicking backdrop
         document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
             if (e.target === this) closeForgotPasswordModal();
         });
 
-        // Handle forgot password form submit via AJAX
+        // ── Forgot-password form — AJAX with JSON response ────────────────
         document.getElementById('forgotPasswordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('forgot-submit-btn');
@@ -455,13 +515,21 @@
             document.getElementById('forgot-error').style.display = 'none';
 
             if (!email) {
-                document.getElementById('forgot-error-text').textContent = 'Please enter your email address.';
+                document.getElementById('forgot-error-text').textContent = 'Please enter your Gmail address.';
+                document.getElementById('forgot-error').style.display = 'block';
+                return;
+            }
+
+            // Front-end Gmail format check
+            const gmailRegex = /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i;
+            if (!gmailRegex.test(email)) {
+                document.getElementById('forgot-error-text').textContent = 'Please enter a valid @gmail.com address.';
                 document.getElementById('forgot-error').style.display = 'block';
                 return;
             }
 
             btn.disabled = true;
-            btn.textContent = 'Sending...';
+            btn.textContent = 'Sending…';
 
             try {
                 const formData = new FormData();
@@ -469,16 +537,23 @@
                 formData.append('account_type', 'owner');
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-                await fetch("{% url 'forgot_password' %}", {
+                const res = await fetch("{% url 'forgot_password' %}", {
                     method: 'POST',
-                    body: formData,
-                    redirect: 'manual'
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
                 });
 
-                // Always show success (security: don't reveal if email exists)
-                document.getElementById('forgot-success').style.display = 'block';
-                document.getElementById('forgotPasswordForm').style.display = 'none';
+                const data = await res.json();
 
+                if (data.success) {
+                    document.getElementById('forgot-success').style.display = 'block';
+                    document.getElementById('forgotPasswordForm').style.display = 'none';
+                } else {
+                    document.getElementById('forgot-error-text').textContent = data.error || 'Something went wrong. Please try again.';
+                    document.getElementById('forgot-error').style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Send Reset Link';
+                }
             } catch (err) {
                 document.getElementById('forgot-error-text').textContent = 'Network error. Please try again.';
                 document.getElementById('forgot-error').style.display = 'block';

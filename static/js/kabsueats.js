@@ -1404,16 +1404,95 @@ const _origRefreshEstCards = window.refreshEstablishmentCardStatuses;
 // ============================================================
 window.bsFS = { inStockOnly: false, category: '', sortBy: '', priceMax: 0 };
 
+// ── Quick-filter keyword maps for the 3 shortcut buttons ──────────────────
+window.bsQF = '';   // active quick-filter key: '' | 'drinks' | 'karenderia' | 'snacks'
+
+const BS_QF_KEYWORDS = {
+    drinks: [
+        'juice', 'buko', 'shake', 'soda', 'softdrink', 'soft drink',
+        'cola', 'beer', 'milk', 'tea', 'coffee', 'water', 'drink',
+        'iced', 'float', 'smoothie', 'lemonade', 'gulaman', 'halo-halo',
+        'frappe', 'hot choco', 'taho', 'milo', 'c2', 'mismo',
+        'powerade', 'gatorade', 'royal', 'sprite', 'coke', 'pepsi'
+    ],
+    karenderia: [
+        // establishment-level (checked against est.categories + est.other_category)
+        // AND item-level name keywords
+        'rice', 'adobo', 'sinigang', 'kare', 'nilaga', 'tinola',
+        'menudo', 'kaldereta', 'pork', 'chicken', 'beef', 'fish',
+        'pakbet', 'pinakbet', 'dinuguan', 'lechon', 'longganisa',
+        'tocino', 'daing', 'bangus', 'tilapia', 'pritong', 'inihaw',
+        'ulam', 'viand', 'lutong', 'pansit', 'palabok', 'batchoy',
+        'goto', 'arroz', 'sinangag', 'kanin', 'meal', 'set meal',
+        'dagdag kanin', 'extra rice', 'silog', 'tapsilog', 'tocilog',
+        'hotsilog', 'bangsilog', 'hamsilog'
+    ],
+    snacks: [
+        'snack', 'fries', 'burger', 'sandwich', 'chips', 'kwek',
+        'fishball', 'isaw', 'banana cue', 'turon', 'kikiam', 'squid ball',
+        'hotdog', 'sausage', 'nachos', 'pizza', 'bread', 'pandesal',
+        'ensaymada', 'kakanin', 'puto', 'kutsinta', 'maja', 'palitaw',
+        'biko', 'sapin-sapin', 'fried', 'nugget', 'popcorn', 'waffle',
+        'donut', 'doughnut', 'cake', 'pastry', 'cookie', 'biscuit',
+        'crackers', 'spring roll', 'lumpia', 'tempura', 'onion ring',
+        'balut', 'penoy', 'tokwa', 'tofu', 'okoy'
+    ],
+    breakfast: [
+        // bakery & bread
+        'pandesal', 'tinapay', 'bread', 'ensaymada', 'monay', 'putok',
+        'spanish bread', 'tasty', 'loaf', 'bun', 'roll', 'croissant',
+        'bakery', 'panaderia',
+        // breakfast viands
+        'almusal', 'breakfast', 'silog', 'tapsilog', 'tocilog', 'hotsilog',
+        'bangsilog', 'hamsilog', 'longsilog', 'cornsilog', 'spamsilog',
+        'sinangag', 'itlog', 'egg', 'sunny side', 'scrambled', 'omelette',
+        'tocino', 'tapa', 'longganisa', 'daing', 'dried fish', 'tuyo',
+        'danggit', 'bangus', 'champorado', 'arroz caldo', 'lugaw',
+        'goto', 'congee', 'porridge', 'oatmeal', 'cereal', 'hotcake',
+        'pancake', 'waffle', 'french toast', 'ham', 'bacon'
+    ]
+};
+
+function _itemMatchesQF(d, key) {
+    const nameLow  = (d.name        || '').toLowerCase();
+    const estCats  = (d.establishment?.categories    || '').toLowerCase();
+    const estOther = (d.establishment?.other_category || '').toLowerCase();
+    const allText  = `${nameLow} ${estCats} ${estOther}`;
+
+    if (key === 'karenderia') {
+        // Primary: establishment is categorised as karenderia
+        if (estCats.includes('karenderia') || estOther.includes('karenderia')) return true;
+    }
+    return BS_QF_KEYWORDS[key].some(kw => allText.includes(kw));
+}
+
+function toggleQuickFilter(btn) {
+    const key = btn.dataset.qf || '';
+    window.bsQF = (window.bsQF === key) ? '' : key;
+    document.querySelectorAll('.bs-qf-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.qf === window.bsQF);
+    });
+    applyBsFilters();
+}
+
 function applyBsFilters() {
     if (searchMode) return; // don't interfere with smart search
     let data = [...bsData];
     const fs = window.bsFS;
 
     if (fs.inStockOnly)  data = data.filter(d => d.quantity > 0);
-    if (fs.category)     data = data.filter(d =>
-        (d.category_name || '').toLowerCase() === fs.category ||
-        (d.establishment && (d.establishment.categories || '').toLowerCase().includes(fs.category))
-    );
+
+    // Quick-filter (broad keyword match) takes precedence over pill category
+    if (window.bsQF) {
+        data = data.filter(d => _itemMatchesQF(d, window.bsQF));
+    } else if (fs.category) {
+        data = data.filter(d =>
+            (d.category_name || '').toLowerCase() === fs.category ||
+            (d.establishment && (d.establishment.categories || '').toLowerCase().includes(fs.category)) ||
+            (d.establishment && (d.establishment.other_category || '').toLowerCase().includes(fs.category))
+        );
+    }
+
     if (fs.priceMax > 0) data = data.filter(d => parseFloat(d.price) <= fs.priceMax);
 
     if (fs.sortBy === 'orders_desc') data.sort((a, b) => (b.total_orders||0) - (a.total_orders||0));
@@ -1450,12 +1529,18 @@ function populateBsCatPills() {
     const wrap = document.getElementById('bsCatPills');
     if (!wrap || !bsData.length) return;
 
+    // Categories already handled by the 3 quick-filter square buttons — skip them here
+    const QF_SKIP = new Set([
+        'karenderia', 'carinderia', 'drinks', 'drink', 'snacks', 'snack',
+        'beverages', 'beverage', 'breakfast', 'almusal', 'bakery', 'panaderia'
+    ]);
+
     const cats = new Map();
     bsData.forEach(d => {
         const raw = ((d.category_name || '') + ',' + (d.establishment?.categories || '')).toLowerCase().split(',');
         raw.forEach(c => {
             c = c.trim();
-            if (c) cats.set(c, (cats.get(c) || 0) + 1);
+            if (c && !QF_SKIP.has(c)) cats.set(c, (cats.get(c) || 0) + 1);
         });
     });
 
@@ -2254,6 +2339,32 @@ function openMod(id) {
     document.getElementById('bsMod').classList.add('on');
     document.body.style.overflow = 'hidden';
 
+    // ── Reset note textarea ────────────────────────────────────────
+    const mNoteEl = document.getElementById('mNote');
+    if (mNoteEl) mNoteEl.value = '';
+
+    // ── Load / render add-on groups ────────────────────────────────
+    const addonWrap = document.getElementById('mAddonGroups');
+    if (addonWrap) { addonWrap.innerHTML = ''; addonWrap.style.display = 'none'; }
+    window._currentAddonGroups = [];
+    // Use inline addon_groups from bsData if available (avoids extra fetch)
+    const inlineGroups = (d.addon_groups || []).filter(g => g.options && g.options.length);
+    if (inlineGroups.length) {
+        _renderAddonGroups(inlineGroups);
+    } else {
+        // Fallback: fetch from API
+        const addonsUrl = (typeof URLS !== 'undefined' && URLS.menuItemAddons)
+            ? URLS.menuItemAddons + id + '/'
+            : '/api/menu-item-addons/' + id + '/';
+        fetch(addonsUrl)
+            .then(r => r.json())
+            .then(adData => {
+                if (!adData.success || !adData.groups || !adData.groups.length) return;
+                _renderAddonGroups(adData.groups);
+            })
+            .catch(() => {});
+    }
+
     // ── Reset request info banner ──────────────────────────────────
     const ksInfo     = document.getElementById('ksModalRequestInfo');
     const ksInfoText = document.getElementById('ksModalRequestInfoText');
@@ -2374,6 +2485,12 @@ function closeMod() {
     const ksInfo = document.getElementById('ksModalRequestInfo');
     if (ksInfo) ksInfo.style.display = 'none';
     currentModalInCart = 0;
+    // Reset add-ons and note
+    const addonWrap = document.getElementById('mAddonGroups');
+    if (addonWrap) { addonWrap.innerHTML = ''; addonWrap.style.display = 'none'; }
+    const mNoteEl = document.getElementById('mNote');
+    if (mNoteEl) mNoteEl.value = '';
+    window._currentAddonGroups = [];
 
     // ✅ Reset qty input and Add to Cart button for next open
     const mqtyEl = document.getElementById('mqty');
@@ -2392,6 +2509,7 @@ function chgQ(d) {
     // Cap by remaining slots: stock minus what's already in cart
     const effectiveMax = Math.max(0, totalStock - currentModalInCart);
     e.value = Math.max(1, Math.min(parseInt(e.value) + d, effectiveMax));
+    _recalcModalPrice();
 }
 
 // ============================================
@@ -2417,11 +2535,19 @@ function addToCartFromModal() {
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify({ menu_item_id: currentModalItem.id, quantity: qty })
+        body: JSON.stringify({
+            menu_item_id: currentModalItem.id,
+            quantity: qty,
+            note: document.getElementById('mNote') ? (document.getElementById('mNote').value || '').trim() : '',
+            addons: _getSelectedAddons()
+        })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            // ✅ I-clear ang note field para hindi ma-duplicate sa susunod na add
+            const mNoteEl = document.getElementById('mNote');
+            if (mNoteEl) mNoteEl.value = '';
             // 1. Update badge
             if (typeof data.cart_count === 'number') {
                 window.setCartBadgeCount(data.cart_count, true);
@@ -2429,8 +2555,24 @@ function addToCartFromModal() {
                 updateCartBadge(true);
             }
 
-            // 2. Fly animation — modal stays OPEN
-            _flyToCart();
+            // 2. Fly animation — modal stays OPEN, starts from Add to Cart button
+            _flyToCart(null, document.getElementById('addToCartBtn'));
+
+            // ✅ REALTIME: I-broadcast sa cart page (kung nakabukas sa ibang tab)
+            // para ma-update agad ang quantity, addons, at note nang walang page reload
+            try {
+                const _cartSyncBC = new BroadcastChannel('kabsueats_cart_sync');
+                _cartSyncBC.postMessage({
+                    type: 'item_added',
+                    menu_item_id: currentModalItem.id,
+                    added_qty: qty,
+                    cart_count: typeof data.cart_count === 'number' ? data.cart_count : null,
+                    // ✅ BAGO: isama ang addons at note para ma-merge sa cart DOM nang walang reload
+                    addons: _getSelectedAddons(),
+                    note: document.getElementById('mNote') ? (document.getElementById('mNote').value || '').trim() : ''
+                });
+                _cartSyncBC.close();
+            } catch(_bcErr) {}
 
             // 3. Update local running total
             currentModalInCart = (currentModalInCart || 0) + qty;
@@ -2466,84 +2608,121 @@ function addToCartFromModal() {
 }
 
 // ── Flying-to-cart animation ──
-// imgEl: optional source element to fly from (defaults to #mImg)
-function _flyToCart(imgEl) {
-    // Find the cart icon in the sidebar
-    const cartLink = document.querySelector('.client-sidebar .cart-link .csb-ico');
+// imgEl : optional source image element (falls back to #mImg)
+// srcBtn: optional source button element — when provided, fly starts FROM the button
+function _flyToCart(imgEl, srcBtn) {
+    // ── Find cart target (desktop sidebar first, then mobile bottom nav) ──
+    const cartLink = document.querySelector('.client-sidebar .cart-link .csb-ico')
+                  || document.querySelector('#mobBottomNav .mob-nav-item .fa-shopping-cart');
     if (!cartLink) return;
 
-    // Get source image — use passed element or fall back to modal image
-    const modalImg = imgEl || document.getElementById('mImg');
-    const src = (modalImg && modalImg.src) ? modalImg.src : '';
+    // ── Determine start position ──────────────────────────────────────────────
+    let startX, startY, flySize, arcHeight;
 
-    // Start position: centre of the source image element (if visible), else viewport centre
-    let startX, startY;
-    if (modalImg) {
-        const r = modalImg.getBoundingClientRect();
-        startX = r.left + r.width  / 2 - 26;
-        startY = r.top  + r.height / 2 - 26;
+    if (srcBtn) {
+        // START: centre of the "Add to Cart" button
+        const r = srcBtn.getBoundingClientRect();
+        flySize   = 44;
+        startX    = r.left + r.width  / 2 - flySize / 2;
+        startY    = r.top  + r.height / 2 - flySize / 2;
+        arcHeight = -120; // strong upward arc from button → cart
     } else {
-        startX = window.innerWidth  / 2 - 26;
-        startY = window.innerHeight / 2 - 26;
+        // Fallback: start from modal food image
+        const modalImg = imgEl || document.getElementById('mImg');
+        flySize = 52;
+        if (modalImg) {
+            const r = modalImg.getBoundingClientRect();
+            startX = r.left + r.width  / 2 - flySize / 2;
+            startY = r.top  + r.height / 2 - flySize / 2;
+        } else {
+            startX = window.innerWidth  / 2 - flySize / 2;
+            startY = window.innerHeight / 2 - flySize / 2;
+        }
+        arcHeight = -80;
     }
 
-    // Create the flying element
+    // ── Build the flying element ──────────────────────────────────────────────
     const fly = document.createElement('div');
     fly.style.cssText = [
         'position:fixed',
-        'width:52px',
-        'height:52px',
+        'width:'  + flySize + 'px',
+        'height:' + flySize + 'px',
         'border-radius:50%',
         'overflow:hidden',
-        'background:#B71C1C',
+        'background:linear-gradient(135deg,#B71C1C,#ef4444)',
         'display:flex',
         'align-items:center',
         'justify-content:center',
-        'z-index:999999',
+        'z-index:9999999',
         'pointer-events:none',
-        'box-shadow:0 4px 16px rgba(183,28,28,.5)',
+        'box-shadow:0 6px 20px rgba(183,28,28,.55)',
+        'border:2.5px solid rgba(255,255,255,0.35)',
         'transition:none',
+        'will-change:transform,left,top',
     ].join(';');
 
-    if (src) {
-        fly.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-    } else {
-        fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:20px;"></i>';
-    }
-    document.body.appendChild(fly);
+    // Always show a cart icon — makes the "going to cart" intent unmistakable
+    fly.innerHTML = '<i class="fas fa-shopping-cart" style="color:#fff;font-size:' + Math.round(flySize * 0.42) + 'px;"></i>';
 
+    // If we have a food image too, show it as a tiny badge on the cart ball
+    const modalImg = imgEl || document.getElementById('mImg');
+    if (modalImg && modalImg.src) {
+        fly.innerHTML =
+            '<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-shopping-cart" style="color:#fff;font-size:' + Math.round(flySize * 0.40) + 'px;"></i>' +
+            '<img src="' + modalImg.src + '" style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;object-fit:cover;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);">' +
+            '</div>';
+    }
+
+    document.body.appendChild(fly);
     fly.style.left = startX + 'px';
     fly.style.top  = startY + 'px';
 
-    // Target position: cart icon in sidebar
+    // ── Determine end position: centre of cart icon ───────────────────────────
     const cartRect = cartLink.getBoundingClientRect();
-    const endX = cartRect.left + cartRect.width  / 2 - 26;
-    const endY = cartRect.top  + cartRect.height / 2 - 26;
+    const endX = cartRect.left + cartRect.width  / 2 - flySize / 2;
+    const endY = cartRect.top  + cartRect.height / 2 - flySize / 2;
 
-    // Animate via requestAnimationFrame for smooth arc
-    const duration = 600; // ms
+    // ── Animate: smooth arc via requestAnimationFrame ─────────────────────────
+    const duration  = 620; // ms
     const startTime = performance.now();
+
+    // Tiny "launch burst" effect on the button
+    if (srcBtn) {
+        srcBtn.style.transition = 'transform .12s ease';
+        srcBtn.style.transform  = 'scale(0.92)';
+        setTimeout(function () {
+            srcBtn.style.transform = 'scale(1)';
+            setTimeout(function () { srcBtn.style.transition = ''; }, 140);
+        }, 120);
+    }
 
     function step(now) {
         const elapsed  = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
+
         // Ease-in-out cubic
-        const t = progress < 0.5 ? 4*progress*progress*progress : 1 - Math.pow(-2*progress+2,3)/2;
-        // Arc: add upward curve via sine
-        const arc = Math.sin(Math.PI * progress) * -80;
+        const t = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+        // Arc via sine — peaks at midpoint
+        const arc  = Math.sin(Math.PI * progress) * arcHeight;
         const curX = startX + (endX - startX) * t;
         const curY = startY + (endY - startY) * t + arc;
-        const scale = 1 - 0.5 * t; // shrink as it approaches cart
+
+        // Spin + shrink as it lands
+        const scale = 1 - 0.55 * t;
+        const rot   = t * 360;
 
         fly.style.left      = curX + 'px';
         fly.style.top       = curY + 'px';
-        fly.style.transform = 'scale(' + scale + ')';
-        fly.style.opacity   = (1 - progress * 0.3).toString();
+        fly.style.transform = 'scale(' + scale + ') rotate(' + rot + 'deg)';
+        fly.style.opacity   = progress > 0.85 ? String(1 - (progress - 0.85) / 0.15) : '1';
 
         if (progress < 1) {
             requestAnimationFrame(step);
         } else {
-            // Remove fly element and pop-bounce the cart icon
             fly.remove();
             _popCartIcon(cartLink);
         }
@@ -2582,13 +2761,30 @@ function buyNowFromModal() {
     fetch(URLS.addToCart, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify({ menu_item_id: currentModalItem.id, quantity: qty })
+        body: JSON.stringify({
+            menu_item_id: currentModalItem.id,
+            quantity: qty,
+            note: document.getElementById('mNote') ? (document.getElementById('mNote').value || '').trim() : '',
+            addons: _getSelectedAddons()
+        })
     })
     .then(r => r.json())
     .then(data => {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
 
         if (data.success) {
+            // ✅ REALTIME: I-broadcast sa cart page bago mag-redirect
+            try {
+                const _cartSyncBC = new BroadcastChannel('kabsueats_cart_sync');
+                _cartSyncBC.postMessage({
+                    type: 'item_added',
+                    menu_item_id: currentModalItem.id,
+                    added_qty: qty,
+                    cart_count: typeof data.cart_count === 'number' ? data.cart_count : null
+                });
+                _cartSyncBC.close();
+            } catch(_bcErr) {}
+
             window.location.href = URLS.cart + '?pay=1';
         } else {
             showToast(data.message || data.error || 'Could not process Buy Now.', 'error');
@@ -3345,3 +3541,173 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ============================================================
+// ADD-ON HELPERS  (called from openMod, addToCartFromModal, buyNowFromModal)
+// ============================================================
+function _renderAddonGroups(groups) {
+    const wrap = document.getElementById('mAddonGroups');
+    if (!wrap) return;
+    window._currentAddonGroups = groups;
+
+    const html = groups.map(function(g) {
+        const inputType = (g.max_choices === 1) ? 'radio' : 'checkbox';
+        const optsHtml = g.options.map(function(o) {
+            // ✅ BAGO: may qty controls (−/+) na naka-hide hanggang ma-check ang option
+            const priceLabel = o.additional_price > 0
+                ? '<span style="color:#B71C1C;font-weight:700;font-size:12px;white-space:nowrap;margin-left:4px;">+₱' + parseFloat(o.additional_price).toFixed(2) + '</span>'
+                : '';
+            const qtyControls = [
+                '<div class="m-addon-qty" style="display:none;align-items:center;gap:4px;margin-left:6px;">',
+                '<button type="button" class="m-addon-qty-btn"',
+                ' onclick="window._addonQtyChange(this,-1,event)"',
+                ' style="width:22px;height:22px;border-radius:50%;border:1.5px solid #B71C1C;background:#fff;color:#B71C1C;',
+                'font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;',
+                'line-height:1;padding:0;">−</button>',
+                '<span class="m-addon-qty-val"',
+                ' style="min-width:18px;text-align:center;font-size:13px;font-weight:700;color:#111;">1</span>',
+                '<button type="button" class="m-addon-qty-btn"',
+                ' onclick="window._addonQtyChange(this,1,event)"',
+                ' style="width:22px;height:22px;border-radius:50%;border:1.5px solid #B71C1C;background:#B71C1C;color:#fff;',
+                'font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;',
+                'line-height:1;padding:0;">+</button>',
+                '</div>'
+            ].join('');
+
+            return [
+                '<label class="m-addon-opt-label" style="display:flex;align-items:center;gap:8px;padding:7px 10px;',
+                'border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:13px;',
+                'font-family:Poppins,sans-serif;transition:all .15s;margin:0;">',
+                '<input type="' + inputType + '" name="addon_g_' + g.id + '" value="' + o.id + '"',
+                ' data-name="' + (o.name || '').replace(/"/g, '&quot;') + '"',
+                ' data-price="' + (o.additional_price || 0) + '"',
+                ' style="accent-color:#B71C1C;width:15px;height:15px;cursor:pointer;flex-shrink:0;"',
+                ' onchange="window._onAddonChange(this,' + g.max_choices + ')">',
+                '<span style="flex:1;">' + (o.name || '') + '</span>',
+                priceLabel,
+                qtyControls,   // ✅ BAGO: qty stepper dito
+                '</label>'
+            ].join('');
+        }).join('');
+
+        const reqLabel = g.is_required ? 'Required' : 'Optional';
+        const maxLabel = g.max_choices > 1 ? ', max ' + g.max_choices : '';
+
+        return [
+            '<div class="m-addon-group" data-gid="' + g.id + '" data-max="' + g.max_choices + '" data-req="' + g.is_required + '"',
+            ' style="margin-bottom:14px;">',
+            '<div style="font-size:11.5px;font-weight:700;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">',
+            '<i class="fas fa-list-ul" style="color:#B71C1C;font-size:10px;"></i>',
+            ' ' + (g.name || '') + '&nbsp;',
+            '<span style="font-weight:400;color:#9ca3af;font-size:11px;">' + reqLabel + maxLabel + '</span>',
+            '</div>',
+            '<div class="m-addon-opts" style="display:flex;flex-direction:column;gap:5px;">',
+            optsHtml,
+            '</div>',
+            '</div>'
+        ].join('');
+    }).join('');
+
+    wrap.innerHTML = html;
+    wrap.style.display = 'block';
+    // Attach hover styles via event delegation
+    wrap.querySelectorAll('.m-addon-opt-label').forEach(function(lbl) {
+        lbl.addEventListener('mouseenter', function() {
+            if (!this.querySelector('input').checked) this.style.borderColor = '#B71C1C';
+        });
+        lbl.addEventListener('mouseleave', function() {
+            if (!this.querySelector('input').checked) this.style.borderColor = '#e5e7eb';
+        });
+    });
+}
+
+/** Called whenever a radio/checkbox add-on changes */
+window._onAddonChange = function(input, maxChoices) {
+    const group = input.closest('.m-addon-group');
+    if (!group) return;
+
+    // Kung radio: i-hide lahat ng qty controls muna bago mag-update
+    if (input.type === 'radio') {
+        group.querySelectorAll('.m-addon-qty').forEach(function(qEl) {
+            qEl.style.display = 'none';
+            // I-reset ang qty value pabalik sa 1 kapag na-deselect
+            const qv = qEl.querySelector('.m-addon-qty-val');
+            if (qv) qv.textContent = '1';
+        });
+    }
+
+    // Kung checkbox at may max_choices limit: i-enforce
+    if (input.type === 'checkbox' && maxChoices > 0) {
+        const checked = group.querySelectorAll('input:checked');
+        if (checked.length > maxChoices) {
+            input.checked = false;
+            return;
+        }
+    }
+
+    // Update label styles at show/hide ng qty controls
+    group.querySelectorAll('.m-addon-opt-label').forEach(function(lbl) {
+        const inp = lbl.querySelector('input');
+        const qEl = lbl.querySelector('.m-addon-qty');
+        lbl.style.borderColor = inp.checked ? '#B71C1C' : '#e5e7eb';
+        lbl.style.background  = inp.checked ? '#fff5f5' : '';
+        if (qEl) {
+            // ✅ BAGO: ipakita ang qty controls kapag naka-check, itago kapag hindi
+            qEl.style.display = inp.checked ? 'flex' : 'none';
+            // I-reset qty sa 1 kapag na-uncheck
+            if (!inp.checked) {
+                const qv = qEl.querySelector('.m-addon-qty-val');
+                if (qv) qv.textContent = '1';
+            }
+        }
+    });
+    _recalcModalPrice();
+};
+window._addonQtyChange = function(btn, delta, e) {
+    e.preventDefault();
+    e.stopPropagation(); // Huwag i-toggle ang checkbox kapag nag-click ng qty buttons
+    const label = btn.closest('.m-addon-opt-label');
+    if (!label) return;
+    const qtyEl = label.querySelector('.m-addon-qty-val');
+    if (!qtyEl) return;
+    const current = parseInt(qtyEl.textContent, 10) || 1;
+    qtyEl.textContent = Math.max(1, current + delta);
+    _recalcModalPrice(); // I-update ang total price display
+};
+/** Recalculates and updates the price display in the modal based on qty + selected addons */
+/** Recalculates and updates the price display in the modal based on qty + selected addons (with addon qty) */
+function _recalcModalPrice() {
+    if (!currentModalItem) return;
+    const basePrice = parseFloat(currentModalItem.price) || 0;
+    let addonTotal = 0;
+    document.querySelectorAll('#mAddonGroups input:checked').forEach(function(inp) {
+        const label  = inp.closest('.m-addon-opt-label');
+        // ✅ BAGO: kunin ang qty ng add-on (default 1 kung walang qty control)
+        const qtyEl  = label ? label.querySelector('.m-addon-qty-val') : null;
+        const addonQty = qtyEl ? (parseInt(qtyEl.textContent, 10) || 1) : 1;
+        addonTotal += (parseFloat(inp.dataset.price) || 0) * addonQty;
+    });
+    const qty = parseInt((document.getElementById('mqty') || {}).value || 1) || 1;
+    const total = (basePrice + addonTotal) * qty;
+    const priceEl = document.getElementById('mPrice');
+    if (priceEl) priceEl.textContent = '₱' + total.toFixed(2);
+}
+
+/** Returns array of selected addon objects [{id, name, additional_price}] */
+/** Returns array of selected addon objects [{id, name, additional_price, qty}] */
+function _getSelectedAddons() {
+    const result = [];
+    document.querySelectorAll('#mAddonGroups input:checked').forEach(function(inp) {
+        const label  = inp.closest('.m-addon-opt-label');
+        // ✅ BAGO: isama ang qty ng add-on sa payload papunta sa cart
+        const qtyEl  = label ? label.querySelector('.m-addon-qty-val') : null;
+        const addonQty = qtyEl ? (parseInt(qtyEl.textContent, 10) || 1) : 1;
+        result.push({
+            id:               parseInt(inp.value),
+            name:             inp.dataset.name || '',
+            additional_price: parseFloat(inp.dataset.price) || 0,
+            qty:              addonQty   // ✅ BAGO: ito ang i-sasend sa backend
+        });
+    });
+    return result;
+}

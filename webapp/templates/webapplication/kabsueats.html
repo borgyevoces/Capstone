@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <link rel="stylesheet" href="{% static 'css/kabsueats_filters_redesign.css' %}">
     <link rel="stylesheet" href="{% static 'css/kabsueats_desktopview.css' %}">
     <link rel="stylesheet" href="{% static 'css/kabsueats_phoneview.css' %}">
     {% block extra_css %}{% endblock %}
@@ -469,6 +468,74 @@
         display: none;
     }
 
+    /* ============================================================
+       MODAL REDESIGN — Image on Top + Black Addon Prices
+       ============================================================ */
+
+    /* ── Change modal body from side-by-side to stacked ── */
+    .mbody {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* ── Image block: full width at top ── */
+    .mimg {
+        height: 300px !important;
+        width: 100% !important;
+        border-radius: 18px 18px 0 0 !important;
+        flex-shrink: 0;
+    }
+    .mimg img {
+        border-radius: 18px 18px 0 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /* ── Detail panel: full width below image ── */
+    .mdet {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* ── X button: float over the top-right of the image ── */
+    .mcb {
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        z-index: 30 !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        backdrop-filter: blur(4px) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    }
+    .mcb:hover {
+        background: var(--red) !important;
+        color: #fff !important;
+    }
+
+    /* ── Addon prices: BLACK instead of red ── */
+    /* Targets any price span inside the addon groups container */
+    #mAddonGroups span[style*="color"],
+    #mAddonGroups [style*="color:#B71C1C"],
+    #mAddonGroups [style*="color: #B71C1C"],
+    #mAddonGroups [style*="color:#b71c1c"],
+    #mAddonGroups [style*="color:var(--red)"] {
+        color: #1f2937 !important;
+    }
+    /* Broad fallback — all colored text inside addon groups */
+    #mAddonGroups .addon-price,
+    #mAddonGroups .add-price,
+    #mAddonGroups .opt-price {
+        color: #1f2937 !important;
+    }
+
+    /* ── Mobile: shorter image ── */
+    @media (max-width: 600px) {
+        .mimg {
+            height: 220px !important;
+        }
+    }
+
     /* ✅ Map category sidebar — checkbox-pill style */
     .map-cat-filter {
         display: grid;
@@ -554,6 +621,18 @@
     }
     .mcf-btn.mcf-all.active .mcf-check::after {
         display: block;
+    }
+
+    /* ── Desktop: reduce modal width ── */
+    @media (min-width: 601px) {
+        .mover {
+            align-items: center;
+            justify-content: center;
+        }
+        .mbox {
+            max-width: 500px !important;
+            width: 90% !important;
+        }
     }
     </style>
 </head>
@@ -743,11 +822,28 @@
     <!-- BESTSELLERS SECTION -->
     <section class="bs-section" id="bsSec">
 
-        <div class="bs-title-row">
-            <div class="bs-heading-block">
-                <h2 class="bs-heading-main">🔥 Best Sellers</h2>
-                <p class="bs-heading-sub">Top-rated Loved Picks from Our Local Partner Establishments</p>
-            </div>
+        <!-- 4 Quick-Filter Buttons — own row ABOVE the filter bar -->
+        <div class="bs-qf-row" id="bsQuickFilters">
+            <button class="bs-qf-btn" data-qf="drinks"
+                    onclick="toggleQuickFilter(this)" title="Show drinks">
+                <span class="bs-qf-icon bs-qf-icon--drinks"><i class="fas fa-mug-hot"></i></span>
+                <span class="bs-qf-label">Drinks</span>
+            </button>
+            <button class="bs-qf-btn" data-qf="karenderia"
+                    onclick="toggleQuickFilter(this)" title="Show karenderia meals">
+                <span class="bs-qf-icon bs-qf-icon--meals"><i class="fas fa-utensils"></i></span>
+                <span class="bs-qf-label">Karenderia Meals</span>
+            </button>
+            <button class="bs-qf-btn" data-qf="snacks"
+                    onclick="toggleQuickFilter(this)" title="Show snacks">
+                <span class="bs-qf-icon bs-qf-icon--snacks"><i class="fas fa-cookie-bite"></i></span>
+                <span class="bs-qf-label">Snacks</span>
+            </button>
+            <button class="bs-qf-btn" data-qf="breakfast"
+                    onclick="toggleQuickFilter(this)" title="Show breakfast / bakery items">
+                <span class="bs-qf-icon bs-qf-icon--almusal"><i class="fas fa-sun"></i></span>
+                <span class="bs-qf-label">Almusal</span>
+            </button>
         </div>
 
         <!-- ✅ REALTIME BS FILTERS — single unified row -->
@@ -1094,6 +1190,21 @@
                     <div class="mesta"><i class="fas fa-map-marker-alt"></i> <span id="mEstA"></span></div>
                     <div class="mests closed" id="mEstS"><i class="fas fa-circle" style="font-size:8px"></i> Closed</div>
                 </div>
+                <!-- Add-On Groups — rendered by JS -->
+                <div id="mAddonGroups" style="display:none;margin-bottom:12px;"></div>
+
+                <!-- Note to Establishment -->
+                <div id="mNoteWrap" style="margin-bottom:12px;">
+                    <label style="font-size:12px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                        <i class="fas fa-sticky-note" style="color:#B71C1C;"></i> Note to Establishment
+                        <span style="font-weight:400;color:#9ca3af;font-size:11px;">(Optional)</span>
+                    </label>
+                    <textarea id="mNote" rows="2" maxlength="300"
+                        placeholder="Add your special request (subject to restaurant's discretion)"
+                        style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Poppins',sans-serif;resize:none;outline:none;transition:border-color .18s;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#B71C1C'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+                </div>
+
                 <div class="qrow">
                     <span class="qlbl">Quantity:</span>
                     <div class="qctrl">
@@ -1167,6 +1278,7 @@
     const URLS = {
         bestsellers:    "{% url 'get_bestsellers' %}",
         addToCart:      "{% url 'add_to_cart' %}",
+        menuItemAddons: "/api/menu-item-addons/",  // append {id}/
         cartCount:      "{% url 'get_cart_count' %}",
         nearbyEst:      "{% url 'get_nearby_establishments' %}",
         searchMenu:     "{% url 'search_menu_items' %}",
@@ -1247,6 +1359,31 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 {% block extra_js %}{% endblock %}
+
+<script>
+/* ── Patch addon prices to black after JS renders them ── */
+(function () {
+    var addonWrap = document.getElementById('mAddonGroups');
+    if (!addonWrap) return;
+
+    function patchPrices(root) {
+        root.querySelectorAll('*').forEach(function (el) {
+            var s = el.getAttribute('style') || '';
+            if (/#[Bb]71[Cc]1[Cc]|var\(--red\)/.test(s)) {
+                el.style.setProperty('color', '#1f2937', 'important');
+            }
+        });
+    }
+
+    // Patch whenever the modal JS injects content
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.addedNodes.length) patchPrices(addonWrap);
+        });
+    });
+    observer.observe(addonWrap, { childList: true, subtree: true });
+}());
+</script>
 
 
 <!-- ============================================================

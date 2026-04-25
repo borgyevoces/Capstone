@@ -398,7 +398,7 @@
         position: fixed;
         inset: 0;
         background: rgba(0,0,0,.45);
-        z-index: 9999;
+        z-index: 999999;
         align-items: center;
         justify-content: center;
         padding: 20px;
@@ -410,7 +410,8 @@
         width: 100%;
         max-width: 480px;
         box-shadow: 0 20px 60px rgba(0,0,0,.18);
-        overflow: hidden;
+        overflow: visible;
+        position: relative;
     }
     .modal-header {
         display: flex;
@@ -418,6 +419,10 @@
         justify-content: space-between;
         padding: 18px 22px;
         border-bottom: 1px solid #f3f4f6;
+        border-radius: 18px 18px 0 0;
+        background: #fff;
+        position: relative;
+        z-index: 1;
     }
     .modal-title {
         font-size: 15px;
@@ -429,21 +434,33 @@
     }
     .modal-title i { color: #b91c1c; }
     .modal-close {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        border: none;
-        background: #f3f4f6;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1.5px solid #e5e7eb;
+        background: #f9fafb;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 14px;
-        color: #6b7280;
-        transition: background .15s;
+        color: #374151;
+        transition: background .15s, border-color .15s, color .15s;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1000000;
+        pointer-events: auto !important;
     }
-    .modal-close:hover { background: #e5e7eb; }
-    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; }
+    .modal-close:hover { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+    .modal-body {
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-height: 70vh;
+        overflow-y: auto;
+        border-radius: 0 0 18px 18px;
+    }
     .detail-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
     .detail-label { font-size: 12px; color: #9ca3af; font-weight: 600; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
     .detail-value { font-size: 13px; font-weight: 600; color: #1a1d23; text-align: right; }
@@ -479,10 +496,10 @@
             <div class="th-header-sub">Track all payments and revenue for {{ establishment.name }}</div>
         </div>
         <div class="period-tabs">
-            <button class="period-tab active" onclick="setPeriod('daily', this)">Daily</button>
-            <button class="period-tab" onclick="setPeriod('weekly', this)">Weekly</button>
-            <button class="period-tab" onclick="setPeriod('monthly', this)">Monthly</button>
-            <button class="period-tab" onclick="setPeriod('yearly', this)">Yearly</button>
+            <button type="button" class="period-tab active" onclick="setPeriod('daily', this)">Daily</button>
+            <button type="button" class="period-tab" onclick="setPeriod('weekly', this)">Weekly</button>
+            <button type="button" class="period-tab" onclick="setPeriod('monthly', this)">Monthly</button>
+            <button type="button" class="period-tab" onclick="setPeriod('yearly', this)">Yearly</button>
         </div>
     </div>
 
@@ -557,8 +574,8 @@
                 <span id="txn-count-badge" style="background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;"></span>
             </div>
             <div class="txn-actions">
-                <button class="txn-btn" onclick="toggleFilters()"><i class="fas fa-sliders-h"></i> Filter</button>
-                <button class="txn-btn" onclick="exportTransactions()"><i class="fas fa-download"></i> Export CSV</button>
+                <button type="button" class="txn-btn" onclick="toggleFilters()"><i class="fas fa-sliders-h"></i> Filter</button>
+                <button type="button" class="txn-btn" onclick="exportTransactions()"><i class="fas fa-download"></i> Export CSV</button>
             </div>
         </div>
 
@@ -592,7 +609,7 @@
                 <input type="date" id="dateToFilter" onchange="applyFilters()">
             </div>
             <div class="filter-field" style="flex-direction:row;align-items:flex-end;gap:6px;">
-                <button class="txn-btn" onclick="clearFilters()"><i class="fas fa-times"></i> Clear</button>
+                <button type="button" class="txn-btn" id="clearFiltersBtn"><i class="fas fa-times"></i> Clear</button>
             </div>
         </div>
 
@@ -606,11 +623,14 @@
 </div>
 
 <!-- Transaction Detail Modal -->
-<div class="modal-overlay" id="txnModal" onclick="if(event.target===this)closeModal()">
-    <div class="modal-box">
+<div class="modal-overlay" id="txnModal" onclick="if(event.target===this){this.classList.remove('show');}">
+    <div class="modal-box" onclick="event.stopPropagation();">
         <div class="modal-header">
             <div class="modal-title"><i class="fas fa-receipt"></i> Transaction Details</div>
-            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            <button type="button" class="modal-close" id="modalCloseBtn" title="Close"
+                onclick="document.getElementById('txnModal').classList.remove('show');event.stopPropagation();">
+                <span style="pointer-events:none;font-size:16px;line-height:1;">&#x2715;</span>
+            </button>
         </div>
         <div class="modal-body" id="modalBody"></div>
     </div>
@@ -843,12 +863,17 @@ function renderTable(txns) {
         const icon = payIcons[pm] || 'fa-credit-card';
         const initials = (t.customer_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
         const status = (t.status||'completed').toLowerCase();
+        // Count add-ons and notes across all items
+        const addonCount = (t.items||[]).reduce((s,i)=>s+(i.addons&&i.addons.length?i.addons.length:0),0);
+        const hasNote   = (t.items||[]).some(i=>i.note&&i.note.trim());
+        const addonBadge = addonCount ? `<span title="${addonCount} add-on(s)" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:6px;padding:1px 6px;margin-left:4px;"><i class="fas fa-plus-circle" style="font-size:9px;"></i>${addonCount}</span>` : '';
+        const noteBadge  = hasNote ? `<span title="Has note" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;background:#fef9c3;color:#a16207;border:1px solid #fde68a;border-radius:6px;padding:1px 6px;margin-left:2px;"><i class="fas fa-sticky-note" style="font-size:9px;"></i></span>` : '';
         return `<tr>
             <td><span class="order-id-badge">#${t.order_id}</span></td>
             <td><div class="date-col"><span class="d">${dateStr}</span><span class="t"><i class="far fa-clock"></i> ${timeStr}</span></div></td>
             <td><span class="pay-badge ${pm}"><i class="fas ${icon}"></i> ${t.payment_method_display||t.payment_method}</span></td>
             <td><div class="cust-cell"><div class="cust-avatar">${initials}</div><span class="cust-name">${esc(t.customer_name||'Guest')}</span></div></td>
-            <td><span class="amount-cell">${fmt(t.amount)}</span></td>
+            <td><span class="amount-cell">${fmt(t.amount)}${addonBadge}${noteBadge}</span></td>
             <td><span class="status-badge ${status}">${t.status}</span></td>
             <td><button class="view-btn" onclick='viewTransaction(${JSON.stringify(t).replace(/'/g,"&#39;")})'><i class="fas fa-eye"></i> View</button></td>
         </tr>`;
@@ -897,10 +922,13 @@ function clearFilters() {
 function exportTransactions() {
     const data = filteredTransactions.length ? filteredTransactions : filterByPeriod(allTransactions, currentPeriod);
     if (!data.length) { alert('No transactions to export'); return; }
-    let csv = 'Order ID,Date,Time,Payment Method,Customer,Amount,Status,Reference\n';
+    let csv = 'Order ID,Date,Time,Payment Method,Customer,Amount,Status,Reference,Items,Add-Ons,Notes\n';
     data.forEach(t => {
         const d = txnDate(t);
-        csv += `${t.order_id},"${d.toLocaleDateString('en-PH')}","${d.toLocaleTimeString('en-PH')}","${t.payment_method_display||t.payment_method}","${t.customer_name||'Guest'}",${t.amount},"${t.status}","${t.reference_number||'N/A'}"\n`;
+        const itemsSummary = (t.items||[]).map(i=>`${i.quantity}x ${i.name}`).join('; ');
+        const addonsSummary = (t.items||[]).flatMap(i=>(i.addons||[]).map(a=>`${a.name}(x${a.qty||1})`)).join('; ');
+        const notesSummary = (t.items||[]).filter(i=>i.note&&i.note.trim()).map(i=>i.note).join('; ');
+        csv += `${t.order_id},"${d.toLocaleDateString('en-PH')}","${d.toLocaleTimeString('en-PH')}","${t.payment_method_display||t.payment_method}","${t.customer_name||'Guest'}",${t.amount},"${t.status}","${t.reference_number||'N/A'}","${itemsSummary}","${addonsSummary}","${notesSummary}"\n`;
     });
     const a = Object.assign(document.createElement('a'), {
         href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
@@ -919,10 +947,36 @@ function viewTransaction(t) {
 
     let itemsHtml = '';
     if (t.items && t.items.length) {
+        const itemRows = t.items.map(i => {
+            // Add-ons
+            let addonLines = '';
+            if (i.addons && i.addons.length) {
+                addonLines = i.addons.map(a =>
+                    `<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;padding-left:12px;margin-top:2px;">
+                        <span><i class="fas fa-plus-circle" style="font-size:9px;margin-right:3px;color:#b91c1c;"></i>${esc(a.name)} ×${a.qty||1}</span>
+                        <span style="color:#b91c1c;">+₱${parseFloat(a.additional_price||0).toFixed(2)}</span>
+                    </div>`
+                ).join('');
+            }
+            // Note
+            let noteLine = '';
+            if (i.note && i.note.trim()) {
+                noteLine = `<div style="font-size:11px;color:#f59e0b;font-style:italic;padding-left:12px;margin-top:3px;">
+                    <i class="fas fa-sticky-note" style="font-size:10px;margin-right:3px;"></i>${esc(i.note)}
+                </div>`;
+            }
+            return `<div class="order-item" style="flex-direction:column;align-items:stretch;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span><strong>${i.quantity}×</strong> ${esc(i.name)}</span>
+                    <span>${fmt(i.total)}</span>
+                </div>
+                ${addonLines}${noteLine}
+            </div>`;
+        }).join('');
         itemsHtml = `<div class="detail-divider"></div>
         <div class="order-items-section">
             <div class="order-items-title"><i class="fas fa-shopping-bag"></i> Order Items</div>
-            ${t.items.map(i => `<div class="order-item"><span><strong>${i.quantity}×</strong> ${esc(i.name)}</span><span>${fmt(i.total)}</span></div>`).join('')}
+            ${itemRows}
         </div>`;
     }
 
@@ -938,13 +992,39 @@ function viewTransaction(t) {
         ${itemsHtml}`;
     document.getElementById('txnModal').classList.add('show');
 }
-function closeModal() { document.getElementById('txnModal').classList.remove('show'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+function closeModal() {
+    const modal = document.getElementById('txnModal');
+    if (modal) modal.classList.remove('show');
+}
 
 // ─── Helpers ─────────────────────────────────────────────────
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 // ─── Init ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', loadTransactions);
+function initTransactionPage() {
+    loadTransactions();
+
+    // Clear filters button
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) {
+        clearBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearFilters();
+            return false;
+        };
+    }
+
+    // Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTransactionPage);
+} else {
+    initTransactionPage();
+}
 </script>
 {% endblock %}

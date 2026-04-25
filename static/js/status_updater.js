@@ -252,6 +252,40 @@
             }
         }
 
+        // ── 8. Owner dashboard — top navbar badge (#navbarStatusBadge) ──
+        // NOTE: class is "navbar-status-badge" (not "status-badge") so section 6 misses it.
+        // This uses SCHEDULE-BASED calculation only (no force-disable override) so the
+        // navbar always reflects today's BusinessHours in real time — the store shows
+        // "Open" during its scheduled hours and flips to "Closed" automatically at closing time.
+        const navbarStatusBadge = document.getElementById('navbarStatusBadge');
+        if (navbarStatusBadge) {
+            const navOpen  = navbarStatusBadge.dataset.openingTime;
+            const navClose = navbarStatusBadge.dataset.closingTime;
+
+            if (navOpen && navClose) {
+                const navIsOpen = calculateStatus(navOpen, navClose) === 'Open';
+
+                // Badge wrapper class
+                navbarStatusBadge.classList.toggle('open-nav', navIsOpen);
+
+                // Dot
+                const navDot = document.getElementById('navbarStatusDot');
+                if (navDot) {
+                    navDot.classList.toggle('closed', !navIsOpen);
+                }
+
+                // Text
+                const navText = document.getElementById('navbarStatusText');
+                if (navText) {
+                    navText.textContent = navIsOpen ? 'Open' : 'Closed';
+                }
+
+                updated++;
+                console.log('🟢 [StatusUpdater] Navbar badge →', navIsOpen ? 'Open' : 'Closed',
+                    '(' + navOpen + '–' + navClose + ') at', new Date().toLocaleTimeString());
+            }
+        }
+
         if (updated > 0) {
             console.log(`✅ [StatusUpdater] Updated ${updated} status badge(s) at ${new Date().toLocaleTimeString()}`);
         }
@@ -719,12 +753,11 @@
 
         console.log('✅ [StatusUpdater] Started — client: 60 s, backend: 30 s');
 
-        // ── F. On owner dashboard: immediately fetch the authoritative status ──
-        // This corrects any server-rendered Closed that resulted from a per-day
-        // BusinessHours row with is_closed=True overriding valid global hours.
-        // Runs once on load; after that the 60-second clock loop takes over.
+        // ── F. On ALL owner pages: immediately fetch today's authoritative hours ──
+        // Now runs on ANY owner page with #navbarStatusBadge (dashboard, orders,
+        // transactions, ratings, cancelled-orders) so Open/Closed is correct on load.
         const _dashId = (typeof DASHBOARD_EST_ID !== 'undefined') ? parseInt(DASHBOARD_EST_ID) : null;
-        if (_dashId && document.getElementById('heroStatusBadge')) {
+        if (_dashId && document.getElementById('navbarStatusBadge')) {
             _fetchAndPatchEstCard(_dashId);
         }
 
@@ -798,16 +831,38 @@
                     dashBadge.setAttribute('data-closing-time', data.closing_24h);
                 }
 
+                // ── ✅ FIX: Patch navbarStatusBadge (dashboard top bar) ───────
+                // updateHeroStatus() uses navbarStatusBadge as the primary time
+                // source. Without this patch, BroadcastChannel syncs and the
+                // status_updater init call left navbarStatusBadge with stale/empty
+                // data-opening-time → calcStatus('','') returned 'Closed'.
+                // ✅ FIX v2: Only overwrite closing-time when the API returns a
+                //    non-empty value. Previously data.closing_24h || '' could set
+                //    data-closing-time to '' — causing the 60-second setInterval
+                //    updateHeroStatus() to call calcStatus(validOpen, '') = 'Closed',
+                //    creating a repeated flash every minute.
+                // NOTE: data-force-status is set to 'open' always here so that
+                // Section 8 of updateAllClientStatuses() uses schedule-based
+                // calculation and the navbar shows Open/Closed from today's hours.
+                const _navBadge = document.getElementById('navbarStatusBadge');
+                if (_navBadge && data.opening_24h) {
+                    _navBadge.setAttribute('data-opening-time', data.opening_24h);
+                    if (data.closing_24h) _navBadge.setAttribute('data-closing-time', data.closing_24h);
+                    // Always 'open' so the schedule-based calc runs (not force-Closed override)
+                    _navBadge.setAttribute('data-force-status', 'open');
+                }
+
                 // ── Patch hero card status badge + hours text (owner dashboard) ──
                 const heroStatusBadge = document.getElementById('heroStatusBadge');
                 if (heroStatusBadge && data.opening_24h) {
                     heroStatusBadge.setAttribute('data-opening-time', data.opening_24h);
-                    heroStatusBadge.setAttribute('data-closing-time', data.closing_24h || '');
-                    // ✅ Sync force-status: only lock to 'disabled' when owner manually
-                    //    toggled the store off; otherwise clear it so time-based calc runs.
+                    // ✅ FIX: Only overwrite closing-time when non-empty (same as navbarStatusBadge fix)
+                    if (data.closing_24h) heroStatusBadge.setAttribute('data-closing-time', data.closing_24h);
+                    // Only lock to 'disabled' when owner manually toggled the store off;
+                    // otherwise always use 'open' so time-based calc runs correctly.
                     const serverStatus = (data.status || '').toLowerCase();
                     heroStatusBadge.setAttribute('data-force-status',
-                        (serverStatus === 'disabled') ? 'disabled' : serverStatus
+                        (serverStatus === 'disabled') ? 'disabled' : 'open'
                     );
                 }
 
@@ -818,6 +873,15 @@
                     heroHoursText.textContent = data.opening_time + ' \u2013 ' + data.closing_time;
                     heroHoursText.style.display = '';   // reveal if it was hidden
                     if (heroHoursSep) heroHoursSep.style.display = '';
+                }
+
+                // ── Also sync the NAVBAR hours text so it always matches today's schedule ──
+                const navHoursText = document.getElementById('navbarHoursText');
+                const navHoursSep  = document.getElementById('navbarHoursSep');
+                if (navHoursText && data.opening_time && data.closing_time) {
+                    navHoursText.textContent = data.opening_time + ' \u2013 ' + data.closing_time;
+                    navHoursText.style.display = '';
+                    if (navHoursSep) navHoursSep.style.display = '';
                 }
 
                 // ── Re-run badge calculation with the fresh times ───────────

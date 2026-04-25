@@ -1357,6 +1357,8 @@ function initStep3() {
         emailInput.style.borderColor = '';
 
         let emailError = '';
+        let emailFormatOk = false;
+
         if (emailVal === '') {
             emailError = '';
         } else if (!emailVal.includes('@')) {
@@ -1365,7 +1367,14 @@ function initStep3() {
             emailError = '❌ Please enter a domain after "@" (e.g. @gmail.com)';
         } else if (!emailInput.validity.valid) {
             emailError = '❌ Invalid email format (e.g. juan@gmail.com)';
+        } else if (!/^[a-zA-Z0-9._%+\-]+@gmail\.com$/i.test(emailVal)) {
+            // ✅ Gmail-only: must be @gmail.com
+            emailError = '❌ Only Gmail addresses (@gmail.com) are allowed for registration.';
+            emailInput.style.borderColor = '#e53935';
+        } else {
+            emailFormatOk = true;
         }
+
         if (emailErrEl) emailErrEl.textContent = emailError;
 
         let passwordError = '';
@@ -1380,9 +1389,9 @@ function initStep3() {
         }
         if (retypeErrEl) retypeErrEl.textContent = retypeError;
 
-        const ok = passwordInput.value.length >= 8 &&
-                   passwordInput.value === retypeInput.value &&
-                   emailInput.validity.valid;
+        const ok = emailFormatOk &&
+                   passwordInput.value.length >= 8 &&
+                   passwordInput.value === retypeInput.value;
         sendOtpBtn.disabled = !ok;
     }
 
@@ -1441,9 +1450,15 @@ function initStep3() {
     }
 
     function sendOTP() {
-        const email = emailInput.value;
+        const email = emailInput.value.trim();
+        const emailErrEl = document.getElementById('email-error-msg');
+
+        // Clear previous email error
+        if (emailErrEl) { emailErrEl.textContent = ''; }
+        emailInput.style.borderColor = '';
+
         sendOtpBtn.disabled = true;
-        sendOtpBtn.textContent = 'Sending...';
+        sendOtpBtn.textContent = 'Verifying Gmail…';
 
         const csrftoken = getCookie('csrftoken');
 
@@ -1482,8 +1497,14 @@ function initStep3() {
                 }
             }
         })
-        .catch((err) => {
-            alert('Network error. Please check your connection.');
+        .catch(() => {
+            const emailErrEl = document.getElementById('email-error-msg');
+            if (emailErrEl) {
+                emailErrEl.textContent = '❌ Network error. Please check your connection.';
+                emailInput.style.borderColor = '#e53935';
+            } else {
+                alert('Network error. Please check your connection.');
+            }
         })
         .finally(() => {
             sendOtpBtn.disabled = false;

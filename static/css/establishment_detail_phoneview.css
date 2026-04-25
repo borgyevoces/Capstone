@@ -601,7 +601,7 @@
 
     .menu-price {
         font-weight: 700;
-        color: #B71C1C;
+        color: #111111;
         font-size: 0.88em;
         margin: 0;
         white-space: nowrap;
@@ -1919,7 +1919,7 @@
     .menu-price {
         font-size: 0.84em !important;
         font-weight: 800 !important;
-        color: #b71c1c !important;
+        color: #111111 !important;
     }
 
     /* Action buttons — red theme matching desktop brand */

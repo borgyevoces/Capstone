@@ -10,6 +10,18 @@
 {% block extra_css %}
 
 <style>
+/* ── Add-ons at Notes sa Client Order History ── */
+.tbl-item-addons { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.tbl-addon-chip {
+    background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+    border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 500;
+}
+.tbl-item-note {
+    font-size: 10.5px; color: #78350f; background: #fffbeb;
+    border: 1px solid #fde68a; border-radius: 4px; padding: 2px 6px;
+    margin-top: 3px; font-style: italic;
+}
+.tbl-item-note i { color: #d97706; font-size: 9px; margin-right: 3px; }
 @media (max-width: 768px) {
     .main, .main.main-with-sidebar { padding-bottom: 80px !important; }
     .order-tabs { gap: 8px !important; padding: 10px !important; }
@@ -216,19 +228,20 @@ tr.order-row-highlight {
 
     /* Status Badges - Matching Owner Dashboard */
     .order-status-badge {
-        padding: 5px 12px;
-        border-radius: 8px;
-        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 10.5px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.3px;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
+        white-space: nowrap;
     }
 
     .order-status-badge i {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     /* Status Colors - Exactly matching Owner Dashboard */
@@ -283,6 +296,9 @@ tr.order-row-highlight {
         background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
         color: #991b1b;
         border: 1px solid #fca5a5;
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 11px;
     }
 
     /* Time's Up badge */
@@ -293,36 +309,38 @@ tr.order-row-highlight {
     }
 
     .cancelled-owner-wrap {
-        display: flex;
+        display: inline-flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 3px;
         min-width: 0;
+        align-items: stretch;
     }
 
     /* Reason shown always below the badge */
     .reason-inline {
         display: flex;
         align-items: flex-start;
-        gap: 6px;
+        gap: 4px;
         background: #fff5f5;
         border: 1px solid #fecaca;
-        border-radius: 7px;
-        padding: 7px 10px;
-        font-size: 11.5px;
+        border-radius: 5px;
+        padding: 3px 7px;
+        font-size: 9.5px;
         color: #7f1d1d;
         font-weight: 500;
-        line-height: 1.5;
-        margin-top: 2px;
+        line-height: 1.3;
+        margin-top: 0;
         animation: reasonFadeIn 0.2s ease;
-        white-space: normal;
         word-break: break-word;
         overflow-wrap: break-word;
+        width: 100%;
+        max-width: 100%;
     }
     .reason-inline i {
         color: #B71C1C;
         flex-shrink: 0;
-        margin-top: 2px;
-        font-size: 11px;
+        margin-top: 1px;
+        font-size: 9px;
     }
     .reason-inline span {
         word-break: break-word;
@@ -1351,7 +1369,7 @@ tr.order-row-highlight {
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
-        min-width: 860px;
+        min-width: 1200px;
         table-layout: fixed;
     }
     .orders-table thead tr {
@@ -1375,16 +1393,16 @@ tr.order-row-highlight {
     .orders-table th:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; text-align: right; }
     .orders-table tbody tr { border-bottom: 1px solid #f7f7f7; transition: background .12s; }
     .orders-table tbody tr:hover { background: #fafbfc; }
-    .orders-table td { padding: 12px 14px; vertical-align: middle; word-break: break-word; overflow-wrap: break-word; }
+    .orders-table td { padding: 8px 10px; vertical-align: middle; word-break: break-word; overflow-wrap: break-word; }
     .orders-table td:last-child { text-align: right; }
 
-    .tbl-order-num  { font-family: monospace; font-weight: 700; font-size: 13px; color: #B71C1C; background: rgba(183,28,28,.07); padding: 3px 8px; border-radius: 6px; display: inline-block; }
-    .tbl-date       { font-size: 11px; color: #718096; margin-top: 3px; }
-    .tbl-est-name   { font-weight: 700; color: #1a202c; font-size: 13px; }
-    .tbl-est-addr   { font-size: 11px; color: #718096; margin-top: 2px; }
-    .tbl-item-line  { font-size: 12px; color: #4a5568; line-height: 1.6; }
-    .tbl-item-qty   { color: #718096; font-size: 11px; }
-    .tbl-total      { font-weight: 800; color: #B71C1C; font-size: 15px; }
+    .tbl-order-num  { font-family: monospace; font-weight: 700; font-size: 12px; color: #B71C1C; background: rgba(183,28,28,.07); padding: 2px 7px; border-radius: 5px; display: inline-block; }
+    .tbl-date       { font-size: 10px; color: #718096; margin-top: 2px; }
+    .tbl-est-name   { font-weight: 700; color: #1a202c; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tbl-est-addr   { font-size: 10px; color: #718096; margin-top: 2px; line-height: 1.35; }
+    .tbl-item-line  { font-size: 11.5px; color: #4a5568; line-height: 1.5; }
+    .tbl-item-qty   { color: #718096; font-size: 10.5px; }
+    .tbl-total      { font-weight: 800; color: #B71C1C; font-size: 14px; }
     .tbl-actions    { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
     .orders-table td:nth-last-child(2) { white-space: normal; word-break: break-word; } /* status cell wraps properly */
 
@@ -1404,10 +1422,10 @@ tr.order-row-highlight {
 
     /* Action buttons in table */
     .tbl-btn {
-        padding: 7px 13px;
+        padding: 5px 10px;
         border-radius: 6px;
         border: none;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 600;
         cursor: pointer;
         transition: all .15s;
@@ -1477,19 +1495,19 @@ tr.order-row-highlight {
     .claim-cancel-notice {
         background: #fff1f2;
         border: 1.5px solid #fda4af;
-        border-radius: 8px;
-        padding: 8px 10px;
-        font-size: 11.5px;
+        border-radius: 7px;
+        padding: 5px 8px;
+        font-size: 10.5px;
         color: #9f1239;
-        max-width: 180px;
+        max-width: 200px;
     }
     .claim-cancel-notice .ccn-title {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         font-weight: 800;
-        font-size: 12px;
-        margin-bottom: 4px;
+        font-size: 11px;
+        margin-bottom: 2px;
         color: #be123c;
     }
     .claim-cancel-notice .ccn-reason {
@@ -2216,7 +2234,11 @@ tr.order-row-highlight {
                     // ── end order_item_removed ──
 
                     if (d.type !== 'order_status_update') return;
-
+                    if (d.merged === true || d.type === 'order_merged') {
+    loadOrders();
+    showOrderToast('💳 Order accepted and merged! Payment window reset.', 'success');
+    return;
+}
                     const orderId   = d.order_id;
                     const newStatus = d.new_status;
                     const reason    = d.cancel_reason || '';
@@ -2257,6 +2279,16 @@ tr.order-row-highlight {
                         }
 
                         if (!cancelledByOwner) {
+                            // ✅ FIX: If the order was already timer-expired in memory
+                            // (client's 10-min countdown hit zero and we set _expired=true),
+                            // do NOT remove the row. The client still needs to see it with
+                            // Re-order + Remove buttons.  The row stays in To Pay until the
+                            // client explicitly acts.
+                            if (idx !== -1 && allOrders[idx]._expired === true) {
+                                // Row is already showing as expired — nothing to do here.
+                                return;
+                            }
+
                             // Non-owner cancellation (auto-expire etc.) — just remove row
                             // ✅ FIX: If idx === -1 AND no DOM row exists, the order was already
                             // pre-emptively removed by editOrderReorder(). Nothing left to do.
@@ -2348,6 +2380,14 @@ tr.order-row-highlight {
                             // ── Owner rejected a TO PAY order (or any other status) ──
                             // Row stays in the to_pay tab. Client must click Remove.
                             if (idx === -1) { loadOrders(); return; }
+                            // ✅ FIX: If the client-side 10-min timer already expired
+                            // (_expired=true, _cancelledByOwner=false), a subsequent server
+                            // auto-cancel WS event must NOT override the UI to
+                            // "Rejected by Establishment". The row should keep showing
+                            // Reorder + Remove (timer-expiry UX), not the owner-rejection badge.
+                            if (allOrders[idx]._expired === true && allOrders[idx]._cancelledByOwner === false) {
+                                return;
+                            }
                             allOrders[idx].status            = 'to_pay'; // keep in this tab
                             allOrders[idx]._cancelledByOwner = true;
                             allOrders[idx]._cancelReason     = reason;
@@ -2504,6 +2544,21 @@ tr.order-row-highlight {
                             // for ALL owner-rejected orders (request, to_pay, to_claim).
                             // Use cancelled_from_status to keep the row in the correct tab.
                             if (fresh.cancelled_by_owner) {
+                                // ✅ FIX: If the client-side timer already expired BEFORE the
+                                // server processed the cancel (e.g. server auto-cancels after
+                                // 10 min and sets cancelled_by_owner=True), DO NOT override the
+                                // timer-expired UI with "Rejected by Establishment".
+                                // The timer-expired state is identified by:
+                                //   _expired=true  AND  _cancelledByOwner=false
+                                if (src && src._expired === true && src._cancelledByOwner === false) {
+                                    return Object.assign({}, fresh, {
+                                        status:                    src.status || 'to_pay',
+                                        _expired:                  true,
+                                        _cancelledByOwner:         false,
+                                        _cancelReason:             '',
+                                        _ownerPendingCancelReason: ''
+                                    });
+                                }
                                 const fromStatus = fresh.cancelled_from_status || 'request';
                                 const isFromClaim = fromStatus === 'to_claim';
                                 return Object.assign({}, fresh, {
@@ -2762,7 +2817,7 @@ tr.order-row-highlight {
                                         statusCell.innerHTML = buildTimesUpBadge(true, order.items);
                                     } else {
                                         const chipEl2 = document.getElementById('timer-' + order.id);
-                                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time\'s up'; }
+                                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time ran out'; }
                                         const statusBadge = document.getElementById('status-badge-' + order.id);
                                         if (statusBadge) statusBadge.style.display = 'none';
                                     }
@@ -2826,7 +2881,12 @@ tr.order-row-highlight {
         } else {
             filtered = allOrders.filter(o => o.status === status);
         }
-        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        // Completed orders: newest first. All other tabs: oldest first (chronological queue).
+        if (status === 'completed') {
+            filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else {
+            filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        }
         renderOrders(filtered);
     }
 
@@ -2861,19 +2921,32 @@ tr.order-row-highlight {
         const isStockWarnOrder = o.status === 'to_pay' || o.status === 'PENDING' || o.status === 'request';
 const isOwnerRejected  = o._cancelledByOwner === true;
 const itemsHtml = (o.items || []).map(i => {
-        let stockChip = '';
-        if (isOwnerRejected) {
-            // Owner rejected this order — mark ALL items as rejected
-            stockChip = `<span class="stock-warn-chip out" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">` +
-                        `<i class="fas fa-ban"></i> Rejected</span>`;
-        } else if (isStockWarnOrder && typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
-            // Insufficient stock — show remaining quantity in real-time
-            stockChip = `<span class="stock-warn-chip out" id="stock-chip-${o.id}-${i.menu_item_id}">` +
-                        `<i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
-        }
-        return `<div class="tbl-item-line" style="${isOwnerRejected ? 'opacity:0.6;text-decoration:line-through;' : ''}">` +
-               `<strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}</div>`;
-    }).join('');
+    let stockChip = '';
+    if (isOwnerRejected) {
+        stockChip = `<span class="stock-warn-chip out" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">` +
+                    `<i class="fas fa-ban"></i> Rejected</span>`;
+    } else if (isStockWarnOrder && typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
+        stockChip = `<span class="stock-warn-chip out" id="stock-chip-${o.id}-${i.menu_item_id}">` +
+                    `<i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+    }
+
+    // ✅ BAGONG: Add-ons
+    const addons = Array.isArray(i.addons) ? i.addons : [];
+    const addonsHtml = addons.length > 0
+    ? `<div class="tbl-item-addons">${addons.map(a =>
+        `<span class=\"tbl-addon-chip\"><i class=\"fas fa-plus\" style=\"font-size:8px;\"></i> ${esc(a.name)}${(parseInt(a.qty)||1)>1?' ×'+(parseInt(a.qty)):''}${parseFloat(a.additional_price||0)>0?' +₱'+parseFloat(a.additional_price).toFixed(2):''}</span>`
+      ).join('')}</div>`
+    : '';
+
+    // ✅ BAGONG: Note
+    const noteHtml = (i.note && i.note.trim())
+        ? `<div class="tbl-item-note"><i class="fas fa-comment-alt"></i> ${esc(i.note)}</div>`
+        : '';
+
+    return `<div class="tbl-item-line" style="${isOwnerRejected ? 'opacity:0.6;text-decoration:line-through;' : ''}">` +
+           `<strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price || 0).toFixed(2)}${stockChip}` +
+           `${addonsHtml}${noteHtml}</div>`;
+}).join('');
         // Check if any item has insufficient stock (request + to_pay)
         const outOfStockCount = isStockWarnOrder
             ? (o.items || []).filter(i => typeof i.available_stock === 'number' && i.available_stock < i.quantity).length
@@ -2892,7 +2965,7 @@ const itemsHtml = (o.items || []).map(i => {
                 const forceExpire = hasStockIssue;
                 // _expired flag = server cancelled it, client hasn't decided yet
                 if (o._expired || remaining <= 0 || forceExpire) {
-                    timerHtml = `<span class="timer-chip expired" style="margin-left:6px;"><i class="fas fa-clock"></i> Time's up</span>`;
+                    timerHtml = `<span class="timer-chip expired" style="margin-left:6px;"><i class="fas fa-clock"></i> Time ran out</span>`;
                     statusCellExpired = true;
                     // Mark as expired IN MEMORY so actions render Re-order + Remove.
                     // ✅ FIX A: Do NOT call lsSaveCancelled here when this is a stock-issue
@@ -3008,8 +3081,8 @@ const itemsHtml = (o.items || []).map(i => {
                     <div class="tbl-date"><i class="far fa-clock" style="margin-right:3px;"></i>${fmtDate(o.created_at)}</div>
                 </td>
                 <td>
-                    <div class="tbl-est-name">${esc(o.establishment_name)}</div>
-                    <div class="tbl-est-addr"><i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>${esc(o.establishment_address || '')}</div>
+                    <div class="tbl-est-name" title="${esc(o.establishment_name)}">${esc(o.establishment_name)}</div>
+                    <div class="tbl-est-addr" title="${esc(o.establishment_address || '')}"><i class="fas fa-map-marker-alt" style="color:#B71C1C;font-size:10px;margin-right:3px;"></i>${esc(o.establishment_address || '')}</div>
                 </td>
                 <td>${itemsHtml || '<span style="color:#a0aec0;font-size:12px;">—</span>'}${stockBanner || ''}</td>
                 <td>
@@ -3039,14 +3112,14 @@ const itemsHtml = (o.items || []).map(i => {
                 <table class="orders-table">
                     <thead>
                         <tr>
-                            <th ${thS} style="border-left:1px solid #ececec;border-radius:10px 0 0 10px;width:9%;">Order</th>
-                            <th ${thS} style="width:16%;">Establishment</th>
-                            <th ${thS} style="width:19%;">Items</th>
-                            <th ${thS} style="width:8%;">Total</th>
-                            ${showPaymentCol ? `<th ${thS} style="width:9%;">Payment</th>` : ''}
-                            ${showClaimCol ? `<th ${thS} style="width:11%;text-align:center;">Left to Claim</th>` : ''}
-                            <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}width:${showPaymentCol || showClaimCol ? '25%' : '33%'};text-align:left;">Status</th>
-                            ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:15%;text-align:right;">Actions</th>`}
+                            <th ${thS} style="border-left:1px solid #ececec;border-radius:10px 0 0 10px;width:8%;">Order</th>
+                            <th ${thS} style="width:15%;">Establishment</th>
+                            <th ${thS} style="width:18%;">Items</th>
+                            <th ${thS} style="width:7%;">Total</th>
+                            ${showPaymentCol ? `<th ${thS} style="width:8%;">Payment</th>` : ''}
+                            ${showClaimCol ? `<th ${thS} style="width:9%;text-align:center;">Left to Claim</th>` : ''}
+                            <th ${thS} style="${hideActions ? 'border-right:1px solid #ececec;border-radius:0 10px 10px 0;' : ''}width:${showPaymentCol || showClaimCol ? '24%' : '32%'};text-align:left;">Status</th>
+                            ${hideActions ? '' : `<th ${thS} style="border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:11%;text-align:right;">Actions</th>`}
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -3081,7 +3154,7 @@ const itemsHtml = (o.items || []).map(i => {
                     } else {
                         // Fallback: update chip + hide badge separately
                         const chipEl2 = document.getElementById(`timer-${o.id}`);
-                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time\'s up'; }
+                        if (chipEl2) { chipEl2.className = 'timer-chip expired'; chipEl2.innerHTML = '<i class="fas fa-clock"></i> Time ran out'; }
                         const statusBadge = document.getElementById(`status-badge-${o.id}`);
                         if (statusBadge) statusBadge.style.display = 'none';
                     }
@@ -3096,17 +3169,17 @@ const itemsHtml = (o.items || []).map(i => {
                         lsSaveCancelled(allOrders[expiredIdx]);
                     }
 
-                    // 3. Call cancel API to restore stock server-side
-                    //    (in case owner's dashboard isn't open to trigger auto-reject)
-                    fetch('/api/order/' + o.id + '/cancel/', {
-                        method:  'POST',
-                        headers: {
-                            'X-CSRFToken':  getCookie('csrftoken'),
-                            'Content-Type': 'application/json'
-                        }
-                    }).catch(function () { /* silent — stock will be restored on owner login */ });
+                    // ✅ FIX: Do NOT call cancel API here.
+                    // Calling cancel caused the WS broadcast to fire and the
+                    // WS handler (order_cancelled, !cancelledByOwner) would
+                    // immediately REMOVE the row — the client never got to see
+                    // Re-order / Remove buttons.
+                    // Stock is restored server-side only when the client
+                    // explicitly clicks Remove (doRemoveCancelledRow → cancel API)
+                    // or Re-order (editOrderReorder → update-quantities + re-request).
+                    // The order stays 'to_pay' on the server; owner sees it in To Pay.
 
-                    // 4. Swap to Re-order + Remove buttons
+                    // 3. Swap to Re-order + Remove buttons
                     swapToExpiredActions(o.id);
                     return;
                 }
@@ -3248,7 +3321,7 @@ const itemsHtml = (o.items || []).map(i => {
                 <span class="order-status-badge status-cancelled-owner">
                     <i class="fas fa-ban"></i> Rejected by Establishment
                 </span>
-                <div class="reason-inline">
+                <div class="reason-inline" title="${esc(displayReason)}">
                     <i class="fas fa-info-circle"></i>
                     <span>${esc(displayReason)}</span>
                 </div>
@@ -3276,7 +3349,7 @@ const itemsHtml = (o.items || []).map(i => {
             }
             return `
                 <div class="cancelled-owner-wrap">
-                    <div class="reason-inline" style="background:#f9fafb;border-color:#e5e7eb;color:#4b5563;flex-direction:column;align-items:flex-start;">
+                    <div class="reason-inline" style="background:#f9fafb;border-color:#e5e7eb;color:#4b5563;flex-direction:column;align-items:flex-start;padding:3px 7px;font-size:9.5px;">
                         <div style="display:flex;align-items:flex-start;gap:6px;">
                             <i class="fas fa-info-circle" style="color:#6b7280;margin-top:2px;flex-shrink:0;"></i>
                             <span>We're sorry! The quantity of some items in your order is no longer sufficient. You may re-order or remove this.</span>
@@ -3288,11 +3361,11 @@ const itemsHtml = (o.items || []).map(i => {
         return `
             <div class="cancelled-owner-wrap">
                 <span class="order-status-badge status-timesup">
-                    <i class="fas fa-clock"></i> Time's Up
+                    <i class="fas fa-hourglass-end"></i> Time's Up
                 </span>
-                <div class="reason-inline" style="background:#f9fafb;border-color:#e5e7eb;color:#4b5563;">
-                    <i class="fas fa-info-circle" style="color:#6b7280;"></i>
-                    <span>Payment time has expired. You may re-order or remove this.</span>
+                <div class="reason-inline" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412;padding:3px 7px;font-size:9.5px;">
+                    <i class="fas fa-exclamation-circle" style="color:#ea580c;flex-shrink:0;"></i>
+                    <span>Payment time has expired. Tap <strong>Reorder</strong> to re-submit your order.</span>
                 </div>
             </div>`;
     }
@@ -3352,7 +3425,7 @@ const itemsHtml = (o.items || []).map(i => {
             } else if (expired) {
                 // ── Timer expired (owner did NOT cancel) ──
                 // Re-order = re-request. Remove = dismiss row.
-                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(${o.id}, this)">
+                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doDirectReorder(${o.id}, this)">
                             <i class="fas fa-redo-alt"></i> Re-order
                          </button>
                          <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
@@ -3408,10 +3481,10 @@ const itemsHtml = (o.items || []).map(i => {
                 '    <i class="fas fa-times"></i> Remove' +
                 '</button>';
         } else {
-            // Timer expired — Re-order + Remove
+            // Timer expired — Re-order (opens modal) + Remove
             actCell.innerHTML =
-                '<button class="tbl-btn tbl-btn-rerequest" onclick="doReOrder(' + orderId + ', this)">' +
-                '    <i class="fas fa-redo-alt"></i> Re-order' +
+                '<button class="tbl-btn tbl-btn-rerequest" onclick="showReorderModal(' + orderId + ', true)">' +
+                '    <i class="fas fa-redo-alt"></i> Reorder' +
                 '</button>' +
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
                 '    <i class="fas fa-times"></i> Remove' +
@@ -3932,6 +4005,7 @@ const itemsHtml = (o.items || []).map(i => {
     // ============================================================
     let _reorderOrderId   = null;
     let _reorderStockPoll = null;   // setInterval handle for realtime polling
+    let _reorderIsExpired = false;  // true when opened from a timer-expired row
 
     // Flying-cart animation: animate a cart emoji flying to the navbar cart icon
     function flyToCart(originEl) {
@@ -3986,6 +4060,35 @@ const itemsHtml = (o.items || []).map(i => {
             const maxQty   = inStock ? Math.min(stock, 99) : 0;
             const safeQty  = Math.min(curQty, maxQty || 1);
 
+            // Build add-ons block
+            const addons = Array.isArray(item.addons) ? item.addons : [];
+            const addonsTotal = addons.reduce((s, a) => s + parseFloat(a.additional_price || 0) * parseInt(a.qty || 1), 0);
+            const addonsHtml = addons.length ? `
+                <div style="margin:8px 0 4px;padding:8px 11px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;">
+                    <div style="font-size:10px;font-weight:700;color:#1d4ed8;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;display:flex;align-items:center;gap:5px;">
+                        <i class="fas fa-layer-group" style="font-size:9px;"></i> Add-ons from original order
+                    </div>
+                    ${addons.map(a => {
+                        const aQty   = parseInt(a.qty || a.quantity || 1);
+                        const aPrice = parseFloat(a.additional_price || a.price || 0);
+                        const aName  = esc(a.name || a.addon_name || '');
+                        const priceTag = aPrice > 0
+                            ? `<span style="color:#059669;font-weight:600;font-size:11px;">+₱${(aPrice * aQty).toFixed(2)}</span>`
+                            : `<span style="color:#94a3b8;font-size:11px;">Free</span>`;
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#374151;padding:2px 0;">
+                            <span><i class="fas fa-plus-circle" style="font-size:9px;color:#93c5fd;margin-right:4px;"></i>${aName}${aQty > 1 ? ` <span style="color:#6b7280;">×${aQty}</span>` : ''}</span>
+                            ${priceTag}
+                        </div>`;
+                    }).join('')}
+                    ${addonsTotal > 0 ? `<div style="border-top:1px solid #dbeafe;margin-top:5px;padding-top:4px;display:flex;justify-content:flex-end;font-size:11px;color:#1d4ed8;font-weight:700;">Add-ons total: +₱${addonsTotal.toFixed(2)}</div>` : ''}
+                </div>` : '';
+
+            // Build note block
+            const noteHtml = (item.note_to_establishment || item.note) ? `
+                <div style="margin:4px 0 2px;font-size:11px;color:#6b7280;font-style:italic;padding:4px 8px;background:#fffbeb;border-left:3px solid #fbbf24;border-radius:0 4px 4px 0;">
+                    <i class="fas fa-sticky-note" style="margin-right:4px;color:#f59e0b;"></i>${esc(item.note_to_establishment || item.note)}
+                </div>` : '';
+
             return `
             <div class="reorder-item-card ${inStock ? '' : 'unavailable'}"
                  data-item-id="${itemId}"
@@ -4001,6 +4104,8 @@ const itemsHtml = (o.items || []).map(i => {
                     <span class="reorder-item-badge ${badgeCls}" id="rstock-${itemId}">${esc(badgeTxt)}</span>
                 </div>
                 <div class="reorder-item-price-big">₱${parseFloat(item.price || 0).toFixed(2)}</div>
+                ${addonsHtml}
+                ${noteHtml}
                 ${inStock ? `
                 <div class="reorder-qty-row">
                     <span class="reorder-qty-label">Quantity</span>
@@ -4014,47 +4119,27 @@ const itemsHtml = (o.items || []).map(i => {
         }).join('');
     }
 
-    // Poll /api/order/<id>/ and update badges + qty caps without full re-render
+    // Poll /api/order/<id>/ and keep stock + add-ons + notes fully in sync.
+    // Calls _renderReorderItems() which already saves/restores user qty choices,
+    // so no input data is ever lost on a poll tick.
     function _pollReorderStock() {
         if (!_reorderOrderId) return;
-        fetch(`/api/order/${_reorderOrderId}/`)
+        fetch(`/api/order/${_reorderOrderId}/`, { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
                 if (!data.success || !data.order) return;
                 reorderCurrentOrder = data.order;
-
-                (data.order.items || []).forEach(item => {
-                    const itemId  = String(item.id || item.menu_item_id || '');
-                    const stock   = typeof item.available_stock === 'number' ? item.available_stock : 0;
-                    const inStock = stock > 0;
-
-                    // Update badge
-                    const badge = document.getElementById(`rstock-${itemId}`);
-                    if (badge) {
-                        badge.textContent  = inStock ? `${stock} in stock` : 'Out of stock';
-                        badge.className    = `reorder-item-badge ${inStock ? 'badge-in-stock' : 'badge-out-stock'}`;
-                    }
-
-                    // Update card unavailable state
-                    const card = document.querySelector(`.reorder-item-card[data-item-id="${itemId}"]`);
-                    if (card) {
-                        card.classList.toggle('unavailable', !inStock);
-                        card.dataset.maxStock = stock;
-                    }
-
-                    // Cap qty to new stock
-                    const qtyEl = document.getElementById(`rqv-${itemId}`);
-                    if (qtyEl && stock > 0) {
-                        const cur = parseInt(qtyEl.textContent) || 1;
-                        if (cur > stock) qtyEl.textContent = stock;
-                    }
-                });
+                // ✅ Full re-render: keeps add-ons, notes, and stock badges in sync.
+                // _renderReorderItems saves user qty choices before overwriting innerHTML
+                // and restores them afterward, so no selection is lost.
+                _renderReorderItems(data.order);
             })
             .catch(() => {});  // silent fail on poll
     }
 
-    function showReorderModal(orderId) {
+    function showReorderModal(orderId, isExpired) {
         _reorderOrderId     = orderId;
+        _reorderIsExpired   = !!isExpired;
         reorderCurrentOrder = null;
 
         const modal   = document.getElementById('reorderModal');
@@ -4067,13 +4152,23 @@ const itemsHtml = (o.items || []).map(i => {
         items.innerHTML = `<div class="reorder-loading"><i class="fas fa-spinner fa-spin"></i><span>Loading items...</span></div>`;
         if (warning) warning.style.display = 'none';
         atcBtn.disabled = false; buyBtn.disabled = false;
-        atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-        buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+
+        if (_reorderIsExpired) {
+            // Expired timer — single "Place Order" action, hide Add to Cart
+            atcBtn.style.display = 'none';
+            buyBtn.style.display = '';
+            buyBtn.innerHTML = '<i class="fas fa-redo-alt"></i> Place Order';
+        } else {
+            atcBtn.style.display = '';
+            buyBtn.style.display = '';
+            atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+            buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now';
+        }
 
         // Stop any previous poll
         if (_reorderStockPoll) { clearInterval(_reorderStockPoll); _reorderStockPoll = null; }
 
-        fetch(`/api/order/${orderId}/`)
+        fetch(`/api/order/${orderId}/`, { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
                 if (!data.success || !data.order) {
@@ -4102,10 +4197,16 @@ const itemsHtml = (o.items || []).map(i => {
     }
 
     function closeReorderModal() {
-        const modal = document.getElementById('reorderModal');
+        const modal  = document.getElementById('reorderModal');
+        const atcBtn = document.getElementById('reorderAtcBtn');
+        const buyBtn = document.getElementById('reorderBuyBtn');
         if (modal) modal.style.display = 'none';
         if (_reorderStockPoll) { clearInterval(_reorderStockPoll); _reorderStockPoll = null; }
-        _reorderOrderId = null;
+        _reorderOrderId   = null;
+        _reorderIsExpired = false;
+        // Restore default button labels/visibility
+        if (atcBtn) { atcBtn.style.display = ''; atcBtn.disabled = false; atcBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart'; }
+        if (buyBtn) { buyBtn.style.display = ''; buyBtn.disabled = false; buyBtn.innerHTML = '<i class="fas fa-bolt"></i> Buy Now'; }
     }
     function handleOverlayClick(e) {
         if (e.target === document.getElementById('reorderModal')) closeReorderModal();
@@ -4117,12 +4218,68 @@ const itemsHtml = (o.items || []).map(i => {
         const buyBtn = document.getElementById('reorderBuyBtn');
         atcBtn.disabled = true; buyBtn.disabled = true;
 
+        // ── EXPIRED TIMER MODE: re-submit via /api/order/<id>/re-request/ ──────
+        if (_reorderIsExpired) {
+            const orderId = reorderCurrentOrder.id;
+            buyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            // Pre-emptively remove from allOrders to avoid ghost row
+            const _preIdx = allOrders.findIndex(o => o.id === orderId);
+            if (_preIdx !== -1) allOrders.splice(_preIdx, 1);
+            if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(orderId);
+            if (typeof lsDismiss === 'function') lsDismiss(orderId);
+
+            fetch('/api/order/' + orderId + '/re-request/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                cache: 'no-store'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    closeReorderModal();
+                    fadeOutRow(orderId, function () {
+                        updateOrderCounts();
+                        switchTab('request');
+                        setTimeout(function () { if (typeof loadOrders === 'function') loadOrders(); }, 700);
+                    });
+                    showOrderToast('✅ Reorder request sent! Waiting for owner acceptance.', 'success');
+                } else {
+                    // Re-add order back so row reappears
+                    if (typeof loadOrders === 'function') setTimeout(loadOrders, 300);
+                    atcBtn.disabled = false; buyBtn.disabled = false;
+                    buyBtn.innerHTML = '<i class="fas fa-redo-alt"></i> Place Order';
+                    closeReorderModal();
+                    showOrderToast(data.message || 'Could not reorder. Please try again.', 'error');
+                }
+            })
+            .catch(() => {
+                if (typeof loadOrders === 'function') setTimeout(loadOrders, 300);
+                atcBtn.disabled = false; buyBtn.disabled = false;
+                buyBtn.innerHTML = '<i class="fas fa-redo-alt"></i> Place Order';
+                closeReorderModal();
+                showOrderToast('Network error. Please try again.', 'error');
+            });
+            return;
+        }
+
+        // ── NORMAL MODE: add to cart / buy now ────────────────────────────────
         const cards = document.querySelectorAll('.reorder-item-card:not(.unavailable)');
         const items = [];
         cards.forEach(card => {
             const id  = card.dataset.itemId;
             const qty = parseInt(document.getElementById(`rqv-${id}`)?.textContent || '1');
-            if (id && qty > 0) items.push({ menu_item_id: id, quantity: qty });
+            if (!id || qty <= 0) return;
+
+            // ✅ Carry add-ons from the original order into the cart item.
+            // reorderCurrentOrder.items holds the full item data including addons[].
+            const originalItem = (reorderCurrentOrder && reorderCurrentOrder.items || [])
+                .find(i => String(i.id || i.menu_item_id || '') === String(id));
+            const addons = (originalItem && Array.isArray(originalItem.addons) && originalItem.addons.length)
+                ? originalItem.addons
+                : [];
+
+            items.push({ menu_item_id: id, quantity: qty, addons });
         });
 
         if (!items.length) {
@@ -4148,7 +4305,7 @@ const itemsHtml = (o.items || []).map(i => {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCookie('csrftoken')
                     },
-                    body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity })
+                    body: JSON.stringify({ menu_item_id: item.menu_item_id, quantity: item.quantity, addons: item.addons || [] })
                 })
                 .then(r => r.json())
                 .then(res => { if (!res.success) anyError = true; })
@@ -4189,6 +4346,92 @@ const itemsHtml = (o.items || []).map(i => {
 
     // Legacy alias (used by older HTML in the file)
     function submitReorder(mode) { doReorder(mode); }
+
+    // ── DIRECT REORDER (no modal) ─────────────────────────────────────────────
+    // Called when to_pay timer expires. Immediately re-submits the same order
+    // items/quantities as a new 'request' without opening the Edit Order modal.
+    // Owner sees the new request in realtime via WebSocket broadcast.
+    function doDirectReorder(orderId, btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+
+        var orderEntry = allOrders.find(function (o) { return o.id === orderId; });
+
+        // Pre-emptively remove from allOrders + localStorage before fetch
+        // (prevents ghost row if WS broadcast arrives before fetch response)
+        var _preIdx = allOrders.findIndex(function (o) { return o.id === orderId; });
+        if (_preIdx !== -1) allOrders.splice(_preIdx, 1);
+        if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(orderId);
+        if (typeof lsDismiss === 'function') lsDismiss(orderId);
+
+        // Build qty payload from original order items
+        var payload = [];
+        if (orderEntry && orderEntry.items) {
+            orderEntry.items.forEach(function (item) {
+                if (item.order_item_id && item.quantity > 0) {
+                    payload.push({ order_item_id: parseInt(item.order_item_id), quantity: item.quantity });
+                }
+            });
+        }
+
+        var onSuccess = function () {
+            fadeOutRow(orderId, function () {
+                updateOrderCounts();
+                switchTab('request');
+                setTimeout(function () { if (typeof loadOrders === 'function') loadOrders(); }, 700);
+            });
+            showOrderToast('\u2705 Reorder request sent! Waiting for owner acceptance.', 'success');
+        };
+
+        var onError = function (msg) {
+            // Re-add the order back to memory so it reappears
+            if (orderEntry) { allOrders.push(orderEntry); updateOrderCounts(); filterOrders(currentFilter); }
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+            showOrderToast(msg || 'Could not reorder. Please try again.', 'error');
+        };
+
+        var doReqStep = function () {
+            fetch('/api/order/' + orderId + '/re-request/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' }
+            })
+            .then(function (r) {
+                return r.text().then(function (txt) {
+                    try { return JSON.parse(txt); }
+                    catch (e) { return { success: false, message: 'Server error. Please try again.' }; }
+                });
+            })
+            .then(function (data) {
+                if (data.success) { onSuccess(); }
+                else { onError(data.message); }
+            })
+            .catch(function () { onError('Network error. Please try again.'); });
+        };
+
+        if (payload.length > 0) {
+            fetch('/api/order/' + orderId + '/update-quantities/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: payload })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (qRes) {
+                if (qRes.new_order_id) {
+                    // update-quantities already created the new request order on server
+                    onSuccess();
+                } else {
+                    // Update succeeded (or failed) — proceed to re-request
+                    doReqStep();
+                }
+            })
+            .catch(function () { doReqStep(); });
+        } else {
+            doReqStep();
+        }
+    }
+
 </script>
 
 <script>
@@ -4206,6 +4449,9 @@ const itemsHtml = (o.items || []).map(i => {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
                         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+    function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
     function _refreshEditTotal() {
         if (!_editOrderData) return;
