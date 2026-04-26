@@ -3827,7 +3827,13 @@ function applyDashboardInventoryUpdate(updates) {
         var estId = (typeof establishmentId !== 'undefined') ? establishmentId : null;
         if (!estId) return;
         var proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        var ws = new WebSocket(proto + '://' + location.host + '/ws/orders/' + estId + '/');
+        // ✅ FIX: Use the same WS endpoint as the Orders page so this consumer
+        // joins the 'order_status_establishment_<id>' channel group — the exact
+        // group that _broadcast_order_status_update() sends to.
+        // The old '/ws/orders/<id>/' URL joined a different group and never
+        // received re-request broadcasts, causing the Pending Orders count to
+        // stay at 0 after a client re-orders until the 30-second poll fired.
+        var ws = new WebSocket(proto + '://' + location.host + '/ws/order-status/establishment/establishment/' + estId + '/');
 
         ws.onmessage = function(e) {
             try {
@@ -3840,9 +3846,9 @@ function applyDashboardInventoryUpdate(updates) {
                 if (el) {
                     var cur = parseInt(el.textContent, 10) || 0;
                     if (msg.new_status === 'request') {
-                        // New order arrived → count goes up
+                        // New order arrived (or re-requested) → count goes up
                         el.textContent = cur + 1;
-                    } else if (cur > 0) {
+                    } else if (msg.new_status !== 'request' && cur > 0) {
                         // Order left 'request' status (accepted/cancelled) → count goes down
                         el.textContent = cur - 1;
                     }

@@ -4037,11 +4037,14 @@ def _serialize_cancelled_order(order):
             'note': oi.note_to_establishment or '',
         })
 
-    # Determine if this was owner rejection or customer cancellation
-    cancelled_by_owner = bool(order.cancelled_from_status)
+    # Determine if this was owner rejection or customer cancellation.
+    # Owner-rejected orders have cancelled_from_status set WITHOUT 'client_' prefix.
+    # Client-cancelled orders have cancelled_from_status = 'client_request' / 'client_to_pay'.
+    cancelled_by_owner = bool(order.cancelled_from_status) and not order.cancelled_from_status.startswith('client_')
 
     # Only include payment method if order reached 'to_pay' status or beyond
-    payment_reached_to_pay = order.cancelled_from_status in ('to_pay', 'preparing', 'to_claim', 'completed')
+    _raw_from = order.cancelled_from_status.replace('client_', '') if order.cancelled_from_status else ''
+    payment_reached_to_pay = _raw_from in ('to_pay', 'preparing', 'to_claim', 'completed')
     payment_method = (order.gcash_payment_method or 'cash') if payment_reached_to_pay else None
 
     # ✅ Recalculate total using add-on-aware helper so the displayed total is always accurate
@@ -7229,14 +7232,18 @@ def get_establishment_orders(request):
             order_status = status_mapping.get(order_status, order_status)
 
             # ✅ FIX: Detect if this cancelled order was cancelled by the CLIENT while in
-            # 'request' status. Client-cancelled orders have cancelled_from_status='' because
-            # only the owner reject flow sets that field. We show client-cancelled request orders
-            # in the owner request tab so the owner knows the customer withdrew.
-            # Owner-rejected orders are already excluded above via the .exclude() clause,
-            # so if we reach here with status=='cancelled', it must be a client cancellation.
+            # 'request' OR 'to_pay' status.
+            # - Owner-rejected orders have cancelled_from_status = 'request'/'to_pay'/'to_claim' (no prefix)
+            # - Client-cancelled orders have cancelled_from_status = 'client_request' / 'client_to_pay'
+            #   (legacy rows with empty cancelled_from_status are treated as client_request)
             cancelled_from_request = (
                     order_status == 'cancelled'
-                    and not order.cancelled_from_status  # empty = client cancelled, not owner
+                    and (not order.cancelled_from_status or order.cancelled_from_status == 'client_request')
+                    and not order.owner_dismissed
+            )
+            cancelled_from_to_pay = (
+                    order_status == 'cancelled'
+                    and order.cancelled_from_status == 'client_to_pay'
                     and not order.owner_dismissed
             )
             # Retrieve the cancel_reason stored on the order (if available)
@@ -7261,6 +7268,8 @@ def get_establishment_orders(request):
                 'payment_method': normalize_payment_method(order.gcash_payment_method),
                 # ✅ NEW: tells the owner dashboard to show this row in the request tab
                 'cancelled_from_request': cancelled_from_request,
+                # ✅ NEW: tells the owner dashboard to show this row in the to_pay tab
+                'cancelled_from_to_pay': cancelled_from_to_pay,
                 'cancel_reason': cancel_reason_value,
                 # ✅ NEW: tells owner dashboard which rows are owner-rejected (vs client-cancelled)
                 'cancelled_by_owner': cancelled_by_owner_flag,
@@ -8081,12 +8090,16 @@ def cancel_order(request, order_id):
             else:
                 print(f"DEBUG cancel_order: Order #{order.pk} stock was not deducted — nothing to restore")
 
+            original_status = order.status  # capture before changing to 'cancelled'
             order.status = 'cancelled'
-            # ✅ FIX: Persist cancel_reason so it survives page reloads.
-            # Use hasattr check to avoid AttributeError if model field not yet added.
+            # ✅ FIX: Persist cancel_reason AND original status so the owner can
+            # display the cancelled order in the correct tab after page reload.
+            # We prefix with 'client_' so the API can distinguish client-cancelled
+            # (client_request / client_to_pay) from owner-rejected (request / to_pay / to_claim).
             if hasattr(order, 'cancel_reason'):
                 order.cancel_reason = cancel_reason
-                order.save(update_fields=['status', 'updated_at', 'cancel_reason'])
+                order.cancelled_from_status = f'client_{original_status}'
+                order.save(update_fields=['status', 'updated_at', 'cancel_reason', 'cancelled_from_status'])
             else:
                 order.save(update_fields=['status', 'updated_at'])
 
@@ -8098,10 +8111,9 @@ def cancel_order(request, order_id):
              if oi.menu_item_id in menu_items_map]
         )
 
-        # Broadcast order status change → owner request tab row disappears instantly
-        # cancelled_by_owner=False → client WS knows this was a self-cancel and silently
-        # cleans up instead of showing a "Cancelled by Owner" badge.
+        # Broadcast order status change — pass original status so owner WS knows which tab was affected
         _broadcast_order_status_update(order, 'cancelled', cancel_reason=cancel_reason,
+                                       cancelled_from_status=original_status,
                                        cancelled_by_owner=False)
 
         try:

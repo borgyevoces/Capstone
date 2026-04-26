@@ -1800,6 +1800,67 @@ tr.order-row-highlight {
         font-size: 12px; color: #b91c1c; font-weight: 600;
         display: flex; align-items: center; gap: 5px;
     }
+
+    /* ── Client Order Detail Modal ── */
+    .cod-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.50); z-index: 30000;
+        align-items: center; justify-content: center; padding: 20px;
+    }
+    .cod-overlay.show { display: flex; }
+    @media (max-width: 768px) {
+        .cod-overlay { align-items: flex-end; padding: 0; }
+        .cod-box { border-radius: 20px 20px 0 0 !important; max-height: 94vh !important; width: 100% !important; }
+    }
+    .cod-box {
+        background: white; border-radius: 16px;
+        max-width: 480px; width: 100%; max-height: 82vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+        animation: codSlideIn .22s ease;
+    }
+    @keyframes codSlideIn { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .cod-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 18px 12px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .cod-header h3 { font-size: 15px; font-weight: 800; color: #1a202c; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .cod-header h3 i { color: #B71C1C; }
+    .cod-close {
+        background: #f7fafc; border: 1px solid #e2e8f0; color: #718096;
+        border-radius: 8px; width: 32px; height: 32px; cursor: pointer;
+        font-size: 15px; display: flex; align-items: center; justify-content: center;
+        transition: all .2s; flex-shrink: 0;
+    }
+    .cod-close:hover { background: #fee2e2; color: #B71C1C; border-color: #fca5a5; }
+    .cod-body {
+        overflow-y: auto; padding: 16px 18px; flex: 1;
+    }
+    .cod-detail-row {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 7px 0; border-bottom: 1px solid #f7fafc; gap: 12px;
+    }
+    .cod-label { font-size: 12px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; padding-top: 2px; }
+    .cod-value { font-size: 14px; font-weight: 600; color: #2d3748; text-align: right; flex: 1; }
+    .cod-items-section { margin-top: 12px; padding-top: 12px; border-top: 2px solid #e2e8f0; }
+    .cod-items-title { font-size: 14px; font-weight: 800; color: #2d3748; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+    .cod-item-row {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 7px 0; border-bottom: 1px solid #f7fafc; gap: 10px;
+    }
+    .cod-item-name { font-size: 13.5px; font-weight: 700; color: #2d3748; }
+    .cod-item-qty { font-size: 11px; color: #718096; background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+    .cod-item-price { font-size: 13.5px; font-weight: 700; color: #B71C1C; white-space: nowrap; flex-shrink: 0; }
+    .cod-total-row { display: flex; justify-content: flex-end; margin-top: 12px; padding-top: 10px; border-top: 2px solid #e2e8f0; }
+    .cod-total { font-size: 15px; font-weight: 800; color: #B71C1C; }
+    .cod-footer {
+        padding: 12px 18px 14px; border-top: 2px solid #f0f0f0;
+        display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;
+        background: #fafafa; border-radius: 0 0 16px 16px; flex-shrink: 0;
+    }
+    .cod-row-clickable { cursor: pointer; }
+    .cod-row-clickable:hover td { background: #fffbfb !important; }
+    .cod-row-active td { background: #fff5f5 !important; outline: 2px solid #B71C1C; outline-offset: -1px; }
 </style>
 {% endblock %}
 
@@ -1910,8 +1971,22 @@ tr.order-row-highlight {
 </div>
 
 <!-- ====================================================
-     REORDER MODAL — Product Detail Style
+     CLIENT ORDER DETAIL MODAL
 ===================================================== -->
+<div class="cod-overlay" id="clientOrderDetailModal" onclick="if(event.target===this)closeClientOrderDetail()">
+    <div class="cod-box" onclick="event.stopPropagation()">
+        <div class="cod-header">
+            <h3 id="codTitle"><i class="fas fa-receipt"></i> Order Details</h3>
+            <button class="cod-close" onclick="closeClientOrderDetail()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cod-body" id="codBody">
+            <!-- Dynamically populated -->
+        </div>
+        <div class="cod-footer" id="codFooter" style="display:none;">
+            <!-- Action buttons -->
+        </div>
+    </div>
+</div>
 <div class="reorder-modal-overlay" id="reorderModal" onclick="handleOverlayClick(event)">
     <div class="reorder-modal">
 
@@ -2444,6 +2519,8 @@ tr.order-row-highlight {
                         // Brand-new order (e.g. re-request by another session) — reload
                         loadOrders();
                     }
+                    // Refresh the open detail modal if any order changed
+                    if (typeof refreshClientOpenModal === 'function') refreshClientOpenModal();
 
                 } catch (err) {
                     console.warn('[Client Orders WS] Bad message:', err);
@@ -2600,6 +2677,7 @@ tr.order-row-highlight {
                     allOrders = freshWithFlags.concat(preservedCancelled).concat(lsOnlyRows);
                     updateOrderCounts();
                     filterOrders(currentFilter);
+                    if (typeof refreshClientOpenModal === 'function') refreshClientOpenModal();
 
                     // Subscribe to inventory WS for every establishment
                     const estIds = [...new Set(allOrders.map(function (o) {
@@ -3075,7 +3153,7 @@ const itemsHtml = (o.items || []).map(i => {
             const paymentBadge = showPayment ? buildPaymentBadge(o.payment_method || '') : '';
 
             return `
-            <tr class="order-row" data-id="${o.id}" data-status="${o.status}" data-updated="${o.updated_at || o.created_at}">
+            <tr class="order-row cod-row-clickable" data-id="${o.id}" data-status="${o.status}" data-updated="${o.updated_at || o.created_at}" onclick="handleClientRowClick(event, ${o.id})">
                 <td>
                     <div class="tbl-order-num">#${o.id}</div>
                     <div class="tbl-date"><i class="far fa-clock" style="margin-right:3px;"></i>${fmtDate(o.created_at)}</div>
@@ -4227,7 +4305,9 @@ const itemsHtml = (o.items || []).map(i => {
             const _preIdx = allOrders.findIndex(o => o.id === orderId);
             if (_preIdx !== -1) allOrders.splice(_preIdx, 1);
             if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(orderId);
-            if (typeof lsDismiss === 'function') lsDismiss(orderId);
+            // ✅ FIX: Do NOT call lsDismiss here — re-ordering must allow the order
+            // to reappear in the "Order Request" tab. lsDismiss permanently hides the
+            // order from loadOrders(), so only call it when the client explicitly removes.
 
             fetch('/api/order/' + orderId + '/re-request/', {
                 method: 'POST',
@@ -4364,7 +4444,9 @@ const itemsHtml = (o.items || []).map(i => {
         var _preIdx = allOrders.findIndex(function (o) { return o.id === orderId; });
         if (_preIdx !== -1) allOrders.splice(_preIdx, 1);
         if (typeof lsRemoveCancelled === 'function') lsRemoveCancelled(orderId);
-        if (typeof lsDismiss === 'function') lsDismiss(orderId);
+        // ✅ FIX: Do NOT call lsDismiss here — re-ordering must allow the order
+        // to reappear in the "Order Request" tab. lsDismiss permanently hides the
+        // order from loadOrders(), so only call it when the client explicitly removes.
 
         // Build qty payload from original order items
         var payload = [];
@@ -4927,5 +5009,232 @@ const itemsHtml = (o.items || []).map(i => {
     };
 
 })();
+
+    // ============================================================
+    // CLIENT ORDER DETAIL MODAL
+    // ============================================================
+    let openClientModalOrderId = null;
+
+    function handleClientRowClick(event, id) {
+        // Ignore clicks on interactive elements — let them work normally
+        if (event.target.closest('button, input, a, select, label, .confirm-overlay, .cod-overlay')) return;
+        openClientOrderModal(id);
+    }
+
+    function openClientOrderModal(id) {
+        const o = allOrders.find(x => x.id === id);
+        if (!o) return;
+        openClientModalOrderId = id;
+
+        // Highlight active row
+        document.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('cod-row-active'));
+        const activeRow = document.querySelector('tr.order-row[data-id="' + id + '"]');
+        if (activeRow) activeRow.classList.add('cod-row-active');
+
+        // Title
+        document.getElementById('codTitle').innerHTML = '<i class="fas fa-receipt"></i> Order #' + id;
+
+        // Payment badge
+        const pm = o.payment_method || '';
+        const payHTML = pm === 'cash'
+            ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>'
+            : '<span class="payment-badge payment-gcash"><i class="fas fa-mobile-alt"></i> GCash</span>';
+
+        // Status badge
+        let statusHTML = '<span class="order-status-badge status-' + (o.status||'request') + '">' + getStatusText(o.status) + '</span>';
+        if (o._cancelledByOwner) {
+            const reason = esc(o._ownerPendingCancelReason || o._cancelReason || 'No specific reason provided.');
+            statusHTML = '<span class="order-status-badge" style="background:#fee2e2;color:#991b1b;font-size:11px;"><i class=\'fas fa-ban\'></i> Rejected by Establishment</span>' +
+                         '<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;padding:6px 10px;margin-top:6px;font-size:12px;color:#7f1d1d;">' +
+                         '<i class="fas fa-info-circle" style="color:#dc2626;margin-right:4px;"></i>' + reason + '</div>';
+        }
+
+        // Timer info for to_pay
+        let timerInfo = '';
+        if ((o.status === 'to_pay' || o.status === 'PENDING') && !o._expired && !o._hasStockIssue) {
+            const deadlineMs = new Date(o.updated_at || o.created_at).getTime() + 10 * 60 * 1000;
+            const rem = deadlineMs - Date.now();
+            if (rem > 0) {
+                timerInfo = '<div style="margin-top:6px;"><span id="cod-modal-timer" class="timer-chip ' + (rem <= 60000 ? 'urgent' : '') + '" style="font-size:12px;"><i class="fas fa-clock"></i> <span class="cod-timer-val">' + fmtMs(rem) + '</span> left to pay</span></div>';
+            }
+        } else if (o._expired || o._hasStockIssue) {
+            timerInfo = '<div style="margin-top:6px;"><span class="timer-chip expired" style="font-size:12px;"><i class="fas fa-clock"></i> Time ran out</span></div>';
+        }
+
+        // Claim timer for to_claim
+        let claimTimerInfo = '';
+        if (o.status === 'to_claim' && !o._ownerPendingCancelReason && !o._cancelledByOwner && !o._claimExpired) {
+            const claimDeadline = new Date(o.updated_at || o.created_at).getTime() + 30 * 60 * 1000;
+            const claimRem = claimDeadline - Date.now();
+            if (claimRem > 0) {
+                claimTimerInfo = '<div style="margin-top:6px;"><span id="cod-modal-claim-timer" class="claim-countdown-chip" style="font-size:12px;"><i class="fas fa-hourglass-half"></i> <span class="cod-timer-val">' + fmtMs(claimRem) + '</span> left to claim</span></div>';
+            }
+        }
+
+        // Items list
+        let itemsBodyHTML = '';
+        (o.items || []).forEach(function(i) {
+            const addons = Array.isArray(i.addons) ? i.addons : [];
+            const addonsHtml = addons.length > 0
+                ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">' + addons.map(function(a) {
+                    return '<span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:500;">' +
+                           '<i class="fas fa-plus" style="font-size:8px;"></i> ' + esc(a.name) +
+                           ((parseInt(a.qty)||1) > 1 ? ' ×' + parseInt(a.qty) : '') +
+                           (parseFloat(a.additional_price||0) > 0 ? ' +₱' + parseFloat(a.additional_price).toFixed(2) : '') + '</span>';
+                  }).join('') + '</div>'
+                : '';
+            const noteHtml = (i.note && i.note.trim())
+                ? '<div style="margin-top:4px;font-size:11.5px;color:#78350f;background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;font-style:italic;">' +
+                  '<i class="fas fa-comment-alt" style="color:#d97706;margin-right:4px;font-size:9px;"></i>' + esc(i.note) + '</div>'
+                : '';
+            // Stock chip
+            let stockChip = '';
+            if (typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
+                stockChip = i.available_stock === 0
+                    ? ' <span style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;"><i class=\'fas fa-times-circle\'></i> Out of stock</span>'
+                    : ' <span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;"><i class=\'fas fa-exclamation-triangle\'></i> Only ' + i.available_stock + ' left</span>';
+            }
+            itemsBodyHTML += '<div class="cod-item-row">' +
+                '<div style="flex:1;">' +
+                '<span class="cod-item-name">' + esc(i.name) + '</span>' +
+                '<span class="cod-item-qty">×' + i.quantity + '</span>' + stockChip +
+                addonsHtml + noteHtml + '</div>' +
+                '<div class="cod-item-price">₱' + parseFloat(i.price || 0).toFixed(2) + '</div>' +
+                '</div>';
+        });
+
+        // GCash reference
+        const gcashRow = o.gcash_reference
+            ? '<div class="cod-detail-row"><span class="cod-label">GCash Ref</span><span class="cod-value">' + esc(o.gcash_reference) + '</span></div>'
+            : '';
+
+        document.getElementById('codBody').innerHTML =
+            '<div class="cod-detail-row"><span class="cod-label">Establishment</span>' +
+            '<span class="cod-value" style="font-weight:700;">' + esc(o.establishment_name || '—') + '</span></div>' +
+            '<div class="cod-detail-row"><span class="cod-label">Address</span>' +
+            '<span class="cod-value" style="font-size:12px;color:#718096;">' + esc(o.establishment_address || '—') + '</span></div>' +
+            '<div class="cod-detail-row"><span class="cod-label">Ordered</span>' +
+            '<span class="cod-value">' + fmtDate(o.created_at) + '</span></div>' +
+            '<div class="cod-detail-row"><span class="cod-label">Status</span>' +
+            '<span class="cod-value" style="text-align:right;">' + statusHTML + timerInfo + claimTimerInfo + '</span></div>' +
+            (o.status !== 'request' && o.status !== 'to_pay'
+                ? '<div class="cod-detail-row"><span class="cod-label">Payment</span>' +
+                  '<span class="cod-value">' + payHTML + '</span></div>' +
+                  gcashRow
+                : '') +
+            '<div class="cod-items-section">' +
+            '<div class="cod-items-title"><i class="fas fa-utensils" style="color:#B71C1C;"></i> Items Ordered</div>' +
+            (itemsBodyHTML || '<p style="color:#a0aec0;font-size:13px;">No items</p>') +
+            '<div class="cod-total-row"><span class="cod-total">Total: ₱' + parseFloat(o.total_amount || 0).toFixed(2) + '</span></div>' +
+            '</div>';
+
+        // ── Footer action buttons ──
+        const footerEl = document.getElementById('codFooter');
+        const isOwnerCancelled = o._cancelledByOwner === true;
+        const isExpired        = !!o._expired || !!o._hasStockIssue;
+        const isClaimExpired   = !!o._claimExpired;
+        const isOwnerCancelledClaim = o.status === 'to_claim' && isOwnerCancelled;
+        let footerHTML = '';
+
+        if (o.status === 'request' && !isOwnerCancelled) {
+            const hasStockIssue = (o.items || []).some(i => typeof i.available_stock === 'number' && i.available_stock < i.quantity);
+            if (hasStockIssue) {
+                footerHTML = '<button class="tbl-btn tbl-btn-rerequest" onclick="closeClientOrderDetail();showEditOrderModal(' + id + ');">' +
+                             '<i class="fas fa-redo-alt"></i> Re-order</button>';
+            } else {
+                footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();setTimeout(function(){askCancelOrder(' + id + ')},80);">' +
+                             '<i class="fas fa-times"></i> Cancel Order</button>';
+            }
+        } else if (o.status === 'request' && isOwnerCancelled) {
+            footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
+                         '<i class="fas fa-times"></i> Remove</button>';
+        } else if ((o.status === 'to_pay' || o.status === 'PENDING') && isOwnerCancelled) {
+            footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
+                         '<i class="fas fa-times"></i> Remove</button>';
+        } else if ((o.status === 'to_pay' || o.status === 'PENDING') && isExpired) {
+            footerHTML = '<button class="tbl-btn tbl-btn-rerequest" onclick="closeClientOrderDetail();setTimeout(function(){doDirectReorder(' + id + ', null)},80);">' +
+                         '<i class="fas fa-redo-alt"></i> Re-order</button>' +
+                         '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
+                         '<i class="fas fa-times"></i> Remove</button>';
+        } else if ((o.status === 'to_pay' || o.status === 'PENDING') && !isExpired) {
+            const payDisabled = o._hasStockIssue ? 'btn-disabled' : '';
+            footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();setTimeout(function(){askCancelOrder(' + id + ')},80);">' +
+                         '<i class="fas fa-times"></i> Cancel</button>' +
+                         '<button class="tbl-btn tbl-btn-pay ' + payDisabled + '" onclick="' + (o._hasStockIssue ? 'void(0)' : 'closeClientOrderDetail();payOrder(' + id + ');') + '">' +
+                         '<i class="fas fa-credit-card"></i> Pay Now</button>';
+        } else if (o.status === 'to_claim' && (isOwnerCancelledClaim || isClaimExpired)) {
+            footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();removeClaimCancelledRow(' + id + ');">' +
+                         '<i class="fas fa-times"></i> Remove</button>';
+        } else if (o.status === 'completed') {
+            const estId = o.establishment_id || '';
+            footerHTML = '<button class="tbl-btn tbl-btn-rate" onclick="closeClientOrderDetail();openRatingModal(' + estId + ');">' +
+                         '<i class="fas fa-star"></i> Rate</button>' +
+                         '<button class="tbl-btn tbl-btn-reorder" onclick="closeClientOrderDetail();setTimeout(function(){showReorderModal(' + id + ')},80);">' +
+                         '<i class="fas fa-redo"></i> Reorder</button>';
+        }
+
+        if (footerHTML) {
+            footerEl.style.display = 'flex';
+            footerEl.innerHTML = footerHTML;
+        } else {
+            footerEl.style.display = 'none';
+        }
+
+        document.getElementById('clientOrderDetailModal').classList.add('show');
+
+        // ── Live timer tick inside modal ──
+        if (_modalTimerInterval) clearInterval(_modalTimerInterval);
+        if ((o.status === 'to_pay' || o.status === 'PENDING') && !o._expired && !o._hasStockIssue) {
+            const deadlineMs = new Date(o.updated_at || o.created_at).getTime() + 10 * 60 * 1000;
+            _modalTimerInterval = setInterval(function () {
+                const chip = document.getElementById('cod-modal-timer');
+                if (!chip) { clearInterval(_modalTimerInterval); return; }
+                const rem = deadlineMs - Date.now();
+                if (rem <= 0) {
+                    clearInterval(_modalTimerInterval);
+                    chip.className = 'timer-chip expired';
+                    chip.innerHTML = '<i class="fas fa-clock"></i> Time ran out';
+                } else {
+                    chip.className = 'timer-chip' + (rem <= 60000 ? ' urgent' : '');
+                    chip.querySelector('.cod-timer-val').textContent = fmtMs(rem);
+                }
+            }, 1000);
+        } else if (o.status === 'to_claim' && !o._ownerPendingCancelReason && !o._cancelledByOwner && !o._claimExpired) {
+            const claimDeadline = new Date(o.updated_at || o.created_at).getTime() + 30 * 60 * 1000;
+            _modalTimerInterval = setInterval(function () {
+                const chip = document.getElementById('cod-modal-claim-timer');
+                if (!chip) { clearInterval(_modalTimerInterval); return; }
+                const rem = claimDeadline - Date.now();
+                if (rem <= 0) {
+                    clearInterval(_modalTimerInterval);
+                    chip.className = 'claim-countdown-chip expired';
+                    chip.innerHTML = '<i class="fas fa-hourglass-half"></i> Claim window ended';
+                } else {
+                    chip.querySelector('.cod-timer-val').textContent = fmtMs(rem);
+                }
+            }, 1000);
+        }
+    }
+
+    let _modalTimerInterval = null;
+
+    function closeClientOrderDetail() {
+        if (_modalTimerInterval) { clearInterval(_modalTimerInterval); _modalTimerInterval = null; }
+        document.getElementById('clientOrderDetailModal').classList.remove('show');
+        document.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('cod-row-active'));
+        openClientModalOrderId = null;
+    }
+
+    // Refresh modal if it's open and the order was updated
+    function refreshClientOpenModal() {
+        if (openClientModalOrderId !== null) {
+            const still = allOrders.find(x => x.id === openClientModalOrderId);
+            if (still) {
+                openClientOrderModal(openClientModalOrderId);
+            } else {
+                closeClientOrderDetail();
+            }
+        }
+    }
 </script>
 {% endblock %}

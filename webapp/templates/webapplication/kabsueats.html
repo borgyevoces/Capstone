@@ -842,7 +842,7 @@
             <button class="bs-qf-btn" data-qf="breakfast"
                     onclick="toggleQuickFilter(this)" title="Show breakfast / bakery items">
                 <span class="bs-qf-icon bs-qf-icon--almusal"><i class="fas fa-sun"></i></span>
-                <span class="bs-qf-label">Almusal</span>
+                <span class="bs-qf-label">Morning meals</span>
             </button>
         </div>
 
@@ -874,8 +874,8 @@
             </div>
 
             <!-- Category pills — populated by JS after bsData loads -->
-            <div class="bs-cat-pills" id="bsCatPills">
-            </div>
+<!--            <div class="bs-cat-pills" id="bsCatPills">-->
+<!--            </div>-->
 
             <!-- Grid View button — far right -->
             <button class="gv-btn" id="gvBtn" onclick="toggleGrid()" style="margin-left:auto;">
@@ -1072,6 +1072,11 @@
                         {% if not est.categories.all and not est.other_category %}Uncategorized{% endif %}
                     </span>
                 </div>
+                <!-- ✅ REALTIME: hours display — populated + updated by JS below -->
+                <div class="emr est-hours-row" id="estHours-{{ est.id }}" style="font-size:11px;color:#374151;display:none;">
+                    <i class="fas fa-clock" style="color:#B71C1C"></i>
+                    <span class="est-hours-text"></span>
+                </div>
                 <div class="emr"><i class="fas fa-route" style="color:#B71C1C"></i>
                     {% if est.distance_meters %}
                         {% if est.distance_meters < 1000 %}
@@ -1088,7 +1093,7 @@
                     {{ est.payment_methods|default:"Cash" }}
                 </div>
                 {% if est.amenities.all or est.other_amenity %}
-                <div class="emr" style="padding-bottom:10px">
+                <div class="emr" style="padding-bottom:4px">
                     <i class="fas fa-concierge-bell" style="color:#B71C1C"></i>
                     {% for amenity in est.amenities.all %}{{ amenity.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if est.other_amenity %}{% if est.amenities.all %}, {% endif %}{{ est.other_amenity }}{% endif %}
                 </div>
@@ -1382,6 +1387,67 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
     observer.observe(addonWrap, { childList: true, subtree: true });
+}());
+</script>
+
+<script>
+/* ── ✅ REALTIME: Establishment Hours Display ─────────────────
+   Reads data-opening-time / data-closing-time from each card
+   and renders them below categories. Re-runs every 30s so if
+   the owner changes hours via the dashboard, cards update too.
+   ──────────────────────────────────────────────────────────── */
+(function () {
+    function fmt24to12(hhmm) {
+        if (!hhmm) return null;
+        var parts = hhmm.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parts[1] || '00';
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ' ' + ampm;
+    }
+
+    function refreshHours() {
+        document.querySelectorAll('.estc[data-id]').forEach(function (card) {
+            var id      = card.getAttribute('data-id');
+            var open    = card.getAttribute('data-opening-time');
+            var close   = card.getAttribute('data-closing-time');
+            var wrap    = document.getElementById('estHours-' + id);
+            if (!wrap) return;
+
+            var openFmt  = fmt24to12(open);
+            var closeFmt = fmt24to12(close);
+
+            if (openFmt || closeFmt) {
+                var text = (openFmt || '--') + ' – ' + (closeFmt || '--');
+                wrap.querySelector('.est-hours-text').textContent = text;
+                wrap.style.display = 'flex';
+                wrap.style.alignItems = 'center';
+                wrap.style.gap = '6px';
+            } else {
+                wrap.style.display = 'none';
+            }
+        });
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', refreshHours);
+
+    // Re-run every 30s — picks up any data-attr changes made by status_updater.js
+    setInterval(refreshHours, 30000);
+
+    // Also re-run whenever status_updater.js mutates any card's data attributes
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.type === 'attributes' &&
+                (m.attributeName === 'data-opening-time' || m.attributeName === 'data-closing-time')) {
+                refreshHours();
+            }
+        });
+    });
+    document.querySelectorAll('.estc[data-id]').forEach(function (card) {
+        observer.observe(card, { attributes: true });
+    });
 }());
 </script>
 

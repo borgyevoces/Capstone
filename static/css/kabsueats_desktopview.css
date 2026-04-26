@@ -371,7 +371,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .ddo-desc { font-size: 11px; color: var(--g400); line-height: 1.4; }
 
 /* Grid View Button */
-.gv-btn { padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 2px solid var(--g200); background: transparent; color: var(--g800); display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: .25s; }
+.gv-btn { padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 2px solid var(--red); background: var(--red); color: #fff; display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: .25s; }
 .gv-btn:hover { background: var(--red); border-color: var(--red); }
 .gv-btn.on { background: var(--red); border-color: var(--red); }
 
@@ -425,7 +425,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .bsc-body { padding: 10px 13px 9px; }
 .bsc-name { font-size: 14px; font-weight: 700; color: var(--g800); margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .bsc-desc { font-size: 11.5px; color: var(--g500, #6b7280); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
-.bsc-price { font-size: 17px; font-weight: 400; color: var(--g900); margin-bottom: 5px; }
+.bsc-price { font-size: 17px; font-weight: 800; color: var(--red); margin-bottom: 5px; letter-spacing: -0.3px; }
 .bsc-stats { display: flex; gap: 10px; font-size: 11px; color: var(--g600); margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--g100); }
 .bsc-stats span { display: flex; align-items: center; gap: 4px; }
 .bsc-stats i { color: var(--red); }
@@ -581,9 +581,10 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 .filt-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--g800); }
 .filt-lbl i { color: var(--red); }
 .selw { position: relative; }
-.selw::before { content: '🏷️'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; z-index: 1; }
+.selw::before { content: ''; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; z-index: 1; }
 .selw::after { content: '▼'; font-size: 9px; color: var(--g800); position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 #catFilt { -webkit-appearance: none; appearance: none; background: #fff; border: 2px solid var(--g300); border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--g900); outline: none; padding: 8px 36px; min-width: 200px; box-shadow: var(--sh1); transition: .3s; font-family: 'Poppins', sans-serif; }
+#catFilt option { color: #111; background: #fff; }
 #catFilt:hover { border-color: var(--red); }
 #catFilt:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(183,28,28,.08); }
 
@@ -1013,4 +1014,7 @@ body { font-family: 'Poppins', sans-serif; background: #fff; color: var(--g800);
 /* In grid mode, carousel drops its padding — reset qf-row too  */
 .bs-section:has(#carouselWrap.gmode) .bs-qf-row {
     padding-left: 0;
-}
+}-e
+/* ── Hide category count pills (Cafe, Burger, Pizza, etc.) ── */
+.bs-cat-pills,
+#bsCatPills { display: none !important; }

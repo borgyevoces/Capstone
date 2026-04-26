@@ -380,7 +380,7 @@
     .bsc-body { padding: 8px 10px 7px; }
     .bsc-name { font-size: 12px; font-weight: 700; color: var(--g800); margin-bottom: 2px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .bsc-desc { font-size: 10.5px; color: var(--g500, #6b7280); margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
-    .bsc-price { font-size: 15px; font-weight: 400; color: var(--g900); margin-bottom: 4px; }
+    .bsc-price { font-size: 15px; font-weight: 800; color: var(--red); margin-bottom: 4px; letter-spacing: -0.3px; }
     .bsc-stats { display: flex; gap: 7px; font-size: 10px; color: var(--g600); margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid var(--g100); }
     .bsc-stats span { display: flex; align-items: center; gap: 3px; }
     .bsc-stats i { color: var(--red); }
@@ -511,7 +511,7 @@
     .filt-lbl i { color: var(--red); }
     /* Category dropdown — full width */
     .selw { position: relative; flex: 1; min-width: 120px; }
-    .selw::before { content: '🏷️'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none; z-index: 1; }
+    .selw::before { content: ''; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none; z-index: 1; }
     .selw::after  { content: '▼'; font-size: 8px; color: var(--g800); position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
     #catFilt {
         -webkit-appearance: none; appearance: none; background: #fff;
@@ -831,7 +831,7 @@
     .bsc-img { height: 110px !important; }
     .bsc-body { padding: 10px !important; }
     .bsc-name { font-size: 12px !important; font-weight: 700 !important; line-height: 1.3 !important; }
-    .bsc-price { font-size: 14px !important; color: var(--g900) !important; font-weight: 400 !important; }
+    .bsc-price { font-size: 14px !important; color: var(--red) !important; font-weight: 800 !important; letter-spacing: -0.3px !important; }
     .bsc-btn {
         width: 100% !important; padding: 8px !important;
         font-size: 11px !important; border-radius: 8px !important;
@@ -1471,10 +1471,10 @@
     align-items: center;
     gap: 6px;
     padding: 5px 13px;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--red);
     border-radius: var(--radius-pill);
-    background: #fff;
-    color: var(--text-muted);
+    background: var(--red);
+    color: #fff;
     font-size: 12px;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
@@ -1608,6 +1608,7 @@
     outline: none;
     min-width: 140px;
 }
+#catFilt option { color: #111; background: #fff; }
 
 .selw select:hover,
 #catFilt:hover {
@@ -1806,4 +1807,7 @@
         min-width: 120px;
         padding: 5px 28px 5px 11px;
     }
-}
+}-e
+/* ── Hide category count pills (Cafe, Burger, Pizza, etc.) ── */
+.bs-cat-pills,
+#bsCatPills { display: none !important; }

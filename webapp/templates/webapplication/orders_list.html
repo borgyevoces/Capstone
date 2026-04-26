@@ -7,23 +7,21 @@
 {{ block.super }}
 <style>
 /* ── Add-ons at Notes sa Order Items (Owner Dashboard) ── */
-.row-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 2px 0; }
-.row-item + .row-item { border-top: 1px dashed #f0f4f8; }
-.row-item-first-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.row-item-addons {
-    display: flex; flex-wrap: wrap; gap: 3px; margin-top: 1px;
-}
+.row-item { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 1px 0; }
+.row-item + .row-item { border-top: 1px dashed #f0f4f8; margin-top: 2px; padding-top: 2px; }
+.row-item-first-line { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.row-item-addons-inline { display: inline-flex; flex-wrap: wrap; gap: 2px; margin-top: 1px; }
 .addon-chip {
     background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
-    border-radius: 5px; padding: 1px 6px; font-size: 10px; font-weight: 500;
-    display: inline-flex; align-items: center; gap: 3px;
+    border-radius: 4px; padding: 1px 5px; font-size: 9.5px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 2px;
 }
-.row-item-note {
-    font-size: 10.5px; color: #78350f; background: #fffbeb;
-    border: 1px solid #fde68a; border-radius: 5px;
-    padding: 1px 6px; margin-top: 1px; font-style: italic;
-    display: inline-flex; align-items: center; gap: 4px;
-    max-width: 260px; word-break: break-word;
+.row-item-note-inline {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 9.5px; color: #78350f; background: #fffbeb;
+    border: 1px solid #fde68a; border-radius: 4px;
+    padding: 1px 5px; margin-top: 1px; font-style: italic;
+    max-width: 240px; word-break: break-word;
 }
     /* ==========================================
        CARD-BASED DESIGN - ORDERS PAGE
@@ -60,69 +58,81 @@
         font-size: 14px;
     }
 
-    /* Status Tabs - Button Style */
+    /* Status Tabs - Pill Style (matching client) */
     .status-tabs-container {
         background: white;
-        border-radius: 12px;
-        padding: 16px 20px;
+        border-radius: 14px;
+        padding: 12px;
         margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        border: 1px solid #e9ecef;
     }
 
     .status-tabs {
         display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+        gap: 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+    .status-tabs::-webkit-scrollbar { display: none; }
 
     .status-tab {
-        flex: 1;
-        min-width: 140px;
+        flex: 1 1 0;
+        min-width: 130px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 8px;
-        padding: 12px 20px;
-        border: 2px solid #e2e8f0;
+        padding: 12px 16px;
+        border: 1.5px solid #e2e8f0;
         background: white;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
         transition: all 0.2s ease;
         font-weight: 600;
-        font-size: 14px;
-        color: #4a5568;
+        font-size: 13.5px;
+        font-family: 'Poppins', sans-serif;
+        color: #374151;
+        white-space: nowrap;
+        position: relative;
     }
 
     .status-tab:hover {
         border-color: #B71C1C;
+        color: #B71C1C;
         background: #fff5f5;
     }
 
     .status-tab.active {
-        background: #B71C1C;
+        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
         border-color: #B71C1C;
         color: white;
+        box-shadow: 0 4px 12px rgba(183,28,28,0.3);
     }
 
     .status-tab i {
-        font-size: 16px;
+        font-size: 15px;
+        flex-shrink: 0;
     }
 
     .tab-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 24px;
-        height: 24px;
-        padding: 0 8px;
-        background: rgba(0,0,0,0.1);
-        border-radius: 12px;
+        margin-left: auto;
+        background: rgba(183,28,28,0.12);
+        color: #B71C1C;
+        padding: 2px 9px;
+        border-radius: 20px;
         font-size: 12px;
         font-weight: 700;
+        min-width: 24px;
+        text-align: center;
+        flex-shrink: 0;
     }
 
     .status-tab.active .tab-count {
         background: rgba(255,255,255,0.25);
+        color: #fff;
     }
 
     /* Orders Container */
@@ -130,15 +140,29 @@
         width: 100%;
     }
 
-    /* Individual Order Card */
-    /* ── Table ── */
+    /* ── Table — compact client-style ── */
     .orders-table {
         width: 100%;
         border-collapse: separate;
-        border-spacing: 0 6px;
+        border-spacing: 0 4px;
     }
-
-    /* Data rows */
+    .orders-table thead th {
+        background: white;
+        color: #a0aec0 !important;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        padding: 9px 12px;
+        border-top: 1px solid #ececec;
+        border-bottom: 1px solid #ececec;
+        border-left: none;
+        border-right: none;
+        white-space: nowrap;
+    }
+    .orders-table thead th:first-child { border-left: 1px solid #ececec; border-radius: 10px 0 0 10px; }
+    .orders-table thead th:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; text-align: right; }
+    .orders-table tbody tr { border-bottom: 1px solid #f7f7f7; transition: background .12s; }
     .order-row td {
         padding: 6px 10px;
         vertical-align: middle;
@@ -147,10 +171,21 @@
         border-bottom: 1px solid #ececec;
         font-size: 13px;
         transition: background 0.15s;
+        word-break: break-word;
     }
-    .order-row:hover td { background: #fdfafa; }
+    .order-row { cursor: pointer; }
+    .order-row:hover td { background: #fffbfb !important; }
+    .order-row.modal-open-row td { background: #fff5f5 !important; outline: 2px solid #B71C1C; outline-offset: -1px; }
     .order-row td:first-child { border-left: 1px solid #ececec; border-radius: 10px 0 0 10px; }
     .order-row td:last-child  { border-right: 1px solid #ececec; border-radius: 0 10px 10px 0; }
+    /* Client-style tbl-* helpers */
+    .tbl-order-num { font-family: monospace; font-weight: 700; font-size: 12px; color: #B71C1C; background: rgba(183,28,28,.07); padding: 2px 7px; border-radius: 5px; display: inline-block; }
+    .tbl-date      { font-size: 10px; color: #718096; margin-top: 2px; }
+    .tbl-cust-name { font-weight: 700; color: #1a202c; font-size: 12px; }
+    .tbl-cust-sub  { font-size: 10px; color: #718096; margin-top: 2px; word-break: break-all; }
+    .tbl-total     { font-weight: 800; color: #B71C1C; font-size: 13px; white-space: nowrap; }
+    .tbl-actions   { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
+    .tbl-actions-stack { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
 
     .order-status-badge {
         padding: 4px 10px;
@@ -176,41 +211,22 @@
     .status-to_claim  { background: #E9D5FF; color: #6B21A8; }
     .status-completed { background: #D1FAE5; color: #065F46; }
 
-    /* Row cells */
-    .row-order-num { font-size: 14px; font-weight: 700; color: #B71C1C; }
-    .row-meta      { font-size: 11px; color: #a0aec0; line-height: 1.5; }
-    .row-customer-name { font-size: 13px; font-weight: 600; color: #2d3748; }
-
     .row-items-list { display: flex; flex-direction: column; gap: 0; }
-    .row-item-name  { font-size: 12.5px; font-weight: 600; color: #2d3748; }
-    .row-item-qty   { color: #718096; font-size: 10.5px; background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
-    .row-item-price { font-size: 11.5px; color: #4a5568; }
+    .row-item-name  { font-size: 12px; font-weight: 600; color: #2d3748; }
+    .row-item-qty   { color: #718096; font-size: 10px; background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+    .row-item-price { font-size: 11px; color: #4a5568; }
     .row-item-sep   { color: #cbd5e0; font-size: 11px; }
-    .row-item-total {
-        font-size: 11.5px;
-        color: #718096;
-        margin-top: 4px;
-        padding-top: 4px;
-        border-top: 1px dashed #e2e8f0;
-        text-align: right;
-    }
-    .row-item-total strong { color: #B71C1C; font-size: 14px; }
-
-    .row-total { font-size: 15px; font-weight: 800; color: #B71C1C; white-space: nowrap; }
-
-    .order-actions {
-        display: flex; gap: 5px;
-        justify-content: flex-end; align-items: center;
-    }
+    .order-actions  { display: flex; gap: 5px; justify-content: flex-end; align-items: center; }
 
     .action-btn {
-        padding: 5px 12px; border: none; border-radius: 7px;
-        font-weight: 700; font-size: 11.5px; cursor: pointer;
+        padding: 5px 10px; border: none; border-radius: 6px;
+        font-weight: 700; font-size: 11px; cursor: pointer;
         transition: all 0.2s ease; display: inline-flex;
-        align-items: center; gap: 5px; white-space: nowrap;
-        text-decoration: none; min-width: 76px; justify-content: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,.07);
+        align-items: center; gap: 4px; white-space: nowrap;
+        text-decoration: none; min-width: 90px; justify-content: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,.06); width: 100%;
     }
+    .tbl-actions-stack .action-btn { width: 100%; }
 
     .awaiting-btn {
         background: #f7fafc; color: #a0aec0;
@@ -281,14 +297,14 @@
     .owner-timer-chip {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         background: #fff7ed;
         border: 1px solid #fed7aa;
         color: #c2410c;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 3px 8px;
+        border-radius: 6px;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
@@ -310,14 +326,14 @@
     .claim-timer-chip {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         background: #ede9fe;
         border: 1px solid #c4b5fd;
         color: #6b21a8;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 3px 8px;
+        border-radius: 6px;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
@@ -339,14 +355,14 @@
     .elapsed-chip {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         background: #f1f5f9;
         border: 1px solid #e2e8f0;
         color: #64748b;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        padding: 5px 10px;
-        border-radius: 8px;
+        padding: 3px 8px;
+        border-radius: 6px;
         white-space: nowrap;
     }
     .elapsed-chip i { font-size: 11px; color: #94a3b8; }
@@ -651,78 +667,47 @@
     }
 
     /* Order Modal */
+    /* ── Owner modal — cod-style (matches client) ── */
     .order-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.50); z-index: 30000;
+        align-items: center; justify-content: center; padding: 20px;
     }
-
-    .order-modal.show {
-        display: flex;
+    .order-modal.show { display: flex; }
+    @media (max-width: 768px) {
+        .order-modal { align-items: flex-end; padding: 0; }
+        .modal-content { border-radius: 20px 20px 0 0 !important; max-height: 94vh !important; width: 100% !important; }
     }
-
     .modal-content {
-        background: white;
-        border-radius: 12px;
-        max-width: 600px;
-        width: 100%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        background: white; border-radius: 16px;
+        max-width: 440px; width: 100%; max-height: 78vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+        animation: codSlideIn .22s ease;
     }
-
+    @keyframes codSlideIn { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 18px 12px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
     }
-
-    .modal-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #2d3748;
-    }
-
+    .modal-title { font-size: 15px; font-weight: 800; color: #1a202c; margin: 0; display: flex; align-items: center; gap: 8px; }
     .close-modal {
-        background: none;
-        border: none;
-        font-size: 24px;
-        color: #a0aec0;
-        cursor: pointer;
-        padding: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        transition: all 0.2s;
+        background: #f7fafc; border: 1px solid #e2e8f0; color: #718096;
+        border-radius: 8px; width: 32px; height: 32px; cursor: pointer;
+        font-size: 15px; display: flex; align-items: center; justify-content: center;
+        transition: all .2s; flex-shrink: 0;
     }
-
-    .close-modal:hover {
-        background: #f7fafc;
-        color: #2d3748;
+    .close-modal:hover { background: #fee2e2; color: #B71C1C; border-color: #fca5a5; }
+    .modal-body { overflow-y: auto; padding: 16px 18px; flex: 1; }
+    .modal-footer {
+        padding: 12px 18px 14px; border-top: 2px solid #f0f0f0;
+        display: flex; gap: 8px; justify-content: stretch; flex-wrap: nowrap;
+        background: #fafafa; border-radius: 0 0 16px 16px; flex-shrink: 0;
     }
-
-    .modal-body {
-        padding: 24px;
-    }
-
+    .modal-footer .action-btn { flex: 1; min-width: 0; }
     .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f7fafc;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 7px 0; border-bottom: 1px solid #f7fafc; gap: 12px;
     }
 
     .detail-label {
@@ -1216,31 +1201,7 @@
         40%,80%  { transform: translateX(5px); }
     }
 
-    /* ── 2-row layout inside each td ── */
-    .td-two-row {
-        vertical-align: top !important;
-    }
-    .td-top {
-        padding-bottom: 5px;
-        border-bottom: 1px dashed #e2e8f0;
-        min-height: 28px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .td-bottom {
-        padding-top: 5px;
-        min-height: 28px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    /* Make action buttons full-width inside 2-row cells */
-    .td-two-row.col-actions .td-top .action-btn,
-    .td-two-row.col-actions .td-bottom .action-btn {
-        width: 100%;
-        justify-content: center;
-    }
+
 
 
 </style>
@@ -1287,8 +1248,8 @@
             </div>
         </div>
 
-        <!-- Bulk Actions Bar (inside tabs container so it sits below tabs) -->
-        <div class="bulk-actions">
+        <!-- Bulk Actions Bar -->
+        <div class="bulk-actions" style="margin-top:10px;">
             <div class="selection-info">
                 <input type="checkbox" class="checkbox" onchange="toggleAllOrders()">
                 <span id="selectionText">0 selected</span>
@@ -1379,16 +1340,17 @@
 </div>
 
 <!-- Order Details Modal -->
-<div class="order-modal" id="orderModal">
-    <div class="modal-content">
+<div class="order-modal" id="orderModal" onclick="if(event.target===this)closeOrderModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h2 class="modal-title">Order Details</h2>
-            <button class="close-modal" onclick="closeOrderModal()">
-                <i class="fas fa-times"></i>
-            </button>
+            <h2 class="modal-title" id="orderModalTitle"><i class="fas fa-receipt" style="color:#B71C1C;"></i> Order Details</h2>
+            <button class="close-modal" onclick="closeOrderModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" id="orderModalBody">
             <!-- Dynamically populated -->
+        </div>
+        <div class="modal-footer" id="orderModalFooter" style="display:none;">
+            <!-- Action buttons populated dynamically -->
         </div>
     </div>
 </div>
@@ -1519,7 +1481,7 @@ function esc(s) {
                         // Show "Cancelled by Client" badge + reason in Status cell,
                         // swap action buttons to a single Remove button.
                         // Owner needs to see the reason and manually remove it.
-                        } else if (wasRequest) {
+                        } else if (fromStatus === 'request' || wasRequest) {
                             // Update in-memory status and flag so loadOrders() preserves this row
                             if (idx !== -1) {
                                 orders[idx].status = 'cancelled';
@@ -1563,13 +1525,55 @@ function esc(s) {
                             }
 
                             showToast(`Order #${orderId} was cancelled by the client.`, 'warning');
+                            // ✅ Freeze the elapsed timer chip — stop ticking after cancellation
+                            const elapsedChip = document.getElementById(`elapsed-${orderId}`);
+                            if (elapsedChip) elapsedChip.removeAttribute('data-since');
+                            updateCounts();
+                            // Client cancelled from to_pay — keep row visible with badge + Remove btn
+                            if (idx !== -1) {
+                                orders[idx].status = 'cancelled';
+                                orders[idx]._cancelledFromToPay = true;
+                                orders[idx]._cancelReason = cancelReason;
+                            }
+                            // Update DOM only if owner is currently viewing the to_pay tab
+                            if (currentTab === 'to_pay') {
+                                const statusCellPay = document.querySelector(`tr.order-row[data-id="${orderId}"] td:nth-child(6)`);
+                                if (statusCellPay) {
+                                    const displayReason = cancelReason || 'No reason provided.';
+                                    statusCellPay.innerHTML = `
+                                        <div style="display:inline-flex;flex-direction:column;gap:3px;align-items:stretch;">
+                                            <span class="order-status-badge status-cancelled"
+                                                  style="background:#fee2e2;color:#991b1b;white-space:nowrap;text-transform:none;letter-spacing:0;font-size:11px;">
+                                                <i class="fas fa-user-times"></i> Cancelled by Client
+                                            </span>
+                                            <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:5px;
+                                                        padding:3px 7px;font-size:9.5px;color:#7f1d1d;font-weight:500;line-height:1.3;">
+                                                <i class="fas fa-info-circle" style="color:#dc2626;margin-right:3px;font-size:9px;"></i>
+                                                ${esc(cancelReason || 'No reason provided.')}
+                                            </div>
+                                        </div>`;
+                                }
+                                const actionsCellPay = document.querySelector(`tr.order-row[data-id="${orderId}"] td:last-child`);
+                                if (actionsCellPay) {
+                                    const safeReason = (cancelReason || 'No reason provided.').replace(/"/g, '&quot;');
+                                    actionsCellPay.innerHTML = `<div class="tbl-actions-stack">
+                                        <button class="action-btn btn-reject" style="width:100%;"
+                                                data-cancel-reason="${safeReason}"
+                                                onclick="removeClientCancelledRow(${orderId}, this)">
+                                            <i class="fas fa-trash-alt"></i> Remove
+                                        </button></div>`;
+                                }
+                            }
+                            showToast(`Order #${orderId} was cancelled by the client.`, 'warning');
+                            // ✅ Freeze the elapsed timer chip — stop ticking after cancellation
+                            const elapsedChipToPay = document.getElementById(`elapsed-${orderId}`);
+                            if (elapsedChipToPay) elapsedChipToPay.removeAttribute('data-since');
                             updateCounts();
 
                         } else {
-                            // All other cancellations (to_pay, to_claim etc.) — remove row
+                            // All other cancellations (to_claim etc.) — remove row
                             if (idx !== -1) orders.splice(idx, 1);
                             removeOrderRow(orderId);
-                            // If on to_claim tab, reload to refresh quantities
                             if (currentTab === 'to_claim') {
                                 loadOrders();
                             }
@@ -1605,6 +1609,8 @@ function esc(s) {
                                 showToast('Order #' + orderId + ' was updated by the client.', 'info');
                             }
                         }
+                        // Refresh modal if open for this order
+                        refreshOpenModal();
 
                     } else {
                         // ── Brand-new order / re-request from cancelled/to_pay — reload ────────
@@ -1663,8 +1669,7 @@ function esc(s) {
                     });
 
                     // ✅ FIX: Hydrate in-memory flags from API data so cancelled-by-client
-                    // request orders are shown in the request tab even after a page reload.
-                    // The API now returns cancelled_from_request + cancel_reason per order.
+                    // orders are shown in the correct tab even after a page reload.
                     data.orders.forEach(o => {
                         if (o.cancelled_from_request) {
                             o._cancelledFromRequest = true;
@@ -1673,13 +1678,17 @@ function esc(s) {
                             // cancelled_by_owner=True means the owner initiated the rejection
                             o._rejectedByOwner = !!o.cancelled_by_owner;
                         }
+                        if (o.cancelled_from_to_pay) {
+                            o._cancelledFromToPay = true;
+                            o._cancelReason = o.cancel_reason || 'No reason provided.';
+                        }
                     });
 
                     // Also preserve any in-memory cancelled rows not yet in the fresh API list
                     // (e.g. cancelled via WS in this session before the owner removed them).
                     const freshIds = new Set(data.orders.map(o => o.id));
                     const preservedCancelled = orders.filter(
-                        o => o.status === 'cancelled' && o._cancelledFromRequest && !freshIds.has(o.id)
+                        o => o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay) && !freshIds.has(o.id)
                     );
                     orders = data.orders.concat(preservedCancelled);
                     console.log('📋 [loadOrders] Updated orders array. Total: ' + orders.length);
@@ -1691,8 +1700,9 @@ function esc(s) {
                     });
                     updateCounts();
                     renderOrders();
+                    refreshOpenModal();
                 } else {
-                    console.error('📋 [loadOrders] Failed - data.success=' + data.success + ', data.orders is array=' + Array.isArray(data.orders));
+                    console.error('📋 [loadOrders] Failed');
                     showError('Failed to load orders');
                 }
             })
@@ -1716,6 +1726,10 @@ function esc(s) {
                 const cancelledCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
                 console.log('📋 [updateCounts] ' + status + ' has ' + cancelledCount + ' cancelled orders to include');
                 count += cancelledCount;
+            }
+            if (status === 'to_pay') {
+                const cancelledToPayCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromToPay).length;
+                count += cancelledToPayCount;
             }
             const el = document.getElementById(`count-${status}`);
             if (el) {
@@ -1748,6 +1762,9 @@ function esc(s) {
                         console.log('📋 [renderOrders filter] ✅ Order #' + o.id + ' matches (status=' + o.status + ')');
                     }
                     return match;
+                }
+                if (currentTab === 'to_pay') {
+                    return o.status === 'to_pay' || (o.status === 'cancelled' && o._cancelledFromToPay);
                 }
                 const match = (o.status || 'request') === currentTab;
                 if(match) {
@@ -1791,7 +1808,6 @@ function esc(s) {
             const itemsList = (o.items && o.items.length > 0)
     ? o.items.map(i => {
         let chip = '';
-        let removeBtn = '';
         if (isOwnerStockTab && typeof i.available_stock === 'number') {
             if (i.available_stock === 0) {
                 chip = `<span class="owner-stock-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
@@ -1799,18 +1815,16 @@ function esc(s) {
                 chip = `<span class="owner-stock-chip low"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
             }
         }
-
-        // ✅ BAGONG: Add-ons display
+        // Add-ons inline on same line as item
         const addons = Array.isArray(i.addons) ? i.addons : [];
         const addonsHtml = addons.length > 0
-            ? `<div class="row-item-addons">${addons.map(a =>
-                `<span class=\"addon-chip\"><i class=\"fas fa-plus\" style=\"font-size:8px;\"></i> ${esc(a.name)}${(parseInt(a.qty)||1)>1?' ×'+(parseInt(a.qty)):''}${parseFloat(a.additional_price||0)>0?' +₱'+parseFloat(a.additional_price).toFixed(2):''}</span>`
-              ).join('')}</div>`
+            ? `<span class="row-item-addons-inline">${addons.map(a =>
+                `<span class=\"addon-chip\"><i class=\"fas fa-plus\" style=\"font-size:8px;\"></i>${esc(a.name)}${(parseInt(a.qty)||1)>1?' ×'+(parseInt(a.qty)):''}${parseFloat(a.additional_price||0)>0?' +₱'+parseFloat(a.additional_price).toFixed(2):''}</span>`
+              ).join('')}</span>`
             : '';
-
-        // ✅ BAGONG: Note display
+        // Note inline
         const noteHtml = (i.note && i.note.trim())
-            ? `<div class="row-item-note"><i class="fas fa-comment-alt"></i><em>${esc(i.note)}</em></div>`
+            ? `<span class="row-item-note-inline"><i class="fas fa-comment-alt" style="font-size:8px;"></i><em>${esc(i.note)}</em></span>`
             : '';
 
         return `<div class="row-item" id="order-item-row-${i.order_item_id || ''}">
@@ -1819,12 +1833,11 @@ function esc(s) {
                 <span class="row-item-qty">×${i.quantity}</span>
                 <span class="row-item-sep">—</span>
                 <span class="row-item-price">₱${parseFloat(i.price).toFixed(2)}</span>
-                ${chip}${removeBtn}
+                ${chip}
             </div>
-            ${addonsHtml}
-            ${noteHtml}
+            ${addonsHtml}${noteHtml}
         </div>`;
-      }).join('') + `<div class="row-item-total" id="order-total-${o.id}">Total: <strong>₱${parseFloat(o.total_amount || 0).toFixed(2)}</strong></div>`
+      }).join('')
     : '<span style="color:#a0aec0;font-size:12px;">—</span>';
 
             // Stock issue flag for request + to_pay rows (banner removed — chips on each item are enough)
@@ -1878,7 +1891,7 @@ function esc(s) {
 
             // ✅ FIX: If this order was cancelled by the client from 'request' status,
             // override the status badge and action buttons before building the row.
-            let isCancelledByClient = o.status === 'cancelled' && o._cancelledFromRequest && !o._rejectedByOwner;
+            let isCancelledByClient = o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay) && !o._rejectedByOwner;
             let isRejectedByOwner   = o.status === 'cancelled' && o._cancelledFromRequest && !!o._rejectedByOwner;
             let clientCancelStatusHtml = '';
             if (isCancelledByClient) {
@@ -1991,10 +2004,10 @@ function esc(s) {
             }
 
             rows += `
-                <tr class="order-row" data-id="${o.id}">
+                <tr class="order-row" data-id="${o.id}" onclick="handleRowClick(event, ${o.id})">
 
                     <!-- COL 1: Checkbox -->
-                    <td class="col-check">
+                    <td style="width:36px;text-align:center;">
                         ${currentTab !== 'to_pay' && !isCancelledByClient && !isRejectedByOwner
                             ? `<input type="checkbox" class="checkbox" data-id="${o.id}"
                                       ${selectedOrders.has(o.id) ? 'checked' : ''}
@@ -2003,112 +2016,88 @@ function esc(s) {
                         }
                     </td>
 
-                    <!-- COL 2: Order# (top) + Time & Date (bottom) -->
-                    <td class="col-order td-two-row" style="min-width:110px;">
-                        <div class="td-top">
-                            <div class="row-order-num">#${o.id}</div>
-                        </div>
-                        <div class="td-bottom">
-                            <div class="row-meta" style="font-weight:600;color:#374151;font-size:12px;">${formatTime(o.created_at)}</div>
-                            <div class="row-meta">${formatDate(o.created_at)}</div>
-                        </div>
+                    <!-- COL 2: Order# + Date -->
+                    <td style="width:110px;">
+                        <div class="tbl-order-num">#${o.id}</div>
+                        <div class="tbl-date"><i class="far fa-clock" style="margin-right:2px;"></i>${formatTime(o.created_at)}, ${formatDate(o.created_at)}</div>
                     </td>
 
-                    <!-- COL 3: Elapsed (top) + Customer name & email (bottom) -->
-                    <td class="col-customer td-two-row" style="min-width:150px;">
-                        <div class="td-top">
-                            ${currentTab !== 'completed' && currentTab !== 'to_claim'
-                                ? `<span class="elapsed-chip" id="elapsed-${o.id}" data-since="${o.updated_at || o.created_at}">
-                                       <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
-                                   </span>`
-                                : currentTab === 'to_claim'
-                                    ? claimTimerHtml
-                                    : `<span style="font-size:11px;color:#a0aec0;">—</span>`
-                            }
-                        </div>
-                        <div class="td-bottom">
-                            <div class="row-customer-name">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
-                            <div class="row-meta" style="word-break:break-all;">${esc(o.customer_email || '')}</div>
-                        </div>
-                    </td>
-
-                    <!-- COL 4: Items (top) + Total & Payment (bottom) -->
-                    <td class="col-items td-two-row">
-                        <div class="td-top">
-                            <div class="row-items-list">${itemsList}</div>
-                            ${ownerStockBanner || ''}
-                        </div>
-                        <div class="td-bottom">
-                            ${currentTab !== 'request' && currentTab !== 'to_pay'
-                                ? `<span class="payment-badge ${paymentClass}">
-                                       <i class="fas ${paymentIcon}"></i> ${paymentLabel}
-                                   </span>`
-                                : ''
-                            }
-                        </div>
-                    </td>
-
-                    <!-- COL 5: Status (top) + Timer/extra (bottom) -->
-                    <td class="col-status td-two-row" style="min-width:120px;">
-                        <div class="td-top">
-                            ${isCancelledByClient
-                                ? clientCancelStatusHtml
-                                : isRejectedByOwner
-                                    ? ownerRejectedStatusHtml
-                                    : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
-                            }
-                        </div>
-                        <div class="td-bottom">
-                            ${currentTab === 'to_pay' ? timerCellHtml : ''}
-                        </div>
-                    </td>
-
-                    <!-- COL 6: Actions - already 2-row (primary action top, secondary bottom) -->
-                    <td class="col-actions td-two-row" style="min-width:130px;">
-                        ${currentTab === 'completed'
-                            ? `<div class="td-top"><button class="action-btn btn-view" onclick="viewOrder(${o.id})"><i class="fas fa-eye"></i> Details</button></div><div class="td-bottom"></div>`
-                            : currentTab === 'to_pay'
-                                ? `<div class="td-top">${actionBtn}</div><div class="td-bottom"></div>`
-                                : currentTab === 'request' && !ownerHasStockIssue && !isCancelledByClient && !isRejectedByOwner
-                                    ? `<div class="td-top">
-                                           <button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
-                                               <i class="fas fa-check"></i> Accept
-                                           </button>
-                                       </div>
-                                       <div class="td-bottom">
-                                           <button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
-                                               <i class="fas fa-times"></i> Reject
-                                           </button>
-                                       </div>`
-                                    : currentTab === 'to_claim' && !isClaimExpired
-                                        ? `<div class="td-top">
-                                               <button class="action-btn btn-move" onclick="moveOrder(${o.id})">
-                                                   <i class="fas fa-check-circle"></i> Completed
-                                               </button>
-                                           </div>
-                                           <div class="td-bottom">
-                                               <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-${o.id}" onclick="cancelClaimOrder(${o.id})">
-                                                   <i class="fas fa-ban"></i> Reject
-                                               </button>
-                                           </div>`
-                                        : `<div class="td-top">${actionBtn}</div><div class="td-bottom"></div>`
+                    <!-- COL 3: Elapsed chip + Customer -->
+                    <td style="min-width:150px;">
+                        ${currentTab !== 'completed' && currentTab !== 'to_claim'
+                            ? `<span class="elapsed-chip" id="elapsed-${o.id}" ${isCancelledByClient ? '' : `data-since="${o.updated_at || o.created_at}"`} style="font-size:11px;padding:3px 8px;">
+                                   <i class="fas fa-clock"></i> ${formatElapsed(o.updated_at || o.created_at)}
+                               </span>`
+                            : currentTab === 'to_claim' ? claimTimerHtml : ''
                         }
+                        <div class="tbl-cust-name" style="margin-top:3px;">${esc(o.customer_name || o.customer_email || 'Unknown')}</div>
+                        <div class="tbl-cust-sub">${esc(o.customer_email || '')}</div>
+                    </td>
+
+                    <!-- COL 4: Items only -->
+                    <td>
+                        <div class="row-items-list">${itemsList}</div>
+                        ${ownerStockBanner || ''}
+                    </td>
+
+                    <!-- COL 4b: Total + Payment -->
+                    <td style="width:100px;white-space:nowrap;">
+                        <span class="tbl-total">₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
+                        ${currentTab !== 'request' && currentTab !== 'to_pay'
+                            ? `<div style="margin-top:3px;"><span class="payment-badge ${paymentClass}" style="font-size:10px;padding:2px 7px;">
+                                   <i class="fas ${paymentIcon}"></i> ${paymentLabel}
+                               </span></div>`
+                            : ''
+                        }
+                    </td>
+
+                    <!-- COL 5: Status + timer -->
+                    <td style="min-width:120px;">
+                        ${isCancelledByClient
+                            ? clientCancelStatusHtml
+                            : isRejectedByOwner
+                                ? ownerRejectedStatusHtml
+                                : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
+                        }
+                        ${currentTab === 'to_pay' ? `<div style="margin-top:5px;">${timerCellHtml}</div>` : ''}
+                    </td>
+
+                    <!-- COL 6: Actions — primary top, secondary bottom -->
+                    <td style="min-width:130px;text-align:right;">
+                        <div class="tbl-actions-stack">
+                            ${currentTab === 'request' && !ownerHasStockIssue && !isCancelledByClient && !isRejectedByOwner
+                                ? `<button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
+                                       <i class="fas fa-check"></i> Accept
+                                   </button>
+                                   <button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
+                                       <i class="fas fa-times"></i> Reject
+                                   </button>`
+                                : currentTab === 'to_claim' && !isClaimExpired
+                                    ? `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
+                                           <i class="fas fa-check-circle"></i> Completed
+                                       </button>
+                                       <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-${o.id}" onclick="cancelClaimOrder(${o.id})">
+                                           <i class="fas fa-ban"></i> Reject
+                                       </button>`
+                                    : actionBtn
+                            }
+                        </div>
                     </td>
                 </tr>
             `;
         });
 
-        const thS = `style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;"`;
         const html = `
             <table class="orders-table">
                 <thead>
-                    <tr style="box-shadow:0 1px 3px rgba(0,0,0,0.07);">
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:1px solid #ececec;border-right:none;border-radius:10px 0 0 10px;width:36px;"></th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:120px;">Order / Time</th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;min-width:150px;">Customer</th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;">Items</th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:none;width:130px;text-align:center;">Status</th>
-                        <th ${thS} style="background:white;color:#a0aec0 !important;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-top:1px solid #ececec;border-bottom:1px solid #ececec;border-left:none;border-right:1px solid #ececec;border-radius:0 10px 10px 0;width:160px;text-align:right;">Actions</th>
+                    <tr>
+                        <th style="width:36px;border-left:1px solid #ececec;border-radius:10px 0 0 10px;"></th>
+                        <th style="width:110px;">Order / Time</th>
+                        <th style="min-width:140px;">Customer</th>
+                        <th>Items</th>
+                        <th style="width:100px;">Total</th>
+                        <th style="width:120px;">Status</th>
+                        <th style="width:140px;text-align:right;border-right:1px solid #ececec;border-radius:0 10px 10px 0;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -2132,9 +2121,25 @@ function esc(s) {
     // ==========================================
     // ORDER DETAILS MODAL
     // ==========================================
+
+    // Track which order's modal is currently open (for realtime refresh)
+    let openModalOrderId = null;
+
+    // handleRowClick — called by TR onclick. Ignores clicks on interactive elements.
+    function handleRowClick(event, id) {
+        if (event.target.closest('button, input, a, select, label, .confirm-modal-overlay, .cancel-claim-modal-overlay')) return;
+        viewOrder(id);
+    }
+
     function viewOrder(id) {
         const o = orders.find(x => x.id === id);
         if (!o) return;
+        openModalOrderId = id;
+
+        // Highlight the open row
+        document.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('modal-open-row'));
+        const openRow = document.querySelector(`tr.order-row[data-id="${id}"]`);
+        if (openRow) openRow.classList.add('modal-open-row');
 
         const payHTML = o.payment_method === 'cash'
             ? '<span class="payment-badge payment-cash"><i class="fas fa-money-bill-wave"></i> Cash on Pickup</span>'
@@ -2152,26 +2157,49 @@ function esc(s) {
     const noteHtml = (i.note && i.note.trim())
         ? `<div style="margin-top:4px;font-size:11.5px;color:#78350f;background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;"><i class="fas fa-comment-alt" style="color:#d97706;margin-right:4px;font-size:10px;"></i><em>${esc(i.note)}</em></div>`
         : '';
+    // Stock chip in modal (request + to_pay)
+    let stockChip = '';
+    if ((o.status === 'request' || o.status === 'to_pay') && typeof i.available_stock === 'number') {
+        if (i.available_stock === 0) {
+            stockChip = `<span style="margin-left:6px;background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;"><i class="fas fa-times-circle"></i> Out of stock</span>`;
+        } else if (i.available_stock < i.quantity) {
+            stockChip = `<span style="margin-left:6px;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+        }
+    }
     return `
-        <div class="item-row">
-            <div class="item-details">
-                <div class="item-name">${esc(i.name)}</div>
-                <div class="item-qty">Quantity: ${i.quantity}</div>
-                ${addonsHtml}
-                ${noteHtml}
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f7fafc;">
+            <div style="flex:1;">
+                <div style="font-weight:700;font-size:14px;color:#2d3748;">${esc(i.name)}<span style="font-size:12px;color:#718096;font-weight:400;margin-left:6px;">×${i.quantity}</span>${stockChip}</div>
+                ${addonsHtml}${noteHtml}
             </div>
-            <div class="item-price">₱${parseFloat(i.price).toFixed(2)}</div>
+            <div style="font-weight:700;font-size:14px;color:#B71C1C;white-space:nowrap;margin-left:12px;">₱${parseFloat(i.price).toFixed(2)}</div>
         </div>`;
 }).join('');
         } else {
             itemsHTML = '<p style="color: #718096;">No items found</p>';
         }
 
+        // Cancelled status display
+        let cancelNotice = '';
+        if (o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay)) {
+            const reason = esc(o._cancelReason || 'No reason provided.');
+            cancelNotice = o._rejectedByOwner
+                ? `<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:13px;color:#78350f;">
+                       <strong><i class="fas fa-times-circle"></i> Rejected by You</strong><br>
+                       <span style="font-size:12px;">Reason: ${reason}</span>
+                   </div>`
+                : `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:13px;color:#7f1d1d;">
+                       <strong><i class="fas fa-user-times"></i> Cancelled by Client</strong><br>
+                       <span style="font-size:12px;">Reason: ${reason}</span>
+                   </div>`;
+        }
+
+        const statusLabel = (o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay))
+            ? (o._rejectedByOwner ? 'Rejected by You' : 'Cancelled by Client')
+            : (LABELS[o.status || 'request'] || o.status);
+
+        document.getElementById('orderModalTitle').innerHTML = `<i class="fas fa-receipt" style="color:#B71C1C;"></i> Order #${o.id}`;
         document.getElementById('orderModalBody').innerHTML = `
-            <div class="detail-row">
-                <span class="detail-label">Order #</span>
-                <span class="detail-value">#${o.id}</span>
-            </div>
             <div class="detail-row">
                 <span class="detail-label">Customer</span>
                 <span class="detail-value">${esc(o.customer_name || 'Unknown')}</span>
@@ -2181,39 +2209,116 @@ function esc(s) {
                 <span class="detail-value">${esc(o.customer_email || 'N/A')}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Status</span>
-                <span class="detail-value">${LABELS[o.status || 'request']}</span>
+                <span class="detail-label">Date & Time</span>
+                <span class="detail-value">${formatTime(o.created_at)}, ${formatDate(o.created_at)}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Payment Method</span>
+                <span class="detail-label">Status</span>
+                <span class="detail-value"><span class="order-status-badge status-${o.status || 'request'}">${statusLabel}</span></span>
+            </div>
+            ${(o.status !== 'request' && o.status !== 'to_pay' && !(o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay))) ? `
+            <div class="detail-row">
+                <span class="detail-label">Payment</span>
                 <span class="detail-value">${payHTML}</span>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Total Amount</span>
-                <span class="detail-value" style="font-weight:700;color:#B71C1C;font-size:18px">
-                    ₱${parseFloat(o.total_amount || 0).toFixed(2)}
-                </span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Order Time</span>
-                <span class="detail-value">${formatTime(o.created_at)} - ${formatDate(o.created_at)}</span>
-            </div>
-            ${o.gcash_reference ? `
-            <div class="detail-row">
-                <span class="detail-label">Reference Number</span>
-                <span class="detail-value">${esc(o.gcash_reference)}</span>
-            </div>
+            ${o.gcash_reference ? '<div class="detail-row"><span class="detail-label">GCash Ref</span><span class="detail-value">' + esc(o.gcash_reference) + '</span></div>' : ''}
             ` : ''}
-            <div class="items-section">
-                <h4 class="section-title"><i class="fas fa-utensils"></i> Order Items</h4>
+            ${cancelNotice}
+            <div style="margin-top:14px;padding-top:12px;border-top:2px solid #e2e8f0;">
+                <div style="font-size:12px;font-weight:800;color:#2d3748;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-utensils" style="color:#B71C1C;"></i> Order Items
+                </div>
                 ${itemsHTML}
+                <div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:2px solid #e2e8f0;">
+                    <span style="font-size:15px;font-weight:800;color:#B71C1C;">Total: ₱${parseFloat(o.total_amount || 0).toFixed(2)}</span>
+                </div>
             </div>
         `;
+
+        // ── Action Buttons in modal footer ──
+        const footerEl = document.getElementById('orderModalFooter');
+        const modalStatus = o.status || 'request';
+        const isCancelled = o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay);
+        const isOwnerRej  = isCancelled && !!o._rejectedByOwner;
+        let footerHTML = '';
+
+        if (isCancelled && !isOwnerRej) {
+            // Client cancelled — only Dismiss
+            footerHTML = `<button class="action-btn btn-reject" onclick="removeClientCancelledRow(${o.id}, this);closeOrderModal();">
+                <i class="fas fa-trash-alt"></i> Remove Row
+            </button>`;
+        } else if (isCancelled && isOwnerRej) {
+            // Owner rejected — Dismiss
+            footerHTML = `<button class="action-btn btn-reject" onclick="removeClientCancelledRow(${o.id}, this);closeOrderModal();">
+                <i class="fas fa-check"></i> Dismiss
+            </button>`;
+        } else if (modalStatus === 'request') {
+            if (o._hasStockIssue) {
+                footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();directRemoveOrder(${o.id}, this);">
+                    <i class="fas fa-trash-alt"></i> Remove (Stock Issue)
+                </button>`;
+            } else {
+                footerHTML = `
+                    <button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>rejectOrder(${o.id}),80);">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                    <button class="action-btn btn-move btn-accept" onclick="closeOrderModal();moveOrder(${o.id});">
+                        <i class="fas fa-check"></i> Accept
+                    </button>`;
+            }
+        } else if (modalStatus === 'to_pay') {
+            footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>rejectOrder(${o.id}),80);">
+                <i class="fas fa-times"></i> Reject
+            </button>`;
+        } else if (modalStatus === 'preparing') {
+            footerHTML = `<button class="action-btn btn-move" onclick="closeOrderModal();moveOrder(${o.id});">
+                <i class="fas fa-check-circle"></i> Mark Ready to Claim
+            </button>`;
+        } else if (modalStatus === 'to_claim') {
+            const isClaimExp = !!o._claimExpired;
+            if (!isClaimExp) {
+                footerHTML = `
+                    <button class="action-btn btn-cancel-claim" onclick="closeOrderModal();setTimeout(()=>cancelClaimOrder(${o.id}),80);">
+                        <i class="fas fa-ban"></i> Reject
+                    </button>
+                    <button class="action-btn btn-move" onclick="closeOrderModal();moveOrder(${o.id});">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </button>`;
+            } else {
+                footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();directRemoveExpiredClaimOrder(${o.id},this);">
+                    <i class="fas fa-trash-alt"></i> Remove
+                </button>`;
+            }
+        } else if (modalStatus === 'completed') {
+            footerHTML = `<span style="font-size:13px;color:#065F46;font-weight:700;background:#D1FAE5;padding:8px 16px;border-radius:8px;width:100%;text-align:center;display:block;"><i class="fas fa-check-circle"></i> Order Completed</span>`;
+        }
+
+        if (footerHTML) {
+            footerEl.style.display = 'flex';
+            footerEl.innerHTML = footerHTML;
+        } else {
+            footerEl.style.display = 'none';
+        }
+
         document.getElementById('orderModal').classList.add('show');
     }
 
     function closeOrderModal() {
         document.getElementById('orderModal').classList.remove('show');
+        document.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('modal-open-row'));
+        openModalOrderId = null;
+    }
+
+    // Refresh the open modal if the order it's showing was updated
+    function refreshOpenModal() {
+        if (openModalOrderId !== null) {
+            const stillExists = orders.find(x => x.id === openModalOrderId);
+            if (stillExists) {
+                viewOrder(openModalOrderId);
+            } else {
+                closeOrderModal();
+            }
+        }
     }
 
     // ==========================================
@@ -2263,9 +2368,13 @@ function esc(s) {
         const clearTxt = document.getElementById('clearCancelledText');
         if (clearBtn) {
             const cancelledCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest).length;
+            const cancelledToPayCount = orders.filter(o => o.status === 'cancelled' && o._cancelledFromToPay).length;
             if (currentTab === 'request' && cancelledCount > 0) {
                 clearBtn.style.display = 'flex';
                 if (clearTxt) clearTxt.textContent = `Clear All Cancelled (${cancelledCount})`;
+            } else if (currentTab === 'to_pay' && cancelledToPayCount > 0) {
+                clearBtn.style.display = 'flex';
+                if (clearTxt) clearTxt.textContent = `Clear All Cancelled (${cancelledToPayCount})`;
             } else {
                 clearBtn.style.display = 'none';
             }
@@ -2278,7 +2387,7 @@ function esc(s) {
             // ✅ FIX: Exclude BOTH client-cancelled AND owner-rejected rows from bulk accept
             const acceptableSelected = Array.from(selectedOrders).filter(id => {
                 const o = orders.find(x => x.id === id);
-                return o && !(o.status === 'cancelled' && o._cancelledFromRequest);
+                return o && !(o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay));
             });
             if (acceptableSelected.length > 0) {
                 btn.disabled = false;
@@ -2755,7 +2864,7 @@ function esc(s) {
     // ✅ FIXED: Permanently dismiss ALL client-cancelled AND owner-rejected request rows.
     // Calls the backend bulk dismiss API so dismissals survive page reloads.
     function clearAllCancelledOrders() {
-        const cancelledOrders = orders.filter(o => o.status === 'cancelled' && o._cancelledFromRequest);
+        const cancelledOrders = orders.filter(o => o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay));
         const count = cancelledOrders.length;
         if (count === 0) return;
 
@@ -2894,7 +3003,7 @@ function esc(s) {
 
         // ✅ NEW: Block accepting an order that was already cancelled by the client
         const orderEntry = orders.find(o => o.id === id);
-        if (orderEntry && orderEntry.status === 'cancelled' && orderEntry._cancelledFromRequest) {
+        if (orderEntry && orderEntry.status === 'cancelled' && (orderEntry._cancelledFromRequest || orderEntry._cancelledFromToPay)) {
             showToast(`Order #${id} was already cancelled by the client and cannot be accepted.`, 'error');
             return;
         }
@@ -2916,7 +3025,7 @@ function esc(s) {
         // ✅ NEW: Exclude cancelled-by-client orders from bulk accept
         const ids = Array.from(selectedOrders).filter(id => {
             const o = orders.find(x => x.id === id);
-            return !(o && o.status === 'cancelled' && o._cancelledFromRequest);
+            return !(o && o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay));
         });
         const count = ids.length;
         if (count === 0) {
