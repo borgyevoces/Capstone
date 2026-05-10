@@ -39,7 +39,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import transaction, OperationalError
 from decimal import Decimal
 from django.urls import reverse
 import base64
@@ -276,7 +276,7 @@ def user_login_register(request):
 
                 messages.success(request, "Successfully logged in!")
                 if is_ajax:
-                    return JsonResponse({'success': True, 'redirect': '/home/'})
+                    return JsonResponse({'success': True, 'redirect': reverse('kabsueats_home')})
                 return redirect("kabsueats_home")
             else:
                 # Check if email exists to give a more specific error
@@ -8323,7 +8323,13 @@ def update_request_order_quantities(request, order_id):
                         continue
 
                     oi.quantity = new_qty
-                    oi.save(update_fields=['quantity'])
+                    new_addons = item_data.get('addons')
+                    if new_addons is not None and isinstance(new_addons, list):
+                        import json as _j_addons
+                        oi.addons_json = _j_addons.dumps(new_addons)
+                        oi.save(update_fields=['quantity', 'addons_json'])
+                    else:
+                        oi.save(update_fields=['quantity'])
                     print(f'  ✏️  {mi.name}: qty → {new_qty}')
 
                 # Make sure at least one item remains
@@ -8379,18 +8385,22 @@ def update_request_order_quantities(request, order_id):
             print(f'⚠️  [update_request_order_quantities] Order #{order_id} status={order.status} (not "request")')
             print(f'    → Converting to REORDER with updated quantities...')
 
-            # Build quantities dict from the items list
-            quantities = {}
+            # Build a map keyed by order_item_id -> {qty, addons}
+            # so we preserve both the user-adjusted quantity AND the user-adjusted addons.
+            import json as _j_cancelled
+            oi_override = {}   # { str(order_item_id): {'qty': int, 'addons': list|None} }
+            quantities   = {}  # { str(menu_item_id): int }  — kept for compat with loop below
             for item_data in items:
                 oi_id = item_data.get('order_item_id')
-                qty = int(item_data.get('quantity', 1))
+                qty   = int(item_data.get('quantity', 1))
                 if qty < 1:
                     qty = 1
+                addons = item_data.get('addons')  # list or None
 
-                # Find the menu_item_id from the order_item_id
                 oi = order.orderitem_set.filter(id=oi_id).first()
                 if oi:
                     quantities[str(oi.menu_item.id)] = qty
+                    oi_override[str(oi_id)] = {'qty': qty, 'addons': addons}
 
             if not quantities:
                 return JsonResponse({
@@ -8424,15 +8434,33 @@ def update_request_order_quantities(request, order_id):
 
                     qty = min(qty, oi.menu_item.quantity)
 
+                    # FIX: Use updated addons from the modal payload if provided;
+                    # fall back to the original addons_json only when not overridden.
+                    override = oi_override.get(str(oi.id), {})
+                    new_addons = override.get('addons')
+                    if new_addons is not None and isinstance(new_addons, list):
+                        resolved_addons_json = _j_cancelled.dumps(new_addons)
+                        print(f'  ✏️  {oi.menu_item.name}: using updated addons from modal')
+                    else:
+                        resolved_addons_json = oi.addons_json or ''
+
+                    # Recalculate the addon portion of the total using new addons
+                    addon_total = Decimal('0.00')
+                    try:
+                        for a in (_j_cancelled.loads(resolved_addons_json) if resolved_addons_json else []):
+                            addon_total += Decimal(str(a.get('additional_price', 0))) * int(a.get('qty', 1))
+                    except Exception:
+                        pass
+
                     OrderItem.objects.create(
                         order=new_order,
                         menu_item=oi.menu_item,
                         quantity=qty,
                         price_at_order=oi.menu_item.price,
-                        addons_json=oi.addons_json or '',
+                        addons_json=resolved_addons_json,
                         note_to_establishment=oi.note_to_establishment or ''
                     )
-                    total += oi.menu_item.price * qty
+                    total += oi.menu_item.price * qty + addon_total
                     item_count += 1
 
                 print(f'✅ [update_request_order_quantities] Added {item_count} items, total: ₱{total}')
@@ -8470,7 +8498,13 @@ def update_request_order_quantities(request, order_id):
                     )
 
                 oi.quantity = new_qty
-                oi.save(update_fields=['quantity'])
+                new_addons = item_data.get('addons')
+                if new_addons is not None and isinstance(new_addons, list):
+                    import json as _j_addons
+                    oi.addons_json = _j_addons.dumps(new_addons)
+                    oi.save(update_fields=['quantity', 'addons_json'])
+                else:
+                    oi.save(update_fields=['quantity'])
 
             # Recalculate order total using the model's own update_total()
             # which uses F('price_at_order') * F('quantity') — no subtotal field needed
@@ -9155,6 +9189,30 @@ def create_cash_order(request):
             'success': False,
             'message': 'Order not found or does not belong to you'
         }, status=404)
+
+    except OperationalError as e:
+        # SQLite "database is locked" — order may have already been committed.
+        # Check if the order actually succeeded before returning an error.
+        import traceback, time
+        print(f"OperationalError in create_cash_order: {str(e)}")
+        print(traceback.format_exc())
+        try:
+            committed = Order.objects.filter(
+                id=order_id, user=request.user, status__in=['request', 'preparing']
+            ).exists()
+            if committed:
+                # Order went through — return success silently
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Order placed successfully',
+                    'order_id': int(order_id),
+                })
+        except Exception:
+            pass
+        return JsonResponse({
+            'success': False,
+            'message': 'The server is busy, please try again in a moment.'
+        }, status=500)
 
     except Exception as e:
         print(f"ERROR in create_cash_order: {str(e)}")
@@ -10227,6 +10285,16 @@ def get_order_details(request, order_id):
                 'name': order.establishment.name,
                 'address': order.establishment.address,
                 'image': order.establishment.image.url if order.establishment.image else None,
+                # ✅ REALTIME CLOSE CHECK: expose open/closed status so the client
+                # reorder modal can disable the Re-order button when establishment is closed.
+                # Uses owner's manual toggle first, falls back to schedule-based check.
+                'is_open': (order.establishment.status or get_current_status(
+                    order.establishment.opening_time, order.establishment.closing_time
+                )) == 'Open',
+                'status_label': order.establishment.status or get_current_status(
+                    order.establishment.opening_time, order.establishment.closing_time
+                ),
+                'closing_time': order.establishment.closing_time.strftime('%I:%M %p') if order.establishment.closing_time else None,
             },
             'items': items,
         }

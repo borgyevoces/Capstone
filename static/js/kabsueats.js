@@ -910,11 +910,25 @@ function renderMarkers(data) {
         const imgBanner = e.image
             ? '<img src="' + e.image + '" style="width:calc(100% + 24px);margin:-12px -12px 10px;height:80px;object-fit:cover;border-radius:8px 8px 0 0;display:block;" onerror="this.remove()">'
             : '';
+        // ── Category tags ──
+        const rawCats = ((e.categories || '') + (e.other_category ? ',' + e.other_category : ''))
+            .split(',').map(c => c.trim()).filter(Boolean)
+            .filter((v, i, a) => a.indexOf(v) === i); // dedupe
+        const catTagsHtml = rawCats.length
+            ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">' +
+              rawCats.map(c =>
+                '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;' +
+                'background:#f3f4f6;color:#374151;font-size:10px;font-weight:600;border:1px solid #e5e7eb;">' +
+                '<i class="fas fa-tag" style="font-size:8px;color:#9ca3af;"></i>' + escHtml(cap(c)) + '</span>'
+              ).join('') + '</div>'
+            : '';
+
         const popup =
             '<div style="font-family:Poppins,sans-serif;min-width:200px;">' +
             imgBanner +
             '<div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:2px;">' + escHtml(e.name) + '</div>' +
-            '<div style="font-size:11px;color:#6b7280;margin-bottom:7px;">' + escHtml(e.address || '') + '</div>' +
+            '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">' + escHtml(e.address || '') + '</div>' +
+            catTagsHtml +
             '<div style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;background:' + statusBg + ';color:' + statusFg + ';font-size:11px;font-weight:700;">' +
             statusDot + statusLabel + '</div>' + distRow +
             '<div style="display:flex;gap:6px;margin-top:10px;">' +

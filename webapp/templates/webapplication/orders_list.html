@@ -1812,7 +1812,7 @@ function esc(s) {
             if (i.available_stock === 0) {
                 chip = `<span class="owner-stock-chip out"><i class="fas fa-times-circle"></i> Out of stock</span>`;
             } else if (i.available_stock < i.quantity) {
-                chip = `<span class="owner-stock-chip low"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+                chip = `<span class="owner-stock-chip low">Only ${i.available_stock} left</span>`;
             }
         }
         // Add-ons inline on same line as item
@@ -2163,7 +2163,7 @@ function esc(s) {
         if (i.available_stock === 0) {
             stockChip = `<span style="margin-left:6px;background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;"><i class="fas fa-times-circle"></i> Out of stock</span>`;
         } else if (i.available_stock < i.quantity) {
-            stockChip = `<span style="margin-left:6px;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+            stockChip = `<span style="margin-left:6px;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;">Only ${i.available_stock} left</span>`;
         }
     }
     return `
@@ -3380,7 +3380,7 @@ function ownerRemoveOrderItem(orderId, orderItemId, btnEl) {
                                             : 'owner-stock-chip low';
                                         chip.innerHTML = item.available_stock === 0
                                             ? '<i class="fas fa-times-circle"></i> Out of stock'
-                                            : '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
+                                            : 'Only ' + item.available_stock + ' left';
                                         lineEl.appendChild(chip);
 
                                         // No per-item Remove — action button swaps to Reject

@@ -143,8 +143,8 @@
 .mcs-header i { font-size: 10px; }
 
 /* ── Category filter buttons ── */
-.map-cat-filter { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 2px 0; }
-.mcf-btn.mcf-all { grid-column: 1 / -1; font-size: 12px; }
+.map-cat-filter { display: flex; flex-direction: column; gap: 4px; padding: 2px 0; }
+.mcf-btn.mcf-all { font-size: 12px; }
 .mcf-btn {
     display: flex; align-items: center; gap: 7px;
     padding: 7px 10px; border-radius: 9px;
@@ -743,13 +743,14 @@ function initMapCatFilter() {
 
     var cats = Object.keys(catCount).sort().map(function(k) { return catCount[k]; });
 
-    if (cats.length === 0) {
-        if (window.SUGGEST_DATA && SUGGEST_DATA.categories) {
-            SUGGEST_DATA.categories.forEach(function(c) {
-                var key = c.toLowerCase();
-                if (!catCount[key]) cats.push({ label: c, count: 0 });
-            });
-        }
+    // Always merge all_categories from Django so every registered category
+    // appears in the filter even if no establishment currently has it assigned.
+    if (window.SUGGEST_DATA && SUGGEST_DATA.categories) {
+        SUGGEST_DATA.categories.forEach(function(c) {
+            var key = c.toLowerCase();
+            if (!catCount[key]) cats.push({ label: c, count: 0 });
+        });
+        cats.sort(function(a, b) { return a.label.localeCompare(b.label); });
     }
 
     container.querySelectorAll('.mcf-btn:not(.mcf-all)').forEach(function(b) { b.remove(); });

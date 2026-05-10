@@ -14,34 +14,6 @@
    ============================================================ */
 body { background: #f5f5f5 !important; }
 
-/* ── Real-time stock warning banner ── */
-#stock-warning-banner {
-    display: none;
-    background: #FEF2F2;
-    border: 1.5px solid #FECACA;
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-bottom: 18px;
-    grid-column: 1 / -1;
-}
-#stock-warning-banner.visible { display: block; }
-#stock-warning-banner .swb-title {
-    font-weight: 700;
-    color: #B91C1C;
-    font-size: 0.97rem;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-#stock-warning-banner ul {
-    margin: 0;
-    padding-left: 20px;
-    color: #7F1D1D;
-    font-size: 0.88rem;
-}
-#stock-warning-banner ul li { margin-bottom: 2px; }
-
 .checkout-wrapper {
     max-width: 1100px;
     margin: 0 auto;
@@ -679,6 +651,25 @@ body { background: #f5f5f5 !important; }
     background: #fff5f5;
 }
 
+/* ── Stock Conflict Modal (no banner, only modal) ── */
+#stockConflictModal .policy-modal-header {
+    background: #B71C1C;
+}
+#stockConflictModal .policy-modal-actions {
+    flex-direction: row;
+    gap: 12px;
+}
+#stockConflictModal .btn-policy-confirm {
+    background: #2563eb;
+    flex: 1;
+}
+#stockConflictModal .btn-policy-confirm:hover {
+    background: #1d4ed8;
+}
+#stockConflictModal .btn-policy-cancel {
+    flex: 1;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
     .checkout-wrapper {
@@ -698,14 +689,6 @@ body { background: #f5f5f5 !important; }
 {% endblock %}
 
 {% block content %}
-<div id="stock-warning-banner" role="alert">
-    <div class="swb-title">
-        <i class="fas fa-exclamation-triangle"></i>
-        Some items in your order are no longer available
-    </div>
-    <ul id="stock-warning-list"></ul>
-</div>
-
 <div class="checkout-wrapper">
 
     <!-- ── Page Header ── -->
@@ -769,34 +752,34 @@ body { background: #f5f5f5 !important; }
                     {% endif %}
 
                     <div class="checkout-item-details">
-    <p class="checkout-item-name">{{ item.menu_item.name }}</p>
-    <p class="checkout-item-meta">
-        ×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }} each
-    </p>
+                        <p class="checkout-item-name">{{ item.menu_item.name }}</p>
+                        <p class="checkout-item-meta">
+                            ×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }} each
+                        </p>
 
-    <!-- ✅ BAGONG: Add-ons display -->
-    {% if item.addons_list %}
-    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;">
-        {% for addon in item.addons_list %}
-        <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;
-                     border-radius:4px;padding:1px 7px;font-size:10.5px;font-weight:500;">
-            <i class="fas fa-plus" style="font-size:8px;"></i>
-            {{ addon.name }}{% if addon.additional_price %} +₱{{ addon.additional_price }}{% endif %}
-        </span>
-        {% endfor %}
-    </div>
-    {% endif %}
+                        <!-- Add-ons display -->
+                        {% if item.addons_list %}
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;">
+                            {% for addon in item.addons_list %}
+                            <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;
+                                         border-radius:4px;padding:1px 7px;font-size:10.5px;font-weight:500;">
+                                <i class="fas fa-plus" style="font-size:8px;"></i>
+                                {{ addon.name }}{% if addon.additional_price %} +₱{{ addon.additional_price }}{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
-    <!-- ✅ BAGONG: Note to establishment display -->
-    {% if item.note_to_establishment %}
-    <div style="font-size:11px;color:#78350f;background:#fffbeb;border:1px solid #fde68a;
-                border-radius:4px;padding:3px 8px;margin-top:4px;font-style:italic;">
-        <i class="fas fa-comment-alt" style="color:#d97706;font-size:9px;margin-right:4px;"></i>
-        {{ item.note_to_establishment }}
-    </div>
-    {% endif %}
+                        <!-- Note to establishment -->
+                        {% if item.note_to_establishment %}
+                        <div style="font-size:11px;color:#78350f;background:#fffbeb;border:1px solid #fde68a;
+                                    border-radius:4px;padding:3px 8px;margin-top:4px;font-style:italic;">
+                            <i class="fas fa-comment-alt" style="color:#d97706;font-size:9px;margin-right:4px;"></i>
+                            {{ item.note_to_establishment }}
+                        </div>
+                        {% endif %}
 
-</div>
+                    </div>
 
                     <div>
                         <div class="checkout-item-price">
@@ -884,7 +867,7 @@ body { background: #f5f5f5 !important; }
                 <div class="payment-summary-items">
                     {% for item in items %}
 
-                    <!-- ── Item name + subtotal ── -->
+                    <!-- Item name + subtotal -->
                     <div style="display:flex;justify-content:space-between;align-items:baseline;
                                 padding:10px 0 2px;border-top:1px solid #f0f0f0;">
                         <span style="font-size:0.88rem;font-weight:700;color:#111;">
@@ -895,13 +878,13 @@ body { background: #f5f5f5 !important; }
                         </span>
                     </div>
 
-                    <!-- ── qty × unit price ── -->
+                    <!-- qty × unit price -->
                     <div style="display:flex;justify-content:space-between;align-items:center;
                                 padding:0 0 6px;font-size:0.75rem;color:#9CA3AF;">
                         <span>×{{ item.quantity }} &nbsp;·&nbsp; ₱{{ item.price_at_order }} each</span>
                     </div>
 
-                    <!-- ── Add-ons ── -->
+                    <!-- Add-ons -->
                     {% if item.addons_list %}
                     <div style="background:#f9fafb;border-radius:8px;padding:6px 10px;margin-bottom:6px;">
                         {% for addon in item.addons_list %}
@@ -1106,6 +1089,34 @@ body { background: #f5f5f5 !important; }
     </div>
 </div>
 
+<!-- ============================================================
+     STOCK CONFLICT MODAL — shown when shortage detected after "I Agree"
+     ============================================================ -->
+<div class="policy-modal-overlay" id="stockConflictModal">
+    <div class="policy-modal-box">
+        <div class="policy-modal-header" style="background:#B71C1C;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Stock Changed</h3>
+        </div>
+        <div class="policy-modal-body">
+            <p>Sorry, the quantity of some items in your order is no longer available.</p>
+            <ul id="conflictList" style="margin:15px 0;padding-left:20px;"></ul>
+            <div class="policy-note" style="margin-top:0;">
+                <i class="fas fa-info-circle"></i>
+                <span>Your order has been moved to <strong>To Pay</strong>. You can reorder with the remaining stock or start fresh.</span>
+            </div>
+        </div>
+        <div class="policy-modal-actions" style="flex-direction:row;gap:12px;">
+            <button type="button" class="btn-policy-cancel" id="conflictHomeBtn" style="flex:1;">
+                <i class="fas fa-store"></i> Browse Other Items
+            </button>
+            <button type="button" class="btn-policy-confirm" id="conflictGoToOrdersBtn" style="flex:1;background:#2563eb;">
+                <i class="fas fa-clipboard-list"></i> Go to My Orders
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 
@@ -1125,74 +1136,8 @@ body { background: #f5f5f5 !important; }
     const URL_CREATE_GCASH  = "{% url 'create_gcash_payment_link' %}";
     const URL_CREATE_CASH   = "{% url 'create_cash_order' %}";
     const URL_CHECK_STATUS  = "{% url 'check_order_status' %}";
-    const URL_CHECK_STOCK   = `/api/order/${ORDER_ID}/check-stock/`;
 
-    // ── Real-time stock availability polling ───────────────────
-    // Poll every 8 seconds so the customer sees immediately when
-    // another order has consumed the same items.
-    let _stockWarningActive = false;
-
-    function _pollStock() {
-        fetch(URL_CHECK_STOCK, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-            if (!data) return;
-
-            const banner   = document.getElementById('stock-warning-banner');
-            const list     = document.getElementById('stock-warning-list');
-            const payBtns  = document.querySelectorAll('.btn-payment-method');
-
-            if (!data.available) {
-                // Build item list for banner
-                list.innerHTML = data.items
-                    .filter(i => !i.sufficient)
-                    .map(i =>
-                        `<li><strong>${i.name}</strong> — you need ${i.ordered_qty}, ` +
-                        (i.available_qty === 0
-                            ? 'this item is now <strong>out of stock</strong>'
-                            : `only <strong>${i.available_qty}</strong> left`) +
-                        `</li>`
-                    ).join('');
-                banner.classList.add('visible');
-
-                // Disable payment buttons to prevent the customer from paying
-                payBtns.forEach(b => {
-                    b.disabled = true;
-                    b.style.opacity = '0.5';
-                    b.style.cursor  = 'not-allowed';
-                    b.title = 'Some items are no longer available';
-                });
-                _stockWarningActive = true;
-            } else {
-                // Stock restored or was never a problem — clear the warning
-                banner.classList.remove('visible');
-                payBtns.forEach(b => {
-                    b.disabled = false;
-                    b.style.opacity  = '';
-                    b.style.cursor   = '';
-                    b.title = '';
-                });
-                _stockWarningActive = false;
-            }
-        })
-        .catch(() => { /* silent — server may be momentarily unavailable */ });
-    }
-
-    // Run immediately on load, then every 8 seconds
-    _pollStock();
-    const _stockPollInterval = setInterval(_pollStock, 8000);
-
-    // Stop polling when the user navigates away
-    window.addEventListener('pagehide', () => clearInterval(_stockPollInterval));
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Real-time payment method sync — polls every 5 s
-    // ─────────────────────────────────────────────────────────────────────────
-    // Why polling and not WebSocket?
-    // The ws/establishments/ consumer is triggered by Django signals whose
-    // payload does not reliably include payment_methods.  A tiny dedicated
-    // endpoint is simpler, guaranteed accurate, and still feels instant at 5 s.
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Real-time payment method sync ─────────────────────────────────
     (function _initPaymentMethodPoll() {
         if (!ESTABLISHMENT_ID) return;
 
@@ -1200,23 +1145,16 @@ body { background: #f5f5f5 !important; }
         const _btnCash    = document.getElementById('btn-cash-pickup');
         const _btnNone    = document.getElementById('pm-none-available');
 
-        // Keep track of the last-seen value so we only touch the DOM on change
         let _lastRaw = null;
 
         function _applyPaymentMethods(raw) {
             const str   = (raw || '').trim();
-            if (str === _lastRaw) return;   // no change — skip DOM update
+            if (str === _lastRaw) return;
             _lastRaw = str;
 
             const parts = str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-
-            // Empty → both visible (owner hasn't restricted anything)
             const showOnline = !parts.length ||
-                parts.some(p =>
-                    ['gcash', 'online', 'card', 'maya', 'paymaya', 'credit', 'debit'].includes(p)
-                );
-            // ⚠️ Use exact match — 'cash' is a substring of 'gcash' so
-            //    p.includes('cash') would wrongly show Cash on Pickup for GCash-only setups.
+                parts.some(p => ['gcash', 'online', 'card', 'maya', 'paymaya', 'credit', 'debit'].includes(p));
             const showCash = !parts.length ||
                 parts.some(p => p === 'cash' || p === 'cash on pickup');
 
@@ -1231,24 +1169,18 @@ body { background: #f5f5f5 !important; }
                 credentials: 'same-origin',
             })
             .then(r => r.ok ? r.json() : null)
-            .then(data => {
-                if (data) _applyPaymentMethods(data.payment_methods);
-            })
-            .catch(() => { /* silent — server may be momentarily unavailable */ });
+            .then(data => { if (data) _applyPaymentMethods(data.payment_methods); })
+            .catch(() => {});
         }
 
-        // Run once on load (in case page was cached / bfcache restored)
         _poll();
         const _pmPollInterval = setInterval(_poll, 5000);
-
         window.addEventListener('pagehide', () => clearInterval(_pmPollInterval));
     }());
 
-    // ✅ Back-navigation guard — if user arrives here via browser back button
-    // after order is already confirmed/preparing, redirect them to My Orders.
+    // ── Back-navigation guard ────────────────────────────────────────
     window.addEventListener('pageshow', function (e) {
         if (e.persisted) {
-            // Restored from bfcache — verify order is still payable
             fetch(URL_CHECK_STATUS + '?order_id=' + ORDER_ID, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -1256,85 +1188,115 @@ body { background: #f5f5f5 !important; }
             .then(data => {
                 const payable = ['PENDING', 'to_pay'];
                 if (!data.success || !payable.includes(data.status)) {
-                    // Order already processed — send to My Orders
                     window.location.replace("{% url 'order_history' %}");
                 }
             })
-            .catch(() => {
-                // On error, safer to redirect away than allow double-payment
-                window.location.replace("{% url 'order_history' %}");
-            });
+            .catch(() => window.location.replace("{% url 'order_history' %}"));
         }
     });
 
-    let _pendingType = null;  // 'online' | 'cash'
+    let _pendingType = null;  // 'online' or 'cash'
+    let _insufficientItems = [];
 
     // ----------------------------------------------------------
-    // Open modal
+    // Final stock check before proceeding with payment
+    // ----------------------------------------------------------
+    async function checkStockAndProceed(paymentType) {
+        _pendingType = paymentType;
+        const btn = document.getElementById('policyConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying stock...';
+
+        try {
+            const url = `/api/order/${ORDER_ID}/check-stock/`;
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await resp.json();
+
+            if (data.available) {
+                // All good → proceed with original payment
+                if (paymentType === 'online') _doOnlinePayment(btn);
+                else _doCashPayment(btn);
+                return true;
+            } else {
+                // Stock issue → show conflict modal (no auto-adjust)
+                closePolicyModal();
+                _insufficientItems = data.items.filter(i => !i.sufficient);
+                showStockConflictModal(_insufficientItems);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> I Agree &amp; Proceed';
+                return false;
+            }
+        } catch (err) {
+            showToast('Stock verification failed. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> I Agree &amp; Proceed';
+            return false;
+        }
+    }
+
+    // ----------------------------------------------------------
+    // Show the stock conflict modal
+    // ----------------------------------------------------------
+    function showStockConflictModal(items) {
+        const listEl = document.getElementById('conflictList');
+        listEl.innerHTML = items.map(item => `
+            <li style="margin-bottom:6px;">
+                <strong>${escapeHtml(item.name)}</strong><br>
+                You ordered <strong>${item.ordered_qty}</strong> &nbsp;·&nbsp;
+                Only <strong>${item.available_qty}</strong> left
+            </li>
+        `).join('');
+        document.getElementById('stockConflictModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeStockConflictModal() {
+        document.getElementById('stockConflictModal').classList.remove('open');
+        document.body.style.overflow = '';
+        _insufficientItems = [];
+        _pendingType = null;
+    }
+
+    // ----------------------------------------------------------
+    // Open policy modal
     // ----------------------------------------------------------
     window.openPolicyModal = function (type) {
-        // Block if stock is insufficient — buttons should already be disabled
-        // but this is an extra safety net in case the DOM state was inconsistent.
-        if (_stockWarningActive) {
-            _toast('⚠️ Cannot proceed — some items are no longer available. Please go back and update your order.', 'error');
-            return;
-        }
         _pendingType = type;
 
-        // Personalise header title
         document.getElementById('policyModalTitle').textContent =
             type === 'online' ? 'Online Payment Policy' : 'Cash on Pickup Policy';
 
-        // Toggle payment-specific bullet
-        document.getElementById('policyOnlineExtra').style.display =
-            type === 'online' ? 'flex' : 'none';
-        document.getElementById('policyCashExtra').style.display =
-            type === 'cash' ? 'flex' : 'none';
+        document.getElementById('policyOnlineExtra').style.display = type === 'online' ? 'flex' : 'none';
+        document.getElementById('policyCashExtra').style.display = type === 'cash' ? 'flex' : 'none';
 
-        // Reset confirm button
         const btn = document.getElementById('policyConfirmBtn');
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-check-circle"></i> I Agree &amp; Proceed';
 
-        // Show overlay
         document.getElementById('policyModal').classList.add('open');
         document.body.style.overflow = 'hidden';
     };
 
-    // ----------------------------------------------------------
-    // Close modal
-    // ----------------------------------------------------------
     window.closePolicyModal = function () {
         document.getElementById('policyModal').classList.remove('open');
         document.body.style.overflow = '';
         _pendingType = null;
     };
 
-    // Close on clicking dark backdrop
     document.getElementById('policyModal').addEventListener('click', function (e) {
         if (e.target === this) closePolicyModal();
     });
 
-    // Close on Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closePolicyModal();
     });
 
     // ----------------------------------------------------------
-    // User agreed — proceed
+    // Override original onPolicyConfirm to use stock check
     // ----------------------------------------------------------
     window.onPolicyConfirm = function () {
         if (!_pendingType) return;
-
-        const btn = document.getElementById('policyConfirmBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-        if (_pendingType === 'online') {
-            _doOnlinePayment(btn);
-        } else {
-            _doCashPayment(btn);
-        }
+        checkStockAndProceed(_pendingType);
     };
 
     // ----------------------------------------------------------
@@ -1347,7 +1309,7 @@ body { background: #f5f5f5 !important; }
         fetch(URL_CREATE_GCASH, {
             method: 'POST',
             body: fd,
-            headers: { 'X-CSRFToken': _csrf() },
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
             credentials: 'same-origin'
         })
         .then(r => {
@@ -1362,24 +1324,20 @@ body { background: #f5f5f5 !important; }
         })
         .then(data => {
             if (data.success && data.checkout_url) {
-                // Redirect to PayMongo hosted checkout
                 window.location.href = data.checkout_url;
             } else {
-                _toast(data.message || 'Failed to create payment link.', 'error');
+                showToast(data.message || 'Failed to create payment link.', 'error');
                 _resetBtn(btn);
                 closePolicyModal();
             }
         })
         .catch(err => {
             console.error('Online payment error:', err);
-            // If the global connection overlay is already showing (network error),
-            // don't show a toast on top of it — overlay handles it.
             if (navigator.onLine) {
-                _toast(err.message || 'Network error. Please try again.', 'error');
+                showToast(err.message || 'Network error. Please try again.', 'error');
                 _resetBtn(btn);
                 closePolicyModal();
             } else {
-                // Still re-enable button for when connection is restored
                 _resetBtn(btn);
                 closePolicyModal();
             }
@@ -1392,13 +1350,13 @@ body { background: #f5f5f5 !important; }
     function _doCashPayment(btn) {
         const fd = new FormData();
         fd.append('order_id', ORDER_ID);
-        fd.append('source', 'checkout');   // tells view: already accepted, set to preparing
+        fd.append('source', 'checkout');
         fd.append('payment_method', 'cash');
 
         fetch(URL_CREATE_CASH, {
             method: 'POST',
             body: fd,
-            headers: { 'X-CSRFToken': _csrf() },
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
             credentials: 'same-origin'
         })
         .then(r => {
@@ -1414,37 +1372,28 @@ body { background: #f5f5f5 !important; }
         .then(data => {
             if (data.success) {
                 closePolicyModal();
-                // Redirect to order confirmation page
                 window.location.href = '/payment/success/?order_id=' + ORDER_ID + '&payment_method=cash';
             } else if (data.stock_error) {
-                // ✅ Stock reservation check failed — this is likely a duplicate order
-                _toast(
-                    '⚠️ ' + (data.message || 'Insufficient stock.') +
-                    ' This may be a duplicate order. Please check your My Orders page.',
-                    'error'
-                );
+                showToast('⚠️ ' + (data.message || 'Insufficient stock.') +
+                    ' This may be a duplicate order. Please check your My Orders page.', 'error');
                 _resetBtn(btn);
                 closePolicyModal();
-                // Redirect to My Orders after a short delay so user can see the message
                 setTimeout(function() {
                     window.location.href = "{% url 'order_history' %}";
                 }, 3500);
             } else {
-                _toast(data.message || 'Failed to place order.', 'error');
+                showToast(data.message || 'Failed to place order.', 'error');
                 _resetBtn(btn);
                 closePolicyModal();
             }
         })
         .catch(err => {
             console.error('Cash payment error:', err);
-            // If the global connection overlay is already showing (network error),
-            // don't show a toast on top of it — overlay handles it.
             if (navigator.onLine) {
-                _toast(err.message || 'Network error. Please try again.', 'error');
+                showToast(err.message || 'Network error. Please try again.', 'error');
                 _resetBtn(btn);
                 closePolicyModal();
             } else {
-                // Still re-enable button for when connection is restored
                 _resetBtn(btn);
                 closePolicyModal();
             }
@@ -1452,11 +1401,33 @@ body { background: #f5f5f5 !important; }
     }
 
     // ----------------------------------------------------------
+    // Conflict modal button handlers (no auto-adjust)
+    // ----------------------------------------------------------
+    document.getElementById('conflictHomeBtn').addEventListener('click', function() {
+        window.location.href = "{% url 'kabsueats_home' %}";
+    });
+
+    document.getElementById('conflictGoToOrdersBtn').addEventListener('click', function() {
+        // Redirect to order history with to_pay tab selected
+        window.location.href = "{% url 'order_history' %}?tab=to_pay";
+    });
+
+    document.getElementById('stockConflictModal').addEventListener('click', function(e) {
+        if (e.target === this) closeStockConflictModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('stockConflictModal').classList.contains('open')) {
+            closeStockConflictModal();
+        }
+    });
+
+    // ----------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------
-    function _csrf() {
-        const m = document.cookie.match(/csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : '';
+    function getCookie(name) {
+        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return m ? decodeURIComponent(m[2]) : '';
     }
 
     function _resetBtn(btn) {
@@ -1465,10 +1436,19 @@ body { background: #f5f5f5 !important; }
         btn.innerHTML = '<i class="fas fa-check-circle"></i> I Agree &amp; Proceed';
     }
 
-    function _toast(msg, type) {
+    function showToast(msg, type) {
         if (typeof window.showToast === 'function')      { window.showToast(msg, type); return; }
         if (typeof window.showMessage === 'function')    { window.showMessage(msg, type); return; }
         alert(msg);
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
 }());

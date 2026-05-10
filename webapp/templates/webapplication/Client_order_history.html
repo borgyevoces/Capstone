@@ -2838,7 +2838,7 @@ tr.order-row-highlight {
                                         const chip = document.createElement('span');
                                         chip.className = 'stock-warn-chip out';
                                         chip.id = 'stock-chip-' + order.id + '-' + item.menu_item_id;
-                                        chip.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Only ' + item.available_stock + ' left';
+                                        chip.innerHTML = 'Only ' + item.available_stock + ' left';
                                         line.appendChild(chip);
                                     }
                                 });
@@ -3005,7 +3005,7 @@ const itemsHtml = (o.items || []).map(i => {
                     `<i class="fas fa-ban"></i> Rejected</span>`;
     } else if (isStockWarnOrder && typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
         stockChip = `<span class="stock-warn-chip out" id="stock-chip-${o.id}-${i.menu_item_id}">` +
-                    `<i class="fas fa-exclamation-triangle"></i> Only ${i.available_stock} left</span>`;
+                    `Only ${i.available_stock} left</span>`;
     }
 
     // ✅ BAGONG: Add-ons
@@ -3502,19 +3502,24 @@ const itemsHtml = (o.items || []).map(i => {
                          </button>`;
             } else if (expired) {
                 // ── Timer expired (owner did NOT cancel) ──
-                // Re-order = re-request. Remove = dismiss row.
-                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="doDirectReorder(${o.id}, this)">
+                // Re-order = show confirm modal first. Remove = dismiss row.
+                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="openReorderConfirm(${o.id}, this)">
+                            <i class="fas fa-redo-alt"></i> Re-order
+                         </button>
+                         <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
+                            <i class="fas fa-times"></i> Remove
+                         </button>`;
+            } else if (o._hasStockIssue) {
+                // Timer running but stock insufficient — can't pay, offer Re-order via confirm modal
+                html += `<button class="tbl-btn tbl-btn-rerequest" onclick="openReorderConfirm(${o.id}, this)">
                             <i class="fas fa-redo-alt"></i> Re-order
                          </button>
                          <button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(${o.id}, this)">
                             <i class="fas fa-times"></i> Remove
                          </button>`;
             } else {
-                // Timer still running and NOT owner-cancelled — show Pay Now
-                const payDisabled = o._hasStockIssue ? 'btn-disabled' : '';
-                const payTitle    = o._hasStockIssue ? 'title="Some items are out of stock"' : '';
-                html += `<button class="tbl-btn tbl-btn-pay ${payDisabled}" ${payTitle}
-                                 onclick="${o._hasStockIssue ? 'void(0)' : 'payOrder(' + o.id + ')'}">
+                // Timer still running, stock fine — show Pay Now
+                html += `<button class="tbl-btn tbl-btn-pay" onclick="payOrder(${o.id})">
                             <i class="fas fa-credit-card"></i> Pay Now
                          </button>`;
             }
@@ -3559,9 +3564,9 @@ const itemsHtml = (o.items || []).map(i => {
                 '    <i class="fas fa-times"></i> Remove' +
                 '</button>';
         } else {
-            // Timer expired — Re-order (opens modal) + Remove
+            // Timer expired — Re-order (opens stock confirm modal) + Remove
             actCell.innerHTML =
-                '<button class="tbl-btn tbl-btn-rerequest" onclick="showReorderModal(' + orderId + ', true)">' +
+                '<button class="tbl-btn tbl-btn-rerequest" onclick="openReorderConfirm(' + orderId + ', this)">' +
                 '    <i class="fas fa-redo-alt"></i> Reorder' +
                 '</button>' +
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
@@ -4431,7 +4436,7 @@ const itemsHtml = (o.items || []).map(i => {
     // Called when to_pay timer expires. Immediately re-submits the same order
     // items/quantities as a new 'request' without opening the Edit Order modal.
     // Owner sees the new request in realtime via WebSocket broadcast.
-    function doDirectReorder(orderId, btnEl) {
+    function doDirectReorder(orderId, btnEl, overrideItems) {
         if (btnEl) {
             btnEl.disabled = true;
             btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
@@ -4448,9 +4453,11 @@ const itemsHtml = (o.items || []).map(i => {
         // to reappear in the "Order Request" tab. lsDismiss permanently hides the
         // order from loadOrders(), so only call it when the client explicitly removes.
 
-        // Build qty payload from original order items
+        // Build qty payload — prefer overrideItems (from reorder modal), else use original
         var payload = [];
-        if (orderEntry && orderEntry.items) {
+        if (overrideItems && overrideItems.length > 0) {
+            payload = overrideItems;
+        } else if (orderEntry && orderEntry.items) {
             orderEntry.items.forEach(function (item) {
                 if (item.order_item_id && item.quantity > 0) {
                     payload.push({ order_item_id: parseInt(item.order_item_id), quantity: item.quantity });
@@ -4575,7 +4582,7 @@ const itemsHtml = (o.items || []).map(i => {
                 badgeTxt = '<i class="fas fa-times-circle"></i> Out of stock';
             } else if (stock < ordered) {
                 badgeCls = 'eo-stock-low';
-                badgeTxt = '<i class="fas fa-exclamation-triangle"></i> Only ' + stock + ' left';
+                badgeTxt = 'Only ' + stock + ' left';
             } else {
                 badgeCls = 'eo-stock-ok';
                 badgeTxt = '<i class="fas fa-check-circle"></i> ' + stock + ' in stock';
@@ -4637,7 +4644,7 @@ const itemsHtml = (o.items || []).map(i => {
                             badge.innerHTML = '<i class="fas fa-times-circle"></i> Out of stock';
                         } else if (stock < (item.quantity || 1)) {
                             badge.className = 'eo-stock-badge eo-stock-low';
-                            badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Only ' + stock + ' left';
+                            badge.innerHTML = 'Only ' + stock + ' left';
                         } else {
                             badge.className = 'eo-stock-badge eo-stock-ok';
                             badge.innerHTML = '<i class="fas fa-check-circle"></i> ' + stock + ' in stock';
@@ -5092,7 +5099,7 @@ const itemsHtml = (o.items || []).map(i => {
             if (typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
                 stockChip = i.available_stock === 0
                     ? ' <span style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;"><i class=\'fas fa-times-circle\'></i> Out of stock</span>'
-                    : ' <span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;"><i class=\'fas fa-exclamation-triangle\'></i> Only ' + i.available_stock + ' left</span>';
+                    : ' <span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;">Only ' + i.available_stock + ' left</span>';
             }
             itemsBodyHTML += '<div class="cod-item-row">' +
                 '<div style="flex:1;">' +
@@ -5152,15 +5159,19 @@ const itemsHtml = (o.items || []).map(i => {
             footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
                          '<i class="fas fa-times"></i> Remove</button>';
         } else if ((o.status === 'to_pay' || o.status === 'PENDING') && isExpired) {
-            footerHTML = '<button class="tbl-btn tbl-btn-rerequest" onclick="closeClientOrderDetail();setTimeout(function(){doDirectReorder(' + id + ', null)},80);">' +
+            footerHTML = '<button class="tbl-btn tbl-btn-rerequest" onclick="closeClientOrderDetail();setTimeout(function(){openReorderConfirm(' + id + ', null)},80);">' +
+                         '<i class="fas fa-redo-alt"></i> Re-order</button>' +
+                         '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
+                         '<i class="fas fa-times"></i> Remove</button>';
+        } else if ((o.status === 'to_pay' || o.status === 'PENDING') && !isExpired && o._hasStockIssue) {
+            footerHTML = '<button class="tbl-btn tbl-btn-rerequest" onclick="closeClientOrderDetail();setTimeout(function(){openReorderConfirm(' + id + ', null)},80);">' +
                          '<i class="fas fa-redo-alt"></i> Re-order</button>' +
                          '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
                          '<i class="fas fa-times"></i> Remove</button>';
         } else if ((o.status === 'to_pay' || o.status === 'PENDING') && !isExpired) {
-            const payDisabled = o._hasStockIssue ? 'btn-disabled' : '';
             footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();setTimeout(function(){askCancelOrder(' + id + ')},80);">' +
                          '<i class="fas fa-times"></i> Cancel</button>' +
-                         '<button class="tbl-btn tbl-btn-pay ' + payDisabled + '" onclick="' + (o._hasStockIssue ? 'void(0)' : 'closeClientOrderDetail();payOrder(' + id + ');') + '">' +
+                         '<button class="tbl-btn tbl-btn-pay" onclick="closeClientOrderDetail();payOrder(' + id + ');">' +
                          '<i class="fas fa-credit-card"></i> Pay Now</button>';
         } else if (o.status === 'to_claim' && (isOwnerCancelledClaim || isClaimExpired)) {
             footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();removeClaimCancelledRow(' + id + ');">' +
@@ -5236,5 +5247,620 @@ const itemsHtml = (o.items || []).map(i => {
             }
         }
     }
+
+    // ============================================================
+    // REORDER CONFIRM MODAL  — real-time stock display
+    // ============================================================
+    var _reorderConfirmOrderId  = null;
+    var _reorderConfirmBtnEl    = null;
+    var _rcoStockPoll           = null;   // interval handle
+    var _rcoItemQtys            = {};     // { "oi_id": currentQty }
+    var _rcoAddonQtys           = {};     // { "oi_id-addonIdx": currentQty }
+    var _rcoItemsData           = [];     // cached items from last poll
+
+    // ── Open ────────────────────────────────────────────────────
+    function openReorderConfirm(orderId, btnEl) {
+        _reorderConfirmOrderId = orderId;
+        _reorderConfirmBtnEl   = btnEl;
+        _rcoItemQtys  = {};   // reset qty edits on each open
+        _rcoAddonQtys = {};
+        _rcoItemsData = [];
+
+        // Reset UI to loading state
+        var itemsEl = document.getElementById('rcoItems');
+        var yesBtn  = document.getElementById('rcoYesBtn');
+        if (itemsEl) itemsEl.innerHTML =
+            '<div class="rco-loading"><i class="fas fa-spinner fa-spin"></i> Checking stock…</div>';
+        if (yesBtn)  { yesBtn.disabled = true; }
+
+        document.getElementById('reorderConfirmModal').classList.add('rco-open');
+        document.body.style.overflow = 'hidden';
+
+        // Fetch immediately then poll every 5 s
+        _rcoPollOnce(orderId);
+        _rcoStockPoll = setInterval(function () { _rcoPollOnce(orderId); }, 5000);
+    }
+
+    // ── Close ───────────────────────────────────────────────────
+    function closeReorderConfirm() {
+        document.getElementById('reorderConfirmModal').classList.remove('rco-open');
+        document.body.style.overflow = '';
+        if (_rcoStockPoll) { clearInterval(_rcoStockPoll); _rcoStockPoll = null; }
+        _reorderConfirmOrderId = null;
+        _reorderConfirmBtnEl   = null;
+        // ✅ Reset closed state so banner doesn't persist on next open
+        _rcoIsEstabClosed = false;
+        var banner = document.getElementById('rcoClosedBanner');
+        if (banner) banner.style.display = 'none';
+    }
+
+    // ── Confirm ─────────────────────────────────────────────────
+    function confirmReorderYes() {
+        var orderId = _reorderConfirmOrderId;
+        var btnEl   = _reorderConfirmBtnEl;
+
+        // Build payload from user-adjusted quantities + add-ons
+        var overrideItems = [];
+        (_rcoItemsData || []).forEach(function (item) {
+            var oiId = String(item.order_item_id || '');
+            if (!oiId) return;
+            var qty = _rcoItemQtys[oiId] !== undefined ? _rcoItemQtys[oiId] : (item.quantity || 1);
+            if (qty < 1) return;
+
+            // Adjusted addons
+            var addons = Array.isArray(item.addons) ? item.addons : [];
+            var adjustedAddons = addons.map(function (addon, idx) {
+                var key = oiId + '-' + idx;
+                var aqty = _rcoAddonQtys[key] !== undefined ? _rcoAddonQtys[key] : (parseInt(addon.qty) || 1);
+                return Object.assign({}, addon, { qty: aqty });
+            }).filter(function (a) { return (a.qty || 0) > 0; });
+
+            overrideItems.push({
+                order_item_id: parseInt(oiId),
+                quantity: qty,
+                addons: adjustedAddons
+            });
+        });
+
+        closeReorderConfirm();
+        if (orderId !== null) doDirectReorder(orderId, btnEl, overrideItems.length ? overrideItems : null);
+    }
+
+    // ── Fetch stock for one order, render cards ──────────────────
+    function _rcoPollOnce(orderId) {
+        // Guard: modal might have been closed already
+        if (_reorderConfirmOrderId !== orderId) return;
+
+        fetch('/api/order/' + orderId + '/', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (_reorderConfirmOrderId !== orderId) return; // closed mid-flight
+                // API returns { success: true, order: { items: [...], establishment: { id, is_open } } }
+                var orderData = data.order || data;
+                var items     = orderData.items || orderData.order_items || data.items || data.order_items || [];
+                var estab     = orderData.establishment || {};
+                var estabId   = estab.id || data.establishment_id || null;
+
+                // ✅ REALTIME: Check if establishment is open/closed
+                // estab.is_open is set by the backend (get_order_details now returns it)
+                var isOpen = estab.hasOwnProperty('is_open') ? estab.is_open : true; // default open if old API
+                var closingTime = estab.closing_time || null;
+                _rcoSetEstabOpenState(isOpen, closingTime);
+
+                _rcoRenderItems(items, estabId);
+            })
+            .catch(function () {
+                // If fetch fails just leave the loading spinner; don't crash
+                if (_reorderConfirmOrderId !== orderId) return;
+                var itemsEl = document.getElementById('rcoItems');
+                if (itemsEl) itemsEl.innerHTML =
+                    '<div class="rco-loading" style="color:#B71C1C;">' +
+                    '<i class="fas fa-exclamation-circle"></i> Could not load stock info. You may still try to re-order.</div>';
+                var yesBtn = document.getElementById('rcoYesBtn');
+                if (yesBtn) yesBtn.disabled = false;
+            });
+    }
+
+    // ── Show/hide the "Establishment Closed" banner and enable/disable Yes btn ──
+    var _rcoIsEstabClosed = false; // track closed state
+
+    function _rcoSetEstabOpenState(isOpen, closingTime) {
+        _rcoIsEstabClosed = !isOpen;
+        var banner  = document.getElementById('rcoClosedBanner');
+        var msgEl   = document.getElementById('rcoClosedMsg');
+        var yesBtn  = document.getElementById('rcoYesBtn');
+        if (!banner) return;
+
+        if (!isOpen) {
+            // Show the closed banner
+            banner.style.display = 'flex';
+            if (msgEl) {
+                msgEl.textContent = closingTime
+                    ? 'This establishment is closed (closes at ' + closingTime + '). Re-ordering is unavailable.'
+                    : 'This establishment is currently closed. Re-ordering is unavailable.';
+            }
+            // Disable the Re-order button, but only if it isn't already disabled for stock reasons
+            if (yesBtn) {
+                yesBtn.disabled = true;
+                yesBtn.title    = 'Cannot re-order — establishment is closed.';
+            }
+        } else {
+            // Hide the banner
+            banner.style.display = 'none';
+            if (yesBtn) {
+                yesBtn.title = '';
+                // Only re-enable if no stock issue (allOutOfStock logic in _rcoRenderItems handles this)
+                // We set it to enabled here; _rcoRenderItems will disable again if needed
+                yesBtn.disabled = false;
+            }
+        }
+    }
+
+    // ── Qty stepper helpers ──────────────────────────────────────
+    function _rcoChangeQty(oiId, delta, max) {
+        var cur  = _rcoItemQtys[oiId] !== undefined ? _rcoItemQtys[oiId] : 1;
+        var next = Math.max(1, Math.min(max || 99, cur + delta));
+        _rcoItemQtys[oiId] = next;
+        var valEl    = document.getElementById('rco-qty-'    + oiId);
+        var minusBtn = document.getElementById('rco-qminus-' + oiId);
+        var plusBtn  = document.getElementById('rco-qplus-'  + oiId);
+        if (valEl)    valEl.textContent    = next;
+        if (minusBtn) minusBtn.disabled    = next <= 1;
+        if (plusBtn)  plusBtn.disabled     = next >= (max || 99);
+        _rcoUpdateItemSubtotal(oiId); // ✅ per-item running total
+
+    }
+
+    function _rcoChangeAddonQty(oiId, idx, delta) {
+        var key  = oiId + '-' + idx;
+        var cur  = _rcoAddonQtys[key] !== undefined ? _rcoAddonQtys[key] : 1;
+        var next = Math.max(0, Math.min(10, cur + delta));
+        _rcoAddonQtys[key] = next;
+        var valEl    = document.getElementById('rco-aqv-'     + oiId + '-' + idx);
+        var minusBtn = document.getElementById('rco-aqminus-' + oiId + '-' + idx);
+        var plusBtn  = document.getElementById('rco-aqplus-'  + oiId + '-' + idx);
+        if (valEl)    valEl.textContent = next;
+        if (minusBtn) minusBtn.disabled = next <= 0;
+        if (plusBtn)  plusBtn.disabled  = next >= 10;
+        _rcoUpdateItemSubtotal(oiId); // ✅ per-item running total + per-addon price
+
+    }
+
+    // ── Per-item subtotal + per-addon running-total updater ──────
+    // Called on every +/- tap. Updates:
+    //   • addon price label       (e.g. Coke: +₱20 → +₱40 when qty=2)
+    //   • base subtotal display   (item price × qty)
+    //   • addon total display     (sum of all addon prices × quantities)
+    //   • item total display      (base + addons combined)
+    function _rcoUpdateItemSubtotal(oiId) {
+        var item = (_rcoItemsData || []).find(function (i) {
+            return String(i.order_item_id || '') === String(oiId);
+        });
+        if (!item) return;
+        var price  = parseFloat(item.price || 0);
+        var qty    = _rcoItemQtys[oiId] !== undefined ? _rcoItemQtys[oiId] : (item.quantity || 1);
+        var baseSub = price * qty;
+        var addonSub = 0;
+        var addons = Array.isArray(item.addons) ? item.addons : [];
+        addons.forEach(function (addon, idx) {
+            var key        = oiId + '-' + idx;
+            var aqty       = _rcoAddonQtys[key] !== undefined ? _rcoAddonQtys[key] : (parseInt(addon.qty) || 1);
+            var addonPrice = parseFloat(addon.additional_price || 0);
+            var addonTotal = addonPrice * aqty;
+            addonSub += addonTotal;
+            // Static unit price label — no dynamic element to update
+        });
+        var totalSub = baseSub + addonSub;
+        // ✅ Update base subtotal display
+        var baseEl = document.getElementById('rco-base-sub-' + oiId);
+        if (baseEl) baseEl.innerHTML = '\u20b1' + baseSub.toFixed(2);
+        // ✅ Update addon total display (only present when there are addons)
+        var addonTotalEl = document.getElementById('rco-addon-total-' + oiId);
+        if (addonTotalEl) addonTotalEl.innerHTML = '+\u20b1' + addonSub.toFixed(2);
+        // ✅ Update item grand total display
+        var itemTotalEl = document.getElementById('rco-itotal-' + oiId);
+        if (itemTotalEl) itemTotalEl.innerHTML = '\u20b1' + totalSub.toFixed(2);
+        // Legacy fallback — update old .rco-item-subtotal-val if somehow still present
+        var subValEl = document.querySelector('#rco-sub-' + oiId + ' .rco-item-subtotal-val');
+        if (subValEl) subValEl.innerHTML = '\u20b1' + totalSub.toFixed(2);
+    }
+
+    // ── Render stock cards ───────────────────────────────────────
+    function _rcoRenderItems(items, estabId) {
+        var itemsEl = document.getElementById('rcoItems');
+        var yesBtn  = document.getElementById('rcoYesBtn');
+        if (!itemsEl) return;
+
+        if (!items || items.length === 0) {
+            itemsEl.innerHTML = '<div class="rco-loading">No items found.</div>';
+            if (yesBtn) yesBtn.disabled = false;
+            return;
+        }
+
+        // Cache for confirmReorderYes
+        _rcoItemsData = items;
+
+        var allOutOfStock = true;
+        var html = '';
+
+        items.forEach(function (item) {
+            var name    = item.name || item.menu_item_name || 'Item';
+            var oiId    = String(item.order_item_id || '');
+            var ordered = item.quantity || 1;
+            var stock   = typeof item.available_stock === 'number' ? item.available_stock : null;
+            var isZero  = stock !== null && stock === 0;
+            var isLow   = stock !== null && stock > 0 && stock < ordered;
+            var maxQty  = stock !== null ? Math.max(1, stock) : 99;
+            var itemPrice = parseFloat(item.price || 0);
+
+            if (!isZero) allOutOfStock = false;
+
+            // Initialise / re-clamp qty state (preserves user edits across polls)
+            if (oiId) {
+                if (_rcoItemQtys[oiId] === undefined) {
+                    _rcoItemQtys[oiId] = isZero ? 0 : Math.min(ordered, maxQty);
+                } else {
+                    _rcoItemQtys[oiId] = Math.max(1, Math.min(_rcoItemQtys[oiId], maxQty));
+                }
+            }
+            var curQty = oiId ? _rcoItemQtys[oiId] : ordered;
+
+            // Badge
+            var badge = '', cardClass = 'rco-item-card';
+            if (isZero) {
+                badge = '<span class="rco-stock-badge rco-stock-out"><i class="fas fa-times-circle"></i> Out of stock</span>';
+                cardClass += ' rco-item-out';
+            } else if (isLow) {
+                badge = '<span class="rco-stock-badge rco-stock-low"><i class="fas fa-exclamation-triangle"></i> Only ' + stock + ' left</span>';
+                cardClass += ' rco-item-low';
+            } else if (stock !== null) {
+                badge = '<span class="rco-stock-badge rco-stock-ok"><i class="fas fa-check-circle"></i> In stock (' + stock + ' available)</span>';
+            } else {
+                badge = '<span class="rco-stock-badge rco-stock-ok"><i class="fas fa-check-circle"></i> Available</span>';
+            }
+
+            // Browse btn
+            var browseBtn = '';
+            if (isZero && estabId) {
+                browseBtn = '<a class="rco-browse-btn" href="/food_establishment/' + estabId + '/" target="_blank">' +
+                            '<i class="fas fa-store"></i> Browse Menu</a>';
+            }
+
+            // Qty stepper (hide when out of stock or no oiId)
+            var qtyHtml = '';
+            if (!isZero && oiId) {
+                qtyHtml = '<div class="rco-qty-row">' +
+                    '<button class="rco-qty-btn" id="rco-qminus-' + oiId + '" ' +
+                    (curQty <= 1 ? 'disabled' : '') +
+                    ' onclick="_rcoChangeQty(\'' + oiId + '\',-1,' + maxQty + ')">−</button>' +
+                    '<span class="rco-qty-val" id="rco-qty-' + oiId + '">' + curQty + '</span>' +
+                    '<button class="rco-qty-btn" id="rco-qplus-' + oiId + '" ' +
+                    (curQty >= maxQty ? 'disabled' : '') +
+                    ' onclick="_rcoChangeQty(\'' + oiId + '\',1,' + maxQty + ')">+</button>' +
+                    '</div>';
+            } else {
+                qtyHtml = '<span class="rco-item-qty">Ordered: ' + ordered + '</span>';
+            }
+
+            // Add-ons section — each addon shows running total (price × qty) in realtime
+            var addons = Array.isArray(item.addons) ? item.addons : [];
+            var addonsHtml = '';
+            var initAddonTotal = 0;
+            if (addons.length > 0 && !isZero && oiId) {
+                var addonRows = addons.map(function (addon, idx) {
+                    var key = oiId + '-' + idx;
+                    if (_rcoAddonQtys[key] === undefined) {
+                        _rcoAddonQtys[key] = parseInt(addon.qty) || 1;
+                    }
+                    var aqty = _rcoAddonQtys[key];
+                    var addonUnitPrice = parseFloat(addon.additional_price || 0);
+                    var addonRunningTotal = addonUnitPrice * aqty;
+                    initAddonTotal += addonRunningTotal;
+                    // Always show static unit price only — no running total
+                    var priceLabel = addonUnitPrice > 0
+                        ? '<span class="rco-addon-unit-price" style="margin-left:auto;">+\u20b1' + addonUnitPrice.toFixed(2) + '</span>'
+                        : '';
+                    return '<div class="rco-addon-row">' +
+                        '<span class="rco-addon-name"><i class="fas fa-plus" style="font-size:8px;color:#9ca3af;margin-right:3px;"></i>' + _rcoEsc(addon.name) + '</span>' +
+                        priceLabel +
+                        '<button class="rco-addon-qty-btn" id="rco-aqminus-' + oiId + '-' + idx + '" ' +
+                        (aqty <= 0 ? 'disabled' : '') +
+                        ' onclick="_rcoChangeAddonQty(\'' + oiId + '\',' + idx + ',-1)">−</button>' +
+                        '<span class="rco-addon-qty-val" id="rco-aqv-' + oiId + '-' + idx + '">' + aqty + '</span>' +
+                        '<button class="rco-addon-qty-btn" id="rco-aqplus-' + oiId + '-' + idx + '" ' +
+                        (aqty >= 10 ? 'disabled' : '') +
+                        ' onclick="_rcoChangeAddonQty(\'' + oiId + '\',' + idx + ',1)">+</button>' +
+                        '</div>';
+                }).join('');
+                addonsHtml = '<div class="rco-addons-section"><div class="rco-addons-label">Add-ons</div>' + addonRows + '</div>';
+            }
+
+            // ── Per-item price breakdown: base subtotal + addons subtotal + item total ──
+            var initBaseSub  = itemPrice * curQty;
+            var initItemSub  = initBaseSub + initAddonTotal;
+
+            var subtotalHtml = '';
+            if (!isZero && oiId) {
+                subtotalHtml =
+                    '<div class="rco-item-subtotal-row" id="rco-sub-' + oiId + '">' +
+                    // Base price row
+                    '<div class="rco-price-breakdown">' +
+                    '<div class="rco-price-breakdown-line">' +
+                    '<span class="rco-pbd-label"><i class="fas fa-utensils" style="font-size:9px;margin-right:3px;color:#9ca3af;"></i>Base price</span>' +
+                    '<span class="rco-pbd-val" id="rco-base-sub-' + oiId + '">&#x20b1;' + initBaseSub.toFixed(2) + '</span>' +
+                    '</div>' +
+                    // Addons row — only show if there are addons
+                    (initAddonTotal > 0
+                        ? '<div class="rco-price-breakdown-line">' +
+                          '<span class="rco-pbd-label"><i class="fas fa-layer-group" style="font-size:9px;margin-right:3px;color:#93c5fd;"></i>Add-ons</span>' +
+                          '<span class="rco-pbd-val" id="rco-addon-total-' + oiId + '">+&#x20b1;' + initAddonTotal.toFixed(2) + '</span>' +
+                          '</div>'
+                        : '') +
+                    '</div>' +
+                    // Grand item total divider
+                    '<div class="rco-item-total-divider">' +
+                    '<span class="rco-item-subtotal-label"><i class="fas fa-tag" style="font-size:9px;margin-right:3px;color:#9ca3af;"></i>Item Total</span>' +
+                    '<strong class="rco-item-subtotal-val" id="rco-itotal-' + oiId + '">&#x20b1;' + initItemSub.toFixed(2) + '</strong>' +
+                    '</div>' +
+                    '</div>';
+            }
+
+            html += '<div class="' + cardClass + '">' +
+                      '<div class="rco-item-info">' +
+                        '<span class="rco-item-name">' + _rcoEsc(name) + '</span>' +
+                        '<div class="rco-item-right">' +
+                          // ✅ Unit price on the right, beside stepper
+                          (!isZero && oiId
+                            ? '<span class="rco-item-unit-price">&#x20b1;' + itemPrice.toFixed(2) + '</span>'
+                            : '') +
+                          qtyHtml +
+                        '</div>' +
+                      '</div>' +
+                      '<div class="rco-item-footer">' + badge + browseBtn + '</div>' +
+                      addonsHtml +
+                      subtotalHtml +
+                    '</div>';
+        });
+
+        itemsEl.innerHTML = html;
+
+
+        if (yesBtn) {
+            // ✅ Keep closed if establishment is closed — don't re-enable
+            if (_rcoIsEstabClosed) {
+                yesBtn.disabled = true;
+                yesBtn.title    = 'Cannot re-order — establishment is closed.';
+            } else {
+                yesBtn.disabled = allOutOfStock;
+                yesBtn.title = allOutOfStock ? 'All items are out of stock — please browse the menu for alternatives' : '';
+            }
+        }
+
+        var subEl = document.getElementById('rcoSub');
+        if (subEl) {
+            if (allOutOfStock) {
+                subEl.innerHTML = '<span style="color:#B71C1C;font-weight:600;">\u26a0\ufe0f All items are currently out of stock.</span><br>Browse the menu to order something else.';
+            } else {
+                var hasAnyIssue = items.some(function (i) {
+                    var s = typeof i.available_stock === 'number' ? i.available_stock : null;
+                    return s !== null && s < (i.quantity || 1);
+                });
+                subEl.innerHTML = hasAnyIssue
+                    ? '\u26a0\ufe0f Some items have limited stock. Adjust quantities below.'
+                    : 'All items are available. Adjust quantities if needed before re-ordering.';
+            }
+        }
+    }
+
+    function _rcoEsc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
 </script>
+
+<!-- Reorder Confirm Modal — real-time stock display -->
+<style>
+/* ── Per-item price breakdown ────────────────────────────── */
+/* ── Add-on price labels ─────────────────────────────────── */
+.rco-addon-unit-price {
+    font-size: 11.5px; font-weight: 700; color: #1a202c; white-space: nowrap;
+}.rco-addon-price {
+    font-size: 11px; color: #6b7280; white-space: nowrap; font-weight: 500;
+}
+.rco-price-breakdown {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 7px 10px; background: #f9fafb;
+    border: 1px solid #f0f0f0; border-radius: 8px;
+    margin-bottom: 4px;
+}
+.rco-price-breakdown-line {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11.5px;
+}
+.rco-pbd-label { color: #6b7280; font-weight: 500; }
+.rco-pbd-val   { color: #374151; font-weight: 600; }
+.rco-item-total-divider {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 6px; margin-top: 2px; border-top: 1.5px solid #e5e7eb;
+}
+
+/* ── Overlay + box ──────────────────────────────────────── */
+.rco-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.45); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+}
+.rco-overlay.rco-open { display: flex; }
+.rco-box {
+    background: #fff; border-radius: 18px; padding: 24px 22px 20px;
+    max-width: 370px; width: 93%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+    animation: rco-pop .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes rco-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.rco-icon {
+    width: 58px; height: 58px; border-radius: 50%;
+    background: #fff3cd; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px; font-size: 24px;
+}
+.rco-title { font-size: 17px; font-weight: 700; color: #1a202c; margin-bottom: 6px; }
+.rco-sub   { font-size: 12.5px; color: #6b7280; line-height: 1.5; margin-bottom: 14px; }
+
+/* ── Stock items list ───────────────────────────────────── */
+.rco-items-wrap {
+    max-height: 300px; overflow-y: auto; margin-bottom: 10px;
+    border: 1.5px solid #e5e7eb; border-radius: 12px;
+    text-align: left;
+}
+.rco-item-card {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 13px 14px; border-bottom: 1px solid #f3f4f6;
+    background: #fff; transition: background .15s;
+}
+.rco-item-card:last-child { border-bottom: none; }
+.rco-item-card.rco-item-out { background: #fff5f5; }
+.rco-item-card.rco-item-low { background: #fffbeb; }
+.rco-item-info  { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rco-item-name  { font-size: 13px; font-weight: 600; color: #1a202c; flex: 1; }
+.rco-item-qty   { font-size: 11.5px; color: #9ca3af; white-space: nowrap; }
+.rco-item-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* ── Price + stepper grouped on the right ───────────────── */
+.rco-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.rco-item-unit-price {
+    font-size: 12px; font-weight: 700; color: #1a202c;
+    white-space: nowrap;
+}
+
+/* ── Stock badges ───────────────────────────────────────── */
+.rco-stock-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 20px;
+}
+.rco-stock-ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.rco-stock-low { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.rco-stock-out { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* ── "Browse Menu" link button ──────────────────────────── */
+.rco-browse-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; padding: 2px 10px;
+    border-radius: 20px; border: 1.5px solid #B71C1C;
+    color: #B71C1C; background: #fff; text-decoration: none;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+}
+.rco-browse-btn:hover { background: #B71C1C; color: #fff; }
+
+/* ── Loading spinner inside list ────────────────────────── */
+.rco-loading {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 18px 14px;
+    font-size: 13px; color: #6b7280;
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.rco-btns { display: flex; gap: 10px; }
+.rco-btn-yes {
+    flex: 1; padding: 11px 0; border-radius: 10px; border: none; cursor: pointer;
+    background: linear-gradient(135deg,#B71C1C,#8B0000); color: #fff;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    transition: opacity .15s;
+}
+.rco-btn-yes:hover:not(:disabled) { opacity: .88; }
+.rco-btn-yes:disabled {
+    opacity: 0.45; cursor: not-allowed;
+    background: linear-gradient(135deg,#aaa,#888);
+}
+.rco-btn-no {
+    flex: 1; padding: 11px 0; border-radius: 10px; cursor: pointer;
+    border: 1.5px solid #e5e7eb; background: #fff; color: #374151;
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    transition: background .15s;
+}
+.rco-btn-no:hover { background: #f9fafb; }
+
+/* ── Qty stepper inside rco modal ───────────────────────── */
+.rco-item-info { flex-wrap: wrap; gap: 6px; }
+.rco-qty-row { display:flex; align-items:center; gap:5px; margin-left:auto; flex-shrink:0; }
+.rco-qty-btn {
+    width:26px; height:26px; border-radius:8px; border:1.5px solid #e5e7eb;
+    background:#fff; cursor:pointer; font-size:16px; font-weight:700;
+    color:#374151; display:flex; align-items:center; justify-content:center;
+    transition:all .15s; line-height:1; padding:0;
+}
+.rco-qty-btn:hover:not(:disabled) { border-color:#B71C1C; color:#B71C1C; background:#fff5f5; }
+.rco-qty-btn:disabled { opacity:.35; cursor:not-allowed; }
+.rco-qty-val { min-width:24px; text-align:center; font-size:13px; font-weight:700; color:#1a202c; }
+/* ── Add-ons section ─────────────────────────────────────── */
+.rco-addons-section {
+    border-top:1px dashed #e5e7eb; margin-top:6px; padding-top:6px;
+}
+.rco-addons-label {
+    font-size:10px; font-weight:600; color:#9ca3af; text-transform:uppercase;
+    letter-spacing:.5px; margin-bottom:4px;
+}
+.rco-addon-row { display:flex; align-items:center; gap:5px; padding:3px 0; }
+.rco-addon-name { flex:1; font-size:12px; color:#374151; font-weight:500; }
+.rco-addon-price { font-size:11px; color:#6b7280; white-space:nowrap; }
+.rco-addon-qty-btn {
+    width:22px; height:22px; border-radius:6px; border:1.5px solid #e5e7eb;
+    background:#fff; cursor:pointer; font-size:14px; font-weight:700;
+    color:#374151; display:flex; align-items:center; justify-content:center;
+    transition:all .15s; padding:0;
+}
+.rco-addon-qty-btn:hover:not(:disabled) { border-color:#B71C1C; color:#B71C1C; }
+.rco-addon-qty-btn:disabled { opacity:.35; cursor:not-allowed; }
+.rco-addon-qty-val { min-width:20px; text-align:center; font-size:12px; font-weight:700; color:#1a202c; }
+
+
+/* ── Per-item subtotal row inside each card ─────────────── */
+.rco-item-subtotal-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; padding-top: 7px;
+    border-top: 1px solid #f0f0f0;
+}
+.rco-item-subtotal-label {
+    font-size: 11px; color: #9ca3af; font-weight: 500;
+}
+.rco-item-subtotal-val {
+    font-size: 13px; font-weight: 700; color: #1a202c;
+}
+</style>
+
+<div class="rco-overlay" id="reorderConfirmModal" onclick="if(event.target===this)closeReorderConfirm()">
+    <div class="rco-box">
+        <div class="rco-icon">🔄</div>
+        <div class="rco-title">Re-send Order Request?</div>
+        <div class="rco-sub" id="rcoSub">Checking item availability…</div>
+
+        <!-- ✅ REALTIME: Closed establishment warning banner -->
+        <div id="rcoClosedBanner" style="display:none;margin-bottom:12px;padding:10px 14px;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;color:#991b1b;align-items:center;gap:10px;">
+            <i class="fas fa-store-slash" style="font-size:18px;flex-shrink:0;"></i>
+            <div>
+                <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Establishment is Closed</div>
+                <div style="font-size:11.5px;font-weight:500;color:#b91c1c;" id="rcoClosedMsg">
+                    This establishment is currently closed. Re-ordering is unavailable.
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time stock cards -->
+        <div class="rco-items-wrap">
+            <div id="rcoItems">
+                <div class="rco-loading"><i class="fas fa-spinner fa-spin"></i> Checking stock…</div>
+            </div>
+        </div>
+
+        <div class="rco-btns">
+            <button class="rco-btn-no" onclick="closeReorderConfirm()">
+                <i class="fas fa-times"></i> No, Cancel
+            </button>
+            <button class="rco-btn-yes" id="rcoYesBtn" onclick="confirmReorderYes()" disabled>
+                <i class="fas fa-paper-plane"></i> Yes, Re-order
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
