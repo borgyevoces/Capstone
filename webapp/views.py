@@ -10128,7 +10128,26 @@ def reorder_items(request, order_id):
             print(f"❌ [reorder_items] ERROR verifying order in DB: {verify_err}")
             raise
 
+        # ✅ Create OrderNotification FIRST (before broadcast) so the DB row already
+        #    exists when the dashboard WebSocket fires and re-fetches /api/notifications/.
+        #    Doing this after the broadcast causes a race condition where the fetch
+        #    returns before the notification is saved.
+        try:
+            notification, notif_created = OrderNotification.objects.get_or_create(
+                order=new_order,
+                establishment=new_order.establishment,
+                notification_type='new_order',
+                defaults={
+                    'message': f'New cash order #{new_order.id} from {request.user.username}'
+                }
+            )
+            print(f"✅ [reorder_items] Notification #{notification.id} {'created' if notif_created else 'already existed'} for establishment")
+        except Exception as notif_err:
+            print(f"⚠️  [reorder_items] WARNING: Failed to create establishment notification: {notif_err}")
+            # Don't fail the request if notification creation fails
+
         # ✅ CRITICAL: Broadcast the new order to both owner & customer via WebSocket
+        #    Runs AFTER notification is saved so the dashboard fetch sees it immediately.
         print(f"🔄 [reorder_items] Broadcasting Order #{new_order.id} to owner & customer...")
         try:
             _broadcast_order_status_update(new_order, 'request')
