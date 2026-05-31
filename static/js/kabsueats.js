@@ -1416,7 +1416,7 @@ const _origRefreshEstCards = window.refreshEstablishmentCardStatuses;
 // ============================================================
 // ✅ REALTIME FILTER STATE — Bestsellers
 // ============================================================
-window.bsFS = { inStockOnly: false, category: '', sortBy: '', priceMax: 0 };
+window.bsFS = { inStockOnly: true, category: '', sortBy: '', priceMax: 0 };
 
 // ── Quick-filter keyword maps for the 3 shortcut buttons ──────────────────
 window.bsQF = '';   // active quick-filter key: '' | 'drinks' | 'karenderia' | 'snacks'
@@ -1467,16 +1467,68 @@ const BS_QF_KEYWORDS = {
     ]
 };
 
+// ── Category-name → quick-filter key mapping ──────────────────────────────
+// Maps exact category_name values (from Django backend) to their QF button key.
+// Add more entries here if new categories are created in the admin.
+const CAT_NAME_TO_QF = {
+    // Drinks
+    'drinks': 'drinks',
+    'beverage': 'drinks',
+    'beverages': 'drinks',
+    'juice': 'drinks',
+    'coffee': 'drinks',
+    'tea': 'drinks',
+
+    // Karenderia / Meals
+    'karenderia meals': 'karenderia',
+    'karenderia': 'karenderia',
+    'meals': 'karenderia',
+    'rice meals': 'karenderia',
+    'viands': 'karenderia',
+    'lutong ulam': 'karenderia',
+
+    // Snacks
+    'snacks': 'snacks',
+    'snack': 'snacks',
+    'street food': 'snacks',
+
+    // Breakfast / Morning meals
+    'morning meals': 'breakfast',
+    'breakfast': 'breakfast',
+    'almusal': 'breakfast',
+    'bakery': 'breakfast',
+};
+
 function _itemMatchesQF(d, key) {
-    const nameLow  = (d.name        || '').toLowerCase();
+    // ── Step 1: Check the item's assigned category_name from the backend ────
+    // This is the most accurate signal — if the item is tagged as "Drinks"
+    // in the Django admin, it should ONLY appear under Drinks.
+    const catName = (d.category_name || '').toLowerCase().trim();
+    if (catName) {
+        const mappedKey = CAT_NAME_TO_QF[catName];
+        if (mappedKey) {
+            // Item has a recognised category → match ONLY if the keys match.
+            // This prevents "Pork Steak" (category: karenderia) from showing
+            // under Drinks even if its name accidentally contains a drinks keyword.
+            return mappedKey === key;
+        }
+        // If the category name directly starts with or equals the key label,
+        // treat it as a match (handles future categories like "drinks special")
+        if (catName.startsWith(key)) return true;
+    }
+
+    // ── Step 2: Fall back to establishment-level category tag ────────────────
     const estCats  = (d.establishment?.categories    || '').toLowerCase();
     const estOther = (d.establishment?.other_category || '').toLowerCase();
-    const allText  = `${nameLow} ${estCats} ${estOther}`;
 
     if (key === 'karenderia') {
         // Primary: establishment is categorised as karenderia
         if (estCats.includes('karenderia') || estOther.includes('karenderia')) return true;
     }
+
+    // ── Step 3: Keyword fallback (only used when no category_name is assigned) ─
+    const nameLow = (d.name || '').toLowerCase();
+    const allText = `${nameLow} ${estCats} ${estOther}`;
     return BS_QF_KEYWORDS[key].some(kw => allText.includes(kw));
 }
 

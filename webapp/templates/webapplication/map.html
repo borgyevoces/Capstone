@@ -122,7 +122,7 @@
 /* ═══════════════════════════════════════════
    MAP LAYOUT
 ═══════════════════════════════════════════ */
-.map-layout { display: flex; align-items: stretch; height: calc(100vh - 210px); min-height: 500px; }
+.map-layout { display: flex; align-items: stretch; min-height: 500px; }
 
 /* ── Left sidebar ── */
 .map-cat-sidebar {
@@ -132,6 +132,10 @@
     padding: 16px 12px;
     display: flex; flex-direction: column;
     gap: 8px; overflow-y: auto; overflow-x: hidden;
+    /* Ensure sidebar never overflows the map card height */
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
 }
 .mcs-header {
     display: flex; align-items: center; gap: 7px;
@@ -340,7 +344,7 @@
     .map-page-header  { padding: 20px 16px 18px; border-radius: 14px; }
     .map-page-header h1 { font-size: 18px; }
     .mleg { bottom: 10px !important; left: 10px !important; right: auto !important; }
-    .map-layout { height: calc(100vh - 220px); min-height: 400px; flex-direction: column; }
+    .map-layout { min-height: 400px; flex-direction: column; }
     .map-cat-sidebar { width: 100%; height: auto; max-height: 100px; border-right: none; border-bottom: 1px solid #f0f0f0; flex-direction: row; flex-wrap: wrap; padding: 6px 8px; gap: 4px; overflow-x: auto; overflow-y: hidden; }
     .mcs-header { display: none; }
     .map-right { flex: 1; }
@@ -574,6 +578,43 @@
 {% endblock content %}
 
 {% block extra_js %}
+<!-- Dynamic map height adjustment -->
+<script>
+(function() {
+    function adjustMapHeight() {
+        var pageContent = document.querySelector('.map-page-content');
+        var mapCard = document.querySelector('.map-page-card');
+        var mapLayout = document.querySelector('.map-layout');
+        if (!pageContent || !mapCard || !mapLayout) return;
+
+        // Get viewport height and subtract the map-page-content top offset + bottom padding
+        var contentRect = pageContent.getBoundingClientRect();
+        var cardRect = mapCard.getBoundingClientRect();
+        var viewportH = window.innerHeight;
+
+        // Available height = viewport - top of map card - some bottom breathing room
+        var availableH = viewportH - cardRect.top - 24;
+        if (availableH < 400) availableH = 400;
+
+        mapLayout.style.height = availableH + 'px';
+    }
+
+    // Run on load and on any resize/accordion toggle
+    window.addEventListener('load', adjustMapHeight);
+    window.addEventListener('resize', adjustMapHeight);
+    document.addEventListener('DOMContentLoaded', adjustMapHeight);
+
+    // Patch toggleMapInstructions to re-adjust after accordion open/close
+    var _origToggle = window.toggleMapInstructions;
+    window.toggleMapInstructions = function() {
+        if (typeof _origToggle === 'function') _origToggle();
+        setTimeout(adjustMapHeight, 320); // after CSS transition
+    };
+
+    // Also expose for manual call
+    window.adjustMapHeight = adjustMapHeight;
+})();
+</script>
 <!-- Map data from Django -->
 <script>
     const CVSU = {

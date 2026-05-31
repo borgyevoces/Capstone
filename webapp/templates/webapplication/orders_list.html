@@ -58,81 +58,82 @@
         font-size: 14px;
     }
 
-    /* Status Tabs - Pill Style (matching client) */
+    /* Status Tabs - Icon-stacked style (matching client image) */
     .status-tabs-container {
         background: white;
         border-radius: 14px;
-        padding: 12px;
+        padding: 10px 8px 0;
         margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
         border: 1px solid #e9ecef;
     }
 
     .status-tabs {
         display: flex;
-        gap: 10px;
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
+        border-bottom: 1px solid #f0f0f0;
     }
     .status-tabs::-webkit-scrollbar { display: none; }
 
     .status-tab {
         flex: 1 1 0;
-        min-width: 130px;
+        min-width: 100px;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: flex-start;
-        gap: 8px;
-        padding: 12px 16px;
-        border: 1.5px solid #e2e8f0;
+        justify-content: center;
+        gap: 4px;
+        padding: 10px 8px 10px;
+        border: none;
+        border-bottom: 3px solid transparent;
         background: white;
-        border-radius: 10px;
+        border-radius: 0;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.18s ease;
         font-weight: 600;
-        font-size: 13.5px;
+        font-size: 12px;
         font-family: 'Poppins', sans-serif;
-        color: #374151;
+        color: #9ca3af;
         white-space: nowrap;
         position: relative;
+        text-align: center;
     }
 
     .status-tab:hover {
-        border-color: #B71C1C;
         color: #B71C1C;
         background: #fff5f5;
     }
 
     .status-tab.active {
-        background: linear-gradient(135deg, #B71C1C 0%, #8B0000 100%);
-        border-color: #B71C1C;
-        color: white;
-        box-shadow: 0 4px 12px rgba(183,28,28,0.3);
+        color: #B71C1C;
+        border-bottom: 3px solid #B71C1C;
+        background: white;
+        box-shadow: none;
     }
 
     .status-tab i {
-        font-size: 15px;
+        font-size: 18px;
         flex-shrink: 0;
+        color: inherit;
     }
 
     .tab-count {
-        margin-left: auto;
-        background: rgba(183,28,28,0.12);
-        color: #B71C1C;
-        padding: 2px 9px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-        min-width: 24px;
+        font-size: 14px;
+        font-weight: 800;
+        color: inherit;
+        background: none;
+        padding: 0;
+        border-radius: 0;
+        min-width: unset;
         text-align: center;
-        flex-shrink: 0;
+        line-height: 1;
     }
 
     .status-tab.active .tab-count {
-        background: rgba(255,255,255,0.25);
-        color: #fff;
+        background: none;
+        color: #B71C1C;
     }
 
     /* Orders Container */
@@ -171,7 +172,8 @@
         border-bottom: 1px solid #ececec;
         font-size: 13px;
         transition: background 0.15s;
-        word-break: break-word;
+        word-break: normal;
+        overflow-wrap: break-word;
     }
     .order-row { cursor: pointer; }
     .order-row:hover td { background: #fffbfb !important; }
@@ -186,6 +188,8 @@
     .tbl-total     { font-weight: 800; color: #B71C1C; font-size: 13px; white-space: nowrap; }
     .tbl-actions   { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
     .tbl-actions-stack { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+    /* Hide mobile buttons on desktop — only shown inside @media (max-width: 768px) */
+    .mobile-action-btns { display: none !important; }
 
     .order-status-badge {
         padding: 4px 10px;
@@ -773,48 +777,77 @@
 
         /* Page layout */
         main.main-content {
-            padding: 0 12px 32px;
-            margin-top: 12px;
+            padding: 0 10px 32px;
+            margin-top: 10px;
+            background: #f0f0f0;
         }
 
         /* Page header */
         .page-header {
-            padding: 8px 4px 16px;
-            margin-bottom: 16px;
+            padding: 8px 4px 14px;
+            margin-bottom: 14px;
         }
 
         .page-title {
-            font-size: 22px;
+            font-size: 20px;
             gap: 8px;
         }
 
         .page-subtitle {
-            font-size: 13px;
+            font-size: 12px;
         }
 
-        /* Status tabs: single row of 4 */
+        /* Status tabs: phone icon-stacked style (matches image) */
         .status-tabs-container {
-            padding: 10px;
+            padding: 8px 4px 0;
             margin-bottom: 12px;
+            border-radius: 14px;
+            overflow: hidden;
         }
 
         .status-tabs {
             display: flex;
             flex-direction: row;
             flex-wrap: nowrap;
-            gap: 6px;
+            gap: 0;
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .status-tab {
             flex: 1;
             min-width: 0;
-            padding: 8px 4px;
-            font-size: 10px;
+            padding: 8px 2px 9px;
+            font-size: 9.5px;
             gap: 3px;
             flex-direction: column;
+            align-items: center;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
+            background: white !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            color: #9ca3af;
+            border-bottom: 2.5px solid transparent !important;
+            font-weight: 600;
+            justify-content: center;
+        }
+
+        .status-tab.active {
+            color: #B71C1C !important;
+            border-bottom: 2.5px solid #B71C1C !important;
+            background: white !important;
+            box-shadow: none !important;
+        }
+
+        .status-tab:hover {
+            background: #fff5f5 !important;
+            color: #B71C1C;
+        }
+
+        .status-tab i {
+            font-size: 16px;
         }
 
         .status-tab span:not(.tab-count) {
@@ -822,17 +855,24 @@
             text-overflow: ellipsis;
             max-width: 100%;
             display: block;
-        }
-
-        .status-tab i {
-            font-size: 15px;
+            font-size: 9.5px;
+            line-height: 1.2;
         }
 
         .tab-count {
-            min-width: 18px;
-            height: 18px;
-            font-size: 10px;
-            padding: 0 4px;
+            background: none !important;
+            color: inherit !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            min-width: unset;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
+            margin-left: 0;
+        }
+
+        .status-tab.active .tab-count {
+            color: #B71C1C !important;
         }
 
         /* Bulk actions: below tabs, not fixed */
@@ -931,21 +971,364 @@
         }
 
         .action-btn {
-            padding: 8px 12px;
+            padding: 9px 12px;
             font-size: 12px;
-            flex: 1;
+            flex: 0 0 auto !important;
             min-width: 76px;
             justify-content: center;
             border-radius: 8px;
-            width: auto;
+            width: auto !important;
+            overflow: visible !important;
         }
 
-        .orders-container {
-            overflow-x: auto;
+        /* ── Mobile: Card-per-order layout (inspired by client order history) ── */
+        .orders-container { overflow-x: unset !important; padding-top: 4px; }
+
+        .orders-table { border-spacing: 0; width: 100%; }
+        .orders-table thead { display: none; }
+        .orders-table,
+        .orders-table tbody { display: block; width: 100%; }
+
+        /* ── Each row = a card ── */
+        .order-row {
+            display: block !important;
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 12px;
+            overflow: hidden !important;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease, transform 0.15s ease;
+        }
+        .order-row:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+            transform: translateY(-1px);
+        }
+        .order-row.modal-open-row {
+            box-shadow: 0 0 0 2px #B71C1C, 0 4px 14px rgba(183,28,28,0.15) !important;
+            outline: none;
         }
 
-        .orders-table thead th:nth-child(4),
-        .orders-table td:nth-child(4) { display: none; } /* hide payment col on mobile */
+        /* Strip all original table td styles */
+        .order-row td {
+            display: block !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 0;
+            vertical-align: top;
+            word-break: normal !important;
+            white-space: normal;
+            overflow: visible;
+        }
+        .order-row:hover td { background: transparent !important; }
+
+        /* ── td1: Checkbox — absolute top-left ── */
+        .order-row td:nth-child(1) {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            width: 20px;
+            z-index: 2;
+        }
+
+        /* ── td2: Card header ── */
+        .order-row td:nth-child(2) {
+            display: block !important;
+            padding: 13px 14px 11px 42px;
+            border-bottom: 1px solid #f0f4f8;
+            word-break: normal !important;
+        }
+        .order-row td:nth-child(2) .tbl-order-num {
+            font-size: 14px;
+            font-weight: 800;
+            color: #c0392b;
+            display: inline-block;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+        .order-row td:nth-child(2) .tbl-date {
+            font-size: 10.5px;
+            color: #94a3b8;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: calc(100% - 10px);
+        }
+
+        /* ── td3: Card body — Elapsed chip + Customer name + email ── */
+        .order-row td:nth-child(3) {
+            padding: 8px 14px 8px 14px;
+            display: flex !important;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            min-width: 0;
+            overflow: visible;
+        }
+        .order-row td:nth-child(3) .mobile-chip-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .order-row td:nth-child(3) .elapsed-chip,
+        .order-row td:nth-child(3) .claim-timer-chip,
+        .order-row td:nth-child(3) .owner-timer-chip {
+            flex-shrink: 0;
+            font-size: 10px;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+        .order-row td:nth-child(3) .tbl-cust-name {
+            display: block !important;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-top: 0;
+        }
+        .order-row td:nth-child(3) .tbl-cust-sub {
+            display: block !important;
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 500;
+            white-space: normal !important;
+            text-overflow: unset !important;
+            overflow: visible !important;
+            word-break: break-all !important;
+            line-height: 1.4;
+            min-width: 0;
+        }
+
+        /* ── td4: Items — visible on mobile, compact ── */
+        .order-row td:nth-child(4) {
+            display: block !important;
+            padding: 8px 14px 8px 14px !important;
+            border-top: 1px dashed #eef0f2 !important;
+        }
+        .order-row td:nth-child(4) .row-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .order-row td:nth-child(4) .row-item {
+            font-size: 12px;
+        }
+        .order-row td:nth-child(4) .row-item-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .order-row td:nth-child(4) .row-item-qty {
+            font-size: 10.5px;
+        }
+        .order-row td:nth-child(4) .row-item-price {
+            font-size: 11px;
+        }
+        .order-row td:nth-child(4) .addon-chip {
+            font-size: 9px;
+        }
+        .order-row td:nth-child(4) .row-item-note-inline {
+            font-size: 9px;
+            max-width: 100%;
+        }
+
+        /* ── td5: Total — block row after items ── */
+        .order-row td:nth-child(5) {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 14px 7px 14px !important;
+            border-top: 1px dashed #eef0f2 !important;
+            word-break: normal !important;
+        }
+        .order-row td:nth-child(5)::before {
+            content: 'Order Total';
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .order-row td:nth-child(5) .tbl-total {
+            font-size: 16px;
+            font-weight: 800;
+            color: #c0392b;
+            white-space: nowrap;
+        }
+        .order-row td:nth-child(5) .payment-badge {
+            font-size: 9px;
+            padding: 1px 6px;
+            margin-top: 3px;
+            display: inline-flex;
+        }
+
+        /* ── td6: Status + action buttons — fully inside white card ── */
+        .order-row td:nth-child(6) {
+            display: block !important;
+            padding: 0 !important;
+            border-top: 1px solid #f0f4f8 !important;
+            background: #ffffff !important;
+            border-radius: 0 0 16px 16px !important;
+            overflow: hidden !important;
+        }
+        .mobile-status-row {
+            display: flex !important;
+            flex-direction: column;
+            gap: 0;
+            background: #ffffff;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+        }
+        /* status badge row */
+        .mobile-status-content {
+            padding: 8px 14px 4px 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            background: #ffffff;
+        }
+        .mobile-status-content .order-status-badge {
+            font-size: 11px;
+            padding: 4px 11px;
+        }
+        .mobile-status-content .owner-timer-chip,
+        .mobile-status-content .claim-timer-chip {
+            font-size: 10.5px;
+            padding: 3px 8px;
+        }
+        /* compact buttons row — inside white card */
+        .mobile-action-btns {
+            display: flex !important;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 6px;
+            padding: 5px 14px 10px 14px;
+            align-items: center;
+            justify-content: flex-start;
+            background: #ffffff;
+        }
+        .mobile-action-btns .action-btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            font-size: 11.5px !important;
+            padding: 6px 14px !important;
+            border-radius: 8px !important;
+            justify-content: center !important;
+            text-align: center;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            white-space: nowrap !important;
+            font-weight: 700 !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10) !important;
+            overflow: visible !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            line-height: 1 !important;
+        }
+        /* Single button stays compact, left-aligned */
+        .mobile-action-btns .action-btn:only-child {
+            flex: 0 0 auto !important;
+        }
+        /* ensure colors match reference card style */
+        .mobile-action-btns .btn-move {
+            background: #B71C1C !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        .mobile-action-btns .btn-accept {
+            background: #16a34a !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        .mobile-action-btns .btn-reject {
+            background: #fff1f2 !important;
+            color: #be123c !important;
+            border: 1.5px solid #fda4af !important;
+        }
+        .mobile-action-btns .btn-cancel-claim {
+            background: #fff1f2 !important;
+            color: #be123c !important;
+            border: 1.5px solid #fda4af !important;
+        }
+        /* Reorder expired button — blue fill like reference */
+        .mobile-action-btns [id^="reorder-expired-"] {
+            background: #2563eb !important;
+            color: #fff !important;
+            border: none !important;
+        }
+
+        /* ── td7: Hidden on mobile ── */
+        .order-row td:nth-child(7),
+        .desktop-actions-td {
+            display: none !important;
+        }
+        .tbl-actions-stack {
+            flex-direction: row !important;
+            justify-content: flex-end !important;
+            align-items: center !important;
+            width: auto !important;
+            gap: 6px;
+            display: flex !important;
+        }
+        /* All action buttons: compact, auto-width, inline */
+        .tbl-actions-stack .action-btn,
+        .order-row td:nth-child(7) .action-btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 0 !important;
+            font-size: 12px !important;
+            padding: 7px 14px !important;
+            border-radius: 8px !important;
+            font-weight: 700 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            line-height: 1.2 !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+        /* Accept button — green fill, white text */
+        .order-row td:nth-child(7) .btn-accept {
+            background: #16a34a !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+        /* Move/Next step button — red fill, white text */
+        .order-row td:nth-child(7) .btn-move:not(.btn-accept) {
+            background: #B71C1C !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+        /* Reject / Remove button — outline red, red text */
+        .order-row td:nth-child(7) .btn-reject {
+            background: #fff0f0 !important;
+            color: #c0392b !important;
+            border: 1.5px solid #fca5a5 !important;
+        }
+        /* Cancel claim button */
+        .order-row td:nth-child(7) .btn-cancel-claim {
+            background: #fff1f2 !important;
+            color: #be123c !important;
+            border: 1.5px solid #fda4af !important;
+        }
+        /* Reorder expired button — blue fill */
+        .order-row td:nth-child(7) [id^="reorder-expired-"] {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
 
         /* Toast */
         .orders-toast {
@@ -1008,8 +1391,16 @@
     /* Extra small phones */
     @media (max-width: 380px) {
         .status-tab {
-            font-size: 11px;
-            padding: 8px 6px;
+            font-size: 8.5px;
+            padding: 8px 1px;
+        }
+
+        .status-tab i {
+            font-size: 14px;
+        }
+
+        .tab-count {
+            font-size: 12px;
         }
 
         .bulk-action-btn {
@@ -1018,8 +1409,16 @@
         }
 
         .action-btn {
-            font-size: 11px;
-            padding: 7px 8px;
+            font-size: 12px;
+            padding: 8px 8px;
+            min-height: 38px !important;
+        }
+
+        .mobile-action-btns .action-btn {
+            font-size: 11.5px !important;
+            padding: 5px 12px !important;
+            height: 30px !important;
+            min-height: 30px !important;
         }
     }
 
@@ -1967,11 +2366,21 @@ function esc(s) {
                     </button>`;
                 }
             } else if (currentTab === 'to_pay') {
-                // ✅ Show Reject button — regardless of stock issue
-                // Owner can reject the order, whether stock is low or not
-                actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
-                    <i class="fas fa-times"></i> Reject
-                </button>`;
+                if (timerExpired) {
+                    // ── Timer already expired on page load — show Reorder + Remove ──
+                    actionBtn = `
+                        <button class="action-btn btn-move" id="reorder-expired-${o.id}" onclick="rejectExpiredToPay(${o.id}, this)" style="background:linear-gradient(135deg,#B71C1C,#8B0000);">
+                            <i class="fas fa-redo-alt"></i> Reorder
+                        </button>
+                        <button class="action-btn btn-reject" id="remove-expired-topay-${o.id}" onclick="silentDismissExpiredToPay(${o.id}, this)">
+                            <i class="fas fa-trash-alt"></i> Remove
+                        </button>`;
+                } else {
+                    // Timer still running — show Reject only
+                    actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
+                        <i class="fas fa-times"></i> Reject
+                    </button>`;
+                }
             } else {
                 actionBtn = `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
             }
@@ -2052,18 +2461,42 @@ function esc(s) {
                     </td>
 
                     <!-- COL 5: Status + timer -->
-                    <td style="min-width:120px;">
-                        ${isCancelledByClient
-                            ? clientCancelStatusHtml
-                            : isRejectedByOwner
-                                ? ownerRejectedStatusHtml
-                                : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
-                        }
-                        ${currentTab === 'to_pay' ? `<div style="margin-top:5px;">${timerCellHtml}</div>` : ''}
+                    <td class="col-status" style="min-width:120px;" id="status-cell-owner-${o.id}">
+                        <div class="mobile-status-row">
+                            <div class="mobile-status-content">
+                                ${isCancelledByClient
+                                    ? clientCancelStatusHtml
+                                    : isRejectedByOwner
+                                        ? ownerRejectedStatusHtml
+                                        : timerExpired
+                                            ? `<div style="display:inline-flex;flex-direction:column;gap:3px;align-items:stretch;">
+                                                   <span class="order-status-badge" style="background:#fee2e2;color:#991b1b;white-space:nowrap;border:1px solid #fca5a5;text-transform:none;letter-spacing:0;font-size:11px;">
+                                                       <i class="fas fa-hourglass-end"></i> Payment window expired
+                                                   </span>
+                                                   <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:5px;padding:3px 7px;font-size:9.5px;color:#9a3412;font-weight:500;line-height:1.3;width:100%;">
+                                                       <i class="fas fa-exclamation-circle" style="color:#ea580c;margin-right:3px;font-size:9px;"></i>
+                                                       The 10-minute payment window has lapsed. Click <strong>Reorder</strong> to notify the client, or <strong>Remove</strong> to dismiss.
+                                                   </div>
+                                               </div>`
+                                            : `<span class="order-status-badge status-${o.status || 'request'}">${LABELS[o.status || 'request']}</span>`
+                                }
+                                ${currentTab === 'to_pay' ? `<div style="margin-top:5px;">${timerCellHtml}</div>` : ''}
+                            </div>
+                            <div class="mobile-action-btns">
+                                ${currentTab === 'request' && !ownerHasStockIssue && !isCancelledByClient && !isRejectedByOwner
+                                    ? `<button class="action-btn btn-move btn-accept" onclick="moveOrder(${o.id})"><i class="fas fa-check"></i> Accept</button>
+                                       <button class="action-btn btn-reject" onclick="rejectOrder(${o.id})"><i class="fas fa-times"></i> Reject</button>`
+                                    : currentTab === 'to_claim' && !isClaimExpired
+                                        ? `<button class="action-btn btn-move" onclick="moveOrder(${o.id})"><i class="fas fa-check-circle"></i> Completed</button>
+                                           <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-mobile-${o.id}" onclick="cancelClaimOrder(${o.id})"><i class="fas fa-ban"></i> Reject</button>`
+                                        : actionBtn
+                                }
+                            </div>
+                        </div>
                     </td>
 
-                    <!-- COL 6: Actions — primary top, secondary bottom -->
-                    <td style="min-width:130px;text-align:right;">
+                    <!-- COL 6: Actions — desktop only (hidden on mobile) -->
+                    <td class="desktop-actions-td" style="min-width:130px;text-align:right;">
                         <div class="tbl-actions-stack">
                             ${currentTab === 'request' && !ownerHasStockIssue && !isCancelledByClient && !isRejectedByOwner
                                 ? `<button class="action-btn btn-move btn-accept" id="accept-btn-${o.id}" onclick="moveOrder(${o.id})">
@@ -2267,9 +2700,19 @@ function esc(s) {
                     </button>`;
             }
         } else if (modalStatus === 'to_pay') {
-            footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>rejectOrder(${o.id}),80);">
-                <i class="fas fa-times"></i> Reject
-            </button>`;
+            if (o._timerExpired) {
+                footerHTML = `
+                    <button class="action-btn btn-move" onclick="closeOrderModal();rejectExpiredToPay(${o.id}, this);" style="background:linear-gradient(135deg,#B71C1C,#8B0000);">
+                        <i class="fas fa-redo-alt"></i> Reorder
+                    </button>
+                    <button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>silentDismissExpiredToPay(${o.id}, null),80);">
+                        <i class="fas fa-trash-alt"></i> Remove
+                    </button>`;
+            } else {
+                footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>rejectOrder(${o.id}),80);">
+                    <i class="fas fa-times"></i> Reject
+                </button>`;
+            }
         } else if (modalStatus === 'preparing') {
             footerHTML = `<button class="action-btn btn-move" onclick="closeOrderModal();moveOrder(${o.id});">
                 <i class="fas fa-check-circle"></i> Mark Ready to Claim
@@ -2492,31 +2935,57 @@ function esc(s) {
 
                 if (rem <= 0) {
                     clearInterval(ownerTimerMap[orderId]);
-                    // ── Timer expired: auto-reject → restore stock → remove row ──
+
+                    // ── Timer expired: update UI — no auto-reject ──
+                    // Show expired chip, swap status badge + actions so owner decides.
+                    const oIdNum = parseInt(orderId, 10);
+
+                    // 1. Update timer chip
                     if (chipEl) {
                         chipEl.className = 'owner-timer-chip expired';
                         chipEl.innerHTML = '<i class="fas fa-clock"></i> Expired';
                     }
-                    // Auto-reject after a brief visual pause so owner sees "Expired"
-                    setTimeout(() => {
-                        fetch(`/api/food-establishment/orders/${orderId}/reject/`, {
-                            method:  'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
-                            }
-                        })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                removeOrderRow(parseInt(orderId));
-                            } else {
-                                // Backend rejected the reject — just reload
-                                loadOrders();
-                            }
-                        })
-                        .catch(() => loadOrders());
-                    }, 1200);
+
+                    // 2. Update status cell — show "Payment window expired" badge
+                    const statusCellEl = document.getElementById('status-cell-owner-' + oIdNum);
+                    if (statusCellEl) {
+                        statusCellEl.innerHTML = `
+                            <div style="display:inline-flex;flex-direction:column;gap:3px;align-items:stretch;">
+                                <span class="order-status-badge" style="background:#fee2e2;color:#991b1b;white-space:nowrap;border:1px solid #fca5a5;text-transform:none;letter-spacing:0;font-size:11px;">
+                                    <i class="fas fa-hourglass-end"></i> Payment window expired
+                                </span>
+                                <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:5px;padding:3px 7px;font-size:9.5px;color:#9a3412;font-weight:500;line-height:1.3;width:100%;">
+                                    <i class="fas fa-exclamation-circle" style="color:#ea580c;margin-right:3px;font-size:9px;"></i>
+                                    The 10-minute payment window has lapsed. Click <strong>Reorder</strong> to notify the client, or <strong>Remove</strong> to dismiss.
+                                </div>
+                            </div>
+                            <div style="margin-top:5px;"><span class="owner-timer-chip expired"><i class="fas fa-clock"></i> Expired</span></div>`;
+                    }
+
+                    // 3. Replace actions cell with Reorder + Remove buttons
+                    const row = document.querySelector('tr.order-row[data-id="' + oIdNum + '"]');
+                    if (row) {
+                        const lastCell = row.querySelector('td:last-child');
+                        if (lastCell) {
+                            lastCell.innerHTML = `
+                                <div class="tbl-actions-stack">
+                                    <button class="action-btn btn-move" id="reorder-expired-${oIdNum}"
+                                            onclick="rejectExpiredToPay(${oIdNum}, this)"
+                                            style="background:linear-gradient(135deg,#B71C1C,#8B0000);">
+                                        <i class="fas fa-redo-alt"></i> Reorder
+                                    </button>
+                                    <button class="action-btn btn-reject" id="remove-expired-topay-${oIdNum}"
+                                            onclick="silentDismissExpiredToPay(${oIdNum}, this)">
+                                        <i class="fas fa-trash-alt"></i> Remove
+                                    </button>
+                                </div>`;
+                        }
+                    }
+
+                    // 4. Mark as expired in memory so modal actions are correct
+                    const expIdx = orders.findIndex(function(x) { return x.id === oIdNum; });
+                    if (expIdx !== -1) { orders[expIdx]._timerExpired = true; }
+
                     return;
                 }
 
@@ -2775,6 +3244,52 @@ function esc(s) {
     function closeCancelClaimModal()      { closeUnifiedRejectModal(); }
     function onCancelClaimReasonChange(v) { onUnifiedReasonChange(v); }
     function confirmCancelClaimOrder()    { submitUnifiedReject(); }
+
+    // ── Reorder: reject expired to_pay with "Payment window expired" reason ──────
+    // Notifies the client that the window lapsed so they can re-submit.
+    function rejectExpiredToPay(orderId, btnEl) {
+        if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+        const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        const reason = 'Sorry, the 10-minute payment window has lapsed. Please re-request your order to try again.';
+        fetch('/api/food-establishment/orders/' + orderId + '/reject/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body:    JSON.stringify({ reason })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            orders = orders.filter(function(o) { return o.id !== orderId; });
+            showToast('Client notified to reorder. Order #' + orderId + ' removed.', 'success');
+            removeOrderRow(orderId);
+            updateCounts();
+        })
+        .catch(function() {
+            showToast('Network error. Please try again.', 'error');
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-redo-alt"></i> Reorder'; }
+        });
+    }
+
+    // ── Remove: silently dismiss an expired to_pay row (no client notification) ──
+    function silentDismissExpiredToPay(orderId, btnEl) {
+        if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+        const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        fetch('/api/food-establishment/orders/' + orderId + '/reject/', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body:    JSON.stringify({ reason: 'Sorry, the 10-minute payment window has lapsed. Please re-request your order to try again.' })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+            orders = orders.filter(function(o) { return o.id !== orderId; });
+            showToast('Order #' + orderId + ' removed.', 'success');
+            removeOrderRow(orderId);
+            updateCounts();
+        })
+        .catch(function() {
+            showToast('Network error. Please try again.', 'error');
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash-alt"></i> Remove'; }
+        });
+    }
 
     // ── Direct Remove for out-of-stock request orders (no modal) ─────────────
     // Dismisses the row from the OWNER's view only — the client's order history

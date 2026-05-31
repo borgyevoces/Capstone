@@ -8467,6 +8467,16 @@ def update_request_order_quantities(request, order_id):
                 new_order.total_amount = total
                 new_order.save(update_fields=['total_amount'])
 
+                # ✅ FIX: Mark the original cancelled order as owner_dismissed=True
+                # so it NO LONGER appears in /api/user/transactions/ after the reorder.
+                # Without this, the old rejected order keeps reappearing in the "To Pay"
+                # tab every time loadOrders() polls the server — even though it was replaced
+                # by the new order above.
+                order.owner_dismissed = True
+                order.save(update_fields=['owner_dismissed'])
+                print(f'✅ [update_request_order_quantities] Dismissed original order #{order.id} '
+                      f'(owner_dismissed=True) — replaced by new Order #{new_order.id}')
+
             _broadcast_order_status_update(new_order, 'request')
             print(f'✅ [update_request_order_quantities] Reorder broadcast complete')
 

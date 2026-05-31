@@ -24,10 +24,10 @@
 .tbl-item-note i { color: #d97706; font-size: 9px; margin-right: 3px; }
 @media (max-width: 768px) {
     .main, .main.main-with-sidebar { padding-bottom: 80px !important; }
-    .order-tabs { gap: 8px !important; padding: 10px !important; }
-    .order-tab { min-width: 100px !important; font-size: 11.5px !important; padding: 10px 10px !important; border-radius: 8px !important; gap: 6px !important; }
-    .order-tab i { font-size: 12px !important; }
-    .order-tab-count { font-size: 10px !important; padding: 1px 7px !important; min-width: 20px !important; }
+    .order-tabs { gap: 0 !important; padding: 0 !important; }
+    .order-tab { min-width: 0 !important; font-size: 8.5px !important; padding: 8px 1px 6px !important; border-radius: 0 !important; gap: 0 !important; }
+    .order-tab i { font-size: 14px !important; }
+    .order-tab-count { font-size: 8.5px !important; padding: 0 4px !important; min-width: 14px !important; }
     .orders-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
     .orders-table { min-width: 480px; font-size: 12px; }
     .tbl-empty { padding: 36px 16px !important; }
@@ -147,6 +147,9 @@ tr.order-row-highlight {
         font-size: 15px;
         flex-shrink: 0;
     }
+
+    /* label span — inline on desktop, block on mobile */
+    .order-tab-label { display: inline; }
 
     .order-tab-count {
         margin-left: auto;
@@ -652,31 +655,92 @@ tr.order-row-highlight {
         }
 
         .order-tabs {
-            padding: 8px;
-            gap: 6px;
-            display: grid !important;
-            grid-template-columns: 1fr 1fr;
-            justify-content: unset;
+            padding: 0;
+            gap: 0;
+            display: flex !important;
+            grid-template-columns: unset;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            scrollbar-width: none;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        /* 5 tabs in 2-column grid on mobile */
         .order-tab {
-            padding: 9px 10px;
-            font-size: 11px;
-            gap: 6px;
-            justify-content: flex-start;
-            border-radius: 8px;
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 8px 1px 6px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            border-right: 1px solid #f0f2f5;
+            color: #718096;
+            gap: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            white-space: normal;
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
         }
+        .order-tab:last-child { border-right: none; }
+
+        .order-tab.active {
+            background: transparent;
+            border-right: 1px solid #f0f2f5;
+            color: #B71C1C;
+            box-shadow: none;
+        }
+        .order-tab:last-child.active { border-right: none; }
+        .order-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 6px;
+            right: 6px;
+            height: 2px;
+            background: #B71C1C;
+            border-radius: 2px 2px 0 0;
+        }
+        .order-tab:hover { background: #fafbfc; color: #B71C1C; }
 
         .order-tab i {
-            font-size: 12px;
+            font-size: 14px;
+            margin-bottom: 3px;
+            display: block;
+        }
+
+        .order-tab-label {
+            font-size: 8.5px;
+            font-weight: 600;
+            line-height: 1.2;
+            display: block;
+            margin-bottom: 2px;
+            text-align: center;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            padding: 0 1px;
         }
 
         .order-tab-count {
-            margin-left: auto;
-            min-width: 20px;
-            font-size: 10px;
-            padding: 1px 6px;
+            margin-left: 0;
+            background: rgba(183,28,28,0.10);
+            color: #B71C1C;
+            padding: 0 4px;
+            border-radius: 20px;
+            font-size: 8.5px;
+            font-weight: 700;
+            min-width: 14px;
+            text-align: center;
+            display: inline-block;
+            line-height: 1.5;
+        }
+        .order-tab.active .order-tab-count {
+            background: rgba(183,28,28,0.12);
+            color: #B71C1C;
         }
 
         .order-card-header {
@@ -1580,6 +1644,135 @@ tr.order-row-highlight {
     }
 
     /* ==========================================
+       MOBILE FLAT LIST — replaces table on phones
+    ========================================== */
+    .mobile-orders-cards { display: none; }
+
+    @media (max-width: 768px) {
+        .orders-table-wrap { display: none !important; }
+
+        /* ── Flat list wrapper — clean container, no gaps between rows ── */
+        .mobile-orders-cards {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        /* ── Each row — transparent bg, only bottom divider ── */
+        .mob-order-card {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f2f5;
+            background: transparent;
+            cursor: pointer;
+            transition: background .12s;
+        }
+        .mob-order-card:last-child { border-bottom: none; }
+        .mob-order-card:active { background: #fafbfc; }
+
+        /* ── Line 1: order # · date  |  status badge ── */
+        .mob-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .mob-card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+        .mob-card-order-num {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 12.5px;
+            color: #B71C1C;
+        }
+        .mob-card-date {
+            font-size: 11px;
+            color: #a0aec0;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* ── Line 2: establishment name + address ── */
+        .mob-est-row { margin-bottom: 6px; }
+        .mob-est-name {
+            font-weight: 700;
+            font-size: 13.5px;
+            color: #1a202c;
+            line-height: 1.3;
+        }
+        .mob-est-addr {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+            display: flex;
+            align-items: flex-start;
+            gap: 3px;
+            line-height: 1.4;
+        }
+        .mob-est-addr i { color: #B71C1C; font-size: 9px; margin-top: 2px; flex-shrink: 0; }
+
+        /* ── Line 3: items ── */
+        .mob-items-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #b0bec5;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 3px;
+        }
+        .mob-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 7px;
+        }
+        .mob-items-list .tbl-item-line { font-size: 12px; }
+
+        /* ── Line 4: payment + timer chips ── */
+        .mob-info-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        /* ── Line 5: total  |  action buttons ── */
+        .mob-card-footer { padding: 0; }
+        .mob-footer-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 7px;
+        }
+        .mob-total-label { font-size: 11px; color: #718096; font-weight: 600; }
+        .mob-total-val   { font-size: 15.5px; font-weight: 800; color: #B71C1C; }
+
+        /* Action buttons — always side-by-side in ONE row */
+        .mob-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 7px;
+        }
+        .mob-actions .tbl-btn {
+            flex: 1 !important;
+            justify-content: center !important;
+            padding: 9px 8px !important;
+            font-size: 12px !important;
+            border-radius: 7px !important;
+            white-space: nowrap;
+        }
+    }
+
+    /* ==========================================
        EDIT ORDER MODAL — realtime qty editor
     ========================================== */
     #editOrderModal {
@@ -1879,27 +2072,27 @@ tr.order-row-highlight {
     <div class="order-tabs">
         <button class="order-tab active" data-status="request" onclick="switchTab('request')">
             <i class="fas fa-paper-plane"></i>
-            Order Request
+            <span class="order-tab-label">Order Request</span>
             <span class="order-tab-count" id="count-request">0</span>
         </button>
         <button class="order-tab" data-status="to_pay" onclick="switchTab('to_pay')">
             <i class="fas fa-credit-card"></i>
-            To Pay
+            <span class="order-tab-label">To Pay</span>
             <span class="order-tab-count" id="count-to_pay">0</span>
         </button>
         <button class="order-tab" data-status="preparing" onclick="switchTab('preparing')">
             <i class="fas fa-fire"></i>
-            Preparing
+            <span class="order-tab-label">Preparing</span>
             <span class="order-tab-count" id="count-preparing">0</span>
         </button>
         <button class="order-tab" data-status="to_claim" onclick="switchTab('to_claim')">
             <i class="fas fa-box"></i>
-            To Claim
+            <span class="order-tab-label">To Claim</span>
             <span class="order-tab-count" id="count-to_claim">0</span>
         </button>
         <button class="order-tab" data-status="completed" onclick="switchTab('completed')">
             <i class="fas fa-check-circle"></i>
-            Completed
+            <span class="order-tab-label">Completed</span>
             <span class="order-tab-count" id="count-completed">0</span>
         </button>
     </div>
@@ -3185,6 +3378,111 @@ const itemsHtml = (o.items || []).map(i => {
         // Show Left to Claim column only for to_claim tab
         const showClaimCol = currentFilter === 'to_claim';
 
+        // ── Mobile cards (shown instead of table on ≤768px) ──────────────────
+        const mobileCards = orders.map(o => {
+            // Recompute per-order values needed for the card
+            const isOwnerRej2  = o._cancelledByOwner === true;
+            const showAct2     = o.status !== 'preparing' && (o.status !== 'to_claim' ||
+                                  (o._cancelledByOwner === true || !!o._claimExpired));
+            const showPay2     = o.status === 'preparing' || o.status === 'to_claim' || o.status === 'completed';
+            const payBadge2    = showPay2 ? buildPaymentBadge(o.payment_method || '') : '';
+
+            // Items HTML (same as table, reused variable from outer map — o is same ref)
+            const isStockWarn2 = o.status === 'to_pay' || o.status === 'PENDING' || o.status === 'request';
+            const itemsHtml2   = (o.items || []).map(i => {
+                let sc = '';
+                if (isOwnerRej2) {
+                    sc = `<span class="stock-warn-chip out"><i class="fas fa-ban"></i> Rejected</span>`;
+                } else if (isStockWarn2 && typeof i.available_stock === 'number' && i.available_stock < i.quantity) {
+                    sc = `<span class="stock-warn-chip out">Only ${i.available_stock} left</span>`;
+                }
+                const addons2 = Array.isArray(i.addons) ? i.addons : [];
+                const addonsH2 = addons2.length ? `<div class="tbl-item-addons">${addons2.map(a =>
+                    `<span class="tbl-addon-chip"><i class="fas fa-plus" style="font-size:8px;"></i> ${esc(a.name)}${(parseInt(a.qty)||1)>1?' ×'+(parseInt(a.qty)):''}${parseFloat(a.additional_price||0)>0?' +₱'+parseFloat(a.additional_price).toFixed(2):''}</span>`
+                ).join('')}</div>` : '';
+                const noteH2 = (i.note && i.note.trim()) ? `<div class="tbl-item-note"><i class="fas fa-comment-alt"></i> ${esc(i.note)}</div>` : '';
+                return `<div class="tbl-item-line" style="${isOwnerRej2 ? 'opacity:0.6;text-decoration:line-through;' : ''}">` +
+                       `<strong>${esc(i.name)}</strong> <span class="tbl-item-qty">×${i.quantity}</span> — ₱${parseFloat(i.price||0).toFixed(2)}${sc}${addonsH2}${noteH2}</div>`;
+            }).join('');
+
+            // Status cell (reuse already-computed statusCell from outer scope, bound to same o)
+            const isOwnerCancelledClaim2 = o.status === 'to_claim' && isOwnerRej2;
+            const isClaimExpired2        = o.status === 'to_claim' && !!o._claimExpired;
+            const actions2               = (isOwnerCancelledClaim2 || isClaimExpired2)
+                ? buildClaimCancelledActions(o.id)
+                : buildClientActions(o, !!(o._expired || (o.status==='to_pay'&&o._hasStockIssue)));
+
+            // Determine side-by-side action layout (2 small action btns)
+            const actBtnCount = (actions2.match(/tbl-btn/g) || []).length;
+            const actionsCls  = 'mob-actions';
+
+            // Timer / claim chips
+            let mobTimerHtml = '';
+            if (o.status === 'to_pay' || o.status === 'PENDING') {
+                const acceptedAt2 = new Date(o.updated_at || o.created_at);
+                const deadlineMs2 = acceptedAt2.getTime() + 10 * 60 * 1000;
+                const rem2        = deadlineMs2 - Date.now();
+                if (o._expired || rem2 <= 0 || o._hasStockIssue) {
+                    mobTimerHtml = `<span class="timer-chip expired" style="margin-left:0"><i class="fas fa-clock"></i> Time ran out</span>`;
+                } else {
+                    mobTimerHtml = `<span class="timer-chip" id="mob-timer-${o.id}"><i class="fas fa-clock"></i> <span id="mob-timer-val-${o.id}">${fmtMs(rem2)}</span></span>`;
+                }
+            }
+            if (o.status === 'to_claim') {
+                const ownerCancelReason2 = o._ownerPendingCancelReason || '';
+                const claimStartAt2  = new Date(o.updated_at || o.created_at);
+                const claimDeadline2 = claimStartAt2.getTime() + 30 * 60 * 1000;
+                const claimRem2      = claimDeadline2 - Date.now();
+                if (ownerCancelReason2 || claimRem2 <= 0) {
+                    const stoppedTime2 = claimRem2 > 0 ? fmtMs(claimRem2) : '0:00';
+                    mobTimerHtml = `<span class="claim-countdown-chip expired"><i class="fas fa-hourglass-end"></i> ${ownerCancelReason2 ? stoppedTime2 + ' left' : 'Claim window ended'}</span>`;
+                } else {
+                    mobTimerHtml = `<span class="claim-countdown-chip" id="mob-claim-timer-${o.id}" data-claim-deadline="${claimDeadline2}"><i class="fas fa-hourglass-half"></i> <span id="mob-claim-timer-val-${o.id}">${fmtMs(claimRem2)}</span> left to claim</span>`;
+                }
+            }
+
+            // Status badge cell (reuse existing statusCell var bound to this o in outer map)
+            let mobStatusCell;
+            if (isOwnerRej2) {
+                const rejReason2 = o._ownerPendingCancelReason || o._cancelReason || '';
+                mobStatusCell = buildCancelledByOwnerBadge(rejReason2);
+            } else if (o.status === 'to_pay' || o.status === 'PENDING') {
+                const isExpired2 = o._expired || o._hasStockIssue;
+                const acceptedAt3 = new Date(o.updated_at || o.created_at);
+                const deadlineMs3 = acceptedAt3.getTime() + 10 * 60 * 1000;
+                const rem3 = deadlineMs3 - Date.now();
+                mobStatusCell = (isExpired2 || rem3 <= 0) ? buildTimesUpBadge(o._hasStockIssue, o.items)
+                    : `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
+            } else {
+                mobStatusCell = `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
+            }
+
+            return `
+            <div class="mob-order-card cod-row-clickable" data-id="${o.id}" data-status="${o.status}" onclick="handleClientRowClick(event, ${o.id})">
+                <div class="mob-card-header">
+                    <div class="mob-card-header-left">
+                        <span class="mob-card-order-num">#${o.id}</span>
+                        <span class="mob-card-date"><i class="far fa-clock"></i>${fmtDate(o.created_at)}</span>
+                    </div>
+                    <div>${mobStatusCell}</div>
+                </div>
+                <div class="mob-est-row">
+                    <div class="mob-est-name">${esc(o.establishment_name)}</div>
+                    <div class="mob-est-addr"><i class="fas fa-map-marker-alt"></i>${esc(o.establishment_address || '')}</div>
+                </div>
+                <div class="mob-items-label">Items Ordered</div>
+                <div class="mob-items-list">${itemsHtml2 || '<span style="color:#a0aec0;font-size:12px;">—</span>'}</div>
+                ${(showPay2 || mobTimerHtml) ? `<div class="mob-info-row">${showPay2 ? payBadge2 : ''}${mobTimerHtml}</div>` : ''}
+                <div class="mob-card-footer">
+                    <div class="mob-footer-top">
+                        <span class="mob-total-label">Order Total</span>
+                        <span class="mob-total-val">₱${parseFloat(o.total_amount||0).toFixed(2)}</span>
+                    </div>
+                    ${showAct2 ? `<div class="${actionsCls}" id="mob-actions-cell-${o.id}">${actions2}</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
         container.innerHTML = `
             <div class="orders-table-wrap">
                 <table class="orders-table">
@@ -3202,7 +3500,8 @@ const itemsHtml = (o.items || []).map(i => {
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
-            </div>`;
+            </div>
+            <div class="mobile-orders-cards">${mobileCards}</div>`;
 
         // Start live countdown timers for to_pay rows
         orders.forEach(o => {
@@ -3264,6 +3563,11 @@ const itemsHtml = (o.items || []).map(i => {
 
                 valEl.textContent = fmtMs(rem);
                 if (chipEl) chipEl.className = rem <= 60000 ? 'timer-chip urgent' : 'timer-chip';
+                // ── Sync mobile card timer ──
+                const mobValEl  = document.getElementById(`mob-timer-val-${o.id}`);
+                const mobChipEl = document.getElementById(`mob-timer-${o.id}`);
+                if (mobValEl) mobValEl.textContent = fmtMs(rem);
+                if (mobChipEl) mobChipEl.className = rem <= 60000 ? 'timer-chip urgent' : 'timer-chip';
             }, 1000);
 
             timerMap[o.id] = { id: intervalId, deadlineMs };
@@ -3321,6 +3625,11 @@ const itemsHtml = (o.items || []).map(i => {
 
                 if (valEl) valEl.textContent = fmtMs(rem);
                 if (chipEl) chipEl.className = rem <= 5 * 60 * 1000 ? 'claim-countdown-chip urgent' : 'claim-countdown-chip';
+                // ── Sync mobile card claim timer ──
+                const mobClaimValEl  = document.getElementById(`mob-claim-timer-val-${o.id}`);
+                const mobClaimChipEl = document.getElementById(`mob-claim-timer-${o.id}`);
+                if (mobClaimValEl) mobClaimValEl.textContent = fmtMs(rem);
+                if (mobClaimChipEl) mobClaimChipEl.className = rem <= 5 * 60 * 1000 ? 'claim-countdown-chip urgent' : 'claim-countdown-chip';
             }, 1000);
         });
 
@@ -3559,19 +3868,27 @@ const itemsHtml = (o.items || []).map(i => {
 
         if (reallyOwnerCancelled) {
             // Owner rejected — Remove only, no Re-order
-            actCell.innerHTML =
+            const removeBtn =
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
                 '    <i class="fas fa-times"></i> Remove' +
                 '</button>';
+            actCell.innerHTML = removeBtn;
+            // ── Sync mobile card ──
+            const mobActCell = document.getElementById('mob-actions-cell-' + orderId);
+            if (mobActCell) mobActCell.innerHTML = removeBtn;
         } else {
             // Timer expired — Re-order (opens stock confirm modal) + Remove
-            actCell.innerHTML =
+            const expiredBtns =
                 '<button class="tbl-btn tbl-btn-rerequest" onclick="openReorderConfirm(' + orderId + ', this)">' +
                 '    <i class="fas fa-redo-alt"></i> Reorder' +
                 '</button>' +
                 '<button class="tbl-btn tbl-btn-cancel" onclick="doRemoveCancelledRow(' + orderId + ', this)">' +
                 '    <i class="fas fa-times"></i> Remove' +
                 '</button>';
+            actCell.innerHTML = expiredBtns;
+            // ── Sync mobile card ──
+            const mobActCell = document.getElementById('mob-actions-cell-' + orderId);
+            if (mobActCell) { mobActCell.className = 'mob-actions'; mobActCell.innerHTML = expiredBtns; }
         }
     }
 
@@ -4508,6 +4825,12 @@ const itemsHtml = (o.items || []).map(i => {
             .then(function (r) { return r.json(); })
             .then(function (qRes) {
                 if (qRes.new_order_id) {
+                    // ✅ FIX: A brand-new order was created from this cancelled/rejected one.
+                    // Permanently dismiss the ORIGINAL order so it never re-appears in the
+                    // "To Pay" tab after loadOrders() re-polls the server.
+                    // NOTE: lsDismiss is safe here because the original cancelled order is
+                    // fully replaced — only "Re-order" (client-initiated remove) calls this.
+                    if (typeof lsDismiss === 'function') lsDismiss(orderId);
                     // update-quantities already created the new request order on server
                     onSuccess();
                 } else {
