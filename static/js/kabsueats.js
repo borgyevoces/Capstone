@@ -1427,7 +1427,14 @@ const BS_QF_KEYWORDS = {
         'cola', 'beer', 'milk', 'tea', 'coffee', 'water', 'drink',
         'iced', 'float', 'smoothie', 'lemonade', 'gulaman', 'halo-halo',
         'frappe', 'hot choco', 'taho', 'milo', 'c2', 'mismo',
-        'powerade', 'gatorade', 'royal', 'sprite', 'coke', 'pepsi'
+        'powerade', 'gatorade', 'royal', 'sprite', 'coke', 'pepsi',
+        // extended — common Filipino drink items
+        'yakult', 'lemon', 'cucumber', 'blueberry', 'strawberry yakult',
+        'melon', 'mango', 'pineapple', 'four season', 'dalandan',
+        'sago', 'pearl', 'boba', 'milk tea', 'matcha', 'wintermelon',
+        'taro', 'ube', 'cream', 'series', 'yakult series',
+        'lemonade series', 'refresher', 'cooler', 'slushie', 'icee',
+        'softdrinks', 'bottled', 'can drink', 'energy drink', 'chocolate drink'
     ],
     karenderia: [
         // establishment-level (checked against est.categories + est.other_category)
@@ -1497,34 +1504,81 @@ const CAT_NAME_TO_QF = {
     'breakfast': 'breakfast',
     'almusal': 'breakfast',
     'bakery': 'breakfast',
+    'panaderia': 'breakfast',
+    'silog meals': 'breakfast',
+
+    // Extended drink aliases (common custom category names in admin)
+    'lemon drinks': 'drinks',
+    'lemon series': 'drinks',
+    'yakult series': 'drinks',
+    'yakult drinks': 'drinks',
+    'milk tea': 'drinks',
+    'boba': 'drinks',
+    'refreshments': 'drinks',
+    'cold drinks': 'drinks',
+    'hot drinks': 'drinks',
+    'frappe': 'drinks',
+    'smoothies': 'drinks',
+    'shakes': 'drinks',
+    'fruit juice': 'drinks',
+    'juices': 'drinks',
+    'softdrinks': 'drinks',
+    'soda': 'drinks',
+    'bottled drinks': 'drinks',
+    'canned drinks': 'drinks',
+
+    // Extended karenderia aliases
+    'rice meal': 'karenderia',
+    'set meal': 'karenderia',
+    'lunch meal': 'karenderia',
+    'ulam': 'karenderia',
+    'viand': 'karenderia',
+    'lutong ulam': 'karenderia',
+    'carinderia': 'karenderia',
+
+    // Extended snack aliases
+    'street food': 'snacks',
+    'merienda': 'snacks',
+    'kakanin': 'snacks',
+    'pastries': 'snacks',
+    'burgers': 'snacks',
+    'sandwiches': 'snacks',
 };
 
 function _itemMatchesQF(d, key) {
-    // Step 1: Use category_name from backend — most accurate signal.
-    // If the item has a category assigned in Django admin, ONLY that decides.
     const catName = (d.category_name || '').toLowerCase().trim();
+
+    // Step 1: category_name is present AND is a recognised mapping — trust it completely.
     if (catName) {
         const mappedKey = CAT_NAME_TO_QF[catName];
         if (mappedKey) return mappedKey === key;
+
+        // category_name loosely contains the filter key — treat as a match.
         if (catName.startsWith(key) || catName.includes(key)) return true;
-        // Has a recognised category but it doesn't match this filter -> exclude
-        return false;
+
+        // category_name exists but is NOT in our mapping table (e.g. "Lemon Series",
+        // "Yakult Series", custom names set in admin).
+        // FALL THROUGH to keyword matching on the item name so these items
+        // still appear under the correct quick-filter button.
     }
 
-    // Step 2: No category_name assigned — match by item NAME keywords ONLY.
-    // Intentionally NOT checking establishment categories to avoid bleed
-    // (e.g. a karenderia store selling drinks would leak all items into Karenderia).
+    // Step 2: Match by item NAME keywords (covers both "no category_name" items
+    // AND items whose category_name is unrecognised by CAT_NAME_TO_QF).
     const nameLow = (d.name || '').toLowerCase();
 
-    // Must contain at least one keyword for THIS filter
+    // Must contain at least one keyword for THIS filter.
     if (!BS_QF_KEYWORDS[key].some(kw => nameLow.includes(kw))) return false;
 
     // Disambiguation: if item name better matches a higher-priority category, exclude.
     // Priority: karenderia > snacks > breakfast > drinks
-    const PRIORITY = ['karenderia', 'snacks', 'breakfast', 'drinks'];
-    for (const otherKey of PRIORITY) {
-        if (otherKey === key) break; // no higher-priority category matched -> include
-        if (BS_QF_KEYWORDS[otherKey].some(kw => nameLow.includes(kw))) return false;
+    // Skip disambiguation when we have an unrecognised category_name — the admin
+    // intentionally categorised this item, so prefer their intent over priority rules.
+    if (!catName) {
+        const PRIORITY = ['karenderia', 'snacks', 'breakfast', 'drinks'];
+        for (const otherKey of PRIORITY) {
+            if (otherKey === key) break; // no higher-priority match found -> include
+            if (BS_QF_KEYWORDS[otherKey].some(kw => nameLow.includes(kw))) return false;
+        }
     }
 
     return true;

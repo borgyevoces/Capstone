@@ -390,9 +390,9 @@
         overflow-x: hidden;
         overflow-y: visible;
     }
-    /* Single-column grid when below map */
+    /* 2-column grid on mobile — same as desktop, long names span full width */
     .map-cat-sidebar .map-cat-filter {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     }
     /* Show header again so user knows what it is */
     .mcs-header { display: flex; padding-bottom: 8px; }
