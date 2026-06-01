@@ -1500,37 +1500,36 @@ const CAT_NAME_TO_QF = {
 };
 
 function _itemMatchesQF(d, key) {
-    // ── Step 1: Check the item's assigned category_name from the backend ────
-    // This is the most accurate signal — if the item is tagged as "Drinks"
-    // in the Django admin, it should ONLY appear under Drinks.
+    // Step 1: Use category_name from backend — most accurate signal.
+    // If the item has a category assigned in Django admin, ONLY that decides.
     const catName = (d.category_name || '').toLowerCase().trim();
     if (catName) {
         const mappedKey = CAT_NAME_TO_QF[catName];
-        if (mappedKey) {
-            // Item has a recognised category → match ONLY if the keys match.
-            // This prevents "Pork Steak" (category: karenderia) from showing
-            // under Drinks even if its name accidentally contains a drinks keyword.
-            return mappedKey === key;
-        }
-        // If the category name directly starts with or equals the key label,
-        // treat it as a match (handles future categories like "drinks special")
-        if (catName.startsWith(key)) return true;
+        if (mappedKey) return mappedKey === key;
+        if (catName.startsWith(key) || catName.includes(key)) return true;
+        // Has a recognised category but it doesn't match this filter -> exclude
+        return false;
     }
 
-    // ── Step 2: Fall back to establishment-level category tag ────────────────
-    const estCats  = (d.establishment?.categories    || '').toLowerCase();
-    const estOther = (d.establishment?.other_category || '').toLowerCase();
-
-    if (key === 'karenderia') {
-        // Primary: establishment is categorised as karenderia
-        if (estCats.includes('karenderia') || estOther.includes('karenderia')) return true;
-    }
-
-    // ── Step 3: Keyword fallback (only used when no category_name is assigned) ─
+    // Step 2: No category_name assigned — match by item NAME keywords ONLY.
+    // Intentionally NOT checking establishment categories to avoid bleed
+    // (e.g. a karenderia store selling drinks would leak all items into Karenderia).
     const nameLow = (d.name || '').toLowerCase();
-    const allText = `${nameLow} ${estCats} ${estOther}`;
-    return BS_QF_KEYWORDS[key].some(kw => allText.includes(kw));
+
+    // Must contain at least one keyword for THIS filter
+    if (!BS_QF_KEYWORDS[key].some(kw => nameLow.includes(kw))) return false;
+
+    // Disambiguation: if item name better matches a higher-priority category, exclude.
+    // Priority: karenderia > snacks > breakfast > drinks
+    const PRIORITY = ['karenderia', 'snacks', 'breakfast', 'drinks'];
+    for (const otherKey of PRIORITY) {
+        if (otherKey === key) break; // no higher-priority category matched -> include
+        if (BS_QF_KEYWORDS[otherKey].some(kw => nameLow.includes(kw))) return false;
+    }
+
+    return true;
 }
+
 
 function toggleQuickFilter(btn) {
     const key = btn.dataset.qf || '';

@@ -294,7 +294,7 @@ body {
     gap: 12px;
     padding: 14px 18px;
     color: white;
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
@@ -5808,7 +5808,7 @@ body {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
             flex-shrink: 0;
         }
@@ -5863,7 +5863,7 @@ body {
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -5997,7 +5997,7 @@ body {
             border-bottom: 1px solid var(--border, #e4e6eb);
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
             flex-shrink: 0;
         }
@@ -6062,7 +6062,7 @@ body {
         .owner-pinned-section-title {
             font-size: 13px;
             font-weight: 700;
-            color: #667eea;
+            color: #dc2626;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -6081,8 +6081,8 @@ body {
         }
 
         .owner-pinned-collapse:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            color: #dc2626;
+            background: rgba(220, 38, 38, 0.1);
             border-radius: 4px;
         }
 
@@ -6114,7 +6114,7 @@ body {
         }
 
         .pinned-message-item i.fa-thumbtack {
-            color: #667eea;
+            color: #dc2626;
             font-size: 11px;
             transform: rotate(45deg);
         }
@@ -6151,7 +6151,7 @@ body {
             overflow-y: auto;
             overflow-x: hidden !important;
             padding: 16px;
-            background: #f0f2f5;
+            background: #f8f0f0;
             width: 100%;
         }
 
@@ -6187,7 +6187,7 @@ body {
         }
 
         .chat-message.sent .chat-message-bubble {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -6269,7 +6269,7 @@ body {
             transition: background 0.2s;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #667eea;
+            color: #dc2626;
             display: none;
             flex-shrink: 0;
         }
@@ -6320,7 +6320,11 @@ body {
         }
 
         .chat-input:focus {
-            border-color: #667eea;
+            border-color: #dc2626;
+        }
+
+        .chat-input::placeholder {
+            color: #9ca3af;
         }
 
         .chat-send-btn {
@@ -6329,7 +6333,7 @@ body {
             min-width: 40px !important;
             max-width: 40px !important;
             flex: 0 0 40px !important;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
             border: none;
             border-radius: 50%;
@@ -6516,13 +6520,13 @@ body {
         }
 
         .unsend-option:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
+            border-color: #dc2626;
+            background: #fff5f5;
         }
 
         .unsend-option.selected {
-            border-color: #667eea;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: #dc2626;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.08) 0%, rgba(185, 28, 28, 0.08) 100%);
         }
 
         .unsend-option-title {
@@ -6568,13 +6572,13 @@ body {
         }
 
         .btn-remove {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
         }
 
         .btn-remove:hover {
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
 
         .btn-remove:disabled {
@@ -6870,7 +6874,7 @@ body {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -6965,7 +6969,7 @@ body {
         }
 
         .btn-delete {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
         }
 
