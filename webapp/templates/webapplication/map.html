@@ -293,40 +293,6 @@
     z-index: 1000; display: flex; align-items: flex-end; gap: 10px;
     white-space: nowrap;
 }
-.gender-toggle-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.gender-toggle-label {
-    font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
-    color: #6b7280; white-space: nowrap; pointer-events: none;
-    background: rgba(255,255,255,0.92); padding: 2px 8px; border-radius: 20px;
-    line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,.08);
-}
-.gender-toggle-wrap {
-    display: flex; gap: 5px;
-    background: rgba(255,255,255,0.97);
-    border-radius: 14px; padding: 5px;
-    box-shadow: 0 4px 18px rgba(0,0,0,.18);
-    border: 1px solid #e9ecef;
-}
-.gender-toggle-btn {
-    display: flex; align-items: center; gap: 5px;
-    padding: 7px 14px; border-radius: 10px;
-    border: 1.5px solid transparent; background: transparent;
-    font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s; color: #9ca3af;
-}
-.gender-toggle-btn i { font-size: 13px; }
-.gender-toggle-btn[data-gender="male"]:hover,
-.gender-toggle-btn[data-gender="male"].active {
-    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
-    color: #fff; border-color: transparent;
-    box-shadow: 0 2px 10px rgba(59,130,246,.4);
-}
-.gender-toggle-btn[data-gender="female"]:hover,
-.gender-toggle-btn[data-gender="female"].active {
-    background: linear-gradient(135deg, #be185d, #ec4899);
-    color: #fff; border-color: transparent;
-    box-shadow: 0 2px 10px rgba(236,72,153,.4);
-}
 
 .map-loc-btn-inline {
     display: flex; align-items: center; gap: 7px;
@@ -420,14 +386,7 @@
         gap: 8px !important;
         white-space: nowrap !important;
     }
-    .gender-toggle-btn { padding: 5px 9px; font-size: 10.5px; }
-    .gender-toggle-btn i { font-size: 11px; }
-    .gender-toggle-wrap { padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.10); }
-    .gender-toggle-label { font-size: 9px; }
-    .map-loc-btn-inline { padding: 8px 14px; font-size: 11.5px; gap: 5px; }
-    .map-loc-btn-inline i { font-size: 11px; }
-}
-</style>
+    .map-loc-btn-inline { padding: 8px 14px; font-size: 11.5px; gap: 5px; }</style>
 {% endblock extra_css %}
 
 {% block content %}
@@ -450,31 +409,15 @@
                 <div class="map-steps">
 
                     <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6)">1</div>
-                        <div>
-                            <div class="map-step-title">Choose your avatar icon</div>
-                            <div class="map-step-desc">Before showing your location, pick your gender icon — tap <strong style="color:#1d4ed8;">🧔 Male</strong> or <strong style="color:#be185d;">👩 Female</strong> using the toggle buttons at the bottom of the map. This determines what icon appears on your exact location.</div>
-                        </div>
-                    </div>
-
-                    <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#f97316,#ea580c)">2</div>
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#f97316,#ea580c)">1</div>
                         <div>
                             <div class="map-step-title">Show your location</div>
-                            <div class="map-step-desc">Click <strong>📍 Show My Location</strong> at the bottom of the map. Allow location permission when prompted — your chosen avatar will appear at your exact position on the map in real-time.</div>
+                            <div class="map-step-desc">Click <strong>📍 Show My Location</strong> at the bottom of the map. Allow location permission when prompted — your avatar will appear at your exact position on the map in real-time.</div>
                         </div>
                     </div>
 
                     <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#059669,#10b981)">3</div>
-                        <div>
-                            <div class="map-step-title">Switch icon anytime</div>
-                            <div class="map-step-desc">Even after your location is shown, you can tap the <strong>🧔 / 👩</strong> buttons to instantly swap your avatar icon — no need to re-tap Show My Location. The change happens in real-time.</div>
-                        </div>
-                    </div>
-
-                    <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">4</div>
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">2</div>
                         <div>
                             <div class="map-step-title">Tap an establishment pin</div>
                             <div class="map-step-desc"><strong style="color:#10b981;">🟢 Green pins</strong> = Open (can order now) &nbsp;·&nbsp; <strong style="color:#ef4444;">🔴 Red pins</strong> = Closed. Tap any pin to view details, menu, and get walking directions.</div>
@@ -482,7 +425,7 @@
                     </div>
 
                     <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#b45309,#f59e0b)">5</div>
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#b45309,#f59e0b)">3</div>
                         <div>
                             <div class="map-step-title">Get walking directions</div>
                             <div class="map-step-desc">After tapping a pin, click <strong>Get Directions</strong>. A turn-by-turn walking route will appear with distance and estimated walk time. Click <strong>Clear Route</strong> to remove it.</div>
@@ -490,7 +433,7 @@
                     </div>
 
                     <div class="map-step">
-                        <div class="map-step-num" style="background:linear-gradient(135deg,#0e7490,#06b6d4)">6</div>
+                        <div class="map-step-num" style="background:linear-gradient(135deg,#0e7490,#06b6d4)">4</div>
                         <div>
                             <div class="map-step-title">Filter &amp; change map type</div>
                             <div class="map-step-desc">Use <strong>Filter by Category</strong> on the left sidebar to narrow down establishments. Use the <strong>🗺️ Layers</strong> button (top-right of map) to switch between Hybrid, Street, Satellite, or Terrain view.</div>
@@ -556,23 +499,8 @@
                         <button class="mlp-opt"    id="mts-terrain"   onclick="switchTile('terrain')">  <i class="fas fa-mountain"></i> Terrain</button>
                     </div>
 
-                    <!-- Bottom row: Choose icon (left) + Show My Location (right) -->
+                    <!-- Bottom row: Gender toggle (left) + Show My Location (right) -->
                     <div class="map-bottom-row">
-                        <!-- Gender toggle group -->
-                        <div class="gender-toggle-group">
-                            <div class="gender-toggle-label" id="genderToggleLabel">Choose your icon</div>
-                            <div class="gender-toggle-wrap">
-                                <button class="gender-toggle-btn active" data-gender="male"
-                                    onclick="window.setUserGender('male')" title="Male avatar">
-                                    <i class="fas fa-male"></i> Male
-                                </button>
-                                <button class="gender-toggle-btn" data-gender="female"
-                                    onclick="window.setUserGender('female')" title="Female avatar">
-                                    <i class="fas fa-female"></i> Female
-                                </button>
-                            </div>
-                        </div>
-
                         <!-- Show My Location -->
                         <button class="map-loc-btn-inline" id="mapLocBtn" onclick="showMyLocation()">
                             <i class="fas fa-location-arrow"></i> Show My Location
@@ -722,12 +650,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!mapReady) { initMap(); mapReady = true; }
 
-    // ── Restore saved gender toggle state ──
-    var savedGender = localStorage.getItem('kabsu_map_gender') || 'male';
-    document.querySelectorAll('.gender-toggle-btn').forEach(function(b) {
-        b.classList.toggle('active', b.dataset.gender === savedGender);
-    });
-    window._userGender = savedGender;
+    // ── Use neutral person icon (no gender) ──
+    window._userGender = 'neutral';
 
     window.addEventListener('load', function () {
         setTimeout(function(){ if(mapInst) mapInst.invalidateSize(); }, 300);
@@ -757,7 +681,48 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSet(); });
 });
 
-// ── Category Filter (reads directly from EST_ALL_DATA already on the page) ──
+// ── Override: always use neutral person icon for user location ──
+window.setUserGender = function(gender) {
+    // no-op: gender toggle removed, icon is always neutral
+};
+
+// Patch: intercept any icon creation that reads _userGender
+// so it always renders as a neutral 'fa-user' icon
+(function() {
+    var _genderDesc = Object.getOwnPropertyDescriptor(window, '_userGender');
+    Object.defineProperty(window, '_userGender', {
+        get: function() { return 'neutral'; },
+        set: function() {},
+        configurable: true
+    });
+})();
+
+// Patch: replace any male/female marker icons with neutral person icon
+// This runs after kabsueats.js renders the user location marker
+(function patchUserMarkerIcon() {
+    function replaceGenderIcons() {
+        document.querySelectorAll('#esMap .leaflet-marker-icon').forEach(function(el) {
+            var html = el.innerHTML;
+            if (html && (html.includes('fa-male') || html.includes('fa-female'))) {
+                el.innerHTML = html
+                    .replace(/fa-male/g, 'fa-user')
+                    .replace(/fa-female/g, 'fa-user');
+            }
+        });
+    }
+    function attachObserver() {
+        var mapEl = document.getElementById('esMap');
+        if (mapEl) {
+            new MutationObserver(replaceGenderIcons).observe(mapEl, { childList: true, subtree: true });
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachObserver);
+    } else {
+        attachObserver();
+    }
+})();
+
 window._mapActiveCats = new Set();
 
 window.filterMapCategory = function(cat, btn) {

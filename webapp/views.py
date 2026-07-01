@@ -2660,6 +2660,12 @@ def checkout_page(request):
         _show_online = True
         _show_cash   = True
 
+    # ── GCash number — safe fallback if migration hasn't run yet ──────────
+    try:
+        _gcash_number = order.establishment.gcash_number or ''
+    except Exception:
+        _gcash_number = ''
+
     context = {
         'order':               order,
         'items':               items,
@@ -2667,6 +2673,8 @@ def checkout_page(request):
         'show_online_payment': _show_online,
         'show_cash_payment':   _show_cash,
         'establishment_id':    order.establishment.id,
+        'custom_payment_policy': order.establishment.custom_payment_policy or '',
+        'gcash_number':        _gcash_number,
     }
     return render(request, 'webapplication/checkout.html', context)
 
@@ -4451,6 +4459,27 @@ def update_establishment_details_ajax(request, pk):
         establishment.other_category = request.POST.get('other_category', '').strip() or None
         establishment.other_amenity = request.POST.get('other_amenity', '').strip() or None
 
+        # ── Custom Payment / Order Policy (owner-defined) ──────────────────
+        custom_policy = request.POST.get('custom_payment_policy', '').strip()
+        if len(custom_policy) > 2000:
+            return JsonResponse({
+                'success': False,
+                'error': 'Order policy text must be 2000 characters or fewer.'
+            }, status=400)
+        establishment.custom_payment_policy = custom_policy or None
+
+        # ── GCash Number (for QR code at checkout) ─────────────────────────
+        import re as _re_gcash
+        gcash_number = request.POST.get('gcash_number', '').strip()
+        if gcash_number:
+            # Validate: must be 09XXXXXXXXX or +639XXXXXXXXX
+            if not _re_gcash.match(r'^(09\d{9}|\+639\d{9})$', gcash_number):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid GCash number. Please use format 09XXXXXXXXX.'
+                }, status=400)
+        establishment.gcash_number = gcash_number or None
+
         # ── Contact / Social Links ─────────────────────────────────────────
         import json as _cl_json
         from .models import EstablishmentContactLink
@@ -4591,6 +4620,7 @@ def update_establishment_details_ajax(request, pk):
             'amenities': ', '.join([a.name for a in establishment.amenities.all()]),
             'amenities_list': [{'id': a.id, 'name': a.name} for a in establishment.amenities.all()],
             'other_amenity': establishment.other_amenity,
+            'custom_payment_policy': establishment.custom_payment_policy or '',
             'weekly_hours': weekly_resp,
             'today_weekday': today_resp,
             'contact_links': [
@@ -7273,6 +7303,9 @@ def get_establishment_orders(request):
                 'cancel_reason': cancel_reason_value,
                 # ✅ NEW: tells owner dashboard which rows are owner-rejected (vs client-cancelled)
                 'cancelled_by_owner': cancelled_by_owner_flag,
+                # ✅ NEW: GCash payment proof fields for Verifying tab
+                'payment_proof_url': order.payment_proof.url if getattr(order, 'payment_proof', None) and order.payment_proof else '',
+                'payment_proof_submitted_at': order.payment_proof_submitted_at.isoformat() if getattr(order, 'payment_proof_submitted_at', None) else '',
             }
             orders_data.append(order_data)
 
@@ -7985,6 +8018,59 @@ def client_dismiss_rejected_order(request, order_id):
     except Exception as e:
         import traceback
         print(f"ERROR in client_dismiss_rejected_order: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def client_mark_completed(request, order_id):
+    """
+    Client confirms they received their order, moving it from 'to_claim' → 'completed'.
+    Only the customer who placed the order can call this endpoint.
+
+    Called from: Client_order_history.html → markOrderCompleted()
+    Endpoint: POST /api/orders/<order_id>/client-complete/
+    """
+    try:
+        order = get_object_or_404(
+            Order.objects.select_related('establishment', 'user'),
+            id=order_id,
+            user=request.user,          # ✅ Only the customer who owns this order
+            status='to_claim',          # ✅ Only valid transition: to_claim → completed
+        )
+
+        with transaction.atomic():
+            order.status = 'completed'
+            order.save(update_fields=['status', 'updated_at'])
+
+        # Broadcast real-time update to owner dashboard
+        _broadcast_order_status_update(order, 'completed')
+
+        # Create notification for owner
+        try:
+            OrderNotification.objects.get_or_create(
+                establishment=order.establishment,
+                order=order,
+                notification_type='completed',
+                defaults={
+                    'message': f'Order #{order.id} has been marked as received by the customer.',
+                    'is_read': False,
+                }
+            )
+        except Exception:
+            pass
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Order #{order.id} marked as completed.',
+            'order_id': order.id,
+            'status': 'completed',
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in client_mark_completed: {e}")
         print(traceback.format_exc())
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
@@ -9286,6 +9372,166 @@ def debug_order_status(request, order_id):
         }, status=500)
 
 
+@login_required
+def upload_payment_proof(request):
+    """
+    ✅ NEW: Customer uploads a GCash payment screenshot as proof.
+    Changes order status from 'to_pay' → 'verifying'.
+    Owner will see it in their dashboard and can Confirm or Reject.
+
+    POST: order_id, proof_image (file)
+    Endpoint: /payment/upload-proof/
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+    try:
+        order_id = request.POST.get('order_id')
+        proof_file = request.FILES.get('proof_image')
+
+        if not order_id:
+            return JsonResponse({'success': False, 'message': 'Order ID is required.'}, status=400)
+        if not proof_file:
+            return JsonResponse({'success': False, 'message': 'Please attach your GCash receipt screenshot.'}, status=400)
+
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+        if proof_file.content_type not in allowed_types:
+            return JsonResponse({'success': False, 'message': 'Only image files (JPG, PNG, WEBP) are accepted.'}, status=400)
+
+        # Max 10 MB
+        if proof_file.size > 10 * 1024 * 1024:
+            return JsonResponse({'success': False, 'message': 'Image is too large. Maximum size is 10 MB.'}, status=400)
+
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+
+        if order.status != 'to_pay':
+            return JsonResponse({
+                'success': False,
+                'message': f'Cannot upload proof for an order with status "{order.status}". Expected "to_pay".'
+            }, status=400)
+
+        if order.gcash_payment_method == 'cash':
+            return JsonResponse({'success': False, 'message': 'This order is Cash on Pickup — no proof needed.'}, status=400)
+
+        with transaction.atomic():
+            order.payment_proof = proof_file
+            order.payment_proof_submitted_at = timezone.now()
+            order.status = 'verifying'
+            order.save(update_fields=['payment_proof', 'payment_proof_submitted_at', 'status', 'updated_at'])
+
+        # Broadcast to owner dashboard + customer history via WebSocket
+        _broadcast_order_status_update(order, 'verifying')
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment proof submitted! The owner will verify your payment shortly.',
+            'order_id': order.id,
+            'status': 'verifying',
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in upload_payment_proof: {e}\n{traceback.format_exc()}")
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+
+
+@login_required
+def verify_gcash_payment(request):
+    """
+    ✅ NEW: Owner confirms or rejects a GCash payment proof.
+    - action='confirm' → status 'verifying' → 'preparing' (deducts stock)
+    - action='reject'  → status 'verifying' → 'to_pay'  (customer re-uploads)
+
+    POST: order_id, action ('confirm' | 'reject'), reject_reason (optional)
+    Endpoint: /payment/verify-gcash/
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+    try:
+        import json as _json
+        body = _json.loads(request.body)
+        order_id = body.get('order_id')
+        action = body.get('action', '').lower()   # 'confirm' or 'reject'
+        reject_reason = (body.get('reject_reason') or '').strip()
+
+        if action not in ('confirm', 'reject'):
+            return JsonResponse({'success': False, 'message': 'action must be "confirm" or "reject".'}, status=400)
+
+        # Only the establishment owner can do this
+        establishment = FoodEstablishment.objects.filter(owner=request.user).first()
+        if not establishment:
+            return JsonResponse({'success': False, 'message': 'No establishment found for this account.'}, status=403)
+
+        order = get_object_or_404(Order, id=order_id, establishment=establishment)
+
+        if order.status != 'verifying':
+            return JsonResponse({
+                'success': False,
+                'message': f'Order #{order_id} is not in "verifying" state (current: {order.status}).'
+            }, status=400)
+
+        with transaction.atomic():
+            if action == 'confirm':
+                order.status = 'preparing'
+                order.payment_confirmed_at = timezone.now()
+                order.save(update_fields=['status', 'payment_confirmed_at', 'updated_at'])
+                # Deduct stock now that payment is confirmed
+                _deduct_stock_and_clear_cart(order)
+                updated_items = list(order.orderitem_set.select_related('menu_item').all())
+                id_qty_pairs = [(oi.menu_item_id, MenuItem.objects.get(pk=oi.menu_item_id).quantity) for oi in updated_items]
+                _broadcast_inventory_update_from_items(order.establishment_id, id_qty_pairs)
+                new_status = 'preparing'
+                message = f'Payment confirmed! Order #{order_id} is now being prepared.'
+            else:
+                # Reject — send back to to_pay so customer can re-upload
+                order.status = 'to_pay'
+                order.payment_proof = None
+                order.payment_proof_submitted_at = None
+                if reject_reason:
+                    order.cancel_reason = reject_reason
+                order.save(update_fields=['status', 'payment_proof', 'payment_proof_submitted_at', 'cancel_reason', 'updated_at'])
+                new_status = 'to_pay'
+                message = f'Payment proof for Order #{order_id} was rejected. Customer will be asked to re-upload.'
+
+        # Broadcast real-time update
+        _broadcast_order_status_update(order, new_status)
+
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'order_id': order.id,
+            'new_status': new_status,
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in verify_gcash_payment: {e}\n{traceback.format_exc()}")
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+
+
+@login_required
+def check_payment_verification_status(request):
+    """
+    ✅ NEW: Customer polls this endpoint to check if their proof was verified.
+    Returns the current order status so the client can react in real-time.
+
+    GET: ?order_id=
+    Endpoint: /payment/verification-status/
+    """
+    order_id = request.GET.get('order_id')
+    if not order_id:
+        return JsonResponse({'success': False, 'message': 'order_id required'}, status=400)
+    try:
+        order = Order.objects.only('status', 'cancel_reason').get(id=order_id, user=request.user)
+        return JsonResponse({
+            'success': True,
+            'status': order.status,
+            'reject_reason': order.cancel_reason or '',
+        })
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found.'}, status=404)
+
+
 def payment_success(request):
     """
     Display the payment success page after order completion.
@@ -9533,7 +9779,7 @@ def get_establishment_transactions(request):
             transactions_data.append(transaction_data)
 
         # Calculate statistics
-        # ✅ Total revenue — only from completed orders
+        # ✅ Total sales — only from completed orders
         total_revenue = orders.aggregate(
             total=Sum('total_amount')
         )['total'] or Decimal('0.00')
@@ -9541,7 +9787,7 @@ def get_establishment_transactions(request):
         # ✅ Total transactions count — only completed
         total_transactions = orders.count()
 
-        # ✅ Monthly revenue (current month) — only completed
+        # ✅ Monthly sales (current month) — only completed
         now = timezone.now()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         monthly_revenue = orders.filter(
@@ -9613,13 +9859,13 @@ def get_establishment_transaction_statistics(request):
             created_at__lte=end_date
         )
 
-        # Revenue by payment method
+        # Sales by payment method
         revenue_by_method = orders.values('gcash_payment_method').annotate(
             total=Sum('total_amount'),
             count=Count('id')
         ).order_by('-total')
 
-        # Revenue by day (for charts)
+        # Sales by day (for charts)
         daily_revenue = {}
         for i in range(days):
             date = start_date + timedelta(days=i)
@@ -9793,6 +10039,7 @@ def get_user_transaction_history(request):
         client_status_map = {
             'request': 'request',
             'to_pay': 'to_pay',
+            'verifying': 'verifying',
             'PAID': 'preparing',
             'order_received': 'preparing',
             'preparing': 'preparing',
@@ -9869,6 +10116,8 @@ def get_user_transaction_history(request):
                 ),
                 'cancelled_from_status': order.cancelled_from_status or '',
                 'cancel_reason': order.cancel_reason or '',
+                'payment_proof_url': order.payment_proof.url if getattr(order, 'payment_proof', None) and order.payment_proof else '',
+                'payment_proof_submitted_at': order.payment_proof_submitted_at.isoformat() if getattr(order, 'payment_proof_submitted_at', None) else '',
             })
 
         return JsonResponse({
@@ -10326,6 +10575,9 @@ def get_order_details(request, order_id):
                 'closing_time': order.establishment.closing_time.strftime('%I:%M %p') if order.establishment.closing_time else None,
             },
             'items': items,
+            'payment_proof_url': order.payment_proof.url if getattr(order, 'payment_proof', None) and order.payment_proof else '',
+            'payment_proof_submitted_at': order.payment_proof_submitted_at.isoformat() if getattr(order, 'payment_proof_submitted_at', None) else '',
+            'payment_method': order.gcash_payment_method or 'cash',
         }
 
         return JsonResponse({

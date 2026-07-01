@@ -219,10 +219,20 @@ function applyInventoryUpdate(updates) {
         if (card) {
             // Update "X left" stock span
             card.querySelectorAll('.bsc-stats span').forEach(span => {
-                if (span.textContent.includes('left') || span.textContent.includes('left')) {
-                    span.innerHTML = newQty <= 0
-                        ? `<i class="fas fa-times-circle" style="color:#dc2626"></i> Out of Stock`
-                        : `<i class="fas fa-boxes"></i> ${newQty} left`;
+                if (span.textContent.match(/left|Stock|Only/)) {
+                    if (newQty <= 0) {
+                        span.className = '';
+                        span.style.cssText = 'color:#dc2626;font-weight:700;';
+                        span.innerHTML = `<i class="fas fa-times-circle"></i> Out of Stock`;
+                    } else if (newQty <= 5) {
+                        span.className = 'bsc-low-stock-alert';
+                        span.style.cssText = '';
+                        span.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${newQty} left!`;
+                    } else {
+                        span.className = '';
+                        span.style.cssText = '';
+                        span.innerHTML = `<i class="fas fa-boxes"></i> ${newQty} left`;
+                    }
                 }
             });
             // Dim card and block clicks if out of stock
@@ -237,12 +247,17 @@ function applyInventoryUpdate(updates) {
             // Update stock display text
             const mStock = document.getElementById('mStock');
             if (mStock) {
-                mStock.innerHTML = newQty <= 0
-                    ? `<i class="fas fa-times-circle"></i> Out of Stock`
-                    : `<i class="fas fa-box"></i> ${newQty} Items`;
                 mStock.style.transition = 'color 0.3s';
-                mStock.style.color = newQty === 0 ? '#ef4444' : newQty <= 5 ? '#f59e0b' : '';
-                setTimeout(() => { mStock.style.color = ''; }, 2000);
+                if (newQty <= 0) {
+                    mStock.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
+                    mStock.style.color = '#dc2626';
+                } else if (newQty <= 5) {
+                    mStock.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${newQty} left — Low Stock!`;
+                    mStock.style.color = '#d97706';
+                } else {
+                    mStock.innerHTML = `<i class="fas fa-box"></i> ${newQty} Items`;
+                    mStock.style.color = '';
+                }
             }
 
             // Clamp the qty input so user can't select more than available
@@ -555,7 +570,12 @@ function renderBS(data, isSearchResult = false) {
                 <div class="bsc-price">₱${parseFloat(d.price).toFixed(2)}</div>
                 <div class="bsc-stats">
                     <span><i class="fas fa-shopping-bag"></i> ${d.total_orders || 0} orders</span>
-                    <span><i class="fas fa-boxes"></i> ${d.quantity} left</span>
+                    ${d.quantity <= 0
+                        ? `<span style="color:#dc2626;font-weight:700;"><i class="fas fa-times-circle"></i> Out of Stock</span>`
+                        : d.quantity <= 5
+                            ? `<span class="bsc-low-stock-alert"><i class="fas fa-exclamation-triangle"></i> Only ${d.quantity} left!</span>`
+                            : `<span><i class="fas fa-boxes"></i> ${d.quantity} left</span>`
+                    }
                 </div>
                 <div class="bsc-est">
                     <div class="bsc-eico">${estIconHtml}</div>
@@ -709,36 +729,36 @@ function initMap() {
         mkLayer = L.layerGroup().addTo(mapInst);
         loadAllEstablishments();
         mapPollTimer = setInterval(loadAllEstablishments, 30000);
-        
+
         // Real-time WebSocket updates for establishments
         initEstablishmentWebSocket();
-        
+
         // Update layer button to show satellite is selected
         document.getElementById('mts-satellite').classList.add('on');
         document.getElementById('mts-hybrid').classList.remove('on');
-        
+
         mapInst.invalidateSize();
     }, 150);
 }
 
 function initEstablishmentWebSocket() {
     if (window._estWSConnected) return; // Prevent duplicate connections
-    
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/establishments/`;
-    
+
     try {
         window._estWS = new WebSocket(wsUrl);
-        
+
         window._estWS.onopen = function() {
             console.log('[Map] Establishments WebSocket connected');
             window._estWSConnected = true;
         };
-        
+
         window._estWS.onmessage = function(event) {
             try {
                 const data = JSON.parse(event.data);
-                
+
                 if (data.type === 'est_created' || data.type === 'est_updated') {
                     // Add or update establishment
                     const idx = esMapData.findIndex(e => e.id === data.establishment.id);
@@ -756,7 +776,7 @@ function initEstablishmentWebSocket() {
                         other_category: data.establishment.other_category || '',
                         other_amenity: data.establishment.other_amenity || ''
                     };
-                    
+
                     // If establishment has been deactivated, remove it from map
                     if (!estData.is_active) {
                         esMapData = esMapData.filter(e => e.id !== estData.id);
@@ -772,7 +792,7 @@ function initEstablishmentWebSocket() {
                         }
                     }
                     renderMarkers(applyFiltersToData(esMapData));
-                } 
+                }
                 else if (data.type === 'est_deleted' || data.type === 'est_deactivated') {
                     // Remove establishment
                     esMapData = esMapData.filter(e => e.id !== data.establishment_id);
@@ -783,12 +803,12 @@ function initEstablishmentWebSocket() {
                 console.log('[Map] WS message parse error:', err);
             }
         };
-        
+
         window._estWS.onerror = function() {
             console.log('[Map] Establishments WebSocket error');
             window._estWSConnected = false;
         };
-        
+
         window._estWS.onclose = function() {
             console.log('[Map] Establishments WebSocket closed');
             window._estWSConnected = false;
@@ -957,9 +977,9 @@ function switchTile(t) {
     if (btn) btn.classList.add('on');
     if (curTile)   mapInst.removeLayer(curTile);
     if (curLabels) { mapInst.removeLayer(curLabels); curLabels = null; }
-    
+
     curTile = L.tileLayer(TILES[t].url, TILES[t].opt).addTo(mapInst);
-    
+
     // Add appropriate labels for each layer
     if (TILES[t].labels) {
         const labelOpt = { attribution: '', maxZoom: 22, opacity: 0.9 };
@@ -2442,7 +2462,18 @@ function openMod(id) {
     document.getElementById('mName').textContent = d.name;
     document.getElementById('mDesc').textContent = d.description || '';
     document.getElementById('mPrice').textContent = `₱${parseFloat(d.price).toFixed(2)}`;
-    document.getElementById('mStock').innerHTML = `<i class="fas fa-box"></i> ${d.quantity} Items`;
+    const _mQty = d.quantity;
+    const _mStockEl = document.getElementById('mStock');
+    if (_mQty <= 0) {
+        _mStockEl.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
+        _mStockEl.style.color = '#dc2626';
+    } else if (_mQty <= 5) {
+        _mStockEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${_mQty} left — Low Stock!`;
+        _mStockEl.style.color = '#d97706';
+    } else {
+        _mStockEl.innerHTML = `<i class="fas fa-box"></i> ${_mQty} Items`;
+        _mStockEl.style.color = '';
+    }
     document.getElementById('mEstN').textContent = d.establishment.name;
     document.getElementById('mEstA').textContent = d.establishment.address || '';
 

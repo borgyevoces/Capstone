@@ -710,12 +710,15 @@ window.openItemDetailModal = function(menuItemElement, mode) {
     // Stock display
     const stockDisplay = document.getElementById('modalItemStock');
     if (stockDisplay) {
-        if (itemQuantity > 0) {
-            stockDisplay.innerHTML = `<i class="fas fa-box"></i> ${itemQuantity} Item${itemQuantity !== 1 ? 's' : ''}`;
-            stockDisplay.style.color = '#374151';
-        } else {
+        if (itemQuantity <= 0) {
             stockDisplay.innerHTML = `<i class="fas fa-times-circle"></i> Out of Stock`;
             stockDisplay.style.color = '#dc2626';
+        } else if (itemQuantity <= 5) {
+            stockDisplay.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${itemQuantity} left — Low Stock!`;
+            stockDisplay.style.color = '#d97706';
+        } else {
+            stockDisplay.innerHTML = `<i class="fas fa-box"></i> ${itemQuantity} Item${itemQuantity !== 1 ? 's' : ''}`;
+            stockDisplay.style.color = '#374151';
         }
     }
 

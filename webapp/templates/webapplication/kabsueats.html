@@ -42,6 +42,22 @@
         background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
     }
 
+    /* ── Low-stock alert span in BSC cards ── */
+    .bsc-low-stock-alert {
+        color: #92400e !important;
+        font-weight: 700;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 10px;
+        padding: 1px 7px;
+        font-size: 11px;
+        animation: bscLowStockPulse 2s ease-in-out infinite;
+    }
+    @keyframes bscLowStockPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
     /* ── Establishment match badge ── */
     .est-match-badge {
         display: inline-flex;

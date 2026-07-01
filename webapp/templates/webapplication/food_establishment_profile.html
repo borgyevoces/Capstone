@@ -1406,6 +1406,17 @@
                     <span class="detail-value" id="display-address">{{ establishment.address|default:"Address not set" }}</span>
                 </div>
 
+                <!-- ── Custom Order/Payment Policy display ─────────── -->
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <span class="detail-label" style="display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-shield-alt" style="color:#8b0000;font-size:12px;"></i>
+                        Order &amp; Payment Policy (shown to customers at checkout)
+                    </span>
+                    <div class="detail-value" id="display-custom-policy" style="white-space:pre-line;margin-top:6px;">
+                        {% if establishment.custom_payment_policy %}{{ establishment.custom_payment_policy }}{% else %}<span style="color:#9ca3af;">No order policy set yet — customers won't see any policy at checkout until you add one.</span>{% endif %}
+                    </div>
+                </div>
+
                 <!-- ── ROW 3: Amenities | Links & Socials ── -->
                 <div class="detail-item">
                     <span class="detail-label">Amenities</span>
@@ -1587,6 +1598,36 @@
                         <input type="hidden" id="payment_methods" name="payment_methods" value="{{ establishment.payment_methods }}">
                     </div>
 
+                    <!-- GCASH NUMBER (shown only when GCash is selected) -->
+                    <div class="edit-group" id="gcash-number-group" style="{% if 'GCash' not in establishment.payment_methods|default:'' %}display:none;{% endif %}">
+                        <label class="edit-label">
+                            <i class="fas fa-mobile-alt" style="color:#0070e0;margin-right:6px;"></i>
+                            GCash Number
+                        </label>
+                        <div style="position:relative;">
+                            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#0070e0;font-weight:700;font-size:0.9rem;pointer-events:none;">
+                                <i class="fas fa-phone"></i>
+                            </span>
+                            <input type="text"
+                                   id="gcash_number"
+                                   name="gcash_number"
+                                   value="{{ establishment.gcash_number|default:'' }}"
+                                   placeholder="e.g. 09XXXXXXXXX"
+                                   maxlength="20"
+                                   style="width:100%;padding:12px 14px 12px 40px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:0.95rem;color:#111;transition:border-color 0.2s;background:#fff;outline:none;"
+                                   oninput="validateGcashNumber(this)"
+                                   onfocus="this.style.borderColor='#0070e0'"
+                                   onblur="this.style.borderColor='#e5e7eb'">
+                        </div>
+                        <p style="font-size:0.75rem;color:#6b7280;margin:6px 0 0;display:flex;align-items:center;gap:5px;">
+                            <i class="fas fa-info-circle" style="color:#0070e0;"></i>
+                            Customers will scan a QR code generated from this number to pay via GCash.
+                        </p>
+                        <p id="gcash-number-error" style="font-size:0.75rem;color:#e53935;margin:4px 0 0;display:none;">
+                            <i class="fas fa-exclamation-circle"></i> Please enter a valid Philippine mobile number (e.g., 09XXXXXXXXX).
+                        </p>
+                    </div>
+
                     <!-- WEEKLY SCHEDULE EDITOR -->
                     <div class="edit-group" style="grid-column: 1 / -1;" id="edit-weekly-schedule-group">
                         <label class="edit-label">Weekly Schedule</label>
@@ -1673,6 +1714,37 @@
                     <!-- Hidden Lat/Long -->
                     <input type="hidden" id="latitude" name="latitude" value="{{ establishment.latitude }}">
                     <input type="hidden" id="longitude" name="longitude" value="{{ establishment.longitude }}">
+
+                    <!-- ORDER & PAYMENT POLICY (Owner-defined, shown at checkout) -->
+                    <div class="edit-group" style="grid-column:1/-1;margin-top:8px;">
+                        <label class="edit-label" for="custom_payment_policy" style="display:flex;align-items:center;gap:8px;">
+                            <i class="fas fa-shield-alt" style="color:#8b0000;"></i>
+                            Order &amp; Payment Policy
+                        </label>
+                        <p style="font-size:12px;color:#6b7280;margin:4px 0 12px;">
+                            This is the policy customers will see and must agree to before paying
+                            (e.g., cancellation rules, refund rules, claim instructions, packaging fees).
+                            <strong>Add as many policy items as you need</strong> — each one will appear
+                            as its own bullet point in the payment policy popup shown during checkout.
+                            If you don't add any, no policy will be shown to customers at checkout.
+                        </p>
+
+                        <!-- Dynamic policy rows -->
+                        <div id="policy-list-edit" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+                        <button type="button" id="btn-add-policy-edit"
+                                style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px dashed #8b0000;color:#8b0000;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:background .2s;"
+                                onmouseover="this.style.background='#fef2f2';"
+                                onmouseout="this.style.background='#fff';">
+                            <i class="fas fa-plus"></i> Add Policy
+                        </button>
+
+                        <small class="edit-hint" id="customPolicyCount">0 / 2000 characters total</small>
+
+                        <!-- Hidden field actually submitted to the server (also holds initial value) -->
+                        <textarea id="custom_payment_policy" name="custom_payment_policy"
+                                  style="display:none;">{{ establishment.custom_payment_policy|default:'' }}</textarea>
+                    </div>
 
                     <!-- CONTACT / SOCIAL LINKS -->
                     <div class="edit-group" style="grid-column:1/-1;margin-top:8px;">
@@ -2059,6 +2131,18 @@
                 const existing = JSON.parse(document.getElementById('cl-initial-data')?.textContent || '[]');
                 existing.forEach(lnk => addContactLinkRow(lnk.label, lnk.value));
             }
+            // Populate policy rows from hidden textarea
+            const policyList = document.getElementById('policy-list-edit');
+            if (policyList && policyList.children.length === 0) {
+                const raw = (document.getElementById('custom_payment_policy')?.value || '').trim();
+                const lines = raw ? raw.split('\n').map(l => l.trim()).filter(l => l.length > 0) : [];
+                if (lines.length === 0) {
+                    addPolicyRow('');
+                } else {
+                    lines.forEach(line => addPolicyRow(line));
+                }
+                updatePolicyCount();
+            }
         }
 
         function closeEditModal() {
@@ -2136,9 +2220,54 @@
             list.appendChild(row);
         }
 
+        /* ── Order & Payment Policy Builder (Edit Modal) ───────────── */
+        function addPolicyRow(text) {
+            const list = document.getElementById('policy-list-edit');
+            if (!list) return;
+            const row = document.createElement('div');
+            row.className = 'policy-row';
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;transition:border-color .2s;';
+            row.innerHTML = `
+                <i class="fas fa-circle-info" style="color:#8b0000;font-size:13px;flex-shrink:0;"></i>
+                <input class="policy-text-inp" type="text" placeholder="e.g. All sales are final, no refunds."
+                       maxlength="300" value="${(text || '').replace(/"/g, '&quot;')}"
+                       style="flex:1;border:none;background:transparent;padding:4px 6px;font-size:13px;color:#374151;outline:none;min-width:0;">
+                <button type="button"
+                        style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;flex-shrink:0;line-height:1;"
+                        onmouseover="this.style.color='#ef4444';this.style.background='#fee2e2';"
+                        onmouseout="this.style.color='#9ca3af';this.style.background='none';">
+                    <i class="fas fa-times"></i>
+                </button>`;
+            row.addEventListener('focusin',  () => row.style.borderColor = '#8b0000');
+            row.addEventListener('focusout', () => row.style.borderColor = '#e5e7eb');
+            row.querySelector('button').addEventListener('click', () => {
+                row.remove();
+                updatePolicyCount();
+            });
+            row.querySelector('.policy-text-inp').addEventListener('input', updatePolicyCount);
+            list.appendChild(row);
+        }
+
+        function updatePolicyCount() {
+            const countEl = document.getElementById('customPolicyCount');
+            if (!countEl) return;
+            const total = Array.from(document.querySelectorAll('#policy-list-edit .policy-text-inp'))
+                .map(inp => inp.value.trim())
+                .filter(v => v.length > 0)
+                .join('\n').length;
+            countEl.textContent = total + ' / 2000 characters total';
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const addBtn = document.getElementById('btn-add-link-edit');
             if (addBtn) addBtn.addEventListener('click', () => addContactLinkRow('', ''));
+
+            // ── Order & Payment Policy — add row button ──
+            const addPolicyBtn = document.getElementById('btn-add-policy-edit');
+            if (addPolicyBtn) addPolicyBtn.addEventListener('click', () => {
+                addPolicyRow('');
+                updatePolicyCount();
+            });
         });
 
         // ===================================================
@@ -2731,8 +2860,24 @@
                     document.querySelectorAll('input[name="payment_method_options"]:checked')
                 ).map(c => c.value);
                 document.getElementById('payment_methods').value = checked.join(', ');
+
+                // ── Show/hide GCash number field based on GCash checkbox ──────
+                const gcashGroup = document.getElementById('gcash-number-group');
+                if (gcashGroup) {
+                    gcashGroup.style.display = checked.includes('GCash') ? '' : 'none';
+                }
             });
         });
+
+        // ── GCash number validation ──────────────────────────────────────────
+        window.validateGcashNumber = function(input) {
+            const errEl = document.getElementById('gcash-number-error');
+            const val   = input.value.trim();
+            // Allow empty (optional) or valid PH mobile: 09XXXXXXXXX or +639XXXXXXXXX
+            const isValid = val === '' || /^(09\d{9}|\+639\d{9})$/.test(val);
+            if (errEl) errEl.style.display = isValid ? 'none' : '';
+            input.style.borderColor = isValid ? '' : '#e53935';
+        };
 
         // Enable delete button when "DELETE" is typed
         document.getElementById('deleteConfirm').addEventListener('input', function() {
@@ -2761,6 +2906,17 @@
                 order: i,
             })).filter(lnk => lnk.label && lnk.value);
             document.getElementById('contact_links_json').value = JSON.stringify(clData);
+
+            // ── Sync policy rows → hidden textarea ──────────────────────────
+            const policyLines = Array.from(document.querySelectorAll('#policy-list-edit .policy-text-inp'))
+                .map(inp => inp.value.trim())
+                .filter(v => v.length > 0);
+            const policyJoined = policyLines.join('\n');
+            if (policyJoined.length > 2000) {
+                showToast('Order & Payment Policy is too long (max 2000 characters total).', 'error');
+                return;
+            }
+            document.getElementById('custom_payment_policy').value = policyJoined;
 
             // ── Validate establishment name ────────────────────────────────
             const nameVal = document.getElementById('name').value.trim();
@@ -2850,6 +3006,16 @@
                     // ── Payment, Times, Address ───────────────────────────
                     document.getElementById('display-payment').textContent = data.payment_methods || 'Not set';
                     document.getElementById('display-address').textContent = data.address || 'Address not set';
+
+                    // ── Order & Payment Policy ─────────────────────────────
+                    const policyDisplay = document.getElementById('display-custom-policy');
+                    if (policyDisplay) {
+                        if (data.custom_payment_policy && data.custom_payment_policy.trim()) {
+                            policyDisplay.textContent = data.custom_payment_policy;
+                        } else {
+                            policyDisplay.innerHTML = '<span style="color:#9ca3af;">No order policy set yet — customers won\'t see any policy at checkout until you add one.</span>';
+                        }
+                    }
                     // ── Rebuild weekly hours display after save ────────────
                     if (data.weekly_hours && Array.isArray(data.weekly_hours)) {
                         rebuildProfileWeeklyHoursDisplay(data.weekly_hours, data.today_weekday);

@@ -107,6 +107,28 @@ class FoodEstablishment(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     payment_methods = models.CharField(max_length=255, blank=True, null=True)
 
+    # ✅ NEW: Owner-editable payment/order policy shown to customers at checkout.
+    # This is the ONLY policy shown in the "Online Payment Policy" /
+    # "Cash on Pickup Policy" popup — there is no platform-wide default.
+    # Each line entered by the owner is rendered as its own bullet point.
+    custom_payment_policy = models.TextField(
+        blank=True, null=True,
+        help_text="The order/payment policy shown to customers during checkout "
+                  "(e.g., cancellation rules, refund rules, claim instructions, "
+                  "packaging fees). Enter one policy point per line. If left "
+                  "blank, no policy is shown to customers."
+    )
+
+    # ✅ GCash number for QR-based online payment (replaces PayMongo integration).
+    # The owner sets this in their Establishment Profile.
+    # Customers see a QR code generated from this number at checkout.
+    gcash_number = models.CharField(
+        max_length=20,
+        blank=True, null=True,
+        help_text="Owner's GCash mobile number (e.g., 09XXXXXXXXX). "
+                  "Used to generate a GCash QR code shown to customers at checkout."
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -482,6 +504,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('request', 'Request'),
         ('to_pay', 'To Pay'),
+        ('verifying', 'Verifying Payment'),   # ✅ NEW: GCash proof submitted, awaiting owner confirmation
         ('preparing', 'Preparing'),
         ('to_claim', 'To Claim'),
         ('completed', 'Completed'),
@@ -502,6 +525,17 @@ class Order(models.Model):
     gcash_payment_method = models.CharField(max_length=50, default='gcash')
     payment_confirmed_at = models.DateTimeField(null=True, blank=True)
     paymongo_checkout_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # ✅ NEW: GCash Manual Payment Proof
+    payment_proof = models.ImageField(
+        upload_to='payment_proofs/',
+        null=True, blank=True,
+        help_text="Screenshot uploaded by customer as GCash payment proof."
+    )
+    payment_proof_submitted_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Timestamp when customer submitted payment proof."
+    )
 
     # ✅ Idempotency guard — True once _deduct_stock_and_clear_cart has run for
     # this order. Prevents double-deduction when multiple code paths (payment

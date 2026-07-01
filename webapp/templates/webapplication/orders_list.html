@@ -237,6 +237,34 @@
         border: 1px solid #e2e8f0; cursor: default; font-size: 11px;
     }
 
+    /* ── Awaiting chip (generic) ── */
+    .awaiting-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+        padding: 6px 12px; border-radius: 20px; white-space: nowrap;
+        border: 1.5px solid #e2e8f0; background: #f8fafc; color: #64748b;
+        cursor: default; letter-spacing: 0.01em;
+    }
+
+    /* ── Waiting for Customer chip — purple with pulse dot ── */
+    .awaiting-chip.waiting-customer {
+        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        color: #6d28d9;
+        border: 1.5px solid #c4b5fd;
+        box-shadow: 0 2px 8px rgba(109,40,217,.12);
+        padding: 7px 13px;
+        font-size: 11.5px;
+    }
+    .awaiting-chip.waiting-customer .pulse-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #7c3aed; flex-shrink: 0;
+        animation: chip-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes chip-pulse {
+        0%,100% { transform: scale(1);   opacity: 1; }
+        50%      { transform: scale(1.5); opacity: 0.5; }
+    }
+
     /* Reject button */
     .btn-reject {
         background: #c0392b;
@@ -1630,6 +1658,11 @@
                 <span>To Pay</span>
                 <span class="tab-count" id="count-to_pay">0</span>
             </div>
+            <div class="status-tab" data-status="verifying" onclick="switchTab('verifying')">
+                <i class="fas fa-search-dollar"></i>
+                <span>Verifying</span>
+                <span class="tab-count" id="count-verifying">0</span>
+            </div>
             <div class="status-tab" data-status="preparing" onclick="switchTab('preparing')">
                 <i class="fas fa-fire"></i>
                 <span>Preparing</span>
@@ -1772,8 +1805,9 @@ function esc(s) {
     const FLOW = {
         'request': 'to_pay',
         'to_pay': 'preparing',
+        'verifying': 'preparing',
         'preparing': 'to_claim',
-        'to_claim': 'completed',
+        'to_claim': null,
         'completed': null
     };
 
@@ -1781,6 +1815,7 @@ function esc(s) {
     const LABELS = {
         'request': 'Order Request',
         'to_pay': 'To Pay',
+        'verifying': 'Verifying Payment',
         'preparing': 'Preparing',
         'to_claim': 'To Claim',
         'completed': 'Completed'
@@ -2165,6 +2200,9 @@ function esc(s) {
                 if (currentTab === 'to_pay') {
                     return o.status === 'to_pay' || (o.status === 'cancelled' && o._cancelledFromToPay);
                 }
+                if (currentTab === 'verifying') {
+                    return o.status === 'verifying';
+                }
                 const match = (o.status || 'request') === currentTab;
                 if(match) {
                     console.log('📋 [renderOrders filter] ✅ Order #' + o.id + ' matches status ' + currentTab);
@@ -2348,18 +2386,35 @@ function esc(s) {
                             </button>
                         </div>`;
                 }
+            } else if (currentTab === 'verifying') {
+                // ── GCash Proof Verification ──
+                const proofUrl = o.payment_proof_url || '';
+                const submittedAt = o.payment_proof_submitted_at
+                    ? new Date(o.payment_proof_submitted_at).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'})
+                    : '';
+                actionBtn = `
+                    <div style="display:flex;flex-direction:column;gap:6px;min-width:130px;">
+                        ${proofUrl ? `
+                        <a href="${esc(proofUrl)}" target="_blank"
+                           style="display:flex;align-items:center;gap:5px;background:#eff6ff;border:1px solid #93c5fd;
+                                  border-radius:8px;padding:5px 8px;font-size:0.72rem;color:#1d4ed8;font-weight:600;
+                                  text-decoration:none;justify-content:center;">
+                            <i class="fas fa-image"></i> View Receipt
+                            ${submittedAt ? `<span style="color:#6b7280;font-weight:400;font-size:0.68rem;">· ${submittedAt}</span>` : ''}
+                        </a>` : `<span style="font-size:0.72rem;color:#f59e0b;text-align:center;"><i class="fas fa-spinner fa-spin"></i> Waiting for receipt...</span>`}
+                        <button class="action-btn btn-accept" onclick="confirmGcashProof(${o.id}, this)"
+                                style="background:linear-gradient(135deg,#059669,#10b981);font-size:0.76rem;padding:7px 10px;">
+                            <i class="fas fa-check-circle"></i> Confirm Payment
+                        </button>
+                        <button class="action-btn btn-reject" onclick="rejectGcashProof(${o.id}, this)"
+                                style="font-size:0.76rem;padding:7px 10px;">
+                            <i class="fas fa-times-circle"></i> Reject Proof
+                        </button>
+                    </div>`;
             } else if (next && currentTab !== 'to_pay') {
-                // to_claim tab: show Completed button + Reject button below it
+                // to_claim tab: waiting for customer to confirm receipt
                 if (currentTab === 'to_claim') {
-                    actionBtn = `
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <button class="action-btn btn-move" onclick="moveOrder(${o.id})">
-                                <i class="fas fa-check-circle"></i> ${LABELS[next]}
-                            </button>
-                            <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-${o.id}" onclick="cancelClaimOrder(${o.id})">
-                                <i class="fas fa-ban"></i> Reject
-                            </button>
-                        </div>`;
+                    actionBtn = `<span class="awaiting-chip waiting-customer"><span class="pulse-dot"></span><i class="fas fa-user-clock"></i> Waiting for Customer</span>`;
                 } else {
                     actionBtn = `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
                         <i class="fas fa-arrow-right"></i> ${LABELS[next]}
@@ -2376,10 +2431,8 @@ function esc(s) {
                             <i class="fas fa-trash-alt"></i> Remove
                         </button>`;
                 } else {
-                    // Timer still running — show Reject only
-                    actionBtn = `<button class="action-btn btn-reject" id="reject-btn-${o.id}" onclick="rejectOrder(${o.id})">
-                        <i class="fas fa-times"></i> Reject
-                    </button>`;
+                    // Timer still running — awaiting payment, no cancel action for owner
+                    actionBtn = `<span class="awaiting-chip"><i class="fas fa-hourglass-half"></i> Awaiting Payment</span>`;
                 }
             } else {
                 actionBtn = `<button class="action-btn btn-done" style="cursor:default;"><i class="fas fa-check"></i> Done</button>`;
@@ -2487,8 +2540,7 @@ function esc(s) {
                                     ? `<button class="action-btn btn-move btn-accept" onclick="moveOrder(${o.id})"><i class="fas fa-check"></i> Accept</button>
                                        <button class="action-btn btn-reject" onclick="rejectOrder(${o.id})"><i class="fas fa-times"></i> Reject</button>`
                                     : currentTab === 'to_claim' && !isClaimExpired
-                                        ? `<button class="action-btn btn-move" onclick="moveOrder(${o.id})"><i class="fas fa-check-circle"></i> Completed</button>
-                                           <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-mobile-${o.id}" onclick="cancelClaimOrder(${o.id})"><i class="fas fa-ban"></i> Reject</button>`
+                                        ? `<span class="awaiting-chip waiting-customer"><span class="pulse-dot"></span><i class="fas fa-user-clock"></i> Waiting for Customer</span>`
                                         : actionBtn
                                 }
                             </div>
@@ -2506,12 +2558,7 @@ function esc(s) {
                                        <i class="fas fa-times"></i> Reject
                                    </button>`
                                 : currentTab === 'to_claim' && !isClaimExpired
-                                    ? `<button class="action-btn btn-move" onclick="moveOrder(${o.id})">
-                                           <i class="fas fa-check-circle"></i> Completed
-                                       </button>
-                                       <button class="action-btn btn-cancel-claim" id="cancel-claim-btn-${o.id}" onclick="cancelClaimOrder(${o.id})">
-                                           <i class="fas fa-ban"></i> Reject
-                                       </button>`
+                                    ? `<span class="awaiting-chip waiting-customer"><span class="pulse-dot"></span><i class="fas fa-user-clock"></i> Waiting for Customer</span>`
                                     : actionBtn
                             }
                         </div>
@@ -2709,9 +2756,7 @@ function esc(s) {
                         <i class="fas fa-trash-alt"></i> Remove
                     </button>`;
             } else {
-                footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();setTimeout(()=>rejectOrder(${o.id}),80);">
-                    <i class="fas fa-times"></i> Reject
-                </button>`;
+                footerHTML = `<span style="font-size:13px;color:#1e40af;font-weight:700;background:#dbeafe;padding:8px 16px;border-radius:8px;width:100%;text-align:center;display:block;"><i class="fas fa-hourglass-half"></i> Awaiting Payment</span>`;
             }
         } else if (modalStatus === 'preparing') {
             footerHTML = `<button class="action-btn btn-move" onclick="closeOrderModal();moveOrder(${o.id});">
@@ -2720,13 +2765,7 @@ function esc(s) {
         } else if (modalStatus === 'to_claim') {
             const isClaimExp = !!o._claimExpired;
             if (!isClaimExp) {
-                footerHTML = `
-                    <button class="action-btn btn-cancel-claim" onclick="closeOrderModal();setTimeout(()=>cancelClaimOrder(${o.id}),80);">
-                        <i class="fas fa-ban"></i> Reject
-                    </button>
-                    <button class="action-btn btn-move" onclick="closeOrderModal();moveOrder(${o.id});">
-                        <i class="fas fa-check-circle"></i> Completed
-                    </button>`;
+                footerHTML = `<span class="awaiting-chip waiting-customer" style="width:100%;justify-content:center;font-size:13px;padding:10px 16px;border-radius:10px;"><span class="pulse-dot"></span><i class="fas fa-user-clock"></i> Waiting for Customer to Confirm Receipt</span>`;
             } else {
                 footerHTML = `<button class="action-btn btn-reject" onclick="closeOrderModal();directRemoveExpiredClaimOrder(${o.id},this);">
                     <i class="fas fa-trash-alt"></i> Remove
@@ -3203,6 +3242,83 @@ function esc(s) {
 
     // ── Public entry points (called from onclick attributes in renderOrders) ──
     /** Reject button in request tab and to_pay tab */
+    // ============================================================
+    // GCash Proof Verification — Owner Actions
+    // ============================================================
+    function confirmGcashProof(orderId, btn) {
+        if (!confirm('Confirm this GCash payment and move order to Preparing?')) return;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Confirming...';
+
+        fetch('/payment/verify-gcash/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ order_id: orderId, action: 'confirm' }),
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Payment confirmed! Order #' + orderId + ' is now Preparing.', 'success');
+                // Update local order state and refresh
+                const idx = orders.findIndex(x => x.id === orderId);
+                if (idx !== -1) { orders[idx].status = 'preparing'; }
+                updateCounts();
+                renderOrders();
+            } else {
+                showToast('❌ ' + (data.message || 'Failed to confirm payment.'), 'error');
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        })
+        .catch(err => {
+            showToast('Network error: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = original;
+        });
+    }
+
+    function rejectGcashProof(orderId, btn) {
+        const reason = prompt('Reason for rejecting the proof (optional):\n(Customer will be asked to re-upload a clearer screenshot)', '');
+        if (reason === null) return; // cancelled prompt
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rejecting...';
+
+        fetch('/payment/verify-gcash/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ order_id: orderId, action: 'reject', reject_reason: reason || '' }),
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('⚠️ Proof rejected. Customer will be notified to re-upload.', 'warning');
+                const idx = orders.findIndex(x => x.id === orderId);
+                if (idx !== -1) { orders[idx].status = 'to_pay'; }
+                updateCounts();
+                renderOrders();
+            } else {
+                showToast('❌ ' + (data.message || 'Failed to reject proof.'), 'error');
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        })
+        .catch(err => {
+            showToast('Network error: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = original;
+        });
+    }
+
     function rejectOrder(orderId) {
         const o = orders.find(x => x.id === orderId);
         openUnifiedRejectModal(orderId, (o && o.status) || currentTab);

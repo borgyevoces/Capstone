@@ -2080,6 +2080,11 @@ tr.order-row-highlight {
             <span class="order-tab-label">To Pay</span>
             <span class="order-tab-count" id="count-to_pay">0</span>
         </button>
+        <button class="order-tab" data-status="verifying" onclick="switchTab('verifying')">
+            <i class="fas fa-search-dollar"></i>
+            <span class="order-tab-label">Verifying</span>
+            <span class="order-tab-count" id="count-verifying">0</span>
+        </button>
         <button class="order-tab" data-status="preparing" onclick="switchTab('preparing')">
             <i class="fas fa-fire"></i>
             <span class="order-tab-label">Preparing</span>
@@ -2371,7 +2376,7 @@ tr.order-row-highlight {
                 const params = new URLSearchParams(window.location.search);
                 const tab = params.get('tab');
                 const orderId = params.get('order_id');
-                const valid = ['request','to_pay','preparing','to_claim','completed'];
+                const valid = ['request','to_pay','verifying','preparing','to_claim','completed'];
                 if (tab && valid.includes(tab)) {
                     currentFilter = tab;
                     document.querySelectorAll('.order-tab').forEach(function(t) {
@@ -3122,14 +3127,17 @@ tr.order-row-highlight {
     // ============================================================
     function updateOrderCounts() {
         const counts = {
-            request:  allOrders.filter(o => o.status === 'request').length,
-            to_pay:   allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING').length,
-            preparing:allOrders.filter(o => o.status === 'preparing').length,
-            to_claim: allOrders.filter(o => o.status === 'to_claim').length,
-            completed:allOrders.filter(o => o.status === 'completed').length,
+            request:   allOrders.filter(o => o.status === 'request').length,
+            to_pay:    allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING').length,
+            verifying: allOrders.filter(o => o.status === 'verifying').length,
+            preparing: allOrders.filter(o => o.status === 'preparing').length,
+            to_claim:  allOrders.filter(o => o.status === 'to_claim').length,
+            completed: allOrders.filter(o => o.status === 'completed').length,
         };
         document.getElementById('count-request').textContent   = counts.request;
         document.getElementById('count-to_pay').textContent    = counts.to_pay;
+        const verifyEl = document.getElementById('count-verifying');
+        if (verifyEl) verifyEl.textContent = counts.verifying;
         document.getElementById('count-preparing').textContent = counts.preparing;
         document.getElementById('count-to_claim').textContent  = counts.to_claim;
         document.getElementById('count-completed').textContent = counts.completed;
@@ -3149,6 +3157,8 @@ tr.order-row-highlight {
         let filtered;
         if (status === 'to_pay') {
             filtered = allOrders.filter(o => o.status === 'to_pay' || o.status === 'PENDING');
+        } else if (status === 'verifying') {
+            filtered = allOrders.filter(o => o.status === 'verifying');
         } else {
             filtered = allOrders.filter(o => o.status === status);
         }
@@ -3333,14 +3343,24 @@ const itemsHtml = (o.items || []).map(i => {
                            <span class="order-status-badge status-${o.status}" id="status-badge-${o.id}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>
                            ${timerHtml}
                        </div>`;
+            } else if (o.status === 'verifying') {
+                statusCell = `
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span class="order-status-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
+                            <i class="fas fa-search-dollar"></i> Verifying Payment
+                        </span>
+                    </div>
+                    <div style="font-size:0.68rem;color:#6b7280;margin-top:3px;">
+                        <i class="fas fa-hourglass-half" style="color:#f59e0b;"></i> Waiting for owner to confirm your GCash receipt
+                    </div>`;
             } else if (o.status === 'to_claim') {
                 statusCell = `<span class="order-status-badge status-to_claim">${getStatusIcon('to_claim')} ${getStatusText('to_claim')}</span>`;
             } else {
                 statusCell = `<span class="order-status-badge status-${o.status}">${getStatusIcon(o.status)} ${getStatusText(o.status)}</span>`;
             }
 
-            // Show actions: hide for preparing + normal to_claim; show for owner-cancelled or expired to_claim
-            const showActions = o.status !== 'preparing' && (o.status !== 'to_claim' || isOwnerCancelledClaim || isClaimExpired);
+            // Show actions: hide only for preparing; to_claim always shows (Mark as Received or Remove)
+            const showActions = o.status !== 'preparing';
             // Show payment badge for preparing, to_claim, completed
             const showPayment = o.status === 'preparing' || o.status === 'to_claim' || o.status === 'completed';
             const paymentBadge = showPayment ? buildPaymentBadge(o.payment_method || '') : '';
@@ -3372,7 +3392,7 @@ const itemsHtml = (o.items || []).map(i => {
         const hasOwnerCancelledClaimRows = currentFilter === 'to_claim' &&
             orders.some(o => o.status === 'to_claim' &&
                 (o._cancelledByOwner === true || !!o._claimExpired));
-        const hideActions = currentFilter === 'preparing' || (currentFilter === 'to_claim' && !hasOwnerCancelledClaimRows);
+        const hideActions = currentFilter === 'preparing';
         // Show payment column for preparing, to_claim, completed
         const showPaymentCol = currentFilter === 'preparing' || currentFilter === 'to_claim' || currentFilter === 'completed';
         // Show Left to Claim column only for to_claim tab
@@ -3382,8 +3402,7 @@ const itemsHtml = (o.items || []).map(i => {
         const mobileCards = orders.map(o => {
             // Recompute per-order values needed for the card
             const isOwnerRej2  = o._cancelledByOwner === true;
-            const showAct2     = o.status !== 'preparing' && (o.status !== 'to_claim' ||
-                                  (o._cancelledByOwner === true || !!o._claimExpired));
+            const showAct2     = o.status !== 'preparing';
             const showPay2     = o.status === 'preparing' || o.status === 'to_claim' || o.status === 'completed';
             const payBadge2    = showPay2 ? buildPaymentBadge(o.payment_method || '') : '';
 
@@ -3827,15 +3846,36 @@ const itemsHtml = (o.items || []).map(i => {
                             <i class="fas fa-times"></i> Remove
                          </button>`;
             } else {
-                // Timer still running, stock fine — show Pay Now
+                // Timer still running, stock fine — show Pay Now only (no cancel for to_pay)
                 html += `<button class="tbl-btn tbl-btn-pay" onclick="payOrder(${o.id})">
                             <i class="fas fa-credit-card"></i> Pay Now
                          </button>`;
             }
         }
 
-        if (o.status === 'preparing' || o.status === 'to_claim') {
-            html += `<span class="awaiting-chip"><i class="fas fa-${o.status === 'preparing' ? 'fire' : 'box'}"></i> ${getStatusText(o.status)}</span>`;
+        if (o.status === 'verifying') {
+            const proofUrl = o.payment_proof_url || '';
+            html += `
+                <div style="display:flex;flex-direction:column;gap:5px;min-width:110px;">
+                    <span class="awaiting-chip" style="background:#fef9c3;border-color:#fbbf24;color:#78350f;justify-content:center;">
+                        <i class="fas fa-hourglass-half" style="color:#f59e0b;"></i> Awaiting Verification
+                    </span>
+                    ${proofUrl ? `<a href="${esc(proofUrl)}" target="_blank"
+                        style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.72rem;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:4px 8px;font-weight:600;">
+                        <i class="fas fa-image"></i> View Submitted Receipt
+                    </a>` : ''}
+                </div>`;
+        }
+
+        if (o.status === 'preparing') {
+            html += `<span class="awaiting-chip"><i class="fas fa-fire"></i> ${getStatusText('preparing')}</span>`;
+        }
+
+        if (o.status === 'to_claim' && !o._cancelledByOwner && !o._claimExpired) {
+            html += `<button class="tbl-btn tbl-btn-pay" style="background:linear-gradient(135deg,#059669,#10b981);border-color:#059669;"
+                             onclick="markOrderCompleted(${o.id}, this)">
+                        <i class="fas fa-check-circle"></i> Mark as Received
+                     </button>`;
         }
 
         if (o.status === 'completed') {
@@ -3849,6 +3889,39 @@ const itemsHtml = (o.items || []).map(i => {
         }
 
         return html || '<span style="color:#a0aec0;font-size:12px;">—</span>';
+    }
+
+    // ============================================================
+    // markOrderCompleted — customer confirms they received the order
+    // Calls POST /api/orders/<id>/client-complete/
+    // ============================================================
+    function markOrderCompleted(orderId, btn) {
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…'; }
+
+        fetch('/api/orders/' + orderId + '/client-complete/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Order #' + orderId + ' marked as received! Thank you. 🎉', 'success');
+                // Update in-memory status and re-render current tab
+                const idx = allOrders.findIndex(o => o.id === orderId);
+                if (idx !== -1) allOrders[idx].status = 'completed';
+                filterOrders(currentFilter);
+            } else {
+                showToast(data.message || 'Could not complete order.', 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Received'; }
+            }
+        })
+        .catch(() => {
+            showToast('Network error. Please try again.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Received'; }
+        });
     }
 
     // ============================================================
@@ -4235,13 +4308,15 @@ const itemsHtml = (o.items || []).map(i => {
     }
 
     function getStatusText(status) {
-        return { request:'Request', to_pay:'To Pay', order_received:'Order Received', preparing:'Preparing',
+        return { request:'Request', to_pay:'To Pay', verifying:'Verifying Payment',
+                 order_received:'Order Received', preparing:'Preparing',
                  to_claim:'To Claim', completed:'Completed', PENDING:'To Pay', PAID:'Paid',
                  cancelled:'Cancelled', CANCELLED:'Cancelled' }[status] || status;
     }
 
     function getStatusIcon(status) {
         return { request:'<i class="fas fa-paper-plane"></i>', to_pay:'<i class="fas fa-credit-card"></i>',
+                 verifying:'<i class="fas fa-search-dollar"></i>',
                  order_received:'<i class="fas fa-bell"></i>', preparing:'<i class="fas fa-fire"></i>',
                  to_claim:'<i class="fas fa-box"></i>', completed:'<i class="fas fa-check-circle"></i>',
                  PENDING:'<i class="fas fa-credit-card"></i>', PAID:'<i class="fas fa-check"></i>',
@@ -5492,9 +5567,7 @@ const itemsHtml = (o.items || []).map(i => {
                          '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();doRemoveCancelledRow(' + id + ', null);">' +
                          '<i class="fas fa-times"></i> Remove</button>';
         } else if ((o.status === 'to_pay' || o.status === 'PENDING') && !isExpired) {
-            footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();setTimeout(function(){askCancelOrder(' + id + ')},80);">' +
-                         '<i class="fas fa-times"></i> Cancel</button>' +
-                         '<button class="tbl-btn tbl-btn-pay" onclick="closeClientOrderDetail();payOrder(' + id + ');">' +
+            footerHTML = '<button class="tbl-btn tbl-btn-pay" onclick="closeClientOrderDetail();payOrder(' + id + ');">' +
                          '<i class="fas fa-credit-card"></i> Pay Now</button>';
         } else if (o.status === 'to_claim' && (isOwnerCancelledClaim || isClaimExpired)) {
             footerHTML = '<button class="tbl-btn tbl-btn-cancel" onclick="closeClientOrderDetail();removeClaimCancelledRow(' + id + ');">' +

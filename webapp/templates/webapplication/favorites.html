@@ -115,7 +115,7 @@
 .fav-menu-est-lg   { font-family: 'Poppins', sans-serif; font-size: 10.5px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 .fav-menu-stock-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 20px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 600; margin-top: 3px; width: fit-content; }
 .fav-menu-stock-badge.in-stock  { background: #dcfce7; color: #16a34a; }
-.fav-menu-stock-badge.low-stock { background: #fef9c3; color: #b45309; }
+.fav-menu-stock-badge.low-stock { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; animation: favLowStockPulse 2s ease-in-out infinite; }
 .fav-menu-stock-badge.out-stock { background: #fee2e2; color: #dc2626; }
 .fav-menu-est-status { font-family: 'Poppins', sans-serif; font-size: 10px; color: #9ca3af; margin-top: 1px; }
 .fav-menu-est-status.est-open   { color: #16a34a; }
@@ -188,6 +188,8 @@
 .fav-modal-price { font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 800; color: #B71C1C; }
 .fav-modal-stock-badge { font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #dcfce7; color: #16a34a; }
 .fav-modal-stock-badge.out { background: #fee2e2; color: #dc2626; }
+.fav-modal-stock-badge.low { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; animation: favLowStockPulse 2s ease-in-out infinite; }
+@keyframes favLowStockPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 .fav-modal-est-card { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
 .fav-modal-est-name    { font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 6px; }
 .fav-modal-est-address { font-family: 'Poppins', sans-serif; font-size: 11px; color: #111827; display: flex; align-items: center; gap: 5px; }
@@ -714,7 +716,7 @@ function favPageFilter() {
 
             const scl = qty === 0 ? 'out-stock' : qty <= 5 ? 'low-stock' : 'in-stock';
             const stk = qty === 0 ? '<i class="fas fa-times-circle"></i> Out of Stock'
-                      : qty <= 5 ? 'Only ' + qty + ' left'
+                      : qty <= 5 ? '<i class="fas fa-exclamation-triangle"></i> Only ' + qty + ' left!'
                       : '<i class="fas fa-check-circle"></i> In Stock (' + qty + ')';
             const estStatusHtml = estStatus ? `<div class="fav-menu-est-status ${isEstOpen?'est-open':'est-closed'}"><i class="fas fa-circle" style="font-size:7px;margin-right:3px;"></i>${isEstOpen?'Store Open':'Store Closed'}</div>` : '';
 
@@ -828,8 +830,9 @@ function openFavItemModal(m) {
     // Stock badge
     const sb = document.getElementById('favModalStockBadge');
     if (sb) {
-        if (qty > 0) { sb.textContent = qty + ' Item' + (qty!==1?'s':''); sb.className = 'fav-modal-stock-badge'; }
-        else         { sb.textContent = 'Out of Stock'; sb.className = 'fav-modal-stock-badge out'; }
+        if (qty <= 0)      { sb.textContent = 'Out of Stock'; sb.className = 'fav-modal-stock-badge out'; }
+        else if (qty <= 5) { sb.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:10px;"></i> Only ' + qty + ' left!'; sb.className = 'fav-modal-stock-badge low'; }
+        else               { sb.textContent = qty + ' Item' + (qty!==1?'s':''); sb.className = 'fav-modal-stock-badge'; }
     }
 
     // Est info
@@ -904,8 +907,10 @@ function openFavItemModal(m) {
                         document.getElementById('favModalMaxQty').value = freshMi.quantity;
                         const sbEl = document.getElementById('favModalStockBadge');
                         if (sbEl) {
-                            if (freshMi.quantity > 0) { sbEl.textContent = freshMi.quantity + ' Item' + (freshMi.quantity!==1?'s':''); sbEl.className = 'fav-modal-stock-badge'; }
-                            else { sbEl.textContent = 'Out of Stock'; sbEl.className = 'fav-modal-stock-badge out'; }
+                            const fq = freshMi.quantity;
+                            if (fq <= 0)      { sbEl.textContent = 'Out of Stock'; sbEl.className = 'fav-modal-stock-badge out'; }
+                            else if (fq <= 5) { sbEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:10px;"></i> Only ' + fq + ' left!'; sbEl.className = 'fav-modal-stock-badge low'; }
+                            else              { sbEl.textContent = fq + ' Item' + (fq!==1?'s':''); sbEl.className = 'fav-modal-stock-badge'; }
                         }
                         document.getElementById('favModalPrice').textContent = '₱' + parseFloat(freshMi.price).toFixed(2);
                         _fpCalcTotal();

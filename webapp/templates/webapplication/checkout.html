@@ -586,6 +586,30 @@ body { background: #f5f5f5 !important; }
     flex-shrink: 0;
 }
 
+/* ── Fallback note when owner hasn't set a custom policy ── */
+.policy-empty-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.84rem;
+    color: #6b7280;
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.policy-empty-note i {
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: #9ca3af;
+}
+
+.policy-list li.policy-custom-item i {
+    color: #8b0000;
+}
+
 .policy-note {
     background: #FEF3C7;
     border-left: 3px solid #F59E0B;
@@ -651,9 +675,280 @@ body { background: #f5f5f5 !important; }
     background: #fff5f5;
 }
 
-/* ── Stock Conflict Modal (no banner, only modal) ── */
-#stockConflictModal .policy-modal-header {
-    background: #B71C1C;
+/* ── GCash QR Modal ── */
+.gcash-qr-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.60);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.gcash-qr-modal-overlay.open {
+    display: flex;
+}
+.gcash-qr-box {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.25);
+    animation: policyPopIn 0.24s cubic-bezier(.34,1.56,.64,1);
+    display: flex;
+    flex-direction: column;
+}
+.gcash-qr-header {
+    background: linear-gradient(135deg, #007aff 0%, #0070e0 100%);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.gcash-qr-header-icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.gcash-qr-header-text h3 {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0 0 1px;
+}
+.gcash-qr-header-text p {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.72rem;
+    margin: 0;
+}
+.gcash-qr-body {
+    padding: 14px 20px 6px;
+    text-align: center;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+.gcash-qr-steps {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 12px;
+}
+.gcash-qr-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+.gcash-qr-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+}
+.gcash-qr-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #0070e0;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+}
+.gcash-qr-step-label {
+    font-size: 0.62rem;
+    color: #6b7280;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+}
+.gcash-qr-img-wrap {
+    background: #f0f7ff;
+    border: 2px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 10px;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+.gcash-qr-img-wrap img {
+    width: 160px;
+    height: 160px;
+    display: block;
+}
+.gcash-qr-number-card {
+    background: #f0f7ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.gcash-qr-number-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 1px;
+}
+.gcash-qr-number-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0070e0;
+    letter-spacing: 1px;
+}
+.gcash-qr-copy-btn {
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 7px;
+    color: #0070e0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s;
+    flex-shrink: 0;
+}
+.gcash-qr-copy-btn:hover {
+    background: #dbeafe;
+    border-color: #0070e0;
+}
+.gcash-qr-amount-row {
+    background: #fff7ed;
+    border: 1.5px solid #fed7aa;
+    border-radius: 9px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+    color: #92400e;
+    font-weight: 600;
+}
+.gcash-qr-amount-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #B71C1C;
+}
+.gcash-qr-note {
+    background: #fef9c3;
+    border-left: 3px solid #facc15;
+    border-radius: 0 7px 7px 0;
+    padding: 8px 12px;
+    font-size: 0.74rem;
+    color: #713f12;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-bottom: 12px;
+    text-align: left;
+}
+.gcash-qr-note i { color: #f59e0b; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Proof Upload Panel ── */
+.proof-upload-area {
+    border: 2px dashed #93c5fd;
+    border-radius: 14px;
+    background: #eff6ff;
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    margin: 4px 20px 10px;
+    text-align: center;
+}
+.proof-upload-area:hover { border-color: #2563eb; background: #dbeafe; }
+.proof-upload-icon { font-size: 2.2rem; color: #2563eb; }
+.proof-upload-text { font-size: 0.82rem; color: #374151; line-height: 1.5; }
+.proof-upload-text span { font-size: 0.72rem; color: #9ca3af; }
+
+.gcash-qr-actions {
+    padding: 0 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn-gcash-done {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #007aff 0%, #0070e0 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.3px;
+}
+.btn-gcash-done:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-gcash-cancel {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #6b7280;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-gcash-cancel:hover {
+    border-color: #B71C1C;
+    color: #B71C1C;
+    background: #fff5f5;
+}
+/* Mobile — slide up from bottom, slightly smaller QR */
+@media (max-width: 480px) {
+    .gcash-qr-modal-overlay { align-items: flex-end; padding: 0; }
+    .gcash-qr-box { border-radius: 20px 20px 0 0; max-height: 92vh; overflow-y: auto; }
+    .gcash-qr-img-wrap img { width: 140px; height: 140px; }
+    .gcash-qr-body { max-height: unset; padding: 12px 16px 4px; }
+    .gcash-qr-actions { padding: 0 16px 20px; }
+}
+/* Short desktop screens */
+@media (max-height: 700px) {
+    .gcash-qr-body { max-height: calc(100vh - 160px); }
+    .gcash-qr-img-wrap img { width: 130px; height: 130px; }
+    .gcash-qr-steps { margin-bottom: 8px; }
 }
 #stockConflictModal .policy-modal-actions {
     flex-direction: row;
@@ -948,7 +1243,7 @@ body { background: #f5f5f5 !important; }
                         </div>
                         <div class="pm-info">
                             <span class="pm-name">Online Payment</span>
-                            <span class="pm-desc">GCash, Credit/Debit Card, Maya</span>
+                            <span class="pm-desc">Pay via GCash QR Code</span>
                         </div>
                         <i class="fas fa-chevron-right pm-arrow"></i>
                     </button>
@@ -983,7 +1278,7 @@ body { background: #f5f5f5 !important; }
                 <!-- Security badge -->
                 <div class="payment-security-badge">
                     <i class="fas fa-shield-alt"></i>
-                    Payments secured by PayMongo
+                    GCash QR · Cash on Pickup
                 </div>
 
             </div>
@@ -1002,64 +1297,26 @@ body { background: #f5f5f5 !important; }
         <!-- Header -->
         <div class="policy-modal-header">
             <i class="fas fa-shield-alt"></i>
-            <h3 id="policyModalTitle">Order Policy</h3>
+            <div>
+                <h3 id="policyModalTitle">Order Policy</h3>
+                <p id="policyModalEstablishment" style="margin:2px 0 0;font-size:12px;font-weight:600;opacity:.85;letter-spacing:.3px;"></p>
+            </div>
         </div>
 
         <!-- Body -->
         <div class="policy-modal-body">
-            <p>Please read and agree to the following policies before proceeding with your payment:</p>
+            <p>Please read and agree to the following policy before proceeding with your payment:</p>
 
-            <ul class="policy-list">
-                <li>
-                    <i class="fas fa-times-circle"></i>
-                    <span>
-                        <strong>No Cancellation</strong> — Once your payment is confirmed,
-                        orders <strong>cannot be cancelled</strong>. Please review your items
-                        carefully before proceeding.
-                    </span>
-                </li>
-                <li>
-                    <i class="fas fa-undo-alt"></i>
-                    <span>
-                        <strong>No Refunds</strong> — All sales are final. Refunds are only
-                        considered for wrong or missing items and must be reported
-                        immediately upon claiming.
-                    </span>
-                </li>
-                <li>
-                    <i class="fas fa-clock"></i>
-                    <span>
-                        <strong>Preparation Time</strong> — Preparation begins after the owner
-                        confirms your request. Estimated wait time depends on the establishment.
-                    </span>
-                </li>
-                <li>
-                    <i class="fas fa-hourglass-half"></i>
-                    <span>
-                        <strong>30-Minute Claim Window</strong> — Once your order is marked
-                        <strong>Ready to Claim</strong>, you have <strong>30 minutes</strong>
-                        to pick it up at the establishment. The timer is visible on your
-                        My Orders page. Unclaimed orders after this window may be forfeited.
-                    </span>
-                </li>
-                <!-- Online-specific (shown only for online payment) -->
-                <li id="policyOnlineExtra" style="display:none;">
-                    <i class="fas fa-university"></i>
-                    <span>
-                        <strong>Online Payment</strong> — You will be redirected to PayMongo's
-                        secure payment page. Do <strong>not</strong> close the tab until payment
-                        is fully confirmed.
-                    </span>
-                </li>
-                <!-- Cash-specific (shown only for cash) -->
-                <li id="policyCashExtra" style="display:none;">
-                    <i class="fas fa-hand-holding-usd"></i>
-                    <span>
-                        <strong>Cash on Pickup</strong> — Payment is collected when you claim
-                        your order at the establishment. Please prepare the exact amount.
-                    </span>
-                </li>
-            </ul>
+            <!-- Establishment-specific policy (set by the owner) -->
+            <ul class="policy-list" id="policyCustomList"></ul>
+
+            <!-- Fallback shown only if the owner hasn't set a custom policy -->
+            <div id="policyEmptyState" style="display:none;">
+                <div class="policy-empty-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>This establishment hasn't set up a specific order policy yet.</span>
+                </div>
+            </div>
 
             <div class="policy-note">
                 <i class="fas fa-exclamation-triangle"></i>
@@ -1117,6 +1374,155 @@ body { background: #f5f5f5 !important; }
     </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     GCASH QR CODE MODAL
+     ══════════════════════════════════════ -->
+<div class="gcash-qr-modal-overlay" id="gcashQrModal">
+    <div class="gcash-qr-box">
+        <!-- Header -->
+        <div class="gcash-qr-header">
+            <div class="gcash-qr-header-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+            <div class="gcash-qr-header-text">
+                <h3>Pay via GCash</h3>
+                <p>Scan the QR code with your GCash app</p>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="gcash-qr-body">
+            <!-- Steps -->
+            <div class="gcash-qr-steps">
+                <div class="gcash-qr-step">
+                    <div class="gcash-qr-step-num">1</div>
+                    <div class="gcash-qr-step-label">Open<br>GCash App</div>
+                </div>
+                <div class="gcash-qr-step">
+                    <div class="gcash-qr-step-num">2</div>
+                    <div class="gcash-qr-step-label">Scan<br>QR Code</div>
+                </div>
+                <div class="gcash-qr-step">
+                    <div class="gcash-qr-step-num">3</div>
+                    <div class="gcash-qr-step-label">Send<br>Payment</div>
+                </div>
+                <div class="gcash-qr-step">
+                    <div class="gcash-qr-step-num">4</div>
+                    <div class="gcash-qr-step-label">Upload<br>Receipt</div>
+                </div>
+                <div class="gcash-qr-step">
+                    <div class="gcash-qr-step-num">5</div>
+                    <div class="gcash-qr-step-label">Owner<br>Confirms</div>
+                </div>
+            </div>
+
+            <!-- ── PANEL A: QR + Pay ── -->
+            <div id="gcashPanelA">
+                <!-- QR Image -->
+                <div class="gcash-qr-img-wrap">
+                    <img id="gcashQrImg" src="" alt="GCash QR Code" loading="lazy" style="display:none;">
+                    <div id="gcashQrNoNumber" style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#f9fafb;border-radius:10px;padding:20px;text-align:center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;color:#f59e0b;"></i>
+                        <p style="font-size:0.8rem;color:#6b7280;margin:0;line-height:1.4;">GCash number not set up yet.<br>Please use Cash on Pickup.</p>
+                    </div>
+                </div>
+                <!-- GCash Number -->
+                <div class="gcash-qr-number-card">
+                    <div>
+                        <div class="gcash-qr-number-label"><i class="fas fa-mobile-alt"></i> GCash Number</div>
+                        <div class="gcash-qr-number-value" id="gcashQrNumber">—</div>
+                    </div>
+                    <button type="button" class="gcash-qr-copy-btn" id="gcashCopyBtn" onclick="copyGcashNumber()">
+                        <i class="far fa-copy"></i> Copy
+                    </button>
+                </div>
+                <!-- Amount -->
+                <div class="gcash-qr-amount-row">
+                    <span><i class="fas fa-peso-sign" style="margin-right:4px;"></i> Amount to Send</span>
+                    <span class="gcash-qr-amount-value" id="gcashQrAmount">—</span>
+                </div>
+                <div style="text-align:center;font-size:0.72rem;color:#9ca3af;margin-bottom:4px;">Order #<span id="gcashQrOrderId">—</span></div>
+                <div class="gcash-qr-note">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Send the <strong>exact amount</strong>. Then tap <strong>"I've Paid"</strong> and upload your GCash receipt screenshot for the owner to verify.</span>
+                </div>
+                <div class="gcash-qr-actions">
+                    <button type="button" class="btn-gcash-done" id="gcashPaidBtn" onclick="showProofUploadPanel()">
+                        <i class="fas fa-check-circle"></i> I've Paid — Upload Receipt
+                    </button>
+                    <button type="button" class="btn-gcash-cancel" onclick="closeGcashQrModal()">
+                        <i class="fas fa-times"></i> Cancel Payment
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── PANEL B: Upload Proof ── -->
+            <div id="gcashPanelB" style="display:none;">
+                <div class="proof-upload-area" id="proofDropZone" onclick="document.getElementById('proofFileInput').click()">
+                    <div class="proof-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="proof-upload-text">
+                        <strong>Tap to upload your GCash receipt</strong><br>
+                        <span>JPG, PNG or WEBP · Max 10 MB</span>
+                    </div>
+                    <input type="file" id="proofFileInput" accept="image/*" style="display:none;" onchange="handleProofFileSelect(this)">
+                </div>
+                <!-- Image preview -->
+                <div id="proofPreviewWrap" style="display:none;text-align:center;margin:10px 0;">
+                    <div style="position:relative;display:inline-block;">
+                        <img id="proofPreviewImg" src="" alt="Receipt preview" style="max-width:100%;max-height:150px;border-radius:10px;border:2px solid #0066cc;object-fit:contain;">
+                        <button type="button" onclick="removeProofFile()" style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:16px;line-height:24px;padding:0;">×</button>
+                    </div>
+                    <div id="proofFileName" style="font-size:0.75rem;color:#6b7280;margin-top:4px;"></div>
+                </div>
+                <div class="gcash-qr-amount-row" style="margin-top:6px;">
+                    <span><i class="fas fa-peso-sign" style="margin-right:4px;"></i> Amount Sent</span>
+                    <span class="gcash-qr-amount-value" id="gcashQrAmount2">—</span>
+                </div>
+                <div style="text-align:center;font-size:0.72rem;color:#9ca3af;margin:4px 0;">Order #<span id="gcashQrOrderId2">—</span></div>
+                <div class="gcash-qr-note" style="background:#ecfdf5;border-color:#6ee7b7;">
+                    <i class="fas fa-shield-alt" style="color:#10b981;"></i>
+                    <span style="color:#065f46;">Upload a clear screenshot of your GCash receipt. The owner will verify and confirm your order shortly.</span>
+                </div>
+                <div class="gcash-qr-actions">
+                    <button type="button" class="btn-gcash-done" id="gcashSubmitProofBtn" onclick="onSubmitProof()" disabled style="opacity:0.5;cursor:not-allowed;">
+                        <i class="fas fa-paper-plane"></i> Submit Receipt &amp; Place Order
+                    </button>
+                    <button type="button" class="btn-gcash-cancel" onclick="backToQrPanel()">
+                        <i class="fas fa-arrow-left"></i> Back to QR
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── PANEL C: Waiting for Verification ── -->
+            <div id="gcashPanelC" style="display:none;">
+                <div style="text-align:center;padding:18px 0 10px;">
+                    <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                        <i class="fas fa-hourglass-half" style="font-size:2rem;color:#2563eb;"></i>
+                    </div>
+                    <h4 style="margin:0 0 6px;font-size:1rem;color:#1e3a5f;">Receipt Submitted!</h4>
+                    <p style="margin:0 0 12px;font-size:0.82rem;color:#6b7280;line-height:1.5;">
+                        Your GCash receipt has been sent to the owner for verification.<br>
+                        <strong>Please wait</strong> — this usually takes just a few minutes.
+                    </p>
+                </div>
+                <div class="gcash-qr-note" style="background:#eff6ff;border-color:#93c5fd;margin-bottom:10px;">
+                    <i class="fas fa-bell" style="color:#2563eb;"></i>
+                    <span style="color:#1e40af;">Once the owner confirms, your order moves to <strong>Preparing</strong> automatically.</span>
+                </div>
+                <div id="verifyPollStatus" style="text-align:center;font-size:0.75rem;color:#9ca3af;margin-bottom:10px;">
+                    <i class="fas fa-sync fa-spin" style="margin-right:4px;"></i> Checking verification status...
+                </div>
+                <div class="gcash-qr-actions">
+                    <button type="button" style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;font-size:0.9rem;font-weight:600;cursor:pointer;" onclick="closeGcashQrModal()">
+                        <i class="fas fa-list"></i> Close &amp; Check My Orders
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /.gcash-qr-body -->
+    </div><!-- /.gcash-qr-box -->
+</div><!-- /#gcashQrModal -->
+
 {% endblock %}
 
 
@@ -1132,10 +1538,18 @@ body { background: #f5f5f5 !important; }
     const ORDER_ID         = (new URLSearchParams(window.location.search)).get('order_id');
     const ESTABLISHMENT_ID = {{ establishment_id|default:"null" }} || {{ order.id }};
 
+    // Owner-defined additional order/payment policy (set via Establishment Profile)
+    // Each non-empty line becomes its own bullet point in the policy modal.
+    const CUSTOM_PAYMENT_POLICY = "{{ custom_payment_policy|default:''|escapejs }}";
+    const ESTABLISHMENT_NAME    = "{{ order.establishment.name|default:''|escapejs }}";
+
     // Endpoint URLs — resolved server-side so they always match urls.py
     const URL_CREATE_GCASH  = "{% url 'create_gcash_payment_link' %}";
     const URL_CREATE_CASH   = "{% url 'create_cash_order' %}";
     const URL_CHECK_STATUS  = "{% url 'check_order_status' %}";
+
+    // GCash number set by the establishment owner (used to generate QR code)
+    const GCASH_NUMBER = "{{ gcash_number|default:''|escapejs }}";
 
     // ── Real-time payment method sync ─────────────────────────────────
     (function _initPaymentMethodPoll() {
@@ -1266,8 +1680,34 @@ body { background: #f5f5f5 !important; }
         document.getElementById('policyModalTitle').textContent =
             type === 'online' ? 'Online Payment Policy' : 'Cash on Pickup Policy';
 
-        document.getElementById('policyOnlineExtra').style.display = type === 'online' ? 'flex' : 'none';
-        document.getElementById('policyCashExtra').style.display = type === 'cash' ? 'flex' : 'none';
+        const nameEl = document.getElementById('policyModalEstablishment');
+        if (nameEl) {
+            nameEl.textContent = ESTABLISHMENT_NAME ? ESTABLISHMENT_NAME.toUpperCase() : '';
+            nameEl.style.display = ESTABLISHMENT_NAME ? '' : 'none';
+        }
+
+        // ── Establishment-specific policy (set by the owner) ─────────────
+        const customList  = document.getElementById('policyCustomList');
+        const emptyState  = document.getElementById('policyEmptyState');
+        const customLines = CUSTOM_PAYMENT_POLICY
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        if (customLines.length > 0) {
+            customList.innerHTML = customLines.map(line => `
+                <li class="policy-custom-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>${escapeHtml(line)}</span>
+                </li>
+            `).join('');
+            customList.style.display = 'flex';
+            emptyState.style.display = 'none';
+        } else {
+            customList.innerHTML = '';
+            customList.style.display = 'none';
+            emptyState.style.display = 'block';
+        }
 
         const btn = document.getElementById('policyConfirmBtn');
         btn.disabled = false;
@@ -1300,48 +1740,39 @@ body { background: #f5f5f5 !important; }
     };
 
     // ----------------------------------------------------------
-    // Online Payment → PayMongo
+    // Online Payment → GCash QR Code Modal
     // ----------------------------------------------------------
     function _doOnlinePayment(btn) {
-        const fd = new FormData();
-        fd.append('order_id', ORDER_ID);
+        closePolicyModal();
 
-        fetch(URL_CREATE_GCASH, {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            credentials: 'same-origin'
-        })
-        .then(r => {
-            if (!r.ok) {
-                return r.text().then(text => {
-                    let msg = 'Server error ' + r.status;
-                    try { const j = JSON.parse(text); msg = j.message || msg; } catch(e) {}
-                    throw new Error(msg);
-                });
-            }
-            return r.json();
-        })
-        .then(data => {
-            if (data.success && data.checkout_url) {
-                window.location.href = data.checkout_url;
-            } else {
-                showToast(data.message || 'Failed to create payment link.', 'error');
-                _resetBtn(btn);
-                closePolicyModal();
-            }
-        })
-        .catch(err => {
-            console.error('Online payment error:', err);
-            if (navigator.onLine) {
-                showToast(err.message || 'Network error. Please try again.', 'error');
-                _resetBtn(btn);
-                closePolicyModal();
-            } else {
-                _resetBtn(btn);
-                closePolicyModal();
-            }
-        });
+        // Read amount from the rendered DOM element — more reliable than Django tag in JS
+        const amountText = (document.querySelector('.payment-total-amount') || {}).textContent || '';
+        const totalAmount = parseFloat(amountText.replace(/[^0-9.]/g, '')) || 0;
+        const amountFormatted = totalAmount.toFixed(2);
+
+        if (GCASH_NUMBER) {
+            // Build GCash QR using the owner's registered number
+            const gcashPayload = `https://www.gcash.com/merchant/qr?mobile=${encodeURIComponent(GCASH_NUMBER)}&amount=${amountFormatted}`;
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(gcashPayload)}&format=svg&margin=10`;
+            document.getElementById('gcashQrImg').src = qrApiUrl;
+            document.getElementById('gcashQrImg').style.display = 'block';
+            document.getElementById('gcashQrNoNumber').style.display = 'none';
+            document.getElementById('gcashQrNumber').textContent = GCASH_NUMBER;
+            document.getElementById('gcashCopyBtn').style.display = '';
+        } else {
+            // Owner hasn't set a GCash number yet — show "not configured" state
+            document.getElementById('gcashQrImg').style.display = 'none';
+            document.getElementById('gcashQrNoNumber').style.display = 'flex';
+            document.getElementById('gcashQrNumber').textContent = 'Not configured';
+            document.getElementById('gcashCopyBtn').style.display = 'none';
+        }
+
+        document.getElementById('gcashQrAmount').textContent = '₱' + amountFormatted;
+        document.getElementById('gcashQrOrderId').textContent = ORDER_ID || '—';
+
+        document.getElementById('gcashQrModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        _resetBtn(btn);
     }
 
     // ----------------------------------------------------------
@@ -1419,6 +1850,233 @@ body { background: #f5f5f5 !important; }
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && document.getElementById('stockConflictModal').classList.contains('open')) {
             closeStockConflictModal();
+        }
+    });
+
+    // ----------------------------------------------------------
+    // GCash QR Modal — close
+    // ----------------------------------------------------------
+    window.closeGcashQrModal = function () {
+        document.getElementById('gcashQrModal').classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    document.getElementById('gcashQrModal').addEventListener('click', function (e) {
+        if (e.target === this) closeGcashQrModal();
+    });
+
+    // ----------------------------------------------------------
+    // GCash QR Modal — copy number
+    // ----------------------------------------------------------
+    window.copyGcashNumber = function () {
+        const num = document.getElementById('gcashQrNumber').textContent.trim();
+        if (!num || num === '—') return;
+        navigator.clipboard.writeText(num).then(function () {
+            const btn = document.getElementById('gcashCopyBtn');
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.style.background = '#dcfce7';
+            btn.style.borderColor = '#86efac';
+            btn.style.color = '#16a34a';
+            setTimeout(function () {
+                btn.innerHTML = '<i class="far fa-copy"></i> Copy';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }, 2000);
+        }).catch(function () {
+            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = num;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        });
+    };
+
+    // ----------------------------------------------------------
+    // ============================================================
+    // GCash Multi-Panel Flow
+    // Panel A → QR (I've Paid button)
+    // Panel B → Upload Proof screenshot
+    // Panel C → Waiting for owner verification
+    // ============================================================
+
+    let _proofFile = null;
+    let _verifyPollTimer = null;
+
+    // A → B
+    window.showProofUploadPanel = function () {
+        document.getElementById('gcashPanelA').style.display = 'none';
+        document.getElementById('gcashPanelB').style.display = 'block';
+        // Sync amount + order id
+        const amt = document.getElementById('gcashQrAmount').textContent;
+        const oid = document.getElementById('gcashQrOrderId').textContent;
+        document.getElementById('gcashQrAmount2').textContent = amt;
+        document.getElementById('gcashQrOrderId2').textContent = oid;
+    };
+
+    // B → A
+    window.backToQrPanel = function () {
+        document.getElementById('gcashPanelB').style.display = 'none';
+        document.getElementById('gcashPanelA').style.display = 'block';
+    };
+
+    // File selected in Panel B
+    window.handleProofFileSelect = function (input) {
+        const file = input.files[0];
+        if (!file) return;
+        _proofFile = file;
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('proofPreviewImg').src = e.target.result;
+            document.getElementById('proofFileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+            document.getElementById('proofPreviewWrap').style.display = 'block';
+            document.getElementById('proofDropZone').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        // Enable submit btn
+        const btn = document.getElementById('gcashSubmitProofBtn');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    };
+
+    // Remove proof file → back to dropzone
+    window.removeProofFile = function () {
+        _proofFile = null;
+        document.getElementById('proofFileInput').value = '';
+        document.getElementById('proofPreviewWrap').style.display = 'none';
+        document.getElementById('proofDropZone').style.display = 'flex';
+        const btn = document.getElementById('gcashSubmitProofBtn');
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    };
+
+    // B submit → create order + upload proof → show Panel C
+    window.onSubmitProof = function () {
+        if (!_proofFile) {
+            showToast('Please select your GCash receipt screenshot first.', 'error');
+            return;
+        }
+        const btn = document.getElementById('gcashSubmitProofBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+        // Step 1: Create the order (to_pay → verifying status set by upload_payment_proof)
+        const fd = new FormData();
+        fd.append('order_id', ORDER_ID);
+        fd.append('source', 'checkout');
+        fd.append('payment_method', 'gcash');
+
+        fetch(URL_CREATE_CASH, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success && !data.order_id) {
+                throw new Error(data.message || 'Failed to place order.');
+            }
+            // Step 2: Upload proof screenshot
+            const fd2 = new FormData();
+            fd2.append('order_id', ORDER_ID);
+            fd2.append('proof_image', _proofFile);
+            return fetch('/payment/upload-proof/', {
+                method: 'POST',
+                body: fd2,
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                credentials: 'same-origin'
+            });
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message || 'Failed to upload proof.');
+            // Show Panel C
+            document.getElementById('gcashPanelB').style.display = 'none';
+            document.getElementById('gcashPanelC').style.display = 'block';
+            // Start polling for verification
+            _startVerificationPolling();
+        })
+        .catch(err => {
+            console.error('Proof submission error:', err);
+            showToast(err.message || 'Network error. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Receipt & Place Order';
+        });
+    };
+
+    // Poll every 5 seconds for owner verification
+    function _startVerificationPolling() {
+        let attempts = 0;
+        const maxAttempts = 60; // ~5 minutes
+
+        _verifyPollTimer = setInterval(function () {
+            attempts++;
+            fetch('/payment/verification-status/?order_id=' + ORDER_ID, {
+                credentials: 'same-origin'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                const st = data.status;
+                if (st === 'preparing' || st === 'to_claim' || st === 'completed') {
+                    // ✅ Owner confirmed!
+                    clearInterval(_verifyPollTimer);
+                    document.getElementById('verifyPollStatus').innerHTML =
+                        '<i class="fas fa-check-circle" style="color:#10b981;margin-right:4px;"></i><span style="color:#065f46;font-weight:600;">Payment Verified! Redirecting...</span>';
+                    setTimeout(function () {
+                        closeGcashQrModal();
+                        window.location.href = '/payment/success/?order_id=' + ORDER_ID + '&payment_method=gcash';
+                    }, 1500);
+                } else if (st === 'to_pay') {
+                    // ❌ Owner rejected proof — go back to Panel B for re-upload
+                    clearInterval(_verifyPollTimer);
+                    const reason = data.reject_reason ? (' Reason: ' + data.reject_reason) : '';
+                    showToast('⚠️ Your receipt was rejected by the owner.' + reason + ' Please upload a clearer screenshot.', 'error');
+                    document.getElementById('gcashPanelC').style.display = 'none';
+                    document.getElementById('gcashPanelB').style.display = 'block';
+                    removeProofFile();
+                } else if (st === 'verifying') {
+                    // Still waiting
+                    const dots = '.'.repeat((attempts % 3) + 1);
+                    document.getElementById('verifyPollStatus').innerHTML =
+                        '<i class="fas fa-sync fa-spin" style="margin-right:4px;"></i> Checking' + dots;
+                }
+                if (attempts >= maxAttempts) {
+                    clearInterval(_verifyPollTimer);
+                    document.getElementById('verifyPollStatus').innerHTML =
+                        '<i class="fas fa-clock" style="color:#f59e0b;margin-right:4px;"></i> Still verifying — check <a href="{% url 'order_history' %}" style="color:#2563eb;">My Orders</a> for updates.';
+                }
+            })
+            .catch(() => { /* silent — keep polling */ });
+        }, 5000);
+    }
+
+    // Override closeGcashQrModal to also stop polling
+    const _origClose = window.closeGcashQrModal;
+    window.closeGcashQrModal = function () {
+        if (_verifyPollTimer) { clearInterval(_verifyPollTimer); _verifyPollTimer = null; }
+        // Reset panels back to A for next open
+        document.getElementById('gcashPanelA').style.display = 'block';
+        document.getElementById('gcashPanelB').style.display = 'none';
+        document.getElementById('gcashPanelC').style.display = 'none';
+        removeProofFile();
+        if (typeof _origClose === 'function') _origClose();
+        else document.getElementById('gcashQrModal').classList.remove('open');
+    };
+
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('gcashQrModal').classList.contains('open')) {
+            closeGcashQrModal();
         }
     });
 

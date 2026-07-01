@@ -300,6 +300,13 @@
     box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
 }
 
+.location-status.warning {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+}
+
 .spinner {
     display: inline-block;
     width: 18px;
@@ -413,6 +420,16 @@
     0%, 100% { transform: scale(1); opacity: 0.7; }
     50% { transform: scale(1.15); opacity: 0.3; }
 }
+
+/* Outside-area validation message */
+.map-validation-message.outside-area {
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
     </style>
 </head>
 <body>
@@ -428,7 +445,29 @@
 
         <div class="registration-content">
             <h2>Step 1: Pin Your Location</h2>
-            <p>Search for a location, click inside the circle (within 500m of CvSU-Bacoor), or use your current GPS location.</p>
+            <p>Search for a location, click anywhere on the map, or use your current GPS location to pin your establishment.</p>
+
+            <!-- Disclaimer Banner -->
+            <div style="
+                background: #fffbeb;
+                border: 1px solid #f59e0b;
+                border-left: 4px solid #f59e0b;
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin-bottom: 14px;
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                font-size: 13px;
+                color: #78350f;
+            ">
+                <span style="font-size:18px;line-height:1.2;flex-shrink:0;">⚠️</span>
+                <div>
+                    <strong style="display:block;margin-bottom:2px;color:#92400e;">Intended Coverage Area</strong>
+                    KabsuEats is designed for food establishments <strong>near CvSU-Bacoor Campus</strong> (within 500 meters). Registrations outside this area are allowed but may receive limited visibility and support. The dashed circle on the map marks the recommended zone.
+                </div>
+            </div>
+
             <p id="establishment-count" style="font-size: 13px; color: #666; margin-top: -5px;">
                 <span id="est-count-number"></span>
             </p>
@@ -744,14 +783,7 @@
 
             /* ── Map click handler ── */
             map.on('click', function (e) {
-                const distance = map.distance(e.latlng, L.latLng(cvsuLatLng));
-                if (distance <= RADIUS) {
-                    placeMarker(e.latlng);
-                } else {
-                    msg.textContent = '❌ Please pin inside the circle (within 500m).';
-                    msg.className   = 'map-validation-message invalid';
-                    nextBtn.disabled = true;
-                }
+                placeMarker(e.latlng);
             });
 
             function placeMarker(latlng) {
@@ -765,15 +797,7 @@
 
                     window.userMarker.on('dragend', function (evt) {
                         const pos  = evt.target.getLatLng();
-                        const dist = map.distance(pos, L.latLng(cvsuLatLng));
-                        if (dist <= RADIUS) {
-                            validatePosition(pos);
-                        } else {
-                            msg.textContent  = '❌ Please pin inside the circle (within 500m).';
-                            msg.className    = 'map-validation-message invalid';
-                            nextBtn.disabled = true;
-                            updateRemovePinButton(false);
-                        }
+                        validatePosition(pos);
                     });
                 }
                 validatePosition(latlng);
@@ -828,8 +852,15 @@
             function validatePosition(pos) {
                 sessionStorage.setItem('latitude',  pos.lat);
                 sessionStorage.setItem('longitude', pos.lng);
-                msg.textContent  = '✓ Location pinned successfully!';
-                msg.className    = 'map-validation-message valid';
+                const distance = map.distance(pos, L.latLng(cvsuLatLng));
+                if (distance <= RADIUS) {
+                    msg.textContent  = '✓ Location pinned successfully!';
+                    msg.className    = 'map-validation-message valid';
+                } else {
+                    const distText = distance < 1000 ? Math.round(distance) + 'm' : (distance / 1000).toFixed(1) + 'km';
+                    msg.innerHTML = '⚠️ Location pinned — <strong>' + distText + ' from CvSU-Bacoor</strong>. KabsuEats is intended for nearby establishments, but you may continue.';
+                    msg.className    = 'map-validation-message outside-area';
+                }
                 nextBtn.disabled = false;
                 updateRemovePinButton(true);
 
@@ -901,8 +932,7 @@
                 if (typeof EXISTING_ESTABLISHMENTS !== 'undefined' && EXISTING_ESTABLISHMENTS) {
                     const lq = query.toLowerCase();
                     estResults = EXISTING_ESTABLISHMENTS.filter(function (est) {
-                        const d = map.distance(L.latLng(est.latitude, est.longitude), cvsuLatLngObj);
-                        return d <= RADIUS && (
+                        return (
                             (est.name    && est.name.toLowerCase().includes(lq)) ||
                             (est.address && est.address.toLowerCase().includes(lq))
                         );
@@ -946,9 +976,9 @@
                             });
                         });
 
-                        // Only show results inside the 500m circle
+                        // Show all results sorted by distance, not limited to 500m circle
                         combined.sort(function (a, b) { return a._dist - b._dist; });
-                        combined = combined.filter(function (r) { return r._dist <= RADIUS; }).slice(0, 8);
+                        combined = combined.slice(0, 8);
 
                         const allResults = estResults.concat(combined);
                         displaySearchResults(allResults);
@@ -961,7 +991,7 @@
 
             function displaySearchResults(results) {
                 if (results.length === 0) {
-                    autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found inside the 500m circle</div>';
+                    autocompleteDropdown.innerHTML = '<div class="autocomplete-no-results">No results found for that location</div>';
                     return;
                 }
                 autocompleteDropdown.innerHTML = '';
@@ -1010,15 +1040,13 @@
             function selectSearchResult(result, name) {
                 const latlng   = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
                 const distance = map.distance(latlng, cvsuLatLngObj);
+                placeMarker(latlng);
+                map.setView(latlng, 18);
+                searchInput.value = name;
                 if (distance <= RADIUS) {
-                    placeMarker(latlng);
-                    map.setView(latlng, 18);
-                    searchInput.value = name;
                     showLocationStatus('Location selected!', 'success');
                 } else {
-                    showLocationStatus('This location is outside the 500m radius', 'error');
-                    msg.textContent  = '❌ Please select a location within the circle (within 500m).';
-                    msg.className    = 'map-validation-message invalid';
+                    showLocationStatus('⚠️ Location is outside the 500m CvSU area', 'warning');
                 }
                 autocompleteDropdown.classList.remove('show');
             }
@@ -1046,20 +1074,17 @@
                         const userLatLng = L.latLng(lat, lng);
                         const distance   = map.distance(userLatLng, cvsuLatLngObj);
 
+                        placeMarker(userLatLng);
+                        map.setView(userLatLng, 18, { animate: true, duration: 0.5 });
+                        const accuracyText = accuracy < 20 ? '🎯 Very accurate' : accuracy < 50 ? '✅ Good' : '📍 Located';
                         if (distance <= RADIUS) {
-                            placeMarker(userLatLng);
-                            map.setView(userLatLng, 18, { animate: true, duration: 0.5 });
-                            const accuracyText = accuracy < 20 ? '🎯 Very accurate' : accuracy < 50 ? '✅ Good' : '📍 Located';
                             showLocationStatus(accuracyText + ' (±' + Math.round(accuracy) + 'm)', 'success');
-                            setTimeout(function () {
-                                document.getElementById('location-status').style.display = 'none';
-                            }, 3000);
                         } else {
-                            const distanceKm = (distance / 1000).toFixed(2);
-                            showLocationStatus('❌ You\'re ' + distanceKm + 'km away (limit: 500m)', 'error');
-                            msg.textContent  = '❌ Your location is ' + Math.round(distance) + 'm from CvSU. Please select within 500m.';
-                            msg.className    = 'map-validation-message invalid';
+                            showLocationStatus('⚠️ You\'re outside the 500m CvSU area (±' + Math.round(accuracy) + 'm)', 'warning');
                         }
+                        setTimeout(function () {
+                            document.getElementById('location-status').style.display = 'none';
+                        }, 4000);
                         useCurrentLocationBtn.disabled    = false;
                         useCurrentLocationBtn.style.opacity = '1';
                     },
