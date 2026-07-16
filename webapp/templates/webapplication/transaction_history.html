@@ -1172,6 +1172,16 @@ function exportPrintPDF() {
     }));
     const topItems = Object.entries(itemTotals).sort((a,b)=>b[1].qty-a[1].qty).slice(0,10);
 
+    // Capture the live Hourly/Revenue chart as an image so it prints exactly like on screen
+    let chartImg = '';
+    try {
+        if (typeof revenueChart !== 'undefined' && revenueChart) {
+            chartImg = revenueChart.toBase64Image('image/png', 1);
+        }
+    } catch (e) { chartImg = ''; }
+    const chartTitleText = document.getElementById('chart-title') ? document.getElementById('chart-title').textContent : 'Hourly Sales';
+    const chartSubText   = document.getElementById('chart-sub') ? document.getElementById('chart-sub').textContent : '';
+
     const payIcons = {gcash:'💙', cash:'💵', card:'💳', paymaya:'💜'};
 
     const txnRows = data.map(t => {
@@ -1239,6 +1249,14 @@ function exportPrintPDF() {
                 <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Per transaction</div>
             </div>
         </div>
+
+        <!-- Hourly Sales Chart -->
+        ${chartImg ? `
+        <div style="margin-bottom:28px;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;page-break-inside:avoid;">
+            <div style="font-size:13px;font-weight:700;color:#1a1d23;margin-bottom:2px;">${chartTitleText}</div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:14px;">${chartSubText}</div>
+            <img src="${chartImg}" style="width:100%;max-height:260px;object-fit:contain;display:block;" />
+        </div>` : ''}
 
         <!-- Payment Breakdown & Top Items side by side -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
