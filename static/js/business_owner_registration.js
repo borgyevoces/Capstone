@@ -715,36 +715,53 @@ function initStep2() {
     // WEEKLY SCHEDULE HELPERS
     // ============================================================
 
-    /** Returns array of 7 schedule objects from the current UI state */
+    /** Returns array of 7 per-day schedule objects from the current UI state.
+     *  The UI groups days into cards (e.g. "Weekdays Mon–Fri" shares one set
+     *  of controls), but every individual day (0-6) still gets its own entry
+     *  so the rest of the app / backend sees the same shape as before. */
     function getWeeklySchedule() {
-        const rows = document.querySelectorAll('.schedule-row[data-day]');
+        const groups = document.querySelectorAll('.schedule-group[data-days]');
         const schedule = [];
-        rows.forEach(function (row) {
-            const day    = parseInt(row.dataset.day, 10);
-            const cb     = row.querySelector('.day-open-cb');
-            const openT  = row.querySelector('.day-open-t');
-            const closeT = row.querySelector('.day-close-t');
-            schedule.push({
-                day:       day,
-                is_closed: cb ? !cb.checked : true,
-                opening:   openT  ? openT.value  : '',
-                closing:   closeT ? closeT.value : ''
+        groups.forEach(function (group) {
+            const days   = group.dataset.days.split(',').map(function (d) { return parseInt(d, 10); });
+            const cb     = group.querySelector('.day-open-cb');
+            const openT  = group.querySelector('.day-open-t');
+            const closeT = group.querySelector('.day-close-t');
+            const isClosed = cb ? !cb.checked : true;
+            const opening   = openT  ? openT.value  : '';
+            const closing   = closeT ? closeT.value : '';
+
+            days.forEach(function (day) {
+                schedule.push({
+                    day:       day,
+                    is_closed: isClosed,
+                    opening:   opening,
+                    closing:   closing
+                });
             });
         });
+        schedule.sort(function (a, b) { return a.day - b.day; });
         return schedule;
     }
 
-    /** Restores schedule UI from a saved array */
+    /** Restores schedule UI from a saved 7-entry array (one group takes the
+     *  values of its first day — all days within a group always share the
+     *  same hours, so this is lossless in normal use). */
     function restoreWeeklySchedule(hours) {
         if (!Array.isArray(hours)) return;
-        hours.forEach(function (entry) {
-            const row    = document.querySelector(`.schedule-row[data-day="${entry.day}"]`);
-            if (!row) return;
-            const cb       = row.querySelector('.day-open-cb');
-            const openT    = row.querySelector('.day-open-t');
-            const closeT   = row.querySelector('.day-close-t');
-            const label    = row.querySelector('.sd-label');
-            const timesDiv = row.querySelector('.sd-times');
+        const byDay = {};
+        hours.forEach(function (entry) { byDay[entry.day] = entry; });
+
+        document.querySelectorAll('.schedule-group[data-days]').forEach(function (group) {
+            const days  = group.dataset.days.split(',').map(function (d) { return parseInt(d, 10); });
+            const entry = byDay[days[0]];
+            if (!entry) return;
+
+            const cb       = group.querySelector('.day-open-cb');
+            const openT    = group.querySelector('.day-open-t');
+            const closeT   = group.querySelector('.day-close-t');
+            const label    = group.querySelector('.sd-label');
+            const timesDiv = group.querySelector('.sd-times');
             const isOpen   = !entry.is_closed;
 
             if (cb) cb.checked = isOpen;
@@ -753,42 +770,43 @@ function initStep2() {
             if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
             if (timesDiv) {
                 timesDiv.classList.toggle('sd-times-closed', !isOpen);
-                row.querySelectorAll('input[type="time"]').forEach(function (inp) {
+                group.querySelectorAll('input[type="time"]').forEach(function (inp) {
                     inp.disabled = !isOpen;
                 });
             }
-            row.classList.toggle('row-closed', !isOpen);
+            group.classList.toggle('group-closed', !isOpen);
         });
     }
 
-    /** Wire up toggle switches and time input changes on schedule rows */
+    /** Wire up toggle switches and time input changes on schedule groups */
     function initScheduleUI() {
-        document.querySelectorAll('.day-open-cb').forEach(function (cb) {
-            cb.addEventListener('change', function () {
-                const day      = this.dataset.day;
-                const row      = document.querySelector(`.schedule-row[data-day="${day}"]`);
-                const label    = row ? row.querySelector('.sd-label')    : null;
-                const timesDiv = row ? row.querySelector('.sd-times')    : null;
-                const isOpen   = this.checked;
+        document.querySelectorAll('.schedule-group[data-days]').forEach(function (group) {
+            const cb = group.querySelector('.day-open-cb');
+            if (cb) {
+                cb.addEventListener('change', function () {
+                    const label    = group.querySelector('.sd-label');
+                    const timesDiv = group.querySelector('.sd-times');
+                    const isOpen   = this.checked;
 
-                if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
-                if (timesDiv) {
-                    timesDiv.classList.toggle('sd-times-closed', !isOpen);
-                    row.querySelectorAll('input[type="time"]').forEach(function (inp) {
-                        inp.disabled = !isOpen;
-                    });
-                }
-                if (row) row.classList.toggle('row-closed', !isOpen);
+                    if (label)    label.textContent = isOpen ? 'Open' : 'Closed';
+                    if (timesDiv) {
+                        timesDiv.classList.toggle('sd-times-closed', !isOpen);
+                        group.querySelectorAll('input[type="time"]').forEach(function (inp) {
+                            inp.disabled = !isOpen;
+                        });
+                    }
+                    group.classList.toggle('group-closed', !isOpen);
 
-                saveDraft();
-                validateForm();
-            });
-        });
+                    saveDraft();
+                    validateForm();
+                });
+            }
 
-        document.querySelectorAll('.day-open-t, .day-close-t').forEach(function (inp) {
-            inp.addEventListener('change', function () {
-                saveDraft();
-                validateForm();
+            group.querySelectorAll('.day-open-t, .day-close-t').forEach(function (inp) {
+                inp.addEventListener('change', function () {
+                    saveDraft();
+                    validateForm();
+                });
             });
         });
     }

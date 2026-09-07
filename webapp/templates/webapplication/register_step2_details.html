@@ -145,41 +145,35 @@
 
         /* ══ Weekly Schedule ══════════════════════════════════════ */
         .weekly-schedule-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule-group {
+            background: #fff;
             border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            overflow: hidden;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 16px 18px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .schedule-group.group-closed {
+            background: #fafafa;
         }
 
-        .schedule-header-row {
-            display: grid;
-            grid-template-columns: 110px 110px 1fr;
-            background: #f9fafb;
-            padding: 8px 16px;
-            font-weight: 600;
-            font-size: 12px;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .schedule-row {
-            display: grid;
-            grid-template-columns: 110px 110px 1fr;
+        .sg-top {
+            display: flex;
             align-items: center;
-            padding: 10px 16px;
-            border-bottom: 1px solid #f3f4f6;
-            transition: background 0.15s;
+            justify-content: space-between;
+            margin-bottom: 12px;
         }
-        .schedule-row:last-child { border-bottom: none; }
-        .schedule-row.row-closed { background: #fafafa; }
 
-        .sd-name {
+        .sg-name {
             font-weight: 600;
-            color: #374151;
+            font-size: 14px;
+            color: #1f2937;
         }
-        .schedule-row.row-closed .sd-name { color: #9ca3af; }
+        .schedule-group.group-closed .sg-name { color: #9ca3af; }
 
         /* Toggle switch */
         .sd-toggle-wrap {
@@ -227,16 +221,16 @@
         .sd-times {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .sd-times input[type="time"] {
-            padding: 5px 8px;
+            flex: 1;
+            padding: 8px 10px;
             border: 1px solid #d1d5db;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             color: #111;
             background: #fff;
-            width: 112px;
             transition: border-color 0.2s;
         }
         .sd-times input[type="time"]:focus {
@@ -253,12 +247,7 @@
         .sd-times-closed { opacity: 0.4; }
 
         @media (max-width: 600px) {
-            .schedule-header-row { display: none; }
-            .schedule-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-                padding: 12px 16px;
-            }
+            .schedule-group { padding: 14px; }
         }
     /* ── Contact Link Rows ─────────────────────────────────────── */
     .cl-row {
@@ -330,114 +319,55 @@
                     </p>
 
                     <div class="weekly-schedule-wrap">
-                        <div class="schedule-header-row">
-                            <span class="sh-day">Day</span>
-                            <span class="sh-status">Status</span>
-                            <span class="sh-times">Opening – Closing</span>
-                        </div>
 
-                        <!-- Monday = 0 -->
-                        <div class="schedule-row" data-day="0">
-                            <span class="sd-name">Monday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="0" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
-                            <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="0" value="08:00">
-                                <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="0" value="22:00">
+                        <!-- Weekdays = Monday(0) – Friday(4), share one set of hours -->
+                        <div class="schedule-group" data-days="0,1,2,3,4">
+                            <div class="sg-top">
+                                <span class="sg-name">Weekdays (Mon–Fri)</span>
+                                <label class="sd-toggle-wrap">
+                                    <input type="checkbox" class="day-open-cb" checked>
+                                    <span class="sd-slider"></span>
+                                    <span class="sd-label">Open</span>
+                                </label>
                             </div>
-                        </div>
-
-                        <!-- Tuesday = 1 -->
-                        <div class="schedule-row" data-day="1">
-                            <span class="sd-name">Tuesday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="1" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
                             <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="1" value="08:00">
+                                <input type="time" class="day-open-t" value="08:00">
                                 <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="1" value="22:00">
-                            </div>
-                        </div>
-
-                        <!-- Wednesday = 2 -->
-                        <div class="schedule-row" data-day="2">
-                            <span class="sd-name">Wednesday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="2" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
-                            <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="2" value="08:00">
-                                <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="2" value="22:00">
-                            </div>
-                        </div>
-
-                        <!-- Thursday = 3 -->
-                        <div class="schedule-row" data-day="3">
-                            <span class="sd-name">Thursday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="3" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
-                            <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="3" value="08:00">
-                                <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="3" value="22:00">
-                            </div>
-                        </div>
-
-                        <!-- Friday = 4 -->
-                        <div class="schedule-row" data-day="4">
-                            <span class="sd-name">Friday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="4" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
-                            <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="4" value="08:00">
-                                <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="4" value="22:00">
+                                <input type="time" class="day-close-t" value="22:00">
                             </div>
                         </div>
 
                         <!-- Saturday = 5 -->
-                        <div class="schedule-row" data-day="5">
-                            <span class="sd-name">Saturday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="5" checked>
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Open</span>
-                            </label>
+                        <div class="schedule-group" data-days="5">
+                            <div class="sg-top">
+                                <span class="sg-name">Saturday</span>
+                                <label class="sd-toggle-wrap">
+                                    <input type="checkbox" class="day-open-cb" checked>
+                                    <span class="sd-slider"></span>
+                                    <span class="sd-label">Open</span>
+                                </label>
+                            </div>
                             <div class="sd-times">
-                                <input type="time" class="day-open-t" data-day="5" value="08:00">
+                                <input type="time" class="day-open-t" value="08:00">
                                 <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="5" value="22:00">
+                                <input type="time" class="day-close-t" value="22:00">
                             </div>
                         </div>
 
                         <!-- Sunday = 6 (closed by default) -->
-                        <div class="schedule-row row-closed" data-day="6">
-                            <span class="sd-name">Sunday</span>
-                            <label class="sd-toggle-wrap">
-                                <input type="checkbox" class="day-open-cb" data-day="6">
-                                <span class="sd-slider"></span>
-                                <span class="sd-label">Closed</span>
-                            </label>
+                        <div class="schedule-group group-closed" data-days="6">
+                            <div class="sg-top">
+                                <span class="sg-name">Sunday</span>
+                                <label class="sd-toggle-wrap">
+                                    <input type="checkbox" class="day-open-cb">
+                                    <span class="sd-slider"></span>
+                                    <span class="sd-label">Closed</span>
+                                </label>
+                            </div>
                             <div class="sd-times sd-times-closed">
-                                <input type="time" class="day-open-t" data-day="6" value="08:00" disabled>
+                                <input type="time" class="day-open-t" value="08:00" disabled>
                                 <span class="sd-sep">–</span>
-                                <input type="time" class="day-close-t" data-day="6" value="22:00" disabled>
+                                <input type="time" class="day-close-t" value="22:00" disabled>
                             </div>
                         </div>
                     </div>

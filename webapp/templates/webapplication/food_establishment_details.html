@@ -1527,34 +1527,18 @@
         color: #16a34a;
     }
     .menu-stock-text.low-stock {
-        color: #d97706;
+        color: #92400e;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 20px;
+        padding: 2px 8px;
+        width: fit-content;
     }
     .menu-stock-text.out-of-stock {
         color: #dc2626;
     }
     .menu-stock-text i {
         font-size: 11px;
-    }
-    /* ── Low-stock alert pill on card ── */
-    .low-stock-alert-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fcd34d;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 700;
-        padding: 2px 8px;
-        margin-bottom: 4px;
-        animation: lowStockPulse 2s ease-in-out infinite;
-        width: fit-content;
-    }
-    .low-stock-alert-pill i { font-size: 9px; }
-    @keyframes lowStockPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.65; }
     }
 </style>
 {% endblock %}
@@ -1975,9 +1959,6 @@
                 <i class="fas fa-times-circle"></i> Out of Stock
             </p>
             {% elif item.quantity <= 5 %}
-            <span class="low-stock-alert-pill">
-                <i class="fas fa-exclamation-triangle"></i> Only {{ item.quantity }} left!
-            </span>
             <p class="menu-stock-text low-stock">
                 <i class="fas fa-box-open"></i> Low Stock: {{ item.quantity }}
             </p>
@@ -2471,28 +2452,19 @@ function applyDetailsInventoryUpdate(updates) {
         if (card) {
             card.setAttribute('data-item-quantity', qty);
 
-            // Update stock text + low-stock pill inside the card
+            // Update the single stock badge inside the card
             const stockText = card.querySelector('.menu-stock-text');
-            let   lowPill   = card.querySelector('.low-stock-alert-pill');
             if (qty <= 0) {
-                if (lowPill) lowPill.remove();
                 if (stockText) {
                     stockText.className = 'menu-stock-text out-of-stock';
                     stockText.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
                 }
             } else if (qty <= 5) {
-                if (!lowPill) {
-                    lowPill = document.createElement('span');
-                    lowPill.className = 'low-stock-alert-pill';
-                    if (stockText) stockText.parentNode.insertBefore(lowPill, stockText);
-                }
-                lowPill.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Only ${qty} left!`;
                 if (stockText) {
                     stockText.className = 'menu-stock-text low-stock';
                     stockText.innerHTML = `<i class="fas fa-box-open"></i> Low Stock: ${qty}`;
                 }
             } else {
-                if (lowPill) lowPill.remove();
                 if (stockText) {
                     stockText.className = 'menu-stock-text available';
                     stockText.innerHTML = `<i class="fas fa-check-circle"></i> Available: ${qty}`;
