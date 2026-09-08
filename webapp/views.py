@@ -9076,7 +9076,20 @@ def create_cash_order(request):
 
         with transaction.atomic():
             source = request.POST.get('source', 'cart')
-            if order.status == 'to_pay' or source == 'checkout':
+            # ✅ FIX: dating hindi tinitingnan ang payment_method dito — kaya
+            # kahit GCash order, basta source=='checkout', deretso agad sa
+            # 'preparing', na siyang nag-cause ng "Cannot upload proof for an
+            # order with status 'preparing'" error sa customer. Ngayon,
+            # GCash/online orders ay MANANATILI muna sa 'to_pay' dito — ang
+            # upload_payment_proof() na lang (Step 2 sa checkout.html) ang
+            # bahalang mag-transition papuntang 'verifying'.
+            payment_method = (request.POST.get('payment_method', 'cash') or 'cash').lower()
+            if payment_method != 'cash':
+                # GCash/online — huwag i-jump sa preparing. Panatilihin ang
+                # kasalukuyang status (dapat 'to_pay') para makapag-upload pa
+                # ng proof ang customer sa susunod na hakbang.
+                new_status = order.status
+            elif order.status == 'to_pay' or source == 'checkout':
                 new_status = 'preparing'
             else:
                 new_status = 'request'
