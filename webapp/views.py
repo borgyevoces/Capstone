@@ -10049,76 +10049,99 @@ def get_user_transaction_history(request):
 
         orders_data = []
         for order in orders:
-            raw_status = order.status or 'PENDING'
+            # ✅ FIX: bawat order may sariling try/except na ngayon.
+            # Dati, iisang try/except lang ang bumabalot sa BUONG loop —
+            # kaya kapag may ISANG order (halimbawa lumang cancelled/rejected
+            # order na may sirang data) na nag-raise ng exception, bumabagsak
+            # ang BUONG response at nawawala pati ang mga VALID na order
+            # (hal. yung bagong 'to_pay' order mo) kahit tama naman sila.
+            # Ngayon, kapag nag-error ang isang order, ang order lang na yun
+            # ang ski-skip, tuloy pa rin ang ibang orders.
+            try:
+                raw_status = order.status or 'PENDING'
 
-            if raw_status == 'cancelled':
-                cf = order.cancelled_from_status or ''
-                if cf in ('to_pay', 'to_claim'):
-                    normalized_status = cf
+                if raw_status == 'cancelled':
+                    cf = order.cancelled_from_status or ''
+                    if cf in ('to_pay', 'to_claim'):
+                        normalized_status = cf
+                    else:
+                        normalized_status = 'request'
                 else:
-                    normalized_status = 'request'
-            else:
-                normalized_status = client_status_map.get(raw_status, raw_status.lower())
+                    normalized_status = client_status_map.get(raw_status, raw_status.lower())
 
-            import json as _json
-            items = []
-            for oi in order.orderitem_set.all():
-                _addons = []
-                try:
-                    _addons = _json.loads(oi.addons_json or '[]')
-                    if not isinstance(_addons, list):
-                        _addons = []
-                except Exception:
+                import json as _json
+                items = []
+                for oi in order.orderitem_set.all():
+                    # ✅ Skip lang ang item na ito kung nabura na ang menu_item
+                    # nito sa DB (edge case), sa halip na i-crash ang buong order.
+                    if not oi.menu_item_id or oi.menu_item is None:
+                        print(f"WARNING: OrderItem #{oi.id} sa Order #{order.id} ay walang menu_item — skipped")
+                        continue
+
                     _addons = []
+                    try:
+                        _addons = _json.loads(oi.addons_json or '[]')
+                        if not isinstance(_addons, list):
+                            _addons = []
+                    except Exception:
+                        _addons = []
 
-                # ✅ FIXED: total_price now includes add-on prices per unit × qty
-                _addon_per_unit = sum(
-                    float(a.get('additional_price', 0)) * int(a.get('qty', 1))
-                    for a in _addons
-                )
-                _item_total = round(float(oi.price_at_order) * oi.quantity + _addon_per_unit, 2)
+                    # ✅ FIXED: total_price now includes add-on prices per unit × qty
+                    _addon_per_unit = sum(
+                        float(a.get('additional_price', 0)) * int(a.get('qty', 1))
+                        for a in _addons
+                    )
+                    _item_total = round(float(oi.price_at_order) * oi.quantity + _addon_per_unit, 2)
 
-                items.append({
-                    'order_item_id': oi.id,
-                    'name': oi.menu_item.name,
-                    'quantity': oi.quantity,
-                    'price': str(oi.price_at_order),
-                    'total_price': str(_item_total),  # ✅ now includes add-ons
-                    'menu_item_id': oi.menu_item.id,
-                    'available_stock': oi.menu_item.quantity,
-                    'image': oi.menu_item.image.url if oi.menu_item.image else None,
-                    # ✅ BAGONG FIELDS
-                    'addons': _addons,
-                    'note': oi.note_to_establishment or '',
+                    items.append({
+                        'order_item_id': oi.id,
+                        'name': oi.menu_item.name,
+                        'quantity': oi.quantity,
+                        'price': str(oi.price_at_order),
+                        'total_price': str(_item_total),  # ✅ now includes add-ons
+                        'menu_item_id': oi.menu_item.id,
+                        'available_stock': oi.menu_item.quantity,
+                        'image': oi.menu_item.image.url if oi.menu_item.image else None,
+                        # ✅ BAGONG FIELDS
+                        'addons': _addons,
+                        'note': oi.note_to_establishment or '',
+                    })
+
+                orders_data.append({
+                    'id': order.id,
+                    'order_number': order.gcash_reference_number or f"ORD-{order.id}",
+                    'status': normalized_status,
+                    'raw_status': raw_status,
+                    'total_amount': str(order.total_amount),
+                    'payment_method': normalize_payment_method(order.gcash_payment_method),
+                    'created_at': order.created_at.isoformat(),
+                    'updated_at': order.updated_at.isoformat(),
+                    'payment_confirmed_at': order.payment_confirmed_at.isoformat()
+                    if order.payment_confirmed_at else None,
+                    'establishment_id': order.establishment.id,
+                    'establishment_name': order.establishment.name,
+                    'establishment_address': order.establishment.address,
+                    'establishment_image': order.establishment.image.url
+                    if order.establishment.image else None,
+                    'items': items,
+                    'cancelled_by_owner': (
+                            raw_status == 'cancelled'
+                            and not order.owner_dismissed
+                            and bool(order.cancelled_from_status)
+                    ),
+                    'cancelled_from_status': order.cancelled_from_status or '',
+                    'cancel_reason': order.cancel_reason or '',
+                    'payment_proof_url': order.payment_proof.url if getattr(order, 'payment_proof', None) and order.payment_proof else '',
+                    'payment_proof_submitted_at': order.payment_proof_submitted_at.isoformat() if getattr(order, 'payment_proof_submitted_at', None) else '',
                 })
-
-            orders_data.append({
-                'id': order.id,
-                'order_number': order.gcash_reference_number or f"ORD-{order.id}",
-                'status': normalized_status,
-                'raw_status': raw_status,
-                'total_amount': str(order.total_amount),
-                'payment_method': normalize_payment_method(order.gcash_payment_method),
-                'created_at': order.created_at.isoformat(),
-                'updated_at': order.updated_at.isoformat(),
-                'payment_confirmed_at': order.payment_confirmed_at.isoformat()
-                if order.payment_confirmed_at else None,
-                'establishment_id': order.establishment.id,
-                'establishment_name': order.establishment.name,
-                'establishment_address': order.establishment.address,
-                'establishment_image': order.establishment.image.url
-                if order.establishment.image else None,
-                'items': items,
-                'cancelled_by_owner': (
-                        raw_status == 'cancelled'
-                        and not order.owner_dismissed
-                        and bool(order.cancelled_from_status)
-                ),
-                'cancelled_from_status': order.cancelled_from_status or '',
-                'cancel_reason': order.cancel_reason or '',
-                'payment_proof_url': order.payment_proof.url if getattr(order, 'payment_proof', None) and order.payment_proof else '',
-                'payment_proof_submitted_at': order.payment_proof_submitted_at.isoformat() if getattr(order, 'payment_proof_submitted_at', None) else '',
-            })
+            except Exception as order_err:
+                # ✅ FIX: hindi na natin idi-drop ang buong response.
+                # I-lo-log lang natin kung anong specific order ang sira,
+                # tapos itutuloy ang pag-process sa mga natitirang orders.
+                import traceback
+                print(f"ERROR building order #{getattr(order, 'id', '?')} in get_user_transaction_history: {order_err}")
+                print(traceback.format_exc())
+                continue
 
         return JsonResponse({
             'success': True,
