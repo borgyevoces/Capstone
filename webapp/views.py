@@ -7547,6 +7547,25 @@ def update_order_status(request, order_id):
                 'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
             }, status=400)
 
+        # ✅ FIX: Block owner from manually pushing a GCash/online 'to_pay'
+        # order straight to 'preparing' — that skips the 'verifying' stage,
+        # meaning the customer's payment proof is never actually checked.
+        # Cash on Pickup orders are exempt since they have no proof step.
+        if (
+            new_status == 'preparing'
+            and order.status == 'to_pay'
+            and (order.gcash_payment_method or 'cash').lower() != 'cash'
+        ):
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    f'Order #{order.id} is a GCash/online payment still waiting for the '
+                    f'customer to upload their payment proof. It cannot be moved to '
+                    f'"Preparing" until the customer submits the receipt and it moves '
+                    f'to "Verifying".'
+                ),
+            }, status=400)
+
         # ============================================================
         # When order moves to 'preparing':
         # 1. Deduct menu item quantities for ALL items in the order

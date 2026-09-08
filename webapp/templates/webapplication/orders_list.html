@@ -3639,6 +3639,18 @@ function esc(s) {
             return;
         }
 
+        // ✅ FIX: Hindi pwedeng i-skip ang 'Verifying' stage para sa GCash/online
+        // orders. Kung nasa 'To Pay' tab tayo (next === 'preparing') at GCash ang
+        // bayad, dapat hintayin muna ang customer na mag-upload ng proof — hindi
+        // dapat pwedeng i-force ng owner papunta sa 'Preparing' nang direkta.
+        if (currentTab === 'to_pay' && orderEntry && (orderEntry.payment_method || 'cash').toLowerCase() !== 'cash') {
+            showToast(
+                `Order #${id} is a GCash payment. Please wait for the customer to upload their payment proof (it will move to "Verifying" automatically) before it can be prepared.`,
+                'error'
+            );
+            return;
+        }
+
         showConfirmModal(
             currentTab === 'request' ? 'Accept Order Request' : 'Move Order',
             currentTab === 'request'
@@ -3654,13 +3666,30 @@ function esc(s) {
         if (!next || selectedOrders.size === 0) return;
 
         // ✅ NEW: Exclude cancelled-by-client orders from bulk accept
+        // ✅ FIX: Also exclude GCash/online 'to_pay' orders — they must wait
+        // for the customer's payment proof (→ 'verifying') before they can
+        // be moved to 'preparing'. Only Cash on Pickup orders may skip ahead.
+        let blockedGcashCount = 0;
         const ids = Array.from(selectedOrders).filter(id => {
             const o = orders.find(x => x.id === id);
-            return !(o && o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay));
+            if (o && o.status === 'cancelled' && (o._cancelledFromRequest || o._cancelledFromToPay)) {
+                return false;
+            }
+            if (currentTab === 'to_pay' && o && (o.payment_method || 'cash').toLowerCase() !== 'cash') {
+                blockedGcashCount++;
+                return false;
+            }
+            return true;
         });
         const count = ids.length;
+        if (blockedGcashCount > 0) {
+            showToast(
+                `${blockedGcashCount} GCash order${blockedGcashCount > 1 ? 's are' : ' is'} still awaiting payment proof and ${blockedGcashCount > 1 ? 'were' : 'was'} skipped.`,
+                'error'
+            );
+        }
         if (count === 0) {
-            showToast('No acceptable orders selected. Cancelled orders cannot be accepted.', 'error');
+            showToast('No acceptable orders selected. Cancelled or unverified GCash orders cannot be moved this way.', 'error');
             return;
         }
 
